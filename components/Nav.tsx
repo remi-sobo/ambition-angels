@@ -47,11 +47,11 @@ export default function Nav() {
             {/* Logo */}
             <Link href="/" className="flex-shrink-0">
               <Image
-                src="/images/logo.png"
+                src="/images/AmbitionAngels_Logo.png"
                 alt="Ambition Angels"
-                width={160}
-                height={48}
-                className="h-9 w-auto"
+                width={180}
+                height={54}
+                className={scrolled || menuOpen ? "h-10 w-auto" : "h-10 w-auto brightness-0 invert"}
                 priority
               />
             </Link>

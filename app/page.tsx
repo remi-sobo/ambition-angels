@@ -1,11 +1,9 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import CareerQuizModal from "@/components/CareerQuizModal";
-import AnimatedCounter from "@/components/AnimatedCounter";
-import { DoodleStar, DoodleSquiggle, DoodleCircle, DoodleZigzag, DoodleDots, DoodleArrow } from "@/components/Doodles";
+import IPhoneMockup from "@/components/IPhoneMockup";
 
 const pillars = [
   {
@@ -66,55 +64,55 @@ export default function Home() {
     <>
       <CareerQuizModal isOpen={quizOpen} onClose={() => setQuizOpen(false)} />
 
-      {/* HERO */}
-      <section className="relative min-h-[92vh] flex items-center overflow-hidden">
-        {/* Full-bleed photo — teen positioned left */}
-        <div className="absolute inset-0">
+      {/* HERO -- split screen */}
+      <section className="relative min-h-[92vh] flex overflow-hidden">
+
+        {/* LEFT -- photo fills this column */}
+        <div className="relative w-full lg:w-[58%] min-h-[50vh] lg:min-h-0">
           <Image
             src="/images/hero-image.jpg"
-            alt="Teen looking forward with phone in hand"
+            alt="Teen with phone, looking forward"
             fill
             priority
-            className="object-cover object-[30%_center]"
+            className="object-cover object-center"
           />
+          {/* Subtle bottom fade on mobile only */}
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-ink to-transparent lg:hidden" />
         </div>
 
-        {/* Lighter overlay — just a soft gradient from right so text is readable */}
+        {/* RIGHT -- ink panel with dot texture */}
         <div
-          className="absolute inset-0"
+          className="relative flex-1 lg:w-[42%] bg-ink flex items-center"
           style={{
-            background:
-              "linear-gradient(to left, #0E0E0Ef0 0%, #0E0E0Ecc 35%, #0E0E0E55 55%, transparent 75%)",
+            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
           }}
-        />
+        >
+          {/* Doodle 62 -- staircase upward arrow -- top-left of this panel */}
+          <Image
+            src="/images/doodles/Doodle 62@3x.png"
+            alt=""
+            width={120}
+            height={120}
+            className="absolute top-8 left-6 opacity-25 -rotate-12"
+            aria-hidden="true"
+          />
 
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ink to-transparent" />
-
-        {/* Dot grid — visible on dark right side, fades on bright left */}
-        <div
-          className="absolute inset-0 opacity-40"
-          style={{
-            backgroundImage: "radial-gradient(circle, #E8500A 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-            mixBlendMode: "overlay",
-          }}
-        />
-
-        {/* Content — anchored RIGHT */}
-        <div className="container-site relative z-10 pt-32 pb-28 lg:pt-44 lg:pb-36">
-          <div className="max-w-lg ml-auto">
+          <div className="px-8 lg:px-12 py-20 pt-32 lg:pt-20 max-w-xl w-full">
             <div className="inline-block text-xs font-medium text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
               Freshman Year to Career
             </div>
-            <h1 className="font-heading font-bold text-5xl lg:text-6xl text-cream mb-5 leading-none tracking-tight">
-              Career exposure.{" "}
-              <span className="text-orange">In their pocket.</span>
+
+            <h1 className="font-display font-black text-6xl lg:text-7xl text-cream mb-5 leading-none tracking-tight uppercase">
+              Career<br />
+              exposure.<br />
+              <span className="text-orange">In their<br />pocket.</span>
             </h1>
-            <p className="text-gray-mid text-base lg:text-lg mb-8 leading-relaxed">
-              Real internships. Real careers. On the phone
-              he already has. Free for every student.
+
+            <p className="font-body text-gray-mid text-base lg:text-lg mb-8 leading-relaxed max-w-sm">
+              Real internships. Real careers. On the phone he already has. Free for every student.
             </p>
+
             <div className="flex flex-wrap gap-4 mb-6">
               <button
                 onClick={() => setQuizOpen(true)}
@@ -129,58 +127,62 @@ export default function Home() {
                 Support the Mission
               </Link>
             </div>
-            {/* App download buttons */}
+
             <div className="flex flex-wrap gap-3 mb-4">
               <a
                 href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream text-sm font-medium px-4 py-2.5 rounded-xl transition-colors border border-cream/10"
+                className="inline-flex items-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream text-xs font-medium px-4 py-2.5 rounded-xl transition-colors border border-cream/10"
               >
-                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                </svg>
-                Download for iOS
+                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" /></svg>
+                iOS
               </a>
               <a
-                href="https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN&pcampaignid=web_share"
+                href="https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream text-sm font-medium px-4 py-2.5 rounded-xl transition-colors border border-cream/10"
+                className="inline-flex items-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream text-xs font-medium px-4 py-2.5 rounded-xl transition-colors border border-cream/10"
               >
-                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M3.18 23.76c.3.17.64.22.99.14l12.45-7.19-2.78-2.78-10.66 9.83zm-1.81-20.1c-.22.3-.35.7-.35 1.18v18.32c0 .48.13.88.36 1.18l.06.06 10.26-10.26v-.24L1.43 3.6l-.06.06zm20.43 8.83l-2.9-1.68-3.06 3.06 3.06 3.06 2.91-1.69c.83-.48.83-1.27-.01-1.75zM4.17.38L16.62 7.57l-2.78 2.78L3.18.52C3.5.35 3.86.28 4.17.38z" />
-                </svg>
-                Download for Android
+                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.45-7.19-2.78-2.78-10.66 9.83zm-1.81-20.1c-.22.3-.35.7-.35 1.18v18.32c0 .48.13.88.36 1.18l.06.06 10.26-10.26v-.24L1.43 3.6l-.06.06zm20.43 8.83l-2.9-1.68-3.06 3.06 3.06 3.06 2.91-1.69c.83-.48.83-1.27-.01-1.75zM4.17.38L16.62 7.57l-2.78 2.78L3.18.52C3.5.35 3.86.28 4.17.38z" /></svg>
+                Android
               </a>
             </div>
-            <p className="text-gray-mid/70 text-xs">
-              Free career quiz &middot; No signup required
-            </p>
+
+            <p className="text-gray-mid/60 text-xs">Free career quiz &middot; No signup required</p>
           </div>
         </div>
       </section>
 
       {/* STATS BAR */}
-      <section className="bg-ink py-12 lg:py-16 relative overflow-hidden">
-        <DoodleStar className="absolute top-4 right-8 w-8 h-8 text-orange/30 rotate-12" />
-        <DoodleDots className="absolute bottom-3 left-8 w-16 h-6 text-orange/20" />
-        <div className="container-site">
+      <section
+        className="bg-ink py-12 lg:py-16 relative overflow-hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
+        {/* Doodle 70 -- dashed oval -- behind the center stat */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+          <Image src="/images/doodles/Doodle 70@3x.png" alt="" width={200} height={140} className="opacity-20" aria-hidden="true" />
+        </div>
+        <div className="container-site relative z-10">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="fade-up stagger-1">
-              <AnimatedCounter target="3500" suffix="+" label="Teens reached" />
+            <div className="fade-up stagger-1 text-center">
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">3,500+</div>
+              <div className="text-gray-mid text-sm">Teens reached</div>
             </div>
-            <div className="fade-up stagger-2">
-              <AnimatedCounter target="87" suffix="%" label="From Title I schools" />
+            <div className="fade-up stagger-2 text-center">
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">87%</div>
+              <div className="text-gray-mid text-sm">From Title I schools</div>
             </div>
             <div className="fade-up stagger-3 text-center">
-              <div className="font-heading font-bold text-4xl lg:text-5xl text-orange mb-1">
-                3 of 4
-              </div>
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">3 of 4</div>
               <div className="text-gray-mid text-sm">Complete the full internship</div>
             </div>
-            <div className="fade-up stagger-4">
-              <AnimatedCounter target="36" label="States represented" />
+            <div className="fade-up stagger-4 text-center">
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">36</div>
+              <div className="text-gray-mid text-sm">States represented</div>
             </div>
           </div>
         </div>
@@ -191,10 +193,9 @@ export default function Home() {
         <div className="container-site">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div>
-              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-2 fade-up">
+              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
                 The Gap
               </p>
-              <DoodleSquiggle className="w-20 h-4 text-orange mb-4 fade-up" />
               <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6 tracking-tight fade-up stagger-1">
                 Schools prepare students for tests. Not careers.
               </h2>
@@ -218,7 +219,13 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="bg-orange-light border border-orange/10 rounded-card-lg p-8 lg:p-10 fade-up">
+            <div
+              className="bg-orange-light border border-orange/10 rounded-card-lg p-8 lg:p-10 fade-up relative overflow-hidden"
+              style={{
+                backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.15) 1px, transparent 1px)",
+                backgroundSize: "18px 18px",
+              }}
+            >
               <div className="space-y-6">
                 {[
                   { pct: "95%", label: "of teens own a smartphone" },
@@ -226,7 +233,7 @@ export default function Home() {
                   { pct: "11%", label: "attend after-school programming" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-5">
-                    <div className="font-heading font-bold text-3xl lg:text-4xl text-orange flex-shrink-0 w-24">
+                    <div className="font-display font-black text-3xl lg:text-4xl text-orange flex-shrink-0 w-24 tracking-tight">
                       {item.pct}
                     </div>
                     <div className="text-charcoal text-sm leading-snug">
@@ -240,11 +247,21 @@ export default function Home() {
         </div>
       </section>
 
+      {/* DOODLE DIVIDER */}
+      <div className="bg-cream flex justify-center py-2 overflow-hidden">
+        <Image src="/images/doodles/Doodle 54@3x.png" alt="" width={200} height={40} className="opacity-40" aria-hidden="true" />
+      </div>
+
       {/* THE SOLUTION */}
-      <section className="section-pad bg-ink">
+      <section
+        className="section-pad bg-ink"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
         <div className="container-site">
           <div className="max-w-2xl mb-14">
-            <DoodleZigzag className="w-20 h-6 text-orange/60 mb-4" />
             <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
               The Ambition Approach
             </p>
@@ -266,7 +283,7 @@ export default function Home() {
                 key={p.icon}
                 className={`bg-cream/5 border border-cream/10 rounded-card p-7 hover:bg-cream/10 hover:shadow-xl hover:shadow-orange/10 hover:-translate-y-1 border-b-2 border-b-transparent hover:border-b-orange/40 transition-all duration-200 cursor-default fade-up stagger-${i + 1}`}
               >
-                <div className="font-heading font-bold text-7xl lg:text-8xl text-orange/20 mb-4 leading-none">
+                <div className="font-display font-black text-8xl lg:text-9xl text-orange/20 mb-5 leading-none tracking-tight">
                   {p.icon}
                 </div>
                 <h3 className="font-heading font-semibold text-xl text-cream mb-3 tracking-tight">
@@ -294,38 +311,65 @@ export default function Home() {
         </div>
       </section>
 
-      {/* VIDEO SECTION */}
-      <section className="section-pad bg-gray-light">
+      {/* APP SHOWCASE */}
+      <section
+        className="section-pad bg-ink relative overflow-hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
         <div className="container-site">
-          <div className="max-w-2xl mx-auto text-center mb-10">
-            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
-              Meet Our Students
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-4 tracking-tight fade-up stagger-1">
-              See the mission in action.
-            </h2>
-            <p className="text-gray-warm leading-relaxed fade-up stagger-2">
-              Real students. Real internships. Real futures being built.
-            </p>
-          </div>
-          <div className="max-w-3xl mx-auto rounded-card-lg overflow-hidden bg-ink ring-2 ring-orange/20 aspect-video">
-            <video
-              className="w-full h-full object-cover"
-              controls
-              poster="/images/hero-image.jpg"
-              preload="none"
-            >
-              <source src="/images/TeenExampleWebAA%20(2).mp4" type="video/mp4" />
-            </video>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+
+            {/* Text */}
+            <div>
+              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">The App</p>
+              <h2 className="font-display font-black text-5xl lg:text-6xl text-cream mb-6 leading-none tracking-tight uppercase">
+                Built for the<br /><span className="text-orange">phone they<br />already have.</span>
+              </h2>
+              <p className="text-gray-mid text-lg leading-relaxed mb-8 max-w-lg">
+                30-day simulated internships. 15 minutes a day. Videos, quizzes, and activities designed for the phone screen. Teens pick a career, show up to work, and earn real rewards for finishing.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <a
+                  href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm"
+                >
+                  Download for iOS
+                </a>
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors text-sm border border-cream/10"
+                >
+                  Download for Android
+                </a>
+              </div>
+            </div>
+
+            {/* iPhone mockup */}
+            <div className="flex justify-center lg:justify-end">
+              <IPhoneMockup />
+            </div>
+
           </div>
         </div>
       </section>
 
       {/* TEAM */}
-      <section className="section-pad">
+      <section
+        className="section-pad relative overflow-hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.06) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
         <div className="container-site">
-          <div className="max-w-xl mb-12 relative overflow-visible">
-            <DoodleCircle className="absolute -top-6 -right-4 w-16 h-16 text-orange/20" />
+          <div className="max-w-xl mb-12">
             <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
               Who Built This
             </p>
@@ -376,8 +420,22 @@ export default function Home() {
       </section>
 
       {/* DONATE CTA */}
-      <section className="section-pad bg-orange">
-        <div className="container-site text-center">
+      <section
+        className="section-pad bg-orange relative overflow-hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)",
+          backgroundSize: "20px 20px",
+        }}
+      >
+        <Image
+          src="/images/doodles/Doodle 60@3x.png"
+          alt=""
+          width={180}
+          height={160}
+          className="absolute top-6 right-8 opacity-20 rotate-12 pointer-events-none"
+          aria-hidden="true"
+        />
+        <div className="container-site text-center relative z-10">
           <p className="text-white/70 text-sm uppercase tracking-widest mb-4 font-medium fade-up">
             Join the Mission
           </p>
@@ -390,7 +448,6 @@ export default function Home() {
             come back for more. A small investment from you can go a long way.
             Become an Ambition Angel today.
           </p>
-          <DoodleArrow className="w-16 h-12 text-white/40 mx-auto mb-4 rotate-90" />
           <div className="flex flex-wrap gap-4 justify-center fade-up stagger-3">
             <Link
               href="/donate"

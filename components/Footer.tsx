@@ -41,11 +41,11 @@ export default function Footer() {
           <div className="lg:col-span-1">
             <Link href="/" className="inline-block mb-6">
               <Image
-                src="/images/AmbitionAngels_Logo.png"
+                src="/images/logo-white.png"
                 alt="Ambition Angels"
-                width={180}
-                height={54}
-                className="h-10 w-auto brightness-0 invert"
+                width={200}
+                height={60}
+                className="h-9 w-auto"
               />
             </Link>
             <p className="text-gray-mid text-sm leading-relaxed mb-4">

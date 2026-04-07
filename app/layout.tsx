@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
-import { Poppins, DM_Sans } from "next/font/google";
+import { Big_Shoulders_Display, Poppins, DM_Sans } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+
+const bigShoulders = Big_Shoulders_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-display",
+  display: "swap",
+});
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -37,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${poppins.variable} ${dmSans.variable}`}>
+    <html lang="en" className={`${bigShoulders.variable} ${poppins.variable} ${dmSans.variable}`}>
       <body className="antialiased">
         <Nav />
         <main>{children}</main>

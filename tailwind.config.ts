@@ -23,8 +23,8 @@ const config: Config = {
         cream: "#FAFAF8",
       },
       fontFamily: {
-        heading: ["var(--font-space-grotesk)", "sans-serif"],
-        body: ["var(--font-dm-sans)", "sans-serif"],
+        heading: ["var(--font-heading)", "sans-serif"],
+        body: ["var(--font-body)", "sans-serif"],
       },
       maxWidth: {
         site: "1200px",

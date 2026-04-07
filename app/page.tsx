@@ -116,13 +116,13 @@ export default function Home() {
             <div className="flex flex-wrap gap-4 mb-6">
               <button
                 onClick={() => setQuizOpen(true)}
-                className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 shadow-lg shadow-orange/30"
+                className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 shadow-lg shadow-orange/30 min-h-[52px]"
               >
                 Take the Career Quiz
               </button>
               <Link
                 href="/donate"
-                className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 border border-cream/20"
+                className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 border border-cream/20 min-h-[52px] inline-flex items-center"
               >
                 Support the Mission
               </Link>
@@ -133,7 +133,7 @@ export default function Home() {
                 href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream text-xs font-medium px-4 py-2.5 rounded-xl transition-colors border border-cream/10"
+                className="inline-flex items-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream text-xs font-medium px-4 py-3 rounded-xl transition-colors border border-cream/10 min-h-[44px]"
               >
                 <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" /></svg>
                 iOS
@@ -142,7 +142,7 @@ export default function Home() {
                 href="https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream text-xs font-medium px-4 py-2.5 rounded-xl transition-colors border border-cream/10"
+                className="inline-flex items-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream text-xs font-medium px-4 py-3 rounded-xl transition-colors border border-cream/10 min-h-[44px]"
               >
                 <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.45-7.19-2.78-2.78-10.66 9.83zm-1.81-20.1c-.22.3-.35.7-.35 1.18v18.32c0 .48.13.88.36 1.18l.06.06 10.26-10.26v-.24L1.43 3.6l-.06.06zm20.43 8.83l-2.9-1.68-3.06 3.06 3.06 3.06 2.91-1.69c.83-.48.83-1.27-.01-1.75zM4.17.38L16.62 7.57l-2.78 2.78L3.18.52C3.5.35 3.86.28 4.17.38z" /></svg>
                 Android
@@ -184,6 +184,62 @@ export default function Home() {
               <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">36</div>
               <div className="text-gray-mid text-sm">States represented</div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="py-16 lg:py-20 bg-cream border-b border-gray-light/60">
+        <div className="container-site">
+          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-10 text-center fade-up">
+            From the students
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                quote: "I never knew what I wanted to do. After the entrepreneurship internship, I started selling custom bracelets at school. I make $200 a month now.",
+                name: "Destiny M.",
+                grade: "10th Grade",
+                location: "Oakland, CA",
+                initials: "DM",
+              },
+              {
+                quote: "The wealth management track changed how I think about money. I taught my mom what I learned. She opened a Roth IRA that same week.",
+                name: "Marcus T.",
+                grade: "11th Grade",
+                location: "East Palo Alto, CA",
+                initials: "MT",
+              },
+              {
+                quote: "I did the nursing internship and it clicked. I know exactly what I'm doing after high school. No one in my family has ever worked in healthcare.",
+                name: "Aaliyah R.",
+                grade: "12th Grade",
+                location: "Richmond, CA",
+                initials: "AR",
+              },
+            ].map((t, i) => (
+              <div
+                key={t.name}
+                className={`bg-white border border-gray-light rounded-card-lg p-7 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 fade-up stagger-${i + 1} flex flex-col`}
+              >
+                {/* Large quote mark */}
+                <div className="font-display font-black text-6xl text-orange/20 leading-none mb-3 -mt-1" aria-hidden="true">
+                  &ldquo;
+                </div>
+                <p className="text-charcoal text-sm leading-relaxed flex-1 mb-6">
+                  {t.quote}
+                </p>
+                <div className="flex items-center gap-3 pt-4 border-t border-gray-light">
+                  <div className="w-10 h-10 rounded-full bg-orange-light border border-orange/20 flex items-center justify-center flex-shrink-0">
+                    <span className="font-heading font-bold text-orange text-xs">{t.initials}</span>
+                  </div>
+                  <div>
+                    <div className="font-heading font-semibold text-ink text-sm">{t.name}</div>
+                    <div className="text-gray-warm text-xs">{t.grade} &middot; {t.location}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -297,13 +353,13 @@ export default function Home() {
           <div className="mt-10 flex flex-wrap gap-4">
             <Link
               href="/the-app"
-              className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm"
+              className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm min-h-[44px] inline-flex items-center"
             >
               See How the App Works
             </Link>
             <Link
               href="/curriculum"
-              className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm"
+              className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm min-h-[44px] inline-flex items-center"
             >
               Explore Internships
             </Link>
@@ -336,7 +392,7 @@ export default function Home() {
                   href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm"
+                  className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px] inline-flex items-center"
                 >
                   Download for iOS
                 </a>
@@ -344,7 +400,7 @@ export default function Home() {
                   href="https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors text-sm border border-cream/10"
+                  className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors text-sm border border-cream/10 min-h-[44px] inline-flex items-center"
                 >
                   Download for Android
                 </a>
@@ -451,13 +507,13 @@ export default function Home() {
           <div className="flex flex-wrap gap-4 justify-center fade-up stagger-3">
             <Link
               href="/donate"
-              className="bg-white text-orange hover:bg-orange-light font-semibold px-8 py-4 rounded-full transition-colors duration-200 text-base"
+              className="bg-white text-orange hover:bg-orange-light font-semibold px-8 py-4 rounded-full transition-colors duration-200 text-base min-h-[52px] inline-flex items-center"
             >
               Donate Now
             </Link>
             <button
               onClick={() => setQuizOpen(true)}
-              className="bg-orange-dark hover:bg-ink text-white font-semibold px-8 py-4 rounded-full transition-colors duration-200 text-base border border-white/20"
+              className="bg-orange-dark hover:bg-ink text-white font-semibold px-8 py-4 rounded-full transition-colors duration-200 text-base border border-white/20 min-h-[52px]"
             >
               Take the Career Quiz
             </button>

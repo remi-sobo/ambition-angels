@@ -44,6 +44,26 @@
     max-width: 100%;
     height: auto;
   }
+
+  /* Touch: eliminate 300ms tap delay on all buttons and links */
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+
+  /* Accessible focus ring — orange glow, visible on keyboard nav only */
+  :focus-visible {
+    outline: 2px solid var(--orange);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  /* Remove outline for mouse users who explicitly remove it */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
 }
 
 @layer utilities {

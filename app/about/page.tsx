@@ -140,7 +140,7 @@ export default function AboutPage() {
             </p>
             <Link
               href="/founder"
-              className="inline-block bg-orange hover:bg-orange-dark text-white font-semibold px-8 py-4 rounded-full transition-colors text-base"
+              className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px]"
             >
               Learn About Remi
             </Link>

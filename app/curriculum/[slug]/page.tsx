@@ -88,13 +88,13 @@ export default function InternshipDetailPage({ params }: Props) {
                   href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm"
+                  className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px] inline-flex items-center"
                 >
                   Start This Internship
                 </Link>
                 <Link
                   href="/curriculum"
-                  className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors text-sm border border-cream/10"
+                  className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors text-sm border border-cream/10 min-h-[44px] inline-flex items-center"
                 >
                   Browse All Tracks
                 </Link>

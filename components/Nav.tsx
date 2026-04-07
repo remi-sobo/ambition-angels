@@ -77,32 +77,33 @@ export default function Nav() {
             <div className="hidden lg:flex items-center gap-3">
               <Link
                 href="/donate"
-                className="bg-orange text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-orange-dark transition-colors"
+                className="bg-orange text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-orange-dark transition-colors min-h-[44px] inline-flex items-center"
               >
                 Donate
               </Link>
             </div>
 
-            {/* Mobile hamburger */}
+            {/* Mobile hamburger — 44x44 touch target */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="lg:hidden flex flex-col gap-1.5 p-2 -mr-2"
+              className="lg:hidden flex flex-col items-center justify-center gap-1.5 p-3 -mr-3 min-h-[44px] min-w-[44px]"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
             >
               <span
-                className={`block w-6 h-0.5 bg-ink transition-all duration-200 ${
-                  menuOpen ? "rotate-45 translate-y-2" : ""
-                }`}
+                className={`block w-6 h-0.5 transition-all duration-200 ${
+                  scrolled || menuOpen ? "bg-ink" : "bg-cream"
+                } ${menuOpen ? "rotate-45 translate-y-2" : ""}`}
               />
               <span
-                className={`block w-6 h-0.5 bg-ink transition-all duration-200 ${
-                  menuOpen ? "opacity-0" : ""
-                }`}
+                className={`block w-6 h-0.5 transition-all duration-200 ${
+                  scrolled || menuOpen ? "bg-ink" : "bg-cream"
+                } ${menuOpen ? "opacity-0" : ""}`}
               />
               <span
-                className={`block w-6 h-0.5 bg-ink transition-all duration-200 ${
-                  menuOpen ? "-rotate-45 -translate-y-2" : ""
-                }`}
+                className={`block w-6 h-0.5 transition-all duration-200 ${
+                  scrolled || menuOpen ? "bg-ink" : "bg-cream"
+                } ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`}
               />
             </button>
           </div>

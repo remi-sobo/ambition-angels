@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import CareerQuizModal from "@/components/CareerQuizModal";
 
 const stats = [
@@ -54,45 +55,69 @@ export default function Home() {
       <CareerQuizModal isOpen={quizOpen} onClose={() => setQuizOpen(false)} />
 
       {/* HERO */}
-      <section className="relative pt-32 pb-24 lg:pt-44 lg:pb-36 overflow-hidden">
+      <section className="relative min-h-[92vh] flex items-center overflow-hidden">
+        {/* Full-bleed photo */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/hero-image.jpg"
+            alt="Teen looking forward with phone in hand"
+            fill
+            priority
+            className="object-cover object-[65%_center]"
+          />
+        </div>
+
+        {/* Dark gradient — dense on the left where text lives, fades out before his face */}
         <div
-          className="absolute inset-0 opacity-40"
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to right, #0E0E0E 0%, #0E0E0Ecc 38%, #0E0E0E88 52%, transparent 72%)",
+          }}
+        />
+
+        {/* Bottom fade so the section transitions cleanly into the stats bar */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ink to-transparent" />
+
+        {/* Dot grid — mix-blend-mode overlay keeps dots on dark areas, invisible on his skin */}
+        <div
+          className="absolute inset-0 opacity-50"
           style={{
             backgroundImage: "radial-gradient(circle, #E8500A 1px, transparent 1px)",
             backgroundSize: "28px 28px",
+            mixBlendMode: "overlay",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-light/60 via-cream/80 to-cream" />
 
-        <div className="container-site relative z-10">
-          <div className="max-w-3xl">
-            <div className="inline-block text-xs font-medium text-orange bg-orange-light border border-orange/20 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
+        {/* Content — anchored left, max half-width so it never reaches his face */}
+        <div className="container-site relative z-10 pt-32 pb-28 lg:pt-44 lg:pb-36">
+          <div className="max-w-lg">
+            <div className="inline-block text-xs font-medium text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
               Freshman Year to Career
             </div>
-            <h1 className="font-heading font-bold text-5xl lg:text-7xl text-ink mb-6 leading-none">
+            <h1 className="font-heading font-bold text-5xl lg:text-6xl text-cream mb-5 leading-none">
               Career exposure.{" "}
               <span className="text-orange">In their pocket.</span>
             </h1>
-            <p className="text-gray-warm text-lg lg:text-xl max-w-2xl mb-10 leading-relaxed">
-              The Ambition app delivers real career internships to teens on the
-              phones they already have. Free for every student. Backed by real
-              rewards.
+            <p className="text-gray-mid text-base lg:text-lg mb-10 leading-relaxed">
+              Real internships. Real careers. On the phone
+              he already has. Free for every student.
             </p>
             <div className="flex flex-wrap gap-4">
               <button
                 onClick={() => setQuizOpen(true)}
-                className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors shadow-lg shadow-orange/20"
+                className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors shadow-lg shadow-orange/30"
               >
                 Take the Career Quiz
               </button>
               <Link
                 href="/donate"
-                className="bg-ink hover:bg-charcoal text-cream font-semibold text-base px-8 py-4 rounded-full transition-colors"
+                className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold text-base px-8 py-4 rounded-full transition-colors border border-cream/20"
               >
                 Support the Mission
               </Link>
             </div>
-            <p className="text-gray-mid text-xs mt-4">
+            <p className="text-gray-mid/70 text-xs mt-4">
               Free career quiz &middot; No signup required
             </p>
           </div>

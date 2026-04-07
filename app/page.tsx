@@ -1,101 +1,331 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import CareerQuizModal from "@/components/CareerQuizModal";
+
+const stats = [
+  { number: "3,500+", label: "Teens reached" },
+  { number: "87%", label: "From Title I schools" },
+  { number: "3 of 4", label: "Complete the full internship" },
+  { number: "36", label: "States represented" },
+];
+
+const pillars = [
+  {
+    icon: "01",
+    title: "Pick your path",
+    body: "Internships in entrepreneurship, sales, game design, dental hygiene, wealth management, and more. Careers they may never have considered before.",
+  },
+  {
+    icon: "02",
+    title: "Show up to work",
+    body: "Videos, quizzes, and activities built for the phone screen. 15 minutes a day. No commute. No classroom.",
+  },
+  {
+    icon: "03",
+    title: "Earn for your effort",
+    body: "Complete an internship and earn gift cards from brands you actually use. Their time has real value. We prove it.",
+  },
+];
+
+const team = [
+  {
+    name: "Remi Sobomehin",
+    title: "CEO",
+    quote:
+      "My parents ran youth nonprofits throughout my childhood and instilled in me a dedication to serve communities that have been left behind. All of our youth deserve the highest quality investments, and when that reality comes to fruition, we all benefit.",
+    initials: "RS",
+  },
+  {
+    name: "Demetric Sanders",
+    title: "Tech Partner",
+    quote:
+      "I overcame childhood adversity to become a first-generation college graduate. At Facebook I worked on the teens team and saw how effectively phones reach young people. I asked why we were not using that for something that actually helps them. Now we are.",
+    initials: "DS",
+  },
+];
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [quizOpen, setQuizOpen] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  return (
+    <>
+      <CareerQuizModal isOpen={quizOpen} onClose={() => setQuizOpen(false)} />
+
+      {/* HERO */}
+      <section className="relative pt-32 pb-24 lg:pt-44 lg:pb-36 overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-40"
+          style={{
+            backgroundImage: "radial-gradient(circle, #E8500A 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-light/60 via-cream/80 to-cream" />
+
+        <div className="container-site relative z-10">
+          <div className="max-w-3xl">
+            <div className="inline-block text-xs font-medium text-orange bg-orange-light border border-orange/20 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
+              Freshman Year to Career
+            </div>
+            <h1 className="font-heading font-bold text-5xl lg:text-7xl text-ink mb-6 leading-none">
+              Career exposure.{" "}
+              <span className="text-orange">In their pocket.</span>
+            </h1>
+            <p className="text-gray-warm text-lg lg:text-xl max-w-2xl mb-10 leading-relaxed">
+              The Ambition app delivers real career internships to teens on the
+              phones they already have. Free for every student. Backed by real
+              rewards.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <button
+                onClick={() => setQuizOpen(true)}
+                className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors shadow-lg shadow-orange/20"
+              >
+                Take the Career Quiz
+              </button>
+              <Link
+                href="/donate"
+                className="bg-ink hover:bg-charcoal text-cream font-semibold text-base px-8 py-4 rounded-full transition-colors"
+              >
+                Support the Mission
+              </Link>
+            </div>
+            <p className="text-gray-mid text-xs mt-4">
+              Free career quiz &middot; No signup required
+            </p>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </section>
+
+      {/* STATS BAR */}
+      <section className="bg-ink py-12 lg:py-16">
+        <div className="container-site">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="font-heading font-bold text-4xl lg:text-5xl text-orange mb-1">
+                  {stat.number}
+                </div>
+                <div className="text-gray-mid text-sm">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* THE PROBLEM */}
+      <section className="section-pad">
+        <div className="container-site">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div>
+              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
+                The Gap
+              </p>
+              <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6">
+                Schools prepare students for tests. Not careers.
+              </h2>
+              <div className="space-y-4 text-gray-warm leading-relaxed">
+                <p>
+                  Teens from low-income communities graduate knowing academic
+                  subjects but not how to navigate a workforce that is changing
+                  faster than any curriculum can keep up with.
+                </p>
+                <p>
+                  Youth not connected to a viable career path by age 25 face a
+                  lifetime of unemployment, poverty, and housing instability. And
+                  the programs built to help them have never been able to reach
+                  them at scale.
+                </p>
+                <p className="font-semibold text-ink">
+                  95% of teens have a smartphone. They are on it 8 hours a day.
+                  We meet them there.
+                </p>
+              </div>
+            </div>
+            <div className="bg-orange-light border border-orange/10 rounded-card-lg p-8 lg:p-10">
+              <div className="space-y-6">
+                {[
+                  { pct: "95%", label: "of teens own a smartphone" },
+                  { pct: "8 hrs", label: "average daily screen time" },
+                  { pct: "11%", label: "attend after-school programming" },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-5">
+                    <div className="font-heading font-bold text-3xl lg:text-4xl text-orange flex-shrink-0 w-24">
+                      {item.pct}
+                    </div>
+                    <div className="text-charcoal text-sm leading-snug">
+                      {item.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* THE SOLUTION */}
+      <section className="section-pad bg-ink">
+        <div className="container-site">
+          <div className="max-w-2xl mb-14">
+            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
+              The Ambition Approach
+            </p>
+            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream mb-6">
+              Instead of paying adults to develop young people, we reward teens
+              for developing themselves.
+            </h2>
+            <p className="text-gray-mid text-lg leading-relaxed">
+              The Ambition app delivers 30-day simulated internships in real
+              careers. 15 minutes a day. Students pick their path, build technical
+              and life skills, and earn gift cards when they complete an
+              internship.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {pillars.map((p) => (
+              <div
+                key={p.icon}
+                className="bg-cream/5 border border-cream/10 rounded-card p-7 hover:bg-cream/10 transition-colors"
+              >
+                <div className="font-heading font-bold text-5xl text-orange/30 mb-5">
+                  {p.icon}
+                </div>
+                <h3 className="font-heading font-semibold text-xl text-cream mb-3">
+                  {p.title}
+                </h3>
+                <p className="text-gray-mid text-sm leading-relaxed">{p.body}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 flex flex-wrap gap-4">
+            <Link
+              href="/the-app"
+              className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm"
+            >
+              See How the App Works
+            </Link>
+            <Link
+              href="/curriculum"
+              className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors text-sm"
+            >
+              Explore Internships
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* VIDEO SECTION */}
+      <section className="section-pad bg-gray-light">
+        <div className="container-site">
+          <div className="max-w-2xl mx-auto text-center mb-10">
+            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
+              Meet Our Students
+            </p>
+            <h2 className="font-heading font-bold text-4xl text-ink mb-4">
+              See the mission in action.
+            </h2>
+            <p className="text-gray-warm leading-relaxed">
+              Real students. Real internships. Real futures being built.
+            </p>
+          </div>
+          {/* Video placeholder -- drop in actual video URL when ready */}
+          <div className="max-w-3xl mx-auto rounded-card-lg overflow-hidden bg-ink aspect-video flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-orange/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-7 h-7 text-orange" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+              <p className="text-gray-mid text-sm">Video coming soon</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* TEAM */}
+      <section className="section-pad">
+        <div className="container-site">
+          <div className="max-w-xl mb-12">
+            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
+              Who Built This
+            </p>
+            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink">
+              Built by people who lived the gap and refused to accept it.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {team.map((person) => (
+              <div
+                key={person.name}
+                className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm"
+              >
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-14 h-14 rounded-full bg-orange-light border-2 border-orange/20 flex items-center justify-center flex-shrink-0">
+                    <span className="font-heading font-bold text-orange text-sm">
+                      {person.initials}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-heading font-semibold text-ink">
+                      {person.name}
+                    </div>
+                    <div className="text-gray-warm text-sm">{person.title}</div>
+                  </div>
+                </div>
+                <blockquote className="text-charcoal leading-relaxed text-sm border-l-2 border-orange pl-4">
+                  &ldquo;{person.quote}&rdquo;
+                </blockquote>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8">
+            <Link
+              href="/about"
+              className="text-orange font-medium text-sm hover:text-orange-dark transition-colors"
+            >
+              Learn about our full team and advisory board &rarr;
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* DONATE CTA */}
+      <section className="section-pad bg-orange">
+        <div className="container-site text-center">
+          <p className="text-white/70 text-sm uppercase tracking-widest mb-4 font-medium">
+            Join the Mission
+          </p>
+          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-white mb-6 max-w-2xl mx-auto leading-tight">
+            Your support unlocks their future.
+          </h2>
+          <p className="text-white/80 text-lg mb-10 max-w-prose mx-auto leading-relaxed">
+            3 out of 4 teens who start an Ambition internship finish it. Most
+            come back for more. A small investment from you can go a long way.
+            Become an Ambition Angel today.
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link
+              href="/donate"
+              className="bg-white text-orange hover:bg-orange-light font-semibold px-8 py-4 rounded-full transition-colors text-base"
+            >
+              Donate Now
+            </Link>
+            <button
+              onClick={() => setQuizOpen(true)}
+              className="bg-orange-dark hover:bg-ink text-white font-semibold px-8 py-4 rounded-full transition-colors text-base border border-white/20"
+            >
+              Take the Career Quiz
+            </button>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

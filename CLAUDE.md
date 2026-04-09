@@ -1,82 +1,46 @@
-# CLAUDE.md
+# CLAUDE.md — The House We Built
 
-This file provides guidance to Claude Code (claude.ai/code) when working in this repository.
+## READ THIS BEFORE TOUCHING ANY FILE
 
-## Commands
+Stack: Next.js 14, TypeScript, Supabase, Vercel, Anthropic Claude API, Twilio, Google Calendar API, Tailwind CSS
 
-```bash
-npm run dev     # Start dev server (localhost:3000)
-npm run build   # Production build
-npm run lint    # ESLint
-```
+## ARCHITECTURE
+Pages Router NOT App Router. Single main file: pages/index.tsx. All views controlled by view state in index.tsx. No middleware file exists. Supabase client: lib/supabase.ts.
 
-## Architecture
+## KEY DIRECTORIES
+pages/index.tsx — entire app, all views
+pages/api/ — all API routes
+components/ — all components
+lib/supabase.ts — database client
+lib/db.ts — tracker helpers
+lib/constants.ts — PILLARS array
 
-Next.js 14 App Router. Static pages with one dynamic API route.
+## DATA PATTERN
+Tracker table is key/value store per household. All app state persisted via tracker keys. household_id cached in localStorage as hid. householdProfile from tracker key household_profile. Contains adults array, kids array, houseName.
 
-**Route structure:**
-```
-/                     Home (with career quiz modal)
-/about                About (story, team, boards)
-/founder              The Founder -- not in nav, linked from About
-/the-app              The App
-/donate               Donate (GiveButter widget)
-/curriculum           Internship directory
-/curriculum/[slug]    Internship detail (dynamic, not in nav)
-/api/career-quiz      POST -- calls Anthropic, returns JSON career array
-```
+## BRAND
+CSS vars: --gold, --forest, --cream, --text-primary, --text-muted, --input-bg, --border, --serif, --sans
+Forest dark: #1A3020
+Gold: #C9952A
+Cream: #F5F0E8
+Adult colors: #C49A3C, #52B788, #7F77DD, #E76F51
+Kid color: #5499C7
 
-**Key files:**
-- `app/layout.tsx` -- Root layout with Nav and Footer, Space Grotesk + DM Sans fonts
-- `components/Nav.tsx` -- Fixed nav, mobile drawer, scroll detection
-- `components/Footer.tsx` -- Full footer with orange CTA band, links, app store buttons
-- `components/CareerQuizModal.tsx` -- Full quiz component (audience select, 6-section survey, results)
-- `app/api/career-quiz/route.ts` -- Server-side Anthropic call, keeps API key out of browser
+## ECONOMY SYSTEM v44
+Replaces marble system completely. Tracker keys: economy_settings, economy_rules, economy_prizes, economy_balances, economy_history. Currency default is LastNameBucks.
 
-**Design tokens (Tailwind):**
-```
-orange / orange-dark / orange-light / orange-mid   Brand orange system (#E8500A)
-ink                                                Near-black (#0E0E0E)
-charcoal                                           Dark gray (#3D3D3D)
-gray-warm / gray-mid / gray-light                  Neutral grays
-cream                                              Off-white background (#FAFAF8)
-```
+## UPDATE CAROUSEL
+app_versions table controls carousel. To ship new version insert row with is_current true, set old row is_current false. No code changes needed.
 
-**Fonts:** `font-heading` = Space Grotesk, `font-body` = DM Sans (set via CSS variables)
+## ADMIN ACCESS
+Authorized: remi@ambitionangels.org and kendrasobo@gmail.com. Company email remi@thehousewebuilt.family NOT yet active. Protection via useEffect in AdminLayout, redirect to /app if not authorized.
 
-**Utility classes:**
-- `container-site` -- max-w-site centered with horizontal padding
-- `section-pad` -- standard vertical section padding (5rem / 7rem on lg)
+## CY AI ADVISOR
+Model: claude-sonnet-4-20250514. Prompts in pages/api files. Keep under 500 tokens. No em dashes in Cy output.
 
-## Environment variables
+## DO NOT TOUCH
+next.config.js, existing Google OAuth token handling, CSS theming variables, current time line in TimePillar, existing RLS policies.
 
-```
-ANTHROPIC_API_KEY          Server-only. Used in /api/career-quiz only.
-NEXT_PUBLIC_MAKE_WEBHOOK   Make.com webhook for emailing quiz results.
-```
-
-Never put ANTHROPIC_API_KEY in any client component or expose it in the browser.
-
-## Quiz architecture
-
-The career quiz is a modal (`CareerQuizModal.tsx`) triggered from the homepage. It:
-1. Asks audience (teen / adult helping a teen)
-2. Walks through 6 survey sections
-3. Calls `/api/career-quiz` (server route) which calls Claude
-4. Shows 10 ranked career matches with salaries
-5. Offers email results via Make.com webhook
-
-The quiz code the client previously had (with exposed API key in the browser) has been replaced with this secure pattern.
-
-## Images
-
-Drop photos in `public/images/`. The logo file should be:
-- `public/images/logo.png` -- color version (for light nav)
-- `public/images/logo-white.png` -- white version (for dark footer)
-
-Team photos, when available: `remi.jpg`, `demetric.jpg`
-
-## Deployment
-
-GitHub repo, hosted on Vercel at www.ambitionangels.org. See deployment notes in repo.
-Set `ANTHROPIC_API_KEY` as a Vercel environment variable (not committed to git).
+## CURRENT VERSION v44
+## LAST STABLE DEPLOY v43
+## GITHUB remi-sobo/house-we-built

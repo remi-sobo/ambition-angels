@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/about", label: "About" },
   { href: "/the-app", label: "The App" },
   { href: "/curriculum", label: "Curriculum" },
+  { href: "/impact", label: "Impact" },
 ];
 
 export default function Nav() {

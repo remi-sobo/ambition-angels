@@ -96,14 +96,14 @@ const research = [
 
 const measures = [
   {
-    tag: "Future of Self (FOS)",
+    tag: "Future Orientation Score",
     title: "Future Orientation",
     body: "Can a teen envision a future for themselves? Do they believe they have choices? Do they feel agency over where their life goes?",
   },
   {
-    tag: "Future of Self (FOS)",
+    tag: "Future Orientation Score",
     title: "Action Orientation",
-    body: "Is a teen taking concrete steps toward a future they can see? Our headline metric. Our strongest result. Measured across 1,000+ teens.",
+    body: "One element within the FOS — and our strongest result. Is a teen taking concrete steps toward a future they can see? Measured across 1,000+ teens, this is where we saw our biggest gain.",
   },
   {
     tag: "Career Exposure",
@@ -149,7 +149,7 @@ const pilotMeta = [
   {
     label: "Evaluation Partner",
     value: "Empathy Labs",
-    sub: "Future of Self (FOS) measurement and analysis",
+    sub: "Future Orientation Score (FOS) measurement and analysis",
   },
 ];
 
@@ -171,7 +171,7 @@ export default function ImpactPage() {
             Our Impact
           </p>
           <h1 className="font-heading font-bold text-5xl lg:text-6xl text-cream leading-none tracking-tight mb-5 max-w-2xl">
-            Career exposure is what breaks the cycle of poverty.
+            Career exposure is one of the most powerful tools we have to help teens break the cycle of poverty.
           </h1>
           <p className="text-gray-mid text-lg max-w-lg leading-relaxed">
             We have the data. Here is what it shows.
@@ -201,7 +201,7 @@ export default function ImpactPage() {
             The gap is not ambition. It is access.
           </h2>
           <p className="text-gray-warm text-base leading-relaxed max-w-2xl mb-12">
-            Teens from low-income communities graduate knowing academic subjects — not how to navigate a workforce that is changing faster than any curriculum can keep up with. That gap is measurable. And it compounds over a lifetime.
+            Teens from low-income communities graduate knowing academic subjects — not how to navigate a workforce that is changing faster than any curriculum can keep up with. Career exposure is a proven pathway toward economic mobility. And right now, it is not equally distributed.
           </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20">
@@ -266,8 +266,7 @@ export default function ImpactPage() {
                 14%
               </span>
               <p className="text-white/80 text-base leading-relaxed mt-4">
-                <strong className="text-white font-bold block mb-1">Increase in Action Orientation</strong>
-                The highest gain across all dimensions of our Future of Self impact framework.
+                <strong className="text-white font-bold block mb-1">Increase in Action Orientation — the highest-gain dimension within our Future Orientation Score (FOS).</strong>
               </p>
               <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-white/40">
                 Pre and post · 1,000+ teens
@@ -281,13 +280,13 @@ export default function ImpactPage() {
               </h2>
               <div className="space-y-4 text-gray-warm leading-relaxed">
                 <p>
-                  The Future of Self (FOS) framework tracks how teens think about and move toward their futures. We measure before and after every program cycle.
+                  The Future Orientation Score (FOS) tracks how teens think about and move toward their futures across multiple dimensions. We measure before and after every program cycle.
                 </p>
                 <p>
-                  Action orientation — whether a teen is actually taking steps — is our headline metric. It is the dimension that predicts real workforce outcomes. And it is where we see our strongest results.
+                  Action Orientation — one element within the FOS — measures whether a teen is actually taking steps toward a career, not just imagining one. Across 1,000+ teens, it showed the biggest improvement of any dimension we track.
                 </p>
                 <p className="font-semibold text-ink">
-                  Ambition without action does not break the cycle of poverty. Action does.
+                  Career exposure alone does not break the cycle of poverty. But teens who can see a path — and start walking it — have a meaningfully better shot.
                 </p>
               </div>
             </div>
@@ -339,7 +338,7 @@ export default function ImpactPage() {
             The Evidence Base
           </p>
           <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream tracking-tight leading-tight mb-10 max-w-3xl">
-            We did not invent the link between career exposure and economic mobility. We built a program to deliver it at scale.
+            We did not invent the link between career exposure and economic mobility. We built a program to help deliver it at scale.
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/[0.08] rounded-card-lg overflow-hidden border border-white/[0.08]">
             {research.map((r) => (

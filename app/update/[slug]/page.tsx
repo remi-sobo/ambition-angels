@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Poppins } from "next/font/google";
+import Image from "next/image";
 import { donors, getDonorBySlug } from "@/lib/donors";
 
 const poppins = Poppins({
@@ -85,6 +86,70 @@ export default function UpdatePage({ params }: Props) {
         fontFamily: "Poppins, sans-serif",
       }}
     >
+      {/* Responsive styles */}
+      <style>{`
+        .update-hero-grid {
+          display: flex;
+          flex-direction: row;
+          gap: 48px;
+          align-items: center;
+        }
+        .update-hero-text {
+          flex: 1;
+          min-width: 0;
+        }
+        .update-hero-photo {
+          width: 380px;
+          flex-shrink: 0;
+          height: 420px;
+          border-radius: 16px;
+          overflow: hidden;
+          position: relative;
+        }
+        .update-app-grid {
+          display: flex;
+          flex-direction: row;
+          gap: 48px;
+          align-items: center;
+        }
+        .update-app-text {
+          flex: 1;
+          min-width: 0;
+        }
+        .update-photo-break {
+          position: relative;
+          width: 100%;
+          height: 320px;
+          border-radius: 16px;
+          overflow: hidden;
+          margin: 40px 0;
+        }
+        .update-photo-quote {
+          font-size: 22px;
+        }
+        @media (max-width: 640px) {
+          .update-hero-grid {
+            flex-direction: column;
+            gap: 28px;
+          }
+          .update-hero-photo {
+            width: 100%;
+            height: 260px;
+            flex-shrink: unset;
+          }
+          .update-app-grid {
+            flex-direction: column;
+            gap: 32px;
+          }
+          .update-photo-break {
+            height: 240px;
+          }
+          .update-photo-quote {
+            font-size: 18px;
+          }
+        }
+      `}</style>
+
       {/* NAV */}
       <nav
         style={{
@@ -148,81 +213,97 @@ export default function UpdatePage({ params }: Props) {
       {/* MAIN CONTENT */}
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "0 32px 80px" }}>
 
-        {/* HERO */}
+        {/* HERO — Change 1: two-column split with photo */}
         <section style={{ paddingTop: 64, paddingBottom: 48 }}>
-          {/* Pill */}
-          <div
-            style={{
-              display: "inline-block",
-              background: "#FFF0EA",
-              border: `1px solid ${orange}30`,
-              color: orange,
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              padding: "5px 14px",
-              borderRadius: 100,
-              marginBottom: 24,
-            }}
-          >
-            A personal update for {donor.name}
+          <div className="update-hero-grid">
+
+            {/* Left: text */}
+            <div className="update-hero-text">
+              {/* Pill */}
+              <div
+                style={{
+                  display: "inline-block",
+                  background: "#FFF0EA",
+                  border: `1px solid ${orange}30`,
+                  color: orange,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  padding: "5px 14px",
+                  borderRadius: 100,
+                  marginBottom: 24,
+                }}
+              >
+                A personal update for {donor.name}
+              </div>
+
+              <h1
+                style={{
+                  fontSize: "clamp(28px, 4.5vw, 48px)",
+                  fontWeight: 800,
+                  lineHeight: 1.1,
+                  letterSpacing: "-0.03em",
+                  color: navy,
+                  marginBottom: 16,
+                }}
+              >
+                We know it works.{" "}
+                <span style={{ color: orange }}>Now we scale it.</span>
+              </h1>
+
+              {donor.gave && donor.gaveAmount && donor.gaveYear && (
+                <p
+                  style={{
+                    fontSize: 15,
+                    color: orange,
+                    fontWeight: 600,
+                    marginBottom: 12,
+                    fontStyle: "italic",
+                  }}
+                >
+                  Your {donor.gaveAmount} gift in {donor.gaveYear} is part of what made this next chapter possible.
+                </p>
+              )}
+
+              <p
+                style={{
+                  fontSize: 16,
+                  color: "#4B5563",
+                  lineHeight: 1.7,
+                  marginBottom: 16,
+                }}
+              >
+                The career landscape is shifting faster than most adults can track, let alone teenagers. Here&apos;s where we are, what we&apos;ve built, and where we&apos;re going next.
+              </p>
+
+              {/* Personal note */}
+              <p
+                style={{
+                  fontSize: 15,
+                  color: "#6B7280",
+                  lineHeight: 1.7,
+                  fontStyle: "italic",
+                  borderLeft: `3px solid ${orange}40`,
+                  paddingLeft: 16,
+                }}
+              >
+                {donor.personalNote}
+              </p>
+            </div>
+
+            {/* Right: photo */}
+            <div className="update-hero-photo">
+              <Image
+                src="/images/jonas-leupe-wK-elt11pF0-unsplash.jpg"
+                alt="Teen looking at their phone"
+                fill
+                priority
+                style={{ objectFit: "cover", objectPosition: "center" }}
+              />
+            </div>
+
           </div>
-
-          <h1
-            style={{
-              fontSize: "clamp(32px, 5vw, 52px)",
-              fontWeight: 800,
-              lineHeight: 1.1,
-              letterSpacing: "-0.03em",
-              color: navy,
-              marginBottom: 16,
-            }}
-          >
-            We know it works.{" "}
-            <span style={{ color: orange }}>Now we scale it.</span>
-          </h1>
-
-          {donor.gave && donor.gaveAmount && donor.gaveYear && (
-            <p
-              style={{
-                fontSize: 15,
-                color: orange,
-                fontWeight: 600,
-                marginBottom: 12,
-                fontStyle: "italic",
-              }}
-            >
-              Your {donor.gaveAmount} gift in {donor.gaveYear} is part of what made this next chapter possible.
-            </p>
-          )}
-
-          <p
-            style={{
-              fontSize: 17,
-              color: "#4B5563",
-              lineHeight: 1.7,
-              maxWidth: 660,
-              marginBottom: 16,
-            }}
-          >
-            The career landscape is shifting faster than most adults can track, let alone teenagers. Here&apos;s where we are, what your support made possible, and where we&apos;re going next.
-          </p>
-
-          {/* Personal note */}
-          <p
-            style={{
-              fontSize: 15,
-              color: "#6B7280",
-              lineHeight: 1.7,
-              maxWidth: 620,
-              fontStyle: "italic",
-              borderLeft: `3px solid ${orange}40`,
-              paddingLeft: 16,
-            }}
-          >
-            {donor.personalNote}
-          </p>
         </section>
 
         {/* DIVIDER */}
@@ -308,6 +389,79 @@ export default function UpdatePage({ params }: Props) {
           </div>
         </section>
 
+        {/* APP SECTION — Change 2: new section after stats, before quote */}
+        <section style={{ marginBottom: 56 }}>
+          <div className="update-app-grid">
+
+            {/* Left: text */}
+            <div className="update-app-text">
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: orange,
+                  marginBottom: 12,
+                }}
+              >
+                What teens do on the app
+              </div>
+              <h2
+                style={{
+                  fontSize: "clamp(22px, 3vw, 32px)",
+                  fontWeight: 800,
+                  letterSpacing: "-0.025em",
+                  color: navy,
+                  marginBottom: 16,
+                  lineHeight: 1.2,
+                }}
+              >
+                They don&apos;t just learn about careers. They try them.
+              </h2>
+              <p style={{ fontSize: 15, color: "#4B5563", lineHeight: 1.75, margin: 0 }}>
+                On the Ambition App, students complete 30-day simulated internships across business, STEM, arts, health, and more. 15 minutes a day. Real tasks. Real skills. Real rewards. By the end of 30 days, they know what a career actually feels like.
+              </p>
+            </div>
+
+            {/* Right: CSS phone frame with app screenshot */}
+            <div style={{ display: "flex", justifyContent: "center", flexShrink: 0 }}>
+              <div
+                style={{
+                  background: "#1a1a1a",
+                  borderRadius: 44,
+                  padding: 14,
+                  width: 200,
+                  flexShrink: 0,
+                  boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+                }}
+              >
+                {/* Notch */}
+                <div
+                  style={{
+                    width: 70,
+                    height: 20,
+                    background: "#1a1a1a",
+                    borderRadius: 10,
+                    margin: "0 auto 10px auto",
+                  }}
+                />
+                {/* Screen */}
+                <div style={{ borderRadius: 32, overflow: "hidden" }}>
+                  <Image
+                    src="/images/app_mockup.png"
+                    alt="Ambition App internship tracks"
+                    width={390}
+                    height={844}
+                    style={{ width: "100%", height: "auto", display: "block" }}
+                  />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
         {/* QUOTE BLOCK */}
         <blockquote
           style={{
@@ -347,8 +501,8 @@ export default function UpdatePage({ params }: Props) {
         {/* DIVIDER */}
         <div style={{ width: 36, height: 4, background: orange, borderRadius: 2, marginBottom: 48 }} />
 
-        {/* WHAT WE'VE LEARNED */}
-        <section style={{ marginBottom: 56 }}>
+        {/* WHAT MAKES THIS WORK — Change 4: heading updated */}
+        <section style={{ marginBottom: 0 }}>
           <div
             style={{
               fontSize: 11,
@@ -359,7 +513,7 @@ export default function UpdatePage({ params }: Props) {
               marginBottom: 12,
             }}
           >
-            What we&apos;ve learned
+            What makes this work.
           </div>
           <h2
             style={{
@@ -380,6 +534,55 @@ export default function UpdatePage({ params }: Props) {
             That insight is reshaping everything we&apos;re building in 2026. The app does the work. The adult makes it stick.
           </p>
         </section>
+
+        {/* FULL-WIDTH PHOTO BREAK — Change 3: between "what makes this work" and dark priorities */}
+        <div className="update-photo-break">
+          <Image
+            src="/images/derick-anies-hDJT_ERrB-w-unsplash.jpg"
+            alt="Teen with ambition"
+            fill
+            style={{ objectFit: "cover", objectPosition: "center top" }}
+          />
+          {/* Dark overlay */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(30,34,53,0.65)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "0 24px",
+            }}
+          >
+            <p
+              className="update-photo-quote"
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontStyle: "italic",
+                color: "#ffffff",
+                fontWeight: 700,
+                maxWidth: 560,
+                textAlign: "center",
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              &ldquo;Their ambition hasn&apos;t been turned on yet. When it is, they&apos;ll run through a wall.&rdquo;
+            </p>
+            {/* Orange divider line */}
+            <div
+              style={{
+                width: 36,
+                height: 3,
+                background: orange,
+                borderRadius: 2,
+                marginTop: 16,
+              }}
+            />
+          </div>
+        </div>
 
         {/* WHAT WE'RE BUILDING — dark navy */}
         <section

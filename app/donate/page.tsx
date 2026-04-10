@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import GiveButterWidget from "@/components/GiveButterWidget";
 import DonateFaq from "@/components/DonateFaq";
 
 export const metadata: Metadata = {
@@ -15,14 +14,14 @@ export default function DonatePage() {
       {/* HERO — split screen, photo + copy */}
       <section className="relative min-h-[85vh] flex overflow-hidden">
 
-        {/* LEFT — Remi photo */}
+        {/* LEFT — teen photo */}
         <div className="relative hidden lg:block lg:w-[48%]">
           <Image
-            src="/images/Remi-Sobomehin_edited_edited.jpg"
-            alt="Remi Sobomehin, Founder and CEO of Ambition Angels"
+            src="/images/yingchou-han-IJrIeCs3D4g-unsplash.jpg"
+            alt="Teen discovering their future through career exposure"
             fill
             priority
-            className="object-cover object-top"
+            className="object-cover object-center"
           />
           {/* Gradient blend into right panel */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-ink/60" />
@@ -82,7 +81,8 @@ export default function DonatePage() {
             </div>
 
             <a
-              href="#donate-widget"
+              href="/donate"
+              data-givebutter-widget="LWq3rp"
               className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors shadow-lg shadow-orange/30 min-h-[52px] inline-flex items-center"
             >
               Donate Now
@@ -91,28 +91,31 @@ export default function DonatePage() {
         </div>
       </section>
 
-      {/* GIVEBUTTER WIDGET — early, prominent */}
+      {/* GIVE TODAY — popup CTA */}
       <section
-        id="donate-widget"
         className="section-pad bg-orange-light relative overflow-hidden"
         style={{
           backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.12) 1px, transparent 1px)",
           backgroundSize: "18px 18px",
         }}
       >
-        <div className="container-site relative z-10">
-          <div className="text-center mb-10">
-            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">
-              Give Today
-            </p>
-            <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink mb-3">
-              Every dollar goes to work immediately.
-            </h2>
-            <p className="text-gray-warm text-lg max-w-xl mx-auto">
-              Ambition Angels is a US 501(c)(3). Your gift is tax-deductible. EIN 87-2513010.
-            </p>
-          </div>
-          <GiveButterWidget />
+        <div className="container-site relative z-10 text-center">
+          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">
+            Give Today
+          </p>
+          <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink mb-3">
+            Every dollar goes to work immediately.
+          </h2>
+          <p className="text-gray-warm text-lg max-w-xl mx-auto mb-8">
+            Ambition Angels is a US 501(c)(3). Your gift is tax-deductible. EIN 87-2513010.
+          </p>
+          <a
+            href="/donate"
+            data-givebutter-widget="LWq3rp"
+            className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-10 py-4 rounded-full transition-colors shadow-lg shadow-orange/30 min-h-[52px] inline-flex items-center"
+          >
+            Donate Now
+          </a>
         </div>
       </section>
 
@@ -312,7 +315,8 @@ export default function DonatePage() {
             Ambition Angels is a 501(c)(3) nonprofit. Every gift is tax-deductible. And every dollar goes toward putting career exposure in the pocket of a teen who needs it.
           </p>
           <a
-            href="#donate-widget"
+            href="/donate"
+            data-givebutter-widget="LWq3rp"
             className="bg-orange hover:bg-orange-dark text-white font-semibold px-10 py-4 rounded-full transition-colors shadow-lg shadow-orange/30 text-base min-h-[52px] inline-flex items-center"
           >
             Donate Now

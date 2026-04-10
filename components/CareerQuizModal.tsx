@@ -46,48 +46,6 @@ const SECTION_NAMES = [
   "Your Future",
 ];
 
-const MAKE_WEBHOOK = "https://hook.us2.make.com/i9bgrro0j4r7qfwalo5qgqd9ct3o195l";
-
-function buildPrompt(answers: Answers, audienceMode: string): string {
-  const location = answers.location || "the San Francisco Bay Area";
-  const m = answers.moneyvsmeaning;
-  const moneyMeaningText =
-    m <= 2 ? "strongly money-motivated"
-    : m <= 4 ? "leans toward money"
-    : m === 5 ? "balanced between money and meaning"
-    : m <= 7 ? "leans toward mission"
-    : "strongly mission-driven";
-
-  return [
-    "You are an elite career coach. Read this person deeply and return the 10 most personally resonant career matches. Every result must feel written specifically for this human.",
-    "",
-    "NOTE: " + (audienceMode === "adult" ? "Completed by an adult on behalf of a teen." : "Completed by the teen themselves."),
-    "Teen name: " + (answers.teenname || "not provided"),
-    "Age: " + answers.age,
-    "Life stage: " + answers.status,
-    "Location: " + location,
-    "Interests: " + (answers.subjects.join(", ") || "not specified"),
-    "Free time: " + (answers.freetime || "not specified"),
-    "Flow state (highest signal): " + (answers.flowstate || "not specified"),
-    "Work style: " + (answers.workstyle.join(", ") || "not specified"),
-    "When things go wrong: " + answers.whenwrong,
-    "Problem types: " + (answers.problemtypes.join(", ") || "not specified"),
-    "Good at (high signal): " + (answers.goodat || "not specified"),
-    "People come to them for (very high signal): " + (answers.peoplecome || "not specified"),
-    "Personality: creative " + (answers.traits.creative || "?") + "/5, problem solver " + (answers.traits.problemsolver || "?") + "/5, people person " + (answers.traits.peopleperson || "?") + "/5, leader " + (answers.traits.leader || "?") + "/5",
-    "Work environment: " + (answers.workenvironments.join(", ") || "not specified"),
-    "Money vs meaning: " + m + "/10, " + moneyMeaningText,
-    "Dream work day: " + (answers.dreamday || "not specified"),
-    "Future self goal: " + (answers.futureself || "not specified"),
-    "",
-    "RULES: Flow state drives top 3 matches. Mission score 7-10 = lead with nonprofit/education/healthcare. Do not suggest generic defaults (Software Developer, Data Analyst, Accountant) unless explicitly indicated. The why must reference something specific from their answers. Include 2 unexpected gems they never considered but will immediately recognize as perfect.",
-    "",
-    "SALARY: Show accurate local rates for " + location + ". Show ceiling not just floor.",
-    "",
-    "Return ONLY a raw valid JSON array of exactly 10 objects. No preamble. No markdown.",
-    "Each object: title, description (max 14 words starting with You), salary, why (max 12 words referencing something specific)",
-  ].join("\n");
-}
 
 function getFallback(): Career[] {
   return [
@@ -159,15 +117,21 @@ export default function CareerQuizModal({ isOpen, onClose }: Props) {
       setCurrentSection((s) => s + 1);
     } else {
       setStage("loading");
-      const prompt = buildPrompt(answers, audienceMode);
       try {
-        const res = await fetch("/api/career-quiz", {
+        const res = await fetch("/api/career-match", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({ answers, audienceMode }),
         });
         const data = await res.json();
-        setCareers(data.careers || getFallback());
+        const matched = data.careers || getFallback();
+        setCareers(matched);
+        // Fire-and-forget: save + email
+        fetch("/api/quiz-submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answers, audienceMode, careers: matched }),
+        }).catch(() => {});
       } catch {
         setCareers(getFallback());
       }
@@ -179,26 +143,19 @@ export default function CareerQuizModal({ isOpen, onClose }: Props) {
     const email = emailInput || answers.email;
     if (!email || !email.includes("@")) return;
     try {
-      await fetch(MAKE_WEBHOOK, {
+      await fetch("/api/quiz-submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
-          teenname: answers.teenname,
-          audience: audienceMode,
-          location: answers.location,
-          career1: careers[0]?.title,
-          salary1: careers[0]?.salary,
-          career2: careers[1]?.title,
-          career3: careers[2]?.title,
-          careers: careers.map((c, i) => `${i + 1}. ${c.title} - ${c.salary}`).join("\n"),
-          timestamp: new Date().toISOString(),
+          answers: { ...answers, email },
+          audienceMode,
+          careers,
         }),
       });
-      setEmailSent(true);
     } catch {
-      setEmailSent(true);
+      // best-effort
     }
+    setEmailSent(true);
   }, [emailInput, answers, audienceMode, careers]);
 
   const reset = useCallback(() => {

@@ -1,0 +1,21 @@
+create table quiz_submissions (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz default now(),
+  email text,
+  teen_name text,
+  audience text,
+  age text,
+  status text,
+  location text,
+  subjects text,
+  work_style text,
+  problem_types text,
+  good_at text,
+  people_come text,
+  free_time text,
+  flow_state text,
+  dream_day text,
+  future_self text,
+  money_vs_meaning integer,
+  career_matches jsonb
+);

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Big_Shoulders_Display, Poppins, DM_Sans } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
@@ -50,11 +49,6 @@ export default function RootLayout({
         <Nav />
         <main>{children}</main>
         <Footer />
-        <Script
-          async
-          src="https://widgets.givebutter.com/latest.umd.cjs?acct=67420"
-          strategy="afterInteractive"
-        />
       </body>
     </html>
   );

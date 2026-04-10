@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import GiveButterEmbed from "@/components/GiveButterEmbed";
 import DonateFaq from "@/components/DonateFaq";
+import DonateButton from "@/components/DonateButton";
 
 export const metadata: Metadata = {
   title: "Donate",
@@ -75,9 +75,18 @@ export default function DonatePage() {
               </div>
             </div>
 
-            {/* RIGHT — GiveButter widget */}
-            <div className="bg-cream rounded-card-lg overflow-hidden shadow-2xl min-h-[500px]">
-              <GiveButterEmbed />
+            {/* RIGHT — Donate CTA */}
+            <div className="bg-cream rounded-card-lg shadow-2xl p-10 flex flex-col items-center justify-center text-center gap-6 min-h-[360px]">
+              <div className="font-display font-black text-5xl text-ink tracking-tight leading-none uppercase">
+                Give <span className="text-orange">today.</span>
+              </div>
+              <p className="text-gray-warm text-base leading-relaxed max-w-xs">
+                Every dollar funds a teen&apos;s career internship. 100% free for every student who needs it.
+              </p>
+              <DonateButton className="bg-orange hover:bg-orange-dark text-white font-semibold text-lg px-10 py-5 rounded-full transition-colors shadow-lg shadow-orange/30 min-h-[56px] inline-flex items-center" >
+                Donate Now
+              </DonateButton>
+              <p className="text-gray-mid text-xs">Secure · Tax-deductible · Takes 60 seconds</p>
             </div>
 
           </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import DonateButton from "@/components/DonateButton";
 
 export const metadata: Metadata = {
   title: "Our Impact",
@@ -376,13 +377,7 @@ export default function ImpactPage() {
             3 out of 4 teens who start an Ambition internship finish it. Become an Ambition Angel today.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <a
-              href="/donate"
-              data-givebutter-widget="LWq3rp"
-              className="bg-white text-orange hover:bg-orange-light font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center"
-            >
-              Donate Now
-            </a>
+            <DonateButton className="bg-white text-orange hover:bg-orange-light font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center" />
             <a
               href="mailto:remi@ambitionangels.org"
               className="bg-white/15 hover:bg-white/25 text-white font-semibold px-8 py-4 rounded-full transition-colors text-base border border-white/30 min-h-[52px] inline-flex items-center"

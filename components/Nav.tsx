@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { openDonateWidget } from "@/components/GiveButterWidget";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -76,13 +77,12 @@ export default function Nav() {
 
             {/* Desktop CTA */}
             <div className="hidden lg:flex items-center gap-3">
-              <a
-                href="/donate"
-                data-givebutter-widget="LWq3rp"
+              <button
+                onClick={openDonateWidget}
                 className="bg-orange text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-orange-dark transition-colors min-h-[44px] inline-flex items-center"
               >
                 Donate
-              </a>
+              </button>
             </div>
 
             {/* Mobile hamburger — 44x44 touch target */}
@@ -132,13 +132,12 @@ export default function Nav() {
                   {link.label}
                 </Link>
               ))}
-              <a
-                href="/donate"
-                data-givebutter-widget="LWq3rp"
-                className="mt-4 bg-orange text-white text-base font-semibold px-6 py-3.5 rounded-full text-center hover:bg-orange-dark transition-colors"
+              <button
+                onClick={openDonateWidget}
+                className="mt-4 bg-orange text-white text-base font-semibold px-6 py-3.5 rounded-full text-center hover:bg-orange-dark transition-colors w-full"
               >
                 Donate
-              </a>
+              </button>
             </nav>
           </div>
         </div>

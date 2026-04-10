@@ -2,23 +2,44 @@
 
 import { useEffect } from "react";
 
+declare global {
+  interface Window {
+    Givebutter?: (action: string, ...args: unknown[]) => void;
+  }
+  namespace JSX {
+    interface IntrinsicElements {
+      "givebutter-widget": { id: string };
+    }
+  }
+}
+
+const WIDGET_ID = "LWq3rp";
+
+/**
+ * Invisible mount — keeps the <givebutter-widget> element in the DOM
+ * so GiveButter's script can find it on init.
+ */
 export default function GiveButterWidget() {
   useEffect(() => {
-    const existing = document.querySelector(
-      'script[src="https://givebutter.com/js/widget.js"]'
-    );
-    if (!existing) {
-      const script = document.createElement("script");
-      script.src = "https://givebutter.com/js/widget.js";
-      script.async = true;
-      script.setAttribute("data-account", "LWq3rp");
-      document.body.appendChild(script);
+    // If GiveButter already loaded, trigger a silent open/close to force init.
+    if (typeof window !== "undefined" && window.Givebutter) {
+      try {
+        window.Givebutter("widget.open", WIDGET_ID);
+        window.Givebutter("widget.close", WIDGET_ID);
+      } catch {
+        // ignore
+      }
     }
   }, []);
 
-  return (
-    <div className="max-w-2xl mx-auto">
-      <givebutter-widget id="LWq3rp" />
-    </div>
-  );
+  return <givebutter-widget id={WIDGET_ID} />;
+}
+
+/**
+ * Call from any onClick to open the GiveButter donate popup.
+ */
+export function openDonateWidget() {
+  if (typeof window !== "undefined" && window.Givebutter) {
+    window.Givebutter("widget.open", WIDGET_ID);
+  }
 }

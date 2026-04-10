@@ -20,21 +20,25 @@ export default function DonatePage() {
   return (
     <>
       {/* HERO — two column: copy left, widget right */}
-      <section
-        className="relative pt-32 pb-16 lg:pt-44 lg:pb-24 bg-ink overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        {/* Doodle accent */}
+      <section className="relative pt-32 pb-16 lg:pt-44 lg:pb-24 bg-ink overflow-hidden">
+        {/* Background photo */}
         <Image
-          src="/images/doodles/Doodle 60@3x.png"
+          src="/images/yingchou-han-IJrIeCs3D4g-unsplash.jpg"
           alt=""
-          width={140}
-          height={120}
-          className="absolute top-10 right-10 opacity-10 rotate-12 pointer-events-none hidden lg:block"
+          fill
+          priority
+          className="object-cover object-center"
           aria-hidden="true"
+        />
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-ink/70" />
+        {/* Dot texture on top */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
+          }}
         />
 
         <div className="container-site relative z-10">

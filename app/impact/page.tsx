@@ -457,7 +457,7 @@ export default function ImpactPage() {
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <a
-              href="#"
+              href="/donate"
               data-givebutter-widget="LWq3rp"
               className="bg-white text-orange hover:bg-orange-light font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center"
             >

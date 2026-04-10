@@ -50,8 +50,7 @@ export default function RootLayout({
         <Nav />
         <main>{children}</main>
         <Footer />
-        <givebutter-widget id="LWq3rp"></givebutter-widget>
-        <Script src="https://givebutter.com/js/widget.js" strategy="afterInteractive" />
+        <Script src="https://givebutter.com/js/widget.js" data-account="LWq3rp" strategy="afterInteractive" />
       </body>
     </html>
   );

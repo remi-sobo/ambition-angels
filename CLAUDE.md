@@ -1,46 +1,90 @@
-# CLAUDE.md — The House We Built
+# CLAUDE.md
 
-## READ THIS BEFORE TOUCHING ANY FILE
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Stack: Next.js 14, TypeScript, Supabase, Vercel, Anthropic Claude API, Twilio, Google Calendar API, Tailwind CSS
+## Commands
 
-## ARCHITECTURE
-Pages Router NOT App Router. Single main file: pages/index.tsx. All views controlled by view state in index.tsx. No middleware file exists. Supabase client: lib/supabase.ts.
+```bash
+npm run dev      # start dev server at localhost:3000
+npm run build    # production build
+npm run lint     # ESLint via next lint
+```
 
-## KEY DIRECTORIES
-pages/index.tsx — entire app, all views
-pages/api/ — all API routes
-components/ — all components
-lib/supabase.ts — database client
-lib/db.ts — tracker helpers
-lib/constants.ts — PILLARS array
+No test suite exists in this repo.
 
-## DATA PATTERN
-Tracker table is key/value store per household. All app state persisted via tracker keys. household_id cached in localStorage as hid. householdProfile from tracker key household_profile. Contains adults array, kids array, houseName.
+## Stack
 
-## BRAND
-CSS vars: --gold, --forest, --cream, --text-primary, --text-muted, --input-bg, --border, --serif, --sans
-Forest dark: #1A3020
-Gold: #C9952A
-Cream: #F5F0E8
-Adult colors: #C49A3C, #52B788, #7F77DD, #E76F51
-Kid color: #5499C7
+Next.js 14 (App Router), TypeScript, Tailwind CSS, Anthropic Claude API. Deployed to Vercel. No database — all data is static or fetched client-side.
 
-## ECONOMY SYSTEM v44
-Replaces marble system completely. Tracker keys: economy_settings, economy_rules, economy_prizes, economy_balances, economy_history. Currency default is LastNameBucks.
+## Architecture
 
-## UPDATE CAROUSEL
-app_versions table controls carousel. To ship new version insert row with is_current true, set old row is_current false. No code changes needed.
+**App Router** — all routes live under `app/`. Each folder is a page (`app/about/page.tsx`, `app/curriculum/page.tsx`, etc.). The root layout (`app/layout.tsx`) wraps every page with `<Nav>` and `<Footer>`.
 
-## ADMIN ACCESS
-Authorized: remi@ambitionangels.org and kendrasobo@gmail.com. Company email remi@thehousewebuilt.family NOT yet active. Protection via useEffect in AdminLayout, redirect to /app if not authorized.
+**Pages:**
+- `/` — homepage (`app/page.tsx`, client component with `IntersectionObserver` for `.fade-up` animations)
+- `/about` — board of directors + advisory board (static data inline)
+- `/curriculum` — internship directory grid; detail pages at `/curriculum/[slug]`
+- `/donate` — GiveButter donation widget + FAQ
+- `/the-app` — app showcase
+- `/founder` — founder profile
+- `/impact` — impact metrics
+- `/update/[slug]` — update/blog posts
 
-## CY AI ADVISOR
-Model: claude-sonnet-4-20250514. Prompts in pages/api files. Keep under 500 tokens. No em dashes in Cy output.
+**Data layer:**
+- `lib/internships.ts` — typed `Internship[]` array with all internship data; exported `categories` array. Used by `/curriculum` and `/curriculum/[slug]`.
+- `lib/donors.ts` — static donor data.
+- No CMS, no database. Content changes require code edits.
 
-## DO NOT TOUCH
-next.config.js, existing Google OAuth token handling, CSS theming variables, current time line in TimePillar, existing RLS policies.
+**API:**
+- `app/api/career-quiz/route.ts` — POST endpoint that calls Anthropic API (`claude-sonnet-4-20250514`) with a user prompt from the career quiz and returns JSON career matches. Requires `ANTHROPIC_API_KEY` env var.
 
-## CURRENT VERSION v44
-## LAST STABLE DEPLOY v43
-## GITHUB remi-sobo/house-we-built
+**Components:**
+- `GiveButterEmbed` — renders `<givebutter-widget id="LWq3rp">` then loads script with `strategy="afterInteractive"`. The element MUST appear before the script (GiveButter scans DOM on init).
+- `GiveButterWidget` — popup/trigger variant.
+- `CareerQuizModal` — multi-step quiz modal, calls `/api/career-quiz`.
+- `IPhoneMockup` — animated phone mockup for the app showcase.
+- `AnimatedCounter` — scroll-triggered number animation.
+- `DonateFaq` — accordion FAQ for donate page.
+- `Doodles` — decorative SVG doodle assets.
+
+## Brand / Design System
+
+**Colors** (defined as Tailwind tokens and CSS vars):
+- `orange` / `--orange`: `#E8500A` (primary CTA, accents)
+- `orange-dark`: `#B83D06`
+- `orange-light`: `#FFF0EA`
+- `ink`: `#0E0E0E` (dark backgrounds)
+- `cream`: `#FAFAF8` (page background)
+- `charcoal`: `#3D3D3D`
+- `gray-warm`: `#6B6960`
+- `gray-mid`: `#C8C6BE`
+- `gray-light`: `#F0EEE8`
+
+**Fonts** (loaded in `app/layout.tsx` via `next/font/google`):
+- `font-display` — Big Shoulders Display (large hero headlines, uppercase)
+- `font-heading` — Poppins (section headings, UI labels)
+- `font-body` — DM Sans (body text)
+
+**Utility classes** (defined in `globals.css`):
+- `.container-site` — centered 1200px max-width container with responsive padding
+- `.section-pad` — `py-20 lg:py-28`
+- `.fade-up` / `.fade-up.visible` — scroll-triggered fade-in animation (triggered via `IntersectionObserver` on client pages)
+- `.stagger-1` through `.stagger-4` — animation delay classes
+
+**Border radii:** `rounded-card` (1.25rem), `rounded-card-lg` (1.75rem)
+
+**Dot texture pattern** used across dark sections:
+```jsx
+style={{
+  backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+  backgroundSize: "22px 22px",
+}}
+```
+
+## GiveButter
+
+Campaign widget ID: `LWq3rp`. The custom element `<givebutter-widget>` requires a type declaration — see `givebutter.d.ts` at the project root.
+
+## Environment Variables
+
+`ANTHROPIC_API_KEY` — required for the career quiz API route.

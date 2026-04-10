@@ -132,7 +132,7 @@ export default function TheAppPage() {
           {/* Lifestyle image */}
           <div className="relative w-full h-64 lg:h-80 rounded-card-lg overflow-hidden mb-14">
             <Image
-              src="/images/derick-anies-hDJT_ERrB-w-unsplash.jpg"
+              src="/images/brooke-cagle-NoRsyXmHGpI-unsplash.jpg"
               alt="Teen engaging with career content on their phone"
               fill
               className="object-cover object-center"

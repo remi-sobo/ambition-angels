@@ -113,41 +113,6 @@ const measures = [
   },
 ];
 
-const pilotConditions = [
-  {
-    label: "Condition A",
-    title: "Incentive Only",
-    body: "Gift card rewards for completing program tracks. Baseline comparison group.",
-  },
-  {
-    label: "Condition B",
-    title: "Incentive + Adult Engagement",
-    body: "Incentives plus a parent, counselor, or mentor using our adult engagement tools.",
-  },
-  {
-    label: "Condition C",
-    title: "Adult Engagement Only",
-    body: "No incentive. Tests whether intrinsic motivation guided by a caring adult creates more durable change.",
-  },
-];
-
-const pilotMeta = [
-  {
-    label: "Sample Size",
-    value: "200–300 teens",
-    sub: "Across existing school and nonprofit partners",
-  },
-  {
-    label: "Timeline",
-    value: "2026",
-    sub: "Pre-pilot Q2 · Full results by year end",
-  },
-  {
-    label: "Evaluation Partner",
-    value: "Empathy Labs",
-    sub: "Future Orientation Score (FOS) measurement and analysis",
-  },
-];
 
 export default function ImpactPage() {
   return (
@@ -388,58 +353,6 @@ export default function ImpactPage() {
                 <p className="text-gray-warm text-sm leading-relaxed">{m.body}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* PILOT — dark */}
-      <section
-        className="section-pad bg-ink relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">
-            What&apos;s Next
-          </p>
-          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream tracking-tight leading-tight mb-3">
-            Proving what works at scale.
-          </h2>
-          <p className="text-gray-mid text-base leading-relaxed max-w-xl mb-10">
-            We have shown we can move teens. The 2026 pilot answers the next question: what moves them most?
-          </p>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
-
-            {/* Conditions */}
-            <div className="flex flex-col gap-4">
-              {pilotConditions.map((c) => (
-                <div
-                  key={c.label}
-                  className="bg-white/[0.04] border border-white/[0.09] rounded-card p-5"
-                >
-                  <p className="text-xs font-bold uppercase tracking-widest text-orange mb-2">{c.label}</p>
-                  <h4 className="font-heading font-bold text-cream text-base mb-1">{c.title}</h4>
-                  <p className="text-gray-mid text-sm leading-relaxed">{c.body}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Meta */}
-            <div className="flex flex-col gap-5">
-              {pilotMeta.map((m, i) => (
-                <div
-                  key={m.label}
-                  className={`pb-5 ${i < pilotMeta.length - 1 ? "border-b border-white/[0.06]" : ""}`}
-                >
-                  <p className="text-xs font-bold uppercase tracking-widest text-white/30 mb-1">{m.label}</p>
-                  <p className="font-heading font-semibold text-cream text-lg">{m.value}</p>
-                  <p className="text-gray-mid text-sm leading-relaxed mt-0.5">{m.sub}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>

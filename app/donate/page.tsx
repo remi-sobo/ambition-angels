@@ -31,7 +31,7 @@ export default function DonatePage() {
           aria-hidden="true"
         />
         {/* Dark overlay */}
-        <div className="absolute inset-0 bg-ink/70" />
+        <div className="absolute inset-0 bg-ink/55" />
         {/* Dot texture on top */}
         <div
           className="absolute inset-0"

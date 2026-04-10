@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Big_Shoulders_Display, Poppins, DM_Sans } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import GiveButterWidget from "@/components/GiveButterWidget";
 
 const bigShoulders = Big_Shoulders_Display({
   subsets: ["latin"],
@@ -49,10 +51,12 @@ export default function RootLayout({
         <Nav />
         <main>{children}</main>
         <Footer />
-        {/* Native async script — browser handles load timing, not React.
-            By the time this executes, <givebutter-widget> is already in the DOM. */}
-        {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
-        <script defer src="https://widgets.givebutter.com/latest.umd.cjs?acct=67420" />
+        {/* GiveButter: element must exist before script runs */}
+        <GiveButterWidget />
+        <Script
+          src="https://widgets.givebutter.com/latest.umd.cjs?acct=67420"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

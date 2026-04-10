@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import CareerQuizModal from "@/components/CareerQuizModal";
 import IPhoneMockup from "@/components/IPhoneMockup";
+import { openDonateWidget } from "@/components/GiveButterWidget";
 
 const pillars = [
   {
@@ -120,13 +121,12 @@ export default function Home() {
               >
                 Take the Career Quiz
               </button>
-              <a
-                href="/donate"
-                data-givebutter-widget="LWq3rp"
+              <button
+                onClick={openDonateWidget}
                 className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 border border-cream/20 min-h-[52px] inline-flex items-center"
               >
                 Support the Mission
-              </a>
+              </button>
             </div>
 
             <div className="flex flex-wrap gap-3 mb-4">
@@ -504,13 +504,12 @@ export default function Home() {
             Teens are waiting to have their ambition turned on. A small investment from you can go a long way. Become an Ambition Angel today.
           </p>
           <div className="flex flex-wrap gap-4 justify-center fade-up stagger-3">
-            <a
-              href="/donate"
-              data-givebutter-widget="LWq3rp"
+            <button
+              onClick={openDonateWidget}
               className="bg-white text-orange hover:bg-orange-light font-semibold px-8 py-4 rounded-full transition-colors duration-200 text-base min-h-[52px] inline-flex items-center"
             >
               Donate Now
-            </a>
+            </button>
             <button
               onClick={() => setQuizOpen(true)}
               className="bg-orange-dark hover:bg-ink text-white font-semibold px-8 py-4 rounded-full transition-colors duration-200 text-base border border-white/20 min-h-[52px]"

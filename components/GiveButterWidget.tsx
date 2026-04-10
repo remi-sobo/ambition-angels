@@ -6,11 +6,6 @@ declare global {
   interface Window {
     Givebutter?: (action: string, ...args: unknown[]) => void;
   }
-  namespace JSX {
-    interface IntrinsicElements {
-      "givebutter-widget": { id: string };
-    }
-  }
 }
 
 const WIDGET_ID = "LWq3rp";

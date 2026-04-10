@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Our Impact",
@@ -159,6 +160,17 @@ export default function ImpactPage() {
           backgroundSize: "22px 22px",
         }}
       >
+        {/* Background photo */}
+        <Image
+          src="/images/elizeu-dias-2EGNqazbAMk-unsplash.jpg"
+          alt=""
+          fill
+          priority
+          className="object-cover object-center"
+          aria-hidden="true"
+        />
+        {/* Dark overlay at 60% */}
+        <div className="absolute inset-0 bg-ink/60" />
         {/* Curved bottom clip */}
         <div className="absolute bottom-0 left-0 right-0 h-14 bg-cream" style={{ clipPath: "ellipse(55% 100% at 50% 100%)" }} />
         <div className="container-site relative z-10">

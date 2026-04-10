@@ -1,52 +1,78 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "About",
 };
 
 const boardMembers = [
-  { name: "Remi Sobomehin", org: "Ambition Angels", title: "CEO", initials: "RS" },
-  { name: "Jerrel Brown", org: "Dapper Down Lounge", title: "CEO", initials: "JB" },
-  { name: "Lara Sellers", org: "", title: "Educational Advocate", initials: "LS" },
-  { name: "Michelle Vilchez", org: "Innovate Public Schools", title: "CEO", initials: "MV" },
-  { name: "Todd Singleton", org: "Microsoft", title: "General Manager", initials: "TS" },
+  {
+    name: "Remi Sobomehin",
+    org: "Ambition Angels",
+    title: "CEO",
+    initials: "RS",
+    photo: "/images/Remi-Sobomehin_edited_edited.jpeg",
+    linkedin: "https://www.linkedin.com/in/remi-sobomehin/",
+  },
+  {
+    name: "Jerrel Brown",
+    org: "Dapper Down Lounge",
+    title: "CEO",
+    initials: "JB",
+    photo: "/images/Jerrell B.jpeg",
+    linkedin: "https://www.linkedin.com/in/jerrel-brown-b54410ab/",
+  },
+  {
+    name: "Lara Sellers",
+    org: "",
+    title: "Educational Advocate",
+    initials: "LS",
+    photo: "/images/Lara.jpeg",
+    linkedin: "https://www.linkedin.com/in/lara-sellers-a138391a/",
+  },
+  {
+    name: "Michelle Vilchez",
+    org: "Innovate Public Schools",
+    title: "CEO",
+    initials: "MV",
+    photo: "/images/Michelle.jpg",
+    linkedin: "https://www.linkedin.com/in/michelle-vilchez-152684b/",
+  },
+  {
+    name: "Todd Singleton",
+    org: "Microsoft",
+    title: "General Manager",
+    initials: "TS",
+    photo: "/images/Todd.jpeg",
+    linkedin: "https://www.linkedin.com/in/todd-singleton/",
+  },
 ];
 
 const advisors = [
-  { name: "Charles Best", org: "DonorsChoose", title: "Founder" },
-  { name: "Meg Garlinghouse", org: "LinkedIn", title: "VP, Social Impact" },
-  { name: "Shamar Edwards", org: "Alameda Unified", title: "Senior Director" },
-  { name: "Lorne Needle", org: "X, the moonshot factory", title: "Head of People and Culture" },
-  { name: "Jerrell Jimmerson", org: "Disney Streaming", title: "CPO" },
-  { name: "Neil Bellefeuille", org: "BILD", title: "Partner" },
-  { name: "Bob Burlinson", org: "Regis Management", title: "Co-Founder / Partner" },
-  { name: "Lesley Martin", org: "Former Principal", title: "Education Consultant" },
-  { name: "Sean Mendy", org: "Concrete Rose Capital", title: "Founding Partner" },
-  { name: "Shawn Parr", org: "Envoy", title: "Managing Director" },
-  { name: "Jeff Camarillo", org: "Stanford GSE", title: "STEP Director" },
-  { name: "Preston Smith", org: "Rocketship Public Schools", title: "Co-Founder and CEO" },
-  { name: "Jason Mayden", org: "The Speed of Grace", title: "Designer and Author" },
-  { name: "Terri Givens", org: "McGill University", title: "Professor of Political Science" },
-  { name: "Eugene Clark-Herrera", org: "Orrick LLP", title: "Partner" },
-  { name: "Dr. Alan Schroeder", org: "Lucile Packard Children's Hospital Stanford", title: "Assoc. Chief for Research" },
-  { name: "Heather Starnes-Logwood", org: "Live In Peace", title: "Executive Director" },
-  { name: "Dr. Ryan Padrez", org: "Stanford School of Medicine", title: "Clinical Associate Professor in Pediatrics" },
-  { name: "Mallory Dwinal-Palisch", org: "Reach University", title: "Chancellor" },
-  { name: "Olatunde Sobomehin", org: "Streetcode Academy", title: "CEO" },
-  { name: "Dr. Bryan Brown", org: "Stanford GSE", title: "Professor" },
-  { name: "Julie Lythcott-Haims", org: "New York Times", title: "Bestselling Author of How to Raise an Adult" },
+  { name: "Charles Best", org: "DonorsChoose", title: "Founder", photo: "/images/Charles.jpg", linkedin: "https://www.linkedin.com/in/charlesdbest/" },
+  { name: "Meg Garlinghouse", org: "LinkedIn", title: "VP, Social Impact", photo: "/images/meg.jpg", linkedin: "https://www.linkedin.com/in/meggarlinghouse/" },
+  { name: "Shamar Edwards", org: "Alameda Unified", title: "Senior Director", photo: "/images/shamar 2.jpeg", linkedin: "https://www.linkedin.com/in/shamar-edwards-949603b0/" },
+  { name: "Lorne Needle", org: "X, the moonshot factory", title: "Head of People and Culture", photo: "/images/lorne.jpg", linkedin: "https://www.linkedin.com/in/lorne-needle-383a362/" },
+  { name: "Jerrell Jimmerson", org: "Disney Streaming", title: "CPO", photo: "/images/jerrell.jpeg", linkedin: "https://www.linkedin.com/in/jerrelljimerson/" },
+  { name: "Neil Bellefeuille", org: "BILD", title: "Partner", photo: "/images/Neil_edited.jpg", linkedin: "https://www.linkedin.com/in/neil-bellefeuille/" },
+  { name: "Bob Burlinson", org: "Regis Management", title: "Co-Founder / Partner", photo: "/images/bobb_edited.jpg", linkedin: "https://www.linkedin.com/in/bob-burlinson-912ab6/" },
+  { name: "Lesley Martin", org: "Former Principal", title: "Education Consultant", photo: "/images/lesley.jpg", linkedin: "https://www.linkedin.com/in/lesley-martin-babba92b/" },
+  { name: "Sean Mendy", org: "Concrete Rose Capital", title: "Founding Partner", photo: "/images/sean mendy.jpeg", linkedin: "https://www.linkedin.com/in/seanmendy/" },
+  { name: "Shawn Parr", org: "Envoy", title: "Managing Director", photo: "/images/shawn-parr.png", linkedin: "https://www.linkedin.com/in/sparr1/" },
+  { name: "Jeff Camarillo", org: "Stanford GSE", title: "STEP Director", photo: "/images/jeff-camarillo.jpg", linkedin: "https://www.linkedin.com/in/jeff-benjamin-camarillo-6274b02a4/" },
+  { name: "Preston Smith", org: "Rocketship Public Schools", title: "Co-Founder and CEO", photo: "/images/Preston.jpg", linkedin: "https://www.linkedin.com/in/smithpreston/" },
+  { name: "Jason Mayden", org: "The Speed of Grace", title: "Designer and Author", photo: "/images/jason mayden.jpg", linkedin: "https://www.linkedin.com/in/jasonmayden/" },
+  { name: "Terri Givens", org: "McGill University", title: "Professor of Political Science", photo: "/images/Terri.jpg", linkedin: "https://www.linkedin.com/in/terrigivens/" },
+  { name: "Eugene Clark-Herrera", org: "Orrick LLP", title: "Partner", photo: "/images/Eugene.jpg", linkedin: "https://www.linkedin.com/in/eugene-clark-herrera-7b040b/" },
+  { name: "Dr. Alan Schroeder", org: "Lucile Packard Children's Hospital Stanford", title: "Assoc. Chief for Research", photo: "/images/alan.jpg", linkedin: "https://www.linkedin.com/in/alan-schroeder-36b63613/" },
+  { name: "Heather Starnes-Logwood", org: "Live In Peace", title: "Executive Director", photo: "/images/heather.jpg", linkedin: "https://www.linkedin.com/in/heather-starnes-logwood/" },
+  { name: "Dr. Ryan Padrez", org: "Stanford School of Medicine", title: "Clinical Associate Professor in Pediatrics", photo: "/images/Ryan.jpg", linkedin: "https://www.linkedin.com/in/ryan-padrez-64518134/" },
+  { name: "Mallory Dwinal-Palisch", org: "Reach University", title: "Chancellor", photo: "/images/mallory.jpeg", linkedin: "https://www.linkedin.com/in/mallory-dwinal-palisch/" },
+  { name: "Olatunde Sobomehin", org: "Streetcode Academy", title: "CEO", photo: "/images/tunde.jpg", linkedin: "https://www.linkedin.com/in/coachtunde/" },
+  { name: "Dr. Bryan Brown", org: "Stanford GSE", title: "Professor", photo: "/images/bryan.jpeg", linkedin: "https://www.linkedin.com/in/bryan-brown-a0744516/" },
+  { name: "Julie Lythcott-Haims", org: "New York Times", title: "Bestselling Author of How to Raise an Adult", photo: "/images/julie.jpeg", linkedin: "https://www.linkedin.com/in/jlythcotthaims/" },
 ];
-
-function getInitials(name: string): string {
-  return name
-    .replace(/^Dr\.\s+/, "")
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join("");
-}
 
 function LinkedInIcon() {
   return (
@@ -66,11 +92,23 @@ export default function AboutPage() {
   return (
     <>
       {/* HERO */}
-      <section className="relative pt-32 pb-24 lg:pt-44 lg:pb-36 overflow-hidden bg-orange-light">
+      <section className="relative pt-32 pb-24 lg:pt-44 lg:pb-36 overflow-hidden">
+        {/* Background photo */}
+        <Image
+          src="/images/yingchou-han-IJrIeCs3D4g-unsplash.jpg"
+          alt=""
+          fill
+          priority
+          className="object-cover object-center"
+          aria-hidden="true"
+        />
+        {/* Dark overlay at 55% */}
+        <div className="absolute inset-0 bg-ink/55" />
+        {/* Original dot pattern on top */}
         <div
           className="absolute inset-0 opacity-20"
           style={{
-            backgroundImage: "radial-gradient(circle, #E8500A 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px)",
             backgroundSize: "28px 28px",
           }}
         />
@@ -79,10 +117,10 @@ export default function AboutPage() {
             <div className="inline-block text-xs font-medium text-orange bg-white border border-orange/20 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
               About Us
             </div>
-            <h1 className="font-heading font-bold text-4xl lg:text-6xl text-ink mb-6 leading-tight">
+            <h1 className="font-heading font-bold text-4xl lg:text-6xl text-white mb-6 leading-tight">
               Every teen deserves a clear picture of what is possible and a real path to get there.
             </h1>
-            <p className="text-gray-warm text-lg lg:text-xl max-w-2xl leading-relaxed">
+            <p className="text-white/80 text-lg lg:text-xl max-w-2xl leading-relaxed">
               Ambition Angels is a youth development organization building that path through technology, career exposure, and a deep belief in the potential of every student we serve.
             </p>
           </div>
@@ -164,10 +202,14 @@ export default function AboutPage() {
                 className="bg-white border border-gray-light rounded-card-lg p-7 shadow-sm flex flex-col"
               >
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-14 h-14 rounded-full bg-orange-light border-2 border-orange/20 flex items-center justify-center flex-shrink-0">
-                    <span className="font-heading font-bold text-orange text-sm">
-                      {member.initials}
-                    </span>
+                  <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-orange/20 flex-shrink-0">
+                    <Image
+                      src={member.photo}
+                      alt={member.name}
+                      width={56}
+                      height={56}
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                   <div className="min-w-0">
                     <div className="font-heading font-semibold text-ink text-base leading-tight">
@@ -181,7 +223,9 @@ export default function AboutPage() {
                 </div>
                 <div className="mt-auto pt-4 border-t border-gray-light">
                   <a
-                    href="#"
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     aria-label={`${member.name} on LinkedIn`}
                     className="inline-flex items-center gap-1.5 text-gray-warm hover:text-orange transition-colors text-xs font-medium"
                   >
@@ -217,10 +261,14 @@ export default function AboutPage() {
                 className="bg-white border border-gray-light rounded-card p-5 flex flex-col gap-3"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-orange-light border border-orange/20 flex items-center justify-center flex-shrink-0">
-                    <span className="font-heading font-bold text-orange text-xs">
-                      {getInitials(advisor.name)}
-                    </span>
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-orange/20 flex-shrink-0">
+                    <Image
+                      src={advisor.photo}
+                      alt={advisor.name}
+                      width={40}
+                      height={40}
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                   <div className="min-w-0">
                     <div className="font-heading font-semibold text-ink text-sm leading-tight">
@@ -232,7 +280,9 @@ export default function AboutPage() {
                 <div className="text-gray-mid text-xs leading-snug">{advisor.title}</div>
                 <div className="pt-2 border-t border-gray-light mt-auto">
                   <a
-                    href="#"
+                    href={advisor.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     aria-label={`${advisor.name} on LinkedIn`}
                     className="inline-flex items-center gap-1 text-gray-warm hover:text-orange transition-colors text-xs"
                   >

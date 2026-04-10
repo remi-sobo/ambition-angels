@@ -129,6 +129,17 @@ export default function TheAppPage() {
             </h2>
           </div>
 
+          {/* Lifestyle image */}
+          <div className="relative w-full h-64 lg:h-80 rounded-card-lg overflow-hidden mb-14">
+            <Image
+              src="/images/derick-anies-hDJT_ERrB-w-unsplash.jpg"
+              alt="Teen engaging with career content on their phone"
+              fill
+              className="object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-ink/40 to-transparent" />
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             {steps.map((step) => (
               <div key={step.number} className="relative">

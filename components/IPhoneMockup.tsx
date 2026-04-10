@@ -24,7 +24,7 @@ export default function IPhoneMockup() {
         }}
       >
         <Image
-          src="/images/app mockup.png"
+          src="/images/app_mockup.png"
           alt="Ambition app"
           fill
           className="object-cover object-top"

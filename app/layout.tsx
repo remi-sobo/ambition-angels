@@ -49,6 +49,10 @@ export default function RootLayout({
         <Nav />
         <main>{children}</main>
         <Footer />
+        {/* Native async script — browser handles load timing, not React.
+            By the time this executes, <givebutter-widget> is already in the DOM. */}
+        {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
+        <script defer src="https://widgets.givebutter.com/latest.umd.cjs?acct=67420" />
       </body>
     </html>
   );

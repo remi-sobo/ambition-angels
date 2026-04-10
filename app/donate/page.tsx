@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import GiveButterEmbed from "@/components/GiveButterEmbed";
 import DonateFaq from "@/components/DonateFaq";
 
 export const metadata: Metadata = {
@@ -75,9 +74,51 @@ export default function DonatePage() {
               </div>
             </div>
 
-            {/* RIGHT — GiveButter widget embedded */}
-            <div className="bg-cream rounded-card-lg overflow-hidden shadow-2xl">
-              <GiveButterEmbed />
+            {/* RIGHT — donation card */}
+            <div className="bg-cream/[0.06] border border-cream/10 rounded-card-lg p-8 lg:p-10 backdrop-blur-sm">
+              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-5">
+                Give Today
+              </p>
+              <h2 className="font-heading font-bold text-2xl text-cream mb-2 leading-tight">
+                Every dollar goes to work immediately.
+              </h2>
+              <p className="text-gray-mid text-sm leading-relaxed mb-8">
+                Ambition Angels is a US 501(c)(3). Your gift is tax-deductible. EIN 87-2513010.
+              </p>
+
+              {/* Suggested amounts */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {["$25", "$50", "$100", "$250", "$500", "$1,000"].map((amt) => (
+                  <a
+                    key={amt}
+                    href="/donate"
+                    data-givebutter-widget="LWq3rp"
+                    className="bg-cream/5 hover:bg-orange hover:text-white border border-cream/15 hover:border-orange text-cream font-heading font-semibold text-sm py-3 rounded-lg text-center transition-all duration-150 cursor-pointer"
+                  >
+                    {amt}
+                  </a>
+                ))}
+              </div>
+
+              {/* Custom amount + main CTA */}
+              <a
+                href="/donate"
+                data-givebutter-widget="LWq3rp"
+                className="w-full bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors shadow-lg shadow-orange/30 min-h-[52px] flex items-center justify-center mb-6"
+              >
+                Donate Now
+              </a>
+
+              {/* Trust row */}
+              <div className="flex flex-col gap-2.5">
+                {[
+                  "🔒 Secure donation via GiveButter",
+                  "✓ Tax-deductible · 501(c)(3)",
+                  "✓ 100% goes to program and students",
+                ].map((line) => (
+                  <p key={line} className="text-gray-mid/70 text-xs">{line}</p>
+                ))}
+              </div>
             </div>
 
           </div>

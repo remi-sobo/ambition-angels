@@ -64,7 +64,7 @@ export default function DonatePage() {
             </h1>
 
             <p className="text-gray-mid text-lg leading-relaxed mb-4 max-w-sm">
-              3 out of 4 teens who start an Ambition internship finish it. Most come back for more. Your gift makes that possible for every student who needs it.
+              Teens want to be on a path toward a well-paying career. Your gift makes that possible for every student who needs it.
             </p>
 
             <div className="flex flex-wrap gap-3 mb-8">
@@ -255,8 +255,8 @@ export default function DonatePage() {
             {[
               { number: "3,500+", label: "Teens reached" },
               { number: "87%", label: "From Title I schools" },
-              { number: "3 of 4", label: "Complete the full internship" },
-              { number: "36", label: "States represented" },
+              { number: "14%", label: "Increase in action orientation" },
+              { number: "4,500+", label: "Modules completed" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="font-display font-black text-5xl lg:text-6xl text-white mb-1 tracking-tight">

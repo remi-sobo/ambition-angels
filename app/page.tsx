@@ -19,7 +19,7 @@ const pillars = [
   {
     icon: "03",
     title: "Earn for your effort",
-    body: "Complete an internship and earn gift cards from brands you actually use. Their time has real value. We prove it.",
+    body: "Complete an internship and earn gift cards from brands you actually use. Their time has real value. We honor that.",
   },
 ];
 
@@ -110,7 +110,7 @@ export default function Home() {
             </h1>
 
             <p className="font-body text-gray-mid text-base lg:text-lg mb-8 leading-relaxed max-w-sm">
-              Real internships. Real careers. On the phone he already has. Free for every student.
+              Take internships. See real careers. On the phone they already have. Free for every student.
             </p>
 
             <div className="flex flex-wrap gap-4 mb-6">
@@ -178,12 +178,12 @@ export default function Home() {
               <div className="text-gray-mid text-sm">From Title I schools</div>
             </div>
             <div className="fade-up stagger-3 text-center">
-              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">3 of 4</div>
-              <div className="text-gray-mid text-sm">Complete the full internship</div>
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">14%</div>
+              <div className="text-gray-mid text-sm">Increase in action orientation</div>
             </div>
             <div className="fade-up stagger-4 text-center">
-              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">36</div>
-              <div className="text-gray-mid text-sm">States represented</div>
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">4,500+</div>
+              <div className="text-gray-mid text-sm">Modules completed</div>
             </div>
           </div>
         </div>
@@ -205,14 +205,14 @@ export default function Home() {
                 initials: "DM",
               },
               {
-                quote: "The wealth management track changed how I think about money. I taught my mom what I learned. She opened a Roth IRA that same week.",
+                quote: "The wealth management track changed how I think about money. I taught my mom what I learned and I am starting to think I might have a future here.",
                 name: "Marcus T.",
                 grade: "11th Grade",
                 location: "East Palo Alto, CA",
                 initials: "MT",
               },
               {
-                quote: "I did the nursing internship and it clicked. I know exactly what I'm doing after high school. No one in my family has ever worked in healthcare.",
+                quote: "I did the nursing internship and it clicked. I know exactly what I am doing after high school. No one in my family has ever worked in healthcare.",
                 name: "Aaliyah R.",
                 grade: "12th Grade",
                 location: "Richmond, CA",
@@ -254,7 +254,7 @@ export default function Home() {
                 The Gap
               </p>
               <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6 tracking-tight fade-up stagger-1">
-                Schools prepare students for tests. Not careers.
+                Schools can&apos;t do it alone.
               </h2>
               <div className="space-y-4 text-gray-warm leading-relaxed">
                 <p className="fade-up stagger-2">
@@ -263,8 +263,8 @@ export default function Home() {
                   faster than any curriculum can keep up with.
                 </p>
                 <p className="fade-up stagger-3">
-                  Youth not connected to a viable career path by age 25 face a
-                  lifetime of unemployment, poverty, and housing instability. And
+                  Youth not connected to a viable career path by age 25 are more
+                  likely to face unemployment, poverty, and housing instability. And
                   the programs built to help them have never been able to reach
                   them at scale.
                 </p>
@@ -501,9 +501,7 @@ export default function Home() {
           </h2>
           <div className="w-16 h-1 bg-white/40 mx-auto mb-8 rounded-full fade-up stagger-2" />
           <p className="text-white/80 text-lg mb-10 max-w-prose mx-auto leading-relaxed fade-up stagger-2">
-            3 out of 4 teens who start an Ambition internship finish it. Most
-            come back for more. A small investment from you can go a long way.
-            Become an Ambition Angel today.
+            Teens are waiting to have their ambition turned on. A small investment from you can go a long way. Become an Ambition Angel today.
           </p>
           <div className="flex flex-wrap gap-4 justify-center fade-up stagger-3">
             <a

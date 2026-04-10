@@ -29,8 +29,8 @@ const steps = [
 const stats = [
   { number: "3,500+", label: "Teens reached" },
   { number: "87%", label: "From Title I schools" },
-  { number: "3 of 4", label: "Complete the full internship" },
-  { number: "36", label: "States represented" },
+  { number: "14%", label: "Increase in action orientation" },
+  { number: "4,500+", label: "Modules completed" },
 ];
 
 export default function TheAppPage() {
@@ -42,7 +42,7 @@ export default function TheAppPage() {
         {/* LEFT — photo */}
         <div className="relative hidden lg:block lg:w-[52%] min-h-full">
           <Image
-            src="/images/hero-image.jpg"
+            src="/images/derick-anies-hDJT_ERrB-w-unsplash.jpg"
             alt="Teen looking at their phone, discovering a career path"
             fill
             priority
@@ -215,7 +215,7 @@ export default function TheAppPage() {
                 Skills that carry through every career and every stage of life.
               </h3>
               <p className="text-gray-mid leading-relaxed">
-                Communication. Problem-solving. Empathy. Time management. These are not soft skills. They are the foundation of every career that lasts.
+                Communication. Problem-solving. Empathy. Time management. These are not soft skills. They are the foundation of every career that lasts, especially in this fast-changing world.
               </p>
             </div>
           </div>

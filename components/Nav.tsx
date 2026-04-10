@@ -76,12 +76,13 @@ export default function Nav() {
 
             {/* Desktop CTA */}
             <div className="hidden lg:flex items-center gap-3">
-              <Link
-                href="/donate"
+              <a
+                href="#"
+                data-givebutter-widget="LWq3rp"
                 className="bg-orange text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-orange-dark transition-colors min-h-[44px] inline-flex items-center"
               >
                 Donate
-              </Link>
+              </a>
             </div>
 
             {/* Mobile hamburger — 44x44 touch target */}
@@ -131,12 +132,13 @@ export default function Nav() {
                   {link.label}
                 </Link>
               ))}
-              <Link
-                href="/donate"
+              <a
+                href="#"
+                data-givebutter-widget="LWq3rp"
                 className="mt-4 bg-orange text-white text-base font-semibold px-6 py-3.5 rounded-full text-center hover:bg-orange-dark transition-colors"
               >
                 Donate
-              </Link>
+              </a>
             </nav>
           </div>
         </div>

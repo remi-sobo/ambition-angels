@@ -18,7 +18,6 @@ export default function GiveButterWidget() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* @ts-expect-error -- givebutter-widget is a custom element */}
       <givebutter-widget id="LWq3rp" />
     </div>
   );

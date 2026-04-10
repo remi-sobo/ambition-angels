@@ -1,54 +1,26 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import Script from "next/script";
+import { useState } from "react";
 
 export default function GiveButterEmbed() {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const mount = () => {
-      if (!containerRef.current) return;
-      containerRef.current.innerHTML = "";
-      const el = document.createElement("givebutter-widget") as HTMLElement;
-      el.setAttribute("id", "LWq3rp");
-      containerRef.current.appendChild(el);
-    };
-
-    // If script already loaded and custom element is defined, mount immediately
-    if (customElements.get("givebutter-widget")) {
-      mount();
-      return;
-    }
-
-    // Otherwise inject the script and mount once it fires
-    const existing = document.querySelector(
-      'script[src="https://givebutter.com/js/widget.js"]'
-    );
-
-    if (existing) {
-      // Script tag exists but element not yet defined — wait for it
-      customElements.whenDefined("givebutter-widget").then(mount);
-    } else {
-      const script = document.createElement("script");
-      script.src = "https://givebutter.com/js/widget.js";
-      script.setAttribute("data-account", "LWq3rp");
-      script.async = true;
-      script.onload = mount;
-      document.head.appendChild(script);
-    }
-
-    return () => {
-      if (containerRef.current) containerRef.current.innerHTML = "";
-    };
-  }, []);
+  const [ready, setReady] = useState(false);
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full"
-      style={{ minHeight: 520 }}
-    />
+    <>
+      {/* Load GiveButter script exactly as they provide it — no extra attributes */}
+      <Script
+        src="https://givebutter.com/js/widget.js"
+        strategy="afterInteractive"
+        onLoad={() => setReady(true)}
+      />
+      {/* Only render the custom element after the script has loaded and
+          registered the givebutter-widget custom element definition */}
+      {ready && (
+        <div className="w-full">
+          <givebutter-widget id="LWq3rp"></givebutter-widget>
+        </div>
+      )}
+    </>
   );
 }

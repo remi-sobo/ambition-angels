@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 const stats = [
   { num: "3,500", sup: "+", label: "Teens reached" },
   { num: "36", sup: "", label: "School and nonprofit partners" },
-  { num: "3 of 4", sup: "", label: "Teens who start, finish" },
   { num: "14", sup: "%", label: "Increase in action orientation" },
+  { num: "4,500", sup: "+", label: "Modules completed" },
 ];
 
 const gapFacts = [
@@ -23,11 +23,6 @@ const gapFacts = [
     num: "11%",
     title: "Career programs raise lifetime earnings.",
     body: "Higher yearly earnings for teens in career-integrated programs, measured 8 years after graduation.",
-  },
-  {
-    num: "11%",
-    title: "Programs never reach them.",
-    body: "Only 11% of teens attend after-school programming. 95% have a smartphone and spend 8 hours a day on it. We meet them there.",
   },
 ];
 
@@ -60,7 +55,7 @@ const quotes = [
   {
     initials: "MT",
     quote:
-      "The wealth management track changed how I think about money. I taught my mom what I learned. She opened a Roth IRA that same week.",
+      "The wealth management track changed how I think about money. I taught my mom what I learned and I am starting to think I might have a future here.",
     name: "Marcus T.",
     grade: "11th Grade · East Palo Alto, CA",
   },
@@ -77,20 +72,20 @@ const research = [
   {
     stat: "40/47",
     finding:
-      "Longitudinal studies found teens with early career exposure had better adult employment outcomes — wage gains of 5–10% not uncommon, even after controlling for academic achievement and social background.",
+      "Longitudinal studies found teens with early career exposure had better adult employment outcomes, with wage gains of 5 to 10% not uncommon, even after controlling for academic achievement and social background.",
     source: "OECD Career Readiness Review · 2021",
+  },
+  {
+    stat: "By 16",
+    finding:
+      "Teens who cannot picture a career by age 16 are statistically more likely to be unemployed or disconnected from education and work by their mid-20s.",
+    source: "OECD Career Readiness Research · 2021",
   },
   {
     stat: "11%",
     finding:
-      "Higher average yearly earnings for teens in career-integrated programs, measured 8 years post-graduation. The effect held across income levels.",
-    source: "MDRC · Brookings · Annie E. Casey Foundation",
-  },
-  {
-    stat: "5–10%",
-    finding:
-      "Wage boost in adulthood tied specifically to early career conversations and exposure — even talks, job shadowing, and simulated experience showed measurable long-term impact.",
-    source: "OECD, From Classroom to Career · 2025",
+      "Only 11% of teens attend after-school programming. 95% own a smartphone and spend 8 hours a day on it. We stopped fighting where teens are and started meeting them there.",
+    source: "After School Matters · Smartphone ownership data",
   },
 ];
 
@@ -103,7 +98,7 @@ const measures = [
   {
     tag: "Future Orientation Score",
     title: "Action Orientation",
-    body: "One element within the FOS — and our strongest result. Is a teen taking concrete steps toward a future they can see? Measured across 1,000+ teens, this is where we saw our biggest gain.",
+    body: "One element within the FOS and our strongest result. Is a teen taking concrete steps toward a future they can see? Measured across 1,000+ teens, this is where we saw our biggest gain.",
   },
   {
     tag: "Career Exposure",

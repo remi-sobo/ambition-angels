@@ -155,12 +155,6 @@ export default function AboutPage() {
             <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
               Our Board of Directors
             </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-4">
-              Five leaders. One shared mission.
-            </h2>
-            <p className="text-gray-warm leading-relaxed">
-              Our board brings together diverse expertise and a deep commitment to the teens we serve.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

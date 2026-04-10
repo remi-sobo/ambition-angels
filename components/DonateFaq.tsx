@@ -6,22 +6,22 @@ const faqs = [
   {
     question: "How do I make a gift?",
     answer:
-      "Online at this page, or by emailing our philanthropy team at shannon@ambitionangels.org. Checks can be made payable to Ambition Angels and mailed to 380 Portage Ave., Palo Alto, CA 94306. Contact us for wire transfer details.",
+      "You can donate online or by emailing our philanthropy team at shannon@ambitionangels.org. You can also donate by mail — checks can be made payable to Ambition Angels and mailed to: 380 Portage Ave., Palo Alto, CA 94306. For wire transfers: Beneficiary: Ambition Angels · Bank: Wells Fargo Bank, N.A. · Routing: 121000248 · Account: 2245119926 · Bank address: 420 Montgomery, San Francisco, CA 94104 · Tax ID: 87-2513010.",
   },
   {
     question: "Can I choose what my donation supports?",
     answer:
-      "We cannot always guarantee designation, but every gift over $100,000 opens a direct conversation with our philanthropy team about your giving options and the specific impact they will have.",
+      "While we cannot promise you can always choose where your donation goes, we can promise that every $100K+ gift warrants a conversation with our philanthropy team where you will learn about your giving opportunities and the impact they will have.",
   },
   {
     question: "Is Ambition Angels tax-exempt?",
     answer:
-      "Yes. We are a 501(c)(3) nonprofit organization. Your gift is tax-deductible to the extent allowed by law. Tax ID: 87-2513010.",
+      "Yes, Ambition Angels is a 501(c)(3) tax-exempt organization. Your gift is deductible to the extent allowed by law. Our tax ID number is 87-2513010.",
   },
   {
     question: "Who supports Ambition Angels?",
     answer:
-      "Mission-minded individuals, foundations, companies, and community members who believe in closing the opportunity gap for low-income teens. We are grateful for every one of them.",
+      "Ambition Angels partners with mission-minded individuals and foundations whose support funds our work. We are grateful for our partners and their commitment to supporting low-income, Black and brown teens.",
   },
 ];
 

@@ -26,7 +26,7 @@ export default function Footer() {
             Become an Ambition Angel today.
           </p>
           <a
-            href="#"
+            href="/donate"
             data-givebutter-widget="LWq3rp"
             className="inline-flex items-center bg-white text-orange font-semibold text-base px-8 py-4 rounded-full hover:bg-orange-light transition-colors min-h-[52px]"
           >

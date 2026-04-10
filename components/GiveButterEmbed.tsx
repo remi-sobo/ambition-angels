@@ -2,8 +2,11 @@
 
 export default function GiveButterEmbed() {
   return (
-    <div className="w-full">
-      <givebutter-widget id="LWq3rp"></givebutter-widget>
-    </div>
+    <iframe
+      src="https://givebutter.com/LWq3rp"
+      style={{ width: "100%", height: "620px", border: "none", display: "block" }}
+      title="Donate to Ambition Angels"
+      allow="payment"
+    />
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import GiveButterEmbed from "@/components/GiveButterEmbed";
 import DonateFaq from "@/components/DonateFaq";
 
 export const metadata: Metadata = {
@@ -8,118 +9,78 @@ export const metadata: Metadata = {
     "Help teens reach their full potential. Your gift puts real career exposure in the pocket of every student who needs it.",
 };
 
+const heroStats = [
+  { label: "3,500+", sub: "Teens reached" },
+  { label: "87%", sub: "From Title I schools" },
+  { label: "14%", sub: "Increase in action orientation" },
+  { label: "4,500+", sub: "Modules completed" },
+];
+
 export default function DonatePage() {
   return (
     <>
-      {/* HERO — split screen, photo + copy */}
-      <section className="relative min-h-[85vh] flex overflow-hidden">
-
-        {/* LEFT — teen photo */}
-        <div className="relative hidden lg:block lg:w-[48%]">
-          <Image
-            src="/images/yingchou-han-IJrIeCs3D4g-unsplash.jpg"
-            alt="Teen discovering their future through career exposure"
-            fill
-            priority
-            className="object-cover object-center"
-          />
-          {/* Gradient blend into right panel */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-ink/60" />
-          {/* Quote pinned over photo */}
-          <div className="absolute bottom-10 left-8 right-8 lg:right-16">
-            <blockquote className="text-white text-sm leading-relaxed italic bg-ink/60 backdrop-blur-sm rounded-card p-4 border-l-4 border-orange">
-              &ldquo;Every individual has massive potential. When teens are set on a pathway to an economically empowered future, we all benefit.&rdquo;
-              <cite className="block mt-2 not-italic text-gray-mid text-xs">Remi Sobomehin, Founder &amp; CEO</cite>
-            </blockquote>
-          </div>
-        </div>
-
-        {/* RIGHT — ink panel */}
-        <div
-          className="relative flex-1 bg-ink flex items-center"
-          style={{
-            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
-            backgroundSize: "22px 22px",
-          }}
-        >
-          {/* Doodle accent */}
-          <Image
-            src="/images/doodles/Doodle 60@3x.png"
-            alt=""
-            width={140}
-            height={120}
-            className="absolute top-8 right-8 opacity-15 rotate-12 pointer-events-none"
-            aria-hidden="true"
-          />
-
-          <div className="px-8 lg:px-14 py-24 pt-36 lg:pt-24 max-w-xl w-full">
-            <div className="inline-block text-xs font-medium text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
-              Become an Ambition Angel
-            </div>
-
-            <h1 className="font-display font-black text-5xl lg:text-6xl text-cream mb-5 leading-none tracking-tight uppercase">
-              A small bet.<br />
-              A <span className="text-orange">massive</span><br />
-              return.
-            </h1>
-
-            <p className="text-gray-mid text-lg leading-relaxed mb-4 max-w-sm">
-              Teens want to be on a path toward a well-paying career. Your gift makes that possible for every student who needs it.
-            </p>
-
-            <div className="flex flex-wrap gap-3 mb-8">
-              {[
-                { label: "3,500+", sub: "teens reached" },
-                { label: "87%", sub: "Title I schools" },
-                { label: "Free", sub: "for every student" },
-              ].map((s) => (
-                <div key={s.sub} className="bg-cream/5 border border-cream/10 rounded-card px-4 py-3">
-                  <div className="font-display font-black text-xl text-orange tracking-tight">{s.label}</div>
-                  <div className="text-gray-mid text-xs">{s.sub}</div>
-                </div>
-              ))}
-            </div>
-
-            <a
-              href="/donate"
-              data-givebutter-widget="LWq3rp"
-              className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors shadow-lg shadow-orange/30 min-h-[52px] inline-flex items-center"
-            >
-              Donate Now
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* GIVE TODAY — popup CTA */}
+      {/* HERO — two column: copy left, widget right */}
       <section
-        className="section-pad bg-orange-light relative overflow-hidden"
+        className="relative pt-32 pb-16 lg:pt-44 lg:pb-24 bg-ink overflow-hidden"
         style={{
-          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.12) 1px, transparent 1px)",
-          backgroundSize: "18px 18px",
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
         }}
       >
-        <div className="container-site relative z-10 text-center">
-          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">
-            Give Today
-          </p>
-          <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink mb-3">
-            Every dollar goes to work immediately.
-          </h2>
-          <p className="text-gray-warm text-lg max-w-xl mx-auto mb-8">
-            Ambition Angels is a US 501(c)(3). Your gift is tax-deductible. EIN 87-2513010.
-          </p>
-          <a
-            href="/donate"
-            data-givebutter-widget="LWq3rp"
-            className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-10 py-4 rounded-full transition-colors shadow-lg shadow-orange/30 min-h-[52px] inline-flex items-center"
-          >
-            Donate Now
-          </a>
+        {/* Doodle accent */}
+        <Image
+          src="/images/doodles/Doodle 60@3x.png"
+          alt=""
+          width={140}
+          height={120}
+          className="absolute top-10 right-10 opacity-10 rotate-12 pointer-events-none hidden lg:block"
+          aria-hidden="true"
+        />
+
+        <div className="container-site relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+
+            {/* LEFT — copy */}
+            <div>
+              <div className="inline-block text-xs font-medium text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
+                Become an Ambition Angel
+              </div>
+
+              <h1 className="font-display font-black text-5xl lg:text-6xl text-cream mb-7 leading-none tracking-tight uppercase">
+                A small bet.<br />
+                A <span className="text-orange">massive</span><br />
+                return.
+              </h1>
+
+              <blockquote className="border-l-4 border-orange pl-5 mb-8">
+                <p className="text-gray-mid text-base lg:text-lg leading-relaxed italic mb-2">
+                  &ldquo;Every individual has massive potential. When teens are set on a pathway to an economically empowered future, we all benefit.&rdquo;
+                </p>
+                <cite className="not-italic text-gray-mid/60 text-sm">
+                  — Remi Sobomehin, Founder and CEO
+                </cite>
+              </blockquote>
+
+              <div className="flex flex-wrap gap-3">
+                {heroStats.map((s) => (
+                  <div key={s.sub} className="bg-cream/5 border border-cream/10 rounded-card px-4 py-3">
+                    <div className="font-display font-black text-xl text-orange tracking-tight">{s.label}</div>
+                    <div className="text-gray-mid text-xs">{s.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* RIGHT — GiveButter widget embedded */}
+            <div className="bg-cream rounded-card-lg overflow-hidden shadow-2xl">
+              <GiveButterEmbed />
+            </div>
+
+          </div>
         </div>
       </section>
 
-      {/* THE STORY — full bleed, emotional */}
+      {/* THE STORY */}
       <section className="section-pad">
         <div className="container-site">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -181,7 +142,7 @@ export default function DonatePage() {
         </div>
       </section>
 
-      {/* IMPACT — 3 bold cards with texture */}
+      {/* YOUR GIFT DOES THREE THINGS */}
       <section
         className="section-pad bg-ink relative overflow-hidden"
         style={{
@@ -239,88 +200,6 @@ export default function DonatePage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* STATS */}
-      <section
-        className="bg-orange py-14 lg:py-20 relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { number: "3,500+", label: "Teens reached" },
-              { number: "87%", label: "From Title I schools" },
-              { number: "14%", label: "Increase in action orientation" },
-              { number: "4,500+", label: "Modules completed" },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="font-display font-black text-5xl lg:text-6xl text-white mb-1 tracking-tight">
-                  {stat.number}
-                </div>
-                <div className="text-white/80 text-sm">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TEEN HERO IMAGE — full bleed emotional moment */}
-      <section className="relative h-72 lg:h-96 overflow-hidden">
-        <Image
-          src="/images/hero-image.jpg"
-          alt="Teen on phone, discovering their future through the Ambition app"
-          fill
-          className="object-cover object-center"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-ink/70 via-ink/30 to-transparent" />
-        <div className="absolute inset-0 flex items-center">
-          <div className="container-site">
-            <p className="text-white/70 text-sm uppercase tracking-widest mb-2 font-medium">Their future is now</p>
-            <h2 className="font-display font-black text-4xl lg:text-6xl text-white leading-none uppercase max-w-lg">
-              This is who you are investing in.
-            </h2>
-          </div>
-        </div>
-      </section>
-
-      {/* SECOND DONATE CTA */}
-      <section
-        className="section-pad bg-ink relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <Image
-          src="/images/doodles/Doodle 70@3x.png"
-          alt=""
-          width={180}
-          height={130}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none"
-          aria-hidden="true"
-        />
-        <div className="container-site text-center relative z-10">
-          <p className="text-white/70 text-sm uppercase tracking-widest mb-4 font-medium">
-            Ready to give?
-          </p>
-          <h2 className="font-heading font-bold text-3xl lg:text-4xl text-cream mb-4 max-w-2xl mx-auto leading-tight">
-            Your support unlocks their future.
-          </h2>
-          <p className="text-gray-mid text-lg mb-10 max-w-prose mx-auto leading-relaxed">
-            Ambition Angels is a 501(c)(3) nonprofit. Every gift is tax-deductible. And every dollar goes toward putting career exposure in the pocket of a teen who needs it.
-          </p>
-          <a
-            href="/donate"
-            data-givebutter-widget="LWq3rp"
-            className="bg-orange hover:bg-orange-dark text-white font-semibold px-10 py-4 rounded-full transition-colors shadow-lg shadow-orange/30 text-base min-h-[52px] inline-flex items-center"
-          >
-            Donate Now
-          </a>
         </div>
       </section>
 

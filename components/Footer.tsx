@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import DonateButton from "@/components/DonateButton";
 
 const footerLinks = [
   { href: "/", label: "Home" },
@@ -25,13 +26,9 @@ export default function Footer() {
           <p className="text-white/80 text-lg mb-8 max-w-prose mx-auto">
             Become an Ambition Angel today.
           </p>
-          <a
-            href="/donate"
-            data-givebutter-widget="LWq3rp"
-            className="inline-flex items-center bg-white text-orange font-semibold text-base px-8 py-4 rounded-full hover:bg-orange-light transition-colors min-h-[52px]"
-          >
+          <DonateButton className="inline-flex items-center bg-white text-orange font-semibold text-base px-8 py-4 rounded-full hover:bg-orange-light transition-colors min-h-[52px]">
             Donate Now
-          </a>
+          </DonateButton>
         </div>
       </div>
 

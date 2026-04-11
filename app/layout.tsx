@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Big_Shoulders_Display, Poppins, DM_Sans } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
-import GiveButterWidget from "@/components/GiveButterWidget";
+import DonateModalProvider from "@/components/DonateModalProvider";
 
 const bigShoulders = Big_Shoulders_Display({
   subsets: ["latin"],
@@ -48,15 +47,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${bigShoulders.variable} ${poppins.variable} ${dmSans.variable}`}>
       <body className="antialiased">
-        <Nav />
-        <main>{children}</main>
-        <Footer />
-        {/* GiveButter: element must exist before script runs */}
-        <GiveButterWidget />
-        <Script
-          src="https://widgets.givebutter.com/latest.umd.cjs?acct=67420"
-          strategy="afterInteractive"
-        />
+        <DonateModalProvider>
+          <Nav />
+          <main>{children}</main>
+          <Footer />
+        </DonateModalProvider>
       </body>
     </html>
   );

@@ -17,32 +17,34 @@ const stats = [
 
 const gapFacts = [
   {
-    num: "40/47",
-    title: "Early exposure predicts adult outcomes.",
-    body: "Longitudinal studies found teens with career exposure earned 5–10% more in adulthood — after controlling for grades and background.",
+    num: "By 16",
+    title: "Career uncertainty by 16 predicts disconnection.",
+    body: "Teens who cannot picture a career by age 16 are statistically more likely to be unemployed or disconnected from education and work by their mid-20s.",
+    source: "OECD Career Readiness Research · 2021",
   },
   {
     num: "11%",
-    title: "Career programs raise lifetime earnings.",
-    body: "Higher yearly earnings for teens in career-integrated programs, measured 8 years after graduation.",
+    title: "Traditional programs never reach them.",
+    body: "Only 11% of teens attend after-school programming. The systems built to help them have never been able to reach them at scale.",
+    source: "After School Matters · National Survey Data",
   },
 ];
 
 const howWeRespond = [
   {
     num: "01",
-    title: "Career Exposure",
-    body: "30-day simulated internships in real careers. 15 minutes a day. On the phone they already have.",
+    title: "The Phone",
+    body: "95% of teens own a smartphone and spend 8 hours a day on it. We stopped fighting that and started building for it. The Ambition App lives where teens already live.",
   },
   {
     num: "02",
-    title: "Future Orientation",
-    body: "Teens connect with possible futures and begin to see themselves as people with choices.",
+    title: "Real Career Exposure",
+    body: "30-day simulated internships in real careers. 15 minutes a day. Students pick their path, build real skills, and see what a career actually feels like before they have to choose one.",
   },
   {
     num: "03",
-    title: "Action Orientation",
-    body: "The shift from imagining a future to taking steps toward it. Our highest-gain metric.",
+    title: "A Trusted Adult in the Room",
+    body: "The teens who shift their career thinking are almost always connected to an adult who knows they are doing it. We equip parents, counselors, and mentors to be that person — even if no one ever did it for them.",
   },
 ];
 
@@ -78,16 +80,16 @@ const research = [
     source: "OECD Career Readiness Review · 2021",
   },
   {
-    stat: "By 16",
+    stat: "5–10%",
     finding:
-      "Teens who cannot picture a career by age 16 are statistically more likely to be unemployed or disconnected from education and work by their mid-20s.",
-    source: "OECD Career Readiness Research · 2021",
+      "Wage boost in adulthood tied specifically to early career exposure. Even career conversations, job shadowing, and simulated experience showed measurable long-term impact on earnings.",
+    source: "OECD, From Classroom to Career · 2025",
   },
   {
-    stat: "11%",
+    stat: "By 15",
     finding:
-      "Only 11% of teens attend after-school programming. 95% own a smartphone and spend 8 hours a day on it. We stopped fighting where teens are and started meeting them there.",
-    source: "After School Matters · Smartphone ownership data",
+      "Career conversations with a trusted adult by age 15 are one of the strongest independent predictors of adult employment outcomes. We are making it possible for any parent or mentor to have that conversation well.",
+    source: "OECD Career Readiness Research · 2021",
   },
 ];
 
@@ -190,7 +192,10 @@ export default function ImpactPage() {
                   </div>
                   <div className="pt-0.5">
                     <p className="font-heading font-semibold text-ink text-sm mb-1">{f.title}</p>
-                    <p className="text-gray-warm text-sm leading-relaxed">{f.body}</p>
+                    <p className="text-gray-warm text-sm leading-relaxed mb-2">{f.body}</p>
+                    {"source" in f && f.source && (
+                      <p className="text-xs font-semibold text-gray-mid/60 uppercase tracking-widest">{f.source}</p>
+                    )}
                   </div>
                 </div>
               ))}

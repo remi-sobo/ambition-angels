@@ -164,10 +164,6 @@ export default function Home() {
           backgroundSize: "22px 22px",
         }}
       >
-        {/* Doodle 70 -- dashed oval -- behind the center stat */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-          <Image src="/images/doodles/Doodle 70@3x.png" alt="" width={200} height={140} className="opacity-20" aria-hidden="true" />
-        </div>
         <div className="container-site relative z-10">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="fade-up stagger-1 text-center">
@@ -178,9 +174,15 @@ export default function Home() {
               <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">87%</div>
               <div className="text-gray-mid text-sm">From Title I schools</div>
             </div>
-            <div className="fade-up stagger-3 text-center">
-              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">14%</div>
-              <div className="text-gray-mid text-sm">Increase in action orientation</div>
+            {/* 14% stat — dashed oval centered exactly on this cell */}
+            <div className="fade-up stagger-3 text-center relative">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
+                <Image src="/images/doodles/Doodle 70@3x.png" alt="" width={200} height={140} className="opacity-20" />
+              </div>
+              <div className="relative z-10">
+                <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">14%</div>
+                <div className="text-gray-mid text-sm">Increase in action orientation</div>
+              </div>
             </div>
             <div className="fade-up stagger-4 text-center">
               <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">4,500+</div>
@@ -190,10 +192,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="py-16 lg:py-20 bg-cream border-b border-gray-light/60">
-        <div className="container-site">
-          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-10 text-center fade-up">
+      {/* TESTIMONIALS — dark treatment */}
+      <section
+        className="py-16 lg:py-20 bg-ink relative overflow-hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
+        <div className="container-site relative z-10">
+          <p className="text-xs font-semibold text-orange uppercase tracking-widest mb-10 text-center fade-up">
             From the students
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -222,22 +230,21 @@ export default function Home() {
             ].map((t, i) => (
               <div
                 key={t.name}
-                className={`bg-white border border-gray-light rounded-card-lg p-7 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 fade-up stagger-${i + 1} flex flex-col`}
+                className={`bg-[#1a1a1a] border border-white/10 rounded-card-lg p-7 hover:border-white/20 hover:-translate-y-0.5 transition-all duration-200 fade-up stagger-${i + 1} flex flex-col`}
               >
-                {/* Large quote mark */}
-                <div className="font-display font-black text-6xl text-orange/20 leading-none mb-3 -mt-1" aria-hidden="true">
+                <div className="font-display font-black text-6xl text-orange leading-none mb-3 -mt-1" aria-hidden="true">
                   &ldquo;
                 </div>
-                <p className="text-charcoal text-sm leading-relaxed flex-1 mb-6">
+                <p className="text-white/75 text-sm leading-relaxed flex-1 mb-6">
                   {t.quote}
                 </p>
-                <div className="flex items-center gap-3 pt-4 border-t border-gray-light">
-                  <div className="w-10 h-10 rounded-full bg-orange-light border border-orange/20 flex items-center justify-center flex-shrink-0">
+                <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                  <div className="w-10 h-10 rounded-full bg-orange/10 border border-orange/30 flex items-center justify-center flex-shrink-0">
                     <span className="font-heading font-bold text-orange text-xs">{t.initials}</span>
                   </div>
                   <div>
-                    <div className="font-heading font-semibold text-ink text-sm">{t.name}</div>
-                    <div className="text-gray-warm text-xs">{t.grade} &middot; {t.location}</div>
+                    <div className="font-heading font-semibold text-white text-sm">{t.name}</div>
+                    <div className="text-[#999] text-xs">{t.grade} &middot; {t.location}</div>
                   </div>
                 </div>
               </div>

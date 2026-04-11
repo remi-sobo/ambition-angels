@@ -15,7 +15,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-03-25.dahlia",
 });
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
 const getSupabase = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       case "invoice.payment_failed": {
         const invoice = event.data.object as InvoiceWebhook;
         const amt = ((invoice.amount_due ?? 0) / 100).toFixed(2);
-        await resend.emails.send({
+        await getResend().emails.send({
           from: "Ambition Angels <careers@mail.ambitionangels.org>",
           to: "remi@ambitionangels.org",
           subject: "⚠️ Monthly donation payment failed",

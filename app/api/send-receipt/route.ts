@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
 function buildReceiptHTML(firstName: string, amount: number, recurring: boolean): string {
   const formattedAmount = `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
   const firstName = (name || "").split(" ")[0] || "Friend";
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: "Ambition Angels <careers@mail.ambitionangels.org>",
       to: email,
       subject: `Your donation receipt — Ambition Angels`,

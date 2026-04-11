@@ -7,7 +7,7 @@ const getSupabase = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
 function buildEmailHTML(
   teenname: string,
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
   const email = answers.email;
   if (email && email.includes("@")) {
     try {
-      await resend.emails.send({
+      await getResend().emails.send({
         from: "Ambition Angels <remi@ambitionangels.org>",
         to: email,
         subject: `${answers.teenname ? `${answers.teenname}'s` : "Your"} top 10 career matches`,

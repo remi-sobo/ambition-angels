@@ -245,13 +245,19 @@ export default function AdminPage() {
         fetch("/api/admin/donations"),
       ]);
       if (statsRes.status === 401) { setAuthed(false); return; }
-      if (!statsRes.ok) throw new Error("Failed to load data");
+      if (!statsRes.ok) {
+        const body = await statsRes.json().catch(() => ({}));
+        throw new Error(body?.error ?? `Stats API returned ${statsRes.status}`);
+      }
       const data = await statsRes.json();
       setSubmissions(data.submissions ?? []);
       setStats(data.stats);
       if (donationsRes.ok) {
         const dData = await donationsRes.json();
         setDonationStats(dData);
+      } else {
+        const dBody = await donationsRes.json().catch(() => ({}));
+        console.error("Donations API error:", dBody?.error ?? donationsRes.status);
       }
       setLastUpdated(new Date());
     } catch (e) {

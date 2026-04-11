@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useDonateModal } from "@/components/DonateModalProvider";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -18,7 +17,6 @@ export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { openModal } = useDonateModal();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -78,12 +76,12 @@ export default function Nav() {
 
             {/* Desktop CTA */}
             <div className="hidden lg:flex items-center gap-3">
-              <button
-                onClick={openModal}
+              <Link
+                href="/donate"
                 className="bg-orange text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-orange-dark transition-colors min-h-[44px] inline-flex items-center"
               >
-                Donate
-              </button>
+                Support
+              </Link>
             </div>
 
             {/* Mobile hamburger */}
@@ -121,12 +119,13 @@ export default function Nav() {
                   {link.label}
                 </Link>
               ))}
-              <button
-                onClick={() => { setMenuOpen(false); openModal(); }}
+              <Link
+                href="/donate"
+                onClick={() => setMenuOpen(false)}
                 className="mt-4 bg-orange text-white text-base font-semibold px-6 py-3.5 rounded-full text-center hover:bg-orange-dark transition-colors"
               >
-                Donate
-              </button>
+                Support
+              </Link>
             </nav>
           </div>
         </div>

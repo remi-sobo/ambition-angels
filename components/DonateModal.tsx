@@ -9,8 +9,7 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 
-const STRIPE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = STRIPE_KEY ? loadStripe(STRIPE_KEY) : null;
+import type { Stripe } from "@stripe/stripe-js";
 
 const CARD_STYLE = {
   style: {
@@ -406,6 +405,16 @@ interface Props {
 }
 
 export default function DonateModal({ onClose }: Props) {
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [stripeKeyMissing, setStripeKeyMissing] = useState(false);
+
+  // Initialize Stripe client-side only, after hydration
+  useEffect(() => {
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    if (!key) { setStripeKeyMissing(true); return; }
+    setStripePromise(loadStripe(key));
+  }, []);
+
   // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -449,9 +458,9 @@ export default function DonateModal({ onClose }: Props) {
         </div>
 
         <div className="p-7 pt-6">
-          {!STRIPE_KEY ? (
+          {stripeKeyMissing ? (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-600 text-sm">
-              Stripe is not configured. Add <code className="font-mono text-xs">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to your environment variables.
+              Stripe is not configured. Add <code className="font-mono text-xs">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to your environment variables and redeploy.
             </div>
           ) : (
             <Elements stripe={stripePromise}>

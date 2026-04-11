@@ -80,7 +80,7 @@ export default function Nav() {
                 href="/donate"
                 className="bg-orange text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-orange-dark transition-colors min-h-[44px] inline-flex items-center"
               >
-                Support
+                Donate
               </Link>
             </div>
 
@@ -124,7 +124,7 @@ export default function Nav() {
                 onClick={() => setMenuOpen(false)}
                 className="mt-4 bg-orange text-white text-base font-semibold px-6 py-3.5 rounded-full text-center hover:bg-orange-dark transition-colors"
               >
-                Support
+                Donate
               </Link>
             </nav>
           </div>

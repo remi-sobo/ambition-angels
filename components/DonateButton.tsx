@@ -1,6 +1,6 @@
 "use client";
 
-import { openDonateWidget } from "@/components/GiveButterWidget";
+import { useDonateModal } from "@/components/DonateModalProvider";
 
 interface Props {
   className?: string;
@@ -8,8 +8,9 @@ interface Props {
 }
 
 export default function DonateButton({ className, children }: Props) {
+  const { openModal } = useDonateModal();
   return (
-    <button onClick={openDonateWidget} className={className}>
+    <button onClick={openModal} className={className}>
       {children ?? "Donate Now"}
     </button>
   );

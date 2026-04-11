@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import CareerQuizModal from "@/components/CareerQuizModal";
 import IPhoneMockup from "@/components/IPhoneMockup";
-import { openDonateWidget } from "@/components/GiveButterWidget";
+import { useDonateModal } from "@/components/DonateModalProvider";
 
 const pillars = [
   {
@@ -45,6 +45,7 @@ const team = [
 
 export default function Home() {
   const [quizOpen, setQuizOpen] = useState(false);
+  const { openModal: openDonateModal } = useDonateModal();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -122,7 +123,7 @@ export default function Home() {
                 Take the Career Quiz
               </button>
               <button
-                onClick={openDonateWidget}
+                onClick={openDonateModal}
                 className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 border border-cream/20 min-h-[52px] inline-flex items-center"
               >
                 Support the Mission
@@ -505,7 +506,7 @@ export default function Home() {
           </p>
           <div className="flex flex-wrap gap-4 justify-center fade-up stagger-3">
             <button
-              onClick={openDonateWidget}
+              onClick={openDonateModal}
               className="bg-white text-orange hover:bg-orange-light font-semibold px-8 py-4 rounded-full transition-colors duration-200 text-base min-h-[52px] inline-flex items-center"
             >
               Donate Now

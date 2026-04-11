@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { openDonateWidget } from "@/components/GiveButterWidget";
+import { useDonateModal } from "@/components/DonateModalProvider";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -18,6 +18,7 @@ export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { openModal } = useDonateModal();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -78,35 +79,23 @@ export default function Nav() {
             {/* Desktop CTA */}
             <div className="hidden lg:flex items-center gap-3">
               <button
-                onClick={openDonateWidget}
+                onClick={openModal}
                 className="bg-orange text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-orange-dark transition-colors min-h-[44px] inline-flex items-center"
               >
                 Donate
               </button>
             </div>
 
-            {/* Mobile hamburger — 44x44 touch target */}
+            {/* Mobile hamburger */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="lg:hidden flex flex-col items-center justify-center gap-1.5 p-3 -mr-3 min-h-[44px] min-w-[44px]"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
             >
-              <span
-                className={`block w-6 h-0.5 transition-all duration-200 ${
-                  scrolled || menuOpen ? "bg-ink" : "bg-cream"
-                } ${menuOpen ? "rotate-45 translate-y-2" : ""}`}
-              />
-              <span
-                className={`block w-6 h-0.5 transition-all duration-200 ${
-                  scrolled || menuOpen ? "bg-ink" : "bg-cream"
-                } ${menuOpen ? "opacity-0" : ""}`}
-              />
-              <span
-                className={`block w-6 h-0.5 transition-all duration-200 ${
-                  scrolled || menuOpen ? "bg-ink" : "bg-cream"
-                } ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`}
-              />
+              <span className={`block w-6 h-0.5 transition-all duration-200 ${scrolled || menuOpen ? "bg-ink" : "bg-cream"} ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
+              <span className={`block w-6 h-0.5 transition-all duration-200 ${scrolled || menuOpen ? "bg-ink" : "bg-cream"} ${menuOpen ? "opacity-0" : ""}`} />
+              <span className={`block w-6 h-0.5 transition-all duration-200 ${scrolled || menuOpen ? "bg-ink" : "bg-cream"} ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
             </button>
           </div>
         </div>
@@ -133,8 +122,8 @@ export default function Nav() {
                 </Link>
               ))}
               <button
-                onClick={openDonateWidget}
-                className="mt-4 bg-orange text-white text-base font-semibold px-6 py-3.5 rounded-full text-center hover:bg-orange-dark transition-colors w-full"
+                onClick={() => { setMenuOpen(false); openModal(); }}
+                className="mt-4 bg-orange text-white text-base font-semibold px-6 py-3.5 rounded-full text-center hover:bg-orange-dark transition-colors"
               >
                 Donate
               </button>

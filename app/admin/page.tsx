@@ -44,6 +44,23 @@ type Stats = {
   mostCommonWorkStyle: string;
 };
 
+type Donation = {
+  id: string;
+  created_at: string;
+  name: string | null;
+  email: string | null;
+  amount: number;
+  recurring: boolean;
+  stripe_payment_id: string;
+};
+
+type DonationStats = {
+  totalRaised: number;
+  thisMonthRaised: number;
+  donorCount: number;
+  donations: Donation[];
+};
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function timeAgo(dateStr: string): string {
@@ -134,6 +151,7 @@ export default function AdminPage() {
   // Data
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [donationStats, setDonationStats] = useState<DonationStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -156,12 +174,19 @@ export default function AdminPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/stats");
-      if (res.status === 401) { setAuthed(false); return; }
-      if (!res.ok) throw new Error("Failed to load data");
-      const data = await res.json();
+      const [statsRes, donationsRes] = await Promise.all([
+        fetch("/api/admin/stats"),
+        fetch("/api/admin/donations"),
+      ]);
+      if (statsRes.status === 401) { setAuthed(false); return; }
+      if (!statsRes.ok) throw new Error("Failed to load data");
+      const data = await statsRes.json();
       setSubmissions(data.submissions ?? []);
       setStats(data.stats);
+      if (donationsRes.ok) {
+        const dData = await donationsRes.json();
+        setDonationStats(dData);
+      }
       setLastUpdated(new Date());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -179,6 +204,10 @@ export default function AdminPage() {
         setStats(data.stats);
         setLastUpdated(new Date());
         setAuthed(true);
+        // Also fetch donations
+        fetch("/api/admin/donations").then(async (dRes) => {
+          if (dRes.ok) setDonationStats(await dRes.json());
+        });
       }
     });
   }, []);
@@ -636,6 +665,84 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* ── ROW 3B: DONATIONS ── */}
+        <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+          <div className="px-6 py-5 border-b border-white/10">
+            <h2 className="font-heading font-bold text-cream text-lg">Donations</h2>
+            <p className="text-gray-mid text-xs mt-0.5">Powered by Stripe</p>
+          </div>
+
+          {/* Donation stat cards */}
+          <div className="grid grid-cols-3 divide-x divide-white/10 border-b border-white/10">
+            {loading || !donationStats ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="p-5">
+                  <Skeleton className="h-8 w-24 mb-2" />
+                  <Skeleton className="h-3 w-28" />
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="p-5">
+                  <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-1">
+                    ${donationStats.totalRaised.toLocaleString("en-US", { minimumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-gray-mid text-xs">Total raised all time</div>
+                </div>
+                <div className="p-5">
+                  <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-1">
+                    ${donationStats.thisMonthRaised.toLocaleString("en-US", { minimumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-gray-mid text-xs">Raised this month</div>
+                </div>
+                <div className="p-5">
+                  <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-1">
+                    {donationStats.donorCount}
+                  </div>
+                  <div className="text-gray-mid text-xs">Unique donors</div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Recent donations */}
+          <div className="p-6">
+            <div className="text-xs font-bold text-white/30 uppercase tracking-widest mb-4">Recent Donations</div>
+            {loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+              </div>
+            ) : !donationStats || donationStats.donations.length === 0 ? (
+              <p className="text-gray-mid text-sm">No donations recorded yet.</p>
+            ) : (
+              <div className="space-y-1">
+                {donationStats.donations.map((d) => (
+                  <div key={d.id} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors">
+                    <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-orange font-bold text-xs">
+                        {d.name ? d.name[0].toUpperCase() : "$"}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-cream text-sm">{d.name || "Anonymous"}</span>
+                        {d.recurring && (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
+                        )}
+                      </div>
+                      {d.email && <div className="text-xs text-gray-mid">{d.email}</div>}
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-bold text-cream">${d.amount.toLocaleString()}</div>
+                      <div className="text-xs text-white/30">{timeAgo(d.created_at)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
 
         {/* ── ROW 4: RECENT ACTIVITY FEED ── */}

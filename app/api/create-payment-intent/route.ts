@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-03-31.basil",
+  apiVersion: "2026-03-25.dahlia",
 });
 
 export async function POST(req: NextRequest) {
@@ -82,15 +82,16 @@ export async function POST(req: NextRequest) {
           payment_method_types: ["card"],
           save_default_payment_method: "on_subscription",
         },
-        expand: ["latest_invoice.payment_intent"],
+        expand: ["latest_invoice"],
         metadata: { name: name || "", email: email || "", type: "recurring" },
       });
 
       const invoice = subscription.latest_invoice as Stripe.Invoice;
-      const paymentIntent = invoice?.payment_intent as Stripe.PaymentIntent;
+      // In the 2026-03-25 API, client_secret lives on confirmation_secret
+      const clientSecret = invoice?.confirmation_secret?.client_secret ?? null;
 
       return NextResponse.json({
-        clientSecret: paymentIntent?.client_secret ?? null,
+        clientSecret,
         subscriptionId: subscription.id,
       });
     }

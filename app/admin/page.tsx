@@ -47,18 +47,38 @@ type Stats = {
 type Donation = {
   id: string;
   created_at: string;
-  name: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  name?: string | null;
   email: string | null;
   amount: number;
   recurring: boolean;
   stripe_payment_id: string;
+  subscription_id?: string | null;
+  status?: string | null;
+};
+
+type DonorProfile = {
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  totalGiven: number;
+  donationCount: number;
+  firstDonation: string;
+  lastDonation: string;
+  recurring: boolean;
+  lastAmount: number;
 };
 
 type DonationStats = {
   totalRaised: number;
   thisMonthRaised: number;
   donorCount: number;
+  donorsThisMonth: number;
+  recurringDonors: number;
+  avgGift: number;
   donations: Donation[];
+  donorProfiles: DonorProfile[];
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -87,7 +107,25 @@ function fmtLastUpdated(date: Date): string {
   return `${m} mins ago`;
 }
 
-function exportCSV(rows: Submission[]) {
+function fmtMoney(n: number): string {
+  return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function donorDisplayName(d: Donation | DonorProfile): string {
+  if ("firstName" in d) {
+    return [d.firstName, d.lastName].filter(Boolean).join(" ") || d.email || "Anonymous";
+  }
+  return (d as Donation).first_name
+    ? [(d as Donation).first_name, (d as Donation).last_name].filter(Boolean).join(" ")!
+    : (d as Donation).name || "Anonymous";
+}
+
+function donorInitial(d: Donation | DonorProfile): string {
+  const n = donorDisplayName(d);
+  return n[0]?.toUpperCase() ?? "$";
+}
+
+function exportSubmissionsCSV(rows: Submission[]) {
   const headers = [
     "Date", "Name", "Email", "Audience", "Age", "Location",
     "Subjects", "Work Style", "Good At", "People Come To Them For",
@@ -130,6 +168,29 @@ function exportCSV(rows: Submission[]) {
   URL.revokeObjectURL(url);
 }
 
+function exportDonationsCSV(rows: Donation[]) {
+  const headers = ["Date", "Name", "Email", "Amount", "Type", "Status", "Stripe ID"];
+  const data = rows.map((d) => [
+    fmtDate(d.created_at),
+    donorDisplayName(d),
+    d.email || "",
+    d.amount,
+    d.recurring ? "Monthly" : "One-time",
+    d.status || "succeeded",
+    d.stripe_payment_id,
+  ]);
+  const csv = [headers, ...data]
+    .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `donations-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 const PAGE_SIZE = 25;
 
 // ── Skeleton ───────────────────────────────────────────────────────────────
@@ -156,11 +217,16 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Table state
+  // Quiz table state
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<"week" | "month" | "all">("all");
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Donations table state
+  const [donationSearch, setDonationSearch] = useState("");
+  const [donationPage, setDonationPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<"feed" | "table" | "profiles">("feed");
 
   // Force re-render for "X mins ago"
   const [, tick] = useState(0);
@@ -204,7 +270,6 @@ export default function AdminPage() {
         setStats(data.stats);
         setLastUpdated(new Date());
         setAuthed(true);
-        // Also fetch donations
         fetch("/api/admin/donations").then(async (dRes) => {
           if (dRes.ok) setDonationStats(await dRes.json());
         });
@@ -240,8 +305,6 @@ export default function AdminPage() {
   const filtered = useMemo(() => {
     const now = new Date();
     let rows = submissions;
-
-    // Date filter
     if (dateFilter === "week") {
       const cutoff = new Date(now.getTime() - 7 * 86400000).toISOString();
       rows = rows.filter((s) => s.created_at >= cutoff);
@@ -249,8 +312,6 @@ export default function AdminPage() {
       const cutoff = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       rows = rows.filter((s) => s.created_at >= cutoff);
     }
-
-    // Search
     if (search.trim()) {
       const q = search.toLowerCase();
       rows = rows.filter(
@@ -261,17 +322,34 @@ export default function AdminPage() {
           s.career_matches?.[0]?.title?.toLowerCase().includes(q)
       );
     }
-
     return rows;
   }, [submissions, search, dateFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  // Reset page when filters change
   useEffect(() => setPage(1), [search, dateFilter]);
 
-  // ── LOGIN SCREEN (preserved exactly) ────────────────────────────────────
+  // ── Filtered donations ───────────────────────────────────────────────────
+
+  const filteredDonations = useMemo(() => {
+    const all = donationStats?.donations ?? [];
+    if (!donationSearch.trim()) return all;
+    const q = donationSearch.toLowerCase();
+    return all.filter(
+      (d) =>
+        donorDisplayName(d).toLowerCase().includes(q) ||
+        d.email?.toLowerCase().includes(q)
+    );
+  }, [donationStats, donationSearch]);
+
+  const donationTotalPages = Math.max(1, Math.ceil(filteredDonations.length / PAGE_SIZE));
+  const paginatedDonations = filteredDonations.slice(
+    (donationPage - 1) * PAGE_SIZE,
+    donationPage * PAGE_SIZE
+  );
+  useEffect(() => setDonationPage(1), [donationSearch]);
+
+  // ── LOGIN SCREEN ─────────────────────────────────────────────────────────
 
   if (!authed) {
     return (
@@ -316,10 +394,9 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-ink">
+
       {/* ── HEADER ── */}
-      <div
-        className="bg-[#13151f] border-b border-white/10 px-6 lg:px-10 py-4 flex items-center justify-between gap-4 sticky top-0 z-50"
-      >
+      <div className="bg-[#13151f] border-b border-white/10 px-6 lg:px-10 py-4 flex items-center justify-between gap-4 sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <span className="font-heading font-bold text-cream text-base">Admin Dashboard</span>
           {lastUpdated && (
@@ -340,7 +417,7 @@ export default function AdminPage() {
             Refresh
           </button>
           <button
-            onClick={() => exportCSV(filtered)}
+            onClick={() => exportSubmissionsCSV(filtered)}
             className="text-xs font-semibold text-white/60 bg-white/5 border border-white/10 px-4 py-2 rounded-full hover:bg-white/10 transition-colors"
           >
             Export CSV
@@ -362,94 +439,143 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ── ROW 1: PULSE CARDS ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* ── ROW 1A: QUIZ PULSE CARDS ── */}
+        <div>
+          <p className="text-xs font-bold text-white/20 uppercase tracking-widest mb-3">Career Quiz</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-          {/* Card 1 — Submissions this month */}
-          <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
-            {loading || !stats ? (
-              <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
-            ) : (
-              <>
-                <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">
-                  {stats.thisMonth}
-                </div>
-                <div className="text-gray-mid text-sm font-medium">Submissions this month</div>
-                <div className="text-white/30 text-xs mt-1">{stats.allTime} all time</div>
-              </>
-            )}
+            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+              {loading || !stats ? (
+                <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
+              ) : (
+                <>
+                  <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">{stats.thisMonth}</div>
+                  <div className="text-gray-mid text-sm font-medium">Submissions this month</div>
+                  <div className="text-white/30 text-xs mt-1">{stats.allTime} all time</div>
+                </>
+              )}
+            </div>
+
+            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+              {loading || !stats ? (
+                <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
+              ) : (
+                <>
+                  <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">{stats.emailRate}%</div>
+                  <div className="text-gray-mid text-sm font-medium">Email capture rate</div>
+                  <div className="text-white/30 text-xs mt-1">{stats.withEmail} of {stats.allTime} left email</div>
+                </>
+              )}
+            </div>
+
+            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+              {loading || !stats ? (
+                <><Skeleton className="h-10 w-28 mb-2" /><Skeleton className="h-3 w-32" /></>
+              ) : (
+                <>
+                  <div className="font-display font-black text-3xl text-orange tracking-tight leading-none mb-2">
+                    {teenPct}%<span className="text-white/30 text-2xl mx-1">·</span>{adultPct}%
+                  </div>
+                  <div className="text-gray-mid text-sm font-medium">Quiz audience split</div>
+                  <div className="text-white/30 text-xs mt-1">teens · adults</div>
+                </>
+              )}
+            </div>
+
+            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+              {loading || !stats ? (
+                <><Skeleton className="h-7 w-full mb-2" /><Skeleton className="h-3 w-32" /></>
+              ) : (
+                <>
+                  <div className="font-heading font-bold text-xl text-cream leading-tight mb-2 min-h-[3rem] flex items-center">{stats.topCareer}</div>
+                  <div className="text-gray-mid text-sm font-medium">Most matched career</div>
+                </>
+              )}
+            </div>
           </div>
+        </div>
 
-          {/* Card 2 — Email capture rate */}
-          <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
-            {loading || !stats ? (
-              <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
-            ) : (
-              <>
-                <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">
-                  {stats.emailRate}%
-                </div>
-                <div className="text-gray-mid text-sm font-medium">Email capture rate</div>
-                <div className="text-white/30 text-xs mt-1">{stats.withEmail} of {stats.allTime} left email</div>
-              </>
-            )}
-          </div>
+        {/* ── ROW 1B: DONATION PULSE CARDS ── */}
+        <div>
+          <p className="text-xs font-bold text-white/20 uppercase tracking-widest mb-3">Donations</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-          {/* Card 3 — Teen vs Adult */}
-          <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
-            {loading || !stats ? (
-              <><Skeleton className="h-10 w-28 mb-2" /><Skeleton className="h-3 w-32" /></>
-            ) : (
-              <>
-                <div className="font-display font-black text-3xl text-orange tracking-tight leading-none mb-2">
-                  {teenPct}%
-                  <span className="text-white/30 text-2xl mx-1">·</span>
-                  {adultPct}%
-                </div>
-                <div className="text-gray-mid text-sm font-medium">Quiz audience split</div>
-                <div className="text-white/30 text-xs mt-1">teens · adults</div>
-              </>
-            )}
-          </div>
+            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+              {loading || !donationStats ? (
+                <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
+              ) : (
+                <>
+                  <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-2">
+                    {fmtMoney(donationStats.totalRaised)}
+                  </div>
+                  <div className="text-gray-mid text-sm font-medium">Total raised</div>
+                  <div className="text-white/30 text-xs mt-1">{fmtMoney(donationStats.thisMonthRaised)} this month</div>
+                </>
+              )}
+            </div>
 
-          {/* Card 4 — Top career match */}
-          <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
-            {loading || !stats ? (
-              <><Skeleton className="h-7 w-full mb-2" /><Skeleton className="h-3 w-32" /></>
-            ) : (
-              <>
-                <div className="font-heading font-bold text-xl text-cream leading-tight mb-2 min-h-[3rem] flex items-center">
-                  {stats.topCareer}
-                </div>
-                <div className="text-gray-mid text-sm font-medium">Most matched career</div>
-              </>
-            )}
+            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+              {loading || !donationStats ? (
+                <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
+              ) : (
+                <>
+                  <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">
+                    {donationStats.donorsThisMonth}
+                  </div>
+                  <div className="text-gray-mid text-sm font-medium">Donors this month</div>
+                  <div className="text-white/30 text-xs mt-1">{donationStats.donorCount} total unique</div>
+                </>
+              )}
+            </div>
+
+            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+              {loading || !donationStats ? (
+                <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
+              ) : (
+                <>
+                  <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">
+                    {donationStats.recurringDonors}
+                  </div>
+                  <div className="text-gray-mid text-sm font-medium">Recurring donors</div>
+                  <div className="text-white/30 text-xs mt-1">Monthly givers</div>
+                </>
+              )}
+            </div>
+
+            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+              {loading || !donationStats ? (
+                <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
+              ) : (
+                <>
+                  <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-2">
+                    {fmtMoney(donationStats.avgGift)}
+                  </div>
+                  <div className="text-gray-mid text-sm font-medium">Average gift size</div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         {/* ── ROW 2: SUBMISSIONS TABLE ── */}
         <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
-          {/* Section header */}
           <div className="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
               <h2 className="font-heading font-bold text-cream text-lg">Career Quiz Submissions</h2>
               <p className="text-gray-mid text-xs mt-0.5">{filtered.length} result{filtered.length !== 1 ? "s" : ""} · {totalPages} page{totalPages !== 1 ? "s" : ""}</p>
             </div>
-            {/* Controls */}
             <div className="flex flex-wrap items-center gap-3">
-              {/* Date filter */}
               <div className="flex rounded-lg overflow-hidden border border-white/10">
                 {(["week", "month", "all"] as const).map((f) => (
                   <button
                     key={f}
                     onClick={() => setDateFilter(f)}
-                    className={`text-xs font-semibold px-3 py-2 transition-colors capitalize ${dateFilter === f ? "bg-orange text-white" : "text-gray-mid hover:text-cream"}`}
+                    className={`text-xs font-semibold px-3 py-2 transition-colors ${dateFilter === f ? "bg-orange text-white" : "text-gray-mid hover:text-cream"}`}
                   >
                     {f === "week" ? "This Week" : f === "month" ? "This Month" : "All Time"}
                   </button>
                 ))}
               </div>
-              {/* Search */}
               <input
                 type="text"
                 value={search}
@@ -460,15 +586,12 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[900px]">
               <thead>
                 <tr className="border-b border-white/10">
                   {["Date", "Name", "Email", "Audience", "Age", "Location", "Top 3 Careers", "💰 Score"].map((h) => (
-                    <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-5 py-3 whitespace-nowrap">
-                      {h}
-                    </th>
+                    <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -477,9 +600,7 @@ export default function AdminPage() {
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="border-b border-white/5">
                       {Array.from({ length: 8 }).map((_, j) => (
-                        <td key={j} className="px-5 py-4">
-                          <Skeleton className="h-4 w-full" />
-                        </td>
+                        <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-full" /></td>
                       ))}
                     </tr>
                   ))
@@ -500,9 +621,7 @@ export default function AdminPage() {
                         <td className="px-5 py-4 text-gray-mid text-xs">{s.email || <span className="text-white/20">—</span>}</td>
                         <td className="px-5 py-4">
                           {s.audience ? (
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-white/10 text-gray-mid"}`}>
-                              {s.audience}
-                            </span>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-white/10 text-gray-mid"}`}>{s.audience}</span>
                           ) : <span className="text-white/20">—</span>}
                         </td>
                         <td className="px-5 py-4 text-gray-mid text-xs">{s.age || "—"}</td>
@@ -510,9 +629,7 @@ export default function AdminPage() {
                         <td className="px-5 py-4">
                           <div className="flex flex-wrap gap-1">
                             {s.career_matches?.slice(0, 3).map((c, i) => (
-                              <span key={i} className="text-xs bg-white/5 border border-white/10 text-gray-mid px-2 py-0.5 rounded-full whitespace-nowrap">
-                                {c.title}
-                              </span>
+                              <span key={i} className="text-xs bg-white/5 border border-white/10 text-gray-mid px-2 py-0.5 rounded-full whitespace-nowrap">{c.title}</span>
                             )) ?? <span className="text-white/20">—</span>}
                           </div>
                         </td>
@@ -523,12 +640,10 @@ export default function AdminPage() {
                         </td>
                       </tr>
 
-                      {/* Expanded row */}
                       {expandedId === s.id && (
                         <tr key={`${s.id}-expanded`} className="bg-[#13151f]">
                           <td colSpan={8} className="px-6 py-6">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                              {/* Quiz answers */}
                               <div>
                                 <div className="text-xs font-bold text-orange uppercase tracking-widest mb-3">Quiz Answers</div>
                                 <div className="space-y-2">
@@ -558,9 +673,8 @@ export default function AdminPage() {
                                   </div>
                                 )}
                               </div>
-                              {/* All 10 career matches */}
                               <div>
-                                <div className="text-xs font-bold text-orange uppercase tracking-widest mb-3">All 10 Career Matches</div>
+                                <div className="text-xs font-bold text-orange uppercase tracking-widest mb-3">All Career Matches</div>
                                 <div className="space-y-2">
                                   {s.career_matches?.map((c, i) => (
                                     <div key={i} className="bg-white/5 rounded-lg px-3 py-2">
@@ -587,27 +701,12 @@ export default function AdminPage() {
             </table>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
-              <span className="text-xs text-gray-mid">
-                Page {page} of {totalPages} · {filtered.length} rows
-              </span>
+              <span className="text-xs text-gray-mid">Page {page} of {totalPages} · {filtered.length} rows</span>
               <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="text-xs font-semibold text-gray-mid bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors"
-                >
-                  ← Prev
-                </button>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="text-xs font-semibold text-gray-mid bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors"
-                >
-                  Next →
-                </button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="text-xs font-semibold text-gray-mid bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors">← Prev</button>
+                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="text-xs font-semibold text-gray-mid bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors">Next →</button>
               </div>
             </div>
           )}
@@ -616,7 +715,6 @@ export default function AdminPage() {
         {/* ── ROW 3: CAREER ANALYTICS ── */}
         <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
           <h2 className="font-heading font-bold text-cream text-lg mb-6">Career Match Breakdown</h2>
-
           {loading || !stats ? (
             <div className="space-y-3">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -637,10 +735,7 @@ export default function AdminPage() {
                   <div key={title} className="flex items-center gap-3">
                     <div className="w-44 text-xs text-gray-mid text-right flex-shrink-0 truncate">{title}</div>
                     <div className="flex-1 h-5 bg-white/5 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%`, backgroundColor: "#E8500A" }}
-                      />
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: "#E8500A" }} />
                     </div>
                     <div className="w-7 text-xs text-gray-mid flex-shrink-0 text-right">{count}</div>
                   </div>
@@ -648,8 +743,6 @@ export default function AdminPage() {
               })}
             </div>
           )}
-
-          {/* Sub-stats row */}
           {stats && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-6 border-t border-white/10">
               {[
@@ -667,88 +760,206 @@ export default function AdminPage() {
           )}
         </section>
 
-        {/* ── ROW 3B: DONATIONS ── */}
+        {/* ── ROW 4: DONATIONS FULL SECTION ── */}
         <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
-          <div className="px-6 py-5 border-b border-white/10">
-            <h2 className="font-heading font-bold text-cream text-lg">Donations</h2>
-            <p className="text-gray-mid text-xs mt-0.5">Powered by Stripe</p>
-          </div>
-
-          {/* Donation stat cards */}
-          <div className="grid grid-cols-3 divide-x divide-white/10 border-b border-white/10">
-            {loading || !donationStats ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="p-5">
-                  <Skeleton className="h-8 w-24 mb-2" />
-                  <Skeleton className="h-3 w-28" />
-                </div>
-              ))
-            ) : (
-              <>
-                <div className="p-5">
-                  <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-1">
-                    ${donationStats.totalRaised.toLocaleString("en-US", { minimumFractionDigits: 0 })}
-                  </div>
-                  <div className="text-gray-mid text-xs">Total raised all time</div>
-                </div>
-                <div className="p-5">
-                  <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-1">
-                    ${donationStats.thisMonthRaised.toLocaleString("en-US", { minimumFractionDigits: 0 })}
-                  </div>
-                  <div className="text-gray-mid text-xs">Raised this month</div>
-                </div>
-                <div className="p-5">
-                  <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-1">
-                    {donationStats.donorCount}
-                  </div>
-                  <div className="text-gray-mid text-xs">Unique donors</div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Recent donations */}
-          <div className="p-6">
-            <div className="text-xs font-bold text-white/30 uppercase tracking-widest mb-4">Recent Donations</div>
-            {loading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-              </div>
-            ) : !donationStats || donationStats.donations.length === 0 ? (
-              <p className="text-gray-mid text-sm">No donations recorded yet.</p>
-            ) : (
-              <div className="space-y-1">
-                {donationStats.donations.map((d) => (
-                  <div key={d.id} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors">
-                    <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-orange font-bold text-xs">
-                        {d.name ? d.name[0].toUpperCase() : "$"}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-cream text-sm">{d.name || "Anonymous"}</span>
-                        {d.recurring && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
-                        )}
-                      </div>
-                      {d.email && <div className="text-xs text-gray-mid">{d.email}</div>}
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="font-bold text-cream">${d.amount.toLocaleString()}</div>
-                      <div className="text-xs text-white/30">{timeAgo(d.created_at)}</div>
-                    </div>
-                  </div>
+          {/* Header + tab bar */}
+          <div className="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex-1">
+              <h2 className="font-heading font-bold text-cream text-lg">Donations</h2>
+              <p className="text-gray-mid text-xs mt-0.5">Powered by Stripe</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex rounded-lg overflow-hidden border border-white/10">
+                {(["feed", "table", "profiles"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setActiveTab(t)}
+                    className={`text-xs font-semibold px-3 py-2 transition-colors capitalize ${activeTab === t ? "bg-orange text-white" : "text-gray-mid hover:text-cream"}`}
+                  >
+                    {t === "feed" ? "Recent" : t === "table" ? "All Donations" : "Donor Profiles"}
+                  </button>
                 ))}
               </div>
-            )}
+              {activeTab === "table" && (
+                <button
+                  onClick={() => exportDonationsCSV(filteredDonations)}
+                  className="text-xs font-semibold text-white/60 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  Export CSV
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* ── RECENT FEED ── */}
+          {activeTab === "feed" && (
+            <div className="p-6">
+              {loading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+                </div>
+              ) : !donationStats || donationStats.donations.length === 0 ? (
+                <p className="text-gray-mid text-sm">No donations recorded yet.</p>
+              ) : (
+                <div className="space-y-1">
+                  {donationStats.donations.slice(0, 20).map((d) => (
+                    <div key={d.id} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors">
+                      <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-orange font-bold text-xs">{donorInitial(d)}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-cream text-sm">{donorDisplayName(d)}</span>
+                          {d.recurring && (
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
+                          )}
+                          {d.status && d.status !== "succeeded" && (
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 capitalize">{d.status}</span>
+                          )}
+                        </div>
+                        {d.email && <div className="text-xs text-gray-mid">{d.email}</div>}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="font-bold text-cream">{fmtMoney(d.amount)}</div>
+                        <div className="text-xs text-white/30">{timeAgo(d.created_at)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── ALL DONATIONS TABLE ── */}
+          {activeTab === "table" && (
+            <>
+              <div className="px-6 pt-4 pb-3 border-b border-white/10 flex items-center gap-3">
+                <input
+                  type="text"
+                  value={donationSearch}
+                  onChange={(e) => setDonationSearch(e.target.value)}
+                  placeholder="Search name or email…"
+                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-xs placeholder-gray-mid focus:outline-none focus:border-orange/40 w-56"
+                />
+                <span className="text-xs text-gray-mid">{filteredDonations.length} donation{filteredDonations.length !== 1 ? "s" : ""}</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      {["Date", "Donor", "Email", "Amount", "Type", "Status"].map((h) => (
+                        <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <tr key={i} className="border-b border-white/5">
+                          {Array.from({ length: 6 }).map((_, j) => (
+                            <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-full" /></td>
+                          ))}
+                        </tr>
+                      ))
+                    ) : paginatedDonations.length === 0 ? (
+                      <tr><td colSpan={6} className="text-center py-16 text-gray-mid">No donations found.</td></tr>
+                    ) : (
+                      paginatedDonations.map((d) => (
+                        <tr key={d.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                          <td className="px-5 py-4 text-gray-mid text-xs whitespace-nowrap">{fmtDate(d.created_at)}</td>
+                          <td className="px-5 py-4 font-medium text-cream">{donorDisplayName(d)}</td>
+                          <td className="px-5 py-4 text-gray-mid text-xs">{d.email || "—"}</td>
+                          <td className="px-5 py-4 font-bold text-cream">{fmtMoney(d.amount)}</td>
+                          <td className="px-5 py-4">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${d.recurring ? "bg-orange/20 text-orange" : "bg-white/10 text-gray-mid"}`}>
+                              {d.recurring ? "Monthly" : "One-time"}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
+                              !d.status || d.status === "succeeded" ? "bg-green-500/20 text-green-400" :
+                              d.status === "failed" ? "bg-red-500/20 text-red-400" :
+                              d.status === "cancelled" ? "bg-white/10 text-gray-mid" :
+                              "bg-white/10 text-gray-mid"
+                            }`}>
+                              {d.status || "succeeded"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {donationTotalPages > 1 && (
+                <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
+                  <span className="text-xs text-gray-mid">Page {donationPage} of {donationTotalPages}</span>
+                  <div className="flex gap-2">
+                    <button onClick={() => setDonationPage((p) => Math.max(1, p - 1))} disabled={donationPage === 1} className="text-xs font-semibold text-gray-mid bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors">← Prev</button>
+                    <button onClick={() => setDonationPage((p) => Math.min(donationTotalPages, p + 1))} disabled={donationPage === donationTotalPages} className="text-xs font-semibold text-gray-mid bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors">Next →</button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── DONOR PROFILES ── */}
+          {activeTab === "profiles" && (
+            <div className="p-6">
+              {loading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+                </div>
+              ) : !donationStats || donationStats.donorProfiles.length === 0 ? (
+                <p className="text-gray-mid text-sm">No donor data yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[750px]">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        {["Donor", "Email", "Total Given", "Donations", "First Gift", "Last Gift", "Type"].map((h) => (
+                          <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-4 py-3 whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {donationStats.donorProfiles.map((p, i) => (
+                        <tr key={p.email + i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
+                                <span className="text-orange font-bold text-xs">
+                                  {(p.firstName?.[0] ?? p.email?.[0] ?? "$").toUpperCase()}
+                                </span>
+                              </div>
+                              <span className="font-medium text-cream text-sm whitespace-nowrap">
+                                {[p.firstName, p.lastName].filter(Boolean).join(" ") || "Anonymous"}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-mid text-xs">{p.email !== "Anonymous" ? p.email : "—"}</td>
+                          <td className="px-4 py-3 font-bold text-orange text-sm">{fmtMoney(p.totalGiven)}</td>
+                          <td className="px-4 py-3 text-gray-mid text-sm">{p.donationCount}</td>
+                          <td className="px-4 py-3 text-gray-mid text-xs whitespace-nowrap">{fmtDate(p.firstDonation)}</td>
+                          <td className="px-4 py-3 text-gray-mid text-xs whitespace-nowrap">{fmtDate(p.lastDonation)}</td>
+                          <td className="px-4 py-3">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.recurring ? "bg-orange/20 text-orange" : "bg-white/10 text-gray-mid"}`}>
+                              {p.recurring ? "Monthly" : "One-time"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
-        {/* ── ROW 4: RECENT ACTIVITY FEED ── */}
+        {/* ── ROW 5: RECENT ACTIVITY FEED ── */}
         <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
-          <h2 className="font-heading font-bold text-cream text-lg mb-6">Recent Activity</h2>
-
+          <h2 className="font-heading font-bold text-cream text-lg mb-6">Recent Quiz Activity</h2>
           {loading ? (
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -766,26 +977,14 @@ export default function AdminPage() {
           ) : (
             <div className="space-y-1">
               {recentTen.map((s) => (
-                <div
-                  key={s.id}
-                  className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors"
-                >
-                  {/* Avatar */}
+                <div key={s.id} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors">
                   <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-orange font-bold text-xs">
-                      {s.teen_name ? s.teen_name[0].toUpperCase() : "?"}
-                    </span>
+                    <span className="text-orange font-bold text-xs">{s.teen_name ? s.teen_name[0].toUpperCase() : "?"}</span>
                   </div>
-
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-cream text-sm">
-                        {s.teen_name || "Anonymous"}
-                      </span>
-                      {s.location && (
-                        <span className="text-gray-mid text-xs">· {s.location}</span>
-                      )}
+                      <span className="font-semibold text-cream text-sm">{s.teen_name || "Anonymous"}</span>
+                      {s.location && <span className="text-gray-mid text-xs">· {s.location}</span>}
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-white/10 text-gray-mid"}`}>
                         {s.audience || "unknown"}
                       </span>
@@ -803,8 +1002,6 @@ export default function AdminPage() {
                       </div>
                     )}
                   </div>
-
-                  {/* Time */}
                   <div className="text-xs text-white/30 flex-shrink-0">{timeAgo(s.created_at)}</div>
                 </div>
               ))}

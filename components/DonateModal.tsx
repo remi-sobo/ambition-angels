@@ -13,8 +13,6 @@ const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 );
 
-const PRESET_AMOUNTS = [25, 50, 100, 250, 500];
-
 const CARD_STYLE = {
   style: {
     base: {
@@ -28,6 +26,13 @@ const CARD_STYLE = {
   },
 };
 
+const PRESETS = [
+  { amount: 25,    label: "$25",    desc: "Start a teen's career journey" },
+  { amount: 100,   label: "$100",   desc: "Fund 1 teen's full internship" },
+  { amount: 500,   label: "$500",   desc: "Fund 5 teens on Ambition" },
+  { amount: 1000,  label: "$1,000", desc: "Fund a full classroom cohort" },
+];
+
 // ── Inner form (needs Stripe context) ──────────────────────────────────────
 
 interface FormProps {
@@ -38,7 +43,7 @@ function DonateForm({ onClose }: FormProps) {
   const stripe = useStripe();
   const elements = useElements();
 
-  const [amount, setAmount] = useState<number>(50);
+  const [amount, setAmount] = useState<number>(100);
   const [customAmount, setCustomAmount] = useState("");
   const [useCustom, setUseCustom] = useState(false);
   const [recurring, setRecurring] = useState(false);
@@ -48,10 +53,15 @@ function DonateForm({ onClose }: FormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [otherWaysOpen, setOtherWaysOpen] = useState(false);
 
   const finalAmount = useCustom
     ? Math.max(1, parseFloat(customAmount) || 0)
     : amount;
+
+  const displayAmount = useCustom
+    ? (parseFloat(customAmount) || 0).toFixed(0)
+    : amount.toLocaleString();
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -105,15 +115,15 @@ function DonateForm({ onClose }: FormProps) {
               await stripe.confirmCardPayment(data.clientSecret);
             if (confirmError) throw new Error(confirmError.message);
 
-            // Save + receipt
             await Promise.allSettled([
               fetch("/api/save-donation", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  name: fullName, email, amount: finalAmount,
+                  firstName, lastName, email, amount: finalAmount,
                   recurring: true,
                   stripePaymentId: paymentIntent?.id ?? data.subscriptionId,
+                  subscriptionId: data.subscriptionId,
                 }),
               }),
               email && fetch("/api/send-receipt", {
@@ -146,13 +156,12 @@ function DonateForm({ onClose }: FormProps) {
 
           if (confirmError) throw new Error(confirmError.message);
 
-          // Save + receipt
           await Promise.allSettled([
             fetch("/api/save-donation", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                name: fullName, email, amount: finalAmount,
+                firstName, lastName, email, amount: finalAmount,
                 recurring: false,
                 stripePaymentId: paymentIntent!.id,
               }),
@@ -187,9 +196,14 @@ function DonateForm({ onClose }: FormProps) {
         <h3 className="font-heading font-bold text-2xl text-ink mb-3">
           Thank you{firstName ? `, ${firstName}` : ""}.
         </h3>
-        <p className="text-gray-warm text-base leading-relaxed mb-6 max-w-sm">
-          Thank you for investing in the next generation. A receipt has been sent to your email.
+        <p className="text-gray-warm text-base leading-relaxed mb-2 max-w-sm">
+          Your gift of <strong className="text-ink">${displayAmount}</strong> is already going to work.
         </p>
+        {email && (
+          <p className="text-gray-warm text-sm leading-relaxed mb-8 max-w-sm">
+            We&apos;ll send a tax receipt to <span className="text-ink font-medium">{email}</span>.
+          </p>
+        )}
         <button
           onClick={onClose}
           className="bg-orange hover:bg-orange-dark text-white font-semibold px-8 py-3 rounded-full transition-colors"
@@ -204,52 +218,63 @@ function DonateForm({ onClose }: FormProps) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
       {/* Recurring toggle */}
-      <div className="flex rounded-xl overflow-hidden border border-gray-light bg-gray-light/50">
-        {[false, true].map((isRecurring) => (
+      <div className="flex rounded-xl overflow-hidden border border-gray-light bg-gray-light/50 p-1 gap-1">
+        {[
+          { value: false, label: "One-time" },
+          { value: true,  label: "Monthly", badge: "Most impactful" },
+        ].map(({ value, label, badge }) => (
           <button
-            key={String(isRecurring)}
+            key={String(value)}
             type="button"
-            onClick={() => setRecurring(isRecurring)}
-            className={`flex-1 py-2.5 text-sm font-semibold transition-all ${
-              recurring === isRecurring
-                ? "bg-white text-orange shadow-sm rounded-xl"
-                : "text-gray-warm"
+            onClick={() => setRecurring(value)}
+            className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-lg flex items-center justify-center gap-2 ${
+              recurring === value
+                ? "bg-white text-orange shadow-sm"
+                : "text-gray-warm hover:text-ink"
             }`}
           >
-            {isRecurring ? "Monthly" : "One-time"}
+            {label}
+            {badge && (
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                recurring === value ? "bg-orange text-white" : "bg-orange/10 text-orange"
+              }`}>
+                {badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      {/* Preset amounts */}
-      <div>
-        <div className="grid grid-cols-3 gap-2 mb-2">
-          {PRESET_AMOUNTS.map((a) => (
-            <button
-              key={a}
-              type="button"
-              onClick={() => { setAmount(a); setUseCustom(false); }}
-              className={`py-2.5 rounded-xl text-sm font-bold border transition-all ${
-                !useCustom && amount === a
-                  ? "bg-orange text-white border-orange shadow-md shadow-orange/20"
-                  : "bg-white text-ink border-gray-light hover:border-orange/40"
-              }`}
-            >
-              ${a}
-            </button>
-          ))}
+      {/* 2×2 preset grid */}
+      <div className="grid grid-cols-2 gap-2">
+        {PRESETS.map(({ amount: a, label, desc }) => (
           <button
+            key={a}
             type="button"
-            onClick={() => setUseCustom(true)}
-            className={`py-2.5 rounded-xl text-sm font-bold border transition-all ${
-              useCustom
+            onClick={() => { setAmount(a); setUseCustom(false); }}
+            className={`py-3 px-3 rounded-xl text-left border transition-all ${
+              !useCustom && amount === a
                 ? "bg-orange text-white border-orange shadow-md shadow-orange/20"
                 : "bg-white text-ink border-gray-light hover:border-orange/40"
             }`}
           >
-            Custom
+            <div className="font-bold text-sm leading-none mb-1">{label}</div>
+            <div className={`text-[11px] leading-tight ${!useCustom && amount === a ? "text-white/80" : "text-gray-warm"}`}>
+              {desc}
+            </div>
           </button>
-        </div>
+        ))}
+      </div>
+
+      {/* Custom amount */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setUseCustom(!useCustom)}
+          className={`text-sm font-semibold transition-colors ${useCustom ? "text-orange" : "text-gray-warm hover:text-ink"}`}
+        >
+          {useCustom ? "↑ Choose a preset" : "+ Custom amount"}
+        </button>
         {useCustom && (
           <div className="relative mt-2">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-warm font-semibold">$</span>
@@ -321,14 +346,56 @@ function DonateForm({ onClose }: FormProps) {
           </>
         ) : (
           <>
-            Donate {finalAmount >= 1 ? `$${useCustom ? (parseFloat(customAmount) || 0).toFixed(0) : amount}` : ""} {recurring ? "/ mo" : ""}
+            Donate ${displayAmount}{recurring ? " / mo" : ""}
           </>
         )}
       </button>
 
       <p className="text-center text-gray-mid text-xs">
-        🔒 Secure · Tax-deductible · Takes 60 seconds
+        🔒 Secure · Tax-deductible · EIN 87-2513010
       </p>
+
+      {/* Other ways to give */}
+      <div className="border-t border-gray-light pt-4">
+        <button
+          type="button"
+          onClick={() => setOtherWaysOpen(!otherWaysOpen)}
+          className="w-full flex items-center justify-between text-sm font-semibold text-gray-warm hover:text-ink transition-colors"
+        >
+          <span>Other ways to give</span>
+          <svg
+            className={`w-4 h-4 transition-transform ${otherWaysOpen ? "rotate-180" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {otherWaysOpen && (
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Check */}
+            <div className="bg-gray-light/60 rounded-xl p-4">
+              <div className="text-xs font-bold text-ink uppercase tracking-widest mb-2">By Check</div>
+              <div className="text-xs text-gray-warm leading-relaxed space-y-0.5">
+                <p className="font-semibold text-ink">Ambition Angels Inc.</p>
+                <p>380 Portage Ave</p>
+                <p>Palo Alto, CA 94306</p>
+                <p className="pt-1 text-gray-mid">EIN 87-2513010</p>
+              </div>
+            </div>
+            {/* Wire */}
+            <div className="bg-gray-light/60 rounded-xl p-4">
+              <div className="text-xs font-bold text-ink uppercase tracking-widest mb-2">Wire Transfer</div>
+              <div className="text-xs text-gray-warm leading-relaxed space-y-0.5">
+                <p className="font-semibold text-ink">Wells Fargo</p>
+                <p>Routing: <span className="font-mono text-ink">121000248</span></p>
+                <p>Account: <span className="font-mono text-ink">2245119926</span></p>
+                <p className="pt-1 text-gray-mid">EIN 87-2513010</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </form>
   );
 }

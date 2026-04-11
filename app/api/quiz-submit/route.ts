@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
-const supabase = createClient(
+const getSupabase = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -143,6 +143,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Save to Supabase
+  const supabase = getSupabase();
   const { error: dbError } = await supabase.from("quiz_submissions").insert({
     email: answers.email || null,
     teen_name: answers.teenname || null,

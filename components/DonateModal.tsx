@@ -9,9 +9,8 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
+const STRIPE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = STRIPE_KEY ? loadStripe(STRIPE_KEY) : null;
 
 const CARD_STYLE = {
   style: {
@@ -450,9 +449,15 @@ export default function DonateModal({ onClose }: Props) {
         </div>
 
         <div className="p-7 pt-6">
-          <Elements stripe={stripePromise}>
-            <DonateForm onClose={onClose} />
-          </Elements>
+          {!STRIPE_KEY ? (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-600 text-sm">
+              Stripe is not configured. Add <code className="font-mono text-xs">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to your environment variables.
+            </div>
+          ) : (
+            <Elements stripe={stripePromise}>
+              <DonateForm onClose={onClose} />
+            </Elements>
+          )}
         </div>
       </div>
     </div>

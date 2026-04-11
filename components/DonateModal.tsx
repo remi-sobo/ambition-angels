@@ -462,6 +462,13 @@ export default function DonateModal({ onClose }: Props) {
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-600 text-sm">
               Stripe is not configured. Add <code className="font-mono text-xs">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to your environment variables and redeploy.
             </div>
+          ) : !stripePromise ? (
+            <div className="flex items-center justify-center py-16">
+              <svg className="w-6 h-6 animate-spin text-orange" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            </div>
           ) : (
             <Elements stripe={stripePromise}>
               <DonateForm onClose={onClose} />

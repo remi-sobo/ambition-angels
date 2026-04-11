@@ -229,7 +229,7 @@ export default function UpdatePage() {
                 They don&apos;t just learn about careers. They try them.
               </h2>
               <p style={{ fontSize:15, color:"#4B5563", lineHeight:1.75, marginBottom:16 }}>
-                On the Ambition App, students complete 30-day simulated internships across business, tech, health, creative fields, and more. 15 minutes a day. Real tasks. Real skills. Real rewards. By the end of 30 days, they know what a career actually feels like. And 3 out of 4 come back to try another one.
+                On the Ambition App, students complete 30-day simulated internships across business, tech, health, creative fields, and more. 15 minutes a day. Real tasks. Real skills. Real rewards. By the end of 30 days, they know what a career actually feels like.
               </p>
             </div>
             {/* Phone mockup */}

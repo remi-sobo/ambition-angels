@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import DonateButton from "@/components/DonateButton";
 
 export const metadata: Metadata = {
   title: "Our Impact",
@@ -363,35 +362,6 @@ export default function ImpactPage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section
-        className="section-pad bg-orange relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-        }}
-      >
-        <div className="container-site text-center relative z-10">
-          <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-4">
-            Join the Mission
-          </p>
-          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-white tracking-tight leading-tight mb-4 max-w-xl mx-auto">
-            Your support unlocks their future.
-          </h2>
-          <p className="text-white/80 text-lg leading-relaxed max-w-md mx-auto mb-8">
-            3 out of 4 teens who start an Ambition internship finish it. Become an Ambition Angel today.
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center">
-            <DonateButton className="bg-white text-orange hover:bg-orange-light font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center" />
-            <a
-              href="mailto:remi@ambitionangels.org"
-              className="bg-white/15 hover:bg-white/25 text-white font-semibold px-8 py-4 rounded-full transition-colors text-base border border-white/30 min-h-[52px] inline-flex items-center"
-            >
-              Get in Touch
-            </a>
-          </div>
-        </div>
-      </section>
     </>
   );
 }

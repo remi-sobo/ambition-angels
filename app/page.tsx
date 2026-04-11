@@ -484,49 +484,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* DONATE CTA */}
-      <section
-        className="section-pad bg-orange relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-        }}
-      >
-        <Image
-          src="/images/doodles/Doodle 60@3x.png"
-          alt=""
-          width={180}
-          height={160}
-          className="absolute top-6 right-8 opacity-20 rotate-12 pointer-events-none"
-          aria-hidden="true"
-        />
-        <div className="container-site text-center relative z-10">
-          <p className="text-white/70 text-sm uppercase tracking-widest mb-4 font-medium fade-up">
-            Join the Mission
-          </p>
-          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-white mb-4 max-w-2xl mx-auto leading-tight tracking-tight fade-up stagger-1">
-            Your support unlocks their future.
-          </h2>
-          <div className="w-16 h-1 bg-white/40 mx-auto mb-8 rounded-full fade-up stagger-2" />
-          <p className="text-white/80 text-lg mb-10 max-w-prose mx-auto leading-relaxed fade-up stagger-2">
-            Teens are waiting to have their ambition turned on. A small investment from you can go a long way. Become an Ambition Angel today.
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center fade-up stagger-3">
-            <button
-              onClick={openDonateModal}
-              className="bg-white text-orange hover:bg-orange-light font-semibold px-8 py-4 rounded-full transition-colors duration-200 text-base min-h-[52px] inline-flex items-center"
-            >
-              Donate Now
-            </button>
-            <button
-              onClick={() => setQuizOpen(true)}
-              className="bg-orange-dark hover:bg-ink text-white font-semibold px-8 py-4 rounded-full transition-colors duration-200 text-base border border-white/20 min-h-[52px]"
-            >
-              Take the Career Quiz
-            </button>
-          </div>
-        </div>
-      </section>
     </>
   );
 }

@@ -121,7 +121,7 @@ export default function PartnersPage() {
             For Guides
           </p>
           <h1 className="font-heading font-bold text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl text-cream leading-tight tracking-tight mb-6 max-w-3xl">
-            You care about this teen&apos;s future. But when was the last time you had a real career conversation with them?
+            You&apos;re already in their corner. Now we&apos;ll put something real in your hands.
           </h1>
           <p className="text-gray-mid text-lg leading-relaxed max-w-xl mb-10">
             Ambition Angels gives you the tools, the prompts, and the insight to finally show up for that conversation.

@@ -189,18 +189,18 @@ export default function Home() {
             </div>
             {/* 14% stat — dashed oval centered on the number */}
             <div className="fade-up stagger-3 text-center">
-              <div className="relative inline-block">
+              <div className="relative inline-block px-6 py-3">
                 <Image
                   src="/images/doodles/Doodle 70@3x.png"
                   alt=""
-                  width={200}
-                  height={140}
+                  width={280}
+                  height={200}
                   className="opacity-20 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
                   aria-hidden="true"
                 />
                 <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight relative z-10">14%</div>
               </div>
-              <div className="text-gray-mid text-sm">Increase in action orientation</div>
+              <div className="text-gray-mid text-sm">Increase in future orientation</div>
             </div>
             <div className="fade-up stagger-4 text-center">
               <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">4,500+</div>
@@ -396,9 +396,9 @@ export default function Home() {
 
       {/* APP SHOWCASE */}
       <section
-        className="section-pad bg-ink relative overflow-hidden"
+        className="section-pad bg-[#F5F4F0] relative overflow-hidden"
         style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)",
           backgroundSize: "22px 22px",
         }}
       >
@@ -408,10 +408,10 @@ export default function Home() {
             {/* Text */}
             <div>
               <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">The App</p>
-              <h2 className="font-display font-black text-5xl lg:text-6xl text-cream mb-6 leading-none tracking-tight uppercase">
+              <h2 className="font-display font-black text-5xl lg:text-6xl text-[#0E0E0E] mb-6 leading-none tracking-tight uppercase">
                 Built for the<br /><span className="text-orange">phone they<br />already have.</span>
               </h2>
-              <p className="text-gray-mid text-lg leading-relaxed mb-8 max-w-lg">
+              <p className="text-charcoal text-lg leading-relaxed mb-8 max-w-lg">
                 30-day simulated internships. 15 minutes a day. Videos, quizzes, and activities designed for the phone screen. Teens pick a career, show up to work, and earn real rewards for finishing.
               </p>
               <div className="flex flex-wrap gap-4">
@@ -427,7 +427,7 @@ export default function Home() {
                   href="https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors text-sm border border-cream/10 min-h-[44px] inline-flex items-center"
+                  className="bg-[#0E0E0E]/8 hover:bg-[#0E0E0E]/15 text-[#0E0E0E] font-semibold px-7 py-3.5 rounded-full transition-colors text-sm border border-[#0E0E0E]/15 min-h-[44px] inline-flex items-center"
                 >
                   Download for Android
                 </a>
@@ -512,9 +512,9 @@ export default function Home() {
 
       {/* TEAM */}
       <section
-        className="section-pad relative overflow-hidden"
+        className="section-pad bg-[#F5F4F0] relative overflow-hidden"
         style={{
-          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.06) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)",
           backgroundSize: "22px 22px",
         }}
       >

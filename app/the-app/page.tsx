@@ -29,8 +29,8 @@ const steps = [
 const stats = [
   { number: "3,500+", label: "Teens reached" },
   { number: "87%", label: "From Title I schools" },
-  { number: "14%", label: "Increase in action orientation" },
-  { number: "4,500+", label: "Modules completed" },
+  { number: "14%", label: "Increase in future orientation" },
+  { number: "1,100+", label: "Hours of career exploration delivered" },
 ];
 
 export default function TheAppPage() {

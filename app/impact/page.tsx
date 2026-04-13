@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 const stats = [
   { num: "3,500", sup: "+", label: "Teens reached" },
   { num: "36", sup: "", label: "School and nonprofit partners" },
-  { num: "14", sup: "%", label: "Increase in action orientation" },
-  { num: "4,500", sup: "+", label: "Modules completed" },
+  { num: "14", sup: "%", label: "Increase in future orientation" },
+  { num: "1,100", sup: "+", label: "Hours of career exploration delivered" },
 ];
 
 const gapFacts = [

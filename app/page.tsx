@@ -199,10 +199,11 @@ export default function Home() {
               />
               <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight relative z-10">14%</div>
               <div className="text-gray-mid text-sm relative z-10">Increase in future orientation</div>
+              <div className="text-gray-mid/60 text-xs relative z-10 mt-1 leading-snug max-w-[160px] mx-auto">A teen&apos;s belief that their future is worth working toward</div>
             </div>
             <div className="fade-up stagger-4 text-center">
-              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">4,500+</div>
-              <div className="text-gray-mid text-sm">Modules completed</div>
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">1,100+</div>
+              <div className="text-gray-mid text-sm">Hours of career exploration delivered</div>
             </div>
           </div>
         </div>
@@ -519,7 +520,7 @@ export default function Home() {
         <div className="container-site">
           <div className="max-w-xl mb-12">
             <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
-              Who Built This
+              The People Behind This
             </p>
             <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight fade-up stagger-1">
               Built by people who lived the gap and refused to accept it.

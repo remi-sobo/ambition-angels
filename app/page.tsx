@@ -189,7 +189,7 @@ export default function Home() {
             </div>
             {/* 14% stat — dashed oval centered on the number */}
             <div className="fade-up stagger-3 text-center">
-              <div className="relative inline-block px-6 py-3">
+              <div className="relative inline-block align-top">
                 <Image
                   src="/images/doodles/Doodle 70@3x.png"
                   alt=""

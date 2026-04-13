@@ -81,6 +81,21 @@ type DonationStats = {
   donorProfiles: DonorProfile[];
 };
 
+type PartnerSignup = {
+  id: string;
+  created_at: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: string;
+  teen_count: string | null;
+};
+
+type PartnerData = {
+  signups: PartnerSignup[];
+  roleBreakdown: { role: string; count: number }[];
+};
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function timeAgo(dateStr: string): string {
@@ -213,6 +228,7 @@ export default function AdminPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [donationStats, setDonationStats] = useState<DonationStats | null>(null);
+  const [partnerData, setPartnerData] = useState<PartnerData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -240,9 +256,10 @@ export default function AdminPage() {
     setLoading(true);
     setError(null);
     try {
-      const [statsRes, donationsRes] = await Promise.all([
+      const [statsRes, donationsRes, partnersRes] = await Promise.all([
         fetch("/api/admin/stats"),
         fetch("/api/admin/donations"),
+        fetch("/api/admin/partners"),
       ]);
       if (statsRes.status === 401) { setAuthed(false); return; }
       if (!statsRes.ok) {
@@ -258,6 +275,9 @@ export default function AdminPage() {
       } else {
         const dBody = await donationsRes.json().catch(() => ({}));
         console.error("Donations API error:", dBody?.error ?? donationsRes.status);
+      }
+      if (partnersRes.ok) {
+        setPartnerData(await partnersRes.json());
       }
       setLastUpdated(new Date());
     } catch (e) {
@@ -278,6 +298,9 @@ export default function AdminPage() {
         setAuthed(true);
         fetch("/api/admin/donations").then(async (dRes) => {
           if (dRes.ok) setDonationStats(await dRes.json());
+        });
+        fetch("/api/admin/partners").then(async (pRes) => {
+          if (pRes.ok) setPartnerData(await pRes.json());
         });
       }
     });
@@ -1013,6 +1036,80 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* ── ROW 5: PARTNER WAITLIST ── */}
+        <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+          <div className="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex-1">
+              <h2 className="font-heading font-bold text-cream text-lg">Partner Waitlist</h2>
+              <p className="text-gray-mid text-xs mt-0.5">
+                {partnerData ? `${partnerData.signups.length} total signup${partnerData.signups.length !== 1 ? "s" : ""}` : "Guides waiting for access"}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {loading || !partnerData ? (
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+              </div>
+            ) : partnerData.signups.length === 0 ? (
+              <p className="text-gray-mid text-sm">No signups yet.</p>
+            ) : (
+              <>
+                {/* Count + role breakdown */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8">
+                  <div>
+                    <div className="font-display font-black text-6xl text-orange tracking-tight leading-none">
+                      {partnerData.signups.length}
+                    </div>
+                    <div className="text-gray-mid text-sm mt-1">total waitlist signups</div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {partnerData.roleBreakdown.map(({ role, count }) => (
+                      <div key={role} className="bg-white/5 border border-white/10 rounded-full px-4 py-1.5 flex items-center gap-2">
+                        <span className="text-cream text-sm font-semibold">{count}</span>
+                        <span className="text-gray-mid text-xs">{role}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[700px]">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        {["Name", "Email", "Role", "Teen Count", "Date"].map((h) => (
+                          <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {partnerData.signups.map((s) => (
+                        <tr key={s.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                          <td className="px-4 py-3 font-medium text-cream whitespace-nowrap">
+                            {s.first_name} {s.last_name}
+                          </td>
+                          <td className="px-4 py-3 text-gray-mid text-xs">{s.email}</td>
+                          <td className="px-4 py-3">
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange">
+                              {s.role}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-mid text-xs">{s.teen_count ?? "—"}</td>
+                          <td className="px-4 py-3 text-gray-mid text-xs whitespace-nowrap">{fmtDate(s.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
         </section>
 
       </div>

@@ -255,6 +255,39 @@ export default function TheAppPage() {
         </div>
       </section>
 
+      {/* ARE YOU AN ADULT? */}
+      <section className="section-pad">
+        <div className="container-site">
+          <div className="max-w-2xl mx-auto text-center">
+            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
+              Are You an Adult?
+            </p>
+            <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink mb-5 tracking-tight">
+              Bring the app to the teens you care about.
+            </h2>
+            <p className="text-gray-warm text-lg leading-relaxed mb-8">
+              We&apos;re building a Guide portal for the adults in a teen&apos;s corner. Sign up for early access and be among the first to follow along with what they&apos;re learning — with conversation prompts designed to turn the app into a launchpad for real career conversations.
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center">
+              <a
+                href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px] inline-flex items-center"
+              >
+                Get the App for a Teen
+              </a>
+              <Link
+                href="/for-adults"
+                className="bg-transparent hover:bg-ink/5 text-ink font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px] inline-flex items-center border border-ink/20"
+              >
+                Get Early Access as a Guide
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* BEYOND THE APP */}
       <section
         className="section-pad bg-ink relative overflow-hidden"

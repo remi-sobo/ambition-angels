@@ -225,8 +225,45 @@ export default function PartnersPage() {
             </div>
           </div>
 
+          {/* ── THE DEAL ─────────────────────────────────────────────────── */}
+          <div className="mt-16 pt-14 border-t border-white/10">
+            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
+              The Deal
+            </p>
+            <h3 className="font-heading font-bold text-3xl lg:text-4xl text-cream tracking-tight leading-tight mb-3 max-w-xl">
+              Before they start — you make an agreement.
+            </h3>
+            <p className="text-gray-mid text-base leading-relaxed mb-10 max-w-2xl">
+              Pick a reward. Make it real. That agreement is what turns the app into a mission.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {[
+                { emoji: "🍕", tag: "For Parents", deal: "Complete 5 internships → pizza party of your choice" },
+                { emoji: "📝", tag: "For Teachers", deal: "Finish 3 internships → one get-out-of-a-test-free card" },
+                { emoji: "👟", tag: "For Coaches", deal: "Complete the sports business track → new kicks" },
+              ].map((card) => (
+                <div
+                  key={card.tag}
+                  className="bg-[#1a1d27] rounded-card p-6"
+                  style={{ borderLeft: "4px solid #E8500A" }}
+                >
+                  <div className="text-3xl mb-4">{card.emoji}</div>
+                  <div className="inline-block text-xs font-bold text-orange uppercase tracking-widest bg-orange/10 rounded-full px-2.5 py-1 mb-3">
+                    {card.tag}
+                  </div>
+                  <p className="text-cream text-sm leading-relaxed font-medium">{card.deal}</p>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-white/30 text-sm leading-relaxed max-w-2xl">
+              The reward can be monetary, an experience, or a privilege — additive or something they&apos;d normally lose. We&apos;ll give you a starter list of ideas that work. The point is the agreement.
+            </p>
+          </div>
+
           {/* Three steps */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-14">
             {steps.map((step) => (
               <div
                 key={step.num}
@@ -242,6 +279,45 @@ export default function PartnersPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── THE AMBITION FUND ────────────────────────────────────────────── */}
+      <section
+        className="section-pad relative overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, #1A0A00 0%, #120600 50%, #0E0E0E 100%)",
+          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.08) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
+        {/* Subtle orange glow */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at center, rgba(232,80,10,0.12) 0%, transparent 70%)" }}
+        />
+        <div className="container-site relative z-10 max-w-2xl">
+          <p className="text-xs font-bold text-orange uppercase tracking-widest mb-5">
+            The Ambition Fund
+          </p>
+          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream tracking-tight leading-tight mb-6">
+            No support system? We&apos;ve got you.
+          </h2>
+          <div className="space-y-4 mb-10">
+            <p className="text-gray-mid text-base leading-relaxed">
+              Some teens don&apos;t have an adult who can make the deal with them. The Ambition Fund exists for those kids.
+            </p>
+            <p className="text-gray-mid text-base leading-relaxed">
+              Low-income teens can apply directly through the app, make an agreement with Ambition Angels, and earn real rewards as they complete internships. We invest in them — and we keep investing as they grow.
+            </p>
+          </div>
+          <a
+            href="#"
+            className="inline-flex items-center justify-center bg-orange hover:bg-orange-dark text-white font-semibold text-base px-10 py-4 rounded-full transition-colors min-h-[56px] w-full sm:w-auto"
+          >
+            Download the App to Apply
+          </a>
+          <p className="mt-4 text-white/25 text-sm">Free for every student. Always.</p>
         </div>
       </section>
 

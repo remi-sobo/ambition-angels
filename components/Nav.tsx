@@ -11,7 +11,7 @@ const navLinks = [
   { href: "/the-app", label: "The App" },
   { href: "/curriculum", label: "Curriculum" },
   { href: "/impact", label: "Impact" },
-  { href: "/partners", label: "Partners" },
+  { href: "/for-adults", label: "For Adults" },
 ];
 
 export default function Nav() {

@@ -284,40 +284,46 @@ export default function PartnersPage() {
 
       {/* ── THE AMBITION FUND ────────────────────────────────────────────── */}
       <section
-        className="section-pad relative overflow-hidden"
+        className="py-16 lg:py-20 relative overflow-hidden"
         style={{
-          background: "linear-gradient(135deg, #1A0A00 0%, #120600 50%, #0E0E0E 100%)",
-          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.08) 1px, transparent 1px)",
+          backgroundColor: "#1A0A00",
+          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.09) 1px, transparent 1px)",
           backgroundSize: "22px 22px",
+          zIndex: 0,
         }}
       >
-        {/* Subtle orange glow */}
+        {/* Orange glow behind headline */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at center, rgba(232,80,10,0.12) 0%, transparent 70%)" }}
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[320px] pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at center, rgba(232,80,10,0.18) 0%, transparent 70%)", zIndex: 1 }}
         />
-        <div className="container-site relative z-10 max-w-2xl">
+        <div className="container-site relative max-w-2xl" style={{ zIndex: 2 }}>
           <p className="text-xs font-bold text-orange uppercase tracking-widest mb-5">
             The Ambition Fund
           </p>
-          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream tracking-tight leading-tight mb-6">
+          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-white tracking-tight leading-tight mb-6">
             No support system? We&apos;ve got you.
           </h2>
-          <div className="space-y-4 mb-10">
-            <p className="text-gray-mid text-base leading-relaxed">
+          <div className="space-y-4 mb-8">
+            <p className="text-white/90 text-base leading-relaxed">
               Some teens don&apos;t have an adult who can make the deal with them. The Ambition Fund exists for those kids.
             </p>
-            <p className="text-gray-mid text-base leading-relaxed">
+            <p className="text-white/90 text-base leading-relaxed">
               Low-income teens can apply directly through the app, make an agreement with Ambition Angels, and earn real rewards as they complete internships. We invest in them — and we keep investing as they grow.
             </p>
           </div>
           <a
             href="#"
-            className="inline-flex items-center justify-center bg-orange hover:bg-orange-dark text-white font-semibold text-base px-10 py-4 rounded-full transition-colors min-h-[56px] w-full sm:w-auto"
+            className="inline-flex items-center justify-center bg-orange hover:bg-orange-dark text-white font-semibold text-base px-10 py-4 rounded-full transition-colors min-h-[56px] w-full sm:w-auto shadow-lg shadow-orange/20"
           >
             Download the App to Apply
           </a>
-          <p className="mt-4 text-white/25 text-sm">Free for every student. Always.</p>
+          <p className="mt-4 text-white/40 text-sm">
+            The Ambition Fund is made possible by donors like you.{" "}
+            <a href="/donate" className="text-orange hover:text-orange-dark underline underline-offset-2 transition-colors">
+              Become a donor.
+            </a>
+          </p>
         </div>
       </section>
 

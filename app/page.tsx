@@ -187,81 +187,25 @@ export default function Home() {
               <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">87%</div>
               <div className="text-gray-mid text-sm">From Title I schools</div>
             </div>
-            {/* 14% stat — dashed oval centered exactly on this cell */}
-            <div className="fade-up stagger-3 text-center relative">
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
-                <Image src="/images/doodles/Doodle 70@3x.png" alt="" width={200} height={140} className="opacity-20" />
+            {/* 14% stat — dashed oval centered on the number */}
+            <div className="fade-up stagger-3 text-center">
+              <div className="relative inline-block">
+                <Image
+                  src="/images/doodles/Doodle 70@3x.png"
+                  alt=""
+                  width={200}
+                  height={140}
+                  className="opacity-20 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                  aria-hidden="true"
+                />
+                <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight relative z-10">14%</div>
               </div>
-              <div className="relative z-10">
-                <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">14%</div>
-                <div className="text-gray-mid text-sm">Increase in action orientation</div>
-              </div>
+              <div className="text-gray-mid text-sm">Increase in action orientation</div>
             </div>
             <div className="fade-up stagger-4 text-center">
               <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">4,500+</div>
               <div className="text-gray-mid text-sm">Modules completed</div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS — dark treatment */}
-      <section
-        className="py-16 lg:py-20 bg-ink relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <p className="text-xs font-semibold text-orange uppercase tracking-widest mb-10 text-center fade-up">
-            From the students
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                quote: "I never knew what I wanted to do. After the entrepreneurship internship, I started selling custom bracelets at school. I make $200 a month now.",
-                name: "Destiny M.",
-                grade: "10th Grade",
-                location: "Oakland, CA",
-                initials: "DM",
-              },
-              {
-                quote: "The wealth management track changed how I think about money. I taught my mom what I learned and I am starting to think I might have a future here.",
-                name: "Marcus T.",
-                grade: "11th Grade",
-                location: "East Palo Alto, CA",
-                initials: "MT",
-              },
-              {
-                quote: "I did the nursing internship and it clicked. I know exactly what I am doing after high school. No one in my family has ever worked in healthcare.",
-                name: "Aaliyah R.",
-                grade: "12th Grade",
-                location: "Richmond, CA",
-                initials: "AR",
-              },
-            ].map((t, i) => (
-              <div
-                key={t.name}
-                className={`bg-[#1a1a1a] border border-white/10 rounded-card-lg p-7 hover:border-white/20 hover:-translate-y-0.5 transition-all duration-200 fade-up stagger-${i + 1} flex flex-col`}
-              >
-                <div className="font-display font-black text-6xl text-orange leading-none mb-3 -mt-1" aria-hidden="true">
-                  &ldquo;
-                </div>
-                <p className="text-white/75 text-sm leading-relaxed flex-1 mb-6">
-                  {t.quote}
-                </p>
-                <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-                  <div className="w-10 h-10 rounded-full bg-orange/10 border border-orange/30 flex items-center justify-center flex-shrink-0">
-                    <span className="font-heading font-bold text-orange text-xs">{t.initials}</span>
-                  </div>
-                  <div>
-                    <div className="font-heading font-semibold text-white text-sm">{t.name}</div>
-                    <div className="text-[#999] text-xs">{t.grade} &middot; {t.location}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -385,6 +329,67 @@ export default function Home() {
             >
               Explore Internships
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS — dark treatment */}
+      <section
+        className="py-16 lg:py-20 bg-ink relative overflow-hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
+        <div className="container-site relative z-10">
+          <p className="text-xs font-semibold text-orange uppercase tracking-widest mb-10 text-center fade-up">
+            From the students
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                quote: "I never knew what I wanted to do. After the entrepreneurship internship, I started selling custom bracelets at school. I make $200 a month now.",
+                name: "Destiny M.",
+                grade: "10th Grade",
+                location: "Oakland, CA",
+                initials: "DM",
+              },
+              {
+                quote: "The wealth management track changed how I think about money. I taught my mom what I learned and I am starting to think I might have a future here.",
+                name: "Marcus T.",
+                grade: "11th Grade",
+                location: "East Palo Alto, CA",
+                initials: "MT",
+              },
+              {
+                quote: "I did the nursing internship and it clicked. I know exactly what I am doing after high school. No one in my family has ever worked in healthcare.",
+                name: "Aaliyah R.",
+                grade: "12th Grade",
+                location: "Richmond, CA",
+                initials: "AR",
+              },
+            ].map((t, i) => (
+              <div
+                key={t.name}
+                className={`bg-[#1a1a1a] border border-white/10 rounded-card-lg p-7 hover:border-white/20 hover:-translate-y-0.5 transition-all duration-200 fade-up stagger-${i + 1} flex flex-col`}
+              >
+                <div className="font-display font-black text-6xl text-orange leading-none mb-3 -mt-1" aria-hidden="true">
+                  &ldquo;
+                </div>
+                <p className="text-white/75 text-sm leading-relaxed flex-1 mb-6">
+                  {t.quote}
+                </p>
+                <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                  <div className="w-10 h-10 rounded-full bg-orange/10 border border-orange/30 flex items-center justify-center flex-shrink-0">
+                    <span className="font-heading font-bold text-orange text-xs">{t.initials}</span>
+                  </div>
+                  <div>
+                    <div className="font-heading font-semibold text-white text-sm">{t.name}</div>
+                    <div className="text-[#999] text-xs">{t.grade} &middot; {t.location}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

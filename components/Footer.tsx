@@ -21,13 +21,13 @@ export default function Footer() {
             Join the Movement
           </p>
           <h2 className="font-heading font-bold text-white text-3xl lg:text-4xl mb-4 leading-tight">
-            A small investment from you can go<br className="hidden lg:block" /> a long way.
+            One teen. One internship. One future changed.<br className="hidden lg:block" /> Fund it today.
           </h2>
           <p className="text-white/80 text-lg mb-8 max-w-prose mx-auto">
-            Become an Ambition Angel today.
+            Become an Angel investor in a teen&apos;s future before the world knows their name.
           </p>
           <DonateButton className="inline-flex items-center bg-white text-orange font-semibold text-base px-8 py-4 rounded-full hover:bg-orange-light transition-colors min-h-[52px]">
-            Donate Now
+            Become an Angel
           </DonateButton>
         </div>
       </div>

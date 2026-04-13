@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 const heroStats = [
   { label: "3,500+", sub: "Teens reached" },
   { label: "87%", sub: "From Title I schools" },
-  { label: "14%", sub: "Increase in action orientation" },
-  { label: "4,500+", sub: "Modules completed" },
+  { label: "14%", sub: "Increase in future orientation", note: "A teen's belief that their future is worth working toward" },
+  { label: "1,100+", sub: "Hours of career exploration delivered" },
 ];
 
 export default function DonatePage() {
@@ -47,16 +47,17 @@ export default function DonatePage() {
             {/* LEFT — copy */}
             <div>
               <div className="inline-block text-xs font-medium text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
-                Become an Ambition Angel
+                Become an Angel Investor in a Teen&apos;s Future
               </div>
 
               <h1 className="font-display font-black text-5xl lg:text-6xl text-cream mb-7 leading-none tracking-tight uppercase">
-                A small bet.<br />
-                A <span className="text-orange">massive</span><br />
-                return.
+                One gift.<br />
+                A teen&apos;s<br />
+                <span className="text-orange">whole</span><br />
+                future.
               </h1>
 
-              <blockquote className="border-l-4 border-orange pl-5 mb-8">
+              <blockquote className="border-l-4 border-orange pl-5 mb-5">
                 <p className="text-gray-mid text-base lg:text-lg leading-relaxed italic mb-2">
                   &ldquo;Every individual has massive potential. When teens are set on a pathway to an economically empowered future, we all benefit.&rdquo;
                 </p>
@@ -65,11 +66,16 @@ export default function DonatePage() {
                 </cite>
               </blockquote>
 
+              <p className="text-gray-mid text-base leading-relaxed mb-8">
+                Angel investors put real money behind founders before they&apos;ve proven themselves — because they believe in the potential. That&apos;s exactly what an Ambition Angel does for a teen. You invest before they&apos;ve had a chance to show the world what they can do. That&apos;s the bet. That&apos;s the belief.
+              </p>
+
               <div className="flex flex-wrap gap-3">
                 {heroStats.map((s) => (
                   <div key={s.sub} className="bg-cream/5 border border-cream/10 rounded-card px-4 py-3">
                     <div className="font-display font-black text-xl text-orange tracking-tight">{s.label}</div>
                     <div className="text-gray-mid text-xs">{s.sub}</div>
+                    {"note" in s && s.note && <div className="text-gray-mid/60 text-xs mt-0.5 italic leading-snug">{s.note}</div>}
                   </div>
                 ))}
               </div>
@@ -84,7 +90,7 @@ export default function DonatePage() {
                 Every dollar funds a teen&apos;s career internship. 100% free for every student who needs it.
               </p>
               <DonateButton className="bg-orange hover:bg-orange-dark text-white font-semibold text-lg px-10 py-5 rounded-full transition-colors shadow-lg shadow-orange/30 min-h-[56px] inline-flex items-center" >
-                Donate Now
+                Become an Angel
               </DonateButton>
               <p className="text-gray-mid text-xs">Secure · Tax-deductible · Takes 60 seconds</p>
             </div>
@@ -177,7 +183,7 @@ export default function DonatePage() {
               Every Dollar You Give Does Work
             </p>
             <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream leading-tight">
-              Your gift does three things.
+              Here&apos;s what your gift actually does.
             </h2>
           </div>
 
@@ -190,8 +196,8 @@ export default function DonatePage() {
               },
               {
                 num: "02",
-                label: "Innovate",
-                body: "Donations power new curriculum and the student rewards that keep teens engaged, motivated, and coming back for more. They earn gift cards. You fund the future.",
+                label: "Motivate",
+                body: "Donations power new curriculum and the student rewards that keep teens engaged. They earn gift cards. You fund the belief that their time has real value.",
               },
               {
                 num: "03",

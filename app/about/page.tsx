@@ -182,6 +182,20 @@ export default function AboutPage() {
             >
               Learn About Remi
             </Link>
+
+            <div className="mt-12 pt-10 border-t border-cream/20 text-left max-w-xl mx-auto">
+              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
+                From the Founder
+              </p>
+              <blockquote className="border-l-4 border-orange pl-6">
+                <p className="text-gray-mid text-lg leading-relaxed italic mb-4">
+                  &ldquo;We envision a future where all teens experience greater wealth, health, and life satisfaction as they grow into adults. At Ambition Angels, we have the potential to alter the course of an entire generation for good.&rdquo;
+                </p>
+                <cite className="not-italic text-gray-mid/60 text-sm">
+                  — Remi Sobomehin, Founder and CEO
+                </cite>
+              </blockquote>
+            </div>
           </div>
         </div>
       </section>

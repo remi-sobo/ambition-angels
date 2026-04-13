@@ -115,7 +115,43 @@ export default function Home() {
               Take internships. See real careers. On the phone they already have. Free for every student.
             </p>
 
-            <div className="flex flex-wrap gap-4 mb-6">
+            {/* App store buttons — primary */}
+            <p className="text-gray-mid/50 text-xs uppercase tracking-widest font-semibold mb-3">
+              Available now — free for every student.
+            </p>
+            <div className="flex flex-wrap gap-3 mb-6">
+              <a
+                href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 bg-cream text-ink font-semibold px-5 py-3.5 rounded-xl transition-all hover:bg-cream/90 active:scale-95 min-h-[52px] shadow-lg"
+              >
+                <svg className="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                </svg>
+                <div className="text-left leading-tight">
+                  <div className="text-[10px] font-normal opacity-70">Download on the</div>
+                  <div className="text-sm font-bold">App Store</div>
+                </div>
+              </a>
+              <a
+                href="https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 bg-cream text-ink font-semibold px-5 py-3.5 rounded-xl transition-all hover:bg-cream/90 active:scale-95 min-h-[52px] shadow-lg"
+              >
+                <svg className="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M3.18 23.76c.3.17.64.22.99.14l12.45-7.19-2.78-2.78-10.66 9.83zm-1.81-20.1c-.22.3-.35.7-.35 1.18v18.32c0 .48.13.88.36 1.18l.06.06 10.26-10.26v-.24L1.43 3.6l-.06.06zm20.43 8.83l-2.9-1.68-3.06 3.06 3.06 3.06 2.91-1.69c.83-.48.83-1.27-.01-1.75zM4.17.38L16.62 7.57l-2.78 2.78L3.18.52C3.5.35 3.86.28 4.17.38z" />
+                </svg>
+                <div className="text-left leading-tight">
+                  <div className="text-[10px] font-normal opacity-70">Get it on</div>
+                  <div className="text-sm font-bold">Google Play</div>
+                </div>
+              </a>
+            </div>
+
+            {/* Secondary CTAs */}
+            <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => setQuizOpen(true)}
                 className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 shadow-lg shadow-orange/30 min-h-[52px]"
@@ -129,29 +165,6 @@ export default function Home() {
                 Support the Mission
               </button>
             </div>
-
-            <div className="flex flex-wrap gap-3 mb-4">
-              <a
-                href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream text-xs font-medium px-4 py-3 rounded-xl transition-colors border border-cream/10 min-h-[44px]"
-              >
-                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" /></svg>
-                iOS
-              </a>
-              <a
-                href="https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-cream/10 hover:bg-cream/20 text-cream text-xs font-medium px-4 py-3 rounded-xl transition-colors border border-cream/10 min-h-[44px]"
-              >
-                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.45-7.19-2.78-2.78-10.66 9.83zm-1.81-20.1c-.22.3-.35.7-.35 1.18v18.32c0 .48.13.88.36 1.18l.06.06 10.26-10.26v-.24L1.43 3.6l-.06.06zm20.43 8.83l-2.9-1.68-3.06 3.06 3.06 3.06 2.91-1.69c.83-.48.83-1.27-.01-1.75zM4.17.38L16.62 7.57l-2.78 2.78L3.18.52C3.5.35 3.86.28 4.17.38z" /></svg>
-                Android
-              </a>
-            </div>
-
-            <p className="text-gray-mid/60 text-xs">Free career quiz &middot; No signup required</p>
           </div>
         </div>
       </section>

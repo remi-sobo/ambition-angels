@@ -124,7 +124,7 @@ export default function PartnersPage() {
             You&apos;re already in their corner. Now we&apos;ll put something real in your hands.
           </h1>
           <p className="text-gray-mid text-lg leading-relaxed max-w-xl mb-10">
-            Ambition Angels gives you the tools, the prompts, and the insight to finally show up for that conversation.
+            Career conversation prompts. Real-time insight into what they&apos;re learning. A roadmap to finally have the conversation that changes everything.
           </p>
           <button
             onClick={scrollToWaitlist}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import Image from "next/image";
+import IPhoneMockup from "@/components/IPhoneMockup";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -234,12 +235,7 @@ export default function UpdatePage() {
             </div>
             {/* Phone mockup */}
             <div style={{ display:"flex", justifyContent:"center", flexShrink:0 }}>
-              <div style={{ background:"#1a1a1a", borderRadius:44, padding:14, width:200, flexShrink:0, boxShadow:"0 20px 40px rgba(0,0,0,0.15)" }}>
-                <div style={{ width:70, height:20, background:"#1a1a1a", borderRadius:10, margin:"0 auto 10px auto" }} />
-                <div style={{ borderRadius:32, overflow:"hidden" }}>
-                  <Image src="/images/app_mockup.png" alt="Ambition App internship tracks" width={390} height={844} style={{ width:"100%", height:"auto", display:"block" }} />
-                </div>
-              </div>
+              <IPhoneMockup />
             </div>
           </div>
         </section>

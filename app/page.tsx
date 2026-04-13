@@ -188,19 +188,17 @@ export default function Home() {
               <div className="text-gray-mid text-sm">From Title I schools</div>
             </div>
             {/* 14% stat — dashed oval centered on the number */}
-            <div className="fade-up stagger-3 text-center">
-              <div className="relative inline-block align-top">
-                <Image
-                  src="/images/doodles/Doodle 70@3x.png"
-                  alt=""
-                  width={280}
-                  height={200}
-                  className="opacity-20 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                  aria-hidden="true"
-                />
-                <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight relative z-10">14%</div>
-              </div>
-              <div className="text-gray-mid text-sm">Increase in future orientation</div>
+            <div className="fade-up stagger-3 text-center relative">
+              <Image
+                src="/images/doodles/Doodle 70@3x.png"
+                alt=""
+                width={220}
+                height={160}
+                className="opacity-20 absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/4 pointer-events-none"
+                aria-hidden="true"
+              />
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight relative z-10">14%</div>
+              <div className="text-gray-mid text-sm relative z-10">Increase in future orientation</div>
             </div>
             <div className="fade-up stagger-4 text-center">
               <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">4,500+</div>

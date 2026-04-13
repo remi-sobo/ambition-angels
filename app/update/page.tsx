@@ -187,7 +187,7 @@ export default function UpdatePage() {
                 <span style={{ color:orange }}>Now we scale it.</span>
               </h1>
               <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.7, marginBottom:0 }}>
-                The career landscape is shifting faster than most adults can track, let alone teenagers. Here is where we are, what we have built, and where we are going next.
+                The career landscape is shifting faster than most adults can track, let alone teenagers. Here is <strong style={{ color:navy }}>where we are</strong>, <strong style={{ color:navy }}>what we have built</strong>, and <strong style={{ color:navy }}>where we are going next</strong>.
               </p>
             </div>
             <div className="upd-hero-photo">
@@ -247,10 +247,10 @@ export default function UpdatePage() {
         {/* Quote — after app section */}
         <blockquote style={{ borderLeft:`4px solid ${orange}`, background:cream, borderRadius:"0 12px 12px 0", padding:"24px 28px", marginBottom:56 }}>
           <p style={{ fontSize:18, fontStyle:"italic", color:navy, fontWeight:500, lineHeight:1.6, marginBottom:10 }}>
-            &ldquo;I didn&apos;t know this existed. I think I might want to do this.&rdquo;
+            &ldquo;The wealth management track changed how I think about money. I taught my mom what I learned and I am starting to think I might have a future here.&rdquo;
           </p>
           <cite style={{ fontSize:12, color:"#9CA3AF", fontStyle:"normal", fontWeight:600, letterSpacing:"0.05em", textTransform:"uppercase" }}>
-            Teen after completing her first internship track
+            Marcus T., 11th Grade &middot; East Palo Alto, CA
           </cite>
         </blockquote>
 
@@ -276,11 +276,14 @@ export default function UpdatePage() {
         {/* Photo break with pull quote */}
         <div className="upd-photo-break">
           <Image src="/images/derick-anies-hDJT_ERrB-w-unsplash.jpg" alt="Teen with ambition" fill style={{ objectFit:"cover", objectPosition:"center top" }} />
-          <div style={{ position:"absolute", inset:0, background:"rgba(30,34,53,0.65)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"0 24px" }}>
-            <p className="upd-photo-quote" style={{ fontFamily:"Poppins, sans-serif", fontStyle:"italic", color:"#ffffff", fontWeight:700, maxWidth:560, textAlign:"center", lineHeight:1.5, margin:0 }}>
-              &ldquo;Their ambition hasn&apos;t been turned on yet. When it is, they&apos;ll run through a wall.&rdquo;
+          <div style={{ position:"absolute", inset:0, background:"rgba(14,14,14,0.70)", display:"flex", flexDirection:"column", alignItems:"flex-start", justifyContent:"flex-end", padding:"28px 32px" }}>
+            <p className="upd-photo-quote" style={{ fontFamily:"Poppins, sans-serif", fontStyle:"italic", color:"#ffffff", fontWeight:600, maxWidth:520, textAlign:"left", lineHeight:1.55, margin:"0 0 14px 0" }}>
+              &ldquo;Every individual has massive potential. When teens are set on a pathway to an economically empowered future, we all benefit.&rdquo;
             </p>
-            <div style={{ width:36, height:3, background:orange, borderRadius:2, marginTop:16 }} />
+            <div style={{ width:32, height:3, background:orange, borderRadius:2, marginBottom:10 }} />
+            <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.55)", letterSpacing:"0.1em", textTransform:"uppercase" }}>
+              Remi Sobomehin, Founder &amp; CEO
+            </span>
           </div>
         </div>
 
@@ -356,9 +359,16 @@ export default function UpdatePage() {
             </div>
             {/* Block 2 */}
             <div style={{ background:cream, border:`1px solid ${orange}25`, borderRadius:16, padding:"28px 24px" }}>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", color:orange, marginBottom:10 }}>Through parents directly</div>
+              <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", color:orange, marginBottom:10 }}>For the adults in their corner</div>
+              <div style={{ fontSize:13, fontWeight:600, color:navy, letterSpacing:"0.03em", marginBottom:14 }}>Parents. Coaches. Mentors.</div>
+              <p style={{ fontSize:14, color:"#4B5563", lineHeight:1.7, marginBottom:14 }}>
+                The adults who already have a relationship with a teen are our most powerful partners. We give them the tools — career conversation prompts, learning insights, and real-time visibility into what their teen is exploring — to turn an existing relationship into a career launchpad.
+              </p>
+              <p style={{ fontSize:14, color:"#4B5563", lineHeight:1.7, marginBottom:14 }}>
+                Same app. A completely different experience built for the adult who shows up.
+              </p>
               <p style={{ fontSize:14, color:"#4B5563", lineHeight:1.7, marginBottom:0 }}>
-                If a parent comes in through social media, they are the guide. We give them everything they need to show up for their teen.
+                Parents who find us through social media, coaches who want to bring meaning to practice, mentors looking for something real to work through together — we built this for them.
               </p>
             </div>
           </div>

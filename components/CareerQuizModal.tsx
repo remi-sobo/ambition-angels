@@ -630,7 +630,7 @@ export default function CareerQuizModal({ isOpen, onClose }: Props) {
                       Send
                     </button>
                   </div>
-                  <p className="text-gray-mid text-xs mt-2">No spam. No selling your info. Just your results.</p>
+                  <p className="text-gray-mid text-xs mt-2">Your results stay private. We don&apos;t sell your data or send marketing email.</p>
                 </div>
               ) : (
                 <div className="bg-orange-light border border-orange/20 rounded-card p-4 mb-4 text-center">

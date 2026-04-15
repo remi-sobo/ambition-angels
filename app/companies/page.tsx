@@ -271,44 +271,45 @@ export default function CompaniesPage() {
         </div>
       </section>
 
-      {/* ── TWO WAYS TO PARTNER ──────────────────────────────────────── */}
+      {/* ── THE PROCESS ──────────────────────────────────────────────── */}
       <section className="section-pad bg-[#F5F4F0] relative overflow-hidden">
         <div className="container-site">
           <div className="max-w-2xl mb-12">
             <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
-              How We Work Together
+              The Process
             </p>
             <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-4">
-              Two ways in. Both real.
+              How it actually works.
             </h2>
             <p className="text-gray-warm text-lg leading-relaxed">
-              We don&apos;t do performative partnerships. Both of these produce something — content teens actually use, or conversations your team won&apos;t stop talking about.
+              Most of our best career tracks started with a conversation. Here&apos;s how we go from that conversation to content that reaches thousands of teens.
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left — featured dark card */}
+            {/* Step 1 — featured dark card */}
             <div
               className="bg-ink rounded-card-lg p-8 relative overflow-hidden"
               style={dotTexture}
             >
               <div className="relative z-10">
                 <div className="inline-block text-xs font-bold text-orange bg-orange/15 border border-orange/30 px-3 py-1 rounded-full uppercase tracking-widest mb-5">
-                  Most Popular
+                  Step 1
                 </div>
                 <h3 className="font-heading font-bold text-2xl text-cream mb-4">
-                  Branded Career Paths
+                  We bring your people into the room.
                 </h3>
                 <p className="text-gray-mid text-sm leading-relaxed mb-6">
-                  We build a 30-day simulated internship in your industry and put it on the app. Your brand lives throughout the whole experience. Teens apply for the track, show up to work, and finish knowing what a career in your world actually feels like.
+                  We sit your team down with real student profiles from the app. They see exactly where teens are in their career thinking — what they know, what they don&apos;t, what they&apos;re afraid to try. Your employees react, push back, fill in gaps. That conversation tells us what a career track in your industry actually needs to say.
                 </p>
                 <ul className="space-y-3">
                   {[
-                    "3 career paths built in your industry — we handle all production",
-                    "4 videos and 1 quiz per path — designed for a 15-minute daily session",
-                    "Your brand featured throughout — not as a logo, as context",
-                    "Quarterly data on completions and engagement",
-                    "Co-branded launch and press opportunity",
+                    "90-minute session — your office, a school site, or via Zoom",
+                    "Real student data from the app drives the whole conversation",
+                    "Your employees engage and advise — they don't present",
+                    "Works for ERGs, DEI teams, leadership offsites, or all-hands",
+                    "Feeds directly into Step 2 — this is where the content starts",
+                    "Impact report within 2 weeks, with option to film",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-3 text-gray-mid text-sm leading-relaxed">
                       <span className="w-4 h-4 rounded-full bg-orange/20 border border-orange/40 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -321,24 +322,25 @@ export default function CompaniesPage() {
               </div>
             </div>
 
-            {/* Right — light card */}
+            {/* Step 2 — light card */}
             <div className="bg-white border border-gray-light rounded-card-lg p-8">
               <div className="inline-block text-xs font-bold text-orange bg-orange-light border border-orange/20 px-3 py-1 rounded-full uppercase tracking-widest mb-5">
-                High Impact
+                Step 2
               </div>
               <h3 className="font-heading font-bold text-2xl text-ink mb-4">
-                Live Engagement Events
+                We build the career track together.
               </h3>
               <p className="text-gray-warm text-sm leading-relaxed mb-6">
-                Remi leads a 90-minute session with your team using real student profiles. No slides. No prepared remarks. Just honest conversation about what teens from low-income communities are up against — and what your company can actually do.
+                What your team shared in the room becomes the foundation. We handle all production — videos, quizzes, activities built for a 15-minute daily session on a phone screen. Your team reviews drafts, keeps it accurate, and updates it as your industry changes. The result is a 30-day simulated internship that reflects how careers in your field actually work.
               </p>
               <ul className="space-y-3">
                 {[
-                  "90-minute facilitated session — your office or ours",
-                  "Real student profiles and actual career data drive the conversation",
-                  "Works for ERGs, DEI teams, leadership offsites, all-hands",
-                  "Impact report delivered within 2 weeks",
-                  "Option to film for internal storytelling",
+                  "3 career paths in your industry — we handle all production",
+                  "Your team validates accuracy and keeps content current as the industry evolves",
+                  "4 videos and 1 quiz per path — designed for 15 minutes a day on a phone",
+                  "Your brand lives throughout as the source of truth, not as a sponsor",
+                  "Quarterly data on completions, engagement, and career interest generated",
+                  "Co-branded launch with press opportunity",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3 text-gray-warm text-sm leading-relaxed">
                     <span className="w-4 h-4 rounded-full bg-orange-light border border-orange/30 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -470,7 +472,7 @@ export default function CompaniesPage() {
             Let&apos;s talk.
           </h2>
           <p className="text-white/80 text-lg leading-relaxed mb-10">
-            Drop your name and email and Remi will reach out directly. No sales team. No pitch deck by default. Just a real conversation about what your company can do.
+            Drop your name and email. Remi reaches out directly — you&apos;ll have a real conversation about what makes sense for your company, and go from there.
           </p>
           <CompaniesContactForm />
           <p className="mt-6 text-white/60 text-sm">

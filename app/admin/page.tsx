@@ -96,6 +96,22 @@ type PartnerData = {
   roleBreakdown: { role: string; count: number }[];
 };
 
+type ProgramPartner = {
+  id: string;
+  created_at: string;
+  first_name: string;
+  last_name: string;
+  org_name: string;
+  email: string;
+  program_type: string;
+  teen_count: string | null;
+};
+
+type ProgramData = {
+  signups: ProgramPartner[];
+  typeBreakdown: { type: string; count: number }[];
+};
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function timeAgo(dateStr: string): string {
@@ -229,6 +245,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [donationStats, setDonationStats] = useState<DonationStats | null>(null);
   const [partnerData, setPartnerData] = useState<PartnerData | null>(null);
+  const [programData, setProgramData] = useState<ProgramData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -256,10 +273,11 @@ export default function AdminPage() {
     setLoading(true);
     setError(null);
     try {
-      const [statsRes, donationsRes, partnersRes] = await Promise.all([
+      const [statsRes, donationsRes, partnersRes, programsRes] = await Promise.all([
         fetch("/api/admin/stats"),
         fetch("/api/admin/donations"),
         fetch("/api/admin/partners"),
+        fetch("/api/admin/programs"),
       ]);
       if (statsRes.status === 401) { setAuthed(false); return; }
       if (!statsRes.ok) {
@@ -278,6 +296,9 @@ export default function AdminPage() {
       }
       if (partnersRes.ok) {
         setPartnerData(await partnersRes.json());
+      }
+      if (programsRes.ok) {
+        setProgramData(await programsRes.json());
       }
       setLastUpdated(new Date());
     } catch (e) {
@@ -301,6 +322,9 @@ export default function AdminPage() {
         });
         fetch("/api/admin/partners").then(async (pRes) => {
           if (pRes.ok) setPartnerData(await pRes.json());
+        });
+        fetch("/api/admin/programs").then(async (pgRes) => {
+          if (pgRes.ok) setProgramData(await pgRes.json());
         });
       }
     });
@@ -1098,6 +1122,81 @@ export default function AdminPage() {
                           <td className="px-4 py-3">
                             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange">
                               {s.role}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-mid text-xs">{s.teen_count ?? "—"}</td>
+                          <td className="px-4 py-3 text-gray-mid text-xs whitespace-nowrap">{fmtDate(s.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* ── ROW 6: PROGRAM PARTNERS ── */}
+        <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+          <div className="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex-1">
+              <h2 className="font-heading font-bold text-cream text-lg">Program Partners</h2>
+              <p className="text-gray-mid text-xs mt-0.5">
+                {programData ? `${programData.signups.length} total signup${programData.signups.length !== 1 ? "s" : ""}` : "Organizations signed up for access"}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {loading || !programData ? (
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+              </div>
+            ) : programData.signups.length === 0 ? (
+              <p className="text-gray-mid text-sm">No program partner signups yet.</p>
+            ) : (
+              <>
+                {/* Count + type breakdown */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8">
+                  <div>
+                    <div className="font-display font-black text-6xl text-orange tracking-tight leading-none">
+                      {programData.signups.length}
+                    </div>
+                    <div className="text-gray-mid text-sm mt-1">program partner signups</div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {programData.typeBreakdown.map(({ type, count }) => (
+                      <div key={type} className="bg-white/5 border border-white/10 rounded-full px-4 py-1.5 flex items-center gap-2">
+                        <span className="text-cream text-sm font-semibold">{count}</span>
+                        <span className="text-gray-mid text-xs">{type}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[800px]">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        {["Org Name", "Contact", "Email", "Program Type", "Teen Count", "Date"].map((h) => (
+                          <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {programData.signups.map((s) => (
+                        <tr key={s.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                          <td className="px-4 py-3 font-medium text-cream whitespace-nowrap">{s.org_name}</td>
+                          <td className="px-4 py-3 text-gray-mid text-sm whitespace-nowrap">
+                            {s.first_name} {s.last_name}
+                          </td>
+                          <td className="px-4 py-3 text-gray-mid text-xs">{s.email}</td>
+                          <td className="px-4 py-3">
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange">
+                              {s.program_type}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-gray-mid text-xs">{s.teen_count ?? "—"}</td>

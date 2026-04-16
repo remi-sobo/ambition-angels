@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 const tracks = [
   {
@@ -219,33 +220,55 @@ export default function CurriculumPage() {
         }}
       >
         <div className="container-site relative z-10">
-          <div className="max-w-3xl">
-            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
-              Internship Tracks
-            </p>
-            <h1 className="font-display font-black text-6xl lg:text-7xl text-cream mb-6 leading-none tracking-tight uppercase">
-              19 career tracks.<br />
-              30 days each.<br />
-              <span className="text-orange">All free.</span>
-            </h1>
-            <p className="text-gray-mid text-lg lg:text-xl leading-relaxed max-w-2xl">
-              Each track is a simulated internship — a real employer, real deliverables, and real career skills. 15 minutes a day. On the phone they already have.
-            </p>
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-10 lg:gap-14 items-stretch">
 
-          {/* Stats strip */}
-          <div className="mt-14 flex flex-wrap gap-10">
-            {[
-              { number: "19", label: "Career tracks" },
-              { number: "30", label: "Days per internship" },
-              { number: "15 min", label: "Per day" },
-              { number: "100%", label: "Free" },
-            ].map((s) => (
-              <div key={s.label}>
-                <div className="font-display font-black text-4xl text-orange tracking-tight leading-none">{s.number}</div>
-                <div className="text-gray-mid text-sm mt-1">{s.label}</div>
+            {/* LEFT — text content */}
+            <div>
+              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
+                Internship Tracks
+              </p>
+              <h1 className="font-display font-black text-6xl lg:text-7xl text-cream mb-6 leading-none tracking-tight uppercase">
+                19 career tracks.<br />
+                30 days each.<br />
+                <span className="text-orange">All free.</span>
+              </h1>
+              <p className="text-gray-mid text-lg lg:text-xl leading-relaxed">
+                Each track is a simulated internship — a real employer, real deliverables, and real career skills. 15 minutes a day. On the phone they already have.
+              </p>
+
+              {/* Stats strip */}
+              <div className="mt-12 lg:mt-14 flex flex-wrap gap-x-10 gap-y-6">
+                {[
+                  { number: "19", label: "Career tracks" },
+                  { number: "30", label: "Days per internship" },
+                  { number: "15 min", label: "Per day" },
+                  { number: "100%", label: "Free" },
+                ].map((s) => (
+                  <div key={s.label}>
+                    <div className="font-display font-black text-4xl text-orange tracking-tight leading-none">{s.number}</div>
+                    <div className="text-gray-mid text-sm mt-1">{s.label}</div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* RIGHT — photo */}
+            <div className="relative w-full aspect-[4/5] lg:aspect-auto lg:h-full lg:min-h-[520px] rounded-card-lg overflow-hidden">
+              <Image
+                src="/images/curriculum-hero.jpg"
+                alt=""
+                fill
+                sizes="(min-width: 1024px) 42vw, 100vw"
+                className="object-cover"
+                priority
+              />
+              {/* Left-edge fade — blends photo into the dark section background */}
+              <div
+                className="absolute inset-y-0 left-0 w-[20%] bg-gradient-to-r from-ink to-transparent pointer-events-none"
+                aria-hidden="true"
+              />
+            </div>
+
           </div>
         </div>
       </section>

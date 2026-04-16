@@ -237,22 +237,41 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* CARD 03 — waitlist */}
+            {/* CARD 03 — the conversation */}
             <div className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm flex flex-col fade-up stagger-3">
               <div className="font-display font-black text-6xl text-orange leading-none mb-5 tracking-tight">03</div>
               <h3 className="font-heading font-bold text-ink text-xl mb-3 tracking-tight">
-                Join the Guide waitlist.
+                Show up for the conversation.
               </h3>
               <p className="text-gray-warm text-sm leading-relaxed flex-1 mb-6">
-                The full Guide portal is launching soon. Join the waitlist and then we&apos;ll give you early access the moment it opens.
+                Ask them what they learned this week. That one conversation is the whole game. We&apos;ll give you the prompts to make it easy.
               </p>
               <Link
-                href="/for-adults#waitlist"
+                href="/for-adults"
                 className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-5 py-3 rounded-full transition-colors text-sm min-h-[44px] self-start"
               >
-                Join the waitlist
+                See conversation prompts
               </Link>
             </div>
+          </div>
+
+          {/* WAITLIST CAPTURE BAND */}
+          <div className="mt-16 lg:mt-20 pt-12 lg:pt-14 border-t border-ink/10 max-w-2xl mx-auto text-center fade-up">
+            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-3">
+              The Guide Portal Is Coming
+            </p>
+            <h3 className="font-heading font-bold text-2xl lg:text-[28px] text-ink tracking-tight leading-tight mb-4">
+              Want the full dashboard when it opens?
+            </h3>
+            <p className="text-gray-warm text-base leading-relaxed mb-7 max-w-[600px] mx-auto">
+              We&apos;re building a Guide portal with live progress, conversation prompts tied to your teen&apos;s current module, and a way to track every conversation you have. Waitlist members get in first.
+            </p>
+            <Link
+              href="/for-adults#waitlist"
+              className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px]"
+            >
+              Join the Guide Waitlist &rarr;
+            </Link>
           </div>
         </div>
       </section>

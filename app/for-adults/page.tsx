@@ -124,7 +124,7 @@ export default function PartnersPage() {
             You&apos;re already in their corner. Now we&apos;ll put something real in your hands.
           </h1>
           <p className="text-gray-mid text-lg leading-relaxed max-w-xl mb-10">
-            Career conversation prompts. Real-time insight into what they&apos;re learning. A roadmap to finally have the conversation that changes everything.
+            We give you career conversation prompts, real-time insight into what your teen is learning, and a way to finally have the conversation you&apos;ve been putting off.
           </p>
           <button
             onClick={scrollToWaitlist}
@@ -172,7 +172,7 @@ export default function PartnersPage() {
             How It Works
           </p>
           <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream tracking-tight leading-tight mb-12 max-w-2xl">
-            Same app. Two experiences. One relationship deepened.
+            Same app, built two different ways — one for your teen, one for you.
           </h2>
 
           {/* Teen / Guide split */}

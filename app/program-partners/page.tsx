@@ -147,7 +147,7 @@ export default function ProgramPartnersPage() {
               Two ways to bring Ambition to your teens.
             </h2>
             <p className="text-gray-warm text-lg leading-relaxed">
-              Start wherever you are. Both work. One goes deeper.
+              Start with either — one goes deeper than the other.
             </p>
           </div>
 
@@ -282,7 +282,7 @@ export default function ProgramPartnersPage() {
                 We hear this every time. And it&apos;s fair. Your frontline staff is stretched. Your program already has a curriculum. The last thing you need is another app to onboard, another thing to explain, another reason for a student to check out.
               </p>
               <p>
-                Here&apos;s what actually happens: you create 15 minutes in your schedule twice a week. Students open the app, pick a career, and go. No training required. No new lesson plan. Your staff doesn&apos;t teach it — the app does. You just create the time.
+                Here&apos;s what actually happens: you create 15 minutes in your schedule twice a week. Students open the app, pick a career, and go. Your staff doesn&apos;t run it. The app does. No training needed, no new lesson plan to build. You just create the time.
               </p>
             </div>
           </div>
@@ -309,7 +309,7 @@ export default function ProgramPartnersPage() {
           <div className="max-w-2xl mb-12">
             <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">How It Works</p>
             <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-4">
-              Four steps. Same day.
+              Four steps to get started — same-day access.
             </h2>
             <p className="text-gray-warm text-lg leading-relaxed">
               We built this to be self-serve from day one. You shouldn&apos;t need to wait for a kickoff call to get your students learning.
@@ -355,7 +355,7 @@ export default function ProgramPartnersPage() {
                   "Free for every teen in your program",
                   "Program code delivered within 24 hours — usually same day",
                   "Guide dashboard login included",
-                  "No contract. No commitment. Cancel anytime.",
+                  "No contract required. Cancel anytime.",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3 text-gray-mid text-sm">
                     <span className="w-4 h-4 rounded-full bg-orange/20 border border-orange/40 flex items-center justify-center flex-shrink-0 mt-0.5">

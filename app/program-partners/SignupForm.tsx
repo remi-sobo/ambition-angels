@@ -68,8 +68,8 @@ export default function ProgramPartnerSignupForm() {
         </p>
         <p className="text-gray-mid text-sm leading-relaxed">
           Your program code is on the way — usually within a few hours. If you don&apos;t hear from us by tomorrow, email{" "}
-          <a href="mailto:remi@ambitionangels.org" className="text-orange underline underline-offset-2">
-            remi@ambitionangels.org
+          <a href="mailto:hello@ambitionangels.org" className="text-orange underline underline-offset-2">
+            hello@ambitionangels.org
           </a>.
         </p>
       </div>

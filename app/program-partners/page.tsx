@@ -106,7 +106,7 @@ export default function ProgramPartnersPage() {
                   Start Now
                 </a>
                 <a
-                  href="mailto:remi@ambitionangels.org"
+                  href="mailto:hello@ambitionangels.org"
                   className="bg-cream/5 hover:bg-cream/10 text-cream border border-cream/20 font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center justify-center"
                 >
                   Talk to Remi First
@@ -345,8 +345,8 @@ export default function ProgramPartnersPage() {
               </h2>
               <p className="text-gray-mid text-lg leading-relaxed mb-8">
                 Fill this out and you&apos;ll have access same day. No call required. If you want to talk first, just email{" "}
-                <a href="mailto:remi@ambitionangels.org" className="text-orange underline underline-offset-2 hover:text-orange-dark transition-colors">
-                  remi@ambitionangels.org
+                <a href="mailto:hello@ambitionangels.org" className="text-orange underline underline-offset-2 hover:text-orange-dark transition-colors">
+                  hello@ambitionangels.org
                 </a>.
               </p>
               {/* Mini checklist */}

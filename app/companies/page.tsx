@@ -478,10 +478,10 @@ export default function CompaniesPage() {
           <p className="mt-6 text-white/60 text-sm">
             Or email directly:{" "}
             <a
-              href="mailto:remi@ambitionangels.org"
+              href="mailto:hello@ambitionangels.org"
               className="text-white underline underline-offset-2 hover:text-white/80 transition-colors"
             >
-              remi@ambitionangels.org
+              hello@ambitionangels.org
             </a>
           </p>
         </div>

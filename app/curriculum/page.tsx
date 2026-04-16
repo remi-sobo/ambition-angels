@@ -338,6 +338,56 @@ export default function CurriculumPage() {
         </div>
       </section>
 
+      {/* UPCOMING TRACKS */}
+      <section className="section-pad bg-[#F5F4F0]">
+        <div className="container-site">
+          <div className="max-w-2xl mb-10">
+            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
+              Coming Soon
+            </p>
+            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-5">
+              More career tracks in development.
+            </h2>
+            <p className="text-gray-warm text-lg leading-relaxed">
+              Each new track takes funding to build — employer partnerships, production, and content design. Help us get these to teens faster.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3 mb-10">
+            {[
+              "AI & Machine Learning",
+              "Real Estate",
+              "Teaching & Education",
+              "Law & Advocacy",
+              "Social Work",
+              "Cybersecurity",
+            ].map((track) => (
+              <span
+                key={track}
+                className="inline-flex items-center bg-white border border-orange/20 text-ink text-sm font-semibold px-4 py-2.5 rounded-full"
+              >
+                {track}
+              </span>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-5">
+            <a
+              href="/donate"
+              className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px]"
+            >
+              Fund a new track
+            </a>
+            <a
+              href="mailto:hello@ambitionangels.org?subject=Track%20suggestion"
+              className="text-orange font-semibold text-sm hover:text-orange-dark transition-colors underline underline-offset-2"
+            >
+              Or tell us what&apos;s missing
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* BOTTOM CTA */}
       <section
         className="section-pad bg-ink relative overflow-hidden"

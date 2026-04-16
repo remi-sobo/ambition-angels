@@ -11,19 +11,12 @@ const navLinks = [
   { href: "/the-app", label: "The App" },
   { href: "/curriculum", label: "Curriculum" },
   { href: "/impact", label: "Impact" },
-  { href: "/for-adults", label: "I Have a Teen" },
+  { href: "/for-adults", label: "For Guides" },
 ];
 
 export default function Nav() {
-  const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -37,11 +30,7 @@ export default function Nav() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
-          scrolled || menuOpen
-            ? "bg-cream/95 backdrop-blur-md border-b border-gray-light shadow-sm"
-            : "bg-transparent"
-        }`}
+        className="fixed top-0 left-0 right-0 z-50 transition-all duration-200 bg-cream/95 backdrop-blur-md border-b border-gray-light shadow-sm"
       >
         <div className="container-site">
           <div className="flex items-center justify-between h-16 lg:h-18">
@@ -49,7 +38,7 @@ export default function Nav() {
             {/* Logo */}
             <Link href="/" className="flex-shrink-0">
               <Image
-                src={scrolled || menuOpen ? "/images/logo-color.png" : "/images/logo-white.png"}
+                src="/images/logo-color.png"
                 alt="Ambition Angels"
                 width={200}
                 height={60}
@@ -92,9 +81,9 @@ export default function Nav() {
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
             >
-              <span className={`block w-6 h-0.5 transition-all duration-200 ${scrolled || menuOpen ? "bg-ink" : "bg-cream"} ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
-              <span className={`block w-6 h-0.5 transition-all duration-200 ${scrolled || menuOpen ? "bg-ink" : "bg-cream"} ${menuOpen ? "opacity-0" : ""}`} />
-              <span className={`block w-6 h-0.5 transition-all duration-200 ${scrolled || menuOpen ? "bg-ink" : "bg-cream"} ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+              <span className={`block w-6 h-0.5 transition-all duration-200 bg-ink ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
+              <span className={`block w-6 h-0.5 transition-all duration-200 bg-ink ${menuOpen ? "opacity-0" : ""}`} />
+              <span className={`block w-6 h-0.5 transition-all duration-200 bg-ink ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
             </button>
           </div>
         </div>

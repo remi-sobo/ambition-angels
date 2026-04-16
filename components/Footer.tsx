@@ -106,10 +106,10 @@ export default function Footer() {
             <ul className="flex flex-col gap-3 text-gray-mid text-sm mb-8">
               <li>
                 <a
-                  href="mailto:remi@ambitionangels.org"
+                  href="mailto:hello@ambitionangels.org"
                   className="hover:text-cream transition-colors"
                 >
-                  remi@ambitionangels.org
+                  hello@ambitionangels.org
                 </a>
               </li>
               <li>380 Portage Ave, Palo Alto, CA 94306</li>

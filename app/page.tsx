@@ -112,7 +112,7 @@ export default function Home() {
             </h1>
 
             <p className="font-body text-gray-mid text-base lg:text-lg mb-8 leading-relaxed max-w-sm">
-              Take internships. See real careers. On the phone they already have. Free for every student.
+              Teens take simulated internships in real careers, on the phone they already have. Free for every student.
             </p>
 
             {/* App store buttons — primary */}
@@ -164,6 +164,94 @@ export default function Home() {
               >
                 Support the Mission
               </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FOR THE ADULTS IN THEIR CORNER — parent instruction block */}
+      <section
+        className="section-pad bg-[#F5F4F0] relative overflow-hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
+        <div className="container-site relative z-10">
+          <div className="max-w-2xl mb-12 fade-up">
+            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
+              For the Adults in Their Corner
+            </p>
+            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-5">
+              Got a teen in your life? Here&apos;s how to actually help.
+            </h2>
+            <p className="text-gray-warm text-lg leading-relaxed">
+              The app does the work. You make it stick. It takes 15 minutes a day from them — and a few minutes a week from you.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* CARD 01 — download */}
+            <div className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm flex flex-col fade-up stagger-1">
+              <div className="font-display font-black text-6xl text-orange leading-none mb-5 tracking-tight">01</div>
+              <h3 className="font-heading font-bold text-ink text-xl mb-3 tracking-tight">
+                Get the app on their phone.
+              </h3>
+              <p className="text-gray-warm text-sm leading-relaxed flex-1 mb-6">
+                Download Ambition together. Let them pick their first 30-day career internship — entrepreneurship, nursing, game design, wealth management, and more.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-5 py-3 rounded-full transition-colors text-sm min-h-[44px]"
+                >
+                  Download for iOS
+                </a>
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center bg-ink/8 hover:bg-ink/15 text-ink border border-ink/15 font-semibold px-5 py-3 rounded-full transition-colors text-sm min-h-[44px]"
+                >
+                  Download for Android
+                </a>
+              </div>
+            </div>
+
+            {/* CARD 02 — the deal */}
+            <div className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm flex flex-col fade-up stagger-2">
+              <div className="font-display font-black text-6xl text-orange leading-none mb-5 tracking-tight">02</div>
+              <h3 className="font-heading font-bold text-ink text-xl mb-3 tracking-tight">
+                Make a deal with them.
+              </h3>
+              <p className="text-gray-warm text-sm leading-relaxed flex-1 mb-6">
+                Pick a reward they&apos;ll actually want when they finish. Pizza party. New kicks. A get-out-of-a-test-free card. Cash. We&apos;ll give you a starter list of what works.
+              </p>
+              <Link
+                href="/for-adults#the-deal"
+                className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-5 py-3 rounded-full transition-colors text-sm min-h-[44px] self-start"
+              >
+                See reward examples
+              </Link>
+            </div>
+
+            {/* CARD 03 — waitlist */}
+            <div className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm flex flex-col fade-up stagger-3">
+              <div className="font-display font-black text-6xl text-orange leading-none mb-5 tracking-tight">03</div>
+              <h3 className="font-heading font-bold text-ink text-xl mb-3 tracking-tight">
+                Join the Guide waitlist.
+              </h3>
+              <p className="text-gray-warm text-sm leading-relaxed flex-1 mb-6">
+                We&apos;ll send you career conversation prompts tied to what your teen is learning — and let you know the moment the full Guide portal opens.
+              </p>
+              <Link
+                href="/for-adults#waitlist"
+                className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-5 py-3 rounded-full transition-colors text-sm min-h-[44px] self-start"
+              >
+                Join the waitlist
+              </Link>
             </div>
           </div>
         </div>
@@ -251,10 +339,10 @@ export default function Home() {
                 {[
                   { pct: "95%", label: "of teens own a smartphone" },
                   { pct: "8 hrs", label: "average daily screen time" },
-                  { pct: "11%", label: "attend after-school programming" },
+                  { pct: "Only 11%", label: "attend after-school programming" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-5">
-                    <div className="font-display font-black text-3xl lg:text-4xl text-orange flex-shrink-0 w-24 tracking-tight">
+                    <div className="font-display font-black text-3xl lg:text-4xl text-orange flex-shrink-0 w-28 lg:w-32 tracking-tight">
                       {item.pct}
                     </div>
                     <div className="text-charcoal text-sm leading-snug">

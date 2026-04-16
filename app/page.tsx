@@ -244,7 +244,7 @@ export default function Home() {
                 Join the Guide waitlist.
               </h3>
               <p className="text-gray-warm text-sm leading-relaxed flex-1 mb-6">
-                We&apos;ll send you career conversation prompts tied to what your teen is learning — and let you know the moment the full Guide portal opens.
+                The full Guide portal is launching soon. Join the waitlist and then we&apos;ll give you early access the moment it opens.
               </p>
               <Link
                 href="/for-adults#waitlist"
@@ -527,73 +527,6 @@ export default function Home() {
             </div>
 
           </div>
-        </div>
-      </section>
-
-      {/* FOR THE ADULTS IN THEIR CORNER */}
-      <section
-        className="section-pad bg-[#0E0E0E] relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <div className="max-w-2xl mb-12">
-            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4 fade-up">
-              For the Adults in Their Corner
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream mb-5 tracking-tight fade-up stagger-1">
-              You care about this kid. Now you can show up for their future.
-            </h2>
-            <p className="text-gray-mid text-lg leading-relaxed fade-up stagger-2">
-              Ambition Angels isn&apos;t just for teens. Parents, coaches, teachers, and mentors get their own portal — follow along with what your teen is learning, and get career conversation prompts designed to deepen their motivation and vision.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-            {/* Left card — FOR THE TEEN */}
-            <div
-              className="bg-[#1a1a1a] border border-white/10 rounded-card-lg p-8 flex flex-col fade-up stagger-1"
-              style={{ borderTop: "3px solid #E8500A" }}
-            >
-              <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">For the Teen</p>
-              <div className="text-4xl mb-4">📱</div>
-              <p className="text-white/75 text-sm leading-relaxed flex-1 mb-6">
-                Download the app. Pick a career internship. Show up 15 minutes a day. Earn real rewards for finishing.
-              </p>
-              <a
-                href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-orange font-semibold text-sm hover:text-orange-dark transition-colors"
-              >
-                Get the App &rarr;
-              </a>
-            </div>
-
-            {/* Right card — FOR YOU COMING SOON */}
-            <div
-              className="bg-[#1a1a1a] border border-white/10 rounded-card-lg p-8 flex flex-col fade-up stagger-2"
-              style={{ borderTop: "3px solid #E8500A" }}
-            >
-              <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">For You — Coming Soon</p>
-              <div className="text-4xl mb-4">🧭</div>
-              <p className="text-white/75 text-sm leading-relaxed flex-1 mb-6">
-                We&apos;re building a Guide portal for parents, coaches, teachers, and mentors. Follow along with what your teen is learning and get career conversation prompts designed to deepen their motivation.
-              </p>
-              <Link
-                href="/for-adults"
-                className="text-orange font-semibold text-sm hover:text-orange-dark transition-colors"
-              >
-                Join the Waitlist &rarr;
-              </Link>
-            </div>
-          </div>
-
-          <p className="text-center text-orange text-sm font-semibold fade-up">
-            The teen experience is live now. The Guide portal is coming — get early access.
-          </p>
         </div>
       </section>
 

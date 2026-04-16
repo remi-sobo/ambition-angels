@@ -209,7 +209,7 @@ export default function UpdatePage() {
             We launched Ambition to solve a specific problem: teens from low-income communities graduate knowing academic subjects but not how to navigate a workforce changing faster than any curriculum can keep up with. Our answer was to meet them on the device they already use for 8 hours a day.
           </p>
           <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:32, maxWidth:680 }}>
-            Four years in, the data tells a clear story. Teens are showing up. They are finishing. And they are coming back. The question has shifted from &ldquo;does this work?&rdquo; to &ldquo;how fast can we build it out?&rdquo;
+            Four years in, the data tells a clear story. Teens are showing up. They are finishing. And they are coming back. We know this works. The work now is scale.
           </p>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:12 }}>
             {stats.map((s) => (
@@ -287,7 +287,7 @@ export default function UpdatePage() {
         <section style={{ marginBottom:56 }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:orange, marginBottom:12 }}>The model</div>
           <h2 style={{ fontSize:"clamp(24px, 3.5vw, 36px)", fontWeight:800, letterSpacing:"-0.025em", color:navy, marginBottom:14, lineHeight:1.15 }}>
-            Three layers. One continuum.
+            Three layers of the same program.
           </h2>
           <p style={{ fontSize:15, color:"#4B5563", lineHeight:1.75, marginBottom:28, maxWidth:620 }}>
             This is not just an app. This is a system. Think of it as a funnel — breadth at the top, depth at the bottom. Every layer is a win.
@@ -337,7 +337,7 @@ export default function UpdatePage() {
         <section style={{ marginBottom:56 }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:orange, marginBottom:12 }}>How we reach teens</div>
           <h2 style={{ fontSize:"clamp(24px, 3.5vw, 36px)", fontWeight:800, letterSpacing:"-0.025em", color:navy, marginBottom:24, lineHeight:1.15 }}>
-            Two entry points. One mission.
+            Two ways we reach teens.
           </h2>
           <div className="upd-two-col">
             {/* Block 1 */}
@@ -401,7 +401,7 @@ export default function UpdatePage() {
         <section style={{ background:navy, borderRadius:20, padding:"40px 36px", marginBottom:40 }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:orange, marginBottom:12 }}>What we&apos;re building in 2026</div>
           <h2 style={{ fontSize:"clamp(24px, 3.5vw, 36px)", fontWeight:800, letterSpacing:"-0.025em", color:"#ffffff", marginBottom:10, lineHeight:1.15 }}>
-            Four priorities. One goal.
+            Our 2026 priorities.
           </h2>
           <p style={{ fontSize:15, color:"rgba(255,255,255,0.55)", lineHeight:1.7, marginBottom:28, maxWidth:580 }}>
             Take everything that works in the app and build the infrastructure that makes it spread.

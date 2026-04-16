@@ -125,7 +125,7 @@ export default function TheAppPage() {
               How It Works
             </p>
             <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink leading-tight">
-              Simulated internships. On their phone. That pay.
+              Simulated internships on the phone they already have — and they get paid to finish.
             </h2>
           </div>
 

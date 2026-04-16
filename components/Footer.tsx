@@ -21,7 +21,7 @@ export default function Footer() {
             Join the Movement
           </p>
           <h2 className="font-heading font-bold text-white text-3xl lg:text-4xl mb-4 leading-tight">
-            One teen. One internship. One future changed.<br className="hidden lg:block" /> Fund it today.
+            Fund a teen&apos;s first internship.<br className="hidden lg:block" /> Watch what happens next.
           </h2>
           <p className="text-white/80 text-lg mb-8 max-w-prose mx-auto">
             Become an Angel investor in a teen&apos;s future before the world knows their name.

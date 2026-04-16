@@ -183,7 +183,7 @@ export default function DonatePage() {
               Every Dollar You Give Does Work
             </p>
             <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream leading-tight">
-              Here&apos;s what your gift actually does.
+              Here&apos;s where your money goes.
             </h2>
           </div>
 
@@ -191,17 +191,17 @@ export default function DonatePage() {
             {[
               {
                 num: "01",
-                label: "Invest",
+                label: "The App",
                 body: "Your gift gives teens access to career internships and the exposure they need to find a future worth chasing. Completely free to every student who downloads the app.",
               },
               {
                 num: "02",
-                label: "Motivate",
+                label: "The Content",
                 body: "Donations power new curriculum and the student rewards that keep teens engaged. They earn gift cards. You fund the belief that their time has real value.",
               },
               {
                 num: "03",
-                label: "Impact",
+                label: "The Proof",
                 body: "See the real difference your support makes through updates, data, and student stories. We report honestly on outcomes because you deserve to know your gift is working.",
               },
             ].map((col) => (

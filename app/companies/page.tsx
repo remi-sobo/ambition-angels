@@ -35,7 +35,7 @@ const tickerItems = [
 const opportunityCards = [
   {
     title: "Employee Engagement",
-    body: "Your team sits with real student profiles. Real career questions. Real confusion about what to do after high school. They don't pack boxes — they contribute something. The feedback we get from company employees every single time: \"I didn't expect it to hit like that.\"",
+    body: "Your team sits with real student profiles, real career questions, and the actual confusion teens carry about life after high school. They don't pack boxes — they contribute something. The feedback we get from company employees every single time: \"I didn't expect it to hit like that.\"",
   },
   {
     title: "CSR You Can Report",
@@ -43,7 +43,7 @@ const opportunityCards = [
   },
   {
     title: "Brand with the Next Generation",
-    body: "A teen who completes a career internship in your industry — built with your brand throughout — doesn't forget that. Not because of your logo. Because you showed them what a career in your world could actually look like. That's not advertising. That's something else.",
+    body: "A teen who completes a career internship in your industry — built with your brand throughout — doesn't forget that. Not because of your logo. Because you gave them a real look at what a career in your world actually feels like. That's the kind of thing teens remember.",
   },
 ];
 
@@ -252,7 +252,7 @@ export default function CompaniesPage() {
               Most CSR spend disappears.<br className="hidden lg:block" /> This doesn&apos;t.
             </h2>
             <p className="text-gray-mid text-lg leading-relaxed">
-              Logo on a banner. Team volunteering for a day. Annual report line item. You&apos;ve done it. It felt fine. Ambition Angels is something different — direct contact with the teens who will define the next workforce, and a story you&apos;ll actually want to tell.
+              You&apos;ve seen the standard CSR menu. Logo on a banner, a volunteer day, a line in the annual report. Fine. Forgettable. Ambition Angels is different — direct contact with the teens who will define the next workforce, and a story you&apos;ll actually want to tell.
             </p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -472,7 +472,7 @@ export default function CompaniesPage() {
             Let&apos;s talk.
           </h2>
           <p className="text-white/80 text-lg leading-relaxed mb-10">
-            Drop your name and email. Remi reaches out directly — you&apos;ll have a real conversation about what makes sense for your company, and go from there.
+            Drop your name and email and Remi will reach out directly for a real conversation — no sales team, no pitch deck by default.
           </p>
           <CompaniesContactForm />
           <p className="mt-6 text-white/60 text-sm">

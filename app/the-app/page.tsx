@@ -42,8 +42,8 @@ export default function TheAppPage() {
         {/* LEFT — photo */}
         <div className="relative hidden lg:block lg:w-[52%] min-h-full">
           <Image
-            src="/images/derick-anies-hDJT_ERrB-w-unsplash.jpg"
-            alt="Teen looking at their phone, discovering a career path"
+            src="/images/teens-group-phone.jpg"
+            alt="Four teens laughing together while looking at a phone"
             fill
             priority
             className="object-cover object-center"

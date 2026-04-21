@@ -105,15 +105,34 @@ export async function POST(req: NextRequest) {
         if (invoice.subscription && invoice.billing_reason === "subscription_cycle") {
           const piRaw = invoice.payment_intent;
           const piId = typeof piRaw === "string" ? piRaw : (piRaw as Stripe.PaymentIntent | null)?.id;
+          const amt = (invoice.amount_paid ?? 0) / 100;
 
           await supabase.from("donations").insert({
             email: invoice.customer_email ?? null,
-            amount: (invoice.amount_paid ?? 0) / 100,
+            amount: amt,
             recurring: true,
             stripe_payment_id: piId ?? invoice.id,
             subscription_id: invoice.subscription,
             status: "succeeded",
           });
+
+          // Notify Remi on recurring renewals (non-blocking)
+          void getResend().emails.send({
+            from: "Ambition Angels <careers@mail.ambitionangels.org>",
+            to: "remi@ambitionangels.org",
+            subject: `🔁 Monthly renewal: $${amt.toFixed(2)}`,
+            html: `
+              <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:28px;background:#fff;border-radius:12px;">
+                <h2 style="color:#E8500A;margin:0 0 16px;font-size:18px;">Monthly donation renewed — $${amt.toFixed(2)}</h2>
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                  <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Donor</td><td style="padding:6px 0;color:#0E0E0E;">${invoice.customer_email ?? "Unknown"}</td></tr>
+                  <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Amount</td><td style="padding:6px 0;color:#E8500A;font-weight:bold;">$${amt.toFixed(2)}</td></tr>
+                  <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Subscription</td><td style="padding:6px 0;color:#6B7280;font-family:monospace;font-size:12px;">${invoice.subscription}</td></tr>
+                </table>
+                <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View in <a href="https://dashboard.stripe.com" style="color:#E8500A;">Stripe</a></p>
+              </div>
+            `,
+          }).catch((e) => console.error("Resend notify error:", e));
         }
         break;
       }

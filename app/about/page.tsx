@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Image from "next/image";
 
 export const metadata: Metadata = {
@@ -155,46 +154,6 @@ export default function AboutPage() {
               <p>
                 Ambition is what happens when you stop fighting where teens are and start meeting them there. That is our ambition.
               </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FOUNDER MESSAGE */}
-      <section className="section-pad bg-ink">
-        <div className="container-site">
-          <div className="max-w-3xl mx-auto text-center">
-            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-6">
-              From Our Founder
-            </p>
-            <h2 className="font-heading font-bold text-3xl lg:text-4xl text-cream mb-8">
-              This is personal.
-            </h2>
-            <blockquote className="text-gray-mid text-lg lg:text-xl leading-relaxed mb-8">
-              &ldquo;My parents dedicated their lives to serving communities that had been left behind. That shaped everything about how I approach this work. I believe in the power of youth development to create a ripple effect for good. Every individual has massive potential and power. When teens are set on a pathway to an economically empowered future, we all benefit. Demetric and I are proof of what is possible when the right support shows up at the right time. Now we build technology to make sure that support reaches every teen who is ready for it. Together, let us keep investing in the future of our youth.&rdquo;
-            </blockquote>
-            <p className="text-gray-warm text-sm mb-8">
-              Remi Sobomehin, Founder and CEO, Ambition Angels
-            </p>
-            <Link
-              href="/founder"
-              className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px]"
-            >
-              Learn About Remi
-            </Link>
-
-            <div className="mt-12 pt-10 border-t border-cream/20 text-left max-w-xl mx-auto">
-              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
-                From the Founder
-              </p>
-              <blockquote className="border-l-4 border-orange pl-6">
-                <p className="text-gray-mid text-lg leading-relaxed italic mb-4">
-                  &ldquo;We envision a future where all teens experience greater wealth, health, and life satisfaction as they grow into adults. At Ambition Angels, we have the potential to alter the course of an entire generation for good.&rdquo;
-                </p>
-                <cite className="not-italic text-gray-mid/60 text-sm">
-                  — Remi Sobomehin, Founder and CEO
-                </cite>
-              </blockquote>
             </div>
           </div>
         </div>

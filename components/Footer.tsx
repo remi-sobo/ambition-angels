@@ -44,7 +44,7 @@ export default function Footer() {
                 alt="Ambition Angels"
                 width={200}
                 height={60}
-                className="h-9 w-auto"
+                className="h-20 lg:h-24 w-auto"
               />
             </Link>
             <p className="text-gray-mid text-sm leading-relaxed mb-4">

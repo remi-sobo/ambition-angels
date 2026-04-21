@@ -37,15 +37,25 @@
   body {
     background-color: var(--cream);
     color: var(--ink);
-    font-family: var(--font-dm-sans), sans-serif;
+    font-family: var(--font-body), sans-serif;
     font-size: 16px;
     line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-space-grotesk), sans-serif;
+    font-family: var(--font-heading), sans-serif;
     letter-spacing: -0.02em;
-    line-height: 1.1;
+    /* Line-height 1.2 prevents Poppins descenders (g, p, y, q) from
+       touching ascenders on the line below. Tight utilities like
+       `leading-none`, `leading-tight`, etc. still override per-element. */
+    line-height: 1.2;
+  }
+
+  /* Display typeface is always uppercase, sitewide. Covers any stray
+     lowercase strings that would otherwise read inconsistently
+     (e.g., "8 hrs" in the stats block). */
+  .font-display {
+    text-transform: uppercase;
   }
 
   * {

@@ -33,7 +33,7 @@ export default function Nav() {
         className="fixed top-0 left-0 right-0 z-50 transition-all duration-200 bg-cream/95 backdrop-blur-md border-b border-gray-light shadow-sm"
       >
         <div className="container-site">
-          <div className="flex items-center justify-between h-16 lg:h-18">
+          <div className="flex items-center justify-between h-16 lg:h-20">
 
             {/* Logo */}
             <Link href="/" className="flex-shrink-0">
@@ -42,7 +42,7 @@ export default function Nav() {
                 alt="Ambition Angels"
                 width={200}
                 height={60}
-                className="h-9 w-auto"
+                className="h-10 lg:h-12 w-auto"
                 priority
               />
             </Link>
@@ -96,7 +96,7 @@ export default function Nav() {
             className="absolute inset-0 bg-ink/20 backdrop-blur-sm"
             onClick={() => setMenuOpen(false)}
           />
-          <div className="absolute top-16 left-0 right-0 bg-cream border-b border-gray-light shadow-lg">
+          <div className="absolute top-16 lg:top-20 left-0 right-0 bg-cream border-b border-gray-light shadow-lg">
             <nav className="container-site py-6 flex flex-col gap-1">
               {navLinks.map((link) => (
                 <Link

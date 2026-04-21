@@ -27,11 +27,11 @@ export default function DonatePage() {
           alt=""
           fill
           priority
-          className="object-cover object-center"
+          className="object-cover object-[center_top]"
           aria-hidden="true"
         />
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-ink/55" />
+        {/* Dark overlay — lightened so teen's face reads through the photo */}
+        <div className="absolute inset-0 bg-ink/40" />
         {/* Dot texture on top */}
         <div
           className="absolute inset-0"

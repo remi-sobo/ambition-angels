@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
   if (email && email.includes("@")) {
     try {
       await getResend().emails.send({
-        from: "Ambition Angels <remi@ambitionangels.org>",
+        from: "Ambition Angels <careers@mail.ambitionangels.org>",
         to: email,
         subject: `${answers.teenname ? `${answers.teenname}'s` : "Your"} top 10 career matches`,
         html: buildEmailHTML(answers.teenname || "", careers),
@@ -181,6 +181,35 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error("Resend error:", err);
     }
+  }
+
+  // Notification to Remi (non-blocking)
+  try {
+    const topThree = (Array.isArray(careers) ? careers : [])
+      .slice(0, 3)
+      .map((c: { title?: string }) => c.title || "—")
+      .join(", ") || "—";
+    await getResend().emails.send({
+      from: "Ambition Angels <careers@mail.ambitionangels.org>",
+      to: "remi@ambitionangels.org",
+      subject: `New career quiz: ${answers.teenname || email || "(anonymous)"}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:28px;background:#fff;border-radius:12px;">
+          <h2 style="color:#E8500A;margin:0 0 16px;font-size:18px;">New career quiz submission</h2>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Teen</td><td style="padding:6px 0;color:#0E0E0E;">${answers.teenname || "—"}</td></tr>
+            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Audience</td><td style="padding:6px 0;color:#0E0E0E;">${audienceMode}</td></tr>
+            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Email</td><td style="padding:6px 0;color:#0E0E0E;">${email ? `<a href="mailto:${email}" style="color:#E8500A;text-decoration:none;">${email}</a>` : "—"}</td></tr>
+            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Age</td><td style="padding:6px 0;color:#0E0E0E;">${answers.age || "—"}</td></tr>
+            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Location</td><td style="padding:6px 0;color:#0E0E0E;">${answers.location || "—"}</td></tr>
+            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;vertical-align:top;">Top 3 matches</td><td style="padding:6px 0;color:#0E0E0E;">${topThree}</td></tr>
+          </table>
+          <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="https://www.ambitionangels.org/admin" style="color:#E8500A;">admin</a></p>
+        </div>
+      `,
+    });
+  } catch (notifyErr) {
+    console.error("Resend notify error:", notifyErr);
   }
 
   return NextResponse.json({ ok: true });

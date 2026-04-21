@@ -118,5 +118,30 @@ export async function POST(req: NextRequest) {
     // Don't fail — DB write succeeded
   }
 
+  // Notification to Remi (non-blocking)
+  try {
+    const isCorporate = role === "Corporate Partner";
+    const subjectPrefix = isCorporate ? "New company inquiry" : "New Guide waitlist signup";
+    await getResend().emails.send({
+      from: "Ambition Angels <careers@mail.ambitionangels.org>",
+      to: "remi@ambitionangels.org",
+      subject: `${subjectPrefix}: ${first_name} ${last_name}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:28px;background:#fff;border-radius:12px;">
+          <h2 style="color:#E8500A;margin:0 0 16px;font-size:18px;">${subjectPrefix}</h2>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Name</td><td style="padding:6px 0;color:#0E0E0E;">${first_name} ${last_name}</td></tr>
+            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Email</td><td style="padding:6px 0;color:#0E0E0E;"><a href="mailto:${email}" style="color:#E8500A;text-decoration:none;">${email}</a></td></tr>
+            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Role</td><td style="padding:6px 0;color:#0E0E0E;">${role}</td></tr>
+            ${teen_count ? `<tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Teens</td><td style="padding:6px 0;color:#0E0E0E;">${teen_count}</td></tr>` : ""}
+          </table>
+          <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="https://www.ambitionangels.org/admin" style="color:#E8500A;">admin</a></p>
+        </div>
+      `,
+    });
+  } catch (notifyErr) {
+    console.error("Resend notify error:", notifyErr);
+  }
+
   return NextResponse.json({ success: true });
 }

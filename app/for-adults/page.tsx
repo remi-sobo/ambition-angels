@@ -110,11 +110,6 @@ export default function PartnersPage() {
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-ink/65" />
-        {/* Curved bottom clip into next cream section */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-14 bg-cream"
-          style={{ clipPath: "ellipse(55% 100% at 50% 100%)" }}
-        />
 
         <div className="container-site relative z-10 pt-28 pb-28 lg:pt-40 lg:pb-36">
           <p className="text-xs font-bold text-orange uppercase tracking-widest mb-5">

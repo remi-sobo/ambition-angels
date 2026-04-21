@@ -32,17 +32,17 @@ const gapFacts = [
 const howWeRespond = [
   {
     num: "01",
-    title: "The Phone",
+    title: "The phone",
     body: "95% of teens own a smartphone and spend 8 hours a day on it. We stopped fighting that and started building for it. The Ambition App lives where teens already live.",
   },
   {
     num: "02",
-    title: "Real Career Exposure",
+    title: "Real career exposure",
     body: "30-day simulated internships in real careers. 15 minutes a day. Students pick their path, build real skills, and see what a career actually feels like before they have to choose one.",
   },
   {
     num: "03",
-    title: "A Trusted Adult in the Room",
+    title: "A trusted adult in the room",
     body: "The teens who shift their career thinking are almost always connected to an adult who knows they are doing it. We equip parents, counselors, and mentors to be that person — even if no one ever did it for them.",
   },
 ];
@@ -138,8 +138,6 @@ export default function ImpactPage() {
         />
         {/* Dark overlay at 60% */}
         <div className="absolute inset-0 bg-ink/60" />
-        {/* Curved bottom clip */}
-        <div className="absolute bottom-0 left-0 right-0 h-14 bg-cream" style={{ clipPath: "ellipse(55% 100% at 50% 100%)" }} />
         <div className="container-site relative z-10">
           <p className="text-xs font-medium text-orange uppercase tracking-widest mb-5">
             Our Impact

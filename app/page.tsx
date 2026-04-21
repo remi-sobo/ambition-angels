@@ -112,7 +112,7 @@ export default function Home() {
             </h1>
 
             <p className="font-body text-gray-mid text-base lg:text-lg mb-8 leading-relaxed max-w-sm">
-              Teens take simulated internships in real careers, on the phone they already have. Free for every student.
+              Teens discover real careers through simulated internships, on the phone they already have. Free for every student.
             </p>
 
             {/* App store buttons — primary */}
@@ -165,6 +165,226 @@ export default function Home() {
                 Support the Mission
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* THE AMBITION APPROACH */}
+      <section
+        className="section-pad bg-ink"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
+        <div className="container-site">
+          <div className="max-w-2xl mb-14">
+            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
+              The Ambition Approach
+            </p>
+            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream mb-6 tracking-tight fade-up stagger-1">
+              Instead of paying adults to develop young people, we reward teens
+              for developing themselves.
+            </h2>
+            <p className="text-gray-mid text-lg leading-relaxed fade-up stagger-2">
+              The Ambition app delivers 30-day simulated internships in real
+              careers. 15 minutes a day. Students pick their path, build technical
+              and life skills, and earn gift cards when they complete an
+              internship.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {pillars.map((p, i) => (
+              <div
+                key={p.icon}
+                className={`bg-cream/5 border border-cream/10 rounded-card p-7 hover:bg-cream/10 hover:shadow-xl hover:shadow-orange/10 hover:-translate-y-1 border-b-2 border-b-transparent hover:border-b-orange/40 transition-all duration-200 cursor-default fade-up stagger-${i + 1}`}
+              >
+                <div className="font-display font-black text-8xl lg:text-9xl text-orange/20 mb-5 leading-none tracking-tight">
+                  {p.icon}
+                </div>
+                <h3 className="font-heading font-semibold text-xl text-cream mb-3 tracking-tight">
+                  {p.title}
+                </h3>
+                <p className="text-gray-mid text-sm leading-relaxed">{p.body}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 flex flex-wrap gap-4">
+            <Link
+              href="/the-app"
+              className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm min-h-[44px] inline-flex items-center"
+            >
+              See How the App Works
+            </Link>
+            <Link
+              href="/curriculum"
+              className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm min-h-[44px] inline-flex items-center"
+            >
+              Explore Internships
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* STATS BAR — proof it works */}
+      <section
+        className="bg-ink py-12 lg:py-16 relative overflow-hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
+        <div className="container-site relative z-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="fade-up stagger-1 text-center">
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">3,500+</div>
+              <div className="text-gray-mid text-sm">Teens reached</div>
+            </div>
+            <div className="fade-up stagger-2 text-center">
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">87%</div>
+              <div className="text-gray-mid text-sm">From Title I schools</div>
+            </div>
+            {/* 14% stat — dashed oval centered on the number */}
+            <div className="fade-up stagger-3 text-center relative">
+              <Image
+                src="/images/doodles/Doodle 70@3x.png"
+                alt=""
+                width={220}
+                height={160}
+                className="opacity-20 absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/4 pointer-events-none"
+                aria-hidden="true"
+              />
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight relative z-10">14%</div>
+              <div className="text-gray-mid text-sm relative z-10">Increase in future orientation</div>
+              <div className="text-gray-mid/60 text-xs relative z-10 mt-1 leading-snug max-w-[160px] mx-auto">A teen&apos;s belief that their future is worth working toward</div>
+            </div>
+            <div className="fade-up stagger-4 text-center">
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">1,100+</div>
+              <div className="text-gray-mid text-sm">Hours of career exploration delivered</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* THE PROBLEM */}
+      <section className="section-pad">
+        <div className="container-site">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div>
+              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
+                The Gap
+              </p>
+              <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6 tracking-tight fade-up stagger-1">
+                Schools can&apos;t do it alone.
+              </h2>
+              <div className="space-y-4 text-gray-warm leading-relaxed">
+                <p className="fade-up stagger-2">
+                  Teens from low-income communities graduate knowing academic
+                  subjects but not how to navigate a workforce that is changing
+                  faster than any curriculum can keep up with.
+                </p>
+                <p className="fade-up stagger-3">
+                  Youth not connected to a viable career path by age 25 are more
+                  likely to face unemployment, poverty, and housing instability. And
+                  the programs built to help them have never been able to reach
+                  them at scale.
+                </p>
+              </div>
+            </div>
+            <div
+              className="bg-orange-light border border-orange/10 rounded-card-lg p-8 lg:p-10 fade-up relative overflow-hidden"
+              style={{
+                backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.15) 1px, transparent 1px)",
+                backgroundSize: "18px 18px",
+              }}
+            >
+              <div className="space-y-6">
+                {[
+                  { pct: "95%", label: "of teens own a smartphone" },
+                  { pct: "8 hrs", label: "average daily screen time" },
+                  { pct: "Only 11%", label: "attend after-school programming" },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-5">
+                    <div className="font-display font-black text-3xl lg:text-4xl text-orange flex-shrink-0 w-28 lg:w-32 tracking-tight">
+                      {item.pct}
+                    </div>
+                    <div className="text-charcoal text-sm leading-snug">
+                      {item.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Capstone — the conclusion the three stats lead to */}
+              <div className="mt-8 pt-6 border-t border-orange/20">
+                <p className="font-display font-black text-3xl lg:text-5xl text-orange tracking-tight leading-[1.05] text-right">
+                  We meet them there.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS — dark treatment */}
+      <section
+        className="py-16 lg:py-20 bg-ink relative overflow-hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
+        <div className="container-site relative z-10">
+          <p className="text-xs font-semibold text-orange uppercase tracking-widest mb-10 text-center fade-up">
+            From the students
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                quote: "I never knew what I wanted to do. After the entrepreneurship internship, I started selling custom bracelets at school. I make $200 a month now.",
+                name: "Destiny M.",
+                grade: "10th Grade",
+                location: "Oakland, CA",
+                initials: "DM",
+              },
+              {
+                quote: "The wealth management track changed how I think about money. I taught my mom what I learned and I am starting to think I might have a future here.",
+                name: "Marcus T.",
+                grade: "11th Grade",
+                location: "East Palo Alto, CA",
+                initials: "MT",
+              },
+              {
+                quote: "I did the nursing internship and it clicked. I know exactly what I am doing after high school. No one in my family has ever worked in healthcare.",
+                name: "Aaliyah R.",
+                grade: "12th Grade",
+                location: "Richmond, CA",
+                initials: "AR",
+              },
+            ].map((t, i) => (
+              <div
+                key={t.name}
+                className={`bg-[#1a1a1a] border border-white/10 rounded-card-lg p-7 hover:border-white/20 hover:-translate-y-0.5 transition-all duration-200 fade-up stagger-${i + 1} flex flex-col`}
+              >
+                <div className="font-display font-black text-6xl text-orange leading-none mb-3 -mt-1" aria-hidden="true">
+                  &ldquo;
+                </div>
+                <p className="text-white/75 text-sm leading-relaxed flex-1 mb-6">
+                  {t.quote}
+                </p>
+                <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                  <div className="w-10 h-10 rounded-full bg-orange/10 border border-orange/30 flex items-center justify-center flex-shrink-0">
+                    <span className="font-heading font-bold text-orange text-xs">{t.initials}</span>
+                  </div>
+                  <div>
+                    <div className="font-heading font-semibold text-white text-sm">{t.name}</div>
+                    <div className="text-[#999] text-xs">{t.grade} &middot; {t.location}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -272,230 +492,6 @@ export default function Home() {
             >
               Join the Guide Waitlist &rarr;
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* STATS BAR */}
-      <section
-        className="bg-ink py-12 lg:py-16 relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="fade-up stagger-1 text-center">
-              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">3,500+</div>
-              <div className="text-gray-mid text-sm">Teens reached</div>
-            </div>
-            <div className="fade-up stagger-2 text-center">
-              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">87%</div>
-              <div className="text-gray-mid text-sm">From Title I schools</div>
-            </div>
-            {/* 14% stat — dashed oval centered on the number */}
-            <div className="fade-up stagger-3 text-center relative">
-              <Image
-                src="/images/doodles/Doodle 70@3x.png"
-                alt=""
-                width={220}
-                height={160}
-                className="opacity-20 absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/4 pointer-events-none"
-                aria-hidden="true"
-              />
-              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight relative z-10">14%</div>
-              <div className="text-gray-mid text-sm relative z-10">Increase in future orientation</div>
-              <div className="text-gray-mid/60 text-xs relative z-10 mt-1 leading-snug max-w-[160px] mx-auto">A teen&apos;s belief that their future is worth working toward</div>
-            </div>
-            <div className="fade-up stagger-4 text-center">
-              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">1,100+</div>
-              <div className="text-gray-mid text-sm">Hours of career exploration delivered</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* THE PROBLEM */}
-      <section className="section-pad">
-        <div className="container-site">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            <div>
-              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
-                The Gap
-              </p>
-              <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6 tracking-tight fade-up stagger-1">
-                Schools can&apos;t do it alone.
-              </h2>
-              <div className="space-y-4 text-gray-warm leading-relaxed">
-                <p className="fade-up stagger-2">
-                  Teens from low-income communities graduate knowing academic
-                  subjects but not how to navigate a workforce that is changing
-                  faster than any curriculum can keep up with.
-                </p>
-                <p className="fade-up stagger-3">
-                  Youth not connected to a viable career path by age 25 are more
-                  likely to face unemployment, poverty, and housing instability. And
-                  the programs built to help them have never been able to reach
-                  them at scale.
-                </p>
-                <div className="border-l-4 border-orange pl-6 py-2 fade-up stagger-4">
-                  <p className="font-bold text-ink text-xl lg:text-2xl leading-snug">
-                    95% of teens have a smartphone. They are on it 8 hours a day.
-                    We meet them there.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div
-              className="bg-orange-light border border-orange/10 rounded-card-lg p-8 lg:p-10 fade-up relative overflow-hidden"
-              style={{
-                backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.15) 1px, transparent 1px)",
-                backgroundSize: "18px 18px",
-              }}
-            >
-              <div className="space-y-6">
-                {[
-                  { pct: "95%", label: "of teens own a smartphone" },
-                  { pct: "8 hrs", label: "average daily screen time" },
-                  { pct: "Only 11%", label: "attend after-school programming" },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center gap-5">
-                    <div className="font-display font-black text-3xl lg:text-4xl text-orange flex-shrink-0 w-28 lg:w-32 tracking-tight">
-                      {item.pct}
-                    </div>
-                    <div className="text-charcoal text-sm leading-snug">
-                      {item.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* DOODLE DIVIDER */}
-      <div className="bg-cream flex justify-center py-2 overflow-hidden">
-        <Image src="/images/doodles/Doodle 54@3x.png" alt="" width={200} height={40} className="opacity-40" aria-hidden="true" />
-      </div>
-
-      {/* THE SOLUTION */}
-      <section
-        className="section-pad bg-ink"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site">
-          <div className="max-w-2xl mb-14">
-            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
-              The Ambition Approach
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream mb-6 tracking-tight fade-up stagger-1">
-              Instead of paying adults to develop young people, we reward teens
-              for developing themselves.
-            </h2>
-            <p className="text-gray-mid text-lg leading-relaxed fade-up stagger-2">
-              The Ambition app delivers 30-day simulated internships in real
-              careers. 15 minutes a day. Students pick their path, build technical
-              and life skills, and earn gift cards when they complete an
-              internship.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {pillars.map((p, i) => (
-              <div
-                key={p.icon}
-                className={`bg-cream/5 border border-cream/10 rounded-card p-7 hover:bg-cream/10 hover:shadow-xl hover:shadow-orange/10 hover:-translate-y-1 border-b-2 border-b-transparent hover:border-b-orange/40 transition-all duration-200 cursor-default fade-up stagger-${i + 1}`}
-              >
-                <div className="font-display font-black text-8xl lg:text-9xl text-orange/20 mb-5 leading-none tracking-tight">
-                  {p.icon}
-                </div>
-                <h3 className="font-heading font-semibold text-xl text-cream mb-3 tracking-tight">
-                  {p.title}
-                </h3>
-                <p className="text-gray-mid text-sm leading-relaxed">{p.body}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Link
-              href="/the-app"
-              className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm min-h-[44px] inline-flex items-center"
-            >
-              See How the App Works
-            </Link>
-            <Link
-              href="/curriculum"
-              className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm min-h-[44px] inline-flex items-center"
-            >
-              Explore Internships
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS — dark treatment */}
-      <section
-        className="py-16 lg:py-20 bg-ink relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <p className="text-xs font-semibold text-orange uppercase tracking-widest mb-10 text-center fade-up">
-            From the students
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                quote: "I never knew what I wanted to do. After the entrepreneurship internship, I started selling custom bracelets at school. I make $200 a month now.",
-                name: "Destiny M.",
-                grade: "10th Grade",
-                location: "Oakland, CA",
-                initials: "DM",
-              },
-              {
-                quote: "The wealth management track changed how I think about money. I taught my mom what I learned and I am starting to think I might have a future here.",
-                name: "Marcus T.",
-                grade: "11th Grade",
-                location: "East Palo Alto, CA",
-                initials: "MT",
-              },
-              {
-                quote: "I did the nursing internship and it clicked. I know exactly what I am doing after high school. No one in my family has ever worked in healthcare.",
-                name: "Aaliyah R.",
-                grade: "12th Grade",
-                location: "Richmond, CA",
-                initials: "AR",
-              },
-            ].map((t, i) => (
-              <div
-                key={t.name}
-                className={`bg-[#1a1a1a] border border-white/10 rounded-card-lg p-7 hover:border-white/20 hover:-translate-y-0.5 transition-all duration-200 fade-up stagger-${i + 1} flex flex-col`}
-              >
-                <div className="font-display font-black text-6xl text-orange leading-none mb-3 -mt-1" aria-hidden="true">
-                  &ldquo;
-                </div>
-                <p className="text-white/75 text-sm leading-relaxed flex-1 mb-6">
-                  {t.quote}
-                </p>
-                <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-                  <div className="w-10 h-10 rounded-full bg-orange/10 border border-orange/30 flex items-center justify-center flex-shrink-0">
-                    <span className="font-heading font-bold text-orange text-xs">{t.initials}</span>
-                  </div>
-                  <div>
-                    <div className="font-heading font-semibold text-white text-sm">{t.name}</div>
-                    <div className="text-[#999] text-xs">{t.grade} &middot; {t.location}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>

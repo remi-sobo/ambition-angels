@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import IPhoneMockup from "@/components/IPhoneMockup";
 import CompaniesContactForm from "./ContactForm";
+import PageVisitedEvent from "@/components/PageVisitedEvent";
 
 export const metadata: Metadata = {
   title: "Corporate Partnership — Ambition Angels",
@@ -149,6 +150,7 @@ function CheckIcon({ light = false }: { light?: boolean }) {
 export default function CompaniesPage() {
   return (
     <>
+      <PageVisitedEvent name="companies_page_visited" />
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="bg-ink section-pad relative overflow-hidden" style={dotTexture}>
         <div className="container-site relative z-10">

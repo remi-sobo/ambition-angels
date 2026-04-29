@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import AnalyticsView from "./AnalyticsView";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -261,6 +262,9 @@ export default function AdminPage() {
   const [donationPage, setDonationPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"feed" | "table" | "profiles">("feed");
 
+  // Top-level admin view selector
+  const [mainView, setMainView] = useState<"overview" | "analytics">("overview");
+
   // Force re-render for "X mins ago"
   const [, tick] = useState(0);
   useEffect(() => {
@@ -484,13 +488,37 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 lg:px-10 py-8 space-y-10">
+      <div className="max-w-[1400px] mx-auto px-4 lg:px-10 py-8 space-y-8">
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-3 text-red-400 text-sm">
             {error}
           </div>
         )}
+
+        {/* ── MAIN VIEW TABS ── */}
+        <div className="flex gap-1 border-b border-white/10">
+          {([
+            { id: "overview", label: "Overview" },
+            { id: "analytics", label: "Analytics" },
+          ] as const).map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setMainView(t.id)}
+              className={`px-5 py-3 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+                mainView === t.id
+                  ? "text-orange border-orange"
+                  : "text-gray-mid border-transparent hover:text-cream"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {mainView === "analytics" && <AnalyticsView />}
+
+        <div className={`space-y-10 ${mainView !== "overview" ? "hidden" : ""}`}>
 
         {/* ── ROW 1A: QUIZ PULSE CARDS ── */}
         <div>
@@ -1210,6 +1238,8 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+
+        </div>{/* /overview wrapper */}
 
       </div>
     </div>

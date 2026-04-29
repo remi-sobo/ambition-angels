@@ -5,6 +5,7 @@ import Image from "next/image";
 import CareerQuizModal from "@/components/CareerQuizModal";
 import IPhoneMockup from "@/components/IPhoneMockup";
 import { useDonateModal } from "@/components/DonateModalProvider";
+import { trackEvent } from "@/lib/analytics";
 
 const pillars = [
   {
@@ -153,7 +154,10 @@ export default function Home() {
             {/* Secondary CTAs */}
             <div className="flex flex-wrap gap-3">
               <button
-                onClick={() => setQuizOpen(true)}
+                onClick={() => {
+                  trackEvent("career_quiz_cta_clicked");
+                  setQuizOpen(true);
+                }}
                 className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 shadow-lg shadow-orange/30 min-h-[52px]"
               >
                 Take the Career Quiz

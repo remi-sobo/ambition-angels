@@ -4,6 +4,7 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import DonateModalProvider from "@/components/DonateModalProvider";
+import Analytics from "@/components/Analytics";
 
 const bigShoulders = Big_Shoulders_Display({
   subsets: ["latin"],
@@ -52,6 +53,7 @@ export default function RootLayout({
           <main>{children}</main>
           <Footer />
         </DonateModalProvider>
+        <Analytics />
       </body>
     </html>
   );

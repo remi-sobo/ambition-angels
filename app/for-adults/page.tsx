@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
+import { trackEvent } from "@/lib/analytics";
 
 const personas = [
   { emoji: "👩‍🏫", role: "Teachers", desc: "Give your students career context without adding to your plate." },
@@ -82,6 +83,7 @@ export default function PartnersPage() {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error ?? "Something went wrong. Please try again.");
       }
+      trackEvent("partner_waitlist_submitted", { role: form.role });
       setSubmitted(true);
       setForm({ first_name: "", last_name: "", email: "", role: "", teen_count: "" });
     } catch (err) {

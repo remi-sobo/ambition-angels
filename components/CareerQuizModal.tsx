@@ -1,5 +1,7 @@
 "use client";
 
+import { trackEvent } from "@/lib/analytics";
+
 import { useState, useEffect, useCallback } from "react";
 
 interface Career {
@@ -94,6 +96,11 @@ export default function CareerQuizModal({ isOpen, onClose }: Props) {
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
+  // Track quiz_started when the modal opens
+  useEffect(() => {
+    if (isOpen) trackEvent("quiz_started");
+  }, [isOpen]);
+
   const updateAnswer = useCallback(<K extends keyof Answers>(key: K, val: Answers[K]) => {
     setAnswers((prev) => ({ ...prev, [key]: val }));
   }, []);
@@ -136,6 +143,7 @@ export default function CareerQuizModal({ isOpen, onClose }: Props) {
         setCareers(getFallback());
       }
       setStage("results");
+      trackEvent("quiz_completed", { audience: audienceMode });
     }
   }, [currentSection, answers, audienceMode]);
 

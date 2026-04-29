@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { loadStripe } from "@stripe/stripe-js";
+import { trackEvent } from "@/lib/analytics";
 import {
   Elements,
   CardElement,
@@ -132,6 +133,7 @@ function DonateForm({ onClose }: FormProps) {
             ]);
           }
 
+          trackEvent("donation_completed", { amount: finalAmount, recurring });
           setSuccess(true);
         } else {
           // ── One-time PaymentIntent ──
@@ -171,6 +173,7 @@ function DonateForm({ onClose }: FormProps) {
             }),
           ]);
 
+          trackEvent("donation_completed", { amount: finalAmount, recurring });
           setSuccess(true);
         }
       } catch (err) {

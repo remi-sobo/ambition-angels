@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import DonateModal from "./DonateModal";
+import { trackEvent } from "@/lib/analytics";
 
 interface DonateModalContextType {
   openModal: () => void;
@@ -20,7 +21,11 @@ export function useDonateModal() {
 export default function DonateModalProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const openModal = useCallback(() => setIsOpen(true), []);
+  const openModal = useCallback(() => {
+    // Single chokepoint for every donate trigger on the site
+    trackEvent("donate_button_clicked");
+    setIsOpen(true);
+  }, []);
   const closeModal = useCallback(() => setIsOpen(false), []);
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 const programTypes = [
   "After-School Program",
@@ -51,6 +52,7 @@ export default function ProgramPartnerSignupForm() {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error ?? "Something went wrong. Please try again.");
       }
+      trackEvent("program_partner_submitted", { program_type: form.program_type });
       setSubmitted(true);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Something went wrong.");

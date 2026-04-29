@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ProgramPartnerSignupForm from "./SignupForm";
+import PageVisitedEvent from "@/components/PageVisitedEvent";
 
 export const metadata: Metadata = {
   title: "Program Partners — Ambition Angels",
@@ -82,6 +83,7 @@ function CheckIcon({ dark = false }: { dark?: boolean }) {
 export default function ProgramPartnersPage() {
   return (
     <>
+      <PageVisitedEvent name="program_partners_page_visited" />
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="bg-ink section-pad relative overflow-hidden" style={dotTexture}>
         <div className="container-site relative z-10">

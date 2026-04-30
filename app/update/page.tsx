@@ -460,7 +460,7 @@ export default function UpdatePage() {
                     <span style={{ fontSize:10, fontWeight:700, color:orange, textTransform:"uppercase", letterSpacing:"0.1em" }}>{tier.name}</span>
                     {tier.highlight && (
                       <span style={{ background:orange, color:"#fff", fontSize:9, fontWeight:700, padding:"2px 8px", borderRadius:100, textTransform:"uppercase", letterSpacing:"0.08em" }}>
-                        Most common this round
+                        Most Popular
                       </span>
                     )}
                   </div>

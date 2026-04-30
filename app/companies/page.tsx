@@ -50,7 +50,7 @@ const opportunityCards = [
 
 const tiers = [
   {
-    amount: "$10K",
+    amount: "$25K",
     period: "/year",
     name: "Community Partner",
     highlight: false,
@@ -59,7 +59,7 @@ const tiers = [
       "Listed as a Community Partner publicly",
       "Annual impact report with program data",
       "1–2 company fun facts featured inside the app",
-      "1 employee volunteer engagement opportunity",
+      "Invitation to sponsor an existing internship track",
     ],
   },
   {
@@ -69,10 +69,10 @@ const tiers = [
     highlight: false,
     perks: [
       "Everything in Community Partner",
-      "1 branded career path built in your industry",
+      "1 sponsored simulated internship — sponsor an existing track or co-create a new one",
       "Company profile featured inside the app",
       "1 live engagement event with your team",
-      "Quarterly impact reports with completion data",
+      "Biannual impact reports with completion data",
       "Co-branded social content package",
     ],
   },
@@ -83,7 +83,7 @@ const tiers = [
     highlight: true,
     perks: [
       "Everything in Career Builder",
-      "3 branded career paths on the app",
+      "3 sponsored simulated internships — existing tracks or co-created with your team",
       "Premier Partner badge across the platform",
       "2 live engagement events per year",
       "Co-branded marketing and press release",
@@ -302,16 +302,16 @@ export default function CompaniesPage() {
                   We bring your people into the room.
                 </h3>
                 <p className="text-gray-mid text-sm leading-relaxed mb-6">
-                  We sit your team down with real student profiles from the app. They see exactly where teens are in their career thinking — what they know, what they don&apos;t, what they&apos;re afraid to try. Your employees react, push back, fill in gaps. That conversation tells us what a career track in your industry actually needs to say.
+                  We run a 90-minute session with your team — on Zoom so we can record and capture everything. Your employees don&apos;t present. They respond, react, and share what they know about careers in your world. We take that conversation and build curriculum from it. You choose the focus: a specific career path, or the durable skills your industry needs most right now.
                 </p>
                 <ul className="space-y-3">
                   {[
-                    "90-minute session — your office, a school site, or via Zoom",
-                    "Real student data from the app drives the whole conversation",
-                    "Your employees engage and advise — they don't present",
-                    "Works for ERGs, DEI teams, leadership offsites, or all-hands",
-                    "Feeds directly into Step 2 — this is where the content starts",
-                    "Impact report within 2 weeks, with option to film",
+                    "Works for groups of any size — we use breakouts for larger teams",
+                    "Zoom format lets us record and distill your team's knowledge into curriculum",
+                    "You choose the focus: career path-based or durable skills (creativity, critical thinking, communication)",
+                    "Pick the employee group you most want to engage — we build around them",
+                    "Feeds directly into Step 2 — this conversation becomes the internship",
+                    "Impact report and session recording delivered within 2 weeks",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-3 text-gray-mid text-sm leading-relaxed">
                       <span className="w-4 h-4 rounded-full bg-orange/20 border border-orange/40 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -388,7 +388,7 @@ export default function CompaniesPage() {
               >
                 {tier.highlight && (
                   <div className="inline-block text-xs font-bold text-white bg-white/25 px-3 py-1 rounded-full uppercase tracking-widest mb-4 self-start">
-                    Featured
+                    Most Popular
                   </div>
                 )}
                 <div className={`font-display font-black tracking-tight leading-none mb-0.5 ${tier.highlight ? "text-white" : "text-orange"}`}>

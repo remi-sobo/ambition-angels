@@ -4,7 +4,7 @@ import CompaniesContactForm from "./ContactForm";
 import PageVisitedEvent from "@/components/PageVisitedEvent";
 
 export const metadata: Metadata = {
-  title: "Corporate Partnership — Ambition Angels",
+  title: "Corporate Partnership | Ambition Angels",
   description:
     "Put your company inside a teen's future. Branded career paths, employee engagement, and measurable CSR impact.",
   robots: "noindex, nofollow",
@@ -36,15 +36,15 @@ const tickerItems = [
 const opportunityCards = [
   {
     title: "Employee Engagement",
-    body: "Your team sits with real student profiles, real career questions, and the actual confusion teens carry about life after high school. They don't pack boxes — they contribute something. The feedback we get from company employees every single time: \"I didn't expect it to hit like that.\"",
+    body: "We lead your team through a structured conversation about their own careers: what the work actually involves, what skills matter most right now, and what they'd tell their 18-year-old self about getting on this path. That knowledge becomes the foundation of the internship we build together. Your employees aren't just engaging. They're designing something that will reach thousands of teens.",
   },
   {
     title: "CSR You Can Report",
-    body: "Pre and post data. Future orientation scores across 1,000+ teens. Completion rates, demographic breakdown, program reach. Quarterly impact reports. We give you numbers, not narratives. Your ESG team will know what to do with them.",
+    body: "Pre and post data. Future orientation scores across 1,000+ teens. Completion rates, demographic breakdown, program reach. Biannual impact reports. We give you numbers, not narratives. Your ESG team will know what to do with them.",
   },
   {
     title: "Brand with the Next Generation",
-    body: "A teen who completes a career internship in your industry — built with your brand throughout — doesn't forget that. Not because of your logo. Because you gave them a real look at what a career in your world actually feels like. That's the kind of thing teens remember.",
+    body: "A teen who completes a career internship in your industry, built with your brand throughout, doesn't forget that. Not because of your logo. Because you gave them a real look at what a career in your world actually feels like. That's the kind of thing teens remember.",
   },
 ];
 
@@ -69,7 +69,7 @@ const tiers = [
     highlight: false,
     perks: [
       "Everything in Community Partner",
-      "1 sponsored simulated internship — sponsor an existing track or co-create a new one",
+      "1 sponsored simulated internship: sponsor an existing track or co-create a new one",
       "Company profile featured inside the app",
       "1 live engagement event with your team",
       "Biannual impact reports with completion data",
@@ -83,7 +83,7 @@ const tiers = [
     highlight: true,
     perks: [
       "Everything in Career Builder",
-      "3 sponsored simulated internships — existing tracks or co-created with your team",
+      "Up to 3 sponsored simulated internships: existing tracks or co-created with your team, built one at a time",
       "Premier Partner badge across the platform",
       "2 live engagement events per year",
       "Co-branded marketing and press release",
@@ -99,8 +99,8 @@ const tiers = [
       "Everything in Premier Partner",
       "In-app popup feature for your brand",
       "Naming opportunity on a program or cohort",
-      "Category exclusivity — one company per industry",
-      "Executive briefings with Remi quarterly",
+      "Category exclusivity: one company per industry",
+      "Executive briefings with Remi biannually",
       "Board-level relationship and access",
     ],
   },
@@ -113,7 +113,7 @@ const whyCards = [
   },
   {
     title: "Employee Engagement That Lands",
-    body: "Your people want to do something that matters. This is specific, real, and they'll talk about it. Not a box-packing day.",
+    body: "Your people want to do something that matters. This is specific, real, and they'll talk about it. Your people show up, contribute real knowledge, and leave with something to talk about.",
   },
   {
     title: "Reportable CSR Impact",
@@ -165,7 +165,7 @@ export default function CompaniesPage() {
                 Put your company inside a teen&apos;s future.
               </h1>
               <p className="text-gray-mid text-lg leading-relaxed mb-10 max-w-lg">
-                Teens who do a 30-day career internship on our app — in your industry, with your brand throughout — remember that. We&apos;re building the workforce pipeline one simulated internship at a time. Come in early.
+                Teens who do a 30-day career internship on our app, in your industry, with your brand throughout, remember that. We&apos;re building the workforce pipeline one simulated internship at a time. Come in early.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <a
@@ -254,7 +254,7 @@ export default function CompaniesPage() {
               Most CSR spend disappears.<br className="hidden lg:block" /> This doesn&apos;t.
             </h2>
             <p className="text-gray-mid text-lg leading-relaxed">
-              You&apos;ve seen the standard CSR menu. Logo on a banner, a volunteer day, a line in the annual report. Fine. Forgettable. Ambition Angels is different — direct contact with the teens who will define the next workforce, and a story you&apos;ll actually want to tell.
+              Most CSR investment is hard to measure and harder to talk about. Ambition Angels gives you something different: direct contact with the teens who will define the next workforce, and outcomes you can actually point to.
             </p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -302,15 +302,15 @@ export default function CompaniesPage() {
                   We bring your people into the room.
                 </h3>
                 <p className="text-gray-mid text-sm leading-relaxed mb-6">
-                  We run a 90-minute session with your team — on Zoom so we can record and capture everything. Your employees don&apos;t present. They respond, react, and share what they know about careers in your world. We take that conversation and build curriculum from it. You choose the focus: a specific career path, or the durable skills your industry needs most right now.
+                  We run a 90-minute session with your team, on Zoom so we can record and capture everything. Your employees don&apos;t present. They respond, react, and share what they know about careers in your world. We take that conversation and build curriculum from it. You choose the focus: a specific career path, or the durable skills your industry needs most right now.
                 </p>
                 <ul className="space-y-3">
                   {[
-                    "Works for groups of any size — we use breakouts for larger teams",
+                    "Works for groups of any size; we use breakouts for larger teams",
                     "Zoom format lets us record and distill your team's knowledge into curriculum",
                     "You choose the focus: career path-based or durable skills (creativity, critical thinking, communication)",
-                    "Pick the employee group you most want to engage — we build around them",
-                    "Feeds directly into Step 2 — this conversation becomes the internship",
+                    "Pick the employee group you most want to engage; we build around them",
+                    "Feeds directly into Step 2; this conversation becomes the internship",
                     "Impact report and session recording delivered within 2 weeks",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-3 text-gray-mid text-sm leading-relaxed">
@@ -333,15 +333,17 @@ export default function CompaniesPage() {
                 We build the career track together.
               </h3>
               <p className="text-gray-warm text-sm leading-relaxed mb-6">
-                What your team shared in the room becomes the foundation. We handle all production — videos, quizzes, activities built for a 15-minute daily session on a phone screen. Your team reviews drafts, keeps it accurate, and updates it as your industry changes. The result is a 30-day simulated internship that reflects how careers in your field actually work.
+                What your team shared in that session becomes the foundation. We handle all production. Your team reviews drafts, keeps the content accurate, and updates it as your industry changes. The result is a 30-day simulated internship, one career path at a time, that reflects how careers in your field actually work right now.
               </p>
               <ul className="space-y-3">
                 {[
-                  "3 career paths in your industry — we handle all production",
+                  "Each internship is one career path, built one at a time, as deep as it deserves",
+                  "20 videos, 10 quizzes, and 10 activities per internship track",
+                  "Students finish knowing the real tasks of the role, the skills it takes, and what that career actually feels like in today's workforce",
                   "Your team validates accuracy and keeps content current as the industry evolves",
-                  "4 videos and 1 quiz per path — designed for 15 minutes a day on a phone",
+                  "Designed for 15 minutes a day on a phone; no laptop, no classroom required",
                   "Your brand lives throughout as the source of truth, not as a sponsor",
-                  "Quarterly data on completions, engagement, and career interest generated",
+                  "Biannual data on completions, engagement, and career interest generated",
                   "Co-branded launch with press opportunity",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3 text-gray-warm text-sm leading-relaxed">
@@ -462,26 +464,22 @@ export default function CompaniesPage() {
       {/* ── CONTACT / CTA ────────────────────────────────────────────── */}
       <section
         id="contact"
-        className="section-pad bg-orange relative overflow-hidden"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
+        className="section-pad bg-ink relative overflow-hidden"
+        style={dotTexture}
       >
         <div className="container-site relative z-10 max-w-2xl text-center">
-          <h2 className="font-display font-black text-5xl lg:text-6xl text-white uppercase tracking-tight leading-none mb-5">
+          <h2 className="font-display font-black text-5xl lg:text-6xl text-cream uppercase tracking-tight leading-none mb-5">
             Let&apos;s talk.
           </h2>
-          <p className="text-white/80 text-lg leading-relaxed mb-10">
-            Drop your name and email and Remi will reach out directly for a real conversation — no sales team, no pitch deck by default.
+          <p className="text-gray-mid text-lg leading-relaxed mb-10">
+            Drop your name and email and Remi will reach out directly for a real conversation. No sales team, no pitch deck by default.
           </p>
           <CompaniesContactForm />
-          <p className="mt-6 text-white/60 text-sm">
+          <p className="mt-6 text-gray-mid text-sm">
             Or email directly:{" "}
             <a
               href="mailto:hello@ambitionangels.org"
-              className="text-white underline underline-offset-2 hover:text-white/80 transition-colors"
+              className="text-cream underline underline-offset-2 hover:text-gray-mid transition-colors"
             >
               hello@ambitionangels.org
             </a>

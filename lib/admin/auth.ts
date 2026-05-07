@@ -5,26 +5,35 @@ export type AdminUser = "remi" | "shannon";
 /**
  * Returns true if the request carries a valid admin auth cookie.
  *
- * Today: a single shared password in ADMIN_PASSWORD. The login route stores
- * the literal password value in the `admin_auth` cookie and we compare here.
- * Per-user identity is added in PR 2; this helper continues to gate access.
+ * The login route sets `admin_auth` to whichever password value matched —
+ * ADMIN_PASSWORD_REMI, ADMIN_PASSWORD_SHANNON, or the legacy ADMIN_PASSWORD.
+ * We accept any of those three values here so per-user logins and legacy
+ * sessions both succeed.
  */
 export function isAuthed(req: NextRequest): boolean {
-  const expected = process.env.ADMIN_PASSWORD;
-  if (!expected) return false;
-  return req.cookies.get("admin_auth")?.value === expected;
+  const cookie = req.cookies.get("admin_auth")?.value;
+  if (!cookie) return false;
+
+  const accepted = [
+    process.env.ADMIN_PASSWORD_REMI,
+    process.env.ADMIN_PASSWORD_SHANNON,
+    process.env.ADMIN_PASSWORD,
+  ].filter((v): v is string => typeof v === "string" && v.length > 0);
+
+  return accepted.includes(cookie);
 }
 
 /**
  * Returns which admin user is acting on this request, or null if unknown.
  *
- * Stub for now — PR 2 will wire this up to a second cookie (`admin_user`)
- * set at login time once we have per-user passwords. Returning null today
- * is correct: callers should treat null as "no per-user context yet" and
- * fall back to non-personalized behavior.
+ * Reads the `admin_user` cookie set by the login route. If the cookie is
+ * missing but `isAuthed` returns true (legacy session from before PR 2
+ * shipped, or a user logged in only via the legacy ADMIN_PASSWORD), default
+ * to "remi" — the safe fallback since the legacy password maps to Remi.
  */
 export function getAdminUser(req: NextRequest): AdminUser | null {
   const value = req.cookies.get("admin_user")?.value;
   if (value === "remi" || value === "shannon") return value;
+  if (isAuthed(req)) return "remi";
   return null;
 }

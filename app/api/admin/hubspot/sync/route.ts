@@ -38,6 +38,7 @@ import {
   upsertCompanies,
   upsertDeals,
   upsertEngagements,
+  type EngagementUpsertResult,
 } from "@/lib/hubspot/upserts";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -47,7 +48,59 @@ const STEP_ORDER: Step[] = ["contacts", "companies", "deals", "engagements"];
 
 type Cursors = Record<Step, string | null>;
 type Counts = Record<Step, number>;
-type ErrorEntry = { step: Step; message: string; occurred_at: string };
+type ErrorEntry = {
+  step: Step;
+  message: string;
+  occurred_at: string;
+  // Optional context for per-record soft failures (engagements only).
+  subtype?: string;
+  hubspot_id?: string;
+};
+
+// Cap on detailed per-record JSON failures stored on a single job row, to
+// keep the jsonb column from ballooning. Anything beyond the cap rolls up
+// into a summary entry "+ N additional records skipped due to JSON errors".
+const SOFT_FAIL_CAP = 50;
+const SOFT_FAIL_SUFFIX = "additional records skipped due to JSON errors";
+
+function isSoftFailSummary(e: ErrorEntry): boolean {
+  return e.message.startsWith("+ ") && e.message.endsWith(SOFT_FAIL_SUFFIX);
+}
+
+function appendSoftFailure(
+  errors: ErrorEntry[],
+  step: Step,
+  f: EngagementUpsertResult["failed"][number]
+): ErrorEntry[] {
+  const detailed = errors.filter((e) => !isSoftFailSummary(e)).length;
+  const now = new Date().toISOString();
+  if (detailed < SOFT_FAIL_CAP) {
+    return [
+      ...errors,
+      {
+        step,
+        subtype: f.subtype,
+        hubspot_id: f.hubspot_id,
+        message: f.error_message,
+        occurred_at: now,
+      },
+    ];
+  }
+  const idx = errors.findIndex(isSoftFailSummary);
+  if (idx >= 0) {
+    const m = errors[idx].message.match(/^\+ (\d+)/);
+    const count = (m ? parseInt(m[1], 10) : 0) + 1;
+    return [
+      ...errors.slice(0, idx),
+      { ...errors[idx], message: `+ ${count} ${SOFT_FAIL_SUFFIX}`, occurred_at: now },
+      ...errors.slice(idx + 1),
+    ];
+  }
+  return [
+    ...errors,
+    { step, message: `+ 1 ${SOFT_FAIL_SUFFIX}`, occurred_at: now },
+  ];
+}
 
 type JobRow = {
   id: string;
@@ -161,7 +214,13 @@ async function saveJob(job: JobRow): Promise<JobRow> {
 
 // ── Step processors ────────────────────────────────────────────────────────
 
-type ProcessResult = { processed: number; nextCursor: string | null };
+type ProcessResult = {
+  processed: number;
+  nextCursor: string | null;
+  // Per-record soft failures inside this page (engagements only). Records
+  // counted in `processed` are the ones that actually landed.
+  failures?: EngagementUpsertResult["failed"];
+};
 
 async function processContactsPage(
   cursor: string | null
@@ -192,7 +251,10 @@ async function processEngagementsPage(
 ): Promise<ProcessResult> {
   const state = parseEngagementCursor(cursor);
   const page: Page = await fetchEngagements(state.subtype, state.after);
-  const n = await upsertEngagements(state.subtype, page.records as HubSpotRecord[]);
+  const result = await upsertEngagements(
+    state.subtype,
+    page.records as HubSpotRecord[]
+  );
 
   // Where do we go next?
   let next: string | null;
@@ -204,7 +266,11 @@ async function processEngagementsPage(
     const nextSub = nextEngagementSubtype(state.subtype);
     next = nextSub ? serializeEngagementCursor(nextSub, null) : null;
   }
-  return { processed: n, nextCursor: next };
+  return {
+    processed: result.inserted,
+    nextCursor: next,
+    failures: result.failed.length > 0 ? result.failed : undefined,
+  };
 }
 
 async function processOnePageForStep(
@@ -268,6 +334,15 @@ async function runChunk(jobInput: JobRow): Promise<JobRow> {
     job.counts = { ...job.counts, [step]: job.counts[step] + result.processed };
     processed += result.processed;
     job.cursors = { ...job.cursors, [step]: result.nextCursor };
+
+    // Per-record soft failures (engagements only): record the bad
+    // hubspot_ids on the job and keep going. The good records in this
+    // page already landed via the per-record fallback in upsertEngagements.
+    if (result.failures && result.failures.length > 0) {
+      for (const f of result.failures) {
+        job.errors = appendSoftFailure(job.errors, step, f);
+      }
+    }
 
     if (!result.nextCursor) {
       // Step complete — advance.

@@ -176,11 +176,31 @@ function engagementBodyPreview(
   return stripped ? stripped.slice(0, 500) : null;
 }
 
+export type EngagementUpsertResult = {
+  inserted: number;
+  failed: Array<{
+    hubspot_id: string;
+    // The HubSpot v3 sub-type (emails / calls / meetings / notes / tasks)
+    // that the bad record came from — same value used in the cursor.
+    subtype: EngagementSubtype;
+    error_message: string;
+  }>;
+};
+
+// TODO: investigate which HubSpot field contains the bad JSON; common
+// culprits are null bytes (\u0000) in body fields, NaN/Infinity in numeric
+// columns inside raw_json, or invalid UTF-8 in subject lines. Surfacing
+// the failed hubspot_ids via per-record fallback gives us a way to inspect
+// real offenders later without sanitizing in flight.
+function isJsonInputError(message: string): boolean {
+  return /invalid input syntax for type json/i.test(message);
+}
+
 export async function upsertEngagements(
   subtype: EngagementSubtype,
   records: HubSpotRecord[]
-): Promise<number> {
-  if (records.length === 0) return 0;
+): Promise<EngagementUpsertResult> {
+  if (records.length === 0) return { inserted: 0, failed: [] };
   const type = ENGAGEMENT_TYPE_FOR_SUBTYPE[subtype];
   const rows = records.map((r) => ({
     hubspot_id: r.id,
@@ -196,9 +216,37 @@ export async function upsertEngagements(
     raw_json: r,
     updated_at: SYNCED_AT(),
   }));
+
+  // Fast path: try the whole batch in one round trip.
   const { error } = await getSupabaseAdmin()
     .from("hs_engagements")
     .upsert(rows, { onConflict: "hubspot_id" });
-  if (error) throw new Error(`hs_engagements upsert failed: ${error.message}`);
-  return rows.length;
+  if (!error) return { inserted: rows.length, failed: [] };
+
+  // If the batch failed for a reason other than a malformed JSON value,
+  // re-throw — we don't want per-record retries to mask a real outage.
+  if (!isJsonInputError(error.message)) {
+    throw new Error(`hs_engagements upsert failed: ${error.message}`);
+  }
+
+  // Slow path: at least one record carries something Postgres rejects
+  // inside raw_json. Re-upsert each row individually so the good ones
+  // land and we get hubspot_ids for the bad ones.
+  const failed: EngagementUpsertResult["failed"] = [];
+  let inserted = 0;
+  for (const row of rows) {
+    const { error: rowErr } = await getSupabaseAdmin()
+      .from("hs_engagements")
+      .upsert(row, { onConflict: "hubspot_id" });
+    if (rowErr) {
+      failed.push({
+        hubspot_id: row.hubspot_id,
+        subtype,
+        error_message: rowErr.message,
+      });
+    } else {
+      inserted++;
+    }
+  }
+  return { inserted, failed };
 }

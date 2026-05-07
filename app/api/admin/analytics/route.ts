@@ -1,15 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const getSupabase = () =>
-  createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-function isAuthed(req: NextRequest): boolean {
-  return req.cookies.get("admin_auth")?.value === process.env.ADMIN_PASSWORD;
-}
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { isAuthed } from "@/lib/admin/auth";
 
 // We pull a generous slice of recent rows and let the client filter by
 // the selected period (Last 7d / 30d / 90d / All). Cap at 20k rows per
@@ -42,7 +33,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin();
 
   const [pvRes, evRes] = await Promise.all([
     supabase

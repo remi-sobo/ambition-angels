@@ -1,11 +1,10 @@
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import Sidebar from "./_components/Sidebar";
 import type { AdminUser } from "@/lib/admin/auth";
 
 /**
- * Server-side auth check for admin shell routes.
+ * Server-side auth check for the admin shell.
  *
  * The shared helpers in `lib/admin/auth.ts` take a `NextRequest`, which App
  * Router server components don't have — they get `cookies()` from
@@ -34,11 +33,16 @@ function readAdminAuth(): { authed: boolean; user: AdminUser | null } {
   return { authed: true, user: "remi" };
 }
 
-export default function AdminShellLayout({ children }: { children: ReactNode }) {
+export default function AdminLayout({ children }: { children: ReactNode }) {
   const { authed, user } = readAdminAuth();
+
+  // Unauthed visitors only reach /admin in practice — `middleware.ts`
+  // redirects /admin/* nested routes to /admin when no valid cookie is
+  // present. /admin itself renders the monolith's password login UI; we
+  // skip the shell so the login experience isn't framed by a sidebar
+  // that's not yet usable.
   if (!authed) {
-    // The monolith at /admin renders the password login form; bounce there.
-    redirect("/admin");
+    return <>{children}</>;
   }
 
   return (

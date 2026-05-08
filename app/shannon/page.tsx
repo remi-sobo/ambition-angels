@@ -1,7 +1,7 @@
 "use client";
 
 import { Lora } from "next/font/google";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 const lora = Lora({
   subsets: ["latin"],
@@ -15,6 +15,16 @@ const SHANNON_FIELDS = [
   "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9", "a10",
   "a11", "a12", "a13", "a14", "a15", "a16", "a17", "a18", "a19", "a20",
 ];
+
+const DEFAULT_ANSWERS: Record<string, string> = {
+  a1: "", a2: "5", a3: "", a4: "",
+  a5: "", a6: "", a7: "5", a8: "", a9: "5",
+  a10: "", a11: "5", a12: "",
+  a13: "", a14: "", a15: "", a16: "", a17: "",
+  a18: "", a19: "", a20: "",
+};
+
+const STORAGE_PREFIX = "shannon-";
 
 const STYLES = `
   .shannon-scope, .shannon-scope *, .shannon-scope *::before, .shannon-scope *::after {
@@ -298,6 +308,41 @@ const STYLES = `
   }
   .shannon-scope select:focus { border-color: var(--sage); }
 
+  .shannon-scope .save-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 14px;
+  }
+  .shannon-scope .save-btn {
+    background: transparent;
+    border: 1.5px solid var(--sage);
+    color: var(--deep-sage);
+    font-family: var(--font-body), 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 9px 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .shannon-scope .save-btn:hover:not(.saved) {
+    background: var(--warm-white);
+  }
+  .shannon-scope .save-btn.saved {
+    background: var(--deep-sage);
+    border-color: var(--deep-sage);
+    color: white;
+    cursor: default;
+  }
+  .shannon-scope .save-hint {
+    font-size: 12px;
+    color: var(--mid-gray);
+    font-style: italic;
+  }
+
   .shannon-scope .chapter {
     margin: 80px 0 48px;
     padding: 40px;
@@ -435,23 +480,35 @@ const STYLES = `
 `;
 
 const LOADING_MESSAGES = [
-  "Sending your answers…",
-  "Reading every word carefully…",
-  "Mapping out your three options…",
-  "Working through the trade-offs…",
-  "Almost there — putting it all together…",
+  "Sending your answers...",
+  "Reading every word carefully...",
+  "Mapping out your three options...",
+  "Working through the trade-offs...",
+  "Almost there. Putting it all together.",
 ];
 
 export default function ShannonPage() {
-  const [a2, setA2] = useState(5);
-  const [a7, setA7] = useState(5);
-  const [a9, setA9] = useState(5);
-  const [a11, setA11] = useState(5);
+  const [answers, setAnswers] = useState<Record<string, string>>(DEFAULT_ANSWERS);
+  const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loadingIdx, setLoadingIdx] = useState(0);
-  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored: Record<string, string> = {};
+    SHANNON_FIELDS.forEach((key) => {
+      const v = window.localStorage.getItem(STORAGE_PREFIX + key);
+      if (v !== null) stored[key] = v;
+    });
+    if (Object.keys(stored).length > 0) {
+      setAnswers((prev) => ({ ...prev, ...stored }));
+      const savedFlags: Record<string, boolean> = {};
+      Object.keys(stored).forEach((k) => { savedFlags[k] = true; });
+      setSaved(savedFlags);
+    }
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -495,37 +552,65 @@ export default function ShannonPage() {
     return () => clearInterval(id);
   }, [status]);
 
+  const updateAnswer = (key: string, value: string) => {
+    setAnswers((prev) => ({ ...prev, [key]: value }));
+    if (saved[key]) {
+      setSaved((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
+
+  const saveField = (key: string) => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(STORAGE_PREFIX + key, answers[key] ?? "");
+    setSaved((prev) => ({ ...prev, [key]: true }));
+  };
+
+  const clearStorage = () => {
+    if (typeof window === "undefined") return;
+    SHANNON_FIELDS.forEach((key) => window.localStorage.removeItem(STORAGE_PREFIX + key));
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (status === "submitting") return;
     setStatus("submitting");
     setErrorMsg(null);
 
-    const form = e.currentTarget;
-    const fd = new FormData(form);
-    const payload: Record<string, string> = {};
-    for (const key of SHANNON_FIELDS) {
-      const v = fd.get(key);
-      payload[key] = typeof v === "string" ? v : "";
-    }
-
     try {
       const res = await fetch("/api/shannon", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(answers),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => null);
-        throw new Error(j?.error || "Something went wrong. Please try again.");
+        throw new Error(j?.error || "Something went wrong. Try again in a minute.");
       }
+      clearStorage();
       setStatus("success");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       setStatus("error");
-      setErrorMsg(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setErrorMsg(err instanceof Error ? err.message : "Something went wrong. Try again in a minute.");
     }
   };
+
+  const renderSaveButton = (key: string) => (
+    <div className="save-row">
+      <button
+        type="button"
+        className={`save-btn ${saved[key] ? "saved" : ""}`}
+        onClick={() => saveField(key)}
+      >
+        {saved[key] ? "Saved ✓" : "Save my answer"}
+      </button>
+      {!saved[key] && <span className="save-hint">So you can come back to it.</span>}
+    </div>
+  );
 
   return (
     <div className={`shannon-scope ${lora.variable}`}>
@@ -541,7 +626,7 @@ export default function ShannonPage() {
           <em>let&apos;s think this through.</em>
         </h1>
         <p className="hero-sub">
-          Remi and Kendra put this together because they love you and want to help you figure this out — not push you anywhere. Take your time with every question.
+          We put this together because we love you and we want to help you figure this out. Nobody is pushing you anywhere. Take your time with every question.
         </p>
         <a href="#letter" className="scroll-cue">
           <span>Keep reading</span>
@@ -553,46 +638,56 @@ export default function ShannonPage() {
         <p className="letter-label">A note before you begin</p>
         <div className="letter-text">
           <p>
-            You&apos;ve been in survival mode for a long time. You&apos;ve gotten yourself somewhere — a home you&apos;re proud of, a career that matters, grandkids who light up when they see you. That&apos;s not small. That&apos;s everything.
+            You&apos;ve been in survival mode for a long time. And you&apos;ve gotten yourself somewhere real. A home you&apos;re proud of. A career that matters. Grandkids who light up the second they see you. That&apos;s not small. That&apos;s everything.
           </p>
           <p>
-            But we&apos;ve been watching you, and we think you deserve to stop just surviving and start <strong>really living</strong>. That&apos;s what this is about. Not logistics. Life.
+            But we&apos;ve been watching you. And we think you deserve to stop just surviving and start <strong>really living</strong>. That&apos;s what this is about. Not logistics. Life.
           </p>
           <p>
-            This form is going to ask you some real questions. Some of them might feel hard to answer. That&apos;s okay. There are no wrong answers here. We&apos;re not trying to talk you into anything — we just want to understand what&apos;s actually going on inside so we can help you make the best decision for <strong>you</strong>.
+            This form is going to ask you some real questions. Some of them might feel hard. That&apos;s okay. There are no wrong answers here. We&apos;re not trying to talk you into anything. We just want to know what&apos;s actually going on inside you, so we can help you make the right call for <strong>you</strong>.
           </p>
           <p>
-            When you&apos;re done, your answers will get read carefully — by us, and by a thoughtful outside perspective we&apos;ve set up to help map out your options. Then we&apos;ll sit down together and talk it all through.
+            When you&apos;re done, we read every word. We also have something set up that takes everything you said and lays it out as three clear paths forward, with the trade-offs honest and visible. Then you and Remi sit down together and talk it through.
           </p>
-          <p>Take your time. Be honest. And know that whatever you decide, we&apos;re with you.</p>
-          <p style={{ marginTop: 32, fontStyle: "italic", color: "var(--sage)" }}>— Remi &amp; Kendra</p>
+          <p>
+            You can save your answer on each question as you go, so if you need to step away and come back later, you don&apos;t lose anything.
+          </p>
+          <p>Take your time. Be honest. Whatever you decide, we&apos;re with you.</p>
+          <p style={{ marginTop: 32, fontStyle: "italic", color: "var(--sage)" }}>Love, Remi &amp; Kendra</p>
         </div>
       </section>
 
       <div className="divider" />
 
-      <form ref={formRef} className="form-section" onSubmit={handleSubmit}>
+      <form className="form-section" onSubmit={handleSubmit}>
         <div className="chapter">
           <p className="chapter-number">Part One</p>
           <h2 className="chapter-title">Where you are right now</h2>
-          <p className="chapter-desc">Not where you were, not where you&apos;re going — just honest about today.</p>
+          <p className="chapter-desc">Honest about today. Not where you were. Not where you&apos;re going.</p>
         </div>
 
         <div className="question-block">
           <p className="q-number">01</p>
           <label className="q-label" htmlFor="a1">
-            When you&apos;re back in Scapoose — after a visit here — how do you actually feel in those first few days home?
+            When you get back to Scapoose after being here, how do you actually feel those first few days home?
           </label>
-          <p className="q-sub">Don&apos;t edit yourself. Just describe it honestly.</p>
-          <textarea id="a1" name="a1" placeholder="Write whatever comes to mind first..." />
+          <p className="q-sub">Don&apos;t filter. Just say it real.</p>
+          <textarea
+            id="a1"
+            name="a1"
+            placeholder="Write whatever comes to mind first."
+            value={answers.a1}
+            onChange={(e) => updateAnswer("a1", e.target.value)}
+          />
+          {renderSaveButton("a1")}
         </div>
 
         <div className="question-block">
           <p className="q-number">02</p>
           <label className="q-label" htmlFor="a2">
-            On a scale from 1–10, how would you rate your day-to-day happiness in Scapoose right now?
+            On a scale of 1 to 10, how would you rate your day-to-day happiness in Scapoose right now?
           </label>
-          <p className="q-sub">1 = really struggling, 10 = genuinely thriving</p>
+          <p className="q-sub">1 is really struggling. 10 is genuinely thriving.</p>
           <div className="scale-row">
             <span className="scale-label-end">Really struggling</span>
             <input
@@ -601,12 +696,13 @@ export default function ShannonPage() {
               name="a2"
               min={1}
               max={10}
-              value={a2}
-              onChange={(e) => setA2(Number(e.target.value))}
+              value={answers.a2}
+              onChange={(e) => updateAnswer("a2", e.target.value)}
             />
-            <span className="scale-value">{a2}</span>
+            <span className="scale-value">{answers.a2}</span>
             <span className="scale-label-end right">Genuinely thriving</span>
           </div>
+          {renderSaveButton("a2")}
         </div>
 
         <div className="question-block">
@@ -614,8 +710,15 @@ export default function ShannonPage() {
           <label className="q-label" htmlFor="a3">
             Talk about the loneliness. What does it actually feel like, and how often does it hit?
           </label>
-          <p className="q-sub">We know this is real. You don&apos;t have to minimize it here.</p>
-          <textarea id="a3" name="a3" placeholder="Be as honest as you want to be..." />
+          <p className="q-sub">We know this is real. You don&apos;t have to make it smaller than it is.</p>
+          <textarea
+            id="a3"
+            name="a3"
+            placeholder="Be as honest as you want to be."
+            value={answers.a3}
+            onChange={(e) => updateAnswer("a3", e.target.value)}
+          />
+          {renderSaveButton("a3")}
         </div>
 
         <div className="question-block">
@@ -623,39 +726,60 @@ export default function ShannonPage() {
           <label className="q-label" htmlFor="a4">
             What do you actually love about your life in Scapoose right now? What would you genuinely miss?
           </label>
-          <p className="q-sub">There has to be something — be real about what it is.</p>
-          <textarea id="a4" name="a4" placeholder="Maybe it's the quiet, maybe it's the house, maybe it's something small..." />
+          <p className="q-sub">There has to be something. Be real about what it is.</p>
+          <textarea
+            id="a4"
+            name="a4"
+            placeholder="Maybe it's the quiet. Maybe it's the house. Maybe it's something small."
+            value={answers.a4}
+            onChange={(e) => updateAnswer("a4", e.target.value)}
+          />
+          {renderSaveButton("a4")}
         </div>
 
         <div className="chapter">
           <p className="chapter-number">Part Two</p>
           <h2 className="chapter-title">The apartment. East Palo Alto. Us.</h2>
-          <p className="chapter-desc">The opportunity that&apos;s on the table — and everything that comes with it.</p>
+          <p className="chapter-desc">What&apos;s actually on the table, and everything that comes with it.</p>
         </div>
 
         <div className="question-block">
           <p className="q-number">05</p>
           <label className="q-label" htmlFor="a5">
-            When you picture yourself living in that apartment — like really picture it, six months in — what do you feel?
+            Picture yourself living in that apartment. Six months in. What do you feel?
           </label>
           <p className="q-sub">Not what you think you should feel. What actually comes up?</p>
-          <textarea id="a5" name="a5" placeholder="Excited? Nervous? A mix? Describe it..." />
+          <textarea
+            id="a5"
+            name="a5"
+            placeholder="Excited? Nervous? A mix? Describe it."
+            value={answers.a5}
+            onChange={(e) => updateAnswer("a5", e.target.value)}
+          />
+          {renderSaveButton("a5")}
         </div>
 
         <div className="question-block">
           <p className="q-number">06</p>
           <label className="q-label" htmlFor="a6">
-            You&apos;ve stayed here for six months before. What was the hardest part? What was the best part?
+            You stayed here for six months before. What was the hardest part? What was the best part?
           </label>
-          <textarea id="a6" name="a6" placeholder="Be specific if you can..." />
+          <textarea
+            id="a6"
+            name="a6"
+            placeholder="Be specific if you can."
+            value={answers.a6}
+            onChange={(e) => updateAnswer("a6", e.target.value)}
+          />
+          {renderSaveButton("a6")}
         </div>
 
         <div className="question-block">
           <p className="q-number">07</p>
           <label className="q-label" htmlFor="a7">
-            One real concern you have about this is feeling like a guest in someone else&apos;s house — not fully free. On a scale of 1–10, how much does that worry you?
+            One real concern is feeling like a guest in someone else&apos;s house. Not fully free in your own space. On a scale of 1 to 10, how much does that worry you?
           </label>
-          <p className="q-sub">1 = I can handle it, 10 = it would really bother me</p>
+          <p className="q-sub">1 is I can handle it. 10 is it would really bother me.</p>
           <div className="scale-row">
             <span className="scale-label-end">I can handle it</span>
             <input
@@ -664,27 +788,35 @@ export default function ShannonPage() {
               name="a7"
               min={1}
               max={10}
-              value={a7}
-              onChange={(e) => setA7(Number(e.target.value))}
+              value={answers.a7}
+              onChange={(e) => updateAnswer("a7", e.target.value)}
             />
-            <span className="scale-value">{a7}</span>
+            <span className="scale-value">{answers.a7}</span>
             <span className="scale-label-end right">Really worries me</span>
           </div>
+          {renderSaveButton("a7")}
         </div>
 
         <div className="question-block">
           <p className="q-number">08</p>
           <label className="q-label" htmlFor="a8">
-            What would need to be true about the apartment — or about our arrangement — for you to feel at home there and not just like a guest?
+            What would need to be true about the apartment, or about how we set things up, for you to actually feel at home there?
           </label>
           <p className="q-sub">Think about what real independence looks like for you in that space.</p>
-          <textarea id="a8" name="a8" placeholder="Specific things, feelings, agreements..." />
+          <textarea
+            id="a8"
+            name="a8"
+            placeholder="Specific things, feelings, agreements."
+            value={answers.a8}
+            onChange={(e) => updateAnswer("a8", e.target.value)}
+          />
+          {renderSaveButton("a8")}
         </div>
 
         <div className="question-block">
           <p className="q-number">09</p>
           <label className="q-label" htmlFor="a9">
-            Being this close to Jaiye, Kemi, and Sadé — showing up for games, Friday sleepovers, morning workouts — how much does that matter to you when you weigh this decision?
+            Being close to Jaiye, Kemi, and Sadé. Showing up for games. Friday sleepovers. Morning workouts. How much does that matter to you when you weigh this decision?
           </label>
           <div className="scale-row">
             <span className="scale-label-end">It matters some</span>
@@ -694,32 +826,40 @@ export default function ShannonPage() {
               name="a9"
               min={1}
               max={10}
-              value={a9}
-              onChange={(e) => setA9(Number(e.target.value))}
+              value={answers.a9}
+              onChange={(e) => updateAnswer("a9", e.target.value)}
             />
-            <span className="scale-value">{a9}</span>
+            <span className="scale-value">{answers.a9}</span>
             <span className="scale-label-end right">More than anything</span>
           </div>
+          {renderSaveButton("a9")}
         </div>
 
         <div className="chapter">
           <p className="chapter-number">Part Three</p>
           <h2 className="chapter-title">The money picture</h2>
-          <p className="chapter-desc">Let&apos;s get practical for a minute — because finances are real.</p>
+          <p className="chapter-desc">Let&apos;s get practical for a minute. Money is real.</p>
         </div>
 
         <div className="question-block">
           <p className="q-number">10</p>
           <label className="q-label" htmlFor="a10">
-            If you rented your Scapoose house for around $3,000 a month and only paid $800 here, that&apos;s potentially over $2,000 a month you could be saving. What does that possibility feel like to you?
+            If you rented your Scapoose house for around $3,000 a month and only paid $800 here, that&apos;s potentially over $2,000 a month you could be saving. What does that possibility actually feel like to you?
           </label>
-          <textarea id="a10" name="a10" placeholder="Is this exciting? Complicated? Stressful to think about?" />
+          <textarea
+            id="a10"
+            name="a10"
+            placeholder="Is it exciting? Complicated? Stressful to think about?"
+            value={answers.a10}
+            onChange={(e) => updateAnswer("a10", e.target.value)}
+          />
+          {renderSaveButton("a10")}
         </div>
 
         <div className="question-block">
           <p className="q-number">11</p>
           <label className="q-label" htmlFor="a11">
-            How stressful does the process of preparing your house to rent feel — packing, downsizing, making space for a tenant?
+            How stressful does it feel to think about getting your house ready to rent? The packing, the downsizing, making space for a tenant?
           </label>
           <div className="scale-row">
             <span className="scale-label-end">Manageable</span>
@@ -729,12 +869,13 @@ export default function ShannonPage() {
               name="a11"
               min={1}
               max={10}
-              value={a11}
-              onChange={(e) => setA11(Number(e.target.value))}
+              value={answers.a11}
+              onChange={(e) => updateAnswer("a11", e.target.value)}
             />
-            <span className="scale-value">{a11}</span>
+            <span className="scale-value">{answers.a11}</span>
             <span className="scale-label-end right">Really overwhelming</span>
           </div>
+          {renderSaveButton("a11")}
         </div>
 
         <div className="question-block">
@@ -742,13 +883,20 @@ export default function ShannonPage() {
           <label className="q-label" htmlFor="a12">
             The longer-term vision is you owning a condo or townhouse down here. How real does that feel to you? And how much does that possibility motivate you?
           </label>
-          <textarea id="a12" name="a12" placeholder="Does it feel possible? Far away? Something you want?" />
+          <textarea
+            id="a12"
+            name="a12"
+            placeholder="Does it feel possible? Far away? Something you actually want?"
+            value={answers.a12}
+            onChange={(e) => updateAnswer("a12", e.target.value)}
+          />
+          {renderSaveButton("a12")}
         </div>
 
         <div className="chapter">
           <p className="chapter-number">Part Four</p>
           <h2 className="chapter-title">Your heart. Your life. Your vision.</h2>
-          <p className="chapter-desc">The deeper stuff — the things that actually drive a decision like this.</p>
+          <p className="chapter-desc">The deeper stuff. The things that actually drive a decision like this.</p>
         </div>
 
         <div className="question-block">
@@ -756,16 +904,30 @@ export default function ShannonPage() {
           <label className="q-label" htmlFor="a13">
             When you imagine yourself at 65 or 70, what do you want your life to actually look like? Where are you, who&apos;s around you, what does a normal day feel like?
           </label>
-          <p className="q-sub">Even if you&apos;ve never had to think this way, take a shot at it. There&apos;s no right answer.</p>
-          <textarea id="a13" name="a13" placeholder="Describe it like a scene in a movie..." />
+          <p className="q-sub">Even if you&apos;ve never had to think this way before, take a shot at it. There&apos;s no right answer.</p>
+          <textarea
+            id="a13"
+            name="a13"
+            placeholder="Describe it like a scene in a movie."
+            value={answers.a13}
+            onChange={(e) => updateAnswer("a13", e.target.value)}
+          />
+          {renderSaveButton("a13")}
         </div>
 
         <div className="question-block">
           <p className="q-number">14</p>
           <label className="q-label" htmlFor="a14">
-            You&apos;ve spent a lot of your life in survival mode — just making it work. What does it feel like to be making a decision based on what you actually want rather than what you have to do?
+            You&apos;ve spent a lot of your life in survival mode. Just making it work. What does it feel like to make a decision based on what YOU actually want this time?
           </label>
-          <textarea id="a14" name="a14" placeholder="This one might take a minute. That's okay." />
+          <textarea
+            id="a14"
+            name="a14"
+            placeholder="This one might take a minute. That's okay."
+            value={answers.a14}
+            onChange={(e) => updateAnswer("a14", e.target.value)}
+          />
+          {renderSaveButton("a14")}
         </div>
 
         <div className="question-block">
@@ -773,7 +935,14 @@ export default function ShannonPage() {
           <label className="q-label" htmlFor="a15">
             What&apos;s the thing you&apos;re most afraid of about making this move?
           </label>
-          <textarea id="a15" name="a15" placeholder="Name it. Even if it feels small." />
+          <textarea
+            id="a15"
+            name="a15"
+            placeholder="Name it. Even if it feels small."
+            value={answers.a15}
+            onChange={(e) => updateAnswer("a15", e.target.value)}
+          />
+          {renderSaveButton("a15")}
         </div>
 
         <div className="question-block">
@@ -781,35 +950,55 @@ export default function ShannonPage() {
           <label className="q-label" htmlFor="a16">
             What&apos;s the thing you&apos;re most afraid of about NOT making this move?
           </label>
-          <textarea id="a16" name="a16" placeholder="The other side of the fear..." />
+          <textarea
+            id="a16"
+            name="a16"
+            placeholder="The other side of the fear."
+            value={answers.a16}
+            onChange={(e) => updateAnswer("a16", e.target.value)}
+          />
+          {renderSaveButton("a16")}
         </div>
 
         <div className="question-block">
           <p className="q-number">17</p>
           <label className="q-label" htmlFor="a17">
-            If you took Remi and Kendra completely out of the equation — no pressure, no influence — what does your gut actually say?
+            If you took us completely out of the equation. No pressure, no influence. What does your gut actually say?
           </label>
           <p className="q-sub">What do YOU want?</p>
-          <textarea id="a17" name="a17" placeholder="Just you. What does your gut say?" />
+          <textarea
+            id="a17"
+            name="a17"
+            placeholder="Just you. What does your gut say?"
+            value={answers.a17}
+            onChange={(e) => updateAnswer("a17", e.target.value)}
+          />
+          {renderSaveButton("a17")}
         </div>
 
         <div className="chapter">
           <p className="chapter-number">Part Five</p>
           <h2 className="chapter-title">The decision</h2>
-          <p className="chapter-desc">Where you actually land — right now, in this moment.</p>
+          <p className="chapter-desc">Where you actually land. Right now, in this moment.</p>
         </div>
 
         <div className="question-block">
           <p className="q-number">18</p>
           <label className="q-label" htmlFor="a18">
-            If you had to lean one way right now — just a lean, not a final answer — which direction is it?
+            If you had to lean one way right now. Just a lean, not a final answer. Which way is it?
           </label>
-          <select id="a18" name="a18" defaultValue="">
-            <option value="">— Select one —</option>
+          <select
+            id="a18"
+            name="a18"
+            value={answers.a18}
+            onChange={(e) => updateAnswer("a18", e.target.value)}
+          >
+            <option value="">Select one</option>
             <option value="leaning_move">I&apos;m leaning toward making the move</option>
             <option value="leaning_stay">I&apos;m leaning toward staying in Scapoose</option>
             <option value="truly_unsure">I&apos;m genuinely torn and can&apos;t lean either way right now</option>
           </select>
+          {renderSaveButton("a18")}
         </div>
 
         <div className="question-block">
@@ -817,27 +1006,43 @@ export default function ShannonPage() {
           <label className="q-label" htmlFor="a19">
             What would make this decision easier? What information, what conversation, what assurance would help you move forward?
           </label>
-          <textarea id="a19" name="a19" placeholder="What do you need from us?" />
+          <p className="q-sub">What do you need from us?</p>
+          <textarea
+            id="a19"
+            name="a19"
+            placeholder="What do you need from us?"
+            value={answers.a19}
+            onChange={(e) => updateAnswer("a19", e.target.value)}
+          />
+          {renderSaveButton("a19")}
         </div>
 
         <div className="question-block">
           <p className="q-number">20</p>
           <label className="q-label" htmlFor="a20">
-            Is there anything else you want Remi to know that you haven&apos;t been able to say yet — about any of this?
+            Is there anything else you want Remi to know that you haven&apos;t been able to say yet about any of this?
           </label>
           <p className="q-sub">This is your space. Use it.</p>
-          <textarea id="a20" name="a20" style={{ minHeight: 180 }} placeholder="Anything at all..." />
+          <textarea
+            id="a20"
+            name="a20"
+            style={{ minHeight: 180 }}
+            placeholder="Anything at all."
+            value={answers.a20}
+            onChange={(e) => updateAnswer("a20", e.target.value)}
+          />
+          {renderSaveButton("a20")}
         </div>
 
         <div className="submit-section">
           <p className="submit-note">
-            When you&apos;re ready, send this in. We&apos;ll read every word — and we&apos;ve set up a thoughtful outside perspective to help map out your options. Then you and Remi will talk it through together.
+            When you&apos;re ready, send it in. We&apos;ll read every word. You&apos;ll get back a clean breakdown of your three options. Then you and Remi sit down and talk it through together.
           </p>
           <button type="submit" className="submit-btn" disabled={status === "submitting"}>
             {status === "submitting" ? LOADING_MESSAGES[loadingIdx] : "Send my answers"}
           </button>
           {status === "submitting" && (
-            <p className="submit-loading-note">This usually takes about 20–30 seconds. Hang tight.</p>
+            <p className="submit-loading-note">This usually takes about 20 to 30 seconds. Hang tight.</p>
           )}
           {status === "error" && errorMsg && <p className="submit-error">{errorMsg}</p>}
         </div>
@@ -846,8 +1051,8 @@ export default function ShannonPage() {
       <div className={`success-overlay ${status === "success" ? "active" : ""}`}>
         <div className="success-icon">🌿</div>
         <h2>Thank you, Gigi.</h2>
-        <p>Your answers are in — and a full breakdown of your options is on its way to your inbox right now.</p>
-        <p>Take a beat. Read it when you&apos;re ready. Then you and Remi will sit down and talk it through.</p>
+        <p>Your answers are in. A full breakdown of your three options is on its way to your inbox.</p>
+        <p>Read it when you&apos;re ready. Then you and Remi sit down and talk it through.</p>
         <p style={{ marginTop: 16, fontStyle: "italic", color: "var(--sage)" }}>You did a good thing today.</p>
       </div>
     </div>

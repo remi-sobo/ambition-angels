@@ -5,7 +5,7 @@ export const maxDuration = 60;
 
 const TO_REMI = "remi@ambitionangels.org";
 const TO_GIGI = "shannon@ambitionangels.org";
-const FROM = "Ambition Angels <noreply@ambitionangels.org>";
+const FROM = "Ambition Angels <careers@mail.ambitionangels.org>";
 
 const QUESTIONS: { key: string; label: string; type?: "text" | "scale" | "select" }[] = [
   { key: "a1", label: "How she feels back in Scapoose after a visit", type: "text" },

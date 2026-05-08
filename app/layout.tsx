@@ -3,6 +3,7 @@ import { Big_Shoulders_Display, Poppins, DM_Sans } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import SiteChrome from "@/components/SiteChrome";
 import DonateModalProvider from "@/components/DonateModalProvider";
 import Analytics from "@/components/Analytics";
 
@@ -49,9 +50,9 @@ export default function RootLayout({
     <html lang="en" className={`${bigShoulders.variable} ${poppins.variable} ${dmSans.variable}`}>
       <body className="antialiased">
         <DonateModalProvider>
-          <Nav />
-          <main>{children}</main>
-          <Footer />
+          <SiteChrome nav={<Nav />} footer={<Footer />}>
+            {children}
+          </SiteChrome>
         </DonateModalProvider>
         <Analytics />
       </body>

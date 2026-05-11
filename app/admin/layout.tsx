@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 import Sidebar from "./_components/Sidebar";
+import QuickAddButton from "./_components/QuickAddButton";
 import type { AdminUser } from "@/lib/admin/auth";
 
 /**
@@ -49,6 +50,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex bg-ink text-cream">
       <Sidebar currentUser={user} />
       <main className="flex-1 overflow-y-auto">{children}</main>
+      {/* Floating quick-add button. Authed-only by construction (we're
+          inside the authed branch). Visible on every admin route. */}
+      <QuickAddButton currentUser={user} />
     </div>
   );
 }

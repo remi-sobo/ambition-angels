@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import ScorePanel, { type ProspectScore } from "./_components/ScorePanel";
+import ScoreEditor, { type ProspectScore } from "./_components/ScoreEditor";
 import CompanyCard, { type HsCompany } from "./_components/CompanyCard";
 import DealsTable, { type HsDeal } from "./_components/DealsTable";
 import EngagementTimeline, {
@@ -133,6 +134,13 @@ export default async function ProspectDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-5xl mx-auto p-8 space-y-6">
+      <Link
+        href="/admin/fundraising"
+        className="inline-block text-xs text-gray-mid hover:text-cream transition-colors"
+      >
+        ← Back to Fundraising
+      </Link>
+
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header className="rounded-card border border-white/10 bg-black/30 p-6">
         <div className="flex items-start justify-between gap-4">
@@ -191,8 +199,8 @@ export default async function ProspectDetailPage({ params }: PageProps) {
         </div>
       </header>
 
-      {/* ── Score panel ────────────────────────────────────────────────── */}
-      <ScorePanel score={score} />
+      {/* ── Score editor ───────────────────────────────────────────────── */}
+      <ScoreEditor hubspotId={contact.hubspot_id} initial={score} />
 
       {/* ── Company ────────────────────────────────────────────────────── */}
       <CompanyCard company={company} rawCompanyName={contact.company} />

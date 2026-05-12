@@ -5,10 +5,19 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AdminUser } from "@/lib/admin/auth";
 
-const NAV_LINKS = [
+type NavLink = { href: string; label: string; children?: NavLink[] };
+
+const NAV_LINKS: NavLink[] = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/fundraising", label: "Fundraising" },
-  { href: "/admin/ops", label: "Ops" },
+  {
+    href: "/admin/ops",
+    label: "Ops",
+    children: [
+      { href: "/admin/ops/monday", label: "Monday Plan" },
+      { href: "/admin/ops/friday", label: "Friday Review" },
+    ],
+  },
   { href: "/admin/finance", label: "Finance" },
   { href: "/admin/board", label: "Board" },
   { href: "/admin/compliance", label: "Compliance" },
@@ -117,18 +126,39 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {NAV_LINKS.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={[
-              "block px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-              isActive(pathname, link.href)
-                ? "bg-orange/15 text-orange border border-orange/30"
-                : "text-cream/70 hover:text-cream hover:bg-white/5 border border-transparent",
-            ].join(" ")}
-          >
-            {link.label}
-          </Link>
+          <div key={link.href} className="space-y-0.5">
+            <Link
+              href={link.href}
+              className={[
+                "block px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                isActive(pathname, link.href)
+                  ? "bg-orange/15 text-orange border border-orange/30"
+                  : "text-cream/70 hover:text-cream hover:bg-white/5 border border-transparent",
+              ].join(" ")}
+            >
+              {link.label}
+            </Link>
+            {link.children?.map((child) => {
+              // Child active = exact match on the child's href (no descendants
+              // since these are leaf pages). Avoids the parent's prefix-match
+              // accidentally lighting up the child when on /admin/ops itself.
+              const childActive = pathname === child.href;
+              return (
+                <Link
+                  key={child.href}
+                  href={child.href}
+                  className={[
+                    "block pl-8 pr-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors",
+                    childActive
+                      ? "bg-orange/10 text-orange border border-orange/20"
+                      : "text-cream/55 hover:text-cream hover:bg-white/5 border border-transparent",
+                  ].join(" ")}
+                >
+                  {child.label}
+                </Link>
+              );
+            })}
+          </div>
         ))}
       </nav>
 

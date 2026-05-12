@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import TaskEditModal from "@/app/admin/_components/TaskEditModal";
 import {
   formatDueLabel,
   type AdminUserId,
@@ -37,6 +38,7 @@ export default function ProjectTaskList({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editingTask, setEditingTask] = useState<OpsTask | null>(null);
 
   // ── Add task ───────────────────────────────────────────────────────────
   const [newTitle, setNewTitle] = useState("");
@@ -163,6 +165,7 @@ export default function ProjectTaskList({
   }
 
   return (
+    <>
     <section className="rounded-card border border-white/10 bg-black/30 p-6">
       <h2 className="text-xs uppercase tracking-wider text-gray-mid mb-4">
         Tasks{" "}
@@ -222,9 +225,18 @@ export default function ProjectTaskList({
                     </svg>
                   )}
                 </button>
-                <span className={`flex-1 min-w-0 truncate ${isDone ? "line-through text-cream/40" : "text-cream"}`}>
+                <button
+                  type="button"
+                  onClick={() => setEditingTask(t)}
+                  className={`flex-1 min-w-0 truncate text-left transition-colors ${
+                    isDone
+                      ? "line-through text-cream/40 hover:text-cream/60"
+                      : "text-cream hover:text-orange"
+                  }`}
+                  title="Click to edit"
+                >
                   {t.title}
-                </span>
+                </button>
                 {t.assigned_to && (
                   <span
                     className="inline-flex w-4 h-4 rounded-full bg-white/10 text-cream/80 items-center justify-center text-[9px] font-bold uppercase"
@@ -272,5 +284,9 @@ export default function ProjectTaskList({
       </form>
       {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
     </section>
+    {editingTask && (
+      <TaskEditModal task={editingTask} onClose={() => setEditingTask(null)} />
+    )}
+    </>
   );
 }

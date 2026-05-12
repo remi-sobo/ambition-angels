@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import TaskEditModal from "@/app/admin/_components/TaskEditModal";
 import {
   categoryBadgeClass,
   categoryLabel,
@@ -32,6 +33,7 @@ export default function TaskRow({
   const [, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   async function patch(body: Record<string, unknown>) {
     setBusy(true);
@@ -75,6 +77,7 @@ export default function TaskRow({
   }
 
   return (
+    <>
     <div
       className={`group flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${
         isDone
@@ -102,13 +105,18 @@ export default function TaskRow({
       </button>
 
       <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
-        <span
-          className={`text-sm ${
-            isDone ? "line-through text-cream/40" : "text-cream"
-          } truncate min-w-[120px]`}
+        <button
+          type="button"
+          onClick={() => setEditOpen(true)}
+          className={`text-sm text-left truncate min-w-[120px] transition-colors ${
+            isDone
+              ? "line-through text-cream/40 hover:text-cream/60"
+              : "text-cream hover:text-orange"
+          }`}
+          title="Click to edit"
         >
           {task.title}
-        </span>
+        </button>
         <span
           className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(task.category)}`}
         >
@@ -185,6 +193,10 @@ export default function TaskRow({
         )}
       </div>
     </div>
+    {editOpen && (
+      <TaskEditModal task={task} onClose={() => setEditOpen(false)} />
+    )}
+    </>
   );
 }
 

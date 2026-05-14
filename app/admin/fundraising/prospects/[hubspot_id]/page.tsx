@@ -7,6 +7,7 @@ import DealsTable, { type HsDeal } from "./_components/DealsTable";
 import EngagementTimeline, {
   type HsEngagement,
 } from "./_components/EngagementTimeline";
+import BriefPanel, { type ExistingBrief } from "./_components/BriefPanel";
 
 // ── Types local to this page ───────────────────────────────────────────────
 
@@ -69,38 +70,50 @@ export default async function ProspectDetailPage({ params }: PageProps) {
   const hubspotId = params.hubspot_id;
   const supabase = getSupabaseAdmin();
 
-  // Four queries that key off the URL param — no inter-dependency, all
+  // Five queries that key off the URL param — no inter-dependency, all
   // fan out in parallel. Company is fetched in a second step because it
   // joins on the contact's denormalized company name string.
-  const [contactRes, scoreRes, dealsRes, engagementsRes] = await Promise.all([
-    supabase
-      .from("hs_contacts")
-      .select(
-        "hubspot_id, email, first_name, last_name, phone, company, lifecycle_stage, lead_status, owner_id, last_activity_at, created_in_hubspot_at, raw_json"
-      )
-      .eq("hubspot_id", hubspotId)
-      .maybeSingle(),
-    supabase
-      .from("fr_prospect_scores")
-      .select("*")
-      .eq("hubspot_contact_id", hubspotId)
-      .maybeSingle(),
-    supabase
-      .from("hs_deals")
-      .select(
-        "hubspot_id, name, amount, stage, pipeline, close_date, last_activity_at"
-      )
-      .eq("primary_contact_id", hubspotId)
-      .order("last_activity_at", { ascending: false, nullsFirst: false }),
-    supabase
-      .from("hs_engagements")
-      .select(
-        "hubspot_id, engagement_type, subject, body_preview, occurred_at"
-      )
-      .contains("contact_ids", [hubspotId])
-      .order("occurred_at", { ascending: false, nullsFirst: false })
-      .limit(50),
-  ]);
+  const [contactRes, scoreRes, dealsRes, engagementsRes, briefRes] =
+    await Promise.all([
+      supabase
+        .from("hs_contacts")
+        .select(
+          "hubspot_id, email, first_name, last_name, phone, company, lifecycle_stage, lead_status, owner_id, last_activity_at, created_in_hubspot_at, raw_json"
+        )
+        .eq("hubspot_id", hubspotId)
+        .maybeSingle(),
+      supabase
+        .from("fr_prospect_scores")
+        .select("*")
+        .eq("hubspot_contact_id", hubspotId)
+        .maybeSingle(),
+      supabase
+        .from("hs_deals")
+        .select(
+          "hubspot_id, name, amount, stage, pipeline, close_date, last_activity_at"
+        )
+        .eq("primary_contact_id", hubspotId)
+        .order("last_activity_at", { ascending: false, nullsFirst: false }),
+      supabase
+        .from("hs_engagements")
+        .select(
+          "hubspot_id, engagement_type, subject, body_preview, occurred_at"
+        )
+        .contains("contact_ids", [hubspotId])
+        .order("occurred_at", { ascending: false, nullsFirst: false })
+        .limit(50),
+      // Most recent research brief, if one exists. The agent saves a new
+      // row on every generation; this surface always shows the latest.
+      supabase
+        .from("fr_prospect_briefs")
+        .select(
+          "id, content, template_version, status, generated_at, created_by"
+        )
+        .eq("hubspot_contact_id", hubspotId)
+        .order("generated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
   const contact = contactRes.data as HsContact | null;
   if (!contact) {
@@ -124,6 +137,7 @@ export default async function ProspectDetailPage({ params }: PageProps) {
   const score = (scoreRes.data as ProspectScore | null) ?? null;
   const deals = (dealsRes.data as HsDeal[] | null) ?? [];
   const engagements = (engagementsRes.data as HsEngagement[] | null) ?? [];
+  const brief = (briefRes.data as ExistingBrief | null) ?? null;
 
   // HubSpot deep-link: built from HUBSPOT_PORTAL_ID. Hidden if the env var
   // isn't set, so we don't render a broken /contacts/undefined/contact/… URL.
@@ -198,6 +212,9 @@ export default async function ProspectDetailPage({ params }: PageProps) {
           </MetaItem>
         </div>
       </header>
+
+      {/* ── Research brief (agent-generated, PR 10) ────────────────────── */}
+      <BriefPanel hubspotId={contact.hubspot_id} brief={brief} />
 
       {/* ── Score editor ───────────────────────────────────────────────── */}
       <ScoreEditor hubspotId={contact.hubspot_id} initial={score} />

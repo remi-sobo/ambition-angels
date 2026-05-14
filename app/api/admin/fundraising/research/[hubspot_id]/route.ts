@@ -21,7 +21,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { generateBriefForContact } from "@/lib/agents/funder-research/generate-brief";
-import { AGENT_MODEL } from "@/lib/agents/funder-research/client";
+import {
+  AGENT_MODEL,
+  AgentResultError,
+} from "@/lib/agents/funder-research/client";
 
 // ── Cost + rate limit constants ───────────────────────────────────────────
 // Opus rough rates per million tokens. Move to env / config when we have
@@ -221,20 +224,59 @@ export async function POST(
       );
     }
 
-    // Distinguish "agent ran but response couldn't be parsed" from
-    // "Anthropic API errored." Both still log to activity_log; the user-
-    // facing message differs.
-    const isParseError =
-      message.includes("missing required brief sections") ||
-      message.includes("no JSON object") ||
-      message.startsWith("SyntaxError") ||
-      err instanceof SyntaxError;
+    // Two failure modes after the API call enters the picture:
+    //
+    //   - AgentResultError: the API call returned a response, but we
+    //     couldn't extract a usable brief (no submit_brief tool call, or
+    //     the tool input failed shape validation). Carries real metrics.
+    //     Status: 'partial'.
+    //
+    //   - Anything else: API/network/unknown failure. No metrics. Status:
+    //     'failed'.
+    //
+    // This is the fix for PR 10's bug where parse failures silently
+    // dropped tokens / duration / model from the activity log.
+    if (err instanceof AgentResultError) {
+      console.error("[research] tool extraction failed:", {
+        message: err.message,
+      });
+      await supabase.from("fr_agent_activity_log").insert({
+        created_by: "agent",
+        triggered_by: currentUser,
+        action_type: ACTION_TYPE,
+        hubspot_contact_id: hubspotId,
+        target_id: null,
+        target_type: "brief",
+        prompt_summary: `Generate research brief for hubspot_id=${hubspotId}`,
+        model_used: err.metrics.model_used,
+        tokens_input: err.metrics.tokens_input,
+        tokens_output: err.metrics.tokens_output,
+        duration_ms: err.metrics.duration_ms,
+        status: "partial",
+        error_message: err.message,
+        metadata: {
+          kind: "tool_extraction_failure",
+          web_search_count: err.metrics.web_search_count,
+          estimated_cost_usd: Number(
+            estimateCostUsd(
+              err.metrics.tokens_input,
+              err.metrics.tokens_output
+            ).toFixed(4)
+          ),
+          raw_response_summary: err.raw_response_summary ?? null,
+        },
+      });
+      return NextResponse.json(
+        {
+          error:
+            "Agent didn't return a valid brief. Logged for review with full metrics — check fr_agent_activity_log.",
+        },
+        { status: 502 }
+      );
+    }
 
-    console.error("[research] agent failure:", {
-      message,
-      kind: isParseError ? "parse" : "api_or_unknown",
-    });
-
+    // API / network / unknown — no usage data to record.
+    console.error("[research] agent failure (api or unknown):", { message });
     await supabase.from("fr_agent_activity_log").insert({
       created_by: "agent",
       triggered_by: currentUser,
@@ -244,16 +286,13 @@ export async function POST(
       target_type: "brief",
       prompt_summary: `Generate research brief for hubspot_id=${hubspotId}`,
       model_used: AGENT_MODEL,
-      status: isParseError ? "partial" : "failed",
+      status: "failed",
       error_message: message,
       metadata: {
-        kind: isParseError ? "parse_error" : "api_or_unknown_error",
+        kind: "api_or_unknown_error",
       },
     });
 
-    const userFacing = isParseError
-      ? "Agent response could not be parsed. Logged for review."
-      : `Agent error: ${message}`;
-    return NextResponse.json({ error: userFacing }, { status: 502 });
+    return NextResponse.json({ error: `Agent error: ${message}` }, { status: 502 });
   }
 }

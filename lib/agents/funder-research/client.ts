@@ -28,7 +28,11 @@ import type { BriefContent, ResearchContext, ResearchResult } from "./types";
 
 export const AGENT_MODEL = "claude-opus-4-7";
 export const MAX_WEB_SEARCHES = 20;
-const MAX_OUTPUT_TOKENS = 8192;
+// 16000 leaves enough headroom for a complete 9-section brief. PR 10.1's
+// first real run on Danielle Morris hit stop_reason='max_tokens' at 8,577
+// output tokens with the submit_brief tool input arriving truncated and
+// missing required sections. The largest complete brief is likely 10-13k.
+const MAX_OUTPUT_TOKENS = 16000;
 
 // ── Client ─────────────────────────────────────────────────────────────────
 

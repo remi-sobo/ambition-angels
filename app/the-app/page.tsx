@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import AppDemo from "@/components/AppDemo";
 
 export const metadata: Metadata = {
   title: "The App",
@@ -8,21 +9,23 @@ export const metadata: Metadata = {
     "The Ambition app delivers 30-day simulated internships on the phone teens already have. Free for every student.",
 };
 
-const steps = [
+// Slim recap of the three-step framework. Tighter than the original cards
+// because the AppDemo above has already done the storytelling.
+const recapSteps = [
   {
     number: "01",
-    title: "Pick a career path",
-    body: "Students choose from internships in entrepreneurship, sales, game design, dental hygiene, wealth management, and more. Careers they may never have considered. And may end up chasing.",
+    title: "Pick",
+    body: "Entrepreneurship. Sales. Game design. Wealth management. Careers they might never have considered.",
   },
   {
     number: "02",
-    title: "Show up to work for 30 days",
-    body: "Each day: a short video, a quiz to lock in the lesson, and activities to practice the skills that career actually requires. Twelve to fifteen minutes. Built for the phone screen.",
+    title: "Show up",
+    body: "30 days. 15 minutes a day. Built for the phone screen.",
   },
   {
     number: "03",
-    title: "Earn for your effort",
-    body: "Complete an internship and earn money toward a gift card from brands you actually use. Just like the real world we are preparing them for.",
+    title: "Earn",
+    body: "Gift cards from brands they actually use. Real outcomes for real work.",
   },
 ];
 
@@ -117,39 +120,38 @@ export default function TheAppPage() {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
+      {/* INSIDE THE APP — interactive demo */}
       <section className="section-pad">
         <div className="container-site">
-          <div className="max-w-2xl mb-14">
+          <div className="max-w-2xl mb-12">
             <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
-              How It Works
+              Inside the App
             </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink leading-tight">
-              Simulated internships on the phone they already have — and they get paid to finish.
+            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink leading-tight tracking-tight">
+              A day in Ashley&apos;s ambition.
             </h2>
+            <p className="text-gray-warm text-lg leading-relaxed mt-5 max-w-xl">
+              Five days in. $45 earned. One step closer to a laptop. Tap through it.
+            </p>
           </div>
 
-          {/* Lifestyle image */}
-          <div className="relative w-full h-64 lg:h-80 rounded-card-lg overflow-hidden mb-14">
-            <Image
-              src="/images/brooke-cagle-NoRsyXmHGpI-unsplash.jpg"
-              alt="Teen engaging with career content on their phone"
-              fill
-              className="object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink/40 to-transparent" />
-          </div>
+          <AppDemo />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {steps.map((step) => (
+          {/* Slim three-card recap of the framework */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mt-16 pt-12 border-t border-gray-mid/40">
+            {recapSteps.map((step) => (
               <div key={step.number} className="relative">
-                <div className="font-display font-black text-8xl text-orange/15 leading-none mb-4 select-none tracking-tight">
-                  {step.number}
+                <div className="flex items-baseline gap-3 mb-2">
+                  <span className="font-display font-black text-3xl text-orange/70 leading-none tracking-tight">
+                    {step.number}
+                  </span>
+                  <h3 className="font-heading font-semibold text-lg text-ink">
+                    {step.title}
+                  </h3>
                 </div>
-                <h3 className="font-heading font-semibold text-xl text-ink mb-3">
-                  {step.title}
-                </h3>
-                <p className="text-gray-warm leading-relaxed">{step.body}</p>
+                <p className="text-gray-warm leading-relaxed text-sm">
+                  {step.body}
+                </p>
               </div>
             ))}
           </div>

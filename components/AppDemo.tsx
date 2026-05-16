@@ -21,6 +21,15 @@ type OverlayText = {
   className?: string;
   /** Inline style passthrough for fine-grained font sizing in % of phone width. */
   style?: React.CSSProperties;
+  /**
+   * Optional solid backing color that paints over the original text on the
+   * source PNG. Without this, text glyphs leave gaps that let the original
+   * numbers show through. Sampled colors live in BG_* constants below.
+   */
+  bg?: string;
+  /** Optional horizontal/vertical padding (px) around the text to widen the
+   * bg block enough to mask the original text. Defaults to 6/2. */
+  pad?: { x: number; y: number };
 };
 
 type OverlayCheck = {
@@ -42,15 +51,6 @@ type OverlayProgress = {
 };
 
 type Overlay = OverlayText | OverlayCheck | OverlayProgress;
-
-type BugMask = {
-  top: string;
-  left: string;
-  /** Diameter as a % of phone screen width. */
-  size: string;
-  /** Background color matching the local screen area. Defaults to white. */
-  bg?: string;
-};
 
 type Hotspot = {
   top: string;
@@ -80,8 +80,6 @@ type Scene = {
   overlays?: Overlay[];
   /** Hide the interactive bottom tab nav (e.g. for lesson-modal scenes). */
   hideTabNav?: boolean;
-  /** Position + color for the small QA bug icon mask. Defaults applied below. */
-  bugMask?: BugMask;
 };
 
 type TabKey = "work" | "life" | "fundraise" | "wallet" | "bio";
@@ -90,15 +88,22 @@ type TabKey = "work" | "life" | "fundraise" | "wallet" | "bio";
    Scene data
    ──────────────────────────────────────────────────────────────────── */
 
-// Default bug-icon mask. The QA bug icon sits in the same spot
-// (just above the native bottom nav, right-aligned) on every source PNG.
-// Per-scene overrides are still possible via `bugMask`.
-const DEFAULT_BUG_MASK: BugMask = {
-  top: "85.5%",
-  left: "88%",
-  size: "8%",
-  bg: "#FFFFFF",
-};
+// Text overlay sizes. Phone screen is ~300px wide (320 outer, 10px chrome each
+// side). Tuned to visually match the original $0 / 0 days values measured
+// from each source PNG (1206x2622 native, scale 0.249 to 300-wide screen).
+// Plain px because CSS `font-size: X%` is relative to the inherited font-size
+// (16px), NOT the container width — `5%` collapsed everything to sub-pixel
+// sizes in v2.
+const FS_HEADER_DOLLAR = "24px"; // top blue-header balance ($85 / $15) — original is ~25px tall
+const FS_STREAK = "14px"; // 5 days / 5 days streak cards — original is ~12px tall
+const FS_GRID = "12px"; // wallet six-cell grid + fundraise $80 — original is ~11px tall
+
+// Background colors sampled from the source PNGs at the spots where the
+// original $0 / 0 days / etc. live. These bg blocks paint over the original
+// numbers so the new overlay reads cleanly without ghosted text behind.
+const BG_HEADER_BLUE = "#205fa6"; // blue header bg on Work / Wallet / Life
+const BG_CARD_WHITE = "#FFFFFF"; // white card bg for streaks / wallet grid
+const BG_FUNDRAISE_CARD = "#EAF2FB"; // light-blue fundraise card bg
 
 // Percentages reference the phone *screen* container (locked to the
 // screenshot aspect ratio 1206:2622), so overlays land in the same spot
@@ -181,33 +186,37 @@ const SCENES: Scene[] = [
       },
     ],
     overlays: [
-      // $85 over the $0 in the blue Earnable Balance header
+      // $85 over the $0 in the blue Earnable Balance header.
+      // Source bbox: y 233..333, x 1024..1167 (right edge at 96.8%).
       {
         kind: "text",
-        top: "9.2%",
-        right: "5%",
+        top: "10.8%",
+        right: "3.2%",
         text: "$85",
         align: "right",
         className: "text-white font-bold",
-        style: { fontSize: "5.2%" },
+        bg: BG_HEADER_BLUE,
+        style: { fontSize: FS_HEADER_DOLLAR },
       },
-      // 5 days — current streak (left card)
+      // 5 days — current streak (left card). Source "0 days" center (23.5%, 21.6%).
       {
         kind: "text",
-        top: "20.2%",
-        left: "13%",
+        top: "21.6%",
+        left: "16.8%",
         text: "5 days",
         className: "text-ink font-bold",
-        style: { fontSize: "3.8%" },
+        bg: BG_CARD_WHITE,
+        style: { fontSize: FS_STREAK },
       },
-      // 5 days — longest streak (right card) — both equal at day 5
+      // 5 days — longest streak (right card). Source "1 day" center (71.2%, 21.6%).
       {
         kind: "text",
-        top: "20.2%",
-        left: "58%",
+        top: "21.6%",
+        left: "65.5%",
         text: "5 days",
         className: "text-ink font-bold",
-        style: { fontSize: "3.8%" },
+        bg: BG_CARD_WHITE,
+        style: { fontSize: FS_STREAK },
       },
       // Calendar checks: 4 green badges on day 1–4 tiles, top-right of each tile.
       // Day-1 tile right edge ≈ (21% left, 65% top). Step +17% to next tile.
@@ -331,12 +340,13 @@ const SCENES: Scene[] = [
       // $85 over the $0 in the Earnable Balance header — must match Work tab.
       {
         kind: "text",
-        top: "9.2%",
-        right: "5%",
+        top: "10.8%",
+        right: "3.2%",
         text: "$85",
         align: "right",
         className: "text-white font-bold",
-        style: { fontSize: "5.2%" },
+        bg: BG_HEADER_BLUE,
+        style: { fontSize: FS_HEADER_DOLLAR },
       },
     ],
   },
@@ -369,71 +379,80 @@ const SCENES: Scene[] = [
       },
     ],
     overlays: [
-      // $15 over the $0 in the blue Spendable Balance header
+      // $15 over the $0 in the blue Spendable Balance header.
+      // Source bbox: y 233..333, x 1024..1167 (same as work_home header).
       {
         kind: "text",
-        top: "9.2%",
-        right: "5%",
+        top: "10.8%",
+        right: "3.2%",
         text: "$15",
         align: "right",
         className: "text-white font-bold",
-        style: { fontSize: "5.2%" },
+        bg: BG_HEADER_BLUE,
+        style: { fontSize: FS_HEADER_DOLLAR },
       },
-      // Row 1 (top ~21.5%): Processing $0 / Earnable $85 / Spendable $15
+      // Row 1 (top 21.6%): Processing $0 / Earnable $85 / Spendable $15.
+      // Source col centers: 18.3%, 49.9%, 81.6%. Grid cells sit on white card.
       {
         kind: "text",
-        top: "21.5%",
-        left: "8%",
+        top: "21.6%",
+        left: "8.3%",
         text: "$0",
         align: "center",
         className: "text-ink font-bold",
-        style: { fontSize: "3.6%", width: "20%", textAlign: "center" },
+        bg: BG_CARD_WHITE,
+        style: { fontSize: FS_GRID, width: "20%", textAlign: "center" },
       },
       {
         kind: "text",
-        top: "21.5%",
-        left: "40%",
+        top: "21.6%",
+        left: "39.9%",
         text: "$85",
         align: "center",
         className: "text-ink font-bold",
-        style: { fontSize: "3.6%", width: "20%", textAlign: "center" },
+        bg: BG_CARD_WHITE,
+        style: { fontSize: FS_GRID, width: "20%", textAlign: "center" },
       },
       {
         kind: "text",
-        top: "21.5%",
-        left: "72%",
+        top: "21.6%",
+        left: "71.6%",
         text: "$15",
         align: "center",
         className: "text-ink font-bold",
-        style: { fontSize: "3.6%", width: "20%", textAlign: "center" },
+        bg: BG_CARD_WHITE,
+        style: { fontSize: FS_GRID, width: "20%", textAlign: "center" },
       },
-      // Row 2 (top ~29.5%): Fundraised $80 / Earned $15 / Spent $0
+      // Row 2 (top 28.8%): Fundraised $80 / Earned $15 / Spent $0
       {
         kind: "text",
-        top: "29.5%",
-        left: "8%",
+        top: "28.8%",
+        left: "8.3%",
         text: "$80",
         align: "center",
         className: "text-ink font-bold",
-        style: { fontSize: "3.6%", width: "20%", textAlign: "center" },
+        bg: BG_CARD_WHITE,
+        style: { fontSize: FS_GRID, width: "20%", textAlign: "center" },
       },
       {
         kind: "text",
-        top: "29.5%",
-        left: "40%",
+        top: "28.8%",
+        left: "39.9%",
         text: "$15",
         align: "center",
         className: "text-ink font-bold",
-        style: { fontSize: "3.6%", width: "20%", textAlign: "center" },
+        bg: BG_CARD_WHITE,
+        style: { fontSize: FS_GRID, width: "20%", textAlign: "center" },
       },
       {
         kind: "text",
-        top: "29.5%",
-        left: "72%",
+        top: "28.8%",
+        left: "71.6%",
         text: "$0",
         align: "center",
         className: "text-ink font-bold",
-        style: { fontSize: "3.6%", width: "20%", textAlign: "center" },
+        bg: BG_CARD_WHITE,
+        style: { fontSize: FS_GRID, width: "20%", textAlign: "center" },
       },
     ],
   },
@@ -466,13 +485,17 @@ const SCENES: Scene[] = [
       },
     ],
     overlays: [
+      // $80 over the $0 in "$0 raised of your $200 goal".
+      // Source line bbox: y 421..495, x 121..418. "$0" sits at the leftmost
+      // ~50px of the line. Center at top ~17.5%, left edge near 10%.
       {
         kind: "text",
-        top: "15.2%",
-        left: "18%",
+        top: "17.5%",
+        left: "10%",
         text: "$80",
         className: "text-ink font-bold",
-        style: { fontSize: "3.6%" },
+        bg: BG_FUNDRAISE_CARD,
+        style: { fontSize: "16px" },
       },
       // Progress bar fill: ~90% bar width, top ~21%, height ~1.4%
       {
@@ -757,8 +780,6 @@ function Phone({
   onTab: (tab: TabKey) => void;
   toast: string | null;
 }) {
-  const bugMask = scene.bugMask ?? DEFAULT_BUG_MASK;
-
   return (
     <div className="w-full max-w-[320px]">
       {/* Phone body */}
@@ -842,21 +863,6 @@ function Phone({
               className="object-cover object-top animate-[fadeIn_220ms_ease-out_forwards]"
             />
 
-            {/* Bug-icon mask (always rendered; sits underneath the tab nav
-                when the nav is visible, fully visible when nav is hidden) */}
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute rounded-full"
-              style={{
-                top: bugMask.top,
-                left: bugMask.left,
-                width: bugMask.size,
-                aspectRatio: "1 / 1",
-                background: bugMask.bg ?? "#FFFFFF",
-                transform: "translate(-50%, -50%)",
-              }}
-            />
-
             {/* Overlays */}
             {scene.overlays?.map((overlay, idx) => (
               <OverlayLayer key={`${scene.id}-overlay-${idx}`} overlay={overlay} />
@@ -887,8 +893,10 @@ function Phone({
             {!scene.hideTabNav && (
               <nav
                 aria-label="App tabs"
-                className="absolute left-0 right-0 bottom-0 bg-white border-t border-gray-mid/40 grid grid-cols-5"
-                style={{ paddingBottom: "1.5%" }}
+                // Min-height tuned so the overlay fully covers the native iOS
+                // tab nav burned into the source PNGs (~12% of screen height,
+                // roughly 75px at a 320x692 phone).
+                className="absolute left-0 right-0 bottom-0 bg-white border-t border-gray-mid/40 grid grid-cols-5 pt-3 pb-3 min-h-[75px]"
               >
                 {TABS.map((tab) => {
                   const isActive = activeTab === tab.key;
@@ -899,21 +907,19 @@ function Phone({
                       onClick={() => onTab(tab.key)}
                       aria-label={`Jump to ${tab.label}`}
                       aria-pressed={isActive}
-                      className={`flex flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
+                      className={`flex flex-col items-center justify-center gap-1 px-1 py-0.5 transition-colors ${
                         isActive
                           ? "text-orange"
                           : "text-gray-warm/70 hover:text-ink"
                       }`}
-                      style={{ fontSize: "2.4%" }}
                     >
                       <span
                         aria-hidden="true"
-                        className="block"
-                        style={{ width: "6%", height: "6%" }}
+                        className="block h-5 w-5"
                       >
                         {tab.icon}
                       </span>
-                      <span className="font-medium leading-none">
+                      <span className="font-medium leading-none text-[10px]">
                         {tab.label}
                       </span>
                     </button>
@@ -962,6 +968,8 @@ function Phone({
 
 function OverlayLayer({ overlay }: { overlay: Overlay }) {
   if (overlay.kind === "text") {
+    const padX = overlay.pad?.x ?? (overlay.bg ? 6 : 0);
+    const padY = overlay.pad?.y ?? (overlay.bg ? 2 : 0);
     const style: React.CSSProperties = {
       position: "absolute",
       top: overlay.top,
@@ -970,6 +978,13 @@ function OverlayLayer({ overlay }: { overlay: Overlay }) {
       transform: "translateY(-50%)",
       whiteSpace: "nowrap",
       lineHeight: 1,
+      ...(overlay.bg
+        ? {
+            backgroundColor: overlay.bg,
+            padding: `${padY}px ${padX}px`,
+            borderRadius: 2,
+          }
+        : {}),
       ...overlay.style,
     };
     return (

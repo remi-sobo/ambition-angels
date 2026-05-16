@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /* ────────────────────────────────────────────────────────────────────
@@ -42,6 +43,15 @@ type OverlayProgress = {
 
 type Overlay = OverlayText | OverlayCheck | OverlayProgress;
 
+type BugMask = {
+  top: string;
+  left: string;
+  /** Diameter as a % of phone screen width. */
+  size: string;
+  /** Background color matching the local screen area. Defaults to white. */
+  bg?: string;
+};
+
 type Hotspot = {
   top: string;
   left: string;
@@ -68,6 +78,10 @@ type Scene = {
   /** Optional secondary hotspots — invisible, fire toasts on tap. */
   secondary?: Hotspot[];
   overlays?: Overlay[];
+  /** Hide the interactive bottom tab nav (e.g. for lesson-modal scenes). */
+  hideTabNav?: boolean;
+  /** Position + color for the small QA bug icon mask. Defaults applied below. */
+  bugMask?: BugMask;
 };
 
 type TabKey = "work" | "life" | "fundraise" | "wallet" | "bio";
@@ -75,6 +89,16 @@ type TabKey = "work" | "life" | "fundraise" | "wallet" | "bio";
 /* ────────────────────────────────────────────────────────────────────
    Scene data
    ──────────────────────────────────────────────────────────────────── */
+
+// Default bug-icon mask. The QA bug icon sits in the same spot
+// (just above the native bottom nav, right-aligned) on every source PNG.
+// Per-scene overrides are still possible via `bugMask`.
+const DEFAULT_BUG_MASK: BugMask = {
+  top: "85.5%",
+  left: "88%",
+  size: "8%",
+  bg: "#FFFFFF",
+};
 
 // Percentages reference the phone *screen* container (locked to the
 // screenshot aspect ratio 1206:2622), so overlays land in the same spot
@@ -85,10 +109,11 @@ const SCENES: Scene[] = [
     image: "/images/app-demo/bio_profile.png",
     alt: "Ashley's bio profile screen",
     headline: "Meet Ashley.",
-    subhead: "Ninth grader. Oakland. Class of 2028. Five days in.",
+    subhead:
+      "Ninth grader. Class of 2028. Found Ambition through her local Boys & Girls Club.",
     next: 2,
     primary: {
-      top: "88%",
+      top: "78%",
       left: "30%",
       width: "40%",
       height: "8%",
@@ -100,12 +125,12 @@ const SCENES: Scene[] = [
     id: 2,
     image: "/images/app-demo/bio_portfolio.png",
     alt: "Ashley's portfolio and ambitions",
-    headline: "Five real ambitions.",
+    headline: "She filled in her bio. Wrote down what she wants.",
     subhead:
       "Graduate. Find work she loves. Buy a house. Build a family. Show the kids in her family it can be done.",
     next: 3,
     primary: {
-      top: "88%",
+      top: "78%",
       left: "30%",
       width: "40%",
       height: "8%",
@@ -131,13 +156,14 @@ const SCENES: Scene[] = [
     image: "/images/app-demo/work_home.png",
     alt: "Work tab with active Mental Health internship",
     headline: "Day five. On a streak.",
-    subhead: "$45 earned. Internship: Mental Health Therapy. One of thirty.",
+    subhead:
+      "$15 earned. $85 to go. Internship: Mental Health Therapy. One of thirty.",
     next: 4,
     primary: {
-      top: "55%",
+      top: "47%",
       left: "10%",
       width: "80%",
-      height: "10%",
+      height: "8%",
       action: { kind: "advance" },
       label: "Open Day 1 lesson",
     },
@@ -155,15 +181,17 @@ const SCENES: Scene[] = [
       },
     ],
     overlays: [
+      // $85 over the $0 in the blue Earnable Balance header
       {
         kind: "text",
         top: "9.2%",
         right: "5%",
-        text: "$45",
+        text: "$85",
         align: "right",
         className: "text-white font-bold",
         style: { fontSize: "5.2%" },
       },
+      // 5 days — current streak (left card)
       {
         kind: "text",
         top: "20.2%",
@@ -172,19 +200,21 @@ const SCENES: Scene[] = [
         className: "text-ink font-bold",
         style: { fontSize: "3.8%" },
       },
+      // 5 days — longest streak (right card) — both equal at day 5
       {
         kind: "text",
         top: "20.2%",
         left: "58%",
-        text: "7 days",
+        text: "5 days",
         className: "text-ink font-bold",
         style: { fontSize: "3.8%" },
       },
-      // Calendar checks: day 1 at ~(13%, 70%), step +17% per day.
-      { kind: "check", top: "67%", left: "17%", size: "8%" },
-      { kind: "check", top: "67%", left: "34%", size: "8%" },
-      { kind: "check", top: "67%", left: "51%", size: "8%" },
-      { kind: "check", top: "67%", left: "68%", size: "8%" },
+      // Calendar checks: 4 green badges on day 1–4 tiles, top-right of each tile.
+      // Day-1 tile right edge ≈ (21% left, 65% top). Step +17% to next tile.
+      { kind: "check", top: "65%", left: "21%", size: "8%" },
+      { kind: "check", top: "65%", left: "38%", size: "8%" },
+      { kind: "check", top: "65%", left: "55%", size: "8%" },
+      { kind: "check", top: "65%", left: "72%", size: "8%" },
     ],
   },
   {
@@ -192,8 +222,9 @@ const SCENES: Scene[] = [
     image: "/images/app-demo/lesson_video.png",
     alt: "Daily lesson video player",
     headline: "Every day starts with a real lesson.",
-    subhead: "Video first. Built for the phone screen.",
+    subhead: "Video first. Built for how teens already learn.",
     next: 5,
+    hideTabNav: true,
     primary: {
       top: "38%",
       left: "38%",
@@ -223,20 +254,21 @@ const SCENES: Scene[] = [
     headline: "Then a check for understanding.",
     subhead: "Short. Low-stakes. Built for retention.",
     next: 6,
+    hideTabNav: true,
     primary: {
-      top: "55%",
-      left: "10%",
-      width: "80%",
+      top: "30%",
+      left: "5%",
+      width: "90%",
       height: "10%",
       action: { kind: "advance" },
       label: "Answer the quiz",
     },
     secondary: [
       {
-        top: "67%",
-        left: "10%",
-        width: "80%",
-        height: "10%",
+        top: "20%",
+        left: "5%",
+        width: "90%",
+        height: "8%",
         action: {
           kind: "toast",
           message: "Wrong answers get a quick explainer, not a red X.",
@@ -250,14 +282,14 @@ const SCENES: Scene[] = [
     image: "/images/app-demo/intern_task.png",
     alt: "Intern task with handwritten answers",
     headline: "Then real intern work.",
-    subhead:
-      "The same thinking a junior PM does at a real company. In her own words.",
+    subhead: "The same thinking a junior PM does. In her own words.",
     next: 7,
+    hideTabNav: true,
     primary: {
-      top: "82%",
-      left: "15%",
-      width: "70%",
-      height: "10%",
+      top: "87%",
+      left: "30%",
+      width: "55%",
+      height: "8%",
       action: { kind: "advance" },
       label: "Submit task",
     },
@@ -267,13 +299,14 @@ const SCENES: Scene[] = [
     image: "/images/app-demo/standup.png",
     alt: "Daily stand-up recording",
     headline: "And a daily stand-up.",
-    subhead: "Like every team does. Sixty seconds. Saved to her portfolio.",
+    subhead: "Like every team does. Sixty seconds. Saved to her bio.",
     next: 8,
+    hideTabNav: true,
     primary: {
-      top: "70%",
-      left: "38%",
-      width: "24%",
-      height: "16%",
+      top: "87%",
+      left: "30%",
+      width: "55%",
+      height: "8%",
       action: { kind: "advance" },
       label: "Record stand-up",
     },
@@ -284,7 +317,7 @@ const SCENES: Scene[] = [
     alt: "Life lessons home",
     headline: "Plus durable skills.",
     subhead:
-      "The stuff school doesn't always teach. Money. Mental health. Communication.",
+      "Critical thinking. Communication. Money. Mental health. The skills AI can't replace.",
     next: 9,
     primary: {
       top: "32%",
@@ -294,13 +327,25 @@ const SCENES: Scene[] = [
       action: { kind: "advance" },
       label: "Open a life lesson",
     },
+    overlays: [
+      // $85 over the $0 in the Earnable Balance header — must match Work tab.
+      {
+        kind: "text",
+        top: "9.2%",
+        right: "5%",
+        text: "$85",
+        align: "right",
+        className: "text-white font-bold",
+        style: { fontSize: "5.2%" },
+      },
+    ],
   },
   {
     id: 9,
     image: "/images/app-demo/wallet.png",
     alt: "Spendable balance and gift cards",
     headline: "Real rewards. Earned, not given.",
-    subhead: "$80 in five days. $35 already in gift cards she actually uses.",
+    subhead: "$15 earned in five days. Real gift cards she'll actually use.",
     next: 10,
     primary: {
       top: "55%",
@@ -324,21 +369,22 @@ const SCENES: Scene[] = [
       },
     ],
     overlays: [
+      // $15 over the $0 in the blue Spendable Balance header
       {
         kind: "text",
         top: "9.2%",
         right: "5%",
-        text: "$45",
+        text: "$15",
         align: "right",
         className: "text-white font-bold",
         style: { fontSize: "5.2%" },
       },
-      // Row 1 (top ~23%): Processing $10 / Earnable $25 / Spendable $45
+      // Row 1 (top ~21.5%): Processing $0 / Earnable $85 / Spendable $15
       {
         kind: "text",
         top: "21.5%",
         left: "8%",
-        text: "$10",
+        text: "$0",
         align: "center",
         className: "text-ink font-bold",
         style: { fontSize: "3.6%", width: "20%", textAlign: "center" },
@@ -347,7 +393,7 @@ const SCENES: Scene[] = [
         kind: "text",
         top: "21.5%",
         left: "40%",
-        text: "$25",
+        text: "$85",
         align: "center",
         className: "text-ink font-bold",
         style: { fontSize: "3.6%", width: "20%", textAlign: "center" },
@@ -356,12 +402,12 @@ const SCENES: Scene[] = [
         kind: "text",
         top: "21.5%",
         left: "72%",
-        text: "$45",
+        text: "$15",
         align: "center",
         className: "text-ink font-bold",
         style: { fontSize: "3.6%", width: "20%", textAlign: "center" },
       },
-      // Row 2 (top ~31%): Fundraised $80 / Earned $80 / Spent $35
+      // Row 2 (top ~29.5%): Fundraised $80 / Earned $15 / Spent $0
       {
         kind: "text",
         top: "29.5%",
@@ -375,7 +421,7 @@ const SCENES: Scene[] = [
         kind: "text",
         top: "29.5%",
         left: "40%",
-        text: "$80",
+        text: "$15",
         align: "center",
         className: "text-ink font-bold",
         style: { fontSize: "3.6%", width: "20%", textAlign: "center" },
@@ -384,7 +430,7 @@ const SCENES: Scene[] = [
         kind: "text",
         top: "29.5%",
         left: "72%",
-        text: "$35",
+        text: "$0",
         align: "center",
         className: "text-ink font-bold",
         style: { fontSize: "3.6%", width: "20%", textAlign: "center" },
@@ -428,7 +474,7 @@ const SCENES: Scene[] = [
         className: "text-ink font-bold",
         style: { fontSize: "3.6%" },
       },
-      // Progress bar fill: ~90% bar width, centered, top ~21%, height ~1.2%
+      // Progress bar fill: ~90% bar width, top ~21%, height ~1.4%
       {
         kind: "progress",
         top: "21%",
@@ -529,10 +575,8 @@ export default function AppDemo() {
     if (!current) return;
     if (current.next !== null) {
       setSceneId(current.next);
-    } else {
-      showToast("End of tour. Restart to walk through again.");
     }
-  }, [sceneId, showToast]);
+  }, [sceneId]);
 
   const handleHotspot = useCallback(
     (hotspot: Hotspot) => {
@@ -572,13 +616,15 @@ export default function AppDemo() {
     return entry ? entry[0] : null;
   }, [sceneId]);
 
+  const isFinalScene = scene.next === null;
+
   return (
-    <div className="grid gap-10 lg:grid-cols-[1fr_minmax(0,360px)] lg:gap-16 lg:items-start">
+    <div className="grid gap-10 lg:grid-cols-[1fr_minmax(0,360px)] lg:gap-16 lg:items-center">
       {/* COPY COLUMN (mobile: below phone) */}
       <div className="order-2 lg:order-1">
         {/* Progress dots */}
         <ol
-          className="flex flex-wrap gap-1.5 mb-6"
+          className="flex flex-wrap gap-1.5 mb-4"
           aria-label="Demo progress"
         >
           {SCENES.map((s) => {
@@ -612,10 +658,10 @@ export default function AppDemo() {
           key={scene.id}
           className="animate-[fadeUp_280ms_ease-out_forwards]"
         >
-          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">
+          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-2">
             Scene {scene.id} of {SCENES.length}
           </p>
-          <h3 className="font-heading font-bold text-3xl lg:text-4xl text-ink leading-tight mb-4 tracking-tight">
+          <h3 className="font-heading font-bold text-3xl lg:text-4xl text-ink leading-tight mb-3 tracking-tight">
             {scene.headline}
           </h3>
           <p className="text-gray-warm text-lg leading-relaxed">
@@ -624,14 +670,13 @@ export default function AppDemo() {
         </div>
 
         {/* Controls */}
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={advance}
-            className="bg-orange hover:bg-orange-dark text-white font-semibold px-6 py-3 rounded-full transition-colors text-sm shadow-md shadow-orange/20 min-h-[44px] inline-flex items-center gap-2"
-          >
-            {scene.next === null ? "Tour complete" : "Continue"}
-            {scene.next !== null && (
+        <div className="mt-7 flex flex-wrap items-center gap-3">
+          {isFinalScene ? (
+            <Link
+              href="/donate"
+              className="bg-orange hover:bg-orange-dark text-white font-semibold px-6 py-3 rounded-full transition-colors text-sm shadow-md shadow-orange/20 min-h-[44px] inline-flex items-center gap-2"
+            >
+              Sponsor a teen like Ashley
               <svg
                 className="w-4 h-4"
                 viewBox="0 0 24 24"
@@ -645,8 +690,29 @@ export default function AppDemo() {
                 <path d="M5 12h14" />
                 <path d="M13 5l7 7-7 7" />
               </svg>
-            )}
-          </button>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={advance}
+              className="bg-orange hover:bg-orange-dark text-white font-semibold px-6 py-3 rounded-full transition-colors text-sm shadow-md shadow-orange/20 min-h-[44px] inline-flex items-center gap-2"
+            >
+              Continue
+              <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12h14" />
+                <path d="M13 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
           <button
             type="button"
             onClick={restart}
@@ -691,6 +757,8 @@ function Phone({
   onTab: (tab: TabKey) => void;
   toast: string | null;
 }) {
+  const bugMask = scene.bugMask ?? DEFAULT_BUG_MASK;
+
   return (
     <div className="w-full max-w-[320px]">
       {/* Phone body */}
@@ -774,6 +842,21 @@ function Phone({
               className="object-cover object-top animate-[fadeIn_220ms_ease-out_forwards]"
             />
 
+            {/* Bug-icon mask (always rendered; sits underneath the tab nav
+                when the nav is visible, fully visible when nav is hidden) */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute rounded-full"
+              style={{
+                top: bugMask.top,
+                left: bugMask.left,
+                width: bugMask.size,
+                aspectRatio: "1 / 1",
+                background: bugMask.bg ?? "#FFFFFF",
+                transform: "translate(-50%, -50%)",
+              }}
+            />
+
             {/* Overlays */}
             {scene.overlays?.map((overlay, idx) => (
               <OverlayLayer key={`${scene.id}-overlay-${idx}`} overlay={overlay} />
@@ -784,7 +867,7 @@ function Phone({
               <HotspotButton
                 hotspot={scene.primary}
                 onActivate={() => onHotspot(scene.primary!)}
-                pulse={!hasInteracted && scene.id === 1 ? true : !hasInteracted}
+                pulse={!hasInteracted}
               />
             )}
 
@@ -797,12 +880,56 @@ function Phone({
               />
             ))}
 
-            {/* Toast */}
+            {/* Interactive tab nav — lives INSIDE the screen at the bottom,
+                visually overlaying the screenshot's native nav so visitors
+                see a single nav that responds to their taps. Hidden on
+                lesson-modal scenes (4–7). */}
+            {!scene.hideTabNav && (
+              <nav
+                aria-label="App tabs"
+                className="absolute left-0 right-0 bottom-0 bg-white border-t border-gray-mid/40 grid grid-cols-5"
+                style={{ paddingBottom: "1.5%" }}
+              >
+                {TABS.map((tab) => {
+                  const isActive = activeTab === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => onTab(tab.key)}
+                      aria-label={`Jump to ${tab.label}`}
+                      aria-pressed={isActive}
+                      className={`flex flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
+                        isActive
+                          ? "text-orange"
+                          : "text-gray-warm/70 hover:text-ink"
+                      }`}
+                      style={{ fontSize: "2.4%" }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="block"
+                        style={{ width: "6%", height: "6%" }}
+                      >
+                        {tab.icon}
+                      </span>
+                      <span className="font-medium leading-none">
+                        {tab.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            )}
+
+            {/* Toast — sits above the tab nav when nav is visible */}
             {toast && (
               <div
                 role="status"
                 aria-live="polite"
-                className="absolute left-1/2 -translate-x-1/2 bottom-[12%] bg-ink/95 text-cream text-[11px] font-medium px-3 py-2 rounded-full shadow-lg max-w-[80%] text-center animate-[fadeUp_180ms_ease-out_forwards]"
+                className={`absolute left-1/2 -translate-x-1/2 bg-ink/95 text-cream text-[11px] font-medium px-3 py-2 rounded-full shadow-lg max-w-[80%] text-center animate-[fadeUp_180ms_ease-out_forwards] ${
+                  scene.hideTabNav ? "bottom-[15%]" : "bottom-[14%]"
+                }`}
               >
                 {toast}
               </div>
@@ -825,33 +952,6 @@ function Phone({
           />
         </div>
       </div>
-
-      {/* Bottom tab nav — sits outside the phone screen, below the body */}
-      <nav
-        aria-label="App tabs"
-        className="mt-5 grid grid-cols-5 gap-1 bg-cream border border-gray-mid/60 rounded-full p-1 shadow-sm"
-      >
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => onTab(tab.key)}
-              aria-label={`Jump to ${tab.label}`}
-              aria-pressed={isActive}
-              className={`flex flex-col items-center justify-center gap-0.5 py-2 rounded-full text-[10px] font-medium transition-colors min-h-[40px] ${
-                isActive
-                  ? "bg-orange text-white"
-                  : "text-gray-warm hover:text-ink"
-              }`}
-            >
-              <span className="w-4 h-4">{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
     </div>
   );
 }

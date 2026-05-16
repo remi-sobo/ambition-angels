@@ -220,7 +220,7 @@ export default function CompaniesPage() {
                 Corporate Partnership
               </div>
               <h1 className="font-display font-black text-5xl lg:text-6xl xl:text-7xl text-cream mb-6 leading-none tracking-tight uppercase">
-                Give the next generation a clear view of where work is going.
+                Show the next generation where work is going.
               </h1>
               <p className="text-gray-mid text-lg leading-relaxed mb-10 max-w-lg">
                 The workforce is changing fast, and the teens furthest from opportunity are usually the last to find out. We close that gap with 30-day simulated career internships on the phones every teen already has. The research is clear: a teen with real career exposure is more than twice as likely to be employed than one without it. Be part of making sure the next generation has what they need.
@@ -260,25 +260,6 @@ export default function CompaniesPage() {
                     <div className="text-gray-mid text-xs leading-snug">{s.sub}</div>
                   </div>
                 ))}
-              </div>
-
-              {/* Marcus T. quote */}
-              <div className="bg-cream/5 border border-orange/25 rounded-card-lg p-5">
-                <div className="font-display font-black text-3xl text-orange leading-none mb-3">
-                  &ldquo;
-                </div>
-                <p className="text-cream text-sm leading-relaxed italic mb-4">
-                  The wealth management track changed how I think about money. I taught my mom what I learned. I&apos;m starting to think I might have a future here.
-                </p>
-                <div className="flex items-center gap-3 pt-3 border-t border-cream/10">
-                  <div className="w-8 h-8 rounded-full bg-orange/20 border border-orange/30 flex items-center justify-center flex-shrink-0">
-                    <span className="font-heading font-bold text-orange text-xs">MT</span>
-                  </div>
-                  <div>
-                    <div className="font-heading font-semibold text-cream text-xs">Marcus T.</div>
-                    <div className="text-gray-mid text-xs">11th Grade · East Palo Alto, CA</div>
-                  </div>
-                </div>
               </div>
             </div>
 

@@ -102,8 +102,7 @@ const FS_GRID = "12px"; // wallet six-cell grid + fundraise $80 — original is 
 // original $0 / 0 days / etc. live. These bg blocks paint over the original
 // numbers so the new overlay reads cleanly without ghosted text behind.
 const BG_HEADER_BLUE = "#205fa6"; // blue header bg on Work / Wallet / Life
-const BG_CARD_WHITE = "#FFFFFF"; // white card bg for streaks / wallet grid
-const BG_FUNDRAISE_CARD = "#EAF2FB"; // light-blue fundraise card bg
+const BG_CARD_WHITE = "#FFFFFF"; // white card bg for streaks / wallet grid / fundraise
 
 // Percentages reference the phone *screen* container (locked to the
 // screenshot aspect ratio 1206:2622), so overlays land in the same spot
@@ -487,14 +486,16 @@ const SCENES: Scene[] = [
     overlays: [
       // $80 over the $0 in "$0 raised of your $200 goal".
       // Source line bbox: y 421..495, x 121..418. "$0" sits at the leftmost
-      // ~50px of the line. Center at top ~17.5%, left edge near 10%.
+      // ~50px of the line. The inner goal card is pure white (#FFFFFF) —
+      // the light-blue (#EAF2FB) is the page bg *outside* the card. Center
+      // at top ~17.5%, left edge near 10%.
       {
         kind: "text",
         top: "17.5%",
         left: "10%",
         text: "$80",
         className: "text-ink font-bold",
-        bg: BG_FUNDRAISE_CARD,
+        bg: BG_CARD_WHITE,
         style: { fontSize: "16px" },
       },
       // Progress bar fill: ~90% bar width, top ~21%, height ~1.4%

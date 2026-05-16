@@ -131,7 +131,7 @@ export default function TheAppPage() {
               A day in Ashley&apos;s ambition.
             </h2>
             <p className="text-gray-warm text-lg leading-relaxed mt-5 max-w-xl">
-              Five days in. $45 earned. One step closer to a laptop. Tap through it.
+              Five days in. $15 earned. $85 to go. Tap through it.
             </p>
           </div>
 

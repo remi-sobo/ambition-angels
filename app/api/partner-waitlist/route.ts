@@ -10,6 +10,15 @@ const getSupabase = () =>
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
+function escapeHTML(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function buildConfirmationHTML(firstName: string, role: string): string {
   return `
 <!DOCTYPE html>
@@ -84,7 +93,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { first_name, last_name, email, role, teen_count } = body;
+  const {
+    first_name,
+    last_name,
+    email,
+    role,
+    teen_count,
+    company,
+    role_category,
+    problem_to_solve,
+  } = body;
 
   if (!first_name || !last_name || !email || !role) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -132,9 +150,16 @@ export async function POST(req: NextRequest) {
           <table style="width:100%;border-collapse:collapse;font-size:14px;">
             <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Name</td><td style="padding:6px 0;color:#0E0E0E;">${first_name} ${last_name}</td></tr>
             <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Email</td><td style="padding:6px 0;color:#0E0E0E;"><a href="mailto:${email}" style="color:#E8500A;text-decoration:none;">${email}</a></td></tr>
+            ${company ? `<tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Company</td><td style="padding:6px 0;color:#0E0E0E;">${escapeHTML(String(company))}</td></tr>` : ""}
             <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Role</td><td style="padding:6px 0;color:#0E0E0E;">${role}</td></tr>
+            ${role_category ? `<tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Role category</td><td style="padding:6px 0;color:#0E0E0E;">${escapeHTML(String(role_category))}</td></tr>` : ""}
             ${teen_count ? `<tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Teens</td><td style="padding:6px 0;color:#0E0E0E;">${teen_count}</td></tr>` : ""}
           </table>
+          ${problem_to_solve ? `
+          <div style="margin-top:20px;padding:16px;background:#FFF7F2;border-left:3px solid #E8500A;border-radius:6px;">
+            <div style="font-size:11px;font-weight:700;color:#E8500A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">What they want to solve</div>
+            <div style="font-size:14px;color:#0E0E0E;line-height:1.6;white-space:pre-wrap;">${escapeHTML(String(problem_to_solve))}</div>
+          </div>` : ""}
           <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="https://www.ambitionangels.org/admin" style="color:#E8500A;">admin</a></p>
         </div>
       `,

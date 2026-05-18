@@ -13,7 +13,10 @@ export default function SiteChrome({
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const standalone = pathname?.startsWith("/shannon") ?? false;
+  const standalone =
+    (pathname?.startsWith("/shannon") ||
+      pathname?.startsWith("/update/koshland")) ??
+    false;
 
   return (
     <>

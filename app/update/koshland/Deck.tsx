@@ -1249,11 +1249,6 @@ export default function Deck() {
     [],
   );
 
-  const goTo = useCallback((i: number) => {
-    if (i < 0 || i >= TOTAL_SLIDES) return;
-    setIndex(i);
-  }, []);
-
   // Keyboard navigation
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

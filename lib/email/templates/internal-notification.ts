@@ -25,16 +25,21 @@ export function buildInternalNotificationEmail(args: {
 
   const subject = `New booking: ${meetingType.name} with ${booking.attendee_name} on ${dateHost.split(",").slice(0, 2).join(",")}`;
 
+  const isVideo = booking.location_type === "video";
+  const where = isVideo
+    ? `Zoom: ${booking.meeting_url ?? "(missing URL)"}`
+    : `In-person: ${booking.location_details ?? "(no address provided)"}`;
+
   const lines: Array<[string, string | null]> = [
     ["Type", `${meetingType.name} · ${meetingType.duration_minutes} min`],
     ["When (PT)", `${dateHost}, ${timeHost}`],
     ["When (attendee)", timeAttendee],
+    ["Where", where],
     ["Name", booking.attendee_name],
     ["Email", booking.attendee_email],
     ["Company", booking.attendee_company],
     ["Role", booking.attendee_role],
     ["Message", booking.attendee_message],
-    ["Meet link", booking.google_meet_url],
   ];
 
   const text = lines

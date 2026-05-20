@@ -15,6 +15,8 @@ const patchSchema = z.object({
   max_advance_days: z.number().int().min(1).max(365).optional(),
   is_active: z.boolean().optional(),
   sort_order: z.number().int().optional(),
+  location_options: z.array(z.enum(["video", "in_person"])).min(1).optional(),
+  default_in_person_address: z.string().max(500).nullable().optional(),
 });
 
 export async function PATCH(

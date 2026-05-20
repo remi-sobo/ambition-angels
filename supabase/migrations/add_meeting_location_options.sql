@@ -3,11 +3,12 @@ alter table meeting_types
   add column if not exists location_options text[] default '{video}',
   add column if not exists default_in_person_address text;
 
--- Open in-person on Donor + Corporate. Default address left null on
--- purpose — set via /admin/meet → Types. When null, the booking flow
--- asks the attendee "Where works for you?" as an optional field.
+-- Open in-person on Donor + Corporate, with the office address as the
+-- default. When the default is null on a type with in-person enabled,
+-- the booking flow asks the attendee "Where works for you?" instead.
 update meeting_types
-  set location_options = '{video,in_person}'
+  set location_options = '{video,in_person}',
+      default_in_person_address = '380 Portage Ave, Palo Alto, CA'
   where slug in ('donor-conversation', 'corporate-partnership');
 
 -- Each booking remembers which mode it was booked in + the snapshotted

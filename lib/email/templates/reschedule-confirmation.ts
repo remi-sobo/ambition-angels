@@ -17,9 +17,11 @@ export function buildRescheduleConfirmationEmail(args: {
   const tz = booking.attendee_timezone;
   const date = formatDateLong(start, tz);
   const time = formatTimeRange(start, end, tz);
-  const meet = booking.google_meet_url ?? "";
   const manage = manageUrl(booking.cancel_token);
   const firstName = booking.attendee_name.split(" ")[0];
+  const isVideo = booking.location_type === "video";
+  const meetingUrl = booking.meeting_url ?? "";
+  const address = booking.location_details ?? "Address TBD — I'll be in touch.";
 
   const subject = `Rescheduled: ${meetingType.name} with Remi to ${date.split(",").slice(0, 2).join(",")}`;
 
@@ -32,7 +34,7 @@ export function buildRescheduleConfirmationEmail(args: {
     `${date}`,
     `${time}`,
     ``,
-    `Meet link: ${meet}`,
+    isVideo ? `Zoom: ${meetingUrl}` : `Where: ${address}`,
     ``,
     `Need to change it again? ${manage}`,
     ``,
@@ -40,6 +42,17 @@ export function buildRescheduleConfirmationEmail(args: {
     ``,
     `— Remi`,
   ].join("\n");
+
+  const locationBlock = isVideo
+    ? `<tr><td style="padding-top:20px;padding-bottom:20px;">
+        <a href="${escapeHtml(meetingUrl)}" style="display:inline-block;background:#E8500A;color:#FFFFFF;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:600;">Join Zoom</a>
+      </td></tr>`
+    : `<tr><td style="padding-top:20px;padding-bottom:20px;">
+        <div style="background:#FAFAF8;border:1px solid #F0EEE8;border-radius:14px;padding:14px 16px;">
+          <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#6B6960;font-weight:700;margin-bottom:4px;">Where</div>
+          <div style="color:#0E0E0E;">${escapeHtml(address)}</div>
+        </div>
+      </td></tr>`;
 
   const html = htmlShell(`
     <tr><td style="padding-bottom:6px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#E8500A;font-weight:700;">Rescheduled</td></tr>
@@ -51,9 +64,7 @@ export function buildRescheduleConfirmationEmail(args: {
       <div style="color:#3D3D3D;">${escapeHtml(date)}</div>
       <div style="color:#3D3D3D;">${escapeHtml(time)}</div>
     </td></tr>
-    <tr><td style="padding-top:20px;padding-bottom:20px;">
-      <a href="${escapeHtml(meet)}" style="display:inline-block;background:#E8500A;color:#FFFFFF;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:600;">Join the Meet</a>
-    </td></tr>
+    ${locationBlock}
     <tr><td style="padding-bottom:20px;font-size:14px;color:#6B6960;">
       Need to change it again? <a href="${escapeHtml(manage)}" style="color:#0E0E0E;text-decoration:underline;">Manage your booking</a>.
     </td></tr>

@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import "react-day-picker/style.css";
 
-import type { MeetingType } from "@/lib/database.types";
+import type { LocationType, MeetingType } from "@/lib/database.types";
 import { trackEvent } from "@/lib/analytics";
 import { MEET_ICON_MAP, type MeetIconName } from "../icons";
 
@@ -35,12 +35,19 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
     Array.isArray(meetingType.duration_options) &&
     meetingType.duration_options.length > 0;
 
+  const locationOptions = (meetingType.location_options ?? ["video"]) as LocationType[];
+  const hasLocationChoice = locationOptions.length > 1;
+
   const [step, setStep] = useState<Step>("datetime");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedSlot, setSelectedSlot] = useState<Slot | undefined>();
   const [selectedDuration, setSelectedDuration] = useState<number | undefined>(
     hasDurationChoice ? undefined : meetingType.duration_minutes
   );
+  const [selectedLocation, setSelectedLocation] = useState<LocationType | undefined>(
+    hasLocationChoice ? undefined : locationOptions[0]
+  );
+  const [inPersonAddress, setInPersonAddress] = useState<string>("");
   const [slots, setSlots] = useState<Slot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -127,6 +134,12 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
           attendeeTimezone: attendeeTz,
           ...(hasDurationChoice && selectedDuration
             ? { durationMinutes: selectedDuration }
+            : {}),
+          ...(hasLocationChoice && selectedLocation
+            ? { locationType: selectedLocation }
+            : {}),
+          ...(selectedLocation === "in_person" && inPersonAddress.trim()
+            ? { inPersonAddress: inPersonAddress.trim() }
             : {}),
           attendee: {
             name: values.name,
@@ -255,6 +268,70 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
                 </div>
               ) : null}
 
+              {hasLocationChoice ? (
+                <div className="mb-8">
+                  <div className="text-sm font-semibold text-ink mb-3">
+                    Virtual or in person?
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {locationOptions.map((opt) => {
+                      const selected = selectedLocation === opt;
+                      const label = opt === "video" ? "📹 Video" : "📍 In person";
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setSelectedLocation(opt)}
+                          className={[
+                            "px-5 py-3 rounded-full border font-semibold transition-colors min-h-[48px]",
+                            selected
+                              ? "text-white"
+                              : "bg-white text-ink border-gray-light hover:border-ink",
+                          ].join(" ")}
+                          style={
+                            selected
+                              ? { background: accent, borderColor: accent }
+                              : undefined
+                          }
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedLocation === "in_person" &&
+                  !meetingType.default_in_person_address ? (
+                    <div className="mt-4">
+                      <label className="block">
+                        <span className="block text-sm font-semibold text-ink mb-2">
+                          Where works for you? (optional)
+                        </span>
+                        <input
+                          value={inPersonAddress}
+                          onChange={(e) => setInPersonAddress(e.target.value)}
+                          maxLength={500}
+                          placeholder="A coffee shop, your office, anywhere"
+                          className="meet-input"
+                        />
+                      </label>
+                      <p className="text-xs text-gray-warm mt-2">
+                        Leave blank and I&rsquo;ll suggest something by email.
+                      </p>
+                    </div>
+                  ) : null}
+                  {selectedLocation === "in_person" &&
+                  meetingType.default_in_person_address ? (
+                    <p className="text-sm text-gray-warm mt-3">
+                      We&rsquo;ll meet at{" "}
+                      <span className="text-ink font-semibold">
+                        {meetingType.default_in_person_address}
+                      </span>
+                      .
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
               <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-8 lg:gap-10 items-start">
                 <div className="meet-day-picker">
                   <DayPicker
@@ -352,7 +429,7 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
                 </div>
                 <button
                   type="button"
-                  disabled={!selectedSlot}
+                  disabled={!selectedSlot || (hasLocationChoice && !selectedLocation)}
                   onClick={() => setStep("details")}
                   className="bg-ink hover:bg-charcoal text-white font-semibold px-7 py-3.5 rounded-full transition-colors min-h-[48px] disabled:opacity-40 disabled:cursor-not-allowed"
                 >

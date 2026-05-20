@@ -189,13 +189,18 @@ function BookingSummary({
         {formatTime(start, attendeeTz)} – {formatTime(end, attendeeTz)}{" "}
         {tzShort(attendeeTz)}
       </div>
-      {booking.google_meet_url ? (
+      {booking.location_type === "video" && booking.meeting_url ? (
         <a
-          href={booking.google_meet_url}
+          href={booking.meeting_url}
           className="inline-flex items-center mt-4 text-sm font-semibold text-ink underline underline-offset-4 hover:text-orange transition-colors"
         >
-          Meet link →
+          Join Zoom →
         </a>
+      ) : booking.location_type === "in_person" ? (
+        <div className="mt-4 text-sm text-ink">
+          <span className="font-semibold">In-person:</span>{" "}
+          {booking.location_details ?? "Address coming by email"}
+        </div>
       ) : null}
     </div>
   );

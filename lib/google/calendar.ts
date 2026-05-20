@@ -11,6 +11,8 @@ export type CreateEventParams = {
   end: Date;
   timeZone: string;                   // IANA tz for the event display (host tz)
   attendees: Array<{ email: string; displayName?: string }>;
+  /** Free-form location string. Zoom URL for video, address for in-person. */
+  location?: string;
 };
 
 /**
@@ -38,46 +40,36 @@ export async function getFreeBusy(
 }
 
 /**
- * Creates a calendar event with a Google Meet link and notifies all
- * attendees by email (sendUpdates: 'all'). Returns the event ID and the
- * Meet join URL. Throws if Google returns no event ID or no Meet link —
- * callers should treat that as a hard failure (no orphan row).
+ * Creates a calendar event and notifies all attendees by email
+ * (sendUpdates: 'all'). Returns the event ID. Throws if Google returns
+ * no event ID — callers should treat that as a hard failure.
+ *
+ * The `location` param goes into the Calendar event's location field
+ * (and shows up in attendee invites as "Where"). For video bookings we
+ * pass the Zoom URL; for in-person bookings we pass the address. No
+ * Google Meet conference is auto-created — Zoom replaces it.
  */
 export async function createEvent(
   params: CreateEventParams
-): Promise<{ eventId: string; meetLink: string }> {
+): Promise<{ eventId: string }> {
   const calendar = getCalendarClient();
-  const requestId = `aa-meet-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   const res = await calendar.events.insert({
     calendarId: CALENDAR_ID,
     sendUpdates: "all",
-    conferenceDataVersion: 1,
     requestBody: {
       summary: params.summary,
       description: params.description,
+      location: params.location,
       start: { dateTime: params.start.toISOString(), timeZone: params.timeZone },
       end: { dateTime: params.end.toISOString(), timeZone: params.timeZone },
       attendees: params.attendees,
-      conferenceData: {
-        createRequest: {
-          requestId,
-          conferenceSolutionKey: { type: "hangoutsMeet" },
-        },
-      },
     },
   });
   const eventId = res.data.id;
-  const meetLink =
-    res.data.conferenceData?.entryPoints?.find(
-      (e) => e.entryPointType === "video"
-    )?.uri ?? res.data.hangoutLink ?? null;
   if (!eventId) {
     throw new Error("Google Calendar: event created but no event ID returned");
   }
-  if (!meetLink) {
-    throw new Error("Google Calendar: event created but no Meet link returned");
-  }
-  return { eventId, meetLink };
+  return { eventId };
 }
 
 /**

@@ -7,7 +7,7 @@ import { buildConfirmationEmail } from "@/lib/email/templates/confirmation";
 import { buildInternalNotificationEmail } from "@/lib/email/templates/internal-notification";
 import { bookSchema } from "@/lib/meet/schemas";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
-import type { Booking, MeetingType } from "@/lib/database.types";
+import type { Booking, LocationType, MeetingType } from "@/lib/database.types";
 
 const HOST_EMAIL = "remi@ambitionangels.org";
 
@@ -43,7 +43,15 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const { meetingTypeSlug, startTime, attendeeTimezone, attendee, durationMinutes } = parsed.data;
+  const {
+    meetingTypeSlug,
+    startTime,
+    attendeeTimezone,
+    attendee,
+    durationMinutes,
+    locationType: locationTypeOverride,
+    inPersonAddress,
+  } = parsed.data;
 
   const supabase = getSupabaseAdmin();
 
@@ -69,6 +77,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: effectiveDuration.message }, { status: 400 });
   }
   const mt: MeetingType = { ...mtRaw, duration_minutes: effectiveDuration };
+
+  // Resolve location: video defaults to the static Zoom URL; in_person uses
+  // the type's default address, or the attendee's suggestion if no default.
+  const resolvedLocation = resolveBookingLocation(mt, {
+    locationType: locationTypeOverride,
+    inPersonAddress,
+  });
+  if (resolvedLocation instanceof Error) {
+    return NextResponse.json({ error: resolvedLocation.message }, { status: 400 });
+  }
 
   const start = new Date(startTime);
   const end = new Date(start.getTime() + mt.duration_minutes * 60_000);
@@ -96,6 +114,11 @@ export async function POST(req: NextRequest) {
     ? `Ambition Angels ${mt.name} meeting w/ ${attendee.name} - ${attendee.company}`
     : `Ambition Angels ${mt.name} meeting w/ ${attendee.name}`;
   const description = [
+    resolvedLocation.locationType === "video"
+      ? `Zoom: ${resolvedLocation.meetingUrl}${
+          process.env.ZOOM_PASSCODE ? `\nPasscode: ${process.env.ZOOM_PASSCODE}` : ""
+        }`
+      : `Where: ${resolvedLocation.locationDetails ?? "TBD"}`,
     attendee.message
       ? `What they want to discuss:\n${attendee.message}`
       : null,
@@ -105,8 +128,14 @@ export async function POST(req: NextRequest) {
     .filter(Boolean)
     .join("\n\n");
 
+  // Calendar event location field: Zoom URL for video, address for in-person.
+  // This shows up as "Where" in the attendee's calendar invite.
+  const eventLocation =
+    resolvedLocation.locationType === "video"
+      ? resolvedLocation.meetingUrl ?? undefined
+      : resolvedLocation.locationDetails ?? undefined;
+
   let eventId: string;
-  let meetLink: string;
   try {
     const created = await createEvent({
       summary,
@@ -118,9 +147,9 @@ export async function POST(req: NextRequest) {
         { email: HOST_EMAIL, displayName: "Remi Sobo" },
         { email: attendee.email, displayName: attendee.name },
       ],
+      location: eventLocation,
     });
     eventId = created.eventId;
-    meetLink = created.meetLink;
   } catch (err) {
     console.error("createEvent failed", err);
     return NextResponse.json(
@@ -145,7 +174,9 @@ export async function POST(req: NextRequest) {
       attendee_role: attendee.role ?? null,
       attendee_message: attendee.message ?? null,
       google_event_id: eventId,
-      google_meet_url: meetLink,
+      meeting_url: resolvedLocation.meetingUrl,
+      location_type: resolvedLocation.locationType,
+      location_details: resolvedLocation.locationDetails,
     })
     .select("*")
     .single();
@@ -218,4 +249,65 @@ function resolveBookingDuration(
     return new Error("That duration isn't offered for this meeting type.");
   }
   return override;
+}
+
+/**
+ * Resolves the location for a new booking based on the meeting type's
+ * configured options and the attendee's choices.
+ *
+ *   video    → meetingUrl is the static ZOOM_URL (snapshotted onto the row).
+ *              locationDetails mirrors the URL for convenience.
+ *   in_person→ meetingUrl is null. locationDetails is either the type's
+ *              default_in_person_address, or the attendee's inPersonAddress
+ *              suggestion when no default is set.
+ *
+ * Returns Error with a user-safe message on validation failure.
+ */
+function resolveBookingLocation(
+  meetingType: MeetingType,
+  input: { locationType?: LocationType; inPersonAddress?: string }
+):
+  | {
+      locationType: LocationType;
+      meetingUrl: string | null;
+      locationDetails: string | null;
+    }
+  | Error {
+  const options = meetingType.location_options ?? ["video"];
+  let chosen: LocationType;
+
+  if (options.length === 1) {
+    chosen = options[0];
+  } else {
+    if (!input.locationType) {
+      return new Error("Pick where you'd like to meet (video or in-person).");
+    }
+    if (!options.includes(input.locationType)) {
+      return new Error("That location isn't offered for this meeting type.");
+    }
+    chosen = input.locationType;
+  }
+
+  if (chosen === "video") {
+    const zoomUrl = process.env.ZOOM_URL;
+    if (!zoomUrl) {
+      return new Error("Video bookings aren't available right now.");
+    }
+    return {
+      locationType: "video",
+      meetingUrl: zoomUrl,
+      locationDetails: zoomUrl,
+    };
+  }
+
+  // in_person: prefer the type's default address, otherwise the attendee's
+  // suggestion. Either may be null — that's fine, we'll surface "TBD" and
+  // negotiate over email.
+  const details =
+    meetingType.default_in_person_address ?? input.inPersonAddress ?? null;
+  return {
+    locationType: "in_person",
+    meetingUrl: null,
+    locationDetails: details,
+  };
 }

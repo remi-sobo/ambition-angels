@@ -6,11 +6,29 @@ import { sendEmail } from "@/lib/google/gmail";
 import { buildConfirmationEmail } from "@/lib/email/templates/confirmation";
 import { buildInternalNotificationEmail } from "@/lib/email/templates/internal-notification";
 import { bookSchema } from "@/lib/meet/schemas";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import type { Booking, MeetingType } from "@/lib/database.types";
 
 const HOST_EMAIL = "remi@ambitionangels.org";
 
+// 3 booking attempts per IP per 10 minutes. Per-instance in-memory; see
+// lib/rate-limit.ts for caveats. Generous on purpose — real users may
+// abandon and retry; we just want to stop trivial spam.
+const RATE_LIMIT = { limit: 3, windowMs: 10 * 60 * 1000 };
+
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const rl = rateLimit(`book:${ip}`, RATE_LIMIT);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many booking attempts. Try again in a few minutes." },
+      {
+        status: 429,
+        headers: { "Retry-After": Math.ceil((rl.resetAt - Date.now()) / 1000).toString() },
+      }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();

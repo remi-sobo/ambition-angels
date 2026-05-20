@@ -42,7 +42,7 @@ export function buildRescheduleConfirmationEmail(args: {
   ].join("\n");
 
   const html = htmlShell(`
-    <tr><td style="padding-bottom:8px;font-size:14px;color:#6B6960;">Meet with Remi</td></tr>
+    <tr><td style="padding-bottom:6px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#E8500A;font-weight:700;">Rescheduled</td></tr>
     <tr><td style="padding-bottom:24px;font-family:Georgia,serif;font-size:32px;line-height:1.15;">New time, locked in.</td></tr>
     <tr><td style="padding-bottom:8px;">Hey ${escapeHtml(firstName)},</td></tr>
     <tr><td style="padding-bottom:20px;">Here's the updated booking.</td></tr>

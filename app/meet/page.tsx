@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import PageVisitedEvent from "@/components/PageVisitedEvent";
 import { getSupabasePublic } from "@/lib/supabase/public";
@@ -34,26 +35,44 @@ export default async function MeetPage() {
     <>
       <PageVisitedEvent name="meet_landing_viewed" />
       {/* ── HERO ─────────────────────────────────────────────────────── */}
-      <section className="bg-cream section-pad">
+      <section className="bg-cream pt-20 lg:pt-24 pb-10 lg:pb-14">
         <div className="container-site">
-          <div className="max-w-2xl">
-            <div className="inline-block text-xs font-bold text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
-              Meet with Remi
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10 lg:gap-16 items-center">
+            <div className="max-w-2xl">
+              <div className="inline-block text-xs font-bold text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
+                Meet with Remi
+              </div>
+              <h1 className="font-heading font-bold text-5xl lg:text-6xl text-ink tracking-tight leading-[1.05] mb-6">
+                Let&rsquo;s talk.
+              </h1>
+              <p className="text-gray-warm text-lg leading-relaxed">
+                I&rsquo;m Remi, founder of Ambition Angels. Below are the kinds of
+                conversations I&rsquo;m having right now. Pick the one that fits
+                your reason for reaching out. I&rsquo;ll show up ready.
+              </p>
             </div>
-            <h1 className="font-heading font-bold text-5xl lg:text-6xl text-ink tracking-tight leading-[1.05] mb-6">
-              Let&rsquo;s talk.
-            </h1>
-            <p className="text-gray-warm text-lg leading-relaxed">
-              I&rsquo;m Remi, founder of Ambition Angels. Below are the kinds of
-              conversations I&rsquo;m having right now. Pick the one that fits
-              your reason for reaching out. I&rsquo;ll show up ready.
-            </p>
+            <div className="hidden md:block relative w-full max-w-[320px] mx-auto lg:mx-0">
+              <div
+                aria-hidden
+                className="absolute -top-3 -left-3 w-full h-full rounded-card-lg bg-orange/20"
+              />
+              <div className="relative overflow-hidden rounded-card-lg shadow-[0_10px_40px_rgba(14,14,14,0.08)]">
+                <Image
+                  src="/images/Remi-Sobomehin_edited_edited.jpg"
+                  alt="Remi Sobomehin, founder of Ambition Angels"
+                  width={640}
+                  height={800}
+                  priority
+                  className="w-full h-auto block"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── TYPE GRID ────────────────────────────────────────────────── */}
-      <section className="bg-[#F5F4F0] section-pad">
+      <section className="bg-[#F5F4F0] pt-10 lg:pt-14 pb-20 lg:pb-28">
         <div className="container-site">
           {types.length === 0 ? (
             <p className="text-gray-warm">

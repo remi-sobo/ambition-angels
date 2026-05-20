@@ -42,9 +42,16 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function BookingFlow({ meetingType }: { meetingType: MeetingType }) {
+  const hasDurationChoice =
+    Array.isArray(meetingType.duration_options) &&
+    meetingType.duration_options.length > 0;
+
   const [step, setStep] = useState<Step>("type");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedSlot, setSelectedSlot] = useState<Slot | undefined>();
+  const [selectedDuration, setSelectedDuration] = useState<number | undefined>(
+    hasDurationChoice ? undefined : meetingType.duration_minutes
+  );
   const [slots, setSlots] = useState<Slot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -79,7 +86,9 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
     setSlotsLoading(true);
     setSlots([]);
     fetch(
-      `/api/meet/availability?slug=${encodeURIComponent(meetingType.slug)}&date=${dateStr}&tz=${encodeURIComponent(tz)}`
+      `/api/meet/availability?slug=${encodeURIComponent(meetingType.slug)}&date=${dateStr}&tz=${encodeURIComponent(tz)}${
+        selectedDuration ? `&duration=${selectedDuration}` : ""
+      }`
     )
       .then((r) => r.json())
       .then((data) => {
@@ -96,7 +105,7 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
     return () => {
       cancelled = true;
     };
-  }, [selectedDate, attendeeTz, meetingType.slug]);
+  }, [selectedDate, attendeeTz, meetingType.slug, selectedDuration]);
 
   // Smooth scroll on step changes (except initial)
   const firstRender = useRef(true);
@@ -127,6 +136,9 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
           meetingTypeSlug: meetingType.slug,
           startTime: selectedSlot.start,
           attendeeTimezone: attendeeTz,
+          ...(hasDurationChoice && selectedDuration
+            ? { durationMinutes: selectedDuration }
+            : {}),
           attendee: {
             name: values.name,
             email: values.email,
@@ -218,10 +230,45 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
                   {meetingType.prep_notes}
                 </p>
               ) : null}
+
+              {hasDurationChoice && meetingType.duration_options ? (
+                <div className="mb-6">
+                  <div className="text-sm font-semibold text-ink mb-3">
+                    How much time do you need?
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {meetingType.duration_options.map((d) => {
+                      const selected = selectedDuration === d;
+                      return (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => setSelectedDuration(d)}
+                          className={[
+                            "px-5 py-3 rounded-full border font-semibold transition-colors min-h-[48px]",
+                            selected
+                              ? "bg-ink text-white border-ink"
+                              : "bg-white text-ink border-gray-light hover:border-ink",
+                          ].join(" ")}
+                          style={
+                            selected
+                              ? { background: accent, borderColor: accent }
+                              : undefined
+                          }
+                        >
+                          {d} minutes
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
               <button
                 type="button"
+                disabled={hasDurationChoice && !selectedDuration}
                 onClick={() => setStep("date")}
-                className="bg-ink hover:bg-charcoal text-white font-semibold px-7 py-3.5 rounded-full transition-colors min-h-[48px]"
+                className="bg-ink hover:bg-charcoal text-white font-semibold px-7 py-3.5 rounded-full transition-colors min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Pick a date →
               </button>

@@ -5,6 +5,12 @@ export const bookSchema = z.object({
   meetingTypeSlug: z.string().min(1),
   startTime: z.string().datetime(),
   attendeeTimezone: z.string().min(1),
+  /**
+   * Required when the meeting type has duration_options; ignored otherwise.
+   * Must be one of the type's duration_options or the type's
+   * duration_minutes.
+   */
+  durationMinutes: z.number().int().min(5).max(240).optional(),
   attendee: z.object({
     name: z.string().min(1).max(200),
     email: z.string().email().max(320),

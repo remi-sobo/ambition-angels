@@ -17,3 +17,4 @@ npm-debug.log*
 
 # Vercel
 .vercel
+public/_email-previews/

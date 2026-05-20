@@ -46,9 +46,9 @@ export function rateLimit(
 // the serverless model).
 function maybeGc(now: number) {
   if (buckets.size < 1000) return;
-  for (const [k, v] of buckets) {
+  buckets.forEach((v, k) => {
     if (now >= v.resetAt) buckets.delete(k);
-  }
+  });
 }
 
 /**

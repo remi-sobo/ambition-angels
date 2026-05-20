@@ -15,6 +15,8 @@ export type BookingStatus =
   | "no_show"
   | "completed";
 
+export type LocationType = "video" | "in_person";
+
 export interface MeetingType {
   id: string;
   slug: string;
@@ -34,6 +36,10 @@ export interface MeetingType {
   available_start_time: string;       // 'HH:MM:SS' in host timezone
   available_end_time: string;
   daily_limit: number | null;
+  /** Subset of ['video','in_person']. Mostly ['video']. */
+  location_options: LocationType[];
+  /** Used when an attendee picks in_person; null = ask the attendee. */
+  default_in_person_address: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -55,7 +61,11 @@ export interface Booking {
   attendee_message: string | null;
 
   google_event_id: string | null;
-  google_meet_url: string | null;
+  /** For video bookings: the snapshotted Zoom URL. Null for in_person. */
+  meeting_url: string | null;
+  location_type: LocationType;
+  /** For in_person: the address. For video: usually mirrors meeting_url. */
+  location_details: string | null;
 
   cancel_token: string;
   status: BookingStatus;

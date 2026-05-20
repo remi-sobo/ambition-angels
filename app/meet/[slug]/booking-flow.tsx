@@ -12,7 +12,7 @@ import type { MeetingType } from "@/lib/database.types";
 import { trackEvent } from "@/lib/analytics";
 import { MEET_ICON_MAP, type MeetIconName } from "../icons";
 
-type Step = "type" | "date" | "time" | "details" | "booked";
+type Step = "datetime" | "details" | "booked";
 
 type Slot = { start: string; end: string };
 
@@ -22,21 +22,10 @@ type BookingResult = {
   cancelToken: string;
 };
 
-const ROLE_OPTIONS = [
-  "CSR or Foundation",
-  "Talent Acquisition",
-  "Executive Sponsor",
-  "Press",
-  "Donor",
-  "Advisor",
-  "Other",
-];
-
 const formSchema = z.object({
   name: z.string().min(1, "Your name").max(200),
   email: z.string().email("A real email").max(320),
   company: z.string().max(200).optional(),
-  role: z.string().max(80).optional(),
   message: z.string().max(2000).optional(),
 });
 type FormData = z.infer<typeof formSchema>;
@@ -46,7 +35,7 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
     Array.isArray(meetingType.duration_options) &&
     meetingType.duration_options.length > 0;
 
-  const [step, setStep] = useState<Step>("type");
+  const [step, setStep] = useState<Step>("datetime");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedSlot, setSelectedSlot] = useState<Slot | undefined>();
   const [selectedDuration, setSelectedDuration] = useState<number | undefined>(
@@ -122,7 +111,7 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: "", email: "", company: "", role: "", message: "" },
+    defaultValues: { name: "", email: "", company: "", message: "" },
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -143,7 +132,6 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
             name: values.name,
             email: values.email,
             company: values.company || undefined,
-            role: values.role || undefined,
             message: values.message || undefined,
           },
         }),
@@ -221,9 +209,9 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
 
       {/* ── STEP AREA ───────────────────────────────────────────────── */}
       <section ref={stepRef} className="bg-[#F5F4F0] section-pad">
-        <div className="container-site max-w-3xl">
-          {step === "type" && (
-            <StepShell step={1} title="Ready when you are.">
+        <div className="container-site max-w-5xl">
+          {step === "datetime" && (
+            <StepShell title="Pick a time.">
               {meetingType.prep_notes ? (
                 <p className="text-gray-warm mb-6 leading-relaxed">
                   <span className="font-semibold text-ink">What to bring: </span>
@@ -232,7 +220,7 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
               ) : null}
 
               {hasDurationChoice && meetingType.duration_options ? (
-                <div className="mb-6">
+                <div className="mb-8">
                   <div className="text-sm font-semibold text-ink mb-3">
                     How much time do you need?
                   </div>
@@ -243,7 +231,10 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
                         <button
                           key={d}
                           type="button"
-                          onClick={() => setSelectedDuration(d)}
+                          onClick={() => {
+                            setSelectedDuration(d);
+                            setSelectedSlot(undefined);
+                          }}
                           className={[
                             "px-5 py-3 rounded-full border font-semibold transition-colors min-h-[48px]",
                             selected
@@ -264,93 +255,117 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
                 </div>
               ) : null}
 
-              <button
-                type="button"
-                disabled={hasDurationChoice && !selectedDuration}
-                onClick={() => setStep("date")}
-                className="bg-ink hover:bg-charcoal text-white font-semibold px-7 py-3.5 rounded-full transition-colors min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Pick a date →
-              </button>
-            </StepShell>
-          )}
-
-          {step === "date" && (
-            <StepShell step={2} title="Pick a date.">
-              <div className="meet-day-picker">
-                <DayPicker
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(d) => {
-                    if (!d) return;
-                    setSelectedDate(d);
-                    setSelectedSlot(undefined);
-                    setStep("time");
-                  }}
-                  disabled={disabledDays}
-                  showOutsideDays={false}
-                  styles={{
-                    day: { fontFamily: "var(--font-body)" },
-                  }}
-                  modifiersStyles={{
-                    selected: { background: accent, color: "white" },
-                  }}
-                />
-              </div>
-            </StepShell>
-          )}
-
-          {step === "time" && (
-            <StepShell
-              step={3}
-              title={
-                selectedDate
-                  ? `Times on ${formatLongDate(selectedDate)}.`
-                  : "Pick a time."
-              }
-              onBack={() => setStep("date")}
-              backLabel="Different day"
-            >
-              {slotsLoading ? (
-                <p className="text-gray-warm">Loading times…</p>
-              ) : slots.length === 0 ? (
-                <p className="text-gray-warm">
-                  No availability that day. Try another date.
-                </p>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {slots.map((s) => (
-                    <button
-                      key={s.start}
-                      type="button"
-                      onClick={() => {
-                        setSelectedSlot(s);
-                        trackEvent("meet_slot_picked", {
-                          slug: meetingType.slug,
-                          start: s.start,
-                        });
-                        setStep("details");
-                      }}
-                      className="bg-white border border-gray-light hover:border-ink text-ink font-semibold px-4 py-3.5 rounded-xl transition-all hover:-translate-y-0.5 min-h-[48px]"
-                    >
-                      {formatTime(new Date(s.start), attendeeTz)}
-                    </button>
-                  ))}
+              <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-8 lg:gap-10 items-start">
+                <div className="meet-day-picker">
+                  <DayPicker
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(d) => {
+                      if (!d) return;
+                      setSelectedDate(d);
+                      setSelectedSlot(undefined);
+                    }}
+                    disabled={disabledDays}
+                    showOutsideDays={false}
+                    styles={{ day: { fontFamily: "var(--font-body)" } }}
+                    modifiersStyles={{
+                      selected: { background: accent, color: "white" },
+                    }}
+                  />
                 </div>
-              )}
-              {!slotsLoading && slots.length > 0 ? (
-                <p className="text-xs text-gray-warm mt-4">
-                  All times in {tzShort(attendeeTz)}.
-                </p>
-              ) : null}
+
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-ink mb-3">
+                    {selectedDate
+                      ? formatLongDate(selectedDate)
+                      : "Pick a date to see times."}
+                  </div>
+                  {!selectedDate ? (
+                    <p className="text-gray-warm text-sm">
+                      Days in color have openings. Click one.
+                    </p>
+                  ) : slotsLoading ? (
+                    <p className="text-gray-warm text-sm">Loading times…</p>
+                  ) : slots.length === 0 ? (
+                    <p className="text-gray-warm text-sm">
+                      Nothing open that day. Try another.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                        {slots.map((s) => {
+                          const selected = selectedSlot?.start === s.start;
+                          return (
+                            <button
+                              key={s.start}
+                              type="button"
+                              onClick={() => {
+                                setSelectedSlot(s);
+                                trackEvent("meet_slot_picked", {
+                                  slug: meetingType.slug,
+                                  start: s.start,
+                                });
+                              }}
+                              className={[
+                                "border font-semibold px-3 py-3 rounded-xl transition-colors min-h-[48px] text-sm",
+                                selected
+                                  ? "text-white"
+                                  : "bg-white text-ink border-gray-light hover:border-ink",
+                              ].join(" ")}
+                              style={
+                                selected
+                                  ? { background: accent, borderColor: accent }
+                                  : undefined
+                              }
+                            >
+                              {formatTime(new Date(s.start), attendeeTz)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-gray-warm mt-4">
+                        All times in {tzShort(attendeeTz)}.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-10 pt-6 border-t border-gray-light flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="text-sm">
+                  {selectedSlot && selectedDate ? (
+                    <>
+                      <span className="text-gray-warm">You picked </span>
+                      <span className="font-semibold text-ink">
+                        {formatLongDate(selectedDate)} ·{" "}
+                        {formatTime(new Date(selectedSlot.start), attendeeTz)}
+                      </span>{" "}
+                      <span className="text-gray-warm">
+                        {tzShort(attendeeTz)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-gray-warm">
+                      Pick a time, then book it.
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  disabled={!selectedSlot}
+                  onClick={() => setStep("details")}
+                  className="bg-ink hover:bg-charcoal text-white font-semibold px-7 py-3.5 rounded-full transition-colors min-h-[48px] disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Book it →
+                </button>
+              </div>
             </StepShell>
           )}
 
           {step === "details" && selectedSlot && (
             <StepShell
-              step={4}
               title="Tell me a little."
-              onBack={() => setStep("time")}
+              onBack={() => setStep("datetime")}
               backLabel="Different time"
             >
               <div className="bg-white border border-gray-light rounded-card p-4 mb-6 text-sm">
@@ -363,7 +378,7 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
                 </div>
               </div>
 
-              <form onSubmit={onSubmit} className="space-y-5">
+              <form onSubmit={onSubmit} className="space-y-5 max-w-2xl">
                 <Field
                   label="Your name"
                   error={form.formState.errors.name?.message}
@@ -385,25 +400,13 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
                     autoComplete="email"
                   />
                 </Field>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <Field label="Company (optional)">
-                    <input
-                      {...form.register("company")}
-                      className="meet-input"
-                      autoComplete="organization"
-                    />
-                  </Field>
-                  <Field label="What brings you here?">
-                    <select {...form.register("role")} className="meet-input">
-                      <option value="">Pick one</option>
-                      {ROLE_OPTIONS.map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                </div>
+                <Field label="Company or organization (optional)">
+                  <input
+                    {...form.register("company")}
+                    className="meet-input"
+                    autoComplete="organization"
+                  />
+                </Field>
                 <Field label="Want me to know anything?">
                   <textarea
                     {...form.register("message")}
@@ -468,13 +471,11 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
 }
 
 function StepShell({
-  step,
   title,
   children,
   onBack,
   backLabel,
 }: {
-  step: number;
   title: string;
   children: React.ReactNode;
   onBack?: () => void;
@@ -482,10 +483,7 @@ function StepShell({
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <span className="text-xs font-bold uppercase tracking-widest text-gray-warm">
-          Step {step} of 4
-        </span>
+      <div className="flex items-center justify-end mb-6 min-h-[24px]">
         {onBack ? (
           <button
             type="button"

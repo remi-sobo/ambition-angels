@@ -89,14 +89,18 @@ export async function POST(req: NextRequest) {
 
   // 1) Create the Google Calendar event (with Meet link). If this throws,
   //    nothing is persisted yet — return 500 cleanly.
-  const summary = `${mt.name} with ${attendee.name}`;
+  //
+  //    Event title format: "Ambition Angels [Type] meeting w/ [Name] - [Org]".
+  //    Drop the trailing " - [Org]" entirely when no organization was given.
+  const summary = attendee.company
+    ? `Ambition Angels ${mt.name} meeting w/ ${attendee.name} - ${attendee.company}`
+    : `Ambition Angels ${mt.name} meeting w/ ${attendee.name}`;
   const description = [
     attendee.message
       ? `What they want to discuss:\n${attendee.message}`
       : null,
     mt.prep_notes ? `Prep:\n${mt.prep_notes}` : null,
     attendee.company ? `Company: ${attendee.company}` : null,
-    attendee.role ? `Role: ${attendee.role}` : null,
   ]
     .filter(Boolean)
     .join("\n\n");

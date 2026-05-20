@@ -162,6 +162,8 @@ function makeMeetingType(over: Partial<MeetingType> = {}): MeetingType {
     name: "Donor Conversation",
     duration_minutes: 30,
     duration_options: null,
+    location_options: ["video"],
+    default_in_person_address: null,
     description: null,
     prep_notes: null,
     who_its_for: null,

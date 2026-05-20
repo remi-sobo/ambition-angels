@@ -18,11 +18,19 @@ export function buildIcs(args: {
   const { booking, meetingType } = args;
   const start = new Date(booking.start_time);
   const end = new Date(booking.end_time);
-  const meet = booking.google_meet_url ?? "";
+  const isVideo = booking.location_type === "video";
+  const meetingUrl = booking.meeting_url ?? "";
+  const address = booking.location_details ?? "";
+
+  // LOCATION goes in the calendar app's "where" field; URL is shown alongside.
+  // For video bookings the Zoom URL serves as both. For in-person, the
+  // address goes in LOCATION and there's no URL.
+  const locationValue = isVideo ? meetingUrl : address;
 
   const description = [
     `${meetingType.name} with Remi.`,
-    meet ? `Meet link: ${meet}` : null,
+    isVideo && meetingUrl ? `Zoom: ${meetingUrl}` : null,
+    !isVideo && address ? `Where: ${address}` : null,
     meetingType.prep_notes ? `Prep: ${meetingType.prep_notes}` : null,
   ]
     .filter(Boolean)
@@ -41,8 +49,8 @@ export function buildIcs(args: {
     `DTEND:${formatIcsUtc(end)}`,
     `SUMMARY:${escIcs(`${meetingType.name} with Remi`)}`,
     `DESCRIPTION:${description}`,
-    meet ? `LOCATION:${escIcs(meet)}` : "",
-    meet ? `URL:${escIcs(meet)}` : "",
+    locationValue ? `LOCATION:${escIcs(locationValue)}` : "",
+    isVideo && meetingUrl ? `URL:${escIcs(meetingUrl)}` : "",
     `ORGANIZER;CN=Remi Sobo:mailto:${HOST_EMAIL}`,
     `ATTENDEE;CN=${escIcs(booking.attendee_name)};RSVP=TRUE:mailto:${booking.attendee_email}`,
     "STATUS:CONFIRMED",

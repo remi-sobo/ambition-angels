@@ -287,6 +287,8 @@ function TypeRow({
     min_notice_hours: type.min_notice_hours,
     max_advance_days: type.max_advance_days,
     is_active: type.is_active,
+    location_options: type.location_options ?? ["video"],
+    default_in_person_address: type.default_in_person_address ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -298,7 +300,11 @@ function TypeRow({
       const r = await fetch(`/api/admin/meet/types/${type.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(draft),
+        body: JSON.stringify({
+          ...draft,
+          default_in_person_address:
+            draft.default_in_person_address.trim() || null,
+        }),
       });
       const data = await r.json();
       if (!r.ok) {
@@ -421,6 +427,51 @@ function TypeRow({
             className="admin-input"
           />
         </Field>
+      </div>
+
+      <div className="mt-5 pt-5 border-t border-white/10">
+        <div className="text-xs text-zinc-500 uppercase tracking-widest mb-2">
+          Location options
+        </div>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {(["video", "in_person"] as const).map((opt) => {
+            const selected = draft.location_options.includes(opt);
+            return (
+              <button
+                key={opt}
+                type="button"
+                onClick={() =>
+                  setDraft({
+                    ...draft,
+                    location_options: selected
+                      ? draft.location_options.filter((o) => o !== opt)
+                      : [...draft.location_options, opt],
+                  })
+                }
+                className={[
+                  "px-3 py-1.5 rounded text-xs border transition-colors",
+                  selected
+                    ? "bg-orange/20 text-orange border-orange/40"
+                    : "bg-white/5 text-cream/70 border-white/10 hover:bg-white/10",
+                ].join(" ")}
+              >
+                {opt === "video" ? "Video" : "In person"}
+              </button>
+            );
+          })}
+        </div>
+        {draft.location_options.includes("in_person") ? (
+          <Field label="Default in-person address (blank = ask attendee)">
+            <input
+              value={draft.default_in_person_address}
+              onChange={(e) =>
+                setDraft({ ...draft, default_in_person_address: e.target.value })
+              }
+              placeholder="e.g. 380 Portage Ave, Palo Alto, CA"
+              className="admin-input"
+            />
+          </Field>
+        ) : null}
       </div>
 
       <div className="mt-5 flex items-center gap-3">

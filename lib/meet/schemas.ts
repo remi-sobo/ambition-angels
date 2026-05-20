@@ -11,6 +11,16 @@ export const bookSchema = z.object({
    * duration_minutes.
    */
   durationMinutes: z.number().int().min(5).max(240).optional(),
+  /**
+   * Required when the meeting type has more than one entry in
+   * location_options; defaults to 'video' otherwise.
+   */
+  locationType: z.enum(["video", "in_person"]).optional(),
+  /**
+   * Attendee-supplied address suggestion. Used only when locationType is
+   * 'in_person' and the meeting type has no default_in_person_address.
+   */
+  inPersonAddress: z.string().max(500).optional(),
   attendee: z.object({
     name: z.string().min(1).max(200),
     email: z.string().email().max(320),

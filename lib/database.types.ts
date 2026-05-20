@@ -20,6 +20,8 @@ export interface MeetingType {
   slug: string;
   name: string;
   duration_minutes: number;
+  /** If non-null, attendees pick from these (instead of the fixed duration_minutes). */
+  duration_options: number[] | null;
   description: string | null;
   prep_notes: string | null;
   who_its_for: string | null;

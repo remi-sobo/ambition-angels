@@ -161,6 +161,7 @@ function makeMeetingType(over: Partial<MeetingType> = {}): MeetingType {
     slug: "donor-conversation",
     name: "Donor Conversation",
     duration_minutes: 30,
+    duration_options: null,
     description: null,
     prep_notes: null,
     who_its_for: null,

@@ -22,6 +22,7 @@ const meetingType: MeetingType = {
   slug: "donor-conversation",
   name: "Donor Conversation",
   duration_minutes: 30,
+  duration_options: null,
   description: "For people thinking through where their giving belongs.",
   prep_notes: "Bring what you care about. We'll see if Ambition Angels fits.",
   who_its_for: "Philanthropists, family offices, individual donors.",

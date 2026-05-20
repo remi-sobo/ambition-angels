@@ -45,7 +45,7 @@ export function buildConfirmationEmail(args: {
     .join("\n");
 
   const html = htmlShell(`
-    <tr><td style="padding-bottom:8px;font-size:14px;color:#6B6960;">Meet with Remi</td></tr>
+    <tr><td style="padding-bottom:6px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#E8500A;font-weight:700;">Booked with Remi</td></tr>
     <tr><td style="padding-bottom:24px;font-family:Georgia,'Times New Roman',serif;font-size:32px;line-height:1.15;color:#0E0E0E;">You're booked.</td></tr>
     <tr><td style="padding-bottom:8px;">Hey ${escapeHtml(firstName)},</td></tr>
     <tr><td style="padding-bottom:20px;">Here's what's on the books.</td></tr>

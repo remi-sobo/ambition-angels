@@ -22,6 +22,7 @@ const NAV_LINKS: NavLink[] = [
   { href: "/admin/board", label: "Board" },
   { href: "/admin/compliance", label: "Compliance" },
   { href: "/admin/program", label: "Program" },
+  { href: "/admin/meet", label: "Meet" },
 ];
 
 // Active match: exact for /admin (so Dashboard isn't always lit), prefix for nested.

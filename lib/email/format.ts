@@ -46,10 +46,10 @@ export function manageUrl(token: string): string {
  * the card.
  */
 export function htmlShell(body: string): string {
-  return `<!doctype html><html><body style="margin:0;padding:0;background:#FAFAF8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0E0E0E;">
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#FAFAF8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0E0E0E;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FAFAF8;padding:36px 16px 24px;">
   <tr><td align="center">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;background:#FFFFFF;border-radius:20px;overflow:hidden;text-align:left;line-height:1.55;font-size:16px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;background:#FFFFFF;border-radius:20px;overflow:hidden;text-align:left;line-height:1.55;font-size:16px;">
       <tr><td style="height:4px;background:#E8500A;line-height:4px;font-size:0;">&nbsp;</td></tr>
       <tr><td style="padding:36px 36px 32px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -57,7 +57,7 @@ export function htmlShell(body: string): string {
         </table>
       </td></tr>
     </table>
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;margin-top:18px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;margin-top:18px;">
       <tr><td align="center" style="padding:4px 12px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#6B6960;">
         <a href="https://www.ambitionangels.org" style="color:#6B6960;text-decoration:none;font-weight:700;">Ambition Angels</a>
         <span style="opacity:.5;">·</span>

@@ -23,7 +23,7 @@ export function buildCancellationEmail(args: {
   ].join("\n");
 
   const html = htmlShell(`
-    <tr><td style="padding-bottom:8px;font-size:14px;color:#6B6960;">Meet with Remi</td></tr>
+    <tr><td style="padding-bottom:6px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#6B6960;font-weight:700;">Cancelled</td></tr>
     <tr><td style="padding-bottom:20px;font-family:Georgia,serif;font-size:28px;line-height:1.15;">Cancelled.</td></tr>
     <tr><td style="padding-bottom:16px;">Hey ${escapeHtml(firstName)},</td></tr>
     <tr><td style="padding-bottom:24px;">Got it — ${escapeHtml(meetingType.name.toLowerCase())} cancelled.</td></tr>

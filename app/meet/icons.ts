@@ -4,6 +4,7 @@ import {
   Heart,
   MessageCircle,
   Mic,
+  MoreHorizontal,
   Sparkles,
   Target,
   type LucideIcon,
@@ -22,6 +23,7 @@ export const MEET_ICON_MAP = {
   Mic,
   Sparkles,
   Target,
+  MoreHorizontal,
 } satisfies Record<string, LucideIcon>;
 
 export type MeetIconName = keyof typeof MEET_ICON_MAP;

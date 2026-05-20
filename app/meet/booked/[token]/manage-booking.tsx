@@ -96,6 +96,11 @@ export default function ManageBooking({
               token={token}
               meetingType={meetingType}
               attendeeTz={attendeeTz}
+              durationMinutes={Math.round(
+                (new Date(current.end_time).getTime() -
+                  new Date(current.start_time).getTime()) /
+                  60_000
+              )}
               onBack={() => setMode("idle")}
               onDone={(updated) => {
                 setCurrent(updated);
@@ -171,10 +176,13 @@ function BookingSummary({
 }) {
   const start = new Date(booking.start_time);
   const end = new Date(booking.end_time);
+  // Use actual booking duration, not the meeting type's default — for
+  // types with duration_options the booked value may differ.
+  const actualDuration = Math.round((end.getTime() - start.getTime()) / 60_000);
   return (
     <div className="bg-white border border-gray-light rounded-card p-6">
       <div className="font-heading font-bold text-xl text-ink mb-2">
-        {meetingType.name} · {meetingType.duration_minutes} min
+        {meetingType.name} · {actualDuration} min
       </div>
       <div className="text-gray-warm">{formatLongDate(start, attendeeTz)}</div>
       <div className="text-gray-warm">
@@ -199,12 +207,14 @@ function ReschedulePanel({
   token,
   meetingType,
   attendeeTz,
+  durationMinutes,
   onBack,
   onDone,
 }: {
   token: string;
   meetingType: MeetingType;
   attendeeTz: string;
+  durationMinutes: number;
   onBack: () => void;
   onDone: (updated: Booking) => void;
 }) {
@@ -221,7 +231,7 @@ function ReschedulePanel({
     setLoading(true);
     setSlots([]);
     fetch(
-      `/api/meet/availability?slug=${encodeURIComponent(meetingType.slug)}&date=${formatYmd(date)}&tz=${encodeURIComponent(attendeeTz)}`
+      `/api/meet/availability?slug=${encodeURIComponent(meetingType.slug)}&date=${formatYmd(date)}&tz=${encodeURIComponent(attendeeTz)}&duration=${durationMinutes}`
     )
       .then((r) => r.json())
       .then((d) => {
@@ -238,7 +248,7 @@ function ReschedulePanel({
     return () => {
       cancelled = true;
     };
-  }, [date, meetingType.slug, attendeeTz]);
+  }, [date, meetingType.slug, attendeeTz, durationMinutes]);
 
   const today = useMemo(() => startOfDayLocal(new Date()), []);
   const maxDate = useMemo(

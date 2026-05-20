@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const { meetingTypeSlug, startTime, attendeeTimezone, attendee } = parsed.data;
+  const { meetingTypeSlug, startTime, attendeeTimezone, attendee, durationMinutes } = parsed.data;
 
   const supabase = getSupabaseAdmin();
 
@@ -60,7 +60,15 @@ export async function POST(req: NextRequest) {
   if (!meetingType) {
     return NextResponse.json({ error: "meeting type not found" }, { status: 404 });
   }
-  const mt = meetingType as MeetingType;
+  const mtRaw = meetingType as MeetingType;
+
+  // Resolve effective duration. When the type has duration_options, the
+  // caller must pass durationMinutes and it must be in the allow-list.
+  const effectiveDuration = resolveBookingDuration(mtRaw, durationMinutes);
+  if (effectiveDuration instanceof Error) {
+    return NextResponse.json({ error: effectiveDuration.message }, { status: 400 });
+  }
+  const mt: MeetingType = { ...mtRaw, duration_minutes: effectiveDuration };
 
   const start = new Date(startTime);
   const end = new Date(start.getTime() + mt.duration_minutes * 60_000);
@@ -183,4 +191,27 @@ export async function POST(req: NextRequest) {
     bookingId: booking.id,
     cancelToken: booking.cancel_token,
   });
+}
+
+/**
+ * Validates an optional durationMinutes against a meeting type. For
+ * fixed-duration types the override is ignored. For types with
+ * duration_options, the override is required and must be in the list.
+ * Returns the resolved duration on success, an Error with a user-safe
+ * message on validation failure.
+ */
+function resolveBookingDuration(
+  meetingType: MeetingType,
+  override: number | undefined
+): number | Error {
+  if (!meetingType.duration_options || meetingType.duration_options.length === 0) {
+    return meetingType.duration_minutes;
+  }
+  if (override == null) {
+    return new Error("Pick a duration for this meeting type.");
+  }
+  if (!meetingType.duration_options.includes(override)) {
+    return new Error("That duration isn't offered for this meeting type.");
+  }
+  return override;
 }

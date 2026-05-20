@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
   const slug = searchParams.get("slug");
   const dateStr = searchParams.get("date");
   const tz = searchParams.get("tz");
+  const durationParam = searchParams.get("duration");
 
   if (!slug || !dateStr || !tz) {
     return NextResponse.json(
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = getSupabaseAdmin();
-  const { data: meetingType, error } = await supabase
+  const { data, error } = await supabase
     .from("meeting_types")
     .select("*")
     .eq("slug", slug)
@@ -33,8 +34,17 @@ export async function GET(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  if (!meetingType) {
+  if (!data) {
     return NextResponse.json({ error: "meeting type not found" }, { status: 404 });
+  }
+  const meetingType = data as MeetingType;
+
+  // Resolve effective duration: when duration_options is set, the caller
+  // must pass a duration that's in the allow-list. Otherwise the type's
+  // fixed duration_minutes is used.
+  const effectiveDuration = resolveDuration(meetingType, durationParam);
+  if (effectiveDuration instanceof Error) {
+    return NextResponse.json({ error: effectiveDuration.message }, { status: 400 });
   }
 
   // Parse date as host-tz wall date by reading the YYYY-MM-DD components
@@ -44,7 +54,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const slots = await getAvailableSlots({
-      meetingType: meetingType as MeetingType,
+      meetingType: { ...meetingType, duration_minutes: effectiveDuration },
       date,
       attendeeTimezone: tz,
     });
@@ -61,4 +71,28 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Validates an optional duration param against a meeting type's options.
+ * Returns the resolved duration (number) on success, an Error with a
+ * user-safe message on validation failure.
+ */
+function resolveDuration(
+  meetingType: MeetingType,
+  raw: string | null
+): number | Error {
+  if (!meetingType.duration_options || meetingType.duration_options.length === 0) {
+    // Fixed-duration type — ignore any param.
+    return meetingType.duration_minutes;
+  }
+  if (!raw) return meetingType.duration_minutes; // fall back to default
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n <= 0) {
+    return new Error("invalid duration");
+  }
+  if (!meetingType.duration_options.includes(n)) {
+    return new Error("duration not offered by this meeting type");
+  }
+  return n;
 }

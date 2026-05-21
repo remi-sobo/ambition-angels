@@ -37,22 +37,19 @@ function readAdminAuth(): { authed: boolean; user: AdminUser | null } {
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { authed, user } = readAdminAuth();
 
-  // Unauthed visitors only reach /admin in practice — `middleware.ts`
-  // redirects /admin/* nested routes to /admin when no valid cookie is
-  // present. /admin itself renders the monolith's password login UI; we
-  // skip the shell so the login experience isn't framed by a sidebar
-  // that's not yet usable.
-  if (!authed) {
-    return <>{children}</>;
-  }
-
+  // The shell (sidebar + main column) renders on every /admin/* visit,
+  // including the unauthed login screen at /admin. Earlier this layout
+  // skipped the shell when unauthed — but that meant logged-in users
+  // briefly saw the page without a sidebar during the /admin client-side
+  // auth flash, and the login form looked detached from the admin UI.
+  // The Sidebar component already handles currentUser={null} gracefully.
+  // The floating QuickAddButton is still gated on authed since its
+  // actions all require a valid session.
   return (
     <div className="min-h-screen flex bg-ink text-cream">
       <Sidebar currentUser={user} />
       <main className="flex-1 overflow-y-auto">{children}</main>
-      {/* Floating quick-add button. Authed-only by construction (we're
-          inside the authed branch). Visible on every admin route. */}
-      <QuickAddButton currentUser={user} />
+      {authed && <QuickAddButton currentUser={user} />}
     </div>
   );
 }

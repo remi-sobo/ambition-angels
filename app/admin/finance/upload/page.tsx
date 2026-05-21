@@ -35,12 +35,18 @@ export default function FinanceUploadPage() {
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [busy, setBusy] = useState<"idle" | "previewing" | "committing">("idle");
   const [error, setError] = useState<string | null>(null);
+  // When the API returns a 400 with sample lines from the file, we surface
+  // them here so the user can self-diagnose (wrong format, header row, etc).
+  const [errorSample, setErrorSample] = useState<string[] | null>(null);
+  const [errorHint, setErrorHint] = useState<string | null>(null);
   const [result, setResult] = useState<CommitResult | null>(null);
 
   async function doPreview() {
     if (!file) return;
     setBusy("previewing");
     setError(null);
+    setErrorSample(null);
+    setErrorHint(null);
     setPreview(null);
     setResult(null);
 
@@ -52,7 +58,9 @@ export default function FinanceUploadPage() {
     const r = await fetch("/api/admin/finance/import", { method: "POST", body: fd });
     const json = await r.json().catch(() => ({}));
     if (!r.ok) {
-      setError(json.error ?? `Preview failed (${r.status})`);
+      setError(json.error ?? `Upload failed (${r.status})`);
+      if (Array.isArray(json.sample)) setErrorSample(json.sample);
+      if (typeof json.hint === "string") setErrorHint(json.hint);
     } else {
       setPreview(json.preview as ImportPreview);
     }
@@ -96,9 +104,10 @@ export default function FinanceUploadPage() {
           </Link>
         </div>
         <p className="text-sm text-gray-mid max-w-2xl">
-          Upload a CSV exported from your bank. The file is parsed in the
-          browser-to-server round-trip, deduped against your existing
-          transactions, and previewed before anything is written. Wells Fargo
+          Pick a CSV exported from your bank and click <span className="text-cream">Upload</span>.
+          We parse it, dedupe against existing transactions, and show a preview
+          — nothing is written until you click <span className="text-cream">Commit</span>.
+          Wells Fargo
           is the default; generic mode works for any CSV with date /
           description / amount columns.
         </p>
@@ -141,17 +150,21 @@ export default function FinanceUploadPage() {
           </div>
         </div>
 
-        <div className="mt-5 flex items-center gap-3">
+        <div className="mt-5 flex items-center gap-3 flex-wrap">
           <button
             type="button"
             disabled={!file || busy !== "idle"}
             onClick={doPreview}
-            className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-cream text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-cream text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {busy === "previewing" ? "Parsing…" : "Preview"}
+            {busy === "previewing" ? "Reading…" : "Upload"}
           </button>
+          <span className="text-[11px] text-gray-mid">
+            Reads the file, dedupes against existing transactions, shows a
+            preview. You confirm before anything is saved.
+          </span>
           {file && (
-            <span className="text-xs text-gray-mid">
+            <span className="text-xs text-gray-mid ml-auto">
               {file.name} · {(file.size / 1024).toFixed(1)} KB
             </span>
           )}
@@ -161,7 +174,20 @@ export default function FinanceUploadPage() {
       {/* Error */}
       {error && (
         <div className="mb-6 rounded-card border border-red-400/40 bg-red-500/10 p-4 text-sm text-red-200">
-          {error}
+          <div className="font-medium mb-1">{error}</div>
+          {errorHint && (
+            <div className="text-xs text-red-100/80 mb-3">{errorHint}</div>
+          )}
+          {errorSample && errorSample.length > 0 && (
+            <details className="mt-2" open>
+              <summary className="text-xs uppercase tracking-wider text-red-200/70 cursor-pointer hover:text-red-100">
+                First {errorSample.length} lines we saw in the file
+              </summary>
+              <pre className="mt-2 text-[11px] font-mono text-cream/80 bg-black/30 rounded p-3 overflow-x-auto">
+                {errorSample.join("\n")}
+              </pre>
+            </details>
+          )}
         </div>
       )}
 

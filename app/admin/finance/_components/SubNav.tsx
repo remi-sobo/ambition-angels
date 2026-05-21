@@ -1,11 +1,15 @@
-import Link from "next/link";
+"use client";
 
-// Sub-navigation strip that appears below the page header on the finance
-// dashboard. Server component — no active state highlighting since this is
-// only rendered on /admin/finance itself; individual pages have their own
-// "← Finance" breadcrumb instead.
-const LINKS: Array<{ href: string; label: string; primary?: boolean }> = [
-  { href: "/admin/finance/upload", label: "Upload CSV", primary: true },
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+// Persistent section nav for /admin/finance/*. Lives in the section layout
+// so it stays put as you move between Dashboard / Upload / Transactions /
+// Budget / Pledges / Rules / Config — and highlights the active tab so you
+// always know where you are.
+const LINKS: Array<{ href: string; label: string }> = [
+  { href: "/admin/finance", label: "Dashboard" },
+  { href: "/admin/finance/upload", label: "Upload" },
   { href: "/admin/finance/transactions", label: "Transactions" },
   { href: "/admin/finance/budget", label: "Budget" },
   { href: "/admin/finance/revenue", label: "Pledges" },
@@ -13,22 +17,34 @@ const LINKS: Array<{ href: string; label: string; primary?: boolean }> = [
   { href: "/admin/finance/config", label: "Config" },
 ];
 
+// Exact match for the section root (so Dashboard isn't always lit), prefix
+// match for nested pages so the chip stays highlighted on sub-routes like
+// /admin/finance/budget/import.
+function isActive(path: string, href: string): boolean {
+  if (href === "/admin/finance") return path === "/admin/finance";
+  return path === href || path.startsWith(href + "/");
+}
+
 export default function SubNav() {
+  const pathname = usePathname() ?? "";
   return (
-    <nav className="flex items-center gap-2 text-xs flex-wrap">
-      {LINKS.map((l) => (
-        <Link
-          key={l.href}
-          href={l.href}
-          className={`px-3 py-1.5 rounded-full border transition-colors ${
-            l.primary
-              ? "border-orange/40 bg-orange/15 text-orange hover:bg-orange/25"
-              : "border-white/10 text-cream/70 hover:text-cream hover:bg-white/5"
-          }`}
-        >
-          {l.label}
-        </Link>
-      ))}
+    <nav className="flex items-center gap-1.5 text-xs flex-wrap">
+      {LINKS.map((l) => {
+        const active = isActive(pathname, l.href);
+        return (
+          <Link
+            key={l.href}
+            href={l.href}
+            className={`px-3 py-1.5 rounded-full border transition-colors ${
+              active
+                ? "border-orange/60 bg-orange/15 text-orange"
+                : "border-white/10 text-cream/70 hover:text-cream hover:bg-white/5"
+            }`}
+          >
+            {l.label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

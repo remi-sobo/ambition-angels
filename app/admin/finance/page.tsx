@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { FinCategory } from "@/lib/finance/types";
-import SubNav from "./_components/SubNav";
 import {
   CashFlowChart,
   CircleGauge,
@@ -333,22 +332,20 @@ export default async function FinanceDashboardPage() {
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div className="max-w-7xl mx-auto p-6 sm:p-8 space-y-6">
-      {/* Header */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.25em] text-orange/80 mb-1">
-            Fiscal year {cfg.year}
-          </div>
-          <h1 className="font-display font-black uppercase tracking-tight text-cream text-4xl sm:text-5xl leading-none">
-            Finance
-          </h1>
-          <p className="mt-2 text-sm text-gray-mid max-w-2xl">
-            Live picture of cash, burn, fundraising, and budget. Numbers
-            update as transactions are imported, categorized, and pledges
-            are received.
-          </p>
+      {/* Header — SubNav now lives in app/admin/finance/layout.tsx so it
+          persists across every finance page. */}
+      <header>
+        <div className="text-[10px] uppercase tracking-[0.25em] text-orange/80 mb-1">
+          Fiscal year {cfg.year}
         </div>
-        <SubNav />
+        <h1 className="font-display font-black uppercase tracking-tight text-cream text-4xl sm:text-5xl leading-none">
+          Dashboard
+        </h1>
+        <p className="mt-2 text-sm text-gray-mid max-w-2xl">
+          Live picture of cash, burn, fundraising, and budget. Numbers
+          update as transactions are imported, categorized, and pledges
+          are received.
+        </p>
       </header>
 
       {/* Hero KPIs */}

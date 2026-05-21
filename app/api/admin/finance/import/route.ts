@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { parseCsv } from "@/lib/finance/parsers";
-import { dedupHash, fileHash } from "@/lib/finance/dedup";
+import { batchDedupHashes, fileHash } from "@/lib/finance/dedup";
 import { loadRules, matchRule, bumpHitCounts } from "@/lib/finance/categorize";
 import type {
   BankFormat,
@@ -100,7 +100,11 @@ export async function POST(req: NextRequest) {
 
   // Stage rows: compute hashes, look up existing rows to mark duplicates,
   // apply category rules.
-  const hashes = parsed.map(dedupHash);
+  // Occurrence-aware hashes — identical (date, amount, description) rows
+  // within a single batch get unique hashes so the DB unique constraint
+  // doesn't collapse two legitimate same-day same-merchant charges into
+  // one row. See lib/finance/dedup.ts for the full reasoning.
+  const hashes = batchDedupHashes(parsed);
   const { data: existing } = await supabase
     .from("fin_transactions")
     .select("dedup_hash")

@@ -1,0 +1,249 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { FinCategory } from "@/lib/finance/types";
+
+type Rule = {
+  id: string;
+  pattern: string;
+  pattern_type: "contains" | "starts_with" | "regex";
+  category_id: string;
+  restricted: boolean;
+  priority: number;
+  enabled: boolean;
+  hit_count: number;
+};
+
+type Props = {
+  initialRules: Rule[];
+  categories: FinCategory[];
+};
+
+const PATTERN_TYPES: Array<Rule["pattern_type"]> = ["contains", "starts_with", "regex"];
+
+export default function RulesEditor({ initialRules, categories }: Props) {
+  const router = useRouter();
+  const [rules, setRules] = useState<Rule[]>(initialRules);
+  const [newPattern, setNewPattern] = useState("");
+  const [newType, setNewType] = useState<Rule["pattern_type"]>("contains");
+  const [newCategory, setNewCategory] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [applyResult, setApplyResult] = useState<string | null>(null);
+
+  const catById = new Map(categories.map((c) => [c.id, c]));
+
+  async function createRule() {
+    if (!newPattern.trim() || !newCategory) return;
+    setBusy(true);
+    setError(null);
+    const r = await fetch("/api/admin/finance/rules", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pattern: newPattern,
+        pattern_type: newType,
+        category_id: newCategory,
+      }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      setError(j.error ?? "Failed to create rule");
+    } else {
+      setRules((rs) => [j.rule, ...rs]);
+      setNewPattern("");
+      setNewCategory("");
+    }
+    setBusy(false);
+  }
+
+  async function toggle(id: string, enabled: boolean) {
+    setRules((rs) => rs.map((r) => (r.id === id ? { ...r, enabled } : r)));
+    const res = await fetch(`/api/admin/finance/rules/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    });
+    if (!res.ok) {
+      // Roll back.
+      setRules((rs) => rs.map((r) => (r.id === id ? { ...r, enabled: !enabled } : r)));
+    }
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Delete this rule? Transactions it already matched will keep their category.")) {
+      return;
+    }
+    const prev = rules;
+    setRules((rs) => rs.filter((r) => r.id !== id));
+    const res = await fetch(`/api/admin/finance/rules/${id}`, { method: "DELETE" });
+    if (!res.ok) setRules(prev);
+  }
+
+  async function applyAll() {
+    setBusy(true);
+    setError(null);
+    setApplyResult(null);
+    const r = await fetch("/api/admin/finance/rules/apply-all", { method: "POST" });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      setError(j.error ?? "Apply failed");
+    } else {
+      setApplyResult(
+        `Categorized ${j.matched} of ${j.considered} uncategorized transactions. ${j.remaining ?? 0} still need a category.`
+      );
+      router.refresh();
+    }
+    setBusy(false);
+  }
+
+  // Sort by priority desc for display; ties broken by created_at via the
+  // initialRules ordering from the server.
+  const sorted = [...rules].sort((a, b) => b.priority - a.priority);
+
+  return (
+    <div className="space-y-6">
+      {/* Create form */}
+      <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5">
+        <h2 className="text-sm uppercase tracking-wider text-gray-mid mb-3">
+          Add rule
+        </h2>
+        <div className="grid sm:grid-cols-[1fr_auto_1fr_auto] gap-3 items-end">
+          <div>
+            <label className="block text-[10px] uppercase tracking-wider text-gray-mid mb-1">
+              When description …
+            </label>
+            <input
+              value={newPattern}
+              onChange={(e) => setNewPattern(e.target.value)}
+              placeholder={
+                newType === "regex" ? "/regex/" : newType === "starts_with" ? "WF DIRECT PAY" : "GUSTO"
+              }
+              className="w-full bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+            />
+          </div>
+          <select
+            value={newType}
+            onChange={(e) => setNewType(e.target.value as Rule["pattern_type"])}
+            className="bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+          >
+            {PATTERN_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t.replace("_", " ")}
+              </option>
+            ))}
+          </select>
+          <select
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            className="bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+          >
+            <option value="">— Set category to —</option>
+            {Array.from(new Set(categories.map((c) => c.group_name))).map((g) => (
+              <optgroup key={g} label={g}>
+                {categories
+                  .filter((c) => c.group_name === g)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.display_name}
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={busy || !newPattern.trim() || !newCategory}
+            onClick={createRule}
+            className="px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-cream text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Add
+          </button>
+        </div>
+        {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
+      </div>
+
+      {/* Apply CTA */}
+      <div className="rounded-card border border-white/10 bg-white/[0.02] p-4 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div className="text-sm text-cream font-medium">Re-apply rules</div>
+          <div className="text-xs text-gray-mid mt-0.5">
+            Runs the active rule list against every uncategorized transaction.
+            Already-categorized rows are untouched.
+          </div>
+        </div>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={applyAll}
+          className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-cream text-sm disabled:opacity-40"
+        >
+          {busy ? "Working…" : "Apply to uncategorized"}
+        </button>
+      </div>
+      {applyResult && (
+        <div className="rounded-card border border-emerald-400/40 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+          {applyResult}
+        </div>
+      )}
+
+      {/* Rule list */}
+      <div className="rounded-card-lg border border-white/10 bg-white/[0.02] overflow-hidden">
+        <table className="w-full text-xs">
+          <thead className="bg-white/[0.03] text-gray-mid uppercase tracking-wider">
+            <tr>
+              <th className="text-left px-3 py-2.5 w-8"></th>
+              <th className="text-left px-3 py-2.5">Pattern</th>
+              <th className="text-left px-3 py-2.5 w-28">Type</th>
+              <th className="text-left px-3 py-2.5">Category</th>
+              <th className="text-right px-3 py-2.5 w-20">Hits</th>
+              <th className="text-right px-3 py-2.5 w-20">Priority</th>
+              <th className="w-12"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-3 py-10 text-center text-gray-mid">
+                  No rules yet. Add one above — for example,{" "}
+                  <code className="text-cream/80">contains GUSTO → Salaries &amp; wages</code>.
+                </td>
+              </tr>
+            )}
+            {sorted.map((r) => (
+              <tr key={r.id} className={`border-t border-white/5 ${r.enabled ? "" : "opacity-50"}`}>
+                <td className="px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={r.enabled}
+                    onChange={(e) => toggle(r.id, e.target.checked)}
+                    className="accent-orange"
+                  />
+                </td>
+                <td className="px-3 py-2 font-mono text-cream/90">{r.pattern}</td>
+                <td className="px-3 py-2 text-gray-mid">{r.pattern_type.replace("_", " ")}</td>
+                <td className="px-3 py-2 text-cream/80">
+                  {catById.get(r.category_id)?.display_name ?? r.category_id}
+                  <span className="text-[10px] text-gray-mid ml-1.5">
+                    {catById.get(r.category_id)?.group_name}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-right text-cream/80 font-mono">{r.hit_count}</td>
+                <td className="px-3 py-2 text-right text-cream/80 font-mono">{r.priority}</td>
+                <td className="px-3 py-2 text-right">
+                  <button
+                    onClick={() => remove(r.id)}
+                    className="text-gray-mid hover:text-red-300 text-xs"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

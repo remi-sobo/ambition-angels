@@ -16,13 +16,13 @@ export default function FinancePage() {
         </p>
       </header>
 
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Link
           href="/admin/finance/upload"
           className="rounded-card-lg border border-white/10 bg-white/[0.02] p-6 hover:bg-white/[0.04]"
         >
           <div className="text-xs uppercase tracking-wider text-orange mb-2">
-            Step 1
+            Import
           </div>
           <div className="text-lg font-medium text-cream mb-1">
             Upload bank CSV
@@ -33,15 +33,31 @@ export default function FinancePage() {
           </div>
         </Link>
 
+        <Link
+          href="/admin/finance/transactions"
+          className="rounded-card-lg border border-white/10 bg-white/[0.02] p-6 hover:bg-white/[0.04]"
+        >
+          <div className="text-xs uppercase tracking-wider text-orange mb-2">
+            Review
+          </div>
+          <div className="text-lg font-medium text-cream mb-1">
+            Transactions
+          </div>
+          <div className="text-sm text-gray-mid">
+            Browse, filter, categorize. Flag restricted funds. The
+            uncategorized count is your daily todo.
+          </div>
+        </Link>
+
         <div className="rounded-card-lg border border-white/5 bg-white/[0.01] p-6 opacity-60">
           <div className="text-xs uppercase tracking-wider text-gray-mid mb-2">
             Coming next
           </div>
           <div className="text-lg font-medium text-cream mb-1">
-            Transactions · Budget · Dashboard
+            Budget · Pledges · Dashboard
           </div>
           <div className="text-sm text-gray-mid">
-            Browse and categorize · budget vs actual · runway, burn, functional
+            Budget vs actual · pledge pipeline · runway, burn, functional
             split.
           </div>
         </div>

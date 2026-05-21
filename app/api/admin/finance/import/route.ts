@@ -75,8 +75,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 400 });
   }
   if (parsed.length === 0) {
+    // Return a sample of the file so the user can see what we're seeing.
+    // This is the single most useful diagnostic for "why didn't it parse?"
+    // — usually the bank format selection is wrong, or there's a header
+    // row the user needs to know about.
+    const sample = text
+      .replace(/^﻿/, "")
+      .split(/\r?\n/)
+      .filter((l) => l.length > 0)
+      .slice(0, 6);
     return NextResponse.json(
-      { error: "No transactions parsed. Check the bank format selection and file contents." },
+      {
+        error:
+          "No transactions parsed. Either the bank format is wrong, or the file isn't shaped the way we expect.",
+        sample,
+        hint:
+          format === "wells-fargo"
+            ? "Wells Fargo expects a CSV with a date in the first column. If your export looks different, try the Generic option (it auto-detects from headers like 'date' / 'description' / 'amount')."
+            : "Generic mode expects a header row with at least 'date' and 'description' columns plus 'amount' (or 'debit' + 'credit').",
+      },
       { status: 400 }
     );
   }

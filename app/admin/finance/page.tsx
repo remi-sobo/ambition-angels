@@ -1,10 +1,51 @@
+import Link from "next/link";
+
+// Placeholder until the dashboard ships (step 8 of feat/admin-finance). Lets
+// the sidebar Finance link land somewhere useful — at minimum, a path to the
+// upload page so real data can start flowing in.
 export default function FinancePage() {
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-semibold">Finance</h1>
-      <p className="mt-2 text-zinc-400">
-        Runway, burn, QuickBooks reflection.
-      </p>
+    <div className="max-w-6xl mx-auto p-8">
+      <header className="mb-8">
+        <h1 className="font-display font-black uppercase tracking-tight text-cream text-3xl sm:text-4xl leading-none">
+          Finance
+        </h1>
+        <p className="mt-2 text-sm text-gray-mid">
+          Runway, burn, budget vs actual. The full dashboard ships once
+          transactions are flowing in — start by uploading a CSV.
+        </p>
+      </header>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Link
+          href="/admin/finance/upload"
+          className="rounded-card-lg border border-white/10 bg-white/[0.02] p-6 hover:bg-white/[0.04]"
+        >
+          <div className="text-xs uppercase tracking-wider text-orange mb-2">
+            Step 1
+          </div>
+          <div className="text-lg font-medium text-cream mb-1">
+            Upload bank CSV
+          </div>
+          <div className="text-sm text-gray-mid">
+            Wells Fargo export → previewed → committed. Duplicates skipped
+            automatically.
+          </div>
+        </Link>
+
+        <div className="rounded-card-lg border border-white/5 bg-white/[0.01] p-6 opacity-60">
+          <div className="text-xs uppercase tracking-wider text-gray-mid mb-2">
+            Coming next
+          </div>
+          <div className="text-lg font-medium text-cream mb-1">
+            Transactions · Budget · Dashboard
+          </div>
+          <div className="text-sm text-gray-mid">
+            Browse and categorize · budget vs actual · runway, burn, functional
+            split.
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

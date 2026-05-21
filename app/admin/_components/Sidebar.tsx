@@ -163,35 +163,49 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
         ))}
       </nav>
 
-      <div className="px-4 py-3 border-t border-white/10 space-y-2">
-        <button
-          onClick={startSync}
-          disabled={running}
-          title={partial ? job?.errors.map((e) => `${e.step}: ${e.message}`).join("\n") : undefined}
-          className="w-full text-left text-xs font-semibold text-cream/80 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 rounded-lg transition-colors disabled:cursor-default flex items-center gap-2"
-        >
-          <span aria-hidden className={running ? "animate-pulse" : ""}>{partial ? "⚠" : running ? "⟳" : "↻"}</span>
-          <span className="truncate">{syncLabel}</span>
-        </button>
-        {(running || finished) && (
-          <div className="text-[10px] text-gray-mid leading-relaxed font-mono">
-            C {counts.contacts} · Co {counts.companies} · D {counts.deals} · E {counts.engagements}
+      {/* Sync + auth footer only render when the layout knows we're authed.
+          When unauthed (currentUser=null) the sidebar shows nav + branding
+          only, and the user's primary action is the login form rendered in
+          the main column. */}
+      {currentUser && (
+        <>
+          <div className="px-4 py-3 border-t border-white/10 space-y-2">
+            <button
+              onClick={startSync}
+              disabled={running}
+              title={partial ? job?.errors.map((e) => `${e.step}: ${e.message}`).join("\n") : undefined}
+              className="w-full text-left text-xs font-semibold text-cream/80 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 rounded-lg transition-colors disabled:cursor-default flex items-center gap-2"
+            >
+              <span aria-hidden className={running ? "animate-pulse" : ""}>{partial ? "⚠" : running ? "⟳" : "↻"}</span>
+              <span className="truncate">{syncLabel}</span>
+            </button>
+            {(running || finished) && (
+              <div className="text-[10px] text-gray-mid leading-relaxed font-mono">
+                C {counts.contacts} · Co {counts.companies} · D {counts.deals} · E {counts.engagements}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <div className="px-5 py-4 border-t border-white/10 space-y-3">
-        <div className="text-xs text-gray-mid">
-          {currentUser ? `Logged in as ${cap(currentUser)}` : "Logged in"}
+          <div className="px-5 py-4 border-t border-white/10 space-y-3">
+            <div className="text-xs text-gray-mid">
+              {`Logged in as ${cap(currentUser)}`}
+            </div>
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="w-full text-xs font-semibold text-cream/60 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {loggingOut ? "Logging out…" : "Log out"}
+            </button>
+          </div>
+        </>
+      )}
+
+      {!currentUser && (
+        <div className="px-5 py-4 border-t border-white/10 text-[11px] text-gray-mid leading-relaxed">
+          Not signed in. Use the login form in the main panel to continue.
         </div>
-        <button
-          onClick={handleLogout}
-          disabled={loggingOut}
-          className="w-full text-xs font-semibold text-cream/60 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
-        >
-          {loggingOut ? "Logging out…" : "Log out"}
-        </button>
-      </div>
+      )}
     </aside>
   );
 }

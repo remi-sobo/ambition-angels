@@ -13,8 +13,13 @@ export default function SiteChrome({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  // Routes that render their own chrome end-to-end. The public <Nav> is
+  // position:fixed so leaving it visible over any page that doesn't account
+  // for its 64/80px height causes the page heading to slide behind it
+  // (see /admin — its sidebar shell is the chrome, no public nav needed).
   const standalone =
-    (pathname?.startsWith("/shannon") ||
+    (pathname?.startsWith("/admin") ||
+      pathname?.startsWith("/shannon") ||
       pathname?.startsWith("/update/koshland")) ??
     false;
 

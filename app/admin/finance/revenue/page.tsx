@@ -1,0 +1,81 @@
+import Link from "next/link";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import PledgesEditor, { type Pledge } from "./_components/PledgesEditor";
+
+type SearchParams = { year?: string };
+
+export default async function RevenuePage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const supabase = getSupabaseAdmin();
+
+  const { data: cfg } = await supabase
+    .from("fin_config")
+    .select("current_year, fundraising_goal")
+    .eq("id", 1)
+    .maybeSingle();
+  const configYear = typeof cfg?.current_year === "number" ? cfg.current_year : new Date().getFullYear();
+  const requested = parseInt(searchParams.year ?? "", 10);
+  const year =
+    Number.isFinite(requested) && requested >= 2000 && requested <= 2100 ? requested : configYear;
+  const goal = Number(cfg?.fundraising_goal ?? 0);
+
+  const { data: pledgesRaw } = await supabase
+    .from("fin_revenue_commitments")
+    .select(
+      "id, year, source_type, source_name, amount, status, expected_date, probability, restricted, restricted_to, notes"
+    )
+    .eq("year", year)
+    .order("status", { ascending: true })
+    .order("amount", { ascending: false });
+
+  const pledges = (pledgesRaw ?? []).map((p) => ({
+    ...p,
+    amount: Number(p.amount ?? 0),
+    probability: p.probability === null ? null : Number(p.probability),
+  })) as Pledge[];
+
+  const years = [year - 1, year, year + 1].filter((y) => y >= 2024 && y <= 2030);
+
+  return (
+    <div className="max-w-7xl mx-auto p-8">
+      <header className="mb-6 flex items-baseline justify-between gap-4 flex-wrap">
+        <div>
+          <div className="flex items-center gap-3 text-xs text-gray-mid mb-1">
+            <Link href="/admin/finance" className="hover:text-cream">
+              ← Finance
+            </Link>
+          </div>
+          <h1 className="font-display font-black uppercase tracking-tight text-cream text-3xl sm:text-4xl leading-none">
+            Revenue · {year}
+          </h1>
+          <p className="mt-2 text-sm text-gray-mid max-w-2xl">
+            Pledges, grants in progress, and received gifts. Secured =
+            signed/committed but not yet in the bank. Projected = pipeline,
+            weighted by probability. Received = money landed (also recorded
+            as a transaction).
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          {years.map((y) => (
+            <Link
+              key={y}
+              href={`/admin/finance/revenue?year=${y}`}
+              className={`px-3 py-1 rounded-full border ${
+                y === year
+                  ? "border-orange/60 bg-orange/15 text-orange"
+                  : "border-white/10 text-gray-mid hover:text-cream"
+              }`}
+            >
+              {y}
+            </Link>
+          ))}
+        </div>
+      </header>
+
+      <PledgesEditor year={year} initialPledges={pledges} fundraisingGoal={goal} />
+    </div>
+  );
+}

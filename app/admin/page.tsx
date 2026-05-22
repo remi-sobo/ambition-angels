@@ -669,7 +669,94 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile: stacked cards (≤ md). The full table stays for tablet+. */}
+          <div className="md:hidden divide-y divide-white/5">
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="px-4 py-4"><Skeleton className="h-16 w-full" /></div>
+              ))
+            ) : paginated.length === 0 ? (
+              <p className="px-4 py-10 text-center text-gray-mid text-sm">No submissions found.</p>
+            ) : (
+              paginated.map((s) => {
+                const open = expandedId === s.id;
+                return (
+                  <div
+                    key={s.id}
+                    onClick={() => setExpandedId(open ? null : s.id)}
+                    className={`px-4 py-4 transition-colors ${open ? "bg-orange/10" : "active:bg-white/5"}`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-cream text-sm truncate">{s.teen_name || "Anonymous"}</span>
+                          {s.audience && (
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-white/10 text-gray-mid"}`}>{s.audience}</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-mid mt-0.5">
+                          {fmtDate(s.created_at)}{s.location ? ` · ${s.location}` : ""}
+                        </div>
+                      </div>
+                      {s.money_vs_meaning !== null && (
+                        <span className="text-xs font-semibold text-cream flex-shrink-0">
+                          {s.money_vs_meaning}<span className="text-white/30">/10</span>
+                        </span>
+                      )}
+                    </div>
+                    {s.career_matches && s.career_matches.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {s.career_matches.slice(0, 3).map((c, i) => (
+                          <span key={i} className="text-[11px] bg-white/5 border border-white/10 text-gray-mid px-2 py-0.5 rounded-full">{c.title}</span>
+                        ))}
+                      </div>
+                    )}
+                    {open && (
+                      <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+                        <div className="text-[10px] font-bold text-orange uppercase tracking-widest">Quiz Answers</div>
+                        <div className="space-y-1.5 text-xs">
+                          {[
+                            ["Email", s.email],
+                            ["Subjects", s.subjects],
+                            ["Work Style", s.work_style],
+                            ["Good At", s.good_at],
+                            ["People come for", s.people_come],
+                            ["Free Time", s.free_time],
+                            ["Flow State", s.flow_state],
+                            ["Dream Day", s.dream_day],
+                            ["Future Self", s.future_self],
+                          ].map(([label, val]) => val ? (
+                            <div key={String(label)} className="flex gap-2">
+                              <span className="text-white/30 w-28 flex-shrink-0">{label}</span>
+                              <span className="text-gray-mid break-words min-w-0">{String(val)}</span>
+                            </div>
+                          ) : null)}
+                        </div>
+                        {s.career_matches && s.career_matches.length > 0 && (
+                          <>
+                            <div className="text-[10px] font-bold text-orange uppercase tracking-widest pt-2">All Matches</div>
+                            <div className="space-y-1.5">
+                              {s.career_matches.map((c, i) => (
+                                <div key={i} className="bg-white/5 rounded-lg px-2.5 py-1.5">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs font-semibold text-cream truncate">{i + 1}. {c.title}</span>
+                                    <span className="text-[11px] text-orange font-semibold whitespace-nowrap flex-shrink-0">{c.salary}</span>
+                                  </div>
+                                  {c.why && <div className="text-[11px] text-gray-mid mt-0.5 italic">{c.why}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm min-w-[900px]">
               <thead>
                 <tr className="border-b border-white/10">
@@ -926,7 +1013,43 @@ export default function AdminPage() {
                 />
                 <span className="text-xs text-gray-mid">{filteredDonations.length} donation{filteredDonations.length !== 1 ? "s" : ""}</span>
               </div>
-              <div className="overflow-x-auto">
+              {/* Mobile cards */}
+              <div className="md:hidden divide-y divide-white/5">
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="px-4 py-3"><Skeleton className="h-12 w-full" /></div>
+                  ))
+                ) : paginatedDonations.length === 0 ? (
+                  <p className="px-4 py-10 text-center text-gray-mid text-sm">No donations found.</p>
+                ) : (
+                  paginatedDonations.map((d) => (
+                    <div key={d.id} className="px-4 py-3 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-orange font-bold text-xs">{donorInitial(d)}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-cream text-sm truncate">{donorDisplayName(d)}</span>
+                          {d.recurring && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-gray-mid">
+                          {fmtDate(d.created_at)}{d.email ? ` · ${d.email}` : ""}
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="font-bold text-cream text-sm">{fmtMoney(d.amount)}</div>
+                        {d.status && d.status !== "succeeded" && (
+                          <div className="text-[10px] text-red-400 capitalize">{d.status}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/10">
@@ -996,7 +1119,34 @@ export default function AdminPage() {
               ) : !donationStats || donationStats.donorProfiles.length === 0 ? (
                 <p className="text-gray-mid text-sm">No donor data yet.</p>
               ) : (
-                <div className="overflow-x-auto">
+                <>
+                <div className="md:hidden divide-y divide-white/5 -mx-6">
+                  {donationStats.donorProfiles.map((p, i) => (
+                    <div key={p.email + i} className="px-6 py-3 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-orange font-bold text-xs">
+                          {(p.firstName?.[0] ?? p.email?.[0] ?? "$").toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-cream text-sm truncate">
+                            {[p.firstName, p.lastName].filter(Boolean).join(" ") || "Anonymous"}
+                          </span>
+                          {p.recurring && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-gray-mid">
+                          {p.donationCount} gift{p.donationCount !== 1 ? "s" : ""} · last {fmtDate(p.lastDonation)}
+                        </div>
+                      </div>
+                      <div className="font-bold text-orange text-sm flex-shrink-0">{fmtMoney(p.totalGiven)}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm min-w-[750px]">
                     <thead>
                       <tr className="border-b border-white/10">
@@ -1035,6 +1185,7 @@ export default function AdminPage() {
                     </tbody>
                   </table>
                 </div>
+                </>
               )}
             </div>
           )}
@@ -1130,8 +1281,24 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Table */}
-                <div className="overflow-x-auto">
+                {/* Mobile cards */}
+                <div className="md:hidden divide-y divide-white/5 -mx-6">
+                  {partnerData.signups.map((s) => (
+                    <div key={s.id} className="px-6 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-medium text-cream text-sm truncate">{s.first_name} {s.last_name}</span>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange flex-shrink-0">{s.role}</span>
+                      </div>
+                      <div className="text-[11px] text-gray-mid mt-0.5 truncate">{s.email}</div>
+                      <div className="text-[11px] text-white/30 mt-0.5">
+                        {fmtDate(s.created_at)}{s.teen_count ? ` · ${s.teen_count} teens` : ""}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Table (md+) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm min-w-[700px]">
                     <thead>
                       <tr className="border-b border-white/10">
@@ -1204,8 +1371,26 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Table */}
-                <div className="overflow-x-auto">
+                {/* Mobile cards */}
+                <div className="md:hidden divide-y divide-white/5 -mx-6">
+                  {programData.signups.map((s) => (
+                    <div key={s.id} className="px-6 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-medium text-cream text-sm truncate">{s.org_name}</span>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange flex-shrink-0">{s.program_type}</span>
+                      </div>
+                      <div className="text-[11px] text-gray-mid mt-0.5 truncate">
+                        {s.first_name} {s.last_name} · {s.email}
+                      </div>
+                      <div className="text-[11px] text-white/30 mt-0.5">
+                        {fmtDate(s.created_at)}{s.teen_count ? ` · ${s.teen_count} teens` : ""}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Table (md+) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm min-w-[800px]">
                     <thead>
                       <tr className="border-b border-white/10">

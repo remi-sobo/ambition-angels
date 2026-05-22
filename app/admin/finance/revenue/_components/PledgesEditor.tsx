@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { HubSpotPledge } from "@/lib/finance/hubspot-pledges";
 
 export type Pledge = {
   id: string;
@@ -21,6 +22,7 @@ type Props = {
   year: number;
   initialPledges: Pledge[];
   fundraisingGoal: number;
+  hubspotPledges: HubSpotPledge[];
 };
 
 const SOURCE_TYPES: Array<Pledge["source_type"]> = [
@@ -37,7 +39,12 @@ function fmt(n: number): string {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
-export default function PledgesEditor({ year, initialPledges, fundraisingGoal }: Props) {
+export default function PledgesEditor({
+  year,
+  initialPledges,
+  fundraisingGoal,
+  hubspotPledges,
+}: Props) {
   const router = useRouter();
   const [pledges, setPledges] = useState<Pledge[]>(initialPledges);
   const [adding, setAdding] = useState(false);
@@ -113,14 +120,25 @@ export default function PledgesEditor({ year, initialPledges, fundraisingGoal }:
   const projected = pledges.filter((p) => p.status === "projected");
   const received = pledges.filter((p) => p.status === "received");
 
-  const securedTotal = secured.reduce((s, p) => s + Number(p.amount), 0);
-  const projectedTotal = projected.reduce((s, p) => s + Number(p.amount), 0);
+  // HubSpot buckets, computed once and used in both the summary cards and
+  // the rendered "From HubSpot" section.
+  const hsReceived = hubspotPledges.filter((p) => p.status === "received");
+  const hsSecured = hubspotPledges.filter((p) => p.status === "secured");
+  const hsProjected = hubspotPledges.filter((p) => p.status === "projected");
+
+  const securedTotal =
+    secured.reduce((s, p) => s + Number(p.amount), 0) +
+    hsSecured.reduce((s, p) => s + p.amount, 0);
+  const projectedTotal =
+    projected.reduce((s, p) => s + Number(p.amount), 0) +
+    hsProjected.reduce((s, p) => s + p.amount, 0);
   // Probability-weighted projected — what we actually expect to land.
-  const projectedWeighted = projected.reduce(
-    (s, p) => s + Number(p.amount) * (p.probability ?? 1),
-    0
-  );
-  const receivedTotal = received.reduce((s, p) => s + Number(p.amount), 0);
+  const projectedWeighted =
+    projected.reduce((s, p) => s + Number(p.amount) * (p.probability ?? 1), 0) +
+    hsProjected.reduce((s, p) => s + p.amount * p.probability, 0);
+  const receivedTotal =
+    received.reduce((s, p) => s + Number(p.amount), 0) +
+    hsReceived.reduce((s, p) => s + p.amount, 0);
 
   const towardsGoal = securedTotal + receivedTotal;
   const goalPct = fundraisingGoal > 0 ? (towardsGoal / fundraisingGoal) * 100 : 0;
@@ -289,10 +307,98 @@ export default function PledgesEditor({ year, initialPledges, fundraisingGoal }:
         </div>
       )}
 
-      {/* Sectioned lists */}
+      {/* Sectioned lists — manual pledges first, then HubSpot pipeline. */}
       <PledgeSection title="Received" rows={received} onMark={null} onDelete={remove} />
       <PledgeSection title="Secured" rows={secured} onMark={markReceived} onDelete={remove} />
       <PledgeSection title="Projected pipeline" rows={projected} onMark={markReceived} onDelete={remove} />
+
+      {/* HubSpot — read-only pipeline, refreshed by the "Sync HubSpot"
+          button in the sidebar. Counted in the summary cards + goal
+          progress above. */}
+      {hubspotPledges.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-baseline justify-between flex-wrap gap-2">
+            <h2 className="text-[10px] uppercase tracking-widest text-orange/80 font-medium">
+              From HubSpot pipeline
+            </h2>
+            <div className="text-[11px] text-gray-mid">
+              {hubspotPledges.length} deal{hubspotPledges.length === 1 ? "" : "s"} ·
+              {" "}refresh via &ldquo;Sync HubSpot&rdquo; in the sidebar
+            </div>
+          </div>
+          <HubSpotSection title="HubSpot · Received" rows={hsReceived} />
+          <HubSpotSection title="HubSpot · Secured" rows={hsSecured} />
+          <HubSpotSection title="HubSpot · Projected pipeline" rows={hsProjected} showProbability />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HubSpotSection({
+  title,
+  rows,
+  showProbability,
+}: {
+  title: string;
+  rows: HubSpotPledge[];
+  showProbability?: boolean;
+}) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="rounded-card-lg border border-white/10 bg-white/[0.02] overflow-hidden">
+      <header className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between">
+        <div className="text-[10px] uppercase tracking-widest text-orange font-medium">
+          {title}
+        </div>
+        <div className="text-xs text-gray-mid">
+          {rows.length} · {fmt(rows.reduce((s, r) => s + r.amount, 0))}
+        </div>
+      </header>
+      <table className="w-full text-xs">
+        <thead className="text-gray-mid uppercase tracking-wider">
+          <tr>
+            <th className="text-left px-3 py-2">Deal</th>
+            <th className="text-left px-3 py-2 w-48">Contact / company</th>
+            <th className="text-left px-3 py-2 w-32">Stage</th>
+            <th className="text-right px-3 py-2 w-32">Amount</th>
+            {showProbability && (
+              <th className="text-right px-3 py-2 w-24">Weighted</th>
+            )}
+            <th className="text-left px-3 py-2 w-32">Close date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((d) => (
+            <tr key={d.deal_id} className="border-t border-white/5">
+              <td className="px-3 py-2 text-cream/85">{d.name}</td>
+              <td className="px-3 py-2 text-gray-mid">
+                {d.contact_name ?? d.company_name ?? "—"}
+                {d.contact_name && d.company_name && (
+                  <span className="text-[10px] text-gray-mid/70 block">
+                    {d.company_name}
+                  </span>
+                )}
+              </td>
+              <td className="px-3 py-2 text-gray-mid">{d.stage ?? "—"}</td>
+              <td className="px-3 py-2 text-right font-mono text-cream/85">
+                {fmt(d.amount)}
+              </td>
+              {showProbability && (
+                <td className="px-3 py-2 text-right font-mono text-orange/90">
+                  {fmt(d.amount * d.probability)}
+                  <span className="text-[10px] text-gray-mid block">
+                    @ {Math.round(d.probability * 100)}%
+                  </span>
+                </td>
+              )}
+              <td className="px-3 py-2 text-gray-mid font-mono">
+                {d.close_date ?? "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

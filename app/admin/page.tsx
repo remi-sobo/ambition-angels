@@ -453,42 +453,44 @@ export default function AdminPage() {
     <div className="min-h-screen bg-ink">
 
       {/* ── HEADER ── */}
-      <div className="bg-[#13151f] border-b border-white/10 px-6 lg:px-10 py-4 flex items-center justify-between gap-4 sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <span className="font-heading font-bold text-cream text-base">Admin Dashboard</span>
+      <div className="bg-[#13151f] border-b border-white/10 px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex items-center justify-between gap-3 sticky top-14 lg:top-0 z-30 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="font-heading font-bold text-cream text-sm sm:text-base">Admin Dashboard</span>
           {lastUpdated && (
-            <span className="text-xs text-gray-mid hidden sm:block">
+            <span className="text-xs text-gray-mid hidden md:block">
               · Updated {fmtLastUpdated(lastUpdated)}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={fetchData}
             disabled={loading}
-            className="text-xs font-semibold text-orange bg-orange/10 border border-orange/30 px-4 py-2 rounded-full hover:bg-orange/20 transition-colors disabled:opacity-40 flex items-center gap-1.5"
+            aria-label="Refresh"
+            className="text-xs font-semibold text-orange bg-orange/10 border border-orange/30 px-3 sm:px-4 py-2 rounded-full hover:bg-orange/20 transition-colors disabled:opacity-40 flex items-center gap-1.5"
           >
             <svg className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0115-4.5M20 15a9 9 0 01-15 4.5" />
             </svg>
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </button>
           <button
             onClick={() => exportSubmissionsCSV(filtered)}
-            className="text-xs font-semibold text-white/60 bg-white/5 border border-white/10 px-4 py-2 rounded-full hover:bg-white/10 transition-colors"
+            className="text-xs font-semibold text-white/60 bg-white/5 border border-white/10 px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 transition-colors"
           >
-            Export CSV
+            <span className="sm:hidden">CSV</span>
+            <span className="hidden sm:inline">Export CSV</span>
           </button>
           <button
             onClick={handleLogout}
-            className="text-xs font-semibold text-white/40 hover:text-white/70 transition-colors"
+            className="text-xs font-semibold text-white/40 hover:text-white/70 transition-colors hidden sm:inline-block"
           >
             Logout
           </button>
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 lg:px-10 py-8 space-y-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 space-y-8">
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-3 text-red-400 text-sm">

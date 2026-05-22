@@ -184,3 +184,28 @@
     transform: none !important;
   }
 }
+
+/* ── /admin shell ─────────────────────────────────────────────────────── */
+/* The admin section runs as a PWA on iPad/iPhone; these styles cooperate
+   with the fixed mobile top bar in Sidebar.tsx and the iOS safe-area
+   insets exposed via `viewport-fit=cover` in app/admin/layout.tsx. */
+
+.admin-main {
+  /* Reserve room for the fixed mobile top bar (3.5rem tall) plus the
+     iOS notch. Cleared on lg+ where the sidebar lives inline. */
+  padding-top: calc(3.5rem + env(safe-area-inset-top));
+}
+
+@media (min-width: 1024px) {
+  .admin-main {
+    padding-top: 0;
+  }
+}
+
+/* Bigger tap targets for primary admin controls on touch devices. */
+@media (hover: none) and (pointer: coarse) {
+  .admin-shell button,
+  .admin-shell a[role="button"] {
+    min-height: 40px;
+  }
+}

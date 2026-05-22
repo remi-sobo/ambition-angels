@@ -44,7 +44,7 @@ export default async function RevenuePage({
   const years = [year - 1, year, year + 1].filter((y) => y >= 2024 && y <= 2030);
 
   return (
-    <div className="max-w-7xl mx-auto p-8">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
       <header className="mb-6 flex items-baseline justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3 text-xs text-gray-mid mb-1">

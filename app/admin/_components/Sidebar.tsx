@@ -49,13 +49,44 @@ type SyncResponse = {
 
 const ZERO = { contacts: 0, companies: 0, deals: 0, engagements: 0 };
 
+// Short label shown next to the hamburger on the mobile top bar.
+function activeSectionLabel(pathname: string): string {
+  for (const link of NAV_LINKS) {
+    if (link.children) {
+      const child = link.children.find((c) => pathname === c.href);
+      if (child) return child.label;
+    }
+    if (isActive(pathname, link.href)) return link.label;
+  }
+  return "Admin";
+}
+
 export default function Sidebar({ currentUser }: { currentUser: AdminUser | null }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [job, setJob] = useState<SyncResponse | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Close the mobile drawer whenever the route changes — without this,
+  // tapping a link slides the next page in but leaves the drawer covering
+  // it.
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll while the mobile drawer is open so iOS doesn't show
+  // the marketing site bouncing behind the panel.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [drawerOpen]);
 
   // Polling design: POST every 2s while running. Each call advances the job
   // by one chunk AND returns the updated state. GET on mount only, to
@@ -118,20 +149,20 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
     ? `${partial ? "Synced (partial)" : "Synced"} ${fmtAgo(job.finished_at)}`
     : "Sync HubSpot";
 
-  return (
-    <aside className="w-64 shrink-0 border-r border-white/10 bg-black/30 flex flex-col">
+  const navPanel = (
+    <>
       <div className="px-5 py-5 border-b border-white/10">
         <div className="font-display font-black text-lg uppercase tracking-tight text-cream">AA Admin</div>
         <div className="text-[11px] uppercase tracking-wider text-gray-mid mt-0.5">Operating System</div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {NAV_LINKS.map((link) => (
           <div key={link.href} className="space-y-0.5">
             <Link
               href={link.href}
               className={[
-                "block px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                "block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 isActive(pathname, link.href)
                   ? "bg-orange/15 text-orange border border-orange/30"
                   : "text-cream/70 hover:text-cream hover:bg-white/5 border border-transparent",
@@ -149,7 +180,7 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
                   key={child.href}
                   href={child.href}
                   className={[
-                    "block pl-8 pr-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors",
+                    "block pl-8 pr-3 py-2 rounded-lg text-[13px] font-medium transition-colors",
                     childActive
                       ? "bg-orange/10 text-orange border border-orange/20"
                       : "text-cream/55 hover:text-cream hover:bg-white/5 border border-transparent",
@@ -163,10 +194,6 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
         ))}
       </nav>
 
-      {/* Sync + auth footer only render when the layout knows we're authed.
-          When unauthed (currentUser=null) the sidebar shows nav + branding
-          only, and the user's primary action is the login form rendered in
-          the main column. */}
       {currentUser && (
         <>
           <div className="px-4 py-3 border-t border-white/10 space-y-2">
@@ -186,7 +213,7 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
             )}
           </div>
 
-          <div className="px-5 py-4 border-t border-white/10 space-y-3">
+          <div className="px-5 py-4 border-t border-white/10 space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <div className="text-xs text-gray-mid">
               {`Logged in as ${cap(currentUser)}`}
             </div>
@@ -206,6 +233,78 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
           Not signed in. Use the login form in the main panel to continue.
         </div>
       )}
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* ── Mobile top bar (visible < lg) ─────────────────────────────── */}
+      <div
+        className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 bg-ink/95 backdrop-blur border-b border-white/10 flex items-center gap-3 px-4 pt-[env(safe-area-inset-top)]"
+        style={{ height: "calc(3.5rem + env(safe-area-inset-top))" }}
+      >
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Open navigation"
+          className="w-10 h-10 -ml-2 flex items-center justify-center rounded-lg text-cream/80 hover:text-cream hover:bg-white/5 transition-colors"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </button>
+        <div className="font-display font-black uppercase tracking-tight text-cream text-base leading-none">
+          {activeSectionLabel(pathname)}
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          {currentUser && (
+            <button
+              onClick={startSync}
+              disabled={running}
+              aria-label={syncLabel}
+              title={syncLabel}
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-cream/80 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 transition-colors disabled:opacity-60"
+            >
+              <span aria-hidden className={running ? "animate-pulse" : ""}>
+                {partial ? "⚠" : running ? "⟳" : "↻"}
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Mobile drawer + overlay ───────────────────────────────────── */}
+      <div
+        className={[
+          "lg:hidden fixed inset-0 z-50 transition-opacity duration-200",
+          drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+        ].join(" ")}
+        aria-hidden={!drawerOpen}
+      >
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={() => setDrawerOpen(false)}
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          tabIndex={drawerOpen ? 0 : -1}
+        />
+        <aside
+          className={[
+            "absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-ink border-r border-white/10 flex flex-col shadow-2xl",
+            "pt-[env(safe-area-inset-top)] transition-transform duration-200 ease-out will-change-transform",
+            drawerOpen ? "translate-x-0" : "-translate-x-full",
+          ].join(" ")}
+          role="dialog"
+          aria-label="Admin navigation"
+        >
+          {navPanel}
+        </aside>
+      </div>
+
+      {/* ── Desktop sidebar (visible >= lg) ───────────────────────────── */}
+      <aside className="hidden lg:flex w-64 shrink-0 border-r border-white/10 bg-black/30 flex-col">
+        {navPanel}
+      </aside>
+    </>
   );
 }

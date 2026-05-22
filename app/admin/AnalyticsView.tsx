@@ -362,7 +362,26 @@ export default function AnalyticsView() {
 
       {/* Top Pages */}
       <Section title="Top Pages" subtitle={`Top 15 by views · ${PERIODS.find((p) => p.id === period)?.label}`}>
-        <div className="overflow-x-auto">
+        {/* Mobile cards */}
+        <div className="md:hidden divide-y divide-white/5">
+          {loading ? (
+            <p className="px-4 py-6 text-gray-mid text-sm">Loading…</p>
+          ) : topPages.length === 0 ? (
+            <p className="px-4 py-6 text-gray-mid text-sm">No page views in this period yet.</p>
+          ) : (
+            topPages.map((p) => (
+              <div key={p.page} className="px-4 py-3">
+                <div className="text-cream font-mono text-xs break-all">{p.page}</div>
+                <div className="flex items-center justify-between mt-1 text-xs text-gray-mid">
+                  <span><span className="text-cream font-semibold">{p.views.toLocaleString()}</span> views · {p.pct.toFixed(1)}%</span>
+                  <span>{fmtSeconds(p.avgTime)}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-white/10">
@@ -440,7 +459,26 @@ export default function AnalyticsView() {
 
       {/* Key Events */}
       <Section title="Key Events" subtitle="Click & interaction events — what people are actually doing">
-        <div className="overflow-x-auto">
+        {/* Mobile cards */}
+        <div className="md:hidden divide-y divide-white/5">
+          {loading ? (
+            <p className="px-4 py-6 text-gray-mid text-sm">Loading…</p>
+          ) : eventCounts.length === 0 ? (
+            <p className="px-4 py-6 text-gray-mid text-sm">No events in this period yet.</p>
+          ) : (
+            eventCounts.map((e) => (
+              <div key={e.event_name} className="px-4 py-3 flex items-center justify-between gap-3">
+                <span className="text-cream font-mono text-xs break-all flex-1 min-w-0">{e.event_name}</span>
+                <div className="text-right flex-shrink-0">
+                  <div className="text-cream font-semibold text-sm">{e.count.toLocaleString()}</div>
+                  <div className="text-gray-mid text-[11px]">{e.allTime.toLocaleString()} all-time</div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm min-w-[520px]">
             <thead>
               <tr className="border-b border-white/10">
@@ -493,7 +531,36 @@ export default function AnalyticsView() {
 
       {/* Recent Activity */}
       <Section title="Recent Activity" subtitle="Last 50 page views (newest first)">
-        <div className="overflow-x-auto">
+        {/* Mobile cards */}
+        <div className="md:hidden divide-y divide-white/5">
+          {loading ? (
+            <p className="px-4 py-6 text-gray-mid text-sm">Loading…</p>
+          ) : recentActivity.length === 0 ? (
+            <p className="px-4 py-6 text-gray-mid text-sm">No page views yet.</p>
+          ) : (
+            recentActivity.map((v) => (
+              <div key={String(v.id)} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-cream font-mono text-xs break-all flex-1 min-w-0">{v.page ?? "—"}</span>
+                  <span className="text-[11px] text-white/30 whitespace-nowrap flex-shrink-0">{timeAgo(v.created_at)}</span>
+                </div>
+                <div className="text-[11px] text-gray-mid mt-1 flex flex-wrap gap-x-2">
+                  <span>{v.device ?? "—"}</span>
+                  <span>·</span>
+                  <span>{refSource(v.referrer)}</span>
+                  {v.duration != null && (
+                    <>
+                      <span>·</span>
+                      <span>{fmtSeconds(v.duration)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm min-w-[800px]">
             <thead>
               <tr className="border-b border-white/10">

@@ -49,6 +49,16 @@ export default function QuickAddModal({
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose, saving]);
 
+  // Lock body scroll while the modal is open so iOS Safari doesn't rubber-
+  // band the page behind the sheet.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
   // Fetch active projects once the modal opens.
   useEffect(() => {
     let cancelled = false;
@@ -102,16 +112,25 @@ export default function QuickAddModal({
     }
   }
 
+  // Mobile (≤ sm): the modal anchors to the bottom of the viewport as a
+  // sheet so the title stays visible above the iOS keyboard. Tablet+ keeps
+  // the centered card.
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:px-4"
       onClick={() => !saving && onClose()}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-card border border-white/10 bg-ink shadow-2xl"
+        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-card border border-white/10 bg-ink shadow-2xl max-h-[92vh] overflow-y-auto"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <form onSubmit={submit} className="p-6 space-y-4">
+        {/* Drag handle (visual cue on mobile) */}
+        <div className="sm:hidden flex justify-center pt-2.5 pb-1" aria-hidden>
+          <div className="w-10 h-1 rounded-full bg-white/15" />
+        </div>
+
+        <form onSubmit={submit} className="p-5 sm:p-6 space-y-4">
           <h2 className="text-lg font-display font-bold uppercase tracking-tight text-cream">
             Quick add task
           </h2>
@@ -124,7 +143,7 @@ export default function QuickAddModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="What needs to happen?"
               required
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream placeholder-gray-mid focus:outline-none focus:border-orange/50"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-cream placeholder-gray-mid focus:outline-none focus:border-orange/50 text-base sm:text-sm"
             />
           </Field>
 
@@ -133,7 +152,7 @@ export default function QuickAddModal({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as Category)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream focus:outline-none focus:border-orange/50"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-cream focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
@@ -146,7 +165,7 @@ export default function QuickAddModal({
               <select
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value as AdminUser | "")}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream focus:outline-none focus:border-orange/50"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-cream focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               >
                 <option value="">Unassigned</option>
                 <option value="remi">Remi</option>
@@ -161,14 +180,14 @@ export default function QuickAddModal({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream focus:outline-none focus:border-orange/50"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-cream focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               />
             </Field>
             <Field label="Project">
               <select
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream focus:outline-none focus:border-orange/50"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-cream focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               >
                 <option value="">None</option>
                 {projects.map((p) => (
@@ -181,21 +200,21 @@ export default function QuickAddModal({
           </div>
 
           <div className="flex items-center gap-5 text-sm text-cream/80 pt-1">
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex items-center gap-2 cursor-pointer py-1">
               <input
                 type="checkbox"
                 checked={pinToday}
                 onChange={(e) => setPinToday(e.target.checked)}
-                className="accent-orange"
+                className="accent-orange w-4 h-4"
               />
               Pin for today
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex items-center gap-2 cursor-pointer py-1">
               <input
                 type="checkbox"
                 checked={pinWeek}
                 onChange={(e) => setPinWeek(e.target.checked)}
-                className="accent-orange"
+                className="accent-orange w-4 h-4"
               />
               Pin for this week
             </label>
@@ -211,14 +230,14 @@ export default function QuickAddModal({
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="text-sm text-cream/70 hover:text-cream px-4 py-2"
+              className="text-sm text-cream/70 hover:text-cream px-4 py-2.5"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors"
+              className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
             >
               {saving ? "Adding…" : "Add task"}
             </button>

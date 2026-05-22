@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { FinCategory } from "@/lib/finance/types";
+import { loadHubSpotPledges } from "@/lib/finance/hubspot-pledges";
 import {
   CashFlowChart,
   CircleGauge,
@@ -93,6 +94,7 @@ export default async function FinanceDashboardPage() {
     pledgesRes,
     uncatRes,
     recentRes,
+    hubspotPledges,
   ] = await Promise.all([
     supabase
       .from("fin_categories")
@@ -131,6 +133,7 @@ export default async function FinanceDashboardPage() {
       .order("txn_date", { ascending: false })
       .order("id", { ascending: false })
       .limit(10),
+    loadHubSpotPledges(supabase, cfg.year),
   ]);
 
   const categories = (catsRes.data ?? []) as FinCategory[];
@@ -263,15 +266,30 @@ export default async function FinanceDashboardPage() {
     .sort((a, b) => b.value - a.value);
 
   // ── Pledges summary ────────────────────────────────────────────────────
-  const securedTotal = pledges
-    .filter((p) => p.status === "secured")
-    .reduce((s, p) => s + Number(p.amount), 0);
-  const receivedTotal = pledges
-    .filter((p) => p.status === "received")
-    .reduce((s, p) => s + Number(p.amount), 0);
-  const projectedWeighted = pledges
-    .filter((p) => p.status === "projected")
-    .reduce((s, p) => s + Number(p.amount) * (p.probability ?? 1), 0);
+  // Manual pledges (fin_revenue_commitments) PLUS HubSpot deals that map
+  // to a counted bucket. The HubSpot Sync button in the sidebar refreshes
+  // the underlying hs_deals table; this just sums what's there.
+  const securedTotal =
+    pledges
+      .filter((p) => p.status === "secured")
+      .reduce((s, p) => s + Number(p.amount), 0) +
+    hubspotPledges
+      .filter((p) => p.status === "secured")
+      .reduce((s, p) => s + p.amount, 0);
+  const receivedTotal =
+    pledges
+      .filter((p) => p.status === "received")
+      .reduce((s, p) => s + Number(p.amount), 0) +
+    hubspotPledges
+      .filter((p) => p.status === "received")
+      .reduce((s, p) => s + p.amount, 0);
+  const projectedWeighted =
+    pledges
+      .filter((p) => p.status === "projected")
+      .reduce((s, p) => s + Number(p.amount) * (p.probability ?? 1), 0) +
+    hubspotPledges
+      .filter((p) => p.status === "projected")
+      .reduce((s, p) => s + p.amount * p.probability, 0);
   const raisedHard = receivedTotal + securedTotal;
 
   // ── Budget vs actual (grouped) ──────────────────────────────────────────

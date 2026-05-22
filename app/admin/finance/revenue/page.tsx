@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { loadHubSpotPledges } from "@/lib/finance/hubspot-pledges";
 import PledgesEditor, { type Pledge } from "./_components/PledgesEditor";
 
 type SearchParams = { year?: string };
@@ -22,16 +23,19 @@ export default async function RevenuePage({
     Number.isFinite(requested) && requested >= 2000 && requested <= 2100 ? requested : configYear;
   const goal = Number(cfg?.fundraising_goal ?? 0);
 
-  const { data: pledgesRaw } = await supabase
-    .from("fin_revenue_commitments")
-    .select(
-      "id, year, source_type, source_name, amount, status, expected_date, probability, restricted, restricted_to, notes"
-    )
-    .eq("year", year)
-    .order("status", { ascending: true })
-    .order("amount", { ascending: false });
+  const [pledgesRes, hubspotPledges] = await Promise.all([
+    supabase
+      .from("fin_revenue_commitments")
+      .select(
+        "id, year, source_type, source_name, amount, status, expected_date, probability, restricted, restricted_to, notes"
+      )
+      .eq("year", year)
+      .order("status", { ascending: true })
+      .order("amount", { ascending: false }),
+    loadHubSpotPledges(supabase, year),
+  ]);
 
-  const pledges = (pledgesRaw ?? []).map((p) => ({
+  const pledges = (pledgesRes.data ?? []).map((p) => ({
     ...p,
     amount: Number(p.amount ?? 0),
     probability: p.probability === null ? null : Number(p.probability),
@@ -75,7 +79,12 @@ export default async function RevenuePage({
         </div>
       </header>
 
-      <PledgesEditor year={year} initialPledges={pledges} fundraisingGoal={goal} />
+      <PledgesEditor
+        year={year}
+        initialPledges={pledges}
+        fundraisingGoal={goal}
+        hubspotPledges={hubspotPledges}
+      />
     </div>
   );
 }

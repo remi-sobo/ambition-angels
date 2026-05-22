@@ -98,6 +98,28 @@ export default function RulesEditor({ initialRules, categories }: Props) {
     setBusy(false);
   }
 
+  // Seed defaults — inserts ~60 starter rules derived from real Wells
+  // Fargo descriptions on Ambition Angels' Checking.csv. Idempotent:
+  // skips patterns already present.
+  async function seedDefaults() {
+    setBusy(true);
+    setError(null);
+    setApplyResult(null);
+    const r = await fetch("/api/admin/finance/rules/seed", { method: "POST" });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      setError(j.error ?? "Seed failed");
+    } else {
+      setApplyResult(
+        j.inserted === 0
+          ? `Default rule set already seeded (${j.skipped} rules present).`
+          : `Seeded ${j.inserted} default rules (${j.skipped} already present). Click "Apply to uncategorized" to backfill.`
+      );
+      router.refresh();
+    }
+    setBusy(false);
+  }
+
   // Sort by priority desc for display; ties broken by created_at via the
   // initialRules ordering from the server.
   const sorted = [...rules].sort((a, b) => b.priority - a.priority);
@@ -164,23 +186,45 @@ export default function RulesEditor({ initialRules, categories }: Props) {
         {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
       </div>
 
-      {/* Apply CTA */}
-      <div className="rounded-card border border-white/10 bg-white/[0.02] p-4 flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <div className="text-sm text-cream font-medium">Re-apply rules</div>
-          <div className="text-xs text-gray-mid mt-0.5">
-            Runs the active rule list against every uncategorized transaction.
-            Already-categorized rows are untouched.
+      {/* Seed + Apply CTAs */}
+      <div className="rounded-card border border-white/10 bg-white/[0.02] p-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div className="text-sm text-cream font-medium">
+              Seed default rules
+            </div>
+            <div className="text-xs text-gray-mid mt-0.5">
+              ~60 starter rules derived from real Ambition Angels CSV
+              descriptions (Gusto, Paychex, Anthropic, OpenAI, Givebutter,
+              etc.). Skips patterns you already have.
+            </div>
           </div>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={seedDefaults}
+            className="px-3 py-1.5 rounded-lg bg-orange/20 hover:bg-orange/30 border border-orange/40 text-orange text-sm font-medium disabled:opacity-40"
+          >
+            {busy ? "Working…" : "Seed defaults"}
+          </button>
         </div>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={applyAll}
-          className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-cream text-sm disabled:opacity-40"
-        >
-          {busy ? "Working…" : "Apply to uncategorized"}
-        </button>
+        <div className="flex items-center justify-between flex-wrap gap-3 pt-3 border-t border-white/5">
+          <div>
+            <div className="text-sm text-cream font-medium">Re-apply rules</div>
+            <div className="text-xs text-gray-mid mt-0.5">
+              Runs the active rule list against every uncategorized transaction.
+              Already-categorized rows are untouched.
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={applyAll}
+            className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-cream text-sm disabled:opacity-40"
+          >
+            {busy ? "Working…" : "Apply to uncategorized"}
+          </button>
+        </div>
       </div>
       {applyResult && (
         <div className="rounded-card border border-emerald-400/40 bg-emerald-500/10 p-3 text-sm text-emerald-100">

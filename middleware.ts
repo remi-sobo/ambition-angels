@@ -13,12 +13,33 @@ import type { NextRequest } from "next/server";
  * Auth model mirrors lib/admin/auth.ts: the cookie value must match one of
  * ADMIN_PASSWORD_REMI, ADMIN_PASSWORD_SHANNON, or the legacy ADMIN_PASSWORD.
  */
+// Public assets under /admin that the browser must be able to fetch
+// without an auth cookie:
+//   - manifest.webmanifest: referenced from <head> on the login page so
+//     iOS / Android can recognize the section as a PWA before sign-in.
+//   - icon-*.png, apple-touch-icon.png, favicon-*.png: PWA app icons.
+// They live in /app/admin/manifest.ts and /public/admin/, respectively.
+const PUBLIC_ADMIN_PATHS = new Set([
+  "/admin/manifest.webmanifest",
+  "/admin/apple-touch-icon.png",
+  "/admin/icon-192.png",
+  "/admin/icon-512.png",
+  "/admin/icon-192-maskable.png",
+  "/admin/icon-512-maskable.png",
+  "/admin/favicon-32.png",
+]);
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Matcher already scopes us to /admin/*, but be explicit: only gate the
   // nested routes; /admin handles its own login UI.
   if (pathname === "/admin") {
+    return NextResponse.next();
+  }
+
+  // PWA install assets must be reachable pre-auth.
+  if (PUBLIC_ADMIN_PATHS.has(pathname)) {
     return NextResponse.next();
   }
 

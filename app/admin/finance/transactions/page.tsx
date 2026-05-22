@@ -112,7 +112,7 @@ export default async function TransactionsPage({
     .is("category_id", null);
 
   return (
-    <div className="max-w-7xl mx-auto p-8">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
       <header className="flex items-baseline justify-between gap-4 mb-6 flex-wrap">
         <div>
           <div className="flex items-center gap-3 text-xs text-gray-mid mb-1">

@@ -453,7 +453,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-ink">
 
       {/* ── HEADER ── */}
-      <div className="bg-[#13151f] border-b border-white/10 px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex items-center justify-between gap-3 sticky top-14 lg:top-0 z-30 flex-wrap">
+      <div className="bg-[#13151f] border-b border-white/10 px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex items-center justify-between gap-3 sticky admin-sticky-top z-30 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
           <span className="font-heading font-bold text-cream text-sm sm:text-base">Admin Dashboard</span>
           {lastUpdated && (

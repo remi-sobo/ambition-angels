@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import Sidebar from "./_components/Sidebar";
 import QuickAddButton from "./_components/QuickAddButton";
+import AdminPWA from "./_components/AdminPWA";
 import type { AdminUser } from "@/lib/admin/auth";
 
 /**
@@ -34,6 +36,40 @@ function readAdminAuth(): { authed: boolean; user: AdminUser | null } {
   return { authed: true, user: "remi" };
 }
 
+export const metadata: Metadata = {
+  title: {
+    default: "AA Admin",
+    template: "%s · AA Admin",
+  },
+  description: "Ambition Angels operating system.",
+  manifest: "/admin/manifest.webmanifest",
+  applicationName: "AA Admin",
+  appleWebApp: {
+    capable: true,
+    title: "AA Admin",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: [
+      { url: "/admin/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/admin/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/admin/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  // The marketing site sets its own indexable metadata at the root layout;
+  // the admin section should never appear in search results.
+  robots: { index: false, follow: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0E0E0E",
+  width: "device-width",
+  initialScale: 1,
+  // viewport-fit=cover lets us reach into the iOS safe-area insets so the
+  // dark shell paints behind the home indicator / notch when installed.
+  viewportFit: "cover",
+};
+
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { authed, user } = readAdminAuth();
 
@@ -46,9 +82,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   // The floating QuickAddButton is still gated on authed since its
   // actions all require a valid session.
   return (
-    <div className="min-h-screen flex bg-ink text-cream">
+    <div className="admin-shell min-h-screen lg:flex bg-ink text-cream">
+      <AdminPWA />
       <Sidebar currentUser={user} />
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      <main className="admin-main flex-1 min-w-0 overflow-y-auto">{children}</main>
       {authed && <QuickAddButton currentUser={user} />}
     </div>
   );

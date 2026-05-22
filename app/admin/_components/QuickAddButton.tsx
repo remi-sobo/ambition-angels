@@ -21,7 +21,13 @@ export default function QuickAddButton({
       <button
         onClick={() => setOpen(true)}
         aria-label="Quick-add task"
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-orange hover:bg-orange-dark text-white shadow-2xl shadow-orange/30 flex items-center justify-center text-3xl font-light transition-colors"
+        className="fixed z-40 w-14 h-14 rounded-full bg-orange hover:bg-orange-dark text-white shadow-2xl shadow-orange/30 flex items-center justify-center text-3xl font-light transition-colors active:scale-95"
+        style={{
+          // Lift the FAB above the iOS home indicator when installed as a
+          // PWA, and keep a sensible offset on regular browsers.
+          right: "max(1.5rem, env(safe-area-inset-right))",
+          bottom: "max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem))",
+        }}
       >
         +
       </button>

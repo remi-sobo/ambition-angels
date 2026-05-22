@@ -192,13 +192,34 @@
 
 .admin-main {
   /* Reserve room for the fixed mobile top bar (3.5rem tall) plus the
-     iOS notch. Cleared on lg+ where the sidebar lives inline. */
+     iOS notch. Cleared on lg+ where the sidebar lives inline; the
+     shell-level inset (below) handles the status bar there. */
   padding-top: calc(3.5rem + env(safe-area-inset-top));
 }
 
 @media (min-width: 1024px) {
+  .admin-shell {
+    /* Push both sidebar and main column below the iOS status bar in
+       PWA standalone mode. The extra 0.5rem buys a little breathing
+       room so the AA Admin header isn't flush against the clock. */
+    padding-top: calc(env(safe-area-inset-top) + 0.5rem);
+  }
+
   .admin-main {
     padding-top: 0;
+  }
+}
+
+/* Sticky page headers (Finance sub-nav, Dashboard top bar) sit just
+   below the mobile top bar on phones (whose height includes the notch
+   inset) and just below the iOS status bar on iPad PWA. */
+.admin-sticky-top {
+  top: calc(3.5rem + env(safe-area-inset-top));
+}
+
+@media (min-width: 1024px) {
+  .admin-sticky-top {
+    top: calc(env(safe-area-inset-top) + 0.5rem);
   }
 }
 

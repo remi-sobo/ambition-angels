@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { YgbCrown } from "@/app/ygb/YgbLogo";
 
-// ─── CONFIG ───────────────────────────────────────────────────────────────────
-const SUPABASE_URL = "https://kzzdtibbwsucloaoqpqa.supabase.co";
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const CAPACITY = 20;
 
 const CAMP_DAYS = [
   { date: "2025-08-03", label: "Mon Aug 3" },
@@ -14,28 +13,12 @@ const CAMP_DAYS = [
   { date: "2025-08-07", label: "Fri Aug 7" },
 ];
 
-// ─── SUPABASE ────────────────────────────────────────────────────────────────
-const sbFetch = async (path) => {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-  });
-  return res.json();
-};
-
-const sbUpsert = async (table, body) => {
-  await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      Prefer: "resolution=merge-duplicates,return=minimal",
-    },
-    body: JSON.stringify(body),
-  });
+// ─── COLORS ───────────────────────────────────────────────────────────────────
+const C = {
+  bg:     "#080808", panel: "#111", card:"#161616",
+  border: "#222",    gold:  "#FFD700", goldDim:"#7A5800",
+  white:  "#F0EAD6", muted: "#666",   green:"#22c55e",
+  red:    "#ef4444",
 };
 
 // ─── CSV EXPORT ───────────────────────────────────────────────────────────────
@@ -52,7 +35,9 @@ function exportCSV(rows) {
   const lines = rows.map(r =>
     cols.map(c => {
       const v = r[c] ?? "";
-      return typeof v === "string" && v.includes(",") ? `"${v}"` : v;
+      return typeof v === "string" && (v.includes(",") || v.includes('"'))
+        ? `"${v.replace(/"/g, '""')}"`
+        : v;
     }).join(",")
   );
   const csv = [header, ...lines].join("\n");
@@ -62,14 +47,6 @@ function exportCSV(rows) {
   a.download = `ygb-registrations-${new Date().toISOString().slice(0,10)}.csv`;
   a.click(); URL.revokeObjectURL(url);
 }
-
-// ─── COLORS ───────────────────────────────────────────────────────────────────
-const C = {
-  bg:     "#080808", panel: "#111", card:"#161616",
-  border: "#222",    gold:  "#FFD700", goldDim:"#7A5800",
-  white:  "#F0EAD6", muted: "#666",   green:"#22c55e",
-  red:    "#ef4444",
-};
 
 // ─── SHARED UI ────────────────────────────────────────────────────────────────
 const Tab = ({ label, active, count, onClick }) => (
@@ -102,6 +79,8 @@ function RosterTab({ regs }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
 
+  const confirmed = regs.filter(r => r.status === "confirmed").length;
+
   const filtered = regs.filter(r => {
     const q = search.toLowerCase();
     return !q || r.camper_first_name?.toLowerCase().includes(q) ||
@@ -125,15 +104,15 @@ function RosterTab({ regs }) {
           EXPORT CSV
         </button>
         <span style={{ fontFamily:"'Barlow',sans-serif", fontSize:13, color:C.muted }}>
-          {regs.length} / 20 registered
+          {confirmed} / {CAPACITY} confirmed · {regs.length} total
         </span>
       </div>
 
       {/* Capacity bar */}
       <div style={{ marginBottom:24 }}>
         <div style={{ height:6, background:"#222", borderRadius:0 }}>
-          <div style={{ height:6, width:`${Math.min(100,(regs.length/20)*100)}%`,
-            background: regs.length >= 20 ? C.red : C.gold, transition:"width 0.4s" }} />
+          <div style={{ height:6, width:`${Math.min(100,(confirmed/CAPACITY)*100)}%`,
+            background: confirmed >= CAPACITY ? C.red : C.gold, transition:"width 0.4s" }} />
         </div>
       </div>
 
@@ -192,7 +171,7 @@ function RosterTab({ regs }) {
       {selected && (
         <div style={{ position:"fixed", inset:0, background:"#000a", zIndex:100, display:"flex", justifyContent:"flex-end" }}
           onClick={() => setSelected(null)}>
-          <div style={{ width:420, background:C.panel, overflowY:"auto", padding:32, borderLeft:`2px solid ${C.gold}` }}
+          <div style={{ width:420, maxWidth:"100%", background:C.panel, overflowY:"auto", padding:32, borderLeft:`2px solid ${C.gold}` }}
             onClick={e => e.stopPropagation()}>
             <button onClick={() => setSelected(null)} style={{ background:"none", border:"none", color:C.muted,
               fontFamily:"'Bebas Neue',sans-serif", fontSize:14, cursor:"pointer", letterSpacing:"0.2em", marginBottom:20 }}>
@@ -240,27 +219,35 @@ function AttendanceTab({ regs }) {
   const [saving, setSaving] = useState(null);
 
   useEffect(() => {
-    sbFetch(`ygb_attendance?attendance_date=eq.${day}&select=registration_id,checked_in`)
-      .then(rows => {
+    let active = true;
+    fetch(`/api/admin/ygb/attendance?date=${day}`)
+      .then(r => (r.ok ? r.json() : { attendance: [] }))
+      .then(d => {
+        if (!active) return;
         const map = {};
-        (rows||[]).forEach(r => { map[r.registration_id] = r.checked_in; });
+        (d.attendance || []).forEach(r => { map[r.registration_id] = r.checked_in; });
         setAttendance(map);
-      });
+      })
+      .catch(() => { if (active) setAttendance({}); });
+    return () => { active = false; };
   }, [day]);
 
   const toggle = async (regId) => {
     const now = !attendance[regId];
     setSaving(regId);
     setAttendance(p => ({ ...p, [regId]: now }));
-    await sbUpsert("ygb_attendance", {
-      registration_id: regId,
-      attendance_date: day,
-      checked_in: now,
-      check_in_time: now ? new Date().toISOString() : null,
-    });
-    setSaving(null);
+    try {
+      await fetch("/api/admin/ygb/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ registration_id: regId, attendance_date: day, checked_in: now }),
+      });
+    } finally {
+      setSaving(null);
+    }
   };
 
+  const confirmedRegs = regs.filter(r => r.status === "confirmed");
   const present = Object.values(attendance).filter(Boolean).length;
 
   return (
@@ -279,15 +266,15 @@ function AttendanceTab({ regs }) {
       </div>
 
       {/* Summary */}
-      <div style={{ display:"flex", gap:16, marginBottom:24 }}>
+      <div style={{ display:"flex", gap:16, marginBottom:24, flexWrap:"wrap" }}>
         <StatBox label="Present" val={present} color={C.green} />
-        <StatBox label="Absent"  val={regs.filter(r=>r.status==="confirmed").length - present} color={C.red} />
-        <StatBox label="Total"   val={regs.filter(r=>r.status==="confirmed").length} color={C.gold} />
+        <StatBox label="Absent"  val={Math.max(0, confirmedRegs.length - present)} color={C.red} />
+        <StatBox label="Total"   val={confirmedRegs.length} color={C.gold} />
       </div>
 
       {/* Roll call */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:10 }}>
-        {regs.filter(r => r.status==="confirmed").map(r => {
+        {confirmedRegs.map(r => {
           const checked = !!attendance[r.id];
           return (
             <div key={r.id} onClick={() => toggle(r.id)} style={{
@@ -309,6 +296,9 @@ function AttendanceTab({ regs }) {
             </div>
           );
         })}
+        {confirmedRegs.length === 0 && (
+          <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:14, color:C.muted }}>No confirmed campers yet.</p>
+        )}
       </div>
     </div>
   );
@@ -321,36 +311,38 @@ function ShowcaseTab({ regs }) {
 
   return (
     <div>
-      <div style={{ display:"flex", gap:16, marginBottom:28 }}>
+      <div style={{ display:"flex", gap:16, marginBottom:28, flexWrap:"wrap" }}>
         <StatBox label="Families RSVPd" val={rsvpd.length} color={C.gold} />
         <StatBox label="Total Guests"   val={totalGuests} color={C.green} />
         <StatBox label="Not RSVPd Yet"  val={regs.length - rsvpd.length} color={C.muted} />
       </div>
 
-      <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:"'Barlow',sans-serif", fontSize:14 }}>
-        <thead>
-          <tr style={{ borderBottom:`2px solid ${C.gold}` }}>
-            {["Camper","Parent","Email","Guests"].map(h => (
-              <th key={h} style={{ padding:"10px 12px", textAlign:"left", fontFamily:"'Bebas Neue',sans-serif",
-                fontSize:11, letterSpacing:"0.2em", color:C.gold }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {regs.map((r,i) => (
-            <tr key={r.id} style={{ background:i%2===0?C.panel:C.card, borderBottom:`1px solid ${C.border}` }}>
-              <td style={{ padding:"12px", color:C.white }}>{r.camper_first_name} {r.camper_last_name}</td>
-              <td style={{ padding:"12px", color:C.muted }}>{r.parent_first_name} {r.parent_last_name}</td>
-              <td style={{ padding:"12px", color:C.muted, fontSize:12 }}>{r.parent_email}</td>
-              <td style={{ padding:"12px", textAlign:"center" }}>
-                {r.showcase_attending
-                  ? <Badge text={`${r.showcase_guest_count} guests`} color={C.green} />
-                  : <span style={{ color:"#333", fontFamily:"'Bebas Neue',sans-serif", fontSize:11 }}>NOT RSVPd</span>}
-              </td>
+      <div style={{ overflowX:"auto" }}>
+        <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:"'Barlow',sans-serif", fontSize:14 }}>
+          <thead>
+            <tr style={{ borderBottom:`2px solid ${C.gold}` }}>
+              {["Camper","Parent","Email","Guests"].map(h => (
+                <th key={h} style={{ padding:"10px 12px", textAlign:"left", fontFamily:"'Bebas Neue',sans-serif",
+                  fontSize:11, letterSpacing:"0.2em", color:C.gold }}>{h}</th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {regs.map((r,i) => (
+              <tr key={r.id} style={{ background:i%2===0?C.panel:C.card, borderBottom:`1px solid ${C.border}` }}>
+                <td style={{ padding:"12px", color:C.white }}>{r.camper_first_name} {r.camper_last_name}</td>
+                <td style={{ padding:"12px", color:C.muted }}>{r.parent_first_name} {r.parent_last_name}</td>
+                <td style={{ padding:"12px", color:C.muted, fontSize:12 }}>{r.parent_email}</td>
+                <td style={{ padding:"12px", textAlign:"center" }}>
+                  {r.showcase_attending
+                    ? <Badge text={`${r.showcase_guest_count} guests`} color={C.green} />
+                    : <span style={{ color:"#333", fontFamily:"'Bebas Neue',sans-serif", fontSize:11 }}>NOT RSVPd</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -409,33 +401,41 @@ export default function YGBAdmin() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    sbFetch("ygb_registrations?select=*&order=created_at.asc")
-      .then(data => { setRegs(Array.isArray(data) ? data : []); setLoading(false); })
+    fetch("/api/admin/ygb/registrations")
+      .then(r => (r.ok ? r.json() : { registrations: [] }))
+      .then(d => { setRegs(Array.isArray(d.registrations) ? d.registrations : []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
+
+  const confirmed = regs.filter(r => r.status === "confirmed").length;
+  const waitlisted = regs.filter(r => r.status === "waitlisted").length;
 
   return (
     <div style={{ background:C.bg, minHeight:"100vh", color:C.white, fontFamily:"'Barlow',sans-serif" }}>
       {/* Header */}
       <div style={{ background:C.panel, borderBottom:`2px solid ${C.gold}`, padding:"20px 32px",
         display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
-        <div>
-          <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(24px,5vw,40px)",
-            color:C.gold, margin:0, letterSpacing:"0.05em" }}>
-            YGB CREATORS CAMP
-          </h1>
-          <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:12, letterSpacing:"0.3em",
-            color:C.muted, margin:0 }}>ADMIN DASHBOARD · AUGUST 3–7, 2025</p>
+        <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+          <YgbCrown size={46} color={C.gold} />
+          <div>
+            <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(24px,5vw,40px)",
+              color:C.gold, margin:0, letterSpacing:"0.05em" }}>
+              YGB CREATORS CAMP
+            </h1>
+            <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:12, letterSpacing:"0.3em",
+              color:C.muted, margin:0 }}>ADMIN DASHBOARD · AUGUST 3–7, 2025</p>
+          </div>
         </div>
         <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-          <StatBox label="Registered" val={regs.length} color={C.gold} />
-          <StatBox label="Spots Left" val={Math.max(0,20-regs.length)} color={regs.length>=20?C.red:C.green} />
+          <StatBox label="Confirmed" val={`${confirmed}/${CAPACITY}`} color={confirmed>=CAPACITY?C.red:C.gold} />
+          <StatBox label="Waitlisted" val={waitlisted} color={waitlisted>0?C.red:C.muted} />
+          <StatBox label="Total" val={regs.length} color={C.white} />
           <StatBox label="Showcase RSVPs" val={regs.filter(r=>r.showcase_attending).length} color={C.green} />
         </div>
       </div>
 
       {/* Tabs */}
-      <div style={{ background:C.panel, display:"flex", borderBottom:`1px solid ${C.border}`, padding:"0 32px" }}>
+      <div style={{ background:C.panel, display:"flex", borderBottom:`1px solid ${C.border}`, padding:"0 32px", flexWrap:"wrap" }}>
         {TABS.map(t => (
           <Tab key={t} label={t} active={tab===t} onClick={() => setTab(t)} />
         ))}

@@ -1,10 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-
-// ─── CONFIG ────────────────────────────────────────────────────────────────
-const SUPABASE_URL = "https://kzzdtibbwsucloaoqpqa.supabase.co";
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+import YgbLogo, { YgbCrown } from "./YgbLogo";
 
 // ─── COLORS ─────────────────────────────────────────────────────────────────
 const C = {
@@ -16,21 +13,6 @@ const C = {
   goldDeep: "#7A5800",
   white:    "#F0EAD6",
   muted:    "#888",
-};
-
-// ─── SUPABASE HELPERS ────────────────────────────────────────────────────────
-const supabase = async (path, method = "GET", body = null) => {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      Prefer: "return=minimal",
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  return res.ok;
 };
 
 // ─── FONT LOADER ─────────────────────────────────────────────────────────────
@@ -101,9 +83,11 @@ function Hero({ onRegister }) {
       <div style={{ position:"absolute", top:0, left:0, right:0 }}><KenteDivider /></div>
 
       <div style={t}>
-        <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(12px,3vw,16px)", letterSpacing:"0.45em", color:C.goldMid, margin:"0 0 8px" }}>
+        <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(12px,3vw,16px)", letterSpacing:"0.45em", color:C.goldMid, margin:"0 0 14px" }}>
           EAST PALO ALTO PRESENTS
         </p>
+
+        <YgbCrown size={130} color={C.gold} style={{ filter:`drop-shadow(0 0 22px ${C.gold}55)`, marginBottom: -8 }} />
 
         <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,20vw,200px)", lineHeight:0.88, color:C.gold,
           textShadow:`0 0 50px ${C.gold}44, 0 0 100px ${C.gold}18`, letterSpacing:"0.02em", margin:0 }}>
@@ -288,8 +272,14 @@ function Partnership() {
   );
 }
 
-// ─── REGISTRATION FORM ───────────────────────────────────────────────────────
-const STEPS = ["Parent Info","Camper Info","Emergency + Health","Waivers"];
+// ─── FORM PRIMITIVES ─────────────────────────────────────────────────────────
+const STEPS = ["Parent Info", "Campers", "Emergency Contact", "Waivers"];
+const GRADES = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th"];
+const TSHIRT_SIZES = [
+  "Youth XS (2–4)", "Youth S (6–8)", "Youth M (10–12)", "Youth L (14–16)",
+  "Youth XL (18–20)", "Adult S", "Adult M", "Adult L",
+];
+const MAX_CAMPERS = 4;
 
 const iStyle = {
   width:"100%", boxSizing:"border-box",
@@ -353,31 +343,47 @@ function WaiverBlock({ field, form, setForm, label, text }) {
   );
 }
 
+// ─── REGISTRATION FORM ───────────────────────────────────────────────────────
+const emptyCamper = () => ({
+  camper_first_name:"", camper_last_name:"", camper_dob:"",
+  camper_grade:"", camper_tshirt_size:"", allergies_medical:"", special_accommodations:"",
+});
+
 function RegistrationForm({ earlyAccess }) {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState("");
+  const [results, setResults] = useState([]);
 
-  const empty = { parent_first_name:"",parent_last_name:"",parent_email:"",parent_phone:"",
-    secondary_contact_name:"",secondary_contact_phone:"",secondary_contact_relationship:"",
-    camper_first_name:"",camper_last_name:"",camper_dob:"",camper_grade:"",camper_tshirt_size:"",
-    emergency_contact_name:"",emergency_contact_phone:"",emergency_contact_relationship:"",
-    allergies_medical:"",special_accommodations:"",
-    liability_waiver_signed:false,photo_video_release_signed:false,medical_consent_signed:false,
-    returning_family:!!earlyAccess, early_access:!!earlyAccess };
+  const [shared, setShared] = useState({
+    parent_first_name:"", parent_last_name:"", parent_email:"", parent_phone:"",
+    secondary_contact_name:"", secondary_contact_phone:"", secondary_contact_relationship:"",
+    emergency_contact_name:"", emergency_contact_phone:"", emergency_contact_relationship:"",
+    liability_waiver_signed:false, photo_video_release_signed:false, medical_consent_signed:false,
+    returning_family:!!earlyAccess, early_access:!!earlyAccess,
+  });
+  const [campers, setCampers] = useState([emptyCamper()]);
 
-  const [form, setForm] = useState(empty);
-  const set = f => e => setForm(p => ({ ...p, [f]: e.target.value }));
+  const setS = f => e => setShared(p => ({ ...p, [f]: e.target.value }));
+  const updateCamper = (i, f) => e =>
+    setCampers(p => p.map((c, idx) => (idx === i ? { ...c, [f]: e.target.value } : c)));
+  const addCamper = () => setCampers(p => (p.length < MAX_CAMPERS ? [...p, emptyCamper()] : p));
+  const removeCamper = i => setCampers(p => (p.length > 1 ? p.filter((_, idx) => idx !== i) : p));
 
   const validate = () => {
-    if (step===0 && (!form.parent_first_name||!form.parent_last_name||!form.parent_email||!form.parent_phone))
-      return "Please fill in all required fields.";
-    if (step===1 && (!form.camper_first_name||!form.camper_last_name||!form.camper_dob||!form.camper_grade||!form.camper_tshirt_size))
-      return "Please fill in all required camper fields.";
-    if (step===2 && (!form.emergency_contact_name||!form.emergency_contact_phone||!form.emergency_contact_relationship))
+    if (step===0 && (!shared.parent_first_name||!shared.parent_last_name||!shared.parent_email||!shared.parent_phone))
+      return "Please fill in all required parent fields.";
+    if (step===1) {
+      for (let i=0;i<campers.length;i++) {
+        const c = campers[i];
+        if (!c.camper_first_name||!c.camper_last_name||!c.camper_dob||!c.camper_grade||!c.camper_tshirt_size)
+          return `Please complete all required fields for Camper ${i+1}.`;
+      }
+    }
+    if (step===2 && (!shared.emergency_contact_name||!shared.emergency_contact_phone||!shared.emergency_contact_relationship))
       return "Please complete the emergency contact section.";
-    if (step===3 && (!form.liability_waiver_signed||!form.photo_video_release_signed||!form.medical_consent_signed))
+    if (step===3 && (!shared.liability_waiver_signed||!shared.photo_video_release_signed||!shared.medical_consent_signed))
       return "You must agree to all three waivers.";
     return "";
   };
@@ -388,26 +394,54 @@ function RegistrationForm({ earlyAccess }) {
     setErr("");
     if (step < 3) { setStep(s => s+1); return; }
     setLoading(true);
-    const dob = new Date(form.camper_dob);
-    const age = new Date().getFullYear() - dob.getFullYear();
-    const ok = await supabase("ygb_registrations", "POST", { ...form, camper_age: age });
-    setLoading(false);
-    if (ok) setDone(true);
-    else setErr("Something went wrong — please try again or email us directly.");
+    try {
+      const res = await fetch("/api/ygb/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...shared, campers }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setLoading(false);
+      if (res.ok) { setResults(data.results || []); setDone(true); }
+      else setErr(data.error || "Something went wrong — please try again or email us directly.");
+    } catch {
+      setLoading(false);
+      setErr("Something went wrong — please try again or email us directly.");
+    }
   };
 
-  if (done) return (
-    <div style={{ textAlign:"center", padding:"48px 0" }}>
-      <div style={{ fontSize:64, marginBottom:20 }}>🎉</div>
-      <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(36px,8vw,64px)", color:C.gold, letterSpacing:"0.05em", margin:"0 0 12px" }}>YOU&apos;RE IN!</h3>
-      <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:18, color:C.white, marginBottom:8 }}>
-        {form.camper_first_name} is registered for YGB Creators Camp 2025.
-      </p>
-      <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:14, color:C.muted }}>
-        Confirmation sent to {form.parent_email}.
-      </p>
-    </div>
-  );
+  if (done) {
+    const allConfirmed = results.every(r => r.status === "confirmed");
+    const plural = results.length > 1;
+    return (
+      <div style={{ textAlign:"center", padding:"48px 0" }}>
+        <div style={{ fontSize:64, marginBottom:20 }}>{allConfirmed ? "🎉" : "🙌"}</div>
+        <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(36px,8vw,64px)", color:C.gold, letterSpacing:"0.05em", margin:"0 0 18px" }}>
+          {allConfirmed ? (plural ? "THEY'RE IN!" : "YOU'RE IN!") : "YOU'RE REGISTERED!"}
+        </h3>
+        <div style={{ maxWidth:420, margin:"0 auto 20px" }}>
+          {results.map((r,i) => (
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+              borderBottom:`1px solid #1e1e1e`, padding:"12px 0" }}>
+              <span style={{ fontFamily:"'Barlow',sans-serif", fontSize:17, color:C.white }}>{r.name}</span>
+              <span style={{ fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.12em", fontSize:14,
+                color: r.status === "confirmed" ? C.gold : "#bbb" }}>
+                {r.status === "confirmed" ? "✓ CONFIRMED" : "WAITLISTED"}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:16, color:C.white, marginBottom:8 }}>
+          {allConfirmed
+            ? `Registered for YGB Creators Camp 2025.`
+            : `The camp is filling up — any waitlisted campers will be contacted the moment a spot opens.`}
+        </p>
+        <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:14, color:C.muted }}>
+          We&apos;ll follow up at {shared.parent_email}.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -423,85 +457,112 @@ function RegistrationForm({ earlyAccess }) {
         STEP {step+1} OF 4 — {STEPS[step].toUpperCase()}
       </p>
 
-      {/* Step 0 */}
+      {/* Step 0 — Parent */}
       {step===0 && <div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-          <Field label="Parent First Name" req><Input value={form.parent_first_name} onChange={set("parent_first_name")} /></Field>
-          <Field label="Parent Last Name"  req><Input value={form.parent_last_name}  onChange={set("parent_last_name")} /></Field>
+          <Field label="Parent First Name" req><Input value={shared.parent_first_name} onChange={setS("parent_first_name")} /></Field>
+          <Field label="Parent Last Name"  req><Input value={shared.parent_last_name}  onChange={setS("parent_last_name")} /></Field>
         </div>
-        <Field label="Email Address" req><Input type="email" value={form.parent_email} onChange={set("parent_email")} placeholder="you@email.com" /></Field>
-        <Field label="Phone Number"  req><Input type="tel"   value={form.parent_phone} onChange={set("parent_phone")} placeholder="(650) 555-0000" /></Field>
+        <Field label="Email Address" req><Input type="email" value={shared.parent_email} onChange={setS("parent_email")} placeholder="you@email.com" /></Field>
+        <Field label="Phone Number"  req><Input type="tel"   value={shared.parent_phone} onChange={setS("parent_phone")} placeholder="(650) 555-0000" /></Field>
         <div style={{ borderTop:`1px solid #1e1e1e`, paddingTop:24, marginBottom:8 }}>
           <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:12, letterSpacing:"0.3em", color:"#444", margin:"0 0 16px" }}>SECONDARY CONTACT (OPTIONAL)</p>
-          <Field label="Name"><Input value={form.secondary_contact_name} onChange={set("secondary_contact_name")} /></Field>
+          <Field label="Name"><Input value={shared.secondary_contact_name} onChange={setS("secondary_contact_name")} /></Field>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-            <Field label="Phone"><Input type="tel" value={form.secondary_contact_phone} onChange={set("secondary_contact_phone")} /></Field>
-            <Field label="Relationship"><Input value={form.secondary_contact_relationship} onChange={set("secondary_contact_relationship")} placeholder="Grandparent, Aunt..." /></Field>
+            <Field label="Phone"><Input type="tel" value={shared.secondary_contact_phone} onChange={setS("secondary_contact_phone")} /></Field>
+            <Field label="Relationship"><Input value={shared.secondary_contact_relationship} onChange={setS("secondary_contact_relationship")} placeholder="Grandparent, Aunt..." /></Field>
           </div>
         </div>
         <label style={{ display:"flex", gap:12, alignItems:"center", cursor:"pointer" }}>
-          <input type="checkbox" checked={form.returning_family} onChange={e => setForm(p=>({...p,returning_family:e.target.checked}))}
+          <input type="checkbox" checked={shared.returning_family} onChange={e => setShared(p=>({...p,returning_family:e.target.checked}))}
             style={{ accentColor:C.gold, width:18, height:18 }} />
           <span style={{ fontFamily:"'Barlow',sans-serif", fontSize:15, color:"#aaa" }}>We are a returning YGB family</span>
         </label>
       </div>}
 
-      {/* Step 1 */}
+      {/* Step 1 — Campers (one or more) */}
       {step===1 && <div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-          <Field label="Camper First Name" req><Input value={form.camper_first_name} onChange={set("camper_first_name")} /></Field>
-          <Field label="Camper Last Name"  req><Input value={form.camper_last_name}  onChange={set("camper_last_name")} /></Field>
-        </div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-          <Field label="Date of Birth" req><Input type="date" value={form.camper_dob} onChange={set("camper_dob")} /></Field>
-          <Field label="Grade (Fall 2025)" req>
-            <Select value={form.camper_grade} onChange={set("camper_grade")}>
-              <option value="">Select grade</option>
-              {["1st","2nd","3rd","4th","5th","6th","7th"].map(g => <option key={g} value={g}>{g} Grade</option>)}
-            </Select>
-          </Field>
-        </div>
-        <Field label="T-Shirt Size" req>
-          <Select value={form.camper_tshirt_size} onChange={set("camper_tshirt_size")}>
-            <option value="">Select size</option>
-            {["Youth XS (2–4)","Youth S (6–8)","Youth M (10–12)","Youth L (14–16)","Youth XL (18–20)","Adult S","Adult M","Adult L"].map(s => <option key={s} value={s}>{s}</option>)}
-          </Select>
-        </Field>
+        <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:14, color:C.muted, margin:"0 0 24px", lineHeight:1.6 }}>
+          Registering more than one child? Add each of them here — you only fill out the parent, emergency, and waiver sections once.
+        </p>
+        {campers.map((c,i) => (
+          <div key={i} style={{ marginBottom:24,
+            paddingBottom: i < campers.length-1 ? 24 : 0,
+            borderBottom: i < campers.length-1 ? `1px solid #1e1e1e` : "none" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+              <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:14, letterSpacing:"0.3em", color:C.gold, margin:0 }}>
+                CAMPER {i+1}
+              </p>
+              {campers.length > 1 && (
+                <button onClick={() => removeCamper(i)} style={{ background:"none", border:"none", color:C.muted,
+                  fontFamily:"'Bebas Neue',sans-serif", fontSize:12, letterSpacing:"0.15em", cursor:"pointer" }}>
+                  ✕ REMOVE
+                </button>
+              )}
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+              <Field label="Camper First Name" req><Input value={c.camper_first_name} onChange={updateCamper(i,"camper_first_name")} /></Field>
+              <Field label="Camper Last Name"  req><Input value={c.camper_last_name}  onChange={updateCamper(i,"camper_last_name")} /></Field>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+              <Field label="Date of Birth" req><Input type="date" value={c.camper_dob} onChange={updateCamper(i,"camper_dob")} /></Field>
+              <Field label="Grade (Fall 2025)" req>
+                <Select value={c.camper_grade} onChange={updateCamper(i,"camper_grade")}>
+                  <option value="">Select grade</option>
+                  {GRADES.map(g => <option key={g} value={g}>{g} Grade</option>)}
+                </Select>
+              </Field>
+            </div>
+            <Field label="T-Shirt Size" req>
+              <Select value={c.camper_tshirt_size} onChange={updateCamper(i,"camper_tshirt_size")}>
+                <option value="">Select size</option>
+                {TSHIRT_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+              </Select>
+            </Field>
+            <Field label="Allergies or Medical Conditions">
+              <Textarea value={c.allergies_medical} onChange={updateCamper(i,"allergies_medical")} placeholder="List any allergies, medications, or conditions staff should know about. Leave blank if none." rows={2} />
+            </Field>
+            <Field label="Special Accommodations or Notes">
+              <Textarea value={c.special_accommodations} onChange={updateCamper(i,"special_accommodations")} placeholder="Anything else we should know to set your child up for a great week." rows={2} />
+            </Field>
+          </div>
+        ))}
+        {campers.length < MAX_CAMPERS && (
+          <button onClick={addCamper} style={{ width:"100%", background:"transparent",
+            border:`1px dashed ${C.goldMid}`, color:C.gold, fontFamily:"'Bebas Neue',sans-serif",
+            fontSize:16, letterSpacing:"0.15em", padding:"14px", cursor:"pointer", marginTop:4 }}>
+            + ADD ANOTHER CHILD
+          </button>
+        )}
       </div>}
 
-      {/* Step 2 */}
+      {/* Step 2 — Emergency contact (shared) */}
       {step===2 && <div>
         <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:12, letterSpacing:"0.3em", color:"#444", margin:"0 0 20px" }}>EMERGENCY CONTACT</p>
-        <Field label="Emergency Contact Name" req><Input value={form.emergency_contact_name} onChange={set("emergency_contact_name")} /></Field>
+        <Field label="Emergency Contact Name" req><Input value={shared.emergency_contact_name} onChange={setS("emergency_contact_name")} /></Field>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-          <Field label="Phone" req><Input type="tel" value={form.emergency_contact_phone} onChange={set("emergency_contact_phone")} /></Field>
-          <Field label="Relationship" req><Input value={form.emergency_contact_relationship} onChange={set("emergency_contact_relationship")} placeholder="Parent, Grandparent..." /></Field>
+          <Field label="Phone" req><Input type="tel" value={shared.emergency_contact_phone} onChange={setS("emergency_contact_phone")} /></Field>
+          <Field label="Relationship" req><Input value={shared.emergency_contact_relationship} onChange={setS("emergency_contact_relationship")} placeholder="Parent, Grandparent..." /></Field>
         </div>
-        <div style={{ borderTop:`1px solid #1e1e1e`, paddingTop:24, marginTop:8 }}>
-          <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:12, letterSpacing:"0.3em", color:"#444", margin:"0 0 20px" }}>HEALTH &amp; ACCOMMODATIONS</p>
-          <Field label="Allergies or Medical Conditions">
-            <Textarea value={form.allergies_medical} onChange={set("allergies_medical")} placeholder="List any allergies, medications, or conditions staff should know about. Leave blank if none." rows={3} />
-          </Field>
-          <Field label="Special Accommodations or Notes">
-            <Textarea value={form.special_accommodations} onChange={set("special_accommodations")} placeholder="Anything else we should know to set your child up for a great week." rows={3} />
-          </Field>
-        </div>
+        <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:13, color:C.muted, marginTop:4 }}>
+          This emergency contact applies to {campers.length > 1 ? "all campers" : "your camper"} listed in this registration.
+        </p>
       </div>}
 
-      {/* Step 3 */}
+      {/* Step 3 — Waivers (shared) */}
       {step===3 && <div>
         <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:15, color:C.muted, margin:"0 0 24px", lineHeight:1.7 }}>
-          Please read and agree to all three documents below to complete your registration.
+          Please read and agree to all three documents below. These cover {campers.length > 1 ? "every child" : "your child"} in this registration.
         </p>
-        <WaiverBlock field="liability_waiver_signed" form={form} setForm={setForm}
+        <WaiverBlock field="liability_waiver_signed" form={shared} setForm={setShared}
           label="I have read and agree to the Full Release of Liability"
-          text="In consideration of my child's participation in YGB Creators Camp (August 3–7, 2025), hosted by Ambition Angels at 1265 Beach Street, East Palo Alto, CA, I hereby release, waive, discharge, and covenant not to sue Ambition Angels, Young Life, StreetCode Academy, their officers, directors, employees, volunteers, and agents from any and all claims, damages, losses, or expenses arising out of or related to my child's participation, including injury, illness, or accident. I acknowledge that voluntary enrollment constitutes acceptance of these risks. This release is binding on me, my heirs, and legal representatives." />
-        <WaiverBlock field="photo_video_release_signed" form={form} setForm={setForm}
+          text="In consideration of my child(ren)'s participation in YGB Creators Camp (August 3–7, 2025), hosted by Ambition Angels at 1265 Beach Street, East Palo Alto, CA, I hereby release, waive, discharge, and covenant not to sue Ambition Angels, Young Life, StreetCode Academy, their officers, directors, employees, volunteers, and agents from any and all claims, damages, losses, or expenses arising out of or related to my child(ren)'s participation, including injury, illness, or accident. I acknowledge that voluntary enrollment constitutes acceptance of these risks. This release is binding on me, my heirs, and legal representatives." />
+        <WaiverBlock field="photo_video_release_signed" form={shared} setForm={setShared}
           label="I agree to the Photo and Video Release"
-          text="I grant permission to Ambition Angels and its partners to photograph and/or video record my child during YGB Creators Camp 2025. These materials may be used for educational, promotional, and social media purposes including the Ambition Angels website and Instagram. I understand no compensation will be received and I may request removal of specific content by contacting Ambition Angels directly." />
-        <WaiverBlock field="medical_consent_signed" form={form} setForm={setForm}
+          text="I grant permission to Ambition Angels and its partners to photograph and/or video record my child(ren) during YGB Creators Camp 2025. These materials may be used for educational, promotional, and social media purposes including the Ambition Angels website and Instagram. I understand no compensation will be received and I may request removal of specific content by contacting Ambition Angels directly." />
+        <WaiverBlock field="medical_consent_signed" form={shared} setForm={setShared}
           label="I agree to the Medical Consent and Emergency Authorization"
-          text="I authorize YGB Creators Camp staff to seek emergency medical care for my child if I cannot be reached and a medical professional determines care is necessary. I consent to reasonable first aid on-site. I confirm all medical and allergy information provided is accurate. I release Ambition Angels from liability for medical decisions made in good faith during emergencies when a parent cannot be reached." />
+          text="I authorize YGB Creators Camp staff to seek emergency medical care for my child(ren) if I cannot be reached and a medical professional determines care is necessary. I consent to reasonable first aid on-site. I confirm all medical and allergy information provided is accurate. I release Ambition Angels from liability for medical decisions made in good faith during emergencies when a parent cannot be reached." />
       </div>}
 
       {err && <div style={{ background:"#f5444418", border:"1px solid #f54444", color:"#ff8888",
@@ -530,7 +591,7 @@ function RegistrationSection({ earlyAccess, formRef }) {
           <SectionTitle>REGISTER YOUR <span style={{ color:C.gold }}>CREATOR</span></SectionTitle>
           <GoldBar />
           <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:16, color:C.muted }}>
-            Free camp. 20 spots. Register now.
+            Free camp. 20 spots. Got more than one kid? Add them all in one go.
           </p>
           {earlyAccess && (
             <div style={{ display:"inline-block", background:`${C.gold}18`, border:`1px solid ${C.gold}`,
@@ -549,18 +610,27 @@ function ShowcaseRSVP() {
   const [form, setForm] = useState({ name:"", email:"", camper_name:"", guest_count:"2" });
   const [done, setDone]   = useState(false);
   const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
   const set = f => e => setForm(p=>({...p,[f]:e.target.value}));
 
   const submit = async () => {
-    if (!form.name||!form.email||!form.camper_name) return;
+    if (!form.name||!form.email||!form.camper_name) { setErr("Please fill in all fields."); return; }
+    setErr("");
     setLoading(true);
-    await supabase(
-      `ygb_registrations?parent_email=eq.${encodeURIComponent(form.email)}`,
-      "PATCH",
-      { showcase_attending:true, showcase_guest_count:parseInt(form.guest_count) }
-    );
-    setLoading(false);
-    setDone(true);
+    try {
+      const res = await fetch("/api/ygb/showcase-rsvp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email, guest_count: form.guest_count, name: form.name, camper_name: form.camper_name }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setLoading(false);
+      if (res.ok) setDone(true);
+      else setErr(data.error || "Something went wrong. Please try again.");
+    } catch {
+      setLoading(false);
+      setErr("Something went wrong. Please try again.");
+    }
   };
 
   return (
@@ -590,6 +660,8 @@ function ShowcaseRSVP() {
                   {["1","2","3","4","5","6+"].map(n => <option key={n} value={n}>{n} guest{n!=="1"?"s":""}</option>)}
                 </Select>
               </Field>
+              {err && <div style={{ background:"#f5444418", border:"1px solid #f54444", color:"#ff8888",
+                fontFamily:"'Barlow',sans-serif", fontSize:14, padding:"12px 16px", marginBottom:16 }}>{err}</div>}
               <Btn onClick={submit} full disabled={loading}>
                 {loading ? "SAVING..." : "RSVP FOR SHOWCASE →"}
               </Btn>
@@ -631,9 +703,12 @@ function WhatToBring() {
 // ─── FOOTER ──────────────────────────────────────────────────────────────────
 function Footer() {
   return (
-    <footer style={{ background:C.black, padding:"40px 24px", textAlign:"center", borderTop:`1px solid #1a1a1a` }}>
-      <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:14, letterSpacing:"0.3em", color:C.gold, margin:"0 0 8px" }}>
-        YGB ACADEMY · CREATORS CAMP 2025
+    <footer style={{ background:C.black, padding:"48px 24px 40px", textAlign:"center", borderTop:`1px solid #1a1a1a` }}>
+      <div style={{ display:"flex", justifyContent:"center", marginBottom:18 }}>
+        <YgbLogo crownSize={42} textColor={C.white} gold={C.gold} />
+      </div>
+      <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:13, letterSpacing:"0.3em", color:C.gold, margin:"0 0 8px" }}>
+        CREATORS CAMP 2025
       </p>
       <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:13, color:"#3a3a3a", margin:0 }}>
         Hosted by Ambition Angels · East Palo Alto, CA · ambitionangels.org

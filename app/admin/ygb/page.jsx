@@ -6,11 +6,11 @@ import { YgbCrown } from "@/app/ygb/YgbLogo";
 const CAPACITY = 20;
 
 const CAMP_DAYS = [
-  { date: "2025-08-03", label: "Mon Aug 3" },
-  { date: "2025-08-04", label: "Tue Aug 4" },
-  { date: "2025-08-05", label: "Wed Aug 5" },
-  { date: "2025-08-06", label: "Thu Aug 6" },
-  { date: "2025-08-07", label: "Fri Aug 7" },
+  { date: "2026-08-03", label: "Mon Aug 3" },
+  { date: "2026-08-04", label: "Tue Aug 4" },
+  { date: "2026-08-05", label: "Wed Aug 5" },
+  { date: "2026-08-06", label: "Thu Aug 6" },
+  { date: "2026-08-07", label: "Fri Aug 7" },
 ];
 
 // ─── COLORS ───────────────────────────────────────────────────────────────────
@@ -423,7 +423,7 @@ export default function YGBAdmin() {
               YGB CREATORS CAMP
             </h1>
             <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:12, letterSpacing:"0.3em",
-              color:C.muted, margin:0 }}>ADMIN DASHBOARD · AUGUST 3–7, 2025</p>
+              color:C.muted, margin:0 }}>ADMIN DASHBOARD · AUGUST 3–7, 2026</p>
           </div>
         </div>
         <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>

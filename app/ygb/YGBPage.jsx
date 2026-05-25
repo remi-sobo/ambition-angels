@@ -13,6 +13,9 @@ const C = {
   goldDeep: "#7A5800",
   white:    "#F0EAD6",
   muted:    "#888",
+  // Pan-African accents — used sparingly (Kente weave, small touches).
+  red:      "#C81D25",
+  green:    "#1B7A43",
 };
 
 // ─── FONT LOADER ─────────────────────────────────────────────────────────────
@@ -30,24 +33,83 @@ function FontLoader() {
 }
 
 // ─── KENTE DIVIDER ───────────────────────────────────────────────────────────
+// Pan-African weave (gold-dominant with red + green accents). It's punctuation,
+// not decoration — it marks the start of a new beat. The faint horizontal lines
+// give it a woven, threaded feel rather than flat stripes.
 function KenteDivider() {
   return (
     <div
+      aria-hidden="true"
       style={{
-        height: 10,
+        height: 16,
         width: "100%",
-        background: `repeating-linear-gradient(
-          90deg,
-          ${C.gold}     0px,  ${C.gold}     8px,
-          #000          8px,  #000          16px,
-          ${C.goldMid}  16px, ${C.goldMid}  24px,
-          #000          24px, #000          32px,
-          ${C.gold}     32px, ${C.gold}     40px,
-          ${C.goldDeep} 40px, ${C.goldDeep} 48px,
-          #000          48px, #000          56px
-        )`,
+        backgroundColor: "#000",
+        backgroundImage: `
+          repeating-linear-gradient(0deg, rgba(0,0,0,0.5) 0 1px, transparent 1px 8px),
+          repeating-linear-gradient(90deg,
+            ${C.gold}  0 18px,  #000 18px 21px,
+            ${C.red}   21px 37px, #000 37px 40px,
+            ${C.green} 40px 56px, #000 56px 59px,
+            ${C.gold}  59px 64px, ${C.red} 64px 69px,
+            ${C.green} 69px 74px, #000 74px 77px
+          )`,
       }}
     />
+  );
+}
+
+// ─── ADINKRA WATERMARK ───────────────────────────────────────────────────────
+// Adinkrahene ("chief of adinkra") — concentric circles signifying leadership
+// and greatness. Used as a faint background presence, never as an icon.
+function AdinkraWatermark({ size = 320, color = C.gold, opacity = 0.05, style }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      aria-hidden="true"
+      style={{ position: "absolute", pointerEvents: "none", opacity, ...style }}
+    >
+      <g stroke={color} strokeWidth="2" fill="none">
+        <circle cx="50" cy="50" r="46" />
+        <circle cx="50" cy="50" r="33" />
+        <circle cx="50" cy="50" r="20" />
+        <circle cx="50" cy="50" r="8" />
+      </g>
+    </svg>
+  );
+}
+
+// ─── STICKY NAV ──────────────────────────────────────────────────────────────
+function YgbNav({ onRegister }) {
+  const links = [["about","ABOUT"],["details","DETAILS"],["create","CREATE"],["showcase","SHOWCASE"]];
+  return (
+    <nav style={{ position:"sticky", top:0, zIndex:50, background:C.black,
+      borderBottom:`1px solid #161616`, display:"flex", alignItems:"center",
+      justifyContent:"space-between", gap:16, padding:"10px 20px", flexWrap:"wrap" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+        <YgbCrown size={32} color={C.gold} />
+        <span style={{ fontFamily:"'Arial Black','Helvetica Neue',sans-serif", fontWeight:900,
+          fontSize:22, color:C.gold, letterSpacing:"0.02em" }}>YGB</span>
+      </div>
+      <div style={{ display:"flex", alignItems:"center", gap:20, flexWrap:"wrap" }}>
+        {links.map(([id,label]) => (
+          <a key={id} href={`#${id}`}
+            style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:16, letterSpacing:"0.14em",
+              color:C.white, textDecoration:"none", transition:"color 0.15s" }}
+            onMouseOver={e => e.currentTarget.style.color = C.gold}
+            onMouseOut={e => e.currentTarget.style.color = C.white}>
+            {label}
+          </a>
+        ))}
+        <button onClick={onRegister} style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:16,
+          letterSpacing:"0.14em", background:C.gold, color:C.black, border:"none",
+          padding:"9px 22px", cursor:"pointer" }}>
+          REGISTER
+        </button>
+      </div>
+    </nav>
   );
 }
 
@@ -80,22 +142,26 @@ function Hero({ onRegister }) {
       <div style={{ position:"absolute", inset:0, opacity:0.035, pointerEvents:"none",
         backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
 
+      <AdinkraWatermark size={620} color={C.gold} opacity={0.04}
+        style={{ top:"50%", left:"50%", transform:"translate(-50%,-50%)" }} />
+
       <div style={{ position:"absolute", top:0, left:0, right:0 }}><KenteDivider /></div>
 
-      <div style={t}>
+      <div style={{ ...t, position:"relative" }}>
         <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(12px,3vw,16px)", letterSpacing:"0.45em", color:C.goldMid, margin:"0 0 14px" }}>
           EAST PALO ALTO PRESENTS
         </p>
 
         <YgbCrown size={130} color={C.gold} style={{ filter:`drop-shadow(0 0 22px ${C.gold}55)`, marginBottom: -8 }} />
 
-        <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(80px,20vw,200px)", lineHeight:0.88, color:C.gold,
-          textShadow:`0 0 50px ${C.gold}44, 0 0 100px ${C.gold}18`, letterSpacing:"0.02em", margin:0 }}>
+        <h1 style={{ fontFamily:"'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif", fontWeight:900,
+          fontSize:"clamp(80px,19vw,190px)", lineHeight:0.82, color:C.gold,
+          textShadow:`0 0 50px ${C.gold}44, 0 0 100px ${C.gold}18`, letterSpacing:"0.01em", margin:0 }}>
           YGB
         </h1>
 
-        <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(16px,4vw,30px)", letterSpacing:"0.3em", color:C.white, margin:"8px 0 20px" }}>
-          YOUNG · GIFTED · BLACK
+        <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(16px,4vw,30px)", letterSpacing:"0.28em", color:C.white, margin:"10px 0 20px" }}>
+          YOUNG. GIFTED. BLACK.
         </p>
 
         <h2 style={{ fontFamily:"'Permanent Marker',cursive", fontSize:"clamp(40px,11vw,96px)", display:"inline-block",
@@ -144,7 +210,7 @@ function Btn({ children, onClick, gold, outline, full, disabled }) {
 // ─── ABOUT ───────────────────────────────────────────────────────────────────
 function About() {
   return (
-    <section style={{ background:"#0e0e0e", padding:"80px 24px" }}>
+    <section id="about" style={{ background:"#0e0e0e", padding:"80px 24px", scrollMarginTop:64 }}>
       <div style={{ maxWidth:860, margin:"0 auto", textAlign:"center" }}>
         <Eyebrow>WHAT IS</Eyebrow>
         <SectionTitle gold>YGB?</SectionTitle>
@@ -173,7 +239,7 @@ function Details() {
   ];
 
   return (
-    <section style={{ background:C.black, padding:"80px 24px" }}>
+    <section id="details" style={{ background:C.black, padding:"80px 24px", scrollMarginTop:64 }}>
       <div style={{ maxWidth:1100, margin:"0 auto" }}>
         <div style={{ textAlign:"center", marginBottom:48 }}>
           <SectionTitle>CAMP <span style={{ color:C.gold }}>DETAILS</span></SectionTitle>
@@ -223,7 +289,7 @@ function WhatTheyCreate() {
   ];
 
   return (
-    <section style={{ background:"#0c0c0c", padding:"0 24px 80px" }}>
+    <section id="create" style={{ background:"#0c0c0c", padding:"0 24px 80px", scrollMarginTop:64 }}>
       <KenteDivider />
       <div style={{ maxWidth:1100, margin:"48px auto 0" }}>
         <div style={{ textAlign:"center", marginBottom:48 }}>
@@ -259,8 +325,10 @@ function CreateCard({ emoji, title, desc }) {
 // ─── PARTNERSHIP ─────────────────────────────────────────────────────────────
 function Partnership() {
   return (
-    <section style={{ background:"#0e0e0e", padding:"60px 24px" }}>
-      <div style={{ maxWidth:780, margin:"0 auto", textAlign:"center" }}>
+    <section style={{ background:"#0e0e0e", padding:"60px 24px", position:"relative", overflow:"hidden" }}>
+      <AdinkraWatermark size={360} color={C.gold} opacity={0.05}
+        style={{ top:"50%", right:-90, transform:"translateY(-50%)" }} />
+      <div style={{ maxWidth:780, margin:"0 auto", textAlign:"center", position:"relative" }}>
         <Eyebrow>IN PARTNERSHIP WITH</Eyebrow>
         <SectionTitle>StreetCode Academy</SectionTitle>
         <GoldBar />
@@ -634,7 +702,7 @@ function ShowcaseRSVP() {
   };
 
   return (
-    <section id="showcase" style={{ background:"#0c0c0c", padding:"0 24px 80px" }}>
+    <section id="showcase" style={{ background:"#0c0c0c", padding:"0 24px 80px", scrollMarginTop:64 }}>
       <KenteDivider />
       <div style={{ maxWidth:580, margin:"64px auto 0", textAlign:"center" }}>
         <Eyebrow>FRIDAY · AUGUST 7 · 1:00 PM</Eyebrow>
@@ -705,10 +773,10 @@ function Footer() {
   return (
     <footer style={{ background:C.black, padding:"48px 24px 40px", textAlign:"center", borderTop:`1px solid #1a1a1a` }}>
       <div style={{ display:"flex", justifyContent:"center", marginBottom:18 }}>
-        <YgbLogo crownSize={42} textColor={C.white} gold={C.gold} />
+        <YgbLogo crownSize={42} color={C.white} gold={C.gold} tagline="CREATORS CAMP" marker />
       </div>
       <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:13, letterSpacing:"0.3em", color:C.gold, margin:"0 0 8px" }}>
-        CREATORS CAMP 2025
+        AUGUST 3 – 7, 2025
       </p>
       <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:13, color:"#3a3a3a", margin:0 }}>
         Hosted by Ambition Angels · East Palo Alto, CA · ambitionangels.org
@@ -744,8 +812,9 @@ export default function YGBPage({ earlyAccess = false }) {
   const scrollToForm = () => formRef.current?.scrollIntoView({ behavior:"smooth", block:"start" });
 
   return (
-    <div style={{ background:C.black, color:C.white, minHeight:"100vh" }}>
+    <div style={{ background:C.black, color:C.white, minHeight:"100vh", scrollBehavior:"smooth" }}>
       <FontLoader />
+      <YgbNav onRegister={scrollToForm} />
       <Hero onRegister={scrollToForm} />
       <About />
       <Details />

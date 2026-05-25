@@ -8,14 +8,14 @@ const C = {
   black:    "#080808",
   card:     "#111111",
   border:   "#252525",
-  gold:     "#FFD700",
-  goldMid:  "#C9A800",
-  goldDeep: "#7A5800",
+  gold:     "#D4AF37",   // antique / champagne — primary accent
+  goldMid:  "#B0892E",   // borders, labels
+  goldDeep: "#4D3C14",   // backgrounds, depth
   white:    "#F0EAD6",
-  muted:    "#888",
-  // Pan-African accents — used sparingly (Kente weave, small touches).
-  red:      "#C81D25",
-  green:    "#1B7A43",
+  muted:    "#8A887F",
+  // Pan-African accents — deep + desaturated, for the Kente weave only.
+  red:      "#8E2B2B",
+  green:    "#2E5E3A",
 };
 
 // ─── FONT LOADER ─────────────────────────────────────────────────────────────
@@ -41,18 +41,17 @@ function KenteDivider() {
     <div
       aria-hidden="true"
       style={{
-        height: 16,
+        height: 9,
         width: "100%",
-        backgroundColor: "#000",
+        backgroundColor: "#0B0B0B",
+        borderTop: `1px solid ${C.goldMid}`,
+        borderBottom: `1px solid ${C.goldMid}`,
         backgroundImage: `
-          repeating-linear-gradient(0deg, rgba(0,0,0,0.5) 0 1px, transparent 1px 8px),
           repeating-linear-gradient(90deg,
-            ${C.gold}  0 18px,  #000 18px 21px,
-            ${C.red}   21px 37px, #000 37px 40px,
-            ${C.green} 40px 56px, #000 56px 59px,
-            ${C.gold}  59px 64px, ${C.red} 64px 69px,
-            ${C.green} 69px 74px, #000 74px 77px
-          )`,
+            ${C.gold}  0 3px, transparent 3px 7px,
+            ${C.red}   7px 10px, transparent 10px 14px,
+            ${C.green} 14px 17px, transparent 17px 21px),
+          repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px)`,
       }}
     />
   );
@@ -139,24 +138,24 @@ function Hero({ onRegister }) {
         background: `radial-gradient(ellipse 70% 50% at 50% 90%, ${C.goldDeep}28 0%, transparent 70%)` }} />
 
       {/* grain */}
-      <div style={{ position:"absolute", inset:0, opacity:0.035, pointerEvents:"none",
+      <div style={{ position:"absolute", inset:0, opacity:0.02, pointerEvents:"none",
         backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
 
-      <AdinkraWatermark size={620} color={C.gold} opacity={0.04}
+      <AdinkraWatermark size={640} color={C.gold} opacity={0.035}
         style={{ top:"50%", left:"50%", transform:"translate(-50%,-50%)" }} />
-
-      <div style={{ position:"absolute", top:0, left:0, right:0 }}><KenteDivider /></div>
 
       <div style={{ ...t, position:"relative" }}>
         <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(12px,3vw,16px)", letterSpacing:"0.45em", color:C.goldMid, margin:"0 0 14px" }}>
           EAST PALO ALTO PRESENTS
         </p>
 
-        <YgbCrown size={130} color={C.gold} style={{ filter:`drop-shadow(0 0 22px ${C.gold}55)`, marginBottom: -8 }} />
+        <YgbCrown size={132} color={C.gold} style={{ marginBottom: -6 }} />
 
         <h1 style={{ fontFamily:"'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif", fontWeight:900,
-          fontSize:"clamp(80px,19vw,190px)", lineHeight:0.82, color:C.gold,
-          textShadow:`0 0 50px ${C.gold}44, 0 0 100px ${C.gold}18`, letterSpacing:"0.01em", margin:0 }}>
+          fontSize:"clamp(80px,19vw,190px)", lineHeight:0.82, letterSpacing:"0.01em", margin:0,
+          backgroundImage:"linear-gradient(180deg,#F0D98A 0%,#D4AF37 48%,#9C7C28 100%)",
+          WebkitBackgroundClip:"text", backgroundClip:"text",
+          color:"transparent", WebkitTextFillColor:"transparent" }}>
           YGB
         </h1>
 
@@ -164,10 +163,9 @@ function Hero({ onRegister }) {
           YOUNG. GIFTED. BLACK.
         </p>
 
-        <h2 style={{ fontFamily:"'Permanent Marker',cursive", fontSize:"clamp(40px,11vw,96px)", display:"inline-block",
+        <h2 style={{ fontFamily:"'Permanent Marker',cursive", fontSize:"clamp(38px,10vw,88px)", display:"inline-block",
           color:C.white, lineHeight:1.1, margin:"0 0 28px",
-          textShadow:`3px 3px 0 ${C.gold}, 6px 6px 0 ${C.goldMid}, -1px -1px 0 ${C.goldDeep}`,
-          transform:"rotate(-2deg)" }}>
+          textShadow:"0 2px 18px rgba(0,0,0,0.6)", transform:"rotate(-1.5deg)" }}>
           Creators Camp
         </h2>
 
@@ -185,7 +183,6 @@ function Hero({ onRegister }) {
         </p>
       </div>
 
-      <div style={{ position:"absolute", bottom:0, left:0, right:0 }}><KenteDivider /></div>
     </section>
   );
 }
@@ -293,9 +290,9 @@ function WhatTheyCreate() {
       <KenteDivider />
       <div style={{ maxWidth:1100, margin:"48px auto 0" }}>
         <div style={{ textAlign:"center", marginBottom:48 }}>
-          <h2 style={{ fontFamily:"'Permanent Marker',cursive", fontSize:"clamp(36px,9vw,80px)",
-            color:C.white, display:"inline-block", transform:"rotate(-1.5deg)",
-            textShadow:`2px 2px 0 ${C.gold}, 5px 5px 0 ${C.goldMid}`, margin:0 }}>
+          <h2 style={{ fontFamily:"'Permanent Marker',cursive", fontSize:"clamp(36px,9vw,78px)",
+            color:C.white, display:"inline-block", transform:"rotate(-1deg)",
+            textShadow:"0 2px 16px rgba(0,0,0,0.6)", margin:0 }}>
             What They&apos;ll Create
           </h2>
         </div>

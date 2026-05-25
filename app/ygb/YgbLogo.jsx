@@ -5,7 +5,7 @@
 
 // Hand-drawn crown: two open rings on the outer points, a tall center spike,
 // and the signature looping, slightly-tilted halo at the base.
-export function YgbCrown({ size = 96, color = "#E9C84A", style }) {
+export function YgbCrown({ size = 96, color = "#D4AF37", style }) {
   const w = size;
   const h = (size * 210) / 260;
   return (
@@ -18,17 +18,17 @@ export function YgbCrown({ size = 96, color = "#E9C84A", style }) {
       aria-hidden="true"
       style={style}
     >
-      <g stroke={color} strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" fill="none">
+      <g stroke={color} strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none">
         {/* center spike */}
-        <path d="M99 150 L128 36 L157 150" />
+        <path d="M100 148 L128 38 L156 148" />
         {/* outer stalks rising to the rings */}
-        <path d="M88 150 C 80 124 76 102 78 93" />
-        <path d="M168 150 C 176 120 181 92 185 75" />
+        <path d="M90 148 C 82 124 78 103 80 94" />
+        <path d="M170 148 C 178 121 182 94 186 77" />
         {/* ring jewels (asymmetric, hand-drawn) */}
-        <circle cx="78" cy="78" r="15" />
-        <circle cx="186" cy="61" r="15" />
-        {/* looping, tilted halo base */}
-        <path d="M60 158 C 74 176 170 179 200 154 C 210 146 202 137 189 142 C 160 152 96 151 80 139 C 69 132 58 149 65 157" />
+        <circle cx="80" cy="79" r="14" />
+        <circle cx="187" cy="62" r="14" />
+        {/* single clean looping halo base, tilted up to the right */}
+        <path d="M66 150 C 68 163 120 169 161 165 C 199 161 213 152 203 144 C 194 137 150 133 110 137 C 83 140 64 141 66 150 Z" />
       </g>
     </svg>
   );

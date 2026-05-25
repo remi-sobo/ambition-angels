@@ -172,7 +172,7 @@ function Hero({ onRegister }) {
         </h2>
 
         <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(16px,3.5vw,26px)", letterSpacing:"0.35em", color:C.gold, margin:"0 0 40px" }}>
-          AUGUST 3 – 7, 2025
+          AUGUST 3 – 7, 2026
         </p>
 
         <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap" }}>
@@ -230,7 +230,7 @@ function About() {
 // ─── DETAIL CARDS ────────────────────────────────────────────────────────────
 function Details() {
   const cards = [
-    { icon:"📅", label:"DATES",    val:"Aug 3–7, 2025",      sub:"Monday through Friday" },
+    { icon:"📅", label:"DATES",    val:"Aug 3–7, 2026",      sub:"Monday through Friday" },
     { icon:"⏰", label:"HOURS",    val:"9:30 AM – 3:00 PM",  sub:"Drop-off from 9:00 AM" },
     { icon:"📍", label:"LOCATION", val:"Young Life House",   sub:"1265 Beach St, East Palo Alto" },
     { icon:"💰", label:"COST",     val:"FREE",               sub:"Bring lunch + $100 on Friday" },
@@ -501,7 +501,7 @@ function RegistrationForm({ earlyAccess }) {
         </div>
         <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:16, color:C.white, marginBottom:8 }}>
           {allConfirmed
-            ? `Registered for YGB Creators Camp 2025.`
+            ? `Registered for YGB Creators Camp 2026.`
             : `The camp is filling up — any waitlisted campers will be contacted the moment a spot opens.`}
         </p>
         <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:14, color:C.muted }}>
@@ -574,7 +574,7 @@ function RegistrationForm({ earlyAccess }) {
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
               <Field label="Date of Birth" req><Input type="date" value={c.camper_dob} onChange={updateCamper(i,"camper_dob")} /></Field>
-              <Field label="Grade (Fall 2025)" req>
+              <Field label="Grade (Fall 2026)" req>
                 <Select value={c.camper_grade} onChange={updateCamper(i,"camper_grade")}>
                   <option value="">Select grade</option>
                   {GRADES.map(g => <option key={g} value={g}>{g} Grade</option>)}
@@ -624,10 +624,10 @@ function RegistrationForm({ earlyAccess }) {
         </p>
         <WaiverBlock field="liability_waiver_signed" form={shared} setForm={setShared}
           label="I have read and agree to the Full Release of Liability"
-          text="In consideration of my child(ren)'s participation in YGB Creators Camp (August 3–7, 2025), hosted by Ambition Angels at 1265 Beach Street, East Palo Alto, CA, I hereby release, waive, discharge, and covenant not to sue Ambition Angels, Young Life, StreetCode Academy, their officers, directors, employees, volunteers, and agents from any and all claims, damages, losses, or expenses arising out of or related to my child(ren)'s participation, including injury, illness, or accident. I acknowledge that voluntary enrollment constitutes acceptance of these risks. This release is binding on me, my heirs, and legal representatives." />
+          text="In consideration of my child(ren)'s participation in YGB Creators Camp (August 3–7, 2026), hosted by Ambition Angels at 1265 Beach Street, East Palo Alto, CA, I hereby release, waive, discharge, and covenant not to sue Ambition Angels, Young Life, StreetCode Academy, their officers, directors, employees, volunteers, and agents from any and all claims, damages, losses, or expenses arising out of or related to my child(ren)'s participation, including injury, illness, or accident. I acknowledge that voluntary enrollment constitutes acceptance of these risks. This release is binding on me, my heirs, and legal representatives." />
         <WaiverBlock field="photo_video_release_signed" form={shared} setForm={setShared}
           label="I agree to the Photo and Video Release"
-          text="I grant permission to Ambition Angels and its partners to photograph and/or video record my child(ren) during YGB Creators Camp 2025. These materials may be used for educational, promotional, and social media purposes including the Ambition Angels website and Instagram. I understand no compensation will be received and I may request removal of specific content by contacting Ambition Angels directly." />
+          text="I grant permission to Ambition Angels and its partners to photograph and/or video record my child(ren) during YGB Creators Camp 2026. These materials may be used for educational, promotional, and social media purposes including the Ambition Angels website and Instagram. I understand no compensation will be received and I may request removal of specific content by contacting Ambition Angels directly." />
         <WaiverBlock field="medical_consent_signed" form={shared} setForm={setShared}
           label="I agree to the Medical Consent and Emergency Authorization"
           text="I authorize YGB Creators Camp staff to seek emergency medical care for my child(ren) if I cannot be reached and a medical professional determines care is necessary. I consent to reasonable first aid on-site. I confirm all medical and allergy information provided is accurate. I release Ambition Angels from liability for medical decisions made in good faith during emergencies when a parent cannot be reached." />
@@ -776,7 +776,7 @@ function Footer() {
         <YgbLogo crownSize={42} color={C.white} gold={C.gold} tagline="CREATORS CAMP" marker />
       </div>
       <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:13, letterSpacing:"0.3em", color:C.gold, margin:"0 0 8px" }}>
-        AUGUST 3 – 7, 2025
+        AUGUST 3 – 7, 2026
       </p>
       <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:13, color:"#3a3a3a", margin:0 }}>
         Hosted by Ambition Angels · East Palo Alto, CA · ambitionangels.org

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import YgbLogo, { YgbCrown } from "./YgbLogo";
+import Image from "next/image";
 
 // ─── COLORS ─────────────────────────────────────────────────────────────────
 const C = {
@@ -87,11 +87,8 @@ function YgbNav({ onRegister }) {
     <nav style={{ position:"sticky", top:0, zIndex:50, background:C.black,
       borderBottom:`1px solid #161616`, display:"flex", alignItems:"center",
       justifyContent:"space-between", gap:16, padding:"10px 20px", flexWrap:"wrap" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:9 }}>
-        <YgbCrown size={32} color={C.gold} />
-        <span style={{ fontFamily:"'Arial Black','Helvetica Neue',sans-serif", fontWeight:900,
-          fontSize:22, color:C.gold, letterSpacing:"0.02em" }}>YGB</span>
-      </div>
+      <span style={{ fontFamily:"'Arial Black','Helvetica Neue',sans-serif", fontWeight:900,
+        fontSize:24, color:C.gold, letterSpacing:"0.04em" }}>YGB</span>
       <div style={{ display:"flex", alignItems:"center", gap:20, flexWrap:"wrap" }}>
         {links.map(([id,label]) => (
           <a key={id} href={`#${id}`}
@@ -133,9 +130,15 @@ function Hero({ onRegister }) {
         padding: "80px 24px 60px",
       }}
     >
+      {/* real community photo, optimized + sat behind a dark, warm wash */}
+      <Image src="/images/ygb-hero-2.jpg" alt="YGB Creators Camp campers celebrating" fill priority sizes="100vw"
+        style={{ objectFit:"cover", objectPosition:"center 38%" }} />
+      <div style={{ position:"absolute", inset:0, pointerEvents:"none",
+        background:"linear-gradient(180deg, rgba(8,8,8,0.86) 0%, rgba(8,8,8,0.70) 42%, rgba(8,8,8,0.96) 100%)" }} />
+
       {/* ambient glow */}
       <div style={{ position:"absolute", inset:0, pointerEvents:"none",
-        background: `radial-gradient(ellipse 70% 50% at 50% 90%, ${C.goldDeep}28 0%, transparent 70%)` }} />
+        background: `radial-gradient(ellipse 70% 50% at 50% 90%, ${C.goldDeep}33 0%, transparent 70%)` }} />
 
       {/* grain */}
       <div style={{ position:"absolute", inset:0, opacity:0.02, pointerEvents:"none",
@@ -149,23 +152,14 @@ function Hero({ onRegister }) {
           EAST PALO ALTO PRESENTS
         </p>
 
-        <YgbCrown size={132} color={C.gold} style={{ marginBottom: -6 }} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/ygb-logo-words.png" alt="YGB — Young. Gifted. Black."
+          style={{ width:"min(82vw,470px)", height:"auto", margin:"0 auto 18px", display:"block",
+            filter:"drop-shadow(0 8px 34px rgba(0,0,0,0.6))" }} />
 
-        <h1 style={{ fontFamily:"'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif", fontWeight:900,
-          fontSize:"clamp(80px,19vw,190px)", lineHeight:0.82, letterSpacing:"0.01em", margin:0,
-          backgroundImage:"linear-gradient(180deg,#F0D98A 0%,#D4AF37 48%,#9C7C28 100%)",
-          WebkitBackgroundClip:"text", backgroundClip:"text",
-          color:"transparent", WebkitTextFillColor:"transparent" }}>
-          YGB
-        </h1>
-
-        <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(16px,4vw,30px)", letterSpacing:"0.28em", color:C.white, margin:"10px 0 20px" }}>
-          YOUNG. GIFTED. BLACK.
-        </p>
-
-        <h2 style={{ fontFamily:"'Permanent Marker',cursive", fontSize:"clamp(38px,10vw,88px)", display:"inline-block",
+        <h2 style={{ fontFamily:"'Permanent Marker',cursive", fontSize:"clamp(38px,10vw,86px)", display:"inline-block",
           color:C.white, lineHeight:1.1, margin:"0 0 28px",
-          textShadow:"0 2px 18px rgba(0,0,0,0.6)", transform:"rotate(-1.5deg)" }}>
+          textShadow:"0 2px 18px rgba(0,0,0,0.7)", transform:"rotate(-1.5deg)" }}>
           Creators Camp
         </h2>
 
@@ -770,7 +764,9 @@ function Footer() {
   return (
     <footer style={{ background:C.black, padding:"48px 24px 40px", textAlign:"center", borderTop:`1px solid #1a1a1a` }}>
       <div style={{ display:"flex", justifyContent:"center", marginBottom:18 }}>
-        <YgbLogo crownSize={42} color={C.white} gold={C.gold} tagline="CREATORS CAMP" marker />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/ygb-logo-words.png" alt="YGB — Young. Gifted. Black."
+          style={{ width:170, height:"auto", display:"block" }} />
       </div>
       <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:13, letterSpacing:"0.3em", color:C.gold, margin:"0 0 8px" }}>
         AUGUST 3 – 7, 2026

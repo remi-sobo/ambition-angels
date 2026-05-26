@@ -168,7 +168,10 @@ export async function POST(req: NextRequest) {
 }
 
 async function sendNotification(supabase: ReturnType<typeof getSupabaseAdmin>) {
-  if (!process.env.RESEND_API_KEY) return;
+  if (!process.env.RESEND_API_KEY) {
+    console.error("YGB notify skipped: RESEND_API_KEY is not set in this environment.");
+    return;
+  }
 
   const { data: roster, error } = await supabase
     .from("ygb_registrations")
@@ -188,7 +191,11 @@ async function sendNotification(supabase: ReturnType<typeof getSupabaseAdmin>) {
     capacity: CAPACITY,
   });
 
-  await new Resend(process.env.RESEND_API_KEY).emails.send({
+  // Resend resolves with { data, error } rather than throwing on API-level
+  // failures (invalid key, unverified sender domain, rejected recipient), so
+  // the returned error must be inspected — otherwise a failed send looks like
+  // success and the team silently stops getting registration emails.
+  const { data, error: sendErr } = await new Resend(process.env.RESEND_API_KEY).emails.send({
     from: "Ambition Angels <careers@mail.ambitionangels.org>",
     to: NOTIFY_TO,
     replyTo: justRegistered[0]?.parent_email,
@@ -196,4 +203,9 @@ async function sendNotification(supabase: ReturnType<typeof getSupabaseAdmin>) {
     text,
     html,
   });
+  if (sendErr) {
+    console.error(`YGB notify: Resend rejected the send to ${NOTIFY_TO}:`, sendErr);
+    return;
+  }
+  console.log(`YGB notify sent to ${NOTIFY_TO} (Resend id: ${data?.id ?? "unknown"}).`);
 }

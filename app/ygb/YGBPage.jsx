@@ -87,8 +87,8 @@ function YgbNav({ onRegister }) {
     <nav style={{ position:"sticky", top:0, zIndex:50, background:C.black,
       borderBottom:`1px solid #161616`, display:"flex", alignItems:"center",
       justifyContent:"space-between", gap:16, padding:"10px 20px", flexWrap:"wrap" }}>
-      <span style={{ fontFamily:"'Arial Black','Helvetica Neue',sans-serif", fontWeight:900,
-        fontSize:24, color:C.gold, letterSpacing:"0.04em" }}>YGB</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/images/ygb-mark.png" alt="YGB" style={{ height:40, width:"auto", display:"block" }} />
       <div style={{ display:"flex", alignItems:"center", gap:20, flexWrap:"wrap" }}>
         {links.map(([id,label]) => (
           <a key={id} href={`#${id}`}
@@ -149,7 +149,7 @@ function Hero({ onRegister }) {
 
       <div style={{ ...t, position:"relative" }}>
         <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(12px,3vw,16px)", letterSpacing:"0.45em", color:C.goldMid, margin:"0 0 14px" }}>
-          EAST PALO ALTO PRESENTS
+          4TH ANNUAL
         </p>
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -321,11 +321,19 @@ function Partnership() {
         style={{ top:"50%", right:-90, transform:"translateY(-50%)" }} />
       <div style={{ maxWidth:780, margin:"0 auto", textAlign:"center", position:"relative" }}>
         <Eyebrow>IN PARTNERSHIP WITH</Eyebrow>
-        <SectionTitle>StreetCode Academy</SectionTitle>
+        <SectionTitle>
+          <a href="https://streetcode.org" target="_blank" rel="noopener noreferrer"
+            style={{ color:"inherit", textDecoration:"none" }}>StreetCode Academy</a>
+        </SectionTitle>
         <GoldBar />
         <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:17, color:C.muted, lineHeight:1.85 }}>
-          StreetCode Academy is bringing four instructors and a full fleet of computers to power the camp&apos;s AI curriculum. They&apos;ve been doing this work in Black and brown communities for years — and this summer, they&apos;re bringing it directly to East Palo Alto.
+          StreetCode Academy is East Palo Alto. For years they have been putting our community up on game in tech, free of charge. Coding, design, entrepreneurship, building real things, with AI at the center of how they teach. That is exactly what we want for our kids at Creators Camp. This summer they bring their instructors and their computers straight to the camp floor.
         </p>
+        <a href="https://streetcode.org" target="_blank" rel="noopener noreferrer"
+          style={{ display:"inline-block", marginTop:22, fontFamily:"'Bebas Neue',sans-serif", fontSize:15,
+            letterSpacing:"0.2em", color:C.gold, textDecoration:"none", borderBottom:`1px solid ${C.goldMid}`, paddingBottom:3 }}>
+          VISIT STREETCODE.ORG →
+        </a>
       </div>
     </section>
   );
@@ -798,6 +806,37 @@ function GoldBar() {
   return <div style={{ width:60, height:4, background:C.gold, margin:"16px auto 28px" }} />;
 }
 
+// ─── FOUNDERS NOTE ───────────────────────────────────────────────────────────
+function FoundersNote() {
+  return (
+    <section style={{ background:C.black, padding:"72px 24px" }}>
+      <div style={{ maxWidth:760, margin:"0 auto" }}>
+        <div style={{ background:`${C.goldDeep}1F`, border:`1px solid ${C.border}`,
+          borderLeft:`4px solid ${C.gold}`, padding:"34px 32px" }}>
+          <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:13, letterSpacing:"0.3em", color:C.gold, margin:"0 0 20px" }}>
+            FROM REMI &amp; KENDRA
+          </p>
+          <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:"clamp(16px,2vw,19px)", color:C.white, lineHeight:1.85, margin:"0 0 16px" }}>
+            This is the 4th year we get to run YGB Creators Camp. We don&apos;t take that lightly.
+          </p>
+          <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:"clamp(16px,2vw,19px)", color:C.white, lineHeight:1.85, margin:"0 0 16px" }}>
+            Creators Camp has always been about one thing. Our kids are here to create, not just consume. That belief hits different in 2026.
+          </p>
+          <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:"clamp(16px,2vw,19px)", color:C.white, lineHeight:1.85, margin:"0 0 16px" }}>
+            AI is the most powerful tool our kids will ever put their hands on. Most folks are teaching them to scroll it. We teach them to build with it. A song. A story. Their own art. A brand that is theirs.
+          </p>
+          <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:"clamp(16px,2vw,19px)", color:C.muted, lineHeight:1.85, margin:0 }}>
+            Our kids already got the creativity and the swagger. God gave them that. We just hand them the tools and get out the way.
+          </p>
+          <p style={{ fontFamily:"'Permanent Marker',cursive", fontSize:22, color:C.gold, margin:"24px 0 0" }}>
+            Remi &amp; Kendra Sobomehin
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── VIDEO SHOWCASE ──────────────────────────────────────────────────────────
 function VideoShowcase() {
   return (
@@ -839,6 +878,7 @@ export default function YGBPage({ earlyAccess = false }) {
       <YgbNav onRegister={scrollToForm} />
       <Hero onRegister={scrollToForm} />
       <About />
+      <FoundersNote />
       <Details />
       <WhatTheyCreate />
       <VideoShowcase />

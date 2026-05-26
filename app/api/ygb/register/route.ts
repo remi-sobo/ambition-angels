@@ -149,9 +149,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 
-  // Fire-and-forget notification with the running roster. Never block or fail
-  // the registration on email problems.
-  void sendNotification(supabase).catch((e) => console.error("YGB notify error:", e));
+  // Notify the team with the running roster. Awaited so the serverless
+  // function doesn't freeze before the email sends; wrapped so an email
+  // failure never fails the registration itself.
+  try {
+    await sendNotification(supabase);
+  } catch (e) {
+    console.error("YGB notify error:", e);
+  }
 
   return NextResponse.json({
     ok: true,

@@ -82,7 +82,7 @@ function AdinkraWatermark({ size = 320, color = C.gold, opacity = 0.05, style })
 
 // ─── STICKY NAV ──────────────────────────────────────────────────────────────
 function YgbNav({ onRegister }) {
-  const links = [["about","ABOUT"],["details","DETAILS"],["create","CREATE"],["showcase","SHOWCASE"]];
+  const links = [["about","ABOUT"],["details","DETAILS"],["create","CREATE"],["video","WATCH"],["showcase","SHOWCASE"]];
   return (
     <nav style={{ position:"sticky", top:0, zIndex:50, background:C.black,
       borderBottom:`1px solid #161616`, display:"flex", alignItems:"center",
@@ -798,6 +798,35 @@ function GoldBar() {
   return <div style={{ width:60, height:4, background:C.gold, margin:"16px auto 28px" }} />;
 }
 
+// ─── VIDEO SHOWCASE ──────────────────────────────────────────────────────────
+function VideoShowcase() {
+  return (
+    <section id="video" style={{ background:"#0e0e0e", padding:"80px 24px", scrollMarginTop:64 }}>
+      <div style={{ maxWidth:900, margin:"0 auto", textAlign:"center" }}>
+        <Eyebrow>FROM A PAST CAMP</Eyebrow>
+        <SectionTitle>HEAR WHAT THEY <span style={{ color:C.gold }}>MADE</span></SectionTitle>
+        <GoldBar />
+        <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:17, color:C.muted, lineHeight:1.8, margin:"0 auto 36px", maxWidth:620 }}>
+          Every camp, the kids write and produce an original song — then shoot a music video to match. This is one of theirs.
+        </p>
+        <div style={{ border:`1px solid ${C.border}`, borderTop:`3px solid ${C.gold}`, background:C.card, padding:10 }}>
+          <div style={{ position:"relative", width:"100%", paddingBottom:"56.25%", height:0, overflow:"hidden" }}>
+            <iframe
+              src="https://www.youtube-nocookie.com/embed/_B3TgyTpgCM"
+              title="YGB Creators Camp — original music video"
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+              style={{ position:"absolute", top:0, left:0, width:"100%", height:"100%", border:0 }}
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── PAGE EXPORT ─────────────────────────────────────────────────────────────
 // earlyAccess={true} when served via the private link for returning families
 export default function YGBPage({ earlyAccess = false }) {
@@ -812,6 +841,7 @@ export default function YGBPage({ earlyAccess = false }) {
       <About />
       <Details />
       <WhatTheyCreate />
+      <VideoShowcase />
       <Partnership />
       <RegistrationSection earlyAccess={earlyAccess} formRef={formRef} />
       <ShowcaseRSVP />

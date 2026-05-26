@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { YgbCrown } from "@/app/ygb/YgbLogo";
 
 const CAPACITY = 20;
 
@@ -13,12 +12,12 @@ const CAMP_DAYS = [
   { date: "2026-08-07", label: "Fri Aug 7" },
 ];
 
-// ─── COLORS ───────────────────────────────────────────────────────────────────
+// ─── COLORS (match the site: antique gold, deep accents) ─────────────────────
 const C = {
-  bg:     "#080808", panel: "#111", card:"#161616",
-  border: "#222",    gold:  "#FFD700", goldDim:"#7A5800",
-  white:  "#F0EAD6", muted: "#666",   green:"#22c55e",
-  red:    "#ef4444",
+  bg:     "#080808", panel: "#0E0E0E", card:"#161616",
+  border: "#262626", gold:  "#D4AF37", goldMid:"#B0892E", goldDim:"#4D3C14",
+  white:  "#F0EAD6", muted: "#8A887F", green:"#3E9D63",
+  red:    "#C24A38",
 };
 
 // ─── CSV EXPORT ───────────────────────────────────────────────────────────────
@@ -413,17 +412,18 @@ export default function YGBAdmin() {
   return (
     <div style={{ background:C.bg, minHeight:"100vh", color:C.white, fontFamily:"'Barlow',sans-serif" }}>
       {/* Header */}
-      <div style={{ background:C.panel, borderBottom:`2px solid ${C.gold}`, padding:"20px 32px",
-        display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-          <YgbCrown size={46} color={C.gold} />
+      <div style={{ background:C.panel, padding:"22px 32px",
+        display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:16 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:18 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/ygb-mark.png" alt="YGB" style={{ height:46, width:"auto", display:"block" }} />
           <div>
             <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(24px,5vw,40px)",
               color:C.gold, margin:0, letterSpacing:"0.05em" }}>
-              YGB CREATORS CAMP
+              CREATORS CAMP
             </h1>
             <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:12, letterSpacing:"0.3em",
-              color:C.muted, margin:0 }}>ADMIN DASHBOARD · AUGUST 3–7, 2026</p>
+              color:C.muted, margin:0 }}>ADMIN DASHBOARD · AUGUST 3 TO 7, 2026</p>
           </div>
         </div>
         <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
@@ -433,6 +433,10 @@ export default function YGBAdmin() {
           <StatBox label="Showcase RSVPs" val={regs.filter(r=>r.showcase_attending).length} color={C.green} />
         </div>
       </div>
+
+      {/* Kente accent (matches the site) */}
+      <div aria-hidden="true" style={{ height:5, backgroundColor:"#0B0B0B",
+        backgroundImage:`repeating-linear-gradient(90deg, ${C.gold} 0 3px, transparent 3px 7px, ${C.red} 7px 10px, transparent 10px 14px, ${C.green} 14px 17px, transparent 17px 21px)` }} />
 
       {/* Tabs */}
       <div style={{ background:C.panel, display:"flex", borderBottom:`1px solid ${C.border}`, padding:"0 32px", flexWrap:"wrap" }}>

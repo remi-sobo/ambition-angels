@@ -333,6 +333,26 @@
       font-size: 19px;
       color: var(--gray-warm);
     }
+    /* Returns the kiosk to a fresh form for the next person. */
+    .btn-restart {
+      margin-top: 28px;
+      min-height: 60px;
+      padding: 14px 28px;
+      border: 2px solid var(--orange);
+      border-radius: 14px;
+      background: transparent;
+      color: var(--orange);
+      font-family: var(--font-heading);
+      font-size: 19px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .btn-restart:hover { background: var(--orange); color: var(--white); }
+    .btn-restart:focus-visible {
+      outline: 3px solid rgba(232, 80, 10, 0.45);
+      outline-offset: 3px;
+    }
 
     .hidden { display: none !important; }
 
@@ -449,6 +469,7 @@
           </div>
           <h2>You're in.</h2>
           <p>Thanks — we'll be in touch soon.</p>
+          <button type="button" class="btn-restart" id="restartBtn">Sign up someone else</button>
         </div>
       </div>
     </div>
@@ -472,6 +493,7 @@
     const errorBanner = document.getElementById("errorBanner");
     const errorText   = document.getElementById("errorText");
     const retryBtn    = document.getElementById("retryBtn");
+    const restartBtn  = document.getElementById("restartBtn");
     const successPanel= document.getElementById("successPanel");
     const liveStatus  = document.getElementById("liveStatus");
 
@@ -498,6 +520,18 @@
       successPanel.classList.remove("hidden");
       liveStatus.textContent = "Thanks. We'll be in touch soon.";
       successPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    // Clear everything and bring the blank form back — ready for the next
+    // person at the kiosk.
+    function restartForm() {
+      form.reset();
+      clearError();
+      successPanel.classList.add("hidden");
+      form.classList.remove("hidden");
+      liveStatus.textContent = "";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.getElementById("firstname").focus();
     }
 
     // Build the JSON payload for our own API from the current form state.
@@ -567,6 +601,8 @@
       clearError();
       submitSignup();
     });
+
+    restartBtn.addEventListener("click", restartForm);
   </script>
 </body>
 </html>

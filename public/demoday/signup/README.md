@@ -1,8 +1,10 @@
 # Demo Day donor signup form
 
-A static, dependency-free signup form for the Fast Forward Demo Day. It posts
-directly to HubSpot via the [Forms Submissions API][api] — no backend, no
-build step.
+A static, dependency-free signup form for Demo Day, styled to match the
+**Ambition Angels** website (ink background + dot texture, Big Shoulders Display
+headline, orange CTA, cream form card). It posts directly to HubSpot via the
+[Forms Submissions API][api] — no backend, no build step. The layout is sized
+up for an **iPad** kiosk: large type, 60px+ inputs, a 68px submit button.
 
 - **File:** `public/demoday/signup/index.html`
 - **Live URL:** `https://www.ambitionangels.org/demoday/signup`
@@ -10,8 +12,12 @@ build step.
   `/demoday/signup/index.html`)
 - **Access:** public — unlike the lookbook (`/demoday`), this page is **not**
   password-gated, so donors can reach it from a link or QR code.
-- **Fonts:** loaded from `/demoday/fonts.css` (the same Owners / Owners Text /
-  Forma DJR Mono brand faces used by the lookbook).
+- **Fonts:** Big Shoulders Display, Poppins, and DM Sans, loaded from Google
+  Fonts (the same brand typefaces as the main site). No dependency on the
+  lookbook's `/demoday/fonts.css`.
+- **Photo:** `/images/teens-group-phone.jpg` (teens around a phone) runs as a
+  hero banner across the top of the card. Swap the `src` on the `.hero img` to
+  change it.
 
 [api]: https://developers.hubspot.com/docs/api/marketing/forms
 
@@ -91,7 +97,7 @@ Then open <http://localhost:3000/demoday/signup>.
   HubSpot.
 - **After** pasting real IDs: a real submission will create/update a contact.
   Open DevTools → Network and watch the `submit/...` request; a **200** means
-  success and the form is replaced with *"Thanks. We'll be in touch soon."*
+  success and the form is replaced with the *"You're in."* confirmation.
 - The Forms API allows submissions from any origin (CORS is open), so
   `localhost` submissions work the same as production.
 - Force the error path by temporarily setting `FORM_GUID` to a bad value — you
@@ -112,8 +118,12 @@ Then open <http://localhost:3000/demoday/signup>.
 
 ## Editing copy
 
-- **Header** (`<h1>`): currently *"Be part of what's next."*
+- **Header** (`<h1>`): currently *"Be part of what's next."* — the *"what's
+  next."* line carries the orange `.accent` span.
 - **Subcopy**: the `<p class="subcopy">` is marked `EDIT ME` — swap freely.
 - **CTA**: the button label *"Count me in"* lives in the markup and in the
   `setLoading()` function (it's reset there after submitting) — change both.
-- **Success message**: the `<h2>` inside `#successPanel`.
+- **Success message**: the `<h2>` (*"You're in."*) and `<p>` inside
+  `#successPanel`.
+- **Hero photo**: the `<img>` inside `.hero` — point `src` at any file in
+  `public/images/`.

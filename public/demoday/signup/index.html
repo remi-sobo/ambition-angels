@@ -4,114 +4,161 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Be part of what's next · Ambition Angels — Fast Forward Demo Day</title>
+  <title>Be part of what's next · Ambition Angels — Demo Day</title>
   <link rel="icon" type="image/png" href="/demoday/favicon.png">
   <link rel="apple-touch-icon" href="/demoday/favicon.png">
 
-  <!-- Brand fonts (Owners / Owners Text / Forma DJR Mono), shared with the lookbook. -->
-  <link rel="stylesheet" href="/demoday/fonts.css">
+  <!-- Ambition Angels brand fonts (matches the main site: Big Shoulders Display
+       for display headlines, Poppins for headings/labels, DM Sans for body). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=DM+Sans:ital,wght@0,400;0,500;0,700&family=Poppins:wght@500;600;700&display=swap">
 
   <style>
     /* ============================================================
-       Design tokens — mirrored from the lookbook (public/demoday/index.html)
+       Ambition Angels design tokens (mirrored from app/globals.css)
        ============================================================ */
     :root {
-      --ffwd-primary:     #0071BC;
-      --ffwd-dark-blue:   #1D2B73;
-      --ffwd-orange:      #FF6200;
-      --ffwd-red:         #E62600;
-      --ffwd-green:       #00B03E;
-      --ffwd-off-white:   #F9FAF5;
-      --ffwd-white:       #FFFFFF;
-      --ffwd-eggshell-50: #F8F2E3;
-      --ffwd-gray-700:    #3A3A4A;
-      --ffwd-gray-500:    #6B6B7B;
-      --ffwd-gray-300:    #D1D1D9;
-      --ffwd-gray-200:    #E8E8EC;
-      --ffwd-gray-100:    #F7F7F8;
+      --orange:       #E8500A;
+      --orange-dark:  #B83D06;
+      --orange-light: #FFF0EA;
+      --ink:          #0E0E0E;
+      --charcoal:     #3D3D3D;
+      --gray-warm:    #6B6960;
+      --gray-mid:     #C8C6BE;
+      --gray-light:   #F0EEE8;
+      --cream:        #FAFAF8;
+      --white:        #FFFFFF;
 
-      --font-headline:    'Owners', 'Arial Black', sans-serif;
-      --font-body:        'Owners Text', 'Helvetica Neue', Arial, sans-serif;
-      --font-mono:        'Forma DJR Mono', 'SF Mono', 'Fira Code', monospace;
+      --font-display: 'Big Shoulders Display', 'Arial Black', sans-serif;
+      --font-heading: 'Poppins', 'Helvetica Neue', Arial, sans-serif;
+      --font-body:    'DM Sans', 'Helvetica Neue', Arial, sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: var(--font-body);
-      background: var(--ffwd-off-white);
-      color: var(--ffwd-gray-700);
-      line-height: 1.55;
+      color: var(--ink);
+      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
-      padding: 40px 20px 64px;
+      -moz-osx-font-smoothing: grayscale;
+      /* Ink page with the signature dot texture used across the site's dark sections. */
+      background-color: var(--ink);
+      background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 22px 22px;
+      padding: 48px 24px 72px;
     }
 
     .wrap {
       width: 100%;
-      max-width: 520px;
+      max-width: 760px;       /* roomy for an iPad */
       margin: 0 auto;
     }
 
-    /* ---------- Header ---------- */
+    /* ---------- Panel (photo banner + form share one rounded card) ---------- */
+    .panel {
+      background: var(--cream);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+    }
+
+    /* ---------- Hero photo: teens on a phone ---------- */
+    .hero {
+      position: relative;
+      height: 300px;
+    }
+    .hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 35%;
+      display: block;
+    }
+    /* Ink fade at the bottom of the photo so the eyebrow + headline sit on it cleanly. */
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(14,14,14,0.78) 0%, rgba(14,14,14,0.15) 45%, transparent 75%);
+    }
+    .hero-copy {
+      position: absolute;
+      left: 36px;
+      right: 36px;
+      bottom: 28px;
+      z-index: 1;
+    }
+    @media (min-width: 600px) {
+      .hero { height: 360px; }
+      .hero-copy { left: 48px; right: 48px; }
+    }
+
     .eyebrow {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.16em;
+      display: inline-block;
+      font-family: var(--font-heading);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: var(--ffwd-primary);
-      margin-bottom: 14px;
+      color: var(--orange);
+      background: rgba(232, 80, 10, 0.16);
+      border: 1px solid rgba(232, 80, 10, 0.45);
+      padding: 7px 16px;
+      border-radius: 999px;
+      margin-bottom: 16px;
     }
     h1 {
-      font-family: var(--font-headline);
+      font-family: var(--font-display);
       font-weight: 900;
-      font-size: 34px;
-      line-height: 1.12;
-      letter-spacing: -0.02em;
-      color: var(--ffwd-dark-blue);
-      margin-bottom: 10px;
+      text-transform: uppercase;
+      font-size: 58px;
+      line-height: 0.92;
+      letter-spacing: -0.01em;
+      color: var(--cream);
     }
-    /* EDIT ME: one-sentence subcopy below the header. */
+    h1 .accent { color: var(--orange); }
+    @media (min-width: 600px) {
+      h1 { font-size: 72px; }
+    }
+
+    /* ---------- Body of the panel ---------- */
+    .body {
+      padding: 36px 36px 44px;
+    }
+    @media (min-width: 600px) {
+      .body { padding: 44px 48px 52px; }
+    }
+
     .subcopy {
       font-family: var(--font-body);
-      font-size: 16px;
-      color: var(--ffwd-gray-500);
-      max-width: 46ch;
-      margin-bottom: 28px;
+      font-size: 20px;
+      line-height: 1.5;
+      color: var(--gray-warm);
+      max-width: 52ch;
+      margin-bottom: 32px;
     }
 
-    @media (min-width: 600px) {
-      h1 { font-size: 40px; }
-    }
-
-    /* ---------- Card / form ---------- */
-    .card {
-      background: var(--ffwd-white);
-      border: 1px solid var(--ffwd-gray-200);
-      border-radius: 16px;
-      padding: 28px 24px;
-      box-shadow: 0 8px 40px rgba(14, 14, 14, 0.05);
-    }
-    @media (min-width: 600px) {
-      .card { padding: 36px 32px; }
-    }
-
-    .field { margin-bottom: 18px; }
+    /* ---------- Form ---------- */
+    .field { margin-bottom: 22px; }
 
     label.field-label,
     legend.field-label {
       display: block;
-      font-family: var(--font-body);
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--ffwd-gray-700);
-      margin-bottom: 7px;
+      font-family: var(--font-heading);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 9px;
     }
-    .req { color: var(--ffwd-primary); }
+    .req { color: var(--orange); }
     .optional {
+      font-family: var(--font-body);
       font-weight: 500;
-      color: var(--ffwd-gray-500);
-      font-size: 12px;
+      color: var(--gray-warm);
+      font-size: 14px;
     }
 
     input[type="text"],
@@ -119,162 +166,172 @@
     input[type="tel"],
     textarea {
       width: 100%;
-      min-height: 48px; /* >= 44px tap target */
-      padding: 12px 14px;
+      min-height: 60px;            /* generous tap target for touch */
+      padding: 16px 18px;
       font-family: var(--font-body);
-      font-size: 16px; /* >=16px prevents iOS zoom-on-focus */
-      color: var(--ffwd-gray-700);
-      background: var(--ffwd-white);
-      border: 1px solid var(--ffwd-gray-300);
-      border-radius: 10px;
+      font-size: 19px;             /* >=16px avoids iOS zoom-on-focus */
+      color: var(--ink);
+      background: var(--white);
+      border: 1.5px solid var(--gray-light);
+      border-radius: 14px;
       outline: none;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     textarea {
-      min-height: 96px;
+      min-height: 120px;
       resize: vertical;
       line-height: 1.5;
     }
     input:focus,
     textarea:focus {
-      border-color: var(--ffwd-primary);
-      box-shadow: 0 0 0 3px rgba(0, 113, 188, 0.18);
+      border-color: var(--orange);
+      box-shadow: 0 0 0 4px rgba(232, 80, 10, 0.16);
     }
     input:invalid:not(:placeholder-shown) {
-      border-color: var(--ffwd-red);
+      border-color: var(--orange-dark);
     }
 
     /* ---------- Checkboxes ---------- */
-    fieldset { border: none; margin-bottom: 18px; }
-    .check-group { display: flex; flex-direction: column; gap: 8px; }
+    fieldset { border: none; margin-bottom: 22px; }
+    .check-group { display: flex; flex-direction: column; gap: 12px; }
     .check-row {
       display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      min-height: 44px; /* tap target */
-      padding: 9px 12px;
-      border: 1px solid var(--ffwd-gray-200);
-      border-radius: 10px;
-      background: var(--ffwd-gray-100);
+      align-items: center;
+      gap: 16px;
+      min-height: 60px;
+      padding: 14px 18px;
+      border: 1.5px solid var(--gray-light);
+      border-radius: 14px;
+      background: var(--white);
       cursor: pointer;
       transition: border-color 0.15s ease, background 0.15s ease;
     }
-    .check-row:hover { border-color: var(--ffwd-gray-300); }
+    .check-row:hover { border-color: var(--gray-mid); }
     .check-row:focus-within {
-      border-color: var(--ffwd-primary);
-      box-shadow: 0 0 0 3px rgba(0, 113, 188, 0.18);
+      border-color: var(--orange);
+      box-shadow: 0 0 0 4px rgba(232, 80, 10, 0.16);
+    }
+    .check-row:has(input:checked) {
+      border-color: var(--orange);
+      background: var(--orange-light);
     }
     .check-row input[type="checkbox"] {
-      width: 22px;
-      height: 22px;
-      margin-top: 1px;
+      width: 28px;
+      height: 28px;
       flex-shrink: 0;
-      accent-color: var(--ffwd-primary);
+      accent-color: var(--orange);
       cursor: pointer;
     }
     .check-row span {
-      font-size: 15px;
-      color: var(--ffwd-gray-700);
-      padding-top: 1px;
+      font-family: var(--font-body);
+      font-size: 19px;
+      color: var(--ink);
     }
 
     /* ---------- Submit ---------- */
     .btn-submit {
       width: 100%;
-      min-height: 52px;
-      margin-top: 8px;
+      min-height: 68px;
+      margin-top: 12px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      padding: 14px 20px;
+      gap: 12px;
+      padding: 18px 24px;
       border: none;
-      border-radius: 10px;
-      background: var(--ffwd-primary);
-      color: var(--ffwd-white);
-      font-family: var(--font-body);
-      font-size: 17px;
+      border-radius: 14px;
+      background: var(--orange);
+      color: var(--white);
+      font-family: var(--font-heading);
+      font-size: 22px;
       font-weight: 700;
       letter-spacing: 0.01em;
       cursor: pointer;
       transition: filter 0.15s ease, opacity 0.15s ease;
     }
-    .btn-submit:hover { filter: brightness(1.12); }
+    .btn-submit:hover { filter: brightness(1.08); }
     .btn-submit:focus-visible {
-      outline: 3px solid rgba(0, 113, 188, 0.4);
-      outline-offset: 2px;
+      outline: 3px solid rgba(232, 80, 10, 0.45);
+      outline-offset: 3px;
     }
     .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; filter: none; }
 
     .spinner {
-      width: 18px;
-      height: 18px;
-      border: 2px solid rgba(255, 255, 255, 0.45);
-      border-top-color: var(--ffwd-white);
+      width: 22px;
+      height: 22px;
+      border: 2.5px solid rgba(255, 255, 255, 0.45);
+      border-top-color: var(--white);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .privacy {
-      margin-top: 14px;
-      font-size: 12.5px;
-      color: var(--ffwd-gray-500);
+      margin-top: 18px;
+      font-size: 15px;
+      color: var(--gray-warm);
       text-align: center;
     }
 
     /* ---------- Error banner ---------- */
     .error-banner {
-      margin-bottom: 18px;
-      padding: 12px 14px;
-      border-radius: 10px;
-      background: #FCE8E0;
-      border: 1px solid #F3B9A6;
-      color: #B83D06;
-      font-size: 14px;
+      margin-bottom: 22px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      background: var(--orange-light);
+      border: 1.5px solid rgba(232, 80, 10, 0.45);
+      color: var(--orange-dark);
+      font-size: 17px;
       line-height: 1.45;
     }
     .error-banner button {
-      margin-top: 8px;
+      margin-top: 10px;
       background: none;
       border: none;
       padding: 0;
-      color: #B83D06;
-      font-family: var(--font-body);
-      font-size: 14px;
+      color: var(--orange-dark);
+      font-family: var(--font-heading);
+      font-size: 17px;
       font-weight: 700;
       text-decoration: underline;
       text-underline-offset: 2px;
       cursor: pointer;
     }
     .error-banner button:focus-visible {
-      outline: 2px solid #B83D06;
+      outline: 2px solid var(--orange-dark);
       outline-offset: 2px;
     }
 
     /* ---------- Success state ---------- */
     .success {
       text-align: center;
-      padding: 16px 8px;
+      padding: 24px 8px 8px;
     }
     .success .tick {
-      width: 56px;
-      height: 56px;
-      margin: 0 auto 18px;
+      width: 76px;
+      height: 76px;
+      margin: 0 auto 22px;
       border-radius: 50%;
-      background: rgba(0, 176, 62, 0.12);
+      background: var(--orange-light);
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .success .tick svg { width: 30px; height: 30px; color: var(--ffwd-green); }
+    .success .tick svg { width: 40px; height: 40px; color: var(--orange); }
     .success h2 {
-      font-family: var(--font-headline);
+      font-family: var(--font-display);
       font-weight: 900;
-      font-size: 26px;
+      text-transform: uppercase;
+      font-size: 40px;
+      line-height: 1.02;
       letter-spacing: -0.01em;
-      color: var(--ffwd-dark-blue);
-      line-height: 1.2;
+      color: var(--ink);
+      margin-bottom: 10px;
+    }
+    .success p {
+      font-family: var(--font-body);
+      font-size: 19px;
+      color: var(--gray-warm);
     }
 
     .hidden { display: none !important; }
@@ -291,97 +348,108 @@
 </head>
 <body>
   <main class="wrap">
-    <p class="eyebrow">Fast Forward · Demo Day</p>
-    <h1>Be part of what's next.</h1>
-    <!-- EDIT ME: swap this sentence anytime. -->
-    <p class="subcopy">Tell us how you'd like to get involved with Ambition Angels, and we'll follow up with the right next step for you.</p>
-
-    <div class="card">
-      <!-- Error banner (hidden until a submission fails) -->
-      <div id="errorBanner" class="error-banner hidden" role="alert">
-        <span id="errorText">Something went wrong sending your details.</span>
-        <br>
-        <button type="button" id="retryBtn">Try again</button>
+    <div class="panel">
+      <!-- Hero photo: teens reacting to a phone, with the headline laid over an ink fade. -->
+      <div class="hero">
+        <img src="/images/teens-group-phone.jpg"
+             alt="A group of teens laughing together around a phone">
+        <div class="hero-copy">
+          <p class="eyebrow">Ambition Angels · Demo Day</p>
+          <h1>Be part of<br><span class="accent">what's next.</span></h1>
+        </div>
       </div>
 
-      <form id="signupForm" novalidate>
-        <div class="field">
-          <label class="field-label" for="firstname">First name <span class="req" aria-hidden="true">*</span></label>
-          <input type="text" id="firstname" name="firstname" autocomplete="given-name" required aria-required="true" placeholder=" ">
+      <div class="body">
+        <!-- EDIT ME: swap this sentence anytime. -->
+        <p class="subcopy">Tell us how you'd like to get involved with Ambition Angels, and we'll follow up with the right next step for you.</p>
+
+        <!-- Error banner (hidden until a submission fails) -->
+        <div id="errorBanner" class="error-banner hidden" role="alert">
+          <span id="errorText">Something went wrong sending your details.</span>
+          <br>
+          <button type="button" id="retryBtn">Try again</button>
         </div>
 
-        <div class="field">
-          <label class="field-label" for="lastname">Last name <span class="req" aria-hidden="true">*</span></label>
-          <input type="text" id="lastname" name="lastname" autocomplete="family-name" required aria-required="true" placeholder=" ">
-        </div>
-
-        <div class="field">
-          <label class="field-label" for="email">Email <span class="req" aria-hidden="true">*</span></label>
-          <input type="email" id="email" name="email" autocomplete="email" required aria-required="true" placeholder=" ">
-        </div>
-
-        <div class="field">
-          <label class="field-label" for="phone">Phone <span class="optional">(optional)</span></label>
-          <input type="tel" id="phone" name="phone" autocomplete="tel" placeholder=" ">
-        </div>
-
-        <div class="field">
-          <label class="field-label" for="company">Company or organization <span class="optional">(optional)</span></label>
-          <input type="text" id="company" name="company" autocomplete="organization" placeholder=" ">
-        </div>
-
-        <div class="field">
-          <label class="field-label" for="jobtitle">Role / title <span class="optional">(optional)</span></label>
-          <input type="text" id="jobtitle" name="jobtitle" autocomplete="organization-title" placeholder=" ">
-        </div>
-
-        <fieldset>
-          <legend class="field-label">How would you like to engage?</legend>
-          <div class="check-group">
-            <label class="check-row">
-              <input type="checkbox" name="engagement" value="Make a gift">
-              <span>Make a gift</span>
-            </label>
-            <label class="check-row">
-              <input type="checkbox" name="engagement" value="Introduce me to others who should know about this">
-              <span>Introduce me to others who should know about this</span>
-            </label>
-            <label class="check-row">
-              <input type="checkbox" name="engagement" value="Mentor a teen">
-              <span>Mentor a teen</span>
-            </label>
-            <label class="check-row">
-              <input type="checkbox" name="engagement" value="Stay informed">
-              <span>Stay informed</span>
-            </label>
+        <form id="signupForm" novalidate>
+          <div class="field">
+            <label class="field-label" for="firstname">First name <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="firstname" name="firstname" autocomplete="given-name" required aria-required="true" placeholder=" ">
           </div>
-        </fieldset>
 
-        <div class="field">
-          <label class="field-label" for="note">Anything else? <span class="optional">(optional)</span></label>
-          <textarea id="note" name="note" placeholder=" "></textarea>
+          <div class="field">
+            <label class="field-label" for="lastname">Last name <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="lastname" name="lastname" autocomplete="family-name" required aria-required="true" placeholder=" ">
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="email">Email <span class="req" aria-hidden="true">*</span></label>
+            <input type="email" id="email" name="email" autocomplete="email" required aria-required="true" placeholder=" ">
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="phone">Phone <span class="optional">(optional)</span></label>
+            <input type="tel" id="phone" name="phone" autocomplete="tel" placeholder=" ">
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="company">Company or organization <span class="optional">(optional)</span></label>
+            <input type="text" id="company" name="company" autocomplete="organization" placeholder=" ">
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="jobtitle">Role / title <span class="optional">(optional)</span></label>
+            <input type="text" id="jobtitle" name="jobtitle" autocomplete="organization-title" placeholder=" ">
+          </div>
+
+          <fieldset>
+            <legend class="field-label">How would you like to engage?</legend>
+            <div class="check-group">
+              <label class="check-row">
+                <input type="checkbox" name="engagement" value="Make a gift">
+                <span>Make a gift</span>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" name="engagement" value="Introduce me to others who should know about this">
+                <span>Introduce me to others who should know about this</span>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" name="engagement" value="Mentor a teen">
+                <span>Mentor a teen</span>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" name="engagement" value="Stay informed">
+                <span>Stay informed</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="field">
+            <label class="field-label" for="note">Anything else? <span class="optional">(optional)</span></label>
+            <textarea id="note" name="note" placeholder=" "></textarea>
+          </div>
+
+          <button type="submit" class="btn-submit" id="submitBtn">
+            <span class="spinner hidden" id="spinner" aria-hidden="true"></span>
+            <span id="submitLabel">Count me in</span>
+          </button>
+
+          <p class="privacy">We'll only use your details to follow up. No spam.</p>
+
+          <!-- Polite live region for status updates announced to screen readers -->
+          <p class="sr-only" id="liveStatus" role="status" aria-live="polite"></p>
+        </form>
+
+        <!-- Success state (replaces the form on success) -->
+        <div id="successPanel" class="success hidden">
+          <div class="tick" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 6 9 17l-5-5"/>
+            </svg>
+          </div>
+          <h2>You're in.</h2>
+          <p>Thanks — we'll be in touch soon.</p>
         </div>
-
-        <button type="submit" class="btn-submit" id="submitBtn">
-          <span class="spinner hidden" id="spinner" aria-hidden="true"></span>
-          <span id="submitLabel">Count me in</span>
-        </button>
-
-        <p class="privacy">We'll only use your details to follow up. No spam.</p>
-
-        <!-- Polite live region for status updates announced to screen readers -->
-        <p class="sr-only" id="liveStatus" role="status" aria-live="polite"></p>
-      </form>
-
-      <!-- Success state (replaces the form on success) -->
-      <div id="successPanel" class="success hidden">
-        <div class="tick" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 6 9 17l-5-5"/>
-          </svg>
-        </div>
-        <h2>Thanks. We'll be in touch soon.</h2>
       </div>
     </div>
   </main>

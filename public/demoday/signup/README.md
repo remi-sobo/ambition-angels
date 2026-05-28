@@ -1,118 +1,93 @@
-# Demo Day donor signup form
+# Demo Day signup form
 
-A static, dependency-free signup form for Demo Day, styled to match the
-**Ambition Angels** website (ink background + dot texture, Big Shoulders Display
-headline, orange CTA, cream form card). It posts directly to HubSpot via the
-[Forms Submissions API][api] — no backend, no build step. The layout is sized
-up for an **iPad** kiosk: large type, 60px+ inputs, a 68px submit button.
+A signup form for Demo Day, styled to match the **Ambition Angels** website
+(ink background + dot texture, Big Shoulders Display headline, orange CTA, cream
+form card) and sized up for an **iPad** kiosk (large type, 60px+ inputs, a 68px
+submit button).
 
-- **File:** `public/demoday/signup/index.html`
+Submissions post to the site's **own API** — no third-party setup, no keys to
+paste. Each signup is saved to Supabase and shows up in the admin.
+
+- **Page:** `public/demoday/signup/index.html`
 - **Live URL:** `https://www.ambitionangels.org/demoday/signup`
   (clean URL via a rewrite in `next.config.mjs`; the raw file also works at
   `/demoday/signup/index.html`)
 - **Access:** public — unlike the lookbook (`/demoday`), this page is **not**
-  password-gated, so donors can reach it from a link or QR code.
-- **Fonts:** Big Shoulders Display, Poppins, and DM Sans, loaded from Google
-  Fonts (the same brand typefaces as the main site). No dependency on the
-  lookbook's `/demoday/fonts.css`.
-- **Photo:** `/images/teens-group-phone.jpg` (teens around a phone) runs as a
-  hero banner across the top of the card. Swap the `src` on the `.hero img` to
-  change it.
-
-[api]: https://developers.hubspot.com/docs/api/marketing/forms
+  password-gated, so supporters can reach it from a link or QR code.
+- **Photo:** `/images/teens-group-phone.jpg` runs as a hero banner across the
+  top of the card. Swap the `src` on `.hero img` to change it.
+- **Fonts:** Big Shoulders Display, Poppins, DM Sans (Google Fonts).
 
 ---
 
-## 1. Paste your HubSpot IDs
-
-Open `index.html` and find the `HUBSPOT` config object near the top of the
-`<script>` block:
-
-```js
-const HUBSPOT = {
-  PORTAL_ID: "YOUR_PORTAL_ID",
-  FORM_GUID: "YOUR_FORM_GUID",
-};
-```
-
-- **`PORTAL_ID`** (a.k.a. Hub ID) — your numeric HubSpot account ID.
-  Find it under **Settings → Account Management → Account Defaults**, or read
-  it from the URL after login: `app.hubspot.com/contacts/<PORTAL_ID>/...`.
-- **`FORM_GUID`** — the ID of the HubSpot form (see step 2). After you create
-  and save the form, the GUID is the long id that appears in the form's
-  embed/share URL and in the submission endpoint:
-  `.../submit/<PORTAL_ID>/<FORM_GUID>`.
-
-The submission endpoint is assembled automatically:
+## How it flows
 
 ```
-https://api.hsforms.com/submissions/v3/integration/submit/{PORTAL_ID}/{FORM_GUID}
+public/demoday/signup/index.html
+        │  POST (JSON)
+        ▼
+app/api/demoday/signup/route.ts ──► Supabase `demoday_signups` table
+        │                          └► email notification to Remi (Resend, optional)
+        ▼
+/admin/demoday  →  "Signups" tab  (app/admin/demoday/DemoDaySignups.tsx)
+        └─ list / table view + Export CSV  (reads /api/admin/demoday/signups)
 ```
+
+Nothing to configure on the page itself — it posts to a same-origin endpoint,
+so it works in `next dev` and in production with no keys.
 
 ---
 
-## 2. Create the form in HubSpot with these fields
+## The data
 
-In HubSpot: **Marketing → Forms → Create form** (a regular / embed form works).
-Add fields with these **internal names** (the on-screen label can be anything).
-The form will only accept fields it knows about, so every name below must exist.
+Stored in the `demoday_signups` table (migration:
+`supabase/migrations/create_demoday_signups.sql`):
 
-| Form field (internal name) | Type | Source on the page |
-|---|---|---|
-| `firstname` | Default contact property | First name (required) |
-| `lastname`  | Default contact property | Last name (required) |
-| `email`     | Default contact property | Email (required, validated) |
-| `phone`     | Default contact property | Phone (optional) |
-| `company`   | Default contact property | Company or organization (optional) |
-| `jobtitle`  | Default contact property | Role / title (optional) |
-| `engagement_interests` | **Custom — Multi-line text** | "How would you like to engage?" checkboxes, joined with `"; "` |
-| `signup_note` | **Custom — Multi-line text** | Optional note |
-| `signup_source` | **Custom — Single-line text** | Always sent as `"Demo Day Signup"` |
+| Column | Source on the form |
+|---|---|
+| `first_name` | First name (required) |
+| `last_name` | Last name (required) |
+| `email` | Email (required, validated) |
+| `phone` | Phone (optional) |
+| `company` | Company or organization (optional) |
+| `title` | Role / title (optional) |
+| `engagement` | "How would you like to engage?" checkboxes (text array) |
+| `note` | Anything else? (optional) |
+| `source` | Always `"Demo Day Signup"` |
 
-### Notes
-- **`engagement_interests`** receives a single semicolon-separated string, e.g.
-  `Make a gift; Mentor a teen`. Use **Multi-line text** (not a checkbox /
-  enumeration property) so it accepts free-form values.
-- **`signup_source`** is the hidden field for segmentation. Filter or build a
-  list on `signup_source is "Demo Day Signup"` to isolate these contacts.
-- To create a custom property: **Settings → Properties → Create property**
-  (object: Contact), then add it to the form.
-- Empty optional fields are omitted from the payload (HubSpot rejects empty
-  values for some property types), so only filled-in fields are sent.
+The table has **RLS enabled with no policies** — all access goes through the
+service-role key in `lib/supabase/admin.ts`, so the public anon key can't read
+these supporter contacts. The admin list route checks the `admin_auth` cookie.
+
+### Engagement options
+Defined in two places that must stay in sync:
+- the checkboxes in `index.html`
+- the `ENGAGEMENT_OPTIONS` whitelist in `app/api/demoday/signup/route.ts`
+  (values outside the list are dropped)
+
+Current options: *As a potential funder*, *As a connector*, *As a mentor*,
+*Just staying informed*.
 
 ---
 
-## 3. Test locally
+## Email notifications
 
-From the repo root:
+If `RESEND_API_KEY` is set, each submission emails a summary to
+`DEMODAY_NOTIFY_EMAIL` (defaults to `remi@ambitionangels.org`). Missing key →
+notifications are skipped silently; the signup is still saved.
+
+---
+
+## Test locally
 
 ```bash
 npm run dev
 ```
 
-Then open <http://localhost:3000/demoday/signup>.
-
-- **Before** pasting real IDs: submitting logs a config warning to the console
-  and shows the inline error — useful for checking the UI without hitting
-  HubSpot.
-- **After** pasting real IDs: a real submission will create/update a contact.
-  Open DevTools → Network and watch the `submit/...` request; a **200** means
-  success and the form is replaced with the *"You're in."* confirmation.
-- The Forms API allows submissions from any origin (CORS is open), so
-  `localhost` submissions work the same as production.
-- Force the error path by temporarily setting `FORM_GUID` to a bad value — you
-  should see the red banner with a working **Try again** link.
-
----
-
-## 4. Verify a submission landed in HubSpot
-
-1. In HubSpot go to **CRM → Contacts** and search the email you submitted.
-2. Open the contact and confirm `firstname`, `lastname`, `phone`, `company`,
-   `jobtitle`, `engagement_interests`, `signup_note`, and `signup_source` are
-   populated as expected.
-3. Or open the form itself → **Submissions** tab to see the raw entry.
-4. `signup_source = "Demo Day Signup"` is your filter for reporting and lists.
+Open <http://localhost:3000/demoday/signup>, submit, then check
+<http://localhost:3000/admin/demoday> → **Signups** tab. Requires
+`NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in your env for the
+write to land.
 
 ---
 
@@ -120,10 +95,8 @@ Then open <http://localhost:3000/demoday/signup>.
 
 - **Header** (`<h1>`): currently *"Be part of what's next."* — the *"what's
   next."* line carries the orange `.accent` span.
-- **Subcopy**: the `<p class="subcopy">` is marked `EDIT ME` — swap freely.
-- **CTA**: the button label *"Count me in"* lives in the markup and in the
-  `setLoading()` function (it's reset there after submitting) — change both.
-- **Success message**: the `<h2>` (*"You're in."*) and `<p>` inside
-  `#successPanel`.
-- **Hero photo**: the `<img>` inside `.hero` — point `src` at any file in
-  `public/images/`.
+- **Subcopy**: the `<p class="subcopy">` is marked `EDIT ME`.
+- **CTA**: the button label *"Count me in"* lives in the markup and in
+  `setLoading()` — change both.
+- **Success message**: the `<h2>` (*"You're in."*) and `<p>` in `#successPanel`.
+- **Hero photo**: the `<img>` inside `.hero`.

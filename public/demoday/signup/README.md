@@ -99,4 +99,6 @@ write to land.
 - **CTA**: the button label *"Count me in"* lives in the markup and in
   `setLoading()` — change both.
 - **Success message**: the `<h2>` (*"You're in."*) and `<p>` in `#successPanel`.
+- **"Sign up someone else"**: the `#restartBtn` on the success panel resets the
+  form for the next person at the kiosk (`restartForm()`).
 - **Hero photo**: the `<img>` inside `.hero`.

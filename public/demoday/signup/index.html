@@ -405,20 +405,20 @@
             <legend class="field-label">How would you like to engage?</legend>
             <div class="check-group">
               <label class="check-row">
-                <input type="checkbox" name="engagement" value="Make a gift">
-                <span>Make a gift</span>
+                <input type="checkbox" name="engagement" value="As a potential funder">
+                <span>As a potential funder</span>
               </label>
               <label class="check-row">
-                <input type="checkbox" name="engagement" value="Introduce me to others who should know about this">
-                <span>Introduce me to others who should know about this</span>
+                <input type="checkbox" name="engagement" value="As a connector">
+                <span>As a connector</span>
               </label>
               <label class="check-row">
-                <input type="checkbox" name="engagement" value="Mentor a teen">
-                <span>Mentor a teen</span>
+                <input type="checkbox" name="engagement" value="As a mentor">
+                <span>As a mentor</span>
               </label>
               <label class="check-row">
-                <input type="checkbox" name="engagement" value="Stay informed">
-                <span>Stay informed</span>
+                <input type="checkbox" name="engagement" value="Just staying informed">
+                <span>Just staying informed</span>
               </label>
             </div>
           </fieldset>
@@ -456,36 +456,14 @@
 
   <script>
     /* ============================================================
-       HubSpot configuration — PASTE YOUR VALUES HERE
+       Submission
        ============================================================
-
-       PORTAL_ID  (a.k.a. Hub ID): the numeric ID of your HubSpot account.
-                  Find it: HubSpot → Settings (gear icon) → Account Management
-                  → Account Defaults, or in the URL after login
-                  (app.hubspot.com/contacts/<PORTAL_ID>/...).
-
-       FORM_GUID: the ID of the HubSpot form these submissions feed into.
-                  Create a form: HubSpot → Marketing → Forms → Create form
-                  (a non-HubSpot / "embed" form is fine). After saving, the
-                  GUID is the long id in the form's share/embed URL, e.g.
-                  .../submissions/v3/integration/submit/<PORTAL_ID>/<FORM_GUID>
-                  or in the page URL when editing the form.
-
-       The form in HubSpot must contain these fields (internal names):
-         firstname, lastname, email, phone, company, jobtitle  (default contact properties)
-         engagement_interests  — custom, "Multi-line text"  (the checkboxes, joined by "; ")
-         signup_note           — custom, "Multi-line text"  (the optional note)
-         signup_source         — custom, "Single-line text" (always "Demo Day Signup")
-       See README.md in this folder for the full setup checklist.
+       Posts to the site's own API (app/api/demoday/signup), which saves the
+       supporter to Supabase and shows up in the admin at /admin/demoday
+       (Signups tab). No third-party setup or keys needed — same origin, so
+       this works in local dev and in production with no configuration.
     */
-    const HUBSPOT = {
-      PORTAL_ID: "YOUR_PORTAL_ID",
-      FORM_GUID: "YOUR_FORM_GUID",
-    };
-
-    // Value written to the hidden "signup_source" field so you can segment
-    // these contacts later in HubSpot.
-    const SIGNUP_SOURCE = "Demo Day Signup";
+    const ENDPOINT = "/api/demoday/signup";
 
     const form        = document.getElementById("signupForm");
     const submitBtn   = document.getElementById("submitBtn");
@@ -522,38 +500,27 @@
       successPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 
-    // Build the HubSpot Forms API payload from the current form state.
+    // Build the JSON payload for our own API from the current form state.
     function buildPayload() {
       const val = (id) => document.getElementById(id).value.trim();
 
-      // Checkboxes -> a single semicolon-separated string for one HubSpot
-      // multi-line text field ("engagement_interests").
       const engagement = Array.from(
         form.querySelectorAll('input[name="engagement"]:checked')
-      ).map((el) => el.value).join("; ");
-
-      const fields = [
-        { name: "firstname", value: val("firstname") },
-        { name: "lastname",  value: val("lastname") },
-        { name: "email",     value: val("email") },
-        { name: "phone",     value: val("phone") },
-        { name: "company",   value: val("company") },
-        { name: "jobtitle",  value: val("jobtitle") },
-        { name: "engagement_interests", value: engagement },
-        { name: "signup_note", value: val("note") },
-        { name: "signup_source", value: SIGNUP_SOURCE },
-      ].filter((f) => f.value !== ""); // HubSpot rejects empty optional values
+      ).map((el) => el.value);
 
       return {
-        fields,
-        context: {
-          pageUri: window.location.href,
-          pageName: document.title,
-        },
+        first_name: val("firstname"),
+        last_name:  val("lastname"),
+        email:      val("email"),
+        phone:      val("phone"),
+        company:    val("company"),
+        title:      val("jobtitle"),
+        engagement: engagement,
+        note:       val("note"),
       };
     }
 
-    async function submitToHubSpot() {
+    async function submitSignup() {
       clearError();
 
       // Native validation: required fields + email format.
@@ -562,22 +529,12 @@
         return;
       }
 
-      if (HUBSPOT.PORTAL_ID === "YOUR_PORTAL_ID" || HUBSPOT.FORM_GUID === "YOUR_FORM_GUID") {
-        console.error("[signup] HubSpot not configured: set HUBSPOT.PORTAL_ID and HUBSPOT.FORM_GUID.");
-        showError("This form isn't fully set up yet. Please try again shortly.");
-        return;
-      }
-
-      const endpoint =
-        `https://api.hsforms.com/submissions/v3/integration/submit/${HUBSPOT.PORTAL_ID}/${HUBSPOT.FORM_GUID}`;
-      const payload = buildPayload();
-
       setLoading(true);
       try {
-        const res = await fetch(endpoint, {
+        const res = await fetch(ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(buildPayload()),
         });
 
         if (res.ok) {
@@ -585,13 +542,16 @@
           return;
         }
 
-        // Non-2xx: log HubSpot's error body for debugging, show a friendly message.
-        let detail = "";
-        try { detail = JSON.stringify(await res.json()); } catch (_) {}
-        console.error("[signup] HubSpot submission failed:", res.status, detail);
-        showError("Sorry — we couldn't submit your details. Please try again.");
+        // Non-2xx: surface the server's message if it sent one.
+        let message = "Sorry — we couldn't submit your details. Please try again.";
+        try {
+          const data = await res.json();
+          if (data && typeof data.error === "string") message = data.error;
+        } catch (_) {}
+        console.error("[signup] submission failed:", res.status);
+        showError(message);
       } catch (err) {
-        console.error("[signup] Network/error submitting to HubSpot:", err);
+        console.error("[signup] network error:", err);
         showError("We couldn't reach the server. Check your connection and try again.");
       } finally {
         setLoading(false);
@@ -600,12 +560,12 @@
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      submitToHubSpot();
+      submitSignup();
     });
 
     retryBtn.addEventListener("click", () => {
       clearError();
-      submitToHubSpot();
+      submitSignup();
     });
   </script>
 </body>

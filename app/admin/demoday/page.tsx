@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import DemoDayTracker from "./DemoDayTracker";
+import DemoDayTabs from "./DemoDayTabs";
 
 export const metadata: Metadata = { title: "Demo Day" };
 
 export default function DemoDayPage() {
-  return <DemoDayTracker />;
+  return <DemoDayTabs />;
 }

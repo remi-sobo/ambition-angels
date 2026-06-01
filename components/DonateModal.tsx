@@ -26,7 +26,7 @@ const CARD_STYLE = {
 };
 
 const PRESETS = [
-  { amount: 25,    label: "$25",    desc: "Start a teen's career journey" },
+  { amount: 25,    label: "$25",    desc: "Get a teen started exploring careers" },
   { amount: 100,   label: "$100",   desc: "Fund 1 teen's full internship" },
   { amount: 500,   label: "$500",   desc: "Fund 5 teens on Ambition" },
   { amount: 1000,  label: "$1,000", desc: "Fund a full classroom cohort" },

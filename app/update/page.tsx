@@ -206,7 +206,7 @@ export default function UpdatePage() {
             The model is working. The need is urgent.
           </h2>
           <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:14, maxWidth:680 }}>
-            We launched Ambition to solve a specific problem: teens from low-income communities graduate knowing academic subjects but not how to navigate a workforce changing faster than any curriculum can keep up with. Our answer was to meet them on the device they already use for 8 hours a day.
+            We launched Ambition to solve a specific problem: teens from low-income communities graduate knowing academic subjects but not how to make their way in a workforce changing faster than any curriculum can keep up with. Our answer was to meet them on the device they already use for 8 hours a day.
           </p>
           <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:32, maxWidth:680 }}>
             Four years in, the data tells a clear story. Teens are showing up. They are finishing. And they are coming back. We know this works. The work now is scale.
@@ -358,7 +358,7 @@ export default function UpdatePage() {
               <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", color:orange, marginBottom:10 }}>For the adults in their corner</div>
               <div style={{ fontSize:13, fontWeight:600, color:navy, letterSpacing:"0.03em", marginBottom:14 }}>Parents. Coaches. Mentors.</div>
               <p style={{ fontSize:14, color:"#4B5563", lineHeight:1.7, marginBottom:14 }}>
-                The adults who already have a relationship with a teen are our most powerful partners. We give them the tools — career conversation prompts, learning insights, and real-time visibility into what their teen is exploring — to turn an existing relationship into a career launchpad.
+                The adults who already have a relationship with a teen are our best-placed partners. We give them the tools — career conversation prompts, learning insights, and real-time visibility into what their teen is exploring — to turn that relationship into real career direction.
               </p>
               <p style={{ fontSize:14, color:"#4B5563", lineHeight:1.7, marginBottom:14 }}>
                 Same app. A completely different experience built for the adult who shows up.

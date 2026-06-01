@@ -173,7 +173,7 @@ export default function ImpactPage() {
             The gap is not ambition. It is access.
           </h2>
           <p className="text-gray-warm text-base leading-relaxed max-w-2xl mb-12">
-            Teens from low-income communities graduate knowing academic subjects — not how to navigate a workforce that is changing faster than any curriculum can keep up with. Career exposure is a proven pathway toward economic mobility. And right now, it is not equally distributed.
+            Teens from low-income communities graduate knowing academic subjects — not how to make their way in a workforce that is changing faster than any curriculum can keep up with. Career exposure is a proven pathway toward economic mobility. And right now, it is not equally distributed.
           </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20">

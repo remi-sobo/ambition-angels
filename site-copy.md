@@ -33,7 +33,7 @@
 
 **Headline:** Schools can't do it alone.
 
-Teens from low-income communities graduate knowing academic subjects but not how to navigate a workforce that is changing faster than any curriculum can keep up with.
+Teens from low-income communities graduate knowing academic subjects but not how to make their way in a workforce that is changing faster than any curriculum can keep up with.
 
 Youth not connected to a viable career path by age 25 are more likely to face unemployment, poverty, and housing instability. And the programs built to help them have never been able to reach them at scale.
 
@@ -97,12 +97,12 @@ Youth not connected to a viable career path by age 25 are more likely to face un
 
 **Headline:** You care about this kid. Now you can show up for their future.
 
-**Body:** Ambition Angels isn't just for teens. Parents, coaches, teachers, and mentors get their own portal — follow along with what your teen is learning, and get career conversation prompts designed to deepen their motivation and vision.
+**Body:** Ambition Angels isn't just for teens. Parents, coaches, teachers, and mentors get their own portal — follow along with what your teen is learning, and get career conversation prompts that deepen their motivation and vision.
 
 **Card — For the Teen:** Download the app. Pick a career internship. Show up 15 minutes a day. Earn real rewards for finishing.
 **Link:** Get the App →
 
-**Card — For You — Coming Soon:** We're building a Guide portal for parents, coaches, teachers, and mentors. Follow along with what your teen is learning and get career conversation prompts designed to deepen their motivation.
+**Card — For You — Coming Soon:** We're building a Guide portal for parents, coaches, teachers, and mentors. Follow along with what your teen is learning and get career conversation prompts that deepen their motivation.
 **Link:** Join the Waitlist →
 
 **Footer line:** The teen experience is live now. The Guide portal is coming — get early access.
@@ -280,7 +280,7 @@ Communication. Problem-solving. Empathy. Time management. These are not soft ski
 
 **Headline:** Bring the app to the teens you care about.
 
-**Body:** We're building a Guide portal for the adults in a teen's corner. Sign up for early access and be among the first to follow along with what they're learning — with conversation prompts designed to turn the app into a launchpad for real career conversations.
+**Body:** We're building a Guide portal for the adults in a teen's corner. Sign up for early access and be among the first to follow along with what they're learning, with conversation prompts that turn the app into a starting point for real career conversations.
 
 **Buttons:** Get the App for a Teen · Get Early Access as a Guide
 
@@ -328,7 +328,7 @@ Phases: Market Analysis · Marketing Objectives · Target Markets · Brand Strat
 
 **Sales** 🤝 — Harmony Headphones (An audio tech company launching premium headphones)
 Intern on the sales team at an audio technology company launching a new product line.
-Deliverable: A comprehensive sales plan spanning prospecting to closing, designed to drive revenue growth.
+Deliverable: A full sales plan, from prospecting to closing.
 Phases: Preparing · Prospecting · Approaching · Presenting · Handling Objections · Closing & Following Up
 
 **Social Media Management** 📱 — Royal (An up-and-coming musical artist building a fanbase)
@@ -385,8 +385,8 @@ Intern at a local rehab clinic helping design a recovery plan for a teen athlete
 Deliverable: A PT rehab plan for a teen soccer player recovering from ACL surgery.
 Phases: Intake · Safety · Assessment · Treatment Goals · Rehab Phases · Home Program & Discharge
 
-**Personal Training** 💪 — Just Fitness (A community gym where trainers transform lives)
-Intern at a gym where personal trainers empower clients to achieve their health goals.
+**Personal Training** 💪 — Just Fitness (A neighborhood gym where trainers coach clients toward better health)
+Intern at a gym where personal trainers help clients reach their fitness goals.
 Deliverable: A complete training plan for a new client, covering assessments, program design, and progressions.
 Phases: Assessment · Goal Setting · Program Design · Nutrition Basics · Session Planning · Progress Tracking
 
@@ -458,7 +458,7 @@ Phases: Skill Development · Practice & Training · Tools & Equipment · Client 
 
 **Headline:** The gap is not ambition. It is access.
 
-**Body:** Teens from low-income communities graduate knowing academic subjects — not how to navigate a workforce that is changing faster than any curriculum can keep up with. Career exposure is a proven pathway toward economic mobility. And right now, it is not equally distributed.
+**Body:** Teens from low-income communities graduate knowing academic subjects — not how to make their way in a workforce that is changing faster than any curriculum can keep up with. Career exposure is a proven pathway toward economic mobility. And right now, it is not equally distributed.
 
 **By 16 — Career uncertainty by 16 predicts disconnection.**
 Teens who cannot picture a career by age 16 are statistically more likely to be unemployed or disconnected from education and work by their mid-20s.
@@ -647,7 +647,7 @@ After graduating, he moved from Stanford to East Palo Alto and got directly to w
 
 He sees boundless potential in young people and works to provide the resources and support they need to grow academically, professionally, and as full human beings.
 
-That same holistic approach defines his personal life. Remi and his wife Kendra homeschool their two children in East Palo Alto, where they stay deeply rooted in the community he serves.
+That same care carries into his personal life. Remi and his wife Kendra homeschool their two children in East Palo Alto, where they stay deeply rooted in the community he serves.
 
 His vision is simple: every young person, regardless of where they start, should have the tools and support to reach their full potential. Through direct service, innovative technology, and a commitment to dismantling the barriers that create inequity, that is exactly what he is building.
 
@@ -702,7 +702,7 @@ His vision is simple: every young person, regardless of where they start, should
 
 **The Guide (you):**
 - See exactly what they're learning in real time
-- Get proprietary career conversation prompts tied to what they're experiencing
+- Get career conversation prompts tied to what they're experiencing
 - Track their progress and engagement
 - Show up to every conversation with something concrete
 
@@ -758,7 +758,7 @@ Low-income teens can apply directly through the app, make an agreement with Ambi
 
 **Headline:** We built the prompts. You have the relationship.
 
-**Body:** Our proprietary career conversation prompts are designed to increase future orientation — a teen's belief that their future is worth working toward right now. You don't need to be a career counselor. You just need to show up.
+**Body:** Our career conversation prompts build future orientation — a teen's belief that their future is worth working toward right now. You don't need to be a career counselor. You just need to show up.
 
 **Sample prompts:**
 - "After doing the entrepreneurship internship — what surprised you most about running a business?"
@@ -818,7 +818,7 @@ Low-income teens can apply directly through the app, make an agreement with Ambi
 
 **Headline:** The model is working. The need is urgent.
 
-We launched Ambition to solve a specific problem: teens from low-income communities graduate knowing academic subjects but not how to navigate a workforce changing faster than any curriculum can keep up with. Our answer was to meet them on the device they already use for 8 hours a day.
+We launched Ambition to solve a specific problem: teens from low-income communities graduate knowing academic subjects but not how to make their way in a workforce changing faster than any curriculum can keep up with. Our answer was to meet them on the device they already use for 8 hours a day.
 
 Four years in, the data tells a clear story. Teens are showing up. They are finishing. And they are coming back. The question has shifted from "does this work?" to "how fast can we build it out?"
 

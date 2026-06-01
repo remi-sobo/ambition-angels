@@ -286,7 +286,7 @@ export default function Home() {
               <div className="space-y-4 text-gray-warm leading-relaxed">
                 <p className="fade-up stagger-2">
                   Teens from low-income communities graduate knowing academic
-                  subjects but not how to navigate a workforce that is changing
+                  subjects but not how to make their way in a workforce that is changing
                   faster than any curriculum can keep up with.
                 </p>
                 <p className="fade-up stagger-3">

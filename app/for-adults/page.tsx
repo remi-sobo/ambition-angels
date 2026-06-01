@@ -205,7 +205,7 @@ export default function PartnersPage() {
               <ul className="space-y-4">
                 {[
                   "See exactly what they're learning in real time",
-                  "Get proprietary career conversation prompts tied to what they're experiencing",
+                  "Get career conversation prompts tied to what they're experiencing",
                   "Track their progress and engagement",
                   "Show up to every conversation with something concrete",
                 ].map((item) => (
@@ -336,7 +336,7 @@ export default function PartnersPage() {
                 We built the prompts. You have the relationship.
               </h2>
               <p className="text-gray-warm text-base leading-relaxed">
-                Our proprietary career conversation prompts are designed to increase future orientation — a teen&apos;s belief that their future is worth working toward right now. You don&apos;t need to be a career counselor. You just need to show up.
+                Our career conversation prompts build future orientation — a teen&apos;s belief that their future is worth working toward right now. You don&apos;t need to be a career counselor. You just need to show up.
               </p>
             </div>
             <div className="flex flex-col gap-4">

@@ -67,7 +67,7 @@ export default function FounderPage() {
                   He sees boundless potential in young people and works to provide the resources and support they need to grow academically, professionally, and as full human beings.
                 </p>
                 <p>
-                  That same holistic approach defines his personal life. Remi and his wife Kendra homeschool their two children in East Palo Alto, where they stay deeply rooted in the community he serves.
+                  That same care carries into his personal life. Remi and his wife Kendra homeschool their two children in East Palo Alto, where they stay deeply rooted in the community he serves.
                 </p>
                 <p>
                   His vision is simple: every young person, regardless of where they start, should have the tools and support to reach their full potential. Through direct service, innovative technology, and a commitment to dismantling the barriers that create inequity, that is exactly what he is building.

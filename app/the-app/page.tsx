@@ -268,7 +268,7 @@ export default function TheAppPage() {
               Bring the app to the teens you care about.
             </h2>
             <p className="text-gray-warm text-lg leading-relaxed mb-8">
-              We&apos;re building a Guide portal for the adults in a teen&apos;s corner. Sign up for early access and be among the first to follow along with what they&apos;re learning — with conversation prompts designed to turn the app into a launchpad for real career conversations.
+              We&apos;re building a Guide portal for the adults in a teen&apos;s corner. Sign up for early access and be among the first to follow along with what they&apos;re learning, with conversation prompts that turn the app into a starting point for real career conversations.
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               <a

@@ -28,11 +28,6 @@ function money(n: number | null): string {
   return `${sign}$${Math.round(Math.abs(n)).toLocaleString("en-US")}`;
 }
 
-function months(n: number | null): string {
-  if (n === null) return "—";
-  return `${n.toFixed(1)} mo`;
-}
-
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
     month: "short",
@@ -55,8 +50,9 @@ export default async function FinanceModelPage() {
           Model
         </h1>
         <p className="mt-2 text-sm text-gray-mid max-w-2xl">
-          The four numbers that decide whether we keep going. Pulled directly
-          from the source-of-truth Google Sheet — refreshes hourly.
+          The four numbers from the &ldquo;Actual current Summary&rdquo; tab —
+          how much we need, how much we&apos;ll spend, current burn. Pulled
+          directly from the source-of-truth Google Sheet, refreshes hourly.
         </p>
       </header>
 
@@ -67,22 +63,34 @@ export default async function FinanceModelPage() {
       {status.kind === "ok" && (
         <>
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Order matches the sheet: survival → 3-mo buffer → spend → burn.
+                "Survival" gets the orange accent because it's the headline
+                ask. Both funding cards take a warn tone when > 0 since any
+                positive value means we still need to raise. */}
             <Card
-              label="Cash balance"
-              value={money(status.data.cashBalance)}
+              label="Funding needed (survival)"
+              value={money(status.data.fundingSurvival)}
               accent="orange"
-            />
-            <Card
-              label="Monthly burn"
-              value={`${money(status.data.monthlyBurn)}/mo`}
-            />
-            <Card label="Runway" value={months(status.data.runwayMonths)} />
-            <Card
-              label="Funding needed to survive"
-              value={money(status.data.fundingNeeded)}
               tone={
-                (status.data.fundingNeeded ?? 0) > 0 ? "warn" : undefined
+                (status.data.fundingSurvival ?? 0) > 0 ? "warn" : undefined
               }
+            />
+            <Card
+              label="Funding needed (3-mo buffer)"
+              value={money(status.data.fundingThreeMonthRunway)}
+              tone={
+                (status.data.fundingThreeMonthRunway ?? 0) > 0
+                  ? "warn"
+                  : undefined
+              }
+            />
+            <Card
+              label="Total expenses this year"
+              value={money(status.data.totalExpenses)}
+            />
+            <Card
+              label="Monthly burn (year-end)"
+              value={`${money(status.data.monthlyBurn)}/mo`}
             />
           </section>
 

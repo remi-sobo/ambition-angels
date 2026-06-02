@@ -15,9 +15,10 @@
  *     request whose `token` query param doesn't match a Script Property
  *     SHARED_SECRET. Without the token, the URL leaks only the literal
  *     string "unauthorized".
- *   - The script reads ONLY the four mapped cells. Salaries on the same
- *     tab are never accessed by the script, so they cannot leak via this
- *     endpoint even if the token is compromised.
+ *   - The script reads ONLY the four mapped cells. The "Actual current
+ *     Summary" tab does not contain salaries (those live on a separate
+ *     "Salary" tab the script never touches), so even if the token leaks
+ *     the blast radius is the four summary numbers, not personnel data.
  *   - The rendered page is gated by the admin cookie via middleware.ts.
  *   - Token rotation: change SHARED_SECRET in Script Properties AND
  *     FINANCE_MODEL_WEBHOOK_TOKEN in Vercel. No redeploy of the script
@@ -31,10 +32,12 @@
  */
 
 export type FinanceModelData = {
-  cashBalance: number | null;
-  monthlyBurn: number | null;
-  runwayMonths: number | null;
-  fundingNeeded: number | null;
+  // The four numbers labeled on the "Actual current Summary" tab of the
+  // model sheet. Order/naming mirrors the sheet rows (D6–D9 for 2026).
+  fundingSurvival: number | null; // D6: funding needed within year for survival
+  fundingThreeMonthRunway: number | null; // D7: funding needed (3-mo runway buffer)
+  totalExpenses: number | null; // D8: total expenses within year
+  monthlyBurn: number | null; // D9: monthly burn at year-end
   fetchedAt: string; // ISO timestamp
   sheetUrl: string; // deep-link to the model tab for "View full model"
 };
@@ -44,8 +47,9 @@ export type FinanceSheetStatus =
   | { kind: "not_configured"; missing: string[] }
   | { kind: "error"; message: string };
 
-// Pinned: the tab gid Remi cares about. If the model tab ever moves, update
-// both this and the cell references in scripts/finance-model-webhook.gs.
+// Pinned: the tab gid Remi cares about (the "Actual current Summary" tab).
+// If the model tab ever moves, update both this and the TAB_GID constant
+// in scripts/finance-model-webhook.gs.
 const MODEL_TAB_GID = 564859427;
 
 function buildSheetUrl(sheetId: string): string {
@@ -70,10 +74,10 @@ function parseNumber(raw: unknown): number | null {
 }
 
 type WebhookPayload = {
-  cashBalance?: unknown;
+  fundingSurvival?: unknown;
+  fundingThreeMonthRunway?: unknown;
+  totalExpenses?: unknown;
   monthlyBurn?: unknown;
-  runwayMonths?: unknown;
-  fundingNeeded?: unknown;
   error?: string;
 };
 
@@ -136,10 +140,10 @@ export async function loadFinanceModel(): Promise<FinanceSheetStatus> {
     return {
       kind: "ok",
       data: {
-        cashBalance: parseNumber(payload.cashBalance),
+        fundingSurvival: parseNumber(payload.fundingSurvival),
+        fundingThreeMonthRunway: parseNumber(payload.fundingThreeMonthRunway),
+        totalExpenses: parseNumber(payload.totalExpenses),
         monthlyBurn: parseNumber(payload.monthlyBurn),
-        runwayMonths: parseNumber(payload.runwayMonths),
-        fundingNeeded: parseNumber(payload.fundingNeeded),
         fetchedAt: new Date().toISOString(),
         sheetUrl: buildSheetUrl(sheetId!),
       },

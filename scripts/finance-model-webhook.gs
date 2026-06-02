@@ -1,23 +1,27 @@
 /**
  * Finance Model webhook — Apps Script source.
  *
- * Bound to the Finance Model spreadsheet (FINANCE_SHEET_ID). Deployed as a
- * Web App that returns the four headline KPIs as JSON, guarded by a shared
- * secret. Consumed by lib/google/finance-sheet.ts in the Next.js admin.
+ * Bound to the "Ambition s26 Financial Model" spreadsheet. Deployed as a
+ * Web App that returns the four headline KPIs from the "Actual current
+ * Summary" tab as JSON, guarded by a shared secret. Consumed by
+ * lib/google/finance-sheet.ts in the Next.js admin.
  *
  * Why this exists: the org blocks service-account key creation, so the
  * standard "SA reads sheet via googleapis" path isn't available. This is
  * the org-policy-safe alternative — the script runs as the sheet owner
  * inside Google's own infrastructure, and only the four mapped values
- * cross the network boundary.
+ * cross the network boundary. The "Salary" tab (and any other tab) is
+ * never touched by this script.
  *
  * ── Setup ────────────────────────────────────────────────────────────────
  *   1. Open the model sheet → Extensions → Apps Script.
  *   2. Replace Code.gs with this file's contents.
- *   3. Update TAB_NAME and CELLS below to match your sheet.
- *   4. Project Settings → Script Properties → add SHARED_SECRET (32+ random
- *      chars). The same value goes into Vercel as FINANCE_MODEL_WEBHOOK_TOKEN.
- *   5. Deploy → New deployment → Web app:
+ *   3. (Already done) TAB_GID below matches the "Actual current Summary"
+ *      tab. Cell refs below match the labels D6–D9 as of June 2026.
+ *   4. Project Settings (gear icon) → Script Properties → Add script
+ *      property → SHARED_SECRET = (32+ random chars). The same value goes
+ *      into Vercel as FINANCE_MODEL_WEBHOOK_TOKEN.
+ *   5. Deploy → New deployment → ⚙ → Web app:
  *        Execute as: Me
  *        Who has access: Anyone with the link
  *      Copy the /macros/s/.../exec URL into Vercel as FINANCE_MODEL_WEBHOOK_URL.
@@ -32,24 +36,25 @@
  *   2. Add the matching field to FinanceModelData + parseNumber in
  *      lib/google/finance-sheet.ts.
  *   3. Add a Card in app/admin/finance/model/page.tsx.
- *   No script redeploy needed if the deployment is configured as
- *   "Head deployment" (default for new web apps).
+ *   No script redeploy needed if the deployment is "Head" (default).
  */
 
-// The visible TITLE of the tab whose gid is 564859427. The Sheets API and
-// SpreadsheetApp address tabs by name, not gid. If you don't know the
-// title, open the sheet, look at the tab at the bottom, type that string
-// here EXACTLY (case-sensitive, spaces matter).
-const TAB_NAME = 'TODO_TAB_TITLE';
+// The gid of the "Actual current Summary" tab. Looked up by gid (not name)
+// so the script keeps working if the tab is renamed. If you reorganize the
+// model and want to point this at a different tab, get the new gid from the
+// URL fragment when that tab is selected (`#gid=NNNNNNNN`) and update both
+// this and MODEL_TAB_GID in lib/google/finance-sheet.ts.
+const TAB_GID = 564859427;
 
-// A1-style cell refs on TAB_NAME. Update each placeholder with the actual
-// cell that holds the metric. Order doesn't matter — keys must match the
-// FinanceModelData fields in lib/google/finance-sheet.ts.
+// A1-style cell refs on the summary tab. Currently the 2026 column (D);
+// the 2027 forecast lives in column E if you ever want to toggle years.
+// Labels for context — must stay in sync with FinanceModelData fields in
+// lib/google/finance-sheet.ts.
 const CELLS = {
-  cashBalance: 'TODO_A1',
-  monthlyBurn: 'TODO_A1',
-  runwayMonths: 'TODO_A1',
-  fundingNeeded: 'TODO_A1',
+  fundingSurvival: 'D6',         // Additional fundraising needed within year (for survival)
+  fundingThreeMonthRunway: 'D7', // Additional fundraising needed (assuming 3 months runway)
+  totalExpenses: 'D8',           // Total expenses within year
+  monthlyBurn: 'D9',             // Monthly burn rate at year end
 };
 
 /**
@@ -68,24 +73,32 @@ function doGet(e) {
       return json({ error: 'unauthorized' });
     }
 
-    const sheet = SpreadsheetApp.getActive().getSheetByName(TAB_NAME);
+    const sheet = getSheetByGid(TAB_GID);
     if (!sheet) {
-      return json({ error: 'tab not found: ' + TAB_NAME });
+      return json({ error: 'tab with gid ' + TAB_GID + ' not found' });
     }
 
     // Read each mapped cell explicitly. Do NOT read whole ranges or the
-    // active range — the salary cells must never be touched by this script
-    // so they cannot leak through this endpoint.
+    // active range — the contract is that this script only ever touches
+    // the four cells named in CELLS.
     const payload = {
-      cashBalance: readCell(sheet, CELLS.cashBalance),
+      fundingSurvival: readCell(sheet, CELLS.fundingSurvival),
+      fundingThreeMonthRunway: readCell(sheet, CELLS.fundingThreeMonthRunway),
+      totalExpenses: readCell(sheet, CELLS.totalExpenses),
       monthlyBurn: readCell(sheet, CELLS.monthlyBurn),
-      runwayMonths: readCell(sheet, CELLS.runwayMonths),
-      fundingNeeded: readCell(sheet, CELLS.fundingNeeded),
     };
     return json(payload);
   } catch (err) {
     return json({ error: String(err && err.message ? err.message : err) });
   }
+}
+
+function getSheetByGid(gid) {
+  const sheets = SpreadsheetApp.getActive().getSheets();
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].getSheetId() === gid) return sheets[i];
+  }
+  return null;
 }
 
 function readCell(sheet, ref) {

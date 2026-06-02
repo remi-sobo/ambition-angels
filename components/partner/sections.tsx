@@ -95,21 +95,45 @@ export function PartnerHero({
   eyebrow,
   title,
   subhead,
-  buttons,
+  buttons = [],
   logoSlot,
   aside,
+  backgroundImage,
 }: {
   eyebrow: string;
   title: ReactNode;
   subhead: ReactNode;
-  buttons: HeroButton[];
+  buttons?: HeroButton[];
   /** Optional co-brand lockup shown above the eyebrow (e.g. Twilio + AA). */
   logoSlot?: ReactNode;
   /** Optional right-column visual (e.g. the iPhone mockup). */
   aside?: ReactNode;
+  /** Optional full-bleed photo behind the hero, dimmed for legibility. */
+  backgroundImage?: string;
 }) {
   return (
-    <section className="bg-ink section-pad relative overflow-hidden" style={dotTexture}>
+    <section
+      className="bg-ink section-pad relative overflow-hidden"
+      style={backgroundImage ? undefined : dotTexture}
+    >
+      {/* Optional background photo: dimmed image + dark gradient + dot texture */}
+      {backgroundImage && (
+        <>
+          <Image
+            src={backgroundImage}
+            alt=""
+            fill
+            priority
+            className="object-cover object-center opacity-25"
+            aria-hidden="true"
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-ink/55"
+            aria-hidden="true"
+          />
+          <div className="absolute inset-0" style={dotTexture} aria-hidden="true" />
+        </>
+      )}
       {/* Staircase-arrow doodle, same accent used on the home hero */}
       <Image
         src="/images/doodles/Doodle 62@3x.png"
@@ -136,21 +160,23 @@ export function PartnerHero({
             <p className="text-gray-mid text-lg leading-relaxed mb-10 max-w-lg">
               {subhead}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              {buttons.map((b, i) => (
-                <a
-                  key={b.label}
-                  href={b.href}
-                  className={
-                    i === 0
-                      ? "bg-orange hover:bg-orange-dark text-white font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center justify-center"
-                      : "bg-cream/5 hover:bg-cream/10 text-cream border border-cream/20 font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center justify-center"
-                  }
-                >
-                  {b.label}
-                </a>
-              ))}
-            </div>
+            {buttons.length > 0 && (
+              <div className="flex flex-col sm:flex-row gap-4">
+                {buttons.map((b, i) => (
+                  <a
+                    key={b.label}
+                    href={b.href}
+                    className={
+                      i === 0
+                        ? "bg-orange hover:bg-orange-dark text-white font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center justify-center"
+                        : "bg-cream/5 hover:bg-cream/10 text-cream border border-cream/20 font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center justify-center"
+                    }
+                  >
+                    {b.label}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {aside && <div className="flex justify-center lg:justify-end">{aside}</div>}
@@ -256,74 +282,6 @@ export function NumberedSteps({ steps }: { steps: Step[] }) {
   );
 }
 
-/* ── Sponsorship: two-ways-to-partner cards ──────────────────────────────── */
-export type SponsorshipLine = {
-  label: string;
-  /** Rendered in the muted price slot. Use [SET PRICE]-style placeholders. */
-  price?: string;
-};
-
-export type SponsorshipCardData = {
-  badge: string;
-  title: string;
-  body: ReactNode;
-  lines: SponsorshipLine[];
-  /** Optional small note shown beneath the line list. */
-  footnote?: ReactNode;
-};
-
-export function SponsorshipCards({
-  cards,
-  note,
-}: {
-  cards: [SponsorshipCardData, SponsorshipCardData];
-  note?: ReactNode;
-}) {
-  return (
-    <>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {cards.map((card) => (
-          <div
-            key={card.title}
-            className="bg-cream/5 border border-cream/10 border-t-[3px] border-t-orange rounded-card-lg p-8 flex flex-col"
-          >
-            <div className="inline-block text-xs font-bold text-orange bg-orange/15 border border-orange/30 px-3 py-1 rounded-full uppercase tracking-widest mb-5 self-start">
-              {card.badge}
-            </div>
-            <h3 className="font-heading font-bold text-cream text-2xl mb-4 tracking-tight">
-              {card.title}
-            </h3>
-            <p className="text-gray-mid text-sm leading-relaxed mb-6">{card.body}</p>
-            <ul className="space-y-3 flex-1">
-              {card.lines.map((line) => (
-                <li
-                  key={line.label}
-                  className="flex items-baseline justify-between gap-4 border-b border-cream/10 pb-3 last:border-0"
-                >
-                  <span className="text-cream text-sm leading-snug">{line.label}</span>
-                  {line.price && (
-                    <span className="font-heading font-semibold text-orange text-sm whitespace-nowrap text-right">
-                      {line.price}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-            {card.footnote && (
-              <p className="text-gray-mid/70 text-xs leading-relaxed mt-5">
-                {card.footnote}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
-      {note && (
-        <p className="text-gray-mid text-sm leading-relaxed mt-8 max-w-2xl">{note}</p>
-      )}
-    </>
-  );
-}
-
 /* ── Closing CTA ─────────────────────────────────────────────────────────── */
 export function ClosingCTA({
   title,
@@ -372,27 +330,5 @@ export function ClosingCTA({
         </div>
       </div>
     </section>
-  );
-}
-
-/* ── Short framing / single-paragraph block ──────────────────────────────── */
-export function FramingBlock({
-  tone = "light",
-  children,
-}: {
-  tone?: Tone;
-  children: ReactNode;
-}) {
-  const dark = tone === "dark";
-  return (
-    <PartnerSection tone={tone} className="!py-14 lg:!py-16">
-      <p
-        className={`text-lg lg:text-xl leading-relaxed max-w-3xl ${
-          dark ? "text-gray-mid" : "text-gray-warm"
-        }`}
-      >
-        {children}
-      </p>
-    </PartnerSection>
   );
 }

@@ -21,6 +21,7 @@ export default function SiteChrome({
     (pathname?.startsWith("/admin") ||
       pathname?.startsWith("/ygb") ||
       pathname?.startsWith("/shannon") ||
+      pathname?.startsWith("/strategy") ||
       pathname?.startsWith("/update/koshland")) ??
     false;
 

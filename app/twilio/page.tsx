@@ -10,6 +10,7 @@ import {
   NumberedSteps,
   SponsorshipCards,
   ClosingCTA,
+  FramingBlock,
   type Step,
   type SponsorshipCardData,
 } from "@/components/partner/sections";
@@ -101,14 +102,12 @@ export default function TwilioPage() {
       />
 
       {/* ── FRAMING NOTE ─────────────────────────────────────────────── */}
-      <PartnerSection tone="light" className="!py-14 lg:!py-16">
-        <p className="text-lg lg:text-xl leading-relaxed text-gray-warm max-w-3xl">
-          This page lays out how Twilio and Ambition Angels can work together,
-          from a first engagement during Global Impact Week to a longer
-          partnership. It came out of a conversation with Tanise on the employee
-          engagement team, and it is built to be easy to share.
-        </p>
-      </PartnerSection>
+      <FramingBlock tone="light">
+        This page lays out how Twilio and Ambition Angels can work together, from
+        a first engagement during Global Impact Week to a longer partnership. It
+        came out of a conversation with Tanise on the employee engagement team,
+        and it is built to be easy to share.
+      </FramingBlock>
 
       {/* ── WHY TWILIO ───────────────────────────────────────────────── */}
       <PartnerSection tone="dark">

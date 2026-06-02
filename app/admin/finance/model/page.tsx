@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { loadFinanceModel } from "@/lib/google/finance-sheet";
 
 /**

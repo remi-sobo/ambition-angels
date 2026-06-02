@@ -36,7 +36,7 @@ const tickerItems = [
 const opportunityCards = [
   {
     title: "Employee Engagement That Lasts",
-    body: "Your team doesn't show up to volunteer. They show up to author. We run a 90-minute session with the employees you choose, capture what they know about careers in your world, and build a 30-day simulated internship from it. Your people leave with real ownership of something thousands of teens will see. They'll talk about it for months.",
+    body: "Your team doesn't show up to volunteer. They show up to author. We run a session with the employees you choose, capture what they know about careers in your world, and build a 30-day simulated internship from it. Your people leave with real ownership of something thousands of teens will see. They'll talk about it for months.",
   },
   {
     title: "CSR You Can Actually Report",
@@ -116,7 +116,7 @@ const tiers = [
       "Logo on ambitionangels.org and printed materials",
       "Listed as a Community Partner publicly",
       "Annual impact report with program data",
-      "1–2 company fun facts featured inside the app",
+      "A vignette day for your team, woven into the app (micro-volunteering)",
       "Invitation to sponsor an existing internship track",
     ],
   },
@@ -127,9 +127,9 @@ const tiers = [
     highlight: false,
     perks: [
       "Everything in Community Partner",
-      "1 sponsored simulated internship: sponsor an existing track or co-create a new one",
+      "1 career learning session, produced into a sponsored 30-day internship",
       "Company profile featured inside the app",
-      "1 live engagement event with your team",
+      "Vignettes from across your team throughout the year",
       "Biannual impact reports with completion data",
       "Co-branded social content package",
     ],
@@ -141,9 +141,9 @@ const tiers = [
     highlight: true,
     perks: [
       "Everything in Career Builder",
-      "Up to 3 sponsored simulated internships: existing tracks or co-created with your team, built one at a time",
+      "Up to 3 career learning sessions, each produced into a sponsored internship",
       "Premier Partner badge across the platform",
-      "2 live engagement events per year",
+      "Multiple vignette days across the year",
       "Co-branded marketing and press release",
       "Named in Ambition Angels annual report",
     ],
@@ -155,11 +155,11 @@ const tiers = [
     highlight: false,
     perks: [
       "Everything in Premier Partner",
+      "An Ambition Coaches cohort for employees who want to go deeper",
       "In-app popup feature for your brand",
       "Naming opportunity on a program or cohort",
       "Category exclusivity: one company per industry",
       "Executive briefings with Remi biannually",
-      "Board-level relationship and access",
     ],
   },
 ];
@@ -175,7 +175,7 @@ const whyCards = [
   },
   {
     title: "Reportable CSR Impact",
-    body: "Pre and post data. Future orientation scores. Completion rates. Demographic reach. What your ESG team needs to report — and what your CEO needs to see.",
+    body: "Pre and post data. Future orientation scores. Completion rates. Demographic reach. What your ESG team needs to report, and what your CEO needs to see.",
   },
   {
     title: "A Pipeline for a Workforce That Won't Sit Still",
@@ -241,7 +241,7 @@ export default function CompaniesPage() {
               </div>
             </div>
 
-            {/* Right — phone + stats + quote */}
+            {/* Right — phone + stats */}
             <div className="flex flex-col gap-5">
               <div className="flex justify-center">
                 <IPhoneMockup />
@@ -293,7 +293,7 @@ export default function CompaniesPage() {
               Most teens are figuring out their careers from the sidelines.
             </h2>
             <p className="text-gray-warm text-lg leading-relaxed mb-5">
-              The work your industry does is changing fast. New roles, new tools, new ways of working — most of it lives inside companies and never reaches the teens deciding what to study or who to become. The teens furthest from opportunity feel that gap the most. They&apos;re the last to find out where the workforce is going, and by the time they do, the paths are already crowded.
+              The work your industry does is changing fast. New roles, new tools, new ways of working, most of it lives inside companies and never reaches the teens deciding what to study or who to become. The teens furthest from opportunity feel that gap the most. They&apos;re the last to find out where the workforce is going, and by the time they do, the paths are already crowded.
             </p>
             <p className="text-gray-warm text-lg leading-relaxed">
               Career exposure closes the gap. The research is clear: a teen with structured exposure to careers is more than twice as likely to be employed than peers without it. We deliver that exposure at scale, through the phones teens already have, in the industries your company actually operates in. You can be part of making sure the next generation has what they need to succeed in a workforce that won&apos;t sit still.
@@ -332,6 +332,97 @@ export default function CompaniesPage() {
         </div>
       </section>
 
+      {/* ── HOW YOUR PEOPLE SHOW UP ──────────────────────────────────── */}
+      <section className="section-pad bg-[#F5F4F0] relative overflow-hidden">
+        <div className="container-site">
+          <div className="max-w-2xl mb-12">
+            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
+              How Your People Show Up
+            </p>
+            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-4">
+              The best way in is the easiest one.
+            </h2>
+            <p className="text-gray-warm text-lg leading-relaxed">
+              Your team doesn&apos;t need to clear a day or build a deck. The two ways that work best are small: a one-hour career session, or a ten-minute vignette. We call it micro-volunteering. Your people share what they know, we produce it into a 30-day internship on the app, and your brand carries it to thousands of teens.
+            </p>
+          </div>
+
+          {/* Two prominent ways in */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Career learning session — featured dark card */}
+            <div className="bg-ink rounded-card-lg p-8 relative overflow-hidden" style={dotTexture}>
+              <div className="relative z-10">
+                <div className="inline-block text-xs font-bold text-orange bg-orange/15 border border-orange/30 px-3 py-1 rounded-full uppercase tracking-widest mb-5">
+                  Best for groups
+                </div>
+                <h3 className="font-heading font-bold text-2xl text-cream mb-4">
+                  Career learning sessions
+                </h3>
+                <p className="text-gray-mid text-sm leading-relaxed mb-6">
+                  About 20 of your employees get on a guided, one-hour session and talk through one career. The technical skills, the day to day, the honest parts. We record it and produce it into a 30-day internship on the app, sponsored by your company. Run it as one room or split into breakouts so everyone contributes.
+                </p>
+                <ul className="space-y-3">
+                  {[
+                    "About one hour, on Zoom so we can record and produce it",
+                    "Becomes a full internship in a real career, carrying your name",
+                    "Works for any team size; we use breakouts for larger groups",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-3 text-gray-mid text-sm leading-relaxed">
+                      <span className="w-4 h-4 rounded-full bg-orange/20 border border-orange/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <CheckIcon light />
+                      </span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Vignettes — light card */}
+            <div className="bg-white border border-gray-light rounded-card-lg p-8">
+              <div className="inline-block text-xs font-bold text-orange bg-orange-light border border-orange/20 px-3 py-1 rounded-full uppercase tracking-widest mb-5">
+                Best for busy schedules
+              </div>
+              <h3 className="font-heading font-bold text-2xl text-ink mb-4">
+                Vignettes
+              </h3>
+              <p className="text-gray-warm text-sm leading-relaxed mb-6">
+                Individual employees record a short clip. One question, one honest answer about their work. We weave these through the internships so teens see real faces in the field. Ten minutes per person, on their own time.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  "About ten minutes per person, recorded whenever it fits",
+                  "Real people in the field, not stock footage",
+                  "True micro-volunteering; it slots into any calendar",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-gray-warm text-sm leading-relaxed">
+                    <span className="w-4 h-4 rounded-full bg-orange-light border border-orange/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckIcon />
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Ambition Coaches — slim secondary strip */}
+          <div className="mt-6 bg-white border border-gray-light rounded-card-lg p-6 lg:p-7 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex-1">
+              <p className="text-[11px] font-heading font-bold text-orange uppercase tracking-widest mb-1.5">
+                Want to go deeper?
+              </p>
+              <h3 className="font-heading font-bold text-ink text-lg mb-2">
+                Ambition Coaches
+              </h3>
+              <p className="text-gray-warm text-sm leading-relaxed">
+                For the few who want more than a session or a clip. Four meetings over four weeks with one teen, helping them turn exposure into a plan. It&apos;s an opportunity, not the way in. Most partners start with sessions and vignettes, then grow into this.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── CAREER PATHS YOU COULD SPONSOR ──────────────────────────── */}
       <section className="section-pad bg-ink relative overflow-hidden border-t border-cream/5" style={dotTexture}>
         <div className="container-site relative z-10">
@@ -343,7 +434,7 @@ export default function CompaniesPage() {
               Career tracks built one at a time.
             </h2>
             <p className="text-gray-mid text-lg leading-relaxed">
-              Each Ambition internship is a 30-day immersion in one career path — 20 videos, 10 quizzes, 10 hands-on activities, designed for 15 minutes a day on a phone. Sponsor an existing track or co-create a new one with your team.
+              Each Ambition internship is a 30-day immersion in one career path: 20 videos, 10 quizzes, 10 hands-on activities, designed for 15 minutes a day on a phone. Sponsor an existing track or co-create a new one from your team&apos;s session.
             </p>
           </div>
 
@@ -360,94 +451,8 @@ export default function CompaniesPage() {
           </div>
 
           <p className="text-gray-mid text-sm leading-relaxed mt-8 max-w-2xl">
-            Don&apos;t see your industry? That&apos;s a co-creation opportunity. Premier and Founding Partners build new tracks with their teams.
+            Don&apos;t see your industry? That&apos;s a co-creation opportunity. Premier and Founding Partners build new tracks from their team&apos;s career learning session.
           </p>
-        </div>
-      </section>
-
-      {/* ── THE PROCESS ──────────────────────────────────────────────── */}
-      <section className="section-pad bg-[#F5F4F0] relative overflow-hidden">
-        <div className="container-site">
-          <div className="max-w-2xl mb-12">
-            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
-              The Process
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-4">
-              How it actually works.
-            </h2>
-            <p className="text-gray-warm text-lg leading-relaxed">
-              We don&apos;t show up with a fixed program. We start by listening. The first conversation isn&apos;t a sales call — it&apos;s customer discovery. The career track we build together comes from what your team actually knows and what your business actually needs five years from now.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Step 1 — featured dark card */}
-            <div
-              className="bg-ink rounded-card-lg p-8 relative overflow-hidden"
-              style={dotTexture}
-            >
-              <div className="relative z-10">
-                <div className="inline-block text-xs font-bold text-orange bg-orange/15 border border-orange/30 px-3 py-1 rounded-full uppercase tracking-widest mb-5">
-                  Step 1
-                </div>
-                <h3 className="font-heading font-bold text-2xl text-cream mb-4">
-                  We bring your people into the room.
-                </h3>
-                <p className="text-gray-mid text-sm leading-relaxed mb-6">
-                  We run a 90-minute session with your team, on Zoom so we can record and capture everything. Your employees don&apos;t present. They respond, react, and share what they know about careers in your world. We take that conversation and build curriculum from it. You choose the focus: a specific career path, or the durable skills your industry needs most right now.
-                </p>
-                <ul className="space-y-3">
-                  {[
-                    "Works for groups of any size; we use breakouts for larger teams",
-                    "Zoom format lets us record and distill your team's knowledge into curriculum",
-                    "You choose the focus: career path-based or durable skills (creativity, critical thinking, communication)",
-                    "Pick the employee group you most want to engage; we build around them",
-                    "Feeds directly into Step 2; this conversation becomes the internship",
-                    "Impact report and session recording delivered within 2 weeks",
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-3 text-gray-mid text-sm leading-relaxed">
-                      <span className="w-4 h-4 rounded-full bg-orange/20 border border-orange/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <CheckIcon light />
-                      </span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Step 2 — light card */}
-            <div className="bg-white border border-gray-light rounded-card-lg p-8">
-              <div className="inline-block text-xs font-bold text-orange bg-orange-light border border-orange/20 px-3 py-1 rounded-full uppercase tracking-widest mb-5">
-                Step 2
-              </div>
-              <h3 className="font-heading font-bold text-2xl text-ink mb-4">
-                We build the career track together.
-              </h3>
-              <p className="text-gray-warm text-sm leading-relaxed mb-6">
-                What your team shared in that session becomes the foundation. We handle all production. Your team reviews drafts, keeps the content accurate, and updates it as your industry changes. The result is a 30-day simulated internship that reflects how careers in your field actually work right now.
-              </p>
-              <ul className="space-y-3">
-                {[
-                  "Each internship is one career path, built one at a time, as deep as it deserves",
-                  "20 videos, 10 quizzes, and 10 activities per internship track",
-                  "Students finish knowing the real tasks of the role, the skills it takes, and what that career actually feels like in today's workforce",
-                  "Your team validates accuracy and keeps content current as the industry evolves",
-                  "Designed for 15 minutes a day on a phone; no laptop, no classroom required",
-                  "Your brand lives throughout as the source of truth, not as a sponsor",
-                  "Biannual data on completions, engagement, and career interest",
-                  "Co-branded launch with press opportunity",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-gray-warm text-sm leading-relaxed">
-                    <span className="w-4 h-4 rounded-full bg-orange-light border border-orange/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <CheckIcon />
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -531,7 +536,7 @@ export default function CompaniesPage() {
               Find your level.
             </h2>
             <p className="text-gray-mid text-lg leading-relaxed">
-              Every tier is fully tax-deductible. Every tier comes with outcomes you can measure. Pick what fits and we&apos;ll make it count.
+              Every tier is fully tax-deductible, and every tier bundles in the ways your people show up: career learning sessions and vignettes across the year. Pick what fits and we&apos;ll make it count.
             </p>
           </div>
 

@@ -33,9 +33,8 @@ const steps: Step[] = [
   },
 ];
 
-/* Co-brand lockup: Ambition Angels logo + a labeled slot for the Twilio
-   wordmark. The Twilio asset is intentionally NOT pulled from the web — Remi
-   will drop the approved file into the placeholder box. */
+/* Co-brand lockup: Ambition Angels logo + the Twilio wordmark. The Twilio
+   asset is the approved file Remi dropped into public/images/. */
 function CoBrandLockup() {
   return (
     <div className="flex items-center gap-5">
@@ -49,11 +48,13 @@ function CoBrandLockup() {
       <span className="text-cream/40 text-2xl font-light leading-none" aria-hidden="true">
         +
       </span>
-      <div className="h-9 lg:h-10 w-[140px] rounded-lg border border-dashed border-cream/30 bg-cream/5 flex items-center justify-center text-center px-2">
-        <span className="text-cream/40 text-[10px] uppercase tracking-widest leading-tight">
-          Twilio logo goes here
-        </span>
-      </div>
+      <Image
+        src="/images/Twilio-logo.png"
+        alt="Twilio"
+        width={374}
+        height={135}
+        className="h-9 lg:h-10 w-auto"
+      />
     </div>
   );
 }

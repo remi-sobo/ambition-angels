@@ -133,6 +133,7 @@ export default function TwilioPage() {
       <ClosingCTA
         title="We want Twilio to be our first."
         body="We are not chasing a quick win. We want a long-term partner, and after talking with Tanise and Danielle, we believe that is Twilio. Let's build the first one together."
+        email="remi@ambitionangels.org"
       />
     </>
   );

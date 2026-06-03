@@ -289,6 +289,7 @@ export function ClosingCTA({
   buttonLabel,
   buttonHref,
   children,
+  email = "hello@ambitionangels.org",
 }: {
   title: ReactNode;
   body?: ReactNode;
@@ -297,6 +298,8 @@ export function ClosingCTA({
   buttonHref?: string;
   /** Optional extra content (e.g. the contact form) shown above the email link. */
   children?: ReactNode;
+  /** Contact address shown at the bottom. Defaults to the shared hello@ inbox. */
+  email?: string;
 }) {
   return (
     <section
@@ -322,10 +325,10 @@ export function ClosingCTA({
             </a>
           )}
           <a
-            href="mailto:hello@ambitionangels.org"
+            href={`mailto:${email}`}
             className="text-cream underline underline-offset-2 hover:text-gray-mid transition-colors text-base"
           >
-            hello@ambitionangels.org
+            {email}
           </a>
         </div>
       </div>

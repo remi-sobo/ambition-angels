@@ -61,9 +61,25 @@ export async function audit(req: NextRequest | null, entry: AuditEntry): Promise
       orgId = ctx?.orgId ?? null;
     } else {
       actor = entry.actorUserId;
+      // Explicit actor (e.g. just-signed-in user): attribute to THEIR org,
+      // not the resident default — auth events must land in the right
+      // tenant's ledger.
+      if (actor) {
+        const { data } = await getSupabaseAdmin()
+          .from("memberships")
+          .select("org_id")
+          .eq("user_id", actor)
+          .limit(1)
+          .maybeSingle();
+        orgId = (data?.org_id as string | undefined) ?? null;
+      }
     }
     orgId = orgId ?? (await residentOrgId());
-    if (!orgId) return; // nothing sane to attribute the event to
+    if (!orgId) {
+      // Don't insert garbage, but never lose the event silently either.
+      console.error("audit_log dropped (no org to attribute):", entry.action, entry.entityType);
+      return;
+    }
 
     const fwd = req?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
     const { error } = await getSupabaseAdmin().from("audit_log").insert({

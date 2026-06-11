@@ -32,6 +32,7 @@ export function Donut({
   thickness = 28,
   centerLabel,
   centerValue,
+  formatValue = money,
 }: {
   segments: DonutSeg[];
   total?: number;
@@ -39,6 +40,8 @@ export function Donut({
   thickness?: number;
   centerLabel?: string;
   centerValue?: string;
+  /** Legend value formatter — defaults to currency for the finance pages. */
+  formatValue?: (n: number) => string;
 }) {
   const sum = total ?? segments.reduce((s, x) => s + x.value, 0);
   const r = (size - thickness) / 2;
@@ -121,7 +124,7 @@ export function Donut({
             <span className="text-gray-mid font-mono">
               {sum > 0 ? `${Math.round((s.value / sum) * 100)}%` : "—"}
             </span>
-            <span className="text-cream font-mono w-20 text-right">{money(s.value)}</span>
+            <span className="text-cream font-mono w-20 text-right">{formatValue(s.value)}</span>
           </li>
         ))}
       </ul>

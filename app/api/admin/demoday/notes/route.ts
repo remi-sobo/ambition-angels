@@ -18,8 +18,8 @@ function isStatus(v: unknown): v is Status {
 // Returns every saved note row. The attendee roster itself is static
 // (lib/demoday/attendees.ts); this only carries the mutable note/star/status.
 
-export async function GET(req: NextRequest) {
-  if (!isAuthed(req)) {
+export async function GET() {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -48,10 +48,10 @@ export async function GET(req: NextRequest) {
 // row.
 
 export async function PUT(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const updatedBy = getAdminUser(req);
+  const updatedBy = await getAdminUser();
   if (!updatedBy) {
     return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });
   }

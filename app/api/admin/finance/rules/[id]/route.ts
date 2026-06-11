@@ -8,7 +8,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
@@ -64,7 +64,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {

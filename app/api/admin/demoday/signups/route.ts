@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
 
@@ -10,8 +10,8 @@ const UNDEFINED_TABLE = "42P01";
 // ── GET /api/admin/demoday/signups ───────────────────────────────────────────
 // Returns every Demo Day signup, newest first. Powers the Signups tab on
 // /admin/demoday.
-export async function GET(req: NextRequest) {
-  if (!isAuthed(req)) {
+export async function GET() {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -238,8 +238,11 @@ export default function AdminPage() {
 
   // Auth
   const [authed, setAuthed] = useState(false);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [magicSent, setMagicSent] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
 
   // Data
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -340,13 +343,43 @@ export default function AdminPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
-    if (res.ok) { setAuthed(true); setLoginError(""); }
-    else setLoginError("Wrong password.");
+    setLoggingIn(true);
+    setLoginError("");
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (res.ok) {
+        setAuthed(true);
+        router.refresh(); // re-render the server layout so the sidebar picks up the session
+      } else {
+        setLoginError("Invalid email or password.");
+      }
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
+  const handleMagicLink = async () => {
+    if (!email) {
+      setLoginError("Enter your email first.");
+      return;
+    }
+    setLoggingIn(true);
+    setLoginError("");
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, magic: true }),
+      });
+      if (res.ok) setMagicSent(true);
+      else setLoginError("Could not send the sign-in link.");
+    } finally {
+      setLoggingIn(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -418,25 +451,50 @@ export default function AdminPage() {
         }}
       >
         <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
-          <div className="font-display font-black text-3xl text-cream mb-1 tracking-tight uppercase">Admin</div>
-          <div className="text-gray-mid text-sm mb-8">Ambition Angels</div>
-          <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/50"
-              autoFocus
-            />
-            {loginError && <p className="text-red-400 text-xs">{loginError}</p>}
-            <button
-              type="submit"
-              className="bg-orange hover:bg-orange-dark text-white font-semibold py-3 rounded-xl transition-colors"
-            >
-              Sign In
-            </button>
-          </form>
+          <div className="font-display font-black text-3xl text-cream mb-1 tracking-tight uppercase">BloomOS</div>
+          <div className="text-gray-mid text-sm mb-8">Operating System for Ambition Angels</div>
+          {magicSent ? (
+            <div className="text-cream/80 text-sm leading-relaxed">
+              Check your email — we sent a one-time sign-in link to{" "}
+              <span className="text-cream font-semibold">{email}</span>.
+            </div>
+          ) : (
+            <form onSubmit={handleLogin} className="flex flex-col gap-4">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                autoComplete="email"
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/50"
+                autoFocus
+              />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                autoComplete="current-password"
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/50"
+              />
+              {loginError && <p className="text-red-400 text-xs">{loginError}</p>}
+              <button
+                type="submit"
+                disabled={loggingIn}
+                className="bg-orange hover:bg-orange-dark text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
+              >
+                {loggingIn ? "Signing in…" : "Sign In"}
+              </button>
+              <button
+                type="button"
+                onClick={handleMagicLink}
+                disabled={loggingIn}
+                className="text-gray-mid hover:text-cream text-xs transition-colors disabled:opacity-60"
+              >
+                Email me a one-time sign-in link instead
+              </button>
+            </form>
+          )}
         </div>
       </div>
     );

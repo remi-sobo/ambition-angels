@@ -57,6 +57,11 @@ do $$ begin
   if (select count(*) from fin_transactions) = 0 then raise exception 'owner cannot read fin_transactions'; end if;
   if (select count(*) from page_views) = 0 then raise exception 'owner cannot read page_views'; end if;
   if (select count(*) from donations) = 0 then raise exception 'owner cannot read donations'; end if;
+  -- The donations->gifts ingest trigger must have created a gift for the
+  -- seeded donation (fundraising.read grants access).
+  if (select count(*) from gifts where external_source = 'stripe' and external_id = 'leak-test-pi') = 0 then
+    raise exception 'donations->gifts ingest trigger did not fire';
+  end if;
   -- Service-path-only tables: even the owner must see nothing.
   if (select count(*) from connections) <> 0 then raise exception 'LEAK: owner reads connections (token store is service-only)'; end if;
   if (select count(*) from webhook_events) <> 0 then raise exception 'LEAK: owner reads webhook_events (service-only)'; end if;
@@ -86,6 +91,8 @@ do $$ begin
   if (select count(*) from donations) <> 0 then raise exception 'LEAK: non-member reads donations'; end if;
   if (select count(*) from fin_transactions) <> 0 then raise exception 'LEAK: non-member reads fin_transactions'; end if;
   if (select count(*) from hs_contacts) <> 0 then raise exception 'LEAK: non-member reads hs_contacts'; end if;
+  if (select count(*) from constituents) <> 0 then raise exception 'LEAK: non-member reads constituents'; end if;
+  if (select count(*) from gifts) <> 0 then raise exception 'LEAK: non-member reads gifts'; end if;
   if (select count(*) from page_views) <> 0 then raise exception 'LEAK: non-member reads page_views'; end if;
 end $$;
 
@@ -109,6 +116,8 @@ do $$ begin
   end if;
   if (select count(*) from donations) <> 0 then raise exception 'LEAK: anon reads donations'; end if;
   if (select count(*) from quiz_submissions) <> 0 then raise exception 'LEAK: anon reads quiz_submissions'; end if;
+  if (select count(*) from constituents) <> 0 then raise exception 'LEAK: anon reads constituents'; end if;
+  if (select count(*) from gifts) <> 0 then raise exception 'LEAK: anon reads gifts'; end if;
   if (select count(*) from page_views) <> 0 then raise exception 'LEAK: anon reads page_views'; end if;
 end $$;
 

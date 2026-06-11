@@ -44,6 +44,7 @@ ordered=(
   create_membership_bootstrap.sql
   add_org_id_to_tenant_tables.sql
   enable_rls_per_domain.sql
+  create_connections_and_webhook_events.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

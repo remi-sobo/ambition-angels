@@ -231,9 +231,12 @@ async function loadData() {
     const top = matches[0]?.title;
     if (top) careerCounts.set(top, (careerCounts.get(top) ?? 0) + 1);
   }
-  const topCareers = Array.from(careerCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  // Center number = submissions the donut actually summarizes (same window
-  // as the segments), not a different period.
+  // Top 5 careers + an "Other" bucket so the ring always sums to the center
+  // number (every submission the donut summarizes).
+  const sorted = Array.from(careerCounts.entries()).sort((a, b) => b[1] - a[1]);
+  const topCareers = sorted.slice(0, 5);
+  const otherCount = sorted.slice(5).reduce((s, [, n]) => s + n, 0);
+  if (otherCount > 0) topCareers.push(["Other", otherCount]);
   const quizCounted = Array.from(careerCounts.values()).reduce((s, n) => s + n, 0);
 
   return {

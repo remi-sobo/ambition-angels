@@ -236,8 +236,10 @@ function Skeleton({ className }: { className?: string }) {
 export default function AdminPage() {
   const router = useRouter();
 
-  // Auth
-  const [authed, setAuthed] = useState(false);
+  // Auth. Middleware gates /admin/legacy on a session, so anyone who
+  // reaches this page is signed in — start optimistic to avoid flashing
+  // the login form while the first fetch is in flight; a 401 flips it.
+  const [authed, setAuthed] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");

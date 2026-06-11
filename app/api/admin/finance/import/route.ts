@@ -25,10 +25,10 @@ const ALLOWED_FORMATS: BankFormat[] = [
 // Preview is free; commit writes. The client always previews first, then
 // submits the same file with the user's confirmation.
 export async function POST(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const user = getAdminUser(req);
+  const user = await getAdminUser();
   if (!user) {
     return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });
   }

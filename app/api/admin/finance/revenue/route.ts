@@ -19,10 +19,10 @@ function isISODate(v: unknown): v is string {
 
 // POST /api/admin/finance/revenue — create a pledge / grant / commitment.
 export async function POST(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const user = getAdminUser(req);
+  const user = await getAdminUser();
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 

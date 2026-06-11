@@ -57,10 +57,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { hubspot_id: string } }
 ) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const currentUser = getAdminUser(req);
+  const currentUser = await getAdminUser();
   if (!currentUser) {
     return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });
   }

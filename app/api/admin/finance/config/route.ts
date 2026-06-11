@@ -14,7 +14,7 @@ function isISODate(v: unknown): v is string {
 // exist (seeded in the migration); if for some reason it doesn't, we
 // upsert.
 export async function POST(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;

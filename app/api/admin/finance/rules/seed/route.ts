@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
 import { DEFAULT_RULES } from "@/lib/finance/default-rules";
@@ -10,8 +10,8 @@ import { DEFAULT_RULES } from "@/lib/finance/default-rules";
 // repeatedly without piling up dupes). Doesn't run rules against existing
 // transactions on its own; the user follows with "Apply to uncategorized"
 // to backfill.
-export async function POST(req: NextRequest) {
-  if (!isAuthed(req)) {
+export async function POST() {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getSupabaseAdmin();

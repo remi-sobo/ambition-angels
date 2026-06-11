@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 import { DEFAULT_RULES } from "@/lib/finance/default-rules";
 
 // POST /api/admin/finance/rules/seed
@@ -10,7 +11,7 @@ import { DEFAULT_RULES } from "@/lib/finance/default-rules";
 // repeatedly without piling up dupes). Doesn't run rules against existing
 // transactions on its own; the user follows with "Apply to uncategorized"
 // to backfill.
-export async function POST() {
+export async function POST(req: NextRequest) {
   if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -67,6 +68,11 @@ export async function POST() {
     return NextResponse.json({ error: insErr.message }, { status: 500 });
   }
 
+  await audit(req, {
+    action: "finance.rules.seed",
+    entityType: "fin_category_rules",
+    after: { inserted: count ?? toInsert.length },
+  });
   return NextResponse.json({
     ok: true,
     inserted: count ?? toInsert.length,

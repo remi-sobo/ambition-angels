@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 
 // POST /api/admin/finance/budget
 //
@@ -64,5 +65,10 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  await audit(req, {
+    action: "finance.budget.update",
+    entityType: "fin_budget",
+    after: update,
+  });
   return NextResponse.json({ ok: true, row: data });
 }

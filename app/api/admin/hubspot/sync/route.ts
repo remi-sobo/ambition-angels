@@ -362,7 +362,7 @@ async function runChunk(jobInput: JobRow): Promise<JobRow> {
 // ── Route handlers ─────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -379,7 +379,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
   } else {
-    job = await createJob(getAdminUser(req));
+    job = await createJob(await getAdminUser());
   }
 
   if (job.status !== "running") {
@@ -391,7 +391,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const url = new URL(req.url);

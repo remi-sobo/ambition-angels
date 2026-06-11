@@ -14,7 +14,7 @@ import { isAuthed } from "@/lib/admin/auth";
 // update). Idempotent for the same (year, category_id) — used by the
 // inline editor on /admin/finance/budget.
 export async function POST(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;

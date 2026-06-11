@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
 
 /**
  * Server-side auth gates for two areas:
@@ -39,33 +40,20 @@ const PUBLIC_ADMIN_PATHS = new Set([
 // NOT gated so the gate page can display it.
 const DEMODAY_PATHS = new Set(["/demoday", "/demoday/index.html"]);
 
-function acceptedAdminCookies(): string[] {
-  return [
-    process.env.ADMIN_PASSWORD_REMI,
-    process.env.ADMIN_PASSWORD_SHANNON,
-    process.env.ADMIN_PASSWORD,
-  ].filter((v): v is string => typeof v === "string" && v.length > 0);
-}
-
-function isAdminAuthed(req: NextRequest): boolean {
-  const cookie = req.cookies.get("admin_auth")?.value;
-  return !!cookie && acceptedAdminCookies().includes(cookie);
-}
-
-function isDemodayAuthed(req: NextRequest): boolean {
+function isDemodayAuthed(req: NextRequest, hasUser: boolean): boolean {
   const expected = process.env.DEMODAY_PASSWORD;
   const cookie = req.cookies.get("demoday_auth")?.value;
   if (expected && cookie === expected) return true;
-  // Logged-in admins don't need the shared password.
-  return isAdminAuthed(req);
+  // Signed-in BloomOS users don't need the shared password.
+  return hasUser;
 }
 
-function isStrategyAuthed(req: NextRequest): boolean {
+function isStrategyAuthed(req: NextRequest, hasUser: boolean): boolean {
   const expected = process.env.STRATEGY_ROOM_PASSWORD;
   const cookie = req.cookies.get("strategy_auth")?.value;
   if (expected && cookie === expected) return true;
-  // Logged-in admins don't need the shared password.
-  return isAdminAuthed(req);
+  // Signed-in BloomOS users don't need the shared password.
+  return hasUser;
 }
 
 function strategyGateHtml(error: boolean): string {
@@ -165,12 +153,17 @@ function demodayGateHtml(error: boolean): string {
 </html>`;
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // Refresh the Supabase session on every matched request and learn whether
+  // a signed-in user is present. Coarse gate only — membership/permission
+  // enforcement lives in route handlers + RLS.
+  const { response, hasUser } = await updateSession(req);
 
   // ── Demo-day lookbook gate ────────────────────────────────────────────
   if (DEMODAY_PATHS.has(pathname)) {
-    if (isDemodayAuthed(req)) return NextResponse.next();
+    if (isDemodayAuthed(req, hasUser)) return response;
     const error = req.nextUrl.searchParams.get("error") === "1";
     return new NextResponse(demodayGateHtml(error), {
       status: 200,
@@ -182,7 +175,7 @@ export function middleware(req: NextRequest) {
   // The /strategy page renders its own React UI once authed; until then we
   // serve a branded password gate here so the page never reaches the client.
   if (pathname === "/strategy") {
-    if (isStrategyAuthed(req)) return NextResponse.next();
+    if (isStrategyAuthed(req, hasUser)) return response;
     const error = req.nextUrl.searchParams.get("error") === "1";
     return new NextResponse(strategyGateHtml(error), {
       status: 200,
@@ -193,16 +186,16 @@ export function middleware(req: NextRequest) {
   // ── Admin gate ────────────────────────────────────────────────────────
   // /admin handles its own login UI; let it through to avoid a redirect loop.
   if (pathname === "/admin") {
-    return NextResponse.next();
+    return response;
   }
   // PWA install assets must be reachable pre-auth.
   if (PUBLIC_ADMIN_PATHS.has(pathname)) {
-    return NextResponse.next();
+    return response;
   }
-  if (!isAdminAuthed(req)) {
+  if (!hasUser) {
     return NextResponse.redirect(new URL("/admin", req.url));
   }
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

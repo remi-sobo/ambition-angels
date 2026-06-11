@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
 import { loadRules, matchRule, bumpHitCounts } from "@/lib/finance/categorize";
@@ -14,8 +14,8 @@ import { loadRules, matchRule, bumpHitCounts } from "@/lib/finance/categorize";
 // This is O(uncategorized × rules); both sides are small (hundreds at most
 // in steady state, dozens of rules), so we do it in-process rather than a
 // SQL update with regex joins.
-export async function POST(req: NextRequest) {
-  if (!isAuthed(req)) {
+export async function POST() {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getSupabaseAdmin();

@@ -6,7 +6,7 @@ const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 // GET /api/admin/ygb/attendance?date=YYYY-MM-DD → rows for that day
 export async function GET(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/ygb/attendance → upsert a check-in for (registration, date)
 export async function POST(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -7,7 +7,7 @@ type PatternType = (typeof PATTERN_TYPES)[number];
 
 // POST /api/admin/finance/rules — create a new category rule.
 export async function POST(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;

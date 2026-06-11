@@ -31,10 +31,10 @@ async function touchProject(
 // ── POST /api/admin/ops/tasks ──────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const createdBy = getAdminUser(req);
+  const createdBy = await getAdminUser();
   if (!createdBy) {
     return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });
   }
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
 // ── GET /api/admin/ops/tasks ───────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

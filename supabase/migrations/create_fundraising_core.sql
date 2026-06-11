@@ -256,8 +256,11 @@ declare
   fname text;
   lname text;
 begin
-  -- Only money that actually arrived becomes a gift.
-  if d.status is not null and d.status <> 'succeeded' then
+  -- Only money that actually arrived becomes a gift. 'cancelled' refers to
+  -- the SUBSCRIPTION (the webhook stamps it onto every historical renewal
+  -- row) — those payments happened and stay on the spine; only failed or
+  -- refunded payments are excluded.
+  if d.status is not null and d.status in ('failed','refunded') then
     return;
   end if;
   if d.stripe_payment_id is null or d.stripe_payment_id = '' then
@@ -287,6 +290,9 @@ begin
     on conflict (external_source, external_id) where external_id is not null
     do update set constituent_id = coalesce(recurring_plans.constituent_id, excluded.constituent_id)
     returning id into plan;
+    if d.status = 'cancelled' then
+      update recurring_plans set status = 'cancelled' where id = plan;
+    end if;
   end if;
 
   insert into gifts (
@@ -319,13 +325,20 @@ returns trigger
 language plpgsql
 as $$
 begin
-  if (new.status is null or new.status = 'succeeded') then
-    perform fr_ingest_donation(new);
-  else
-    -- Payment failed / refunded / cancelled after the fact: the gift never
-    -- happened. The dedupe key finds it.
+  if new.status in ('failed','refunded') then
+    -- This specific payment never happened (or was returned): the gift
+    -- comes off the spine. The dedupe key finds it.
     delete from gifts
     where external_source = 'stripe' and external_id = new.stripe_payment_id;
+  elsif new.status = 'cancelled' then
+    -- Subscription ended. Historical renewal gifts stand; only the plan
+    -- flips. (The webhook stamps 'cancelled' on every row of the sub.)
+    if new.subscription_id is not null and new.subscription_id <> '' then
+      update recurring_plans set status = 'cancelled'
+      where external_source = 'stripe' and external_id = new.subscription_id;
+    end if;
+  else
+    perform fr_ingest_donation(new);
   end if;
   return new;
 end;

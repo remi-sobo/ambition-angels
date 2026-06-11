@@ -15,7 +15,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
 
   const supabase = getSupabaseAdmin();
-  const [cRes, giftsRes, plansRes, interactionsRes] = await Promise.all([
+  const [cRes, giftsRes, plansRes, firstGiftRes, interactionsRes] = await Promise.all([
     supabase.from("constituents").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("gifts")
@@ -27,6 +27,14 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .from("recurring_plans")
       .select("id, amount, frequency, status")
       .eq("constituent_id", params.id),
+    // Exact first gift, independent of the timeline's display cap.
+    supabase
+      .from("gifts")
+      .select("gift_date")
+      .eq("constituent_id", params.id)
+      .order("gift_date", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
     supabase
       .from("interactions")
       .select("id, kind, occurred_at, notes, logged_by")
@@ -88,7 +96,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
           <StatCard label="Gifts" value={gifts.length} sub={gifts.length > 0 ? `latest ${fmtDate(gifts[0].gift_date)}` : undefined} />
           <StatCard
             label="First Gift"
-            value={gifts.length > 0 ? fmtDate(gifts[gifts.length - 1].gift_date) : "—"}
+            value={firstGiftRes.data?.gift_date ? fmtDate(firstGiftRes.data.gift_date) : "—"}
           />
           <StatCard
             label="Acknowledgments"

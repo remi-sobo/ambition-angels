@@ -42,6 +42,11 @@ insert into meeting_types (slug, name, duration_minutes, is_active) values
   ('leak-test-active','Leak Active',30,true),
   ('leak-test-inactive','Leak Inactive',30,false)
 on conflict (slug) do nothing;
+insert into connections (provider, external_id) values ('hubspot','leak-test')
+on conflict do nothing;
+insert into webhook_events (provider, external_event_id, raw_payload)
+  values ('givebutter','leak-test-evt','{}')
+on conflict do nothing;
 
 -- ════ Owner: full read + write ═══════════════════════════════════════════
 set role authenticated;
@@ -52,6 +57,9 @@ do $$ begin
   if (select count(*) from fin_transactions) = 0 then raise exception 'owner cannot read fin_transactions'; end if;
   if (select count(*) from page_views) = 0 then raise exception 'owner cannot read page_views'; end if;
   if (select count(*) from donations) = 0 then raise exception 'owner cannot read donations'; end if;
+  -- Service-path-only tables: even the owner must see nothing.
+  if (select count(*) from connections) <> 0 then raise exception 'LEAK: owner reads connections (token store is service-only)'; end if;
+  if (select count(*) from webhook_events) <> 0 then raise exception 'LEAK: owner reads webhook_events (service-only)'; end if;
   insert into ops_tasks (title, category, created_by) values ('owner-write','admin','remi');
 end $$;
 

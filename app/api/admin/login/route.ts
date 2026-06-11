@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { audit } from "@/lib/audit";
 
 /**
  * BloomOS sign-in, backed by Supabase Auth.
@@ -36,6 +37,12 @@ export async function POST(req: NextRequest) {
       console.error("Magic link error:", error.message);
       return NextResponse.json({ error: "Could not send sign-in link" }, { status: 500 });
     }
+    await audit(req, {
+      action: "auth.magic_link_sent",
+      entityType: "auth",
+      actorUserId: null,
+      after: { email },
+    });
     return NextResponse.json({ ok: true, sent: true });
   }
 
@@ -43,9 +50,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Password is required" }, { status: 400 });
   }
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
+    await audit(req, {
+      action: "auth.login_failed",
+      entityType: "auth",
+      actorUserId: null,
+      after: { email },
+    });
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }
+  // Request cookies predate this sign-in, so attribute explicitly.
+  await audit(req, {
+    action: "auth.login",
+    entityType: "auth",
+    actorUserId: data.user?.id ?? null,
+    after: { email, method: "password" },
+  });
   return NextResponse.json({ ok: true });
 }

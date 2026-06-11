@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 
 const STATUSES = ["secured", "projected", "received"] as const;
 
@@ -71,6 +72,12 @@ export async function PATCH(
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await audit(req, {
+    action: "finance.pledge.update",
+    entityType: "fin_revenue_commitments",
+    entityId: params.id,
+    after: update,
+  });
   return NextResponse.json({ ok: true, pledge: data });
 }
 
@@ -85,7 +92,21 @@ export async function DELETE(
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
   const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from("fin_revenue_commitments").delete().eq("id", params.id);
+  // select() returns the deleted rows — gives the ledger a `before`
+  // snapshot and lets us skip the audit event on no-op re-deletes.
+  const { data: deleted, error } = await supabase
+    .from("fin_revenue_commitments")
+    .delete()
+    .eq("id", params.id)
+    .select("*");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (deleted && deleted.length > 0) {
+    await audit(req, {
+      action: "finance.pledge.delete",
+      entityType: "fin_revenue_commitments",
+      entityId: params.id,
+      before: deleted[0],
+    });
+  }
   return NextResponse.json({ ok: true });
 }

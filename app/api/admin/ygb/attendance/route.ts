@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 
@@ -62,5 +63,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to save attendance" }, { status: 500 });
   }
 
+  await audit(req, {
+    action: "program.attendance.record",
+    entityType: "ygb_attendance",
+    entityId: registration_id,
+    after: { attendance_date, checked_in },
+  });
   return NextResponse.json({ ok: true });
 }

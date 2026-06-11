@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 import { loadRules, matchRule, bumpHitCounts } from "@/lib/finance/categorize";
 
 // POST /api/admin/finance/rules/apply-all
@@ -14,7 +15,7 @@ import { loadRules, matchRule, bumpHitCounts } from "@/lib/finance/categorize";
 // This is O(uncategorized × rules); both sides are small (hundreds at most
 // in steady state, dozens of rules), so we do it in-process rather than a
 // SQL update with regex joins.
-export async function POST() {
+export async function POST(req: NextRequest) {
   if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -35,6 +36,13 @@ export async function POST() {
 
   const rules = await loadRules(supabase);
   if (rules.length === 0) {
+    // The invocation itself is the audited action — log it even when
+    // there were no rules to apply.
+    await audit(req, {
+      action: "finance.rules.apply_all",
+      entityType: "fin_transactions",
+      after: { matched: 0, considered: uncat.length, rules: 0 },
+    });
     return NextResponse.json({
       ok: true,
       matched: 0,
@@ -68,6 +76,11 @@ export async function POST() {
 
   await bumpHitCounts(supabase, hits);
 
+  await audit(req, {
+    action: "finance.rules.apply_all",
+    entityType: "fin_transactions",
+    after: { matched, considered: uncat.length },
+  });
   return NextResponse.json({
     ok: true,
     matched,

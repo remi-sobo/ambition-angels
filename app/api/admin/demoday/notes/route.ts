@@ -107,7 +107,8 @@ export async function PUT(req: NextRequest) {
   await audit(req, {
     action: "program.demoday_note.update",
     entityType: "demoday_notes",
-    after: { attendee_key: attendeeKey },
+    // Full saved row — the §99.32 ledger must reconstruct what was stored.
+    after: data,
   });
   return NextResponse.json({ note: data });
 }

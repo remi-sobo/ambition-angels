@@ -78,12 +78,21 @@ export async function DELETE(
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
   const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from("fin_category_rules").delete().eq("id", params.id);
+  // select() returns the deleted rows — gives the ledger a `before`
+  // snapshot and lets us skip the audit event on no-op re-deletes.
+  const { data: deleted, error } = await supabase
+    .from("fin_category_rules")
+    .delete()
+    .eq("id", params.id)
+    .select("*");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  await audit(req, {
-    action: "finance.rule.delete",
-    entityType: "fin_category_rules",
-    entityId: params.id,
-  });
+  if (deleted && deleted.length > 0) {
+    await audit(req, {
+      action: "finance.rule.delete",
+      entityType: "fin_category_rules",
+      entityId: params.id,
+      before: deleted[0],
+    });
+  }
   return NextResponse.json({ ok: true });
 }

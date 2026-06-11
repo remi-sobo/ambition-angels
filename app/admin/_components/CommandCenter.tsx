@@ -448,18 +448,14 @@ export default async function CommandCenter() {
             {careerSegs.length === 0 ? (
               <Empty>No career-quiz submissions yet.</Empty>
             ) : (
-              <div className="flex items-center gap-5">
-                <Donut segments={careerSegs} size={140} thickness={20} centerLabel="recent quizzes" centerValue={String(d.quizCounted)} />
-                <ul className="space-y-1.5 min-w-0">
-                  {careerSegs.map((s) => (
-                    <li key={s.label} className="flex items-center gap-2 text-xs min-w-0">
-                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
-                      <span className="text-cream/80 truncate">{s.label}</span>
-                      <span className="text-gray-mid ml-auto [font-variant-numeric:tabular-nums]">{s.value}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <Donut
+                segments={careerSegs}
+                size={140}
+                thickness={20}
+                centerLabel="recent quizzes"
+                centerValue={String(d.quizCounted)}
+                formatValue={(n) => n.toLocaleString()}
+              />
             )}
           </Widget>
         </div>

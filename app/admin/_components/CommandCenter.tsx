@@ -132,17 +132,26 @@ async function loadData() {
   };
   const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
-  const [txnsRes, cashRes, donationsRes, tasksRes, openTasksRes, dealsRes, quizRes, pv7Res, pv14Res] =
+  const [txnsRes, cashRes, monthDonationsRes, recentDonationsRes, tasksRes, openTasksRes, dealsRes, quizRes, pv7Res, pv14Res] =
     await Promise.all([
       supabase.from("fin_transactions").select("txn_date, amount").gte("txn_date", fy.start).lte("txn_date", fy.end),
       cfg.startDate
         ? supabase.from("fin_transactions").select("amount").gt("txn_date", cfg.startDate)
         : Promise.resolve({ data: [] as Array<{ amount: number }>, error: null }),
+      // Month-window rows for the donor KPIs (server-side filtered so the
+      // math never depends on a recency cap)…
+      supabase
+        .from("donations")
+        .select("created_at, amount, recurring, first_name, last_name, name, email, status")
+        .gte("created_at", prevMonthStart)
+        .order("created_at", { ascending: false })
+        .limit(2000),
+      // …and a separate small fetch for the recent-donations feed.
       supabase
         .from("donations")
         .select("created_at, amount, recurring, first_name, last_name, name, email, status")
         .order("created_at", { ascending: false })
-        .limit(200),
+        .limit(10),
       supabase
         .from("ops_tasks")
         .select("id, title, category, due_date")
@@ -185,13 +194,19 @@ async function loadData() {
   const runwayMonths = burn3mo > 0 ? cashOnHand / burn3mo : null;
 
   // ── Donations ──
-  const donations = ((donationsRes.data ?? []) as Donation[])
-    .map((d) => ({ ...d, amount: Number(d.amount) }))
-    .filter((d) => !d.status || d.status === "succeeded");
-  const thisMonth = donations.filter((d) => d.created_at >= monthStart);
-  const prevMonth = donations.filter((d) => d.created_at >= prevMonthStart && d.created_at < monthStart);
-  const donorsThisMonth = new Set(thisMonth.map((d) => d.email ?? d.name ?? Math.random())).size;
-  const donorsPrevMonth = new Set(prevMonth.map((d) => d.email ?? d.name ?? Math.random())).size;
+  const succeeded = (rows: Donation[] | null) =>
+    (rows ?? [])
+      .map((d) => ({ ...d, amount: Number(d.amount) }))
+      .filter((d) => !d.status || d.status === "succeeded");
+  const monthDonations = succeeded(monthDonationsRes.data as Donation[] | null);
+  const donations = succeeded(recentDonationsRes.data as Donation[] | null);
+  const thisMonth = monthDonations.filter((d) => d.created_at >= monthStart);
+  const prevMonth = monthDonations.filter((d) => d.created_at < monthStart);
+  // Distinct donors by email (then name); all fully-anonymous gifts
+  // collapse into one donor rather than inflating the count.
+  const donorKey = (d: Donation) => d.email?.toLowerCase() || d.name || "anonymous";
+  const donorsThisMonth = new Set(thisMonth.map(donorKey)).size;
+  const donorsPrevMonth = new Set(prevMonth.map(donorKey)).size;
 
   // ── Pipeline ──
   const stageAgg = new Map<string, { count: number; total: number }>();
@@ -216,7 +231,9 @@ async function loadData() {
     if (top) careerCounts.set(top, (careerCounts.get(top) ?? 0) + 1);
   }
   const topCareers = Array.from(careerCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const quizThisMonth = (quizRes.data ?? []).filter((q) => q.created_at >= monthStart).length;
+  // Center number = submissions the donut actually summarizes (same window
+  // as the segments), not a different period.
+  const quizCounted = Array.from(careerCounts.values()).reduce((s, n) => s + n, 0);
 
   return {
     cfg,
@@ -234,7 +251,7 @@ async function loadData() {
     stages,
     pipelineTotal,
     topCareers,
-    quizThisMonth,
+    quizCounted,
     pv7: pv7Res.count ?? 0,
     pv14: pv14Res.count ?? 0,
   };
@@ -425,7 +442,7 @@ export default async function CommandCenter() {
               <Empty>No career-quiz submissions yet.</Empty>
             ) : (
               <div className="flex items-center gap-5">
-                <Donut segments={careerSegs} size={140} thickness={20} centerLabel="this month" centerValue={String(d.quizThisMonth)} />
+                <Donut segments={careerSegs} size={140} thickness={20} centerLabel="recent quizzes" centerValue={String(d.quizCounted)} />
                 <ul className="space-y-1.5 min-w-0">
                   {careerSegs.map((s) => (
                     <li key={s.label} className="flex items-center gap-2 text-xs min-w-0">

@@ -16,6 +16,11 @@ const config: Config = {
           mid: "#F47840",
         },
         ink: "#0E0E0E",
+        // BloomOS product chrome (docs/bloomos/06-design-system.md §2).
+        navy: {
+          DEFAULT: "#10214B",
+          light: "#1A2F63",
+        },
         charcoal: "#3D3D3D",
         "gray-warm": "#6B6960",
         "gray-mid": "#C8C6BE",

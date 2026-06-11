@@ -9,6 +9,7 @@ import {
 } from "../finance/_components/charts";
 import StatCard, { type Delta } from "./StatCard";
 import Greeting from "./Greeting";
+import { todayISO } from "../ops/_types/ops";
 
 // Command Center v1 (docs/bloomos/06-design-system.md §5): finance + ops +
 // fundraising widgets computed live from existing data. The metric registry
@@ -261,7 +262,9 @@ async function loadData() {
 
 export default async function CommandCenter() {
   const d = await loadData();
-  const today = new Date().toISOString().slice(0, 10);
+  // Same "today" the ops module uses for due-date math (server-local day,
+  // not UTC), so badges here always agree with the Tasks pages.
+  const today = todayISO();
 
   const donorName = (x: Donation) =>
     [x.first_name, x.last_name].filter(Boolean).join(" ") || x.name || x.email || "Anonymous";
@@ -383,7 +386,11 @@ export default async function CommandCenter() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <Widget title="Upcoming Priorities" href="/admin/ops" hrefLabel={`All tasks (${d.openTaskCount})`} className="lg:col-span-4">
             {d.tasks.length === 0 ? (
-              <Empty>Nothing due — add tasks under Operations → Tasks.</Empty>
+              <Empty>
+                {d.openTaskCount > 0
+                  ? `${d.openTaskCount} open task${d.openTaskCount === 1 ? "" : "s"}, none with a due date — set dates under Operations → Tasks to surface them here.`
+                  : "Nothing due — add tasks under Operations → Tasks."}
+              </Empty>
             ) : (
               <ul className="space-y-2.5">
                 {d.tasks.map((t) => {

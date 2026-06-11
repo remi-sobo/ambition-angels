@@ -30,23 +30,38 @@ type Gift = {
 const fmtDate = (iso: string) =>
   new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-export default async function DonorsPage() {
-  const supabase = getSupabaseAdmin();
-  const [constituentsRes, giftsRes, plansRes] = await Promise.all([
-    supabase
-      .from("constituents")
-      .select("id, type, first_name, last_name, org_name, emails, do_not_contact, source")
-      .limit(2000),
-    supabase
+// Page through the whole gifts spine so KPIs and rollups are exact, not a
+// recency sample. Bounded at 50 pages (50k gifts) — revisit with SQL-side
+// aggregation long before that's real.
+async function fetchAllGifts(supabase: ReturnType<typeof getSupabaseAdmin>) {
+  const out: Gift[] = [];
+  const PAGE = 1000;
+  for (let page = 0; page < 50; page++) {
+    const { data, error } = await supabase
       .from("gifts")
       .select("constituent_id, amount, gift_date, recurring_plan_id")
       .order("gift_date", { ascending: false })
-      .limit(5000),
+      .range(page * PAGE, page * PAGE + PAGE - 1);
+    if (error) return { gifts: null, error };
+    out.push(...((data ?? []) as Gift[]));
+    if (!data || data.length < PAGE) break;
+  }
+  return { gifts: out, error: null };
+}
+
+const chunk = <T,>(arr: T[], n: number): T[][] =>
+  Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, (i + 1) * n));
+
+export default async function DonorsPage() {
+  const supabase = getSupabaseAdmin();
+  const [{ gifts: allGifts, error: giftsError }, plansRes, constituentCountRes] = await Promise.all([
+    fetchAllGifts(supabase),
     supabase.from("recurring_plans").select("id", { count: "exact", head: true }).eq("status", "active"),
+    supabase.from("constituents").select("id", { count: "exact", head: true }),
   ]);
 
   // Tables not applied yet (the migration ships ahead of the prod apply).
-  if (constituentsRes.error || giftsRes.error) {
+  if (giftsError || allGifts === null) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className="font-heading font-bold text-cream text-2xl mb-4">Donors</h1>
@@ -59,8 +74,7 @@ export default async function DonorsPage() {
     );
   }
 
-  const constituents = (constituentsRes.data ?? []) as Constituent[];
-  const gifts = ((giftsRes.data ?? []) as Gift[]).map((g) => ({ ...g, amount: Number(g.amount) }));
+  const gifts = allGifts.map((g) => ({ ...g, amount: Number(g.amount) }));
 
   type Rollup = {
     total: number;
@@ -89,11 +103,24 @@ export default async function DonorsPage() {
     rollups.set(g.constituent_id, r);
   }
 
+  // Fetch exactly the constituents that have gifts, by id — no arbitrary
+  // list cap can drop a donor whose gifts we counted.
+  const donorIds = Array.from(rollups.keys());
+  const constituents: Constituent[] = [];
+  for (const ids of chunk(donorIds, 200)) {
+    const { data, error } = await supabase
+      .from("constituents")
+      .select("id, type, first_name, last_name, org_name, emails, do_not_contact, source")
+      .in("id", ids);
+    if (error) continue;
+    constituents.push(...((data ?? []) as Constituent[]));
+  }
+
   const donors = constituents
     .filter((c) => rollups.has(c.id))
     .map((c) => ({ c, r: rollups.get(c.id)! }))
     .sort((a, b) => b.r.total - a.r.total);
-  const nonDonorConstituents = constituents.length - donors.length;
+  const nonDonorConstituents = Math.max((constituentCountRes.count ?? donors.length) - donors.length, 0);
 
   const totalRaised = gifts.reduce((s, g) => s + g.amount, 0);
 

@@ -45,8 +45,8 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Fundraising",
     items: [
+      { label: "Donors", icon: "donors", href: "/admin/fundraising/donors" },
       { label: "Major Gifts", icon: "majorgifts", href: "/admin/fundraising" },
-      { label: "Donors", icon: "donors", soon: true },
       { label: "Grants", icon: "grants", soon: true },
       { label: "Campaigns", icon: "campaigns", soon: true },
       { label: "Events", icon: "events", soon: true },

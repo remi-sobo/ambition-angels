@@ -1,0 +1,61 @@
+# Manual, audited migration runner (BloomOS Ring 1).
+#
+# Why: nothing else in the deploy path can run DDL — Vercel only builds the
+# app, and ad-hoc SQL-editor pastes leave no trail. This workflow applies a
+# single migration file from supabase/migrations/ against production,
+# wrapped in one transaction, with the run recorded in the Actions log.
+#
+# Usage: Actions → "Apply DB migration" → Run workflow → enter the filename
+# (e.g. enable_rls_per_domain.sql). Re-running an already-applied migration
+# is safe only if the file is idempotent — ours are written that way, but
+# check the header comment of the file first.
+#
+# Required repository secret:
+#   SUPABASE_DB_URL — same Postgres connection string the nightly backup
+#                     uses (Session pooler URI from Supabase dashboard).
+
+name: Apply DB migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: "Migration filename inside supabase/migrations/ (no path)"
+        required: true
+        type: string
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Postgres client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Apply migration
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          MIGRATION_FILE: ${{ inputs.file }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::SUPABASE_DB_URL secret is not set"; exit 1
+          fi
+          # Filename only — reject anything that could escape the
+          # migrations directory.
+          case "$MIGRATION_FILE" in
+            */*|*..*|"") echo "::error::Invalid migration filename"; exit 1 ;;
+          esac
+          path="supabase/migrations/$MIGRATION_FILE"
+          if [ ! -f "$path" ]; then
+            echo "::error::$path does not exist"; exit 1
+          fi
+          echo "Applying $path"
+          psql "$SUPABASE_DB_URL" \
+            --single-transaction \
+            -v ON_ERROR_STOP=1 \
+            -f "$path"
+          echo "Done."

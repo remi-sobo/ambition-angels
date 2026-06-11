@@ -1,0 +1,50 @@
+# Cross-tenant RLS leak test (BloomOS Ring 1).
+#
+# Applies all migrations to a throwaway Postgres and asserts the access
+# matrix (owner / staff / non-member / anon). Catches the two failure modes
+# that matter most for a multi-tenant system: a table left without RLS, and
+# a policy that leaks rows across roles or sessions.
+
+name: RLS leak test
+
+on:
+  pull_request:
+    paths:
+      - "supabase/**"
+      - "scripts/test-rls.sh"
+      - ".github/workflows/rls-test.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/**"
+      - "scripts/test-rls.sh"
+      - ".github/workflows/rls-test.yml"
+
+jobs:
+  rls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Postgres client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Run leak test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+        run: bash scripts/test-rls.sh

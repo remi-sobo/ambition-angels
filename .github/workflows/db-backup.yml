@@ -1,0 +1,72 @@
+# Nightly off-platform Postgres backup (BloomOS Ring 0).
+#
+# Why: Supabase Pro keeps 7 days of daily backups on-platform only. This job
+# keeps an independent, encrypted copy outside Supabase so we survive
+# account-level failure and get >7-day retention.
+#
+# Required repository secrets:
+#   SUPABASE_DB_URL    — Postgres connection string (Session pooler URI from
+#                        Supabase dashboard → Project Settings → Database).
+#   BACKUP_PASSPHRASE  — strong passphrase used to encrypt dumps (store a copy
+#                        in the org password manager; a lost passphrase means
+#                        unrecoverable backups).
+#
+# Restore (locally):
+#   gpg --batch --passphrase "$BACKUP_PASSPHRASE" -d backup.sql.gz.gpg | gunzip | psql "$TARGET_DB_URL"
+#
+# Encrypted dumps are stored as GitHub Actions artifacts (private to this
+# repo) with 30-day retention. When BloomOS reaches Ring 4/5, move the
+# destination to R2/S3 with object lock per docs/bloomos/03-architecture.md §8.
+
+name: Nightly DB backup
+
+on:
+  schedule:
+    - cron: "17 9 * * *" # 09:17 UTC daily (off-peak for US traffic)
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Install Postgres client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Dump database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::SUPABASE_DB_URL secret is not set"; exit 1
+          fi
+          pg_dump "$SUPABASE_DB_URL" \
+            --no-owner --no-privileges \
+            --exclude-schema=storage \
+            --exclude-schema=auth \
+            --exclude-schema=realtime \
+            --exclude-schema=supabase_functions \
+            | gzip > backup.sql.gz
+          ls -lh backup.sql.gz
+
+      - name: Encrypt dump
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::BACKUP_PASSPHRASE secret is not set"; exit 1
+          fi
+          gpg --batch --yes --symmetric --cipher-algo AES256 \
+            --passphrase "$BACKUP_PASSPHRASE" \
+            -o backup.sql.gz.gpg backup.sql.gz
+          rm backup.sql.gz
+
+      - name: Upload encrypted backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup.sql.gz.gpg
+          retention-days: 30
+          if-no-files-found: error

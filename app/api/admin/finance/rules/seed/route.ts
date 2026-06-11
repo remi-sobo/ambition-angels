@@ -42,6 +42,12 @@ export async function POST(req: NextRequest) {
   }));
 
   if (toInsert.length === 0) {
+    // The invocation itself is the audited action — log the no-op too.
+    await audit(req, {
+      action: "finance.rules.seed",
+      entityType: "fin_category_rules",
+      after: { inserted: 0, skipped: DEFAULT_RULES.length },
+    });
     return NextResponse.json({
       ok: true,
       inserted: 0,

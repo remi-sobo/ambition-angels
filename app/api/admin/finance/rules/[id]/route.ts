@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 
 // PATCH /api/admin/finance/rules/:id — partial update for an existing rule.
 // Most commonly used to toggle enabled, bump priority, or rewrite pattern.
@@ -53,6 +54,12 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  await audit(req, {
+    action: "finance.rule.update",
+    entityType: "fin_category_rules",
+    entityId: params.id,
+    after: update,
+  });
   return NextResponse.json({ ok: true, rule: data });
 }
 
@@ -73,5 +80,10 @@ export async function DELETE(
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.from("fin_category_rules").delete().eq("id", params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await audit(req, {
+    action: "finance.rule.delete",
+    entityType: "fin_category_rules",
+    entityId: params.id,
+  });
   return NextResponse.json({ ok: true });
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 
 const PATTERN_TYPES = ["contains", "starts_with", "regex"] as const;
 type PatternType = (typeof PATTERN_TYPES)[number];
@@ -48,5 +49,11 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  await audit(req, {
+    action: "finance.rule.create",
+    entityType: "fin_category_rules",
+    entityId: data.id,
+    after: data,
+  });
   return NextResponse.json({ ok: true, rule: data });
 }

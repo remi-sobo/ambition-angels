@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 
 const STATUSES = ["secured", "projected", "received"] as const;
 
@@ -71,6 +72,12 @@ export async function PATCH(
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await audit(req, {
+    action: "finance.pledge.update",
+    entityType: "fin_revenue_commitments",
+    entityId: params.id,
+    after: update,
+  });
   return NextResponse.json({ ok: true, pledge: data });
 }
 
@@ -87,5 +94,10 @@ export async function DELETE(
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.from("fin_revenue_commitments").delete().eq("id", params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await audit(req, {
+    action: "finance.pledge.delete",
+    entityType: "fin_revenue_commitments",
+    entityId: params.id,
+  });
   return NextResponse.json({ ok: true });
 }

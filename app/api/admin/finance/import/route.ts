@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 import { parseCsv } from "@/lib/finance/parsers";
 import { batchDedupHashes, fileHash } from "@/lib/finance/dedup";
 import { loadRules, matchRule, bumpHitCounts } from "@/lib/finance/categorize";
@@ -215,6 +216,15 @@ export async function POST(req: NextRequest) {
 
   await bumpHitCounts(supabase, ruleHits);
 
+  await audit(req, {
+    action: "finance.transactions.import",
+    entityType: "fin_transactions",
+    after: {
+      filename: file.name,
+      inserted: insCount ?? insertRows.length,
+      duplicates_skipped: dupCount,
+    },
+  });
   return NextResponse.json({
     ok: true,
     inserted: insCount ?? insertRows.length,

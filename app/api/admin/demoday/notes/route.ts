@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 
 // Postgres error code for "relation does not exist" — surfaced when the
 // demoday_notes migration hasn't been applied yet. We treat it as "no notes
@@ -103,5 +104,10 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Failed to save note" }, { status: 500 });
   }
 
+  await audit(req, {
+    action: "program.demoday_note.update",
+    entityType: "demoday_notes",
+    after: { attendee_key: attendeeKey },
+  });
   return NextResponse.json({ note: data });
 }

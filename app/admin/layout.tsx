@@ -7,15 +7,15 @@ import { getAdminUser } from "@/lib/admin/auth";
 
 export const metadata: Metadata = {
   title: {
-    default: "AA Admin",
-    template: "%s · AA Admin",
+    default: "BloomOS",
+    template: "%s · BloomOS",
   },
-  description: "Ambition Angels operating system.",
+  description: "BloomOS — operating system for Ambition Angels.",
   manifest: "/admin/manifest.webmanifest",
-  applicationName: "AA Admin",
+  applicationName: "BloomOS",
   appleWebApp: {
     capable: true,
-    title: "AA Admin",
+    title: "BloomOS",
     statusBarStyle: "black-translucent",
   },
   icons: {
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0E0E0E",
+  themeColor: "#10214B",
   width: "device-width",
   initialScale: 1,
   // viewport-fit=cover lets us reach into the iOS safe-area insets so the

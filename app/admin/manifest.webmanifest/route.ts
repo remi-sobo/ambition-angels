@@ -13,17 +13,18 @@ import { NextResponse } from "next/server";
  * URLs; the marketing site remains a normal website.
  */
 const manifest = {
-  name: "Ambition Angels Admin",
-  short_name: "AA Admin",
+  name: "BloomOS",
+  short_name: "BloomOS",
   description:
-    "Operating system for the Ambition Angels team — fundraising, ops, finance, board, program.",
+    "BloomOS — operating system for Ambition Angels. Fundraising, ops, finance, board, program.",
   id: "/admin",
   start_url: "/admin",
   scope: "/admin",
   display: "standalone",
   orientation: "any",
   background_color: "#0E0E0E",
-  theme_color: "#0E0E0E",
+  // Matches the navy BloomOS chrome (mobile top bar / sidebar).
+  theme_color: "#10214B",
   categories: ["productivity", "business"],
   icons: [
     {

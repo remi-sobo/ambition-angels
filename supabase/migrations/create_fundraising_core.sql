@@ -267,7 +267,8 @@ begin
   if d.email is not null and d.email <> '' then
     select c.id into cid
     from constituents c
-    where lower(d.email) = any (select lower(e) from unnest(c.emails) e)
+    where c.org_id = d.org_id
+      and lower(d.email) = any (select lower(e) from unnest(c.emails) e)
     limit 1;
 
     if cid is null then

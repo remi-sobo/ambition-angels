@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 import { parseQbBudget, matchAccounts, type MatchInput } from "@/lib/finance/qb-budget";
 
 // POST /api/admin/finance/budget/import
@@ -144,6 +145,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: upErr.message }, { status: 500 });
   }
 
+  await audit(req, {
+    action: "finance.budget.import",
+    entityType: "fin_budget",
+    after: { year, upserted: count ?? rows.length, filename: file.name },
+  });
   return NextResponse.json({
     ok: true,
     year,

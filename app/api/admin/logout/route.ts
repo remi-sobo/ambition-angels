@@ -1,9 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { audit } from "@/lib/audit";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const supabase = createServerSupabase();
+  // Capture the actor before the session is destroyed.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   await supabase.auth.signOut();
+  await audit(req, {
+    action: "auth.logout",
+    entityType: "auth",
+    actorUserId: user?.id ?? null,
+  });
 
   const res = NextResponse.json({ ok: true });
   // Clear legacy password-era cookies too, so old sessions can't linger.

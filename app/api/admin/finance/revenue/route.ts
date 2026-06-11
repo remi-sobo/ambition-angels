@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 
 const SOURCE_TYPES = [
   "foundation",
@@ -66,5 +67,11 @@ export async function POST(req: NextRequest) {
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await audit(req, {
+    action: "finance.pledge.create",
+    entityType: "fin_revenue_commitments",
+    entityId: data.id,
+    after: insert,
+  });
   return NextResponse.json({ ok: true, pledge: data });
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
 
 // PATCH /api/admin/finance/transactions/:id
 //
@@ -80,5 +81,11 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  await audit(req, {
+    action: "finance.transaction.update",
+    entityType: "fin_transactions",
+    entityId: params.id,
+    after: update,
+  });
   return NextResponse.json({ ok: true, transaction: data });
 }

@@ -20,7 +20,7 @@ import { parseQbBudget, matchAccounts, type MatchInput } from "@/lib/finance/qb-
 //   - Re-running for the same year overwrites base_amount for matched
 //     rows. That's intentional — the QB export IS the source of truth.
 export async function POST(req: NextRequest) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

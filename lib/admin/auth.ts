@@ -1,39 +1,62 @@
-import type { NextRequest } from "next/server";
+import { createServerSupabase } from "@/lib/supabase/server";
+
+/**
+ * BloomOS Ring 1 auth helpers, backed by Supabase Auth.
+ *
+ * A request is "authed" when it carries a valid Supabase session AND the
+ * user holds a membership in at least one org (memberships are provisioned
+ * by the on_auth_user_created trigger — see
+ * supabase/migrations/create_membership_bootstrap.sql). A random self-signup
+ * gets a session but no membership, and is rejected here.
+ *
+ * The legacy `AdminUser` name type survives for display/attribution compat
+ * ("remi" / "shannon" appear in ops task fields and UI). It is derived from
+ * the email local-part and will be replaced by real user references as
+ * Ring 1 route conversion proceeds.
+ */
 
 export type AdminUser = "remi" | "shannon";
 
-/**
- * Returns true if the request carries a valid admin auth cookie.
- *
- * The login route sets `admin_auth` to whichever password value matched —
- * ADMIN_PASSWORD_REMI, ADMIN_PASSWORD_SHANNON, or the legacy ADMIN_PASSWORD.
- * We accept any of those three values here so per-user logins and legacy
- * sessions both succeed.
- */
-export function isAuthed(req: NextRequest): boolean {
-  const cookie = req.cookies.get("admin_auth")?.value;
-  if (!cookie) return false;
+export type OrgContext = {
+  userId: string;
+  email: string;
+  orgId: string;
+  role: "owner" | "admin" | "staff" | "finance" | "board_viewer";
+};
 
-  const accepted = [
-    process.env.ADMIN_PASSWORD_REMI,
-    process.env.ADMIN_PASSWORD_SHANNON,
-    process.env.ADMIN_PASSWORD,
-  ].filter((v): v is string => typeof v === "string" && v.length > 0);
+/** Session + membership context, or null when unauthenticated/unprovisioned. */
+export async function getOrgContext(): Promise<OrgContext | null> {
+  const supabase = createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
 
-  return accepted.includes(cookie);
+  // RLS on memberships lets a user read only rows in orgs they belong to,
+  // so any row coming back proves membership.
+  const { data: membership } = await supabase
+    .from("memberships")
+    .select("org_id, role")
+    .eq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+  if (!membership) return null;
+
+  return {
+    userId: user.id,
+    email: user.email ?? "",
+    orgId: membership.org_id,
+    role: membership.role,
+  };
 }
 
-/**
- * Returns which admin user is acting on this request, or null if unknown.
- *
- * Reads the `admin_user` cookie set by the login route. If the cookie is
- * missing but `isAuthed` returns true (legacy session from before PR 2
- * shipped, or a user logged in only via the legacy ADMIN_PASSWORD), default
- * to "remi" — the safe fallback since the legacy password maps to Remi.
- */
-export function getAdminUser(req: NextRequest): AdminUser | null {
-  const value = req.cookies.get("admin_user")?.value;
-  if (value === "remi" || value === "shannon") return value;
-  if (isAuthed(req)) return "remi";
-  return null;
+export async function isAuthed(): Promise<boolean> {
+  return (await getOrgContext()) !== null;
+}
+
+export async function getAdminUser(): Promise<AdminUser | null> {
+  const ctx = await getOrgContext();
+  if (!ctx) return null;
+  const local = ctx.email.split("@")[0]?.toLowerCase();
+  return local === "shannon" ? "shannon" : "remi";
 }

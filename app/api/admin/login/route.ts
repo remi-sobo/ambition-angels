@@ -1,49 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { AdminUser } from "@/lib/admin/auth";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 /**
- * Match the submitted password against the three accepted env vars in
- * priority order: per-user passwords first, then the legacy shared one.
- * The order matters when values overlap — during transition all three may
- * carry the same value, in which case Remi's per-user identity wins.
+ * BloomOS sign-in, backed by Supabase Auth.
+ *
+ * Two modes:
+ *  - { email, password }       → password sign-in; session cookies set here.
+ *  - { email, magic: true }    → emails a one-time sign-in link that lands
+ *                                on /auth/callback.
+ *
+ * Users are provisioned in the Supabase dashboard (Auth → Add user) or via
+ * magic-link self-signup; org membership is granted automatically by the
+ * on_auth_user_created trigger for allowlisted emails/domains. A session
+ * without a membership is treated as unauthenticated by lib/admin/auth.ts.
  */
-function matchUser(
-  submitted: string
-): { user: AdminUser; password: string } | null {
-  const remi = process.env.ADMIN_PASSWORD_REMI;
-  const shannon = process.env.ADMIN_PASSWORD_SHANNON;
-  const legacy = process.env.ADMIN_PASSWORD;
-
-  if (remi && submitted === remi) return { user: "remi", password: remi };
-  if (shannon && submitted === shannon)
-    return { user: "shannon", password: shannon };
-  if (legacy && submitted === legacy)
-    return { user: "remi", password: legacy };
-  return null;
-}
-
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-  const password = body && typeof body === "object" ? body.password : null;
+  const email = body && typeof body.email === "string" ? body.email.trim() : "";
+  const password = body && typeof body.password === "string" ? body.password : "";
+  const magic = body && body.magic === true;
 
-  if (typeof password !== "string" || !password) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!email) {
+    return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
 
-  const match = matchUser(password);
-  if (!match) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const supabase = createServerSupabase();
+
+  if (magic) {
+    const origin = req.nextUrl.origin;
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${origin}/auth/callback?next=/admin` },
+    });
+    if (error) {
+      console.error("Magic link error:", error.message);
+      return NextResponse.json({ error: "Could not send sign-in link" }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, sent: true });
   }
 
-  const cookieOpts = {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    maxAge: 60 * 60 * 8, // 8 hours
-    path: "/",
-  };
+  if (!password) {
+    return NextResponse.json({ error: "Password is required" }, { status: 400 });
+  }
 
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set("admin_auth", match.password, cookieOpts);
-  res.cookies.set("admin_user", match.user, cookieOpts);
-  return res;
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+  }
+  return NextResponse.json({ ok: true });
 }

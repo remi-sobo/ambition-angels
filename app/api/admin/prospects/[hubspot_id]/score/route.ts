@@ -50,7 +50,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { hubspot_id: string } }
 ) {
-  if (!isAuthed(req)) {
+  if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -76,7 +76,7 @@ export async function POST(
   }
 
   const notes = parseNotes(body.notes);
-  const scoredBy = getAdminUser(req);
+  const scoredBy = await getAdminUser();
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase

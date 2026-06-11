@@ -35,7 +35,21 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .limit(50),
   ]);
 
-  if (cRes.error || !cRes.data) notFound();
+  // Query error = tables not applied yet (same grace state as the list
+  // page); a clean miss = real 404.
+  if (cRes.error) {
+    return (
+      <div className="min-h-screen bg-ink p-6 lg:p-10">
+        <h1 className="font-heading font-bold text-cream text-2xl mb-4">Donors</h1>
+        <div className="bg-[#1a1d27] border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-gray-mid leading-relaxed">
+          The fundraising tables aren&apos;t in this database yet. Apply{" "}
+          <code className="text-orange">create_fundraising_core.sql</code> via Actions → Apply DB
+          migration, then reload.
+        </div>
+      </div>
+    );
+  }
+  if (!cRes.data) notFound();
   const c = cRes.data;
   const gifts = ((giftsRes.data ?? []) as Array<{
     id: string; amount: number; gift_date: string; method: string;

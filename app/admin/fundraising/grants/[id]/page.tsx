@@ -81,7 +81,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
           {STAGE_LABELS[g.stage] ?? g.stage}
         </span>
         <div className="ml-auto">
-          <StageSelect grantId={g.id} stage={g.stage} />
+          <StageSelect grantId={g.id} stage={g.stage} periodEnd={g.period_end ?? null} />
         </div>
       </div>
 

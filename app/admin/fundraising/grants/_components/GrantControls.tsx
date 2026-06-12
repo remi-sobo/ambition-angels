@@ -39,6 +39,7 @@ export function NewGrantForm() {
   const [funder, setFunder] = useState("");
   const [amount, setAmount] = useState("");
   const [deadline, setDeadline] = useState("");
+  const [periodEnd, setPeriodEnd] = useState("");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,13 +54,13 @@ export function NewGrantForm() {
           funder_name: funder || undefined,
           amount_requested: amount ? Number(amount) : undefined,
           first_deadline: deadline || undefined,
+          period_end: periodEnd || undefined,
         }),
       });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
-      }
-      setName(""); setFunder(""); setAmount(""); setDeadline("");
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (j.warning) alert(j.warning);
+      setName(""); setFunder(""); setAmount(""); setDeadline(""); setPeriodEnd("");
       setOpen(false);
       router.refresh();
     } catch (err) {
@@ -97,6 +98,10 @@ export function NewGrantForm() {
         First deadline
         <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputCls + " w-40"} />
       </label>
+      <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-white/35 font-semibold">
+        Period end
+        <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} className={inputCls + " w-40"} />
+      </label>
       <div className="flex items-center gap-2">
         <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
           {busy ? "Creating…" : "Create"}
@@ -110,25 +115,83 @@ export function NewGrantForm() {
   );
 }
 
-export function StageSelect({ grantId, stage }: { grantId: string; stage: string }) {
+export function StageSelect({
+  grantId,
+  stage,
+  periodEnd,
+}: {
+  grantId: string;
+  stage: string;
+  periodEnd: string | null;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  // Advancing to "awarded" without a grant period on file: collect the
+  // period end inline so the final report can auto-plot (skippable).
+  const [pendingAward, setPendingAward] = useState(false);
+  const [awardPeriodEnd, setAwardPeriodEnd] = useState("");
+
+  const patch = async (payload: Record<string, unknown>) => {
+    setBusy(true);
+    try {
+      await fetch(`/api/admin/grants/${grantId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      router.refresh();
+    } finally {
+      setBusy(false);
+      setPendingAward(false);
+      setAwardPeriodEnd("");
+    }
+  };
+
+  if (pendingAward) {
+    return (
+      <span className="flex items-center gap-2 flex-wrap">
+        <span className="text-[11px] text-gray-mid">Grant period end (plots the final report):</span>
+        <input
+          type="date"
+          value={awardPeriodEnd}
+          onChange={(e) => setAwardPeriodEnd(e.target.value)}
+          className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-cream text-xs focus:outline-none focus:border-orange/40"
+        />
+        <button
+          disabled={busy}
+          onClick={() =>
+            void patch(
+              awardPeriodEnd
+                ? { stage: "awarded", period_end: awardPeriodEnd }
+                : { stage: "awarded" }
+            )
+          }
+          className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
+        >
+          {busy ? "Saving…" : "Mark awarded"}
+        </button>
+        <button
+          disabled={busy}
+          onClick={() => setPendingAward(false)}
+          className="text-[11px] font-semibold text-gray-mid hover:text-cream transition-colors"
+        >
+          Cancel
+        </button>
+      </span>
+    );
+  }
+
   return (
     <select
       value={stage}
       disabled={busy}
-      onChange={async (e) => {
-        setBusy(true);
-        try {
-          await fetch(`/api/admin/grants/${grantId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ stage: e.target.value }),
-          });
-          router.refresh();
-        } finally {
-          setBusy(false);
+      onChange={(e) => {
+        const next = e.target.value;
+        if (next === "awarded" && !periodEnd) {
+          setPendingAward(true);
+          return;
         }
+        void patch({ stage: next });
       }}
       className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-cream text-xs focus:outline-none focus:border-orange/40 disabled:opacity-50"
     >

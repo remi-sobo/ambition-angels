@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { autoPlotFinalReport } from "@/lib/fundraising/grants";
 
 const STAGES = [
   "prospect", "qualified", "loi", "proposal", "submitted",
@@ -73,9 +74,11 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // A first deadline at creation time (e.g. the application due date) is
-  // common enough to take inline.
+  // common enough to take inline. A failure here must not masquerade as
+  // success — the grant exists, but the caller is told the deadline didn't.
+  let warning: string | undefined;
   if (isISODate(body.first_deadline)) {
-    await supabase.from("grant_requirements").insert({
+    const { error: reqErr } = await supabase.from("grant_requirements").insert({
       grant_id: data.id,
       kind: typeof body.first_deadline_kind === "string" &&
         ["loi", "application", "interim_report", "final_report", "financial_report", "other"].includes(body.first_deadline_kind)
@@ -83,6 +86,15 @@ export async function POST(req: NextRequest) {
         : "application",
       due_date: body.first_deadline,
     });
+    if (reqErr) {
+      console.error("[grants] first-deadline insert failed:", reqErr.message);
+      warning = "Grant created, but the first deadline could not be added — add it from the grant page.";
+    }
+  }
+
+  // Same award behavior as the PATCH stage-advance path.
+  if (stage === "awarded") {
+    await autoPlotFinalReport(supabase, data.id, data.period_end);
   }
 
   await audit(req, {
@@ -91,5 +103,5 @@ export async function POST(req: NextRequest) {
     entityId: data.id,
     after: insert,
   });
-  return NextResponse.json({ ok: true, grant: data });
+  return NextResponse.json({ ok: true, grant: data, warning });
 }

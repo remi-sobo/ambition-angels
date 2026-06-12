@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { money } from "../../../finance/_components/charts";
 import StatCard from "../../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
+import { analyzeDonor, FLAG_LABELS, FLAG_HELP } from "@/lib/fundraising/retention";
+import { todayISO } from "../../../ops/_types/ops";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
 export const dynamic = "force-dynamic";
@@ -71,6 +73,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const total = gifts.reduce((s, g) => s + g.amount, 0);
   const name = constituentName(c);
   const activePlan = plans.find((p) => p.status === "active");
+  const { flags } = analyzeDonor(gifts.map((g) => g.gift_date), todayISO(), Boolean(activePlan));
   const pendingAcks = gifts.filter((g) => g.acknowledgment_status === "pending").length;
 
   return (
@@ -88,6 +91,23 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         {c.do_not_contact && (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">Do not contact</span>
         )}
+        {flags.map((f) => (
+          <span
+            key={f}
+            title={FLAG_HELP[f]}
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+              f === "cadence_lapsed"
+                ? "bg-red-500/15 text-red-400"
+                : f === "lybunt"
+                ? "bg-amber-500/15 text-amber-400"
+                : f === "second_gift_watch"
+                ? "bg-blue-500/15 text-blue-400"
+                : "bg-white/10 text-gray-mid"
+            }`}
+          >
+            {FLAG_LABELS[f]}
+          </span>
+        ))}
       </div>
 
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 space-y-6">

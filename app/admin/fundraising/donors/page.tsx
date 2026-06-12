@@ -3,6 +3,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
+import { analyzeDonor, retentionRate, FLAG_LABELS, FLAG_HELP, type RetentionFlag } from "@/lib/fundraising/retention";
+import { todayISO } from "../../ops/_types/ops";
 
 // Donors v1 (Ring 2): constituent list with giving rollups, fed by the
 // fundraising core schema. Gift ingestion is automatic (Stripe trigger);
@@ -56,7 +58,7 @@ export default async function DonorsPage() {
   const supabase = getSupabaseAdmin();
   const [{ gifts: allGifts, error: giftsError }, plansRes, constituentCountRes, pendingAcksRes] = await Promise.all([
     fetchAllGifts(supabase),
-    supabase.from("recurring_plans").select("id", { count: "exact", head: true }).eq("status", "active"),
+    supabase.from("recurring_plans").select("constituent_id", { count: "exact" }).eq("status", "active").limit(1000),
     supabase.from("constituents").select("id", { count: "exact", head: true }),
     supabase.from("gifts").select("id", { count: "exact", head: true }).eq("acknowledgment_status", "pending"),
   ]);
@@ -83,6 +85,7 @@ export default async function DonorsPage() {
     first: string;
     last: string;
     recurring: boolean;
+    dates: string[];
   };
   const rollups = new Map<string, Rollup>();
   let anonTotal = 0;
@@ -94,8 +97,9 @@ export default async function DonorsPage() {
       continue;
     }
     const r = rollups.get(g.constituent_id) ?? {
-      total: 0, count: 0, first: g.gift_date, last: g.gift_date, recurring: false,
+      total: 0, count: 0, first: g.gift_date, last: g.gift_date, recurring: false, dates: [],
     };
+    r.dates.push(g.gift_date);
     r.total += g.amount;
     r.count += 1;
     if (g.gift_date < r.first) r.first = g.gift_date;
@@ -128,6 +132,32 @@ export default async function DonorsPage() {
   const nonDonorConstituents = Math.max((constituentCountRes.count ?? donors.length) - donors.length, 0);
 
   const totalRaised = gifts.reduce((s, g) => s + g.amount, 0);
+
+  // ── Retention intelligence (modules/03 §Donors 5) ──
+  const today = todayISO();
+  const activePlanDonors = new Set(
+    ((plansRes.data ?? []) as Array<{ constituent_id: string | null }>)
+      .map((p) => p.constituent_id)
+      .filter((id): id is string => id !== null)
+  );
+  const flagsByDonor = new Map<string, RetentionFlag[]>();
+  for (const [id, r] of Array.from(rollups.entries())) {
+    const { flags } = analyzeDonor(r.dates, today, activePlanDonors.has(id));
+    if (flags.length > 0) flagsByDonor.set(id, flags);
+  }
+  const retention = retentionRate(
+    Array.from(rollups.values()).map((r) => r.dates),
+    today
+  );
+  const bucket = (flag: RetentionFlag) =>
+    donors.filter(({ c }) => flagsByDonor.get(c.id)?.includes(flag));
+  const FLAG_STYLES: Record<RetentionFlag, string> = {
+    lybunt: "bg-amber-500/15 text-amber-400",
+    sybunt: "bg-white/10 text-gray-mid",
+    cadence_lapsed: "bg-red-500/15 text-red-400",
+    second_gift_watch: "bg-blue-500/15 text-blue-400",
+  };
+  const RETENTION_BUCKETS: RetentionFlag[] = ["lybunt", "cadence_lapsed", "second_gift_watch", "sybunt"];
 
   return (
     <div className="min-h-screen bg-ink">
@@ -163,6 +193,61 @@ export default async function DonorsPage() {
           <StatCard label="Active Recurring Plans" value={plansRes.count ?? 0} sub="monthly givers" />
         </div>
 
+        {/* ── Retention intelligence ── */}
+        <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="font-heading font-bold text-cream text-sm">Retention Intelligence</h2>
+            <div className="text-xs text-gray-mid">
+              {retention.rate !== null ? (
+                <>
+                  <span className={`font-bold ${retention.rate >= 0.43 ? "text-green-400" : "text-amber-400"}`}>
+                    {Math.round(retention.rate * 100)}%
+                  </span>{" "}
+                  of last year&apos;s {retention.lastYearDonors} donors retained so far this year · sector benchmark ≈ 43%
+                </>
+              ) : (
+                "Retention rate appears once there's a full prior year of giving"
+              )}
+            </div>
+          </div>
+          {flagsByDonor.size === 0 ? (
+            <p className="px-5 py-5 text-gray-mid text-sm">
+              No retention flags — every donor is on their usual rhythm.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/10">
+              {RETENTION_BUCKETS.map((flag) => {
+                const members = bucket(flag);
+                return (
+                  <div key={flag} className="px-5 py-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${FLAG_STYLES[flag]}`}>
+                        {FLAG_LABELS[flag]}
+                      </span>
+                      <span className="text-xs text-gray-mid [font-variant-numeric:tabular-nums]">{members.length}</span>
+                    </div>
+                    <p className="text-[11px] text-white/35 mb-2 leading-snug">{FLAG_HELP[flag]}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {members.slice(0, 6).map(({ c }) => (
+                        <Link
+                          key={c.id}
+                          href={`/admin/fundraising/donors/${c.id}`}
+                          className="text-[11px] text-cream/75 hover:text-orange bg-white/5 border border-white/10 rounded-full px-2 py-0.5 transition-colors truncate max-w-[150px]"
+                        >
+                          {constituentName(c)}
+                        </Link>
+                      ))}
+                      {members.length > 6 && (
+                        <span className="text-[11px] text-white/30 px-1 py-0.5">+{members.length - 6} more</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
         <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
           {donors.length === 0 ? (
             <p className="p-8 text-gray-mid text-sm">
@@ -196,6 +281,11 @@ export default async function DonorsPage() {
                           {c.do_not_contact && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400">Do not contact</span>
                           )}
+                          {(flagsByDonor.get(c.id) ?? []).map((f) => (
+                            <span key={f} title={FLAG_HELP[f]} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${FLAG_STYLES[f]}`}>
+                              {FLAG_LABELS[f]}
+                            </span>
+                          ))}
                         </Link>
                       </td>
                       <td className="px-5 py-3.5 text-gray-mid text-xs">{c.emails[0] ?? "—"}</td>

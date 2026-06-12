@@ -167,8 +167,12 @@ export default async function DonorsPage() {
     Array.from(rollups.values()).map((r) => r.dates),
     today
   );
-  const bucket = (flag: RetentionFlag) =>
-    donors.filter(({ c }) => flagsByDonor.get(c.id)?.includes(flag));
+  // Chips can only render loaded constituents, but counts must reflect the
+  // true flagged total (the partial-load banner explains any gap).
+  const bucket = (flag: RetentionFlag) => ({
+    members: donors.filter(({ c }) => flagsByDonor.get(c.id)?.includes(flag)),
+    trueCount: Array.from(flagsByDonor.values()).filter((fl) => fl.includes(flag)).length,
+  });
   const FLAG_STYLES: Record<RetentionFlag, string> = {
     lybunt: "bg-amber-500/15 text-amber-400",
     sybunt: "bg-white/10 text-gray-mid",
@@ -235,14 +239,14 @@ export default async function DonorsPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/10">
               {RETENTION_BUCKETS.map((flag) => {
-                const members = bucket(flag);
+                const { members, trueCount } = bucket(flag);
                 return (
                   <div key={flag} className="px-5 py-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${FLAG_STYLES[flag]}`}>
                         {FLAG_LABELS[flag]}
                       </span>
-                      <span className="text-xs text-gray-mid [font-variant-numeric:tabular-nums]">{members.length}</span>
+                      <span className="text-xs text-gray-mid [font-variant-numeric:tabular-nums]">{trueCount}</span>
                     </div>
                     <p className="text-[11px] text-white/35 mb-2 leading-snug">{FLAG_HELP[flag]}</p>
                     <div className="flex flex-wrap gap-1.5">

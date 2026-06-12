@@ -1,0 +1,76 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import AttendanceSheet, { type RosterEntry } from "./_components/AttendanceSheet";
+
+// Session check-in: the roster-tap attendance screen for one session.
+export const dynamic = "force-dynamic";
+
+const isUuid = (v: string) => /^[0-9a-f-]{36}$/i.test(v);
+
+export default async function SessionAttendancePage({
+  params,
+}: {
+  params: { id: string; sessionId: string };
+}) {
+  if (!isUuid(params.id) || !isUuid(params.sessionId)) notFound();
+  const supabase = getSupabaseAdmin();
+
+  const { data: session } = await supabase
+    .from("cohort_sessions")
+    .select("*, cohorts(name)")
+    .eq("id", params.sessionId)
+    .eq("cohort_id", params.id)
+    .maybeSingle();
+  if (!session) notFound();
+  const cohortName =
+    (session.cohorts as unknown as { name: string } | null)?.name ?? "Cohort";
+
+  const [{ data: membersData }, { data: marksData }] = await Promise.all([
+    supabase
+      .from("cohort_members")
+      .select("student_id, status, students(first_name, last_name, grade)")
+      .eq("cohort_id", params.id)
+      .eq("status", "enrolled"),
+    supabase
+      .from("attendance")
+      .select("student_id, status")
+      .eq("session_id", params.sessionId),
+  ]);
+
+  const markByStudent = new Map((marksData ?? []).map((m) => [m.student_id, m.status]));
+  const roster: RosterEntry[] = (membersData ?? [])
+    .map((m) => {
+      const s = m.students as unknown as
+        { first_name: string; last_name: string | null; grade: string | null } | null;
+      return {
+        studentId: m.student_id,
+        name: s ? [s.first_name, s.last_name].filter(Boolean).join(" ") : "Unknown",
+        grade: s?.grade ?? null,
+        status: markByStudent.get(m.student_id) ?? null,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const time = session.starts_at
+    ? `${String(session.starts_at).slice(0, 5)}–${String(session.ends_at ?? "").slice(0, 5)}`
+    : null;
+
+  return (
+    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[640px]">
+      <Link href={`/admin/cohorts/${params.id}`} className="text-[11px] text-gray-mid hover:text-cream">
+        ← {cohortName}
+      </Link>
+      <h1 className="font-heading font-bold text-2xl text-cream mt-2">
+        {session.title || "Session"}
+      </h1>
+      <p className="text-gray-mid text-sm mt-0.5 mb-6 tabular-nums">
+        {session.session_date}
+        {time ? ` · ${time}` : ""}
+        {session.location ? ` · ${session.location}` : ""}
+      </p>
+
+      <AttendanceSheet sessionId={params.sessionId} roster={roster} />
+    </div>
+  );
+}

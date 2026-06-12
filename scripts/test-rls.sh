@@ -52,6 +52,7 @@ ordered=(
   import_hubspot_to_constituents.sql
   create_segments.sql
   create_compliance.sql
+  create_board.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

@@ -10,66 +10,57 @@ npm run build    # production build
 npm run lint     # ESLint via next lint
 ```
 
-No test suite exists in this repo.
+The only tests are `tests/availability.test.ts` (meeting-scheduler logic); there is no test runner wired into npm scripts.
 
 ## Stack
 
-Next.js 14 (App Router), TypeScript, Tailwind CSS, Anthropic Claude API. Deployed to Vercel. No database — all data is static or fetched client-side.
+Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + auth), Stripe (donations), Anthropic Claude API, Resend/Gmail (email), HubSpot (fundraising CRM sync). Deployed to Vercel.
 
 ## Architecture
 
-**App Router** — all routes live under `app/`. Each folder is a page (`app/about/page.tsx`, `app/curriculum/page.tsx`, etc.). The root layout (`app/layout.tsx`) wraps every page with `<Nav>` and `<Footer>`.
+**App Router** — all routes live under `app/`. The root layout (`app/layout.tsx`) wraps pages with `<Nav>` and `<Footer>` via `components/SiteChrome.tsx`, which skips that chrome for standalone routes (`/admin`, `/ygb`, `/shannon`, `/strategy`, `/update/koshland`).
 
-**Pages:**
-- `/` — homepage (`app/page.tsx`, client component with `IntersectionObserver` for `.fade-up` animations)
-- `/about` — board of directors + advisory board (static data inline)
-- `/curriculum` — internship directory grid; detail pages at `/curriculum/[slug]`
-- `/donate` — GiveButter donation widget + FAQ
-- `/the-app` — app showcase
+**Public pages:**
+- `/` — homepage (client component; `IntersectionObserver` drives `.fade-up` animations)
+- `/about` — story, board of directors, advisory board (static data inline)
+- `/the-app` — app showcase with interactive `AppDemo`
+- `/curriculum` — track grid (inline `tracks` array); detail pages at `/curriculum/[slug]` driven by `lib/internships.ts` (only tracks with a `slug` link through)
+- `/impact` — impact metrics and evidence base
+- `/donate` — Stripe donation flow (`DonateButton` → `DonateModal`); GiveButter has been removed
+- `/for-adults` — Guide (parent/mentor) pitch + waitlist form
 - `/founder` — founder profile
-- `/impact` — impact metrics
-- `/update/[slug]` — update/blog posts
+- `/companies`, `/program-partners` — outreach pages (noindex, not linked from nav)
+- `/update` — investor update (not linked from nav)
+- `/meet` — meeting scheduler backed by Supabase (`meeting_types`, bookings)
+
+**Admin** — a large internal dashboard under `/admin` (finance, fundraising, ops, KPIs, board, compliance), running as an installable PWA. Auth via `lib/admin/auth.ts`; data in Supabase; HubSpot sync for fundraising.
 
 **Data layer:**
-- `lib/internships.ts` — typed `Internship[]` array with all internship data; exported `categories` array. Used by `/curriculum` and `/curriculum/[slug]`.
-- `lib/donors.ts` — static donor data.
-- No CMS, no database. Content changes require code edits.
+- Public-site content is static in page files or `lib/` (e.g. `lib/internships.ts`, `lib/donors.ts`). Content changes require code edits.
+- Admin + meet data lives in Supabase (`lib/supabase/*`, types in `lib/database.types.ts`).
 
-**API:**
-- `app/api/career-quiz/route.ts` — POST endpoint that calls Anthropic API (`claude-sonnet-4-20250514`) with a user prompt from the career quiz and returns JSON career matches. Requires `ANTHROPIC_API_KEY` env var.
+**Key API routes (public):**
+- `app/api/career-quiz/route.ts` and `app/api/career-match/route.ts` — Claude-powered career matching (model `claude-sonnet-4-6`). Require `ANTHROPIC_API_KEY`.
+- `app/api/create-payment-intent`, `app/api/stripe-webhook`, `app/api/save-donation`, `app/api/send-receipt` — Stripe donation pipeline.
+- `app/api/partner-waitlist`, `app/api/program-partner-signup` — form intake.
+- `app/api/meet/*` — scheduler availability/booking.
 
-**Components:**
-- `GiveButterEmbed` — renders `<givebutter-widget id="LWq3rp">` then loads script with `strategy="afterInteractive"`. The element MUST appear before the script (GiveButter scans DOM on init).
-- `GiveButterWidget` — popup/trigger variant.
-- `CareerQuizModal` — multi-step quiz modal, calls `/api/career-quiz`.
-- `IPhoneMockup` — animated phone mockup for the app showcase.
-- `AnimatedCounter` — scroll-triggered number animation.
-- `DonateFaq` — accordion FAQ for donate page.
-- `Doodles` — decorative SVG doodle assets.
+**SEO:** `app/sitemap.ts`, `app/robots.ts`, `app/opengraph-image.png` (regenerate if branding changes), and an Organization JSON-LD block in `app/layout.tsx`.
 
 ## Brand / Design System
 
-**Colors** (defined as Tailwind tokens and CSS vars):
-- `orange` / `--orange`: `#E8500A` (primary CTA, accents)
-- `orange-dark`: `#B83D06`
-- `orange-light`: `#FFF0EA`
-- `ink`: `#0E0E0E` (dark backgrounds)
-- `cream`: `#FAFAF8` (page background)
-- `charcoal`: `#3D3D3D`
-- `gray-warm`: `#6B6960`
-- `gray-mid`: `#C8C6BE`
-- `gray-light`: `#F0EEE8`
+**Colors** (Tailwind tokens in `tailwind.config.ts`, CSS vars in `globals.css`):
+- `orange` / `--orange`: `#E8500A` (primary CTA, accents); `orange-dark` `#B83D06`; `orange-light` `#FFF0EA`; `orange-mid` `#F47840`
+- `ink`: `#0E0E0E` (dark backgrounds); `cream`: `#FAFAF8` (page background)
+- `charcoal` `#3D3D3D`; `gray-warm` `#6B6960`; `gray-mid` `#C8C6BE`; `gray-light` `#F0EEE8`
+- `navy` `#10214B` (admin/BloomOS chrome only)
 
 **Fonts** (loaded in `app/layout.tsx` via `next/font/google`):
-- `font-display` — Big Shoulders Display (large hero headlines, uppercase)
+- `font-display` — Big Shoulders Display (large hero headlines; forced uppercase sitewide via globals.css)
 - `font-heading` — Poppins (section headings, UI labels)
 - `font-body` — DM Sans (body text)
 
-**Utility classes** (defined in `globals.css`):
-- `.container-site` — centered 1200px max-width container with responsive padding
-- `.section-pad` — `py-20 lg:py-28`
-- `.fade-up` / `.fade-up.visible` — scroll-triggered fade-in animation (triggered via `IntersectionObserver` on client pages)
-- `.stagger-1` through `.stagger-4` — animation delay classes
+**Utility classes** (`globals.css`): `.container-site` (1200px container), `.section-pad`, `.fade-up`/`.visible` + `.stagger-1..4` (scroll animations, reduced-motion safe).
 
 **Border radii:** `rounded-card` (1.25rem), `rounded-card-lg` (1.75rem)
 
@@ -81,10 +72,11 @@ style={{
 }}
 ```
 
-## GiveButter
-
-Campaign widget ID: `LWq3rp`. The custom element `<givebutter-widget>` requires a type declaration — see `givebutter.d.ts` at the project root.
+**Known duplication to be careful with:** the headline stats (3,500+ teens / 87% Title I / 14% future orientation / 1,100+ hours) are hardcoded in several pages (`/`, `/donate`, `/the-app`, `/companies`, `/update`, `/impact`) — update all of them together. The App Store / Google Play button markup is likewise copy-pasted across pages.
 
 ## Environment Variables
 
-`ANTHROPIC_API_KEY` — required for the career quiz API route.
+- `ANTHROPIC_API_KEY` — career quiz/match routes
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — Supabase
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — donations
+- Plus admin-only integrations (HubSpot, Google, Resend) — see the relevant `lib/` modules.

@@ -3,7 +3,7 @@ import ProgramPartnerSignupForm from "./SignupForm";
 import PageVisitedEvent from "@/components/PageVisitedEvent";
 
 export const metadata: Metadata = {
-  title: "Program Partners — Ambition Angels",
+  title: "Program Partners",
   description:
     "Bring career exposure to the teens in your program. 15 minutes, twice a week. Self-serve from day one.",
   robots: "noindex, nofollow",

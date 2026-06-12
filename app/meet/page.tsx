@@ -7,7 +7,7 @@ import type { MeetingType } from "@/lib/database.types";
 import { MEET_ICON_MAP, type MeetIconName } from "./icons";
 
 export const metadata: Metadata = {
-  title: "Meet with Remi | Ambition Angels",
+  title: "Meet with Remi",
   description:
     "Pick the kind of conversation that fits your reason for reaching out. I'll show up ready.",
 };

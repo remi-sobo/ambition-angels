@@ -5,7 +5,7 @@ import type { Booking, MeetingType } from "@/lib/database.types";
 import ManageBooking from "./manage-booking";
 
 export const metadata: Metadata = {
-  title: "Your booking | Ambition Angels",
+  title: "Your Booking",
   robots: "noindex, nofollow",
 };
 

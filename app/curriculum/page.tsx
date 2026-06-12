@@ -2,11 +2,26 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
-const tracks = [
+type Track = {
+  category: string;
+  title: string;
+  emoji: string;
+  employer: string;
+  employerDesc: string;
+  internshipDesc: string;
+  deliverable: string;
+  phases: string[];
+  /** Links to the career detail page at /curriculum/[slug] when one exists. */
+  slug?: string;
+};
+
+const tracks: Track[] = [
   {
     category: "Business & Entrepreneurship",
     title: "Entrepreneurship",
+    slug: "entrepreneurship",
     emoji: "🚀",
     employer: "Gen Tech",
     employerDesc: "A teen-only social video app startup",
@@ -17,6 +32,7 @@ const tracks = [
   {
     category: "Business & Entrepreneurship",
     title: "Marketing",
+    slug: "marketing",
     emoji: "📣",
     employer: "YAP (Young and Powerful)",
     employerDesc: "A new streetwear brand empowering youth",
@@ -27,6 +43,7 @@ const tracks = [
   {
     category: "Business & Entrepreneurship",
     title: "Sales",
+    slug: "sales",
     emoji: "🤝",
     employer: "Harmony Headphones",
     employerDesc: "An audio tech company launching premium headphones",
@@ -77,6 +94,7 @@ const tracks = [
   {
     category: "Business & Entrepreneurship",
     title: "Wealth Management",
+    slug: "wealth-management",
     emoji: "💰",
     employer: "Prosper Capital Advisors",
     employerDesc: "A private wealth management firm helping clients build lasting wealth",
@@ -87,6 +105,7 @@ const tracks = [
   {
     category: "Tech & Design",
     title: "Software Engineering",
+    slug: "software-engineering",
     emoji: "💻",
     employer: "Tunesly",
     employerDesc: "A music streaming platform personalizing how we hear music",
@@ -107,6 +126,7 @@ const tracks = [
   {
     category: "Tech & Design",
     title: "Game Design",
+    slug: "game-design",
     emoji: "🎮",
     employer: "Outbreak Interactive",
     employerDesc: "An indie studio known for immersive social gaming",
@@ -117,6 +137,7 @@ const tracks = [
   {
     category: "Health & Wellness",
     title: "Registered Nursing",
+    slug: "nursing",
     emoji: "🏥",
     employer: "University Hospital",
     employerDesc: "A medical center where expert nurses guide patient recovery",
@@ -167,6 +188,7 @@ const tracks = [
   {
     category: "Creative & Trades",
     title: "Chef / Culinary Arts",
+    slug: "culinary-arts",
     emoji: "👨‍🍳",
     employer: "Fireside",
     employerDesc: "A neighborhood restaurant crafting themed menus for community events",
@@ -299,11 +321,11 @@ export default function CurriculumPage() {
 
           {/* Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visible.map((track) => (
-              <div
-                key={track.title}
-                className="group bg-white border border-gray-light rounded-card-lg p-7 shadow-sm hover:shadow-lg hover:border-orange/30 hover:-translate-y-0.5 transition-all flex flex-col"
-              >
+            {visible.map((track) => {
+              const cardClass =
+                "group bg-white border border-gray-light rounded-card-lg p-7 shadow-sm hover:shadow-lg hover:border-orange/30 hover:-translate-y-0.5 transition-all flex flex-col";
+              const inner = (
+                <>
                 {/* Emoji + employer tag */}
                 <div className="flex items-start justify-between gap-3 mb-5">
                   <span className="text-3xl leading-none">{track.emoji}</span>
@@ -351,12 +373,29 @@ export default function CurriculumPage() {
                     </svg>
                     Available in the App
                   </span>
-                  <span className="text-xs text-gray-warm bg-gray-light px-2.5 py-1 rounded-full">
-                    {track.category}
-                  </span>
+                  {track.slug ? (
+                    <span className="text-xs font-semibold text-orange">
+                      Career details &rarr;
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-warm bg-gray-light px-2.5 py-1 rounded-full">
+                      {track.category}
+                    </span>
+                  )}
                 </div>
-              </div>
-            ))}
+                </>
+              );
+
+              return track.slug ? (
+                <Link key={track.title} href={`/curriculum/${track.slug}`} className={cardClass}>
+                  {inner}
+                </Link>
+              ) : (
+                <div key={track.title} className={cardClass}>
+                  {inner}
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

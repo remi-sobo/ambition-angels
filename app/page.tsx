@@ -71,7 +71,7 @@ export default function Home() {
       <section className="relative min-h-[92vh] flex overflow-hidden">
 
         {/* LEFT -- photo fills this column */}
-        <div className="relative w-full lg:w-[58%] min-h-[50vh] lg:min-h-0">
+        <div className="relative w-full lg:w-[58%] min-h-[40vh] lg:min-h-0">
           <Image
             src="/images/hero-image.jpg"
             alt="Teen with phone, looking forward"

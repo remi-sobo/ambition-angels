@@ -243,7 +243,7 @@ export default function ImpactPage() {
               <p className="text-white/80 text-base leading-relaxed mt-4">
                 <strong className="text-white font-bold block mb-1">Increase in Action Orientation — the highest-gain dimension within our Future Orientation Score (FOS).</strong>
               </p>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-white/40">
+              <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-white/70">
                 Pre and post · 1,000+ teens
               </p>
             </div>
@@ -322,7 +322,7 @@ export default function ImpactPage() {
                   {r.stat}
                 </div>
                 <p className="text-gray-mid text-sm leading-relaxed mb-5">{r.finding}</p>
-                <p className="text-xs font-semibold uppercase tracking-widest text-white/25 border-t border-white/[0.07] pt-4">
+                <p className="text-xs font-semibold uppercase tracking-widest text-white/55 border-t border-white/[0.07] pt-4">
                   {r.source}
                 </p>
               </div>

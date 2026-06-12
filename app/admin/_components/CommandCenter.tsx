@@ -133,7 +133,7 @@ async function loadData() {
   };
   const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
-  const [txnsRes, cashRes, monthDonationsRes, recentDonationsRes, tasksRes, openTasksRes, dealsRes, quizRes, pv7Res, pv14Res] =
+  const [txnsRes, cashRes, monthDonationsRes, recentDonationsRes, tasksRes, openTasksRes, dealsRes, quizRes, pv7Res, pv14Res, grantReqsRes] =
     await Promise.all([
       supabase.from("fin_transactions").select("txn_date, amount").gte("txn_date", fy.start).lte("txn_date", fy.end),
       cfg.startDate
@@ -159,7 +159,9 @@ async function loadData() {
         .neq("status", "done")
         .not("due_date", "is", null)
         .order("due_date", { ascending: true })
-        .limit(5),
+        // >= the merged-priorities slice (6) so a nearer task can never be
+        // displaced by a later grant deadline.
+        .limit(8),
       supabase.from("ops_tasks").select("id", { count: "exact", head: true }).neq("status", "done"),
       supabase.from("hs_deals").select("stage, amount").limit(1000),
       supabase
@@ -169,6 +171,14 @@ async function loadData() {
         .limit(400),
       supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", d7),
       supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", d14).lt("created_at", d7),
+      // Tolerated if the grants tables aren't applied yet — the widget just
+      // shows tasks until they are.
+      supabase
+        .from("grant_requirements")
+        .select("id, grant_id, kind, label, due_date, grants(name)")
+        .in("status", ["upcoming", "in_progress"])
+        .order("due_date", { ascending: true })
+        .limit(8),
     ]);
 
   // ── Finance ──
@@ -252,6 +262,14 @@ async function loadData() {
     thisMonthCount: thisMonth.length,
     tasks: tasksRes.data ?? [],
     openTaskCount: openTasksRes.count ?? 0,
+    grantDeadlines: (grantReqsRes.error ? [] : (grantReqsRes.data ?? [])) as unknown as Array<{
+      id: string;
+      grant_id: string;
+      kind: string;
+      label: string | null;
+      due_date: string;
+      grants: { name: string } | null;
+    }>,
     stages,
     pipelineTotal,
     topCareers,
@@ -271,6 +289,32 @@ export default async function CommandCenter() {
 
   const donorName = (x: Donation) =>
     [x.first_name, x.last_name].filter(Boolean).join(" ") || x.name || x.email || "Anonymous";
+
+  // Priorities = dated tasks + grant deadlines, soonest first (the spec's
+  // "grant deadlines, board meeting, compliance due, project milestones" —
+  // the rest join as their modules land).
+  const GRANT_KIND_LABELS: Record<string, string> = {
+    loi: "LOI", application: "Application", interim_report: "Interim report",
+    final_report: "Final report", financial_report: "Financial report", other: "Deadline",
+  };
+  const priorities = [
+    ...d.tasks.map((t) => ({
+      key: `task-${t.id}`,
+      title: t.title as string,
+      sub: t.category as string,
+      due: t.due_date as string,
+      href: "/admin/ops",
+    })),
+    ...d.grantDeadlines.map((r) => ({
+      key: `grant-${r.id}`,
+      title: r.label || GRANT_KIND_LABELS[r.kind] || "Grant deadline",
+      sub: r.grants?.name ? `grant · ${r.grants.name}` : "grant",
+      due: r.due_date,
+      href: `/admin/fundraising/grants/${r.grant_id}`,
+    })),
+  ]
+    .sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : 0))
+    .slice(0, 6);
 
   const careerSegs: DonutSeg[] = d.topCareers.map(([label, value], i) => ({
     label,
@@ -388,7 +432,7 @@ export default async function CommandCenter() {
         {/* ── Row: priorities + donations + careers ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <Widget title="Upcoming Priorities" href="/admin/ops" hrefLabel={`All tasks (${d.openTaskCount})`} className="lg:col-span-4">
-            {d.tasks.length === 0 ? (
+            {priorities.length === 0 ? (
               <Empty>
                 {d.openTaskCount > 0
                   ? `${d.openTaskCount} open task${d.openTaskCount === 1 ? "" : "s"}, none with a due date — set dates under Operations → Tasks to surface them here.`
@@ -396,14 +440,16 @@ export default async function CommandCenter() {
               </Empty>
             ) : (
               <ul className="space-y-2.5">
-                {d.tasks.map((t) => {
-                  const overdue = t.due_date! < today;
-                  const isToday = t.due_date === today;
+                {priorities.map((p) => {
+                  const overdue = p.due < today;
+                  const isToday = p.due === today;
                   return (
-                    <li key={t.id} className="flex items-start justify-between gap-3">
+                    <li key={p.key} className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="text-sm text-cream/90 font-medium truncate">{t.title}</div>
-                        <div className="text-[11px] text-gray-mid capitalize">{t.category}</div>
+                        <Link href={p.href} className="text-sm text-cream/90 font-medium truncate block hover:text-orange transition-colors">
+                          {p.title}
+                        </Link>
+                        <div className="text-[11px] text-gray-mid capitalize">{p.sub}</div>
                       </div>
                       <span
                         className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
@@ -414,7 +460,7 @@ export default async function CommandCenter() {
                             : "bg-white/5 text-gray-mid"
                         }`}
                       >
-                        {overdue ? "Overdue" : isToday ? "Today" : t.due_date}
+                        {overdue ? "Overdue" : isToday ? "Today" : p.due}
                       </span>
                     </li>
                   );

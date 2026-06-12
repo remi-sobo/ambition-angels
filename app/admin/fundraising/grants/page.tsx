@@ -160,6 +160,24 @@ export default async function GrantsPage() {
                 })}
               </div>
             </div>
+            {closedCount > 0 && (
+              <div className="px-4 py-3 border-t border-white/10">
+                <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-white/35 mb-2">
+                  Declined / Closed
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[...(byStage.get("declined") ?? []), ...(byStage.get("closed") ?? [])].map((g) => (
+                    <Link
+                      key={g.id}
+                      href={`/admin/fundraising/grants/${g.id}`}
+                      className="text-xs text-white/40 hover:text-cream bg-white/5 border border-white/10 rounded-full px-2.5 py-1 transition-colors"
+                    >
+                      {g.name} · {STAGE_LABELS[g.stage]}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
 
           {/* ── Requirements calendar ── */}

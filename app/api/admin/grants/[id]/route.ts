@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { autoPlotFinalReport } from "@/lib/fundraising/grants";
 
 const STAGES = [
   "prospect", "qualified", "loi", "proposal", "submitted",
@@ -83,20 +84,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   // Auto-plot the final report when an award lands.
-  if (update.stage === "awarded" && data.period_end) {
-    const { count } = await supabase
-      .from("grant_requirements")
-      .select("id", { count: "exact", head: true })
-      .eq("grant_id", params.id)
-      .in("kind", ["interim_report", "final_report", "financial_report"]);
-    if ((count ?? 0) === 0) {
-      await supabase.from("grant_requirements").insert({
-        grant_id: params.id,
-        kind: "final_report",
-        due_date: data.period_end,
-        notes: "Auto-plotted at award — adjust to the funder's actual reporting deadline.",
-      });
-    }
+  if (update.stage === "awarded") {
+    await autoPlotFinalReport(supabase, params.id, data.period_end);
   }
 
   await audit(req, {

@@ -107,12 +107,16 @@ export default async function DonorsPage() {
   // list cap can drop a donor whose gifts we counted.
   const donorIds = Array.from(rollups.keys());
   const constituents: Constituent[] = [];
+  let constituentFetchFailed = false;
   for (const ids of chunk(donorIds, 200)) {
     const { data, error } = await supabase
       .from("constituents")
       .select("id, type, first_name, last_name, org_name, emails, do_not_contact, source")
       .in("id", ids);
-    if (error) continue;
+    if (error) {
+      constituentFetchFailed = true;
+      continue;
+    }
     constituents.push(...((data ?? []) as Constituent[]));
   }
 
@@ -135,6 +139,12 @@ export default async function DonorsPage() {
       </div>
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 space-y-6">
+        {constituentFetchFailed && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-3 text-red-400 text-sm">
+            Some donor records failed to load — the table below may be missing donors that the
+            totals include. Reload to retry.
+          </div>
+        )}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Total Raised" value={money(totalRaised)} sub={`${gifts.length} gifts on the spine`} />
           <StatCard label="Donors" value={donors.length} sub={anonCount > 0 ? `+ ${anonCount} anonymous gifts` : "with at least one gift"} />

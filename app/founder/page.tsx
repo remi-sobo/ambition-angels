@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "About Our Founder",
@@ -19,10 +20,17 @@ export default function FounderPage() {
         />
         <div className="container-site relative z-10">
           <div className="flex flex-col items-center text-center">
-            <div className="w-32 h-32 lg:w-44 lg:h-44 rounded-full bg-white border-4 border-orange flex items-center justify-center mb-8 shadow-lg">
-              <span className="font-heading font-bold text-orange text-4xl lg:text-5xl">RS</span>
+            <div className="w-32 h-32 lg:w-44 lg:h-44 rounded-full overflow-hidden border-4 border-orange mb-8 shadow-lg">
+              <Image
+                src="/images/Remi-Sobomehin_edited_edited.jpg"
+                alt="Remi Sobomehin"
+                width={176}
+                height={176}
+                priority
+                className="w-full h-full object-cover object-top"
+              />
             </div>
-            <h1 className="font-heading font-bold text-4xl lg:text-6xl text-ink mb-3">
+            <h1 className="font-display font-black text-5xl lg:text-7xl text-ink tracking-tight leading-none uppercase mb-3">
               Remi Sobomehin
             </h1>
             <p className="text-gray-warm text-lg lg:text-xl">
@@ -36,15 +44,15 @@ export default function FounderPage() {
       <section className="section-pad">
         <div className="container-site">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-            {/* Photo placeholder */}
+            {/* Photo */}
             <div className="lg:sticky lg:top-32">
-              <div className="w-full aspect-square max-w-sm mx-auto lg:mx-0 rounded-card-lg bg-orange-light border-2 border-orange/20 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-24 h-24 rounded-full bg-white border-2 border-orange/30 flex items-center justify-center mx-auto mb-4">
-                    <span className="font-heading font-bold text-orange text-2xl">RS</span>
-                  </div>
-                  <p className="text-gray-mid text-sm">Photo coming soon</p>
-                </div>
+              <div className="relative w-full aspect-square max-w-sm mx-auto lg:mx-0 rounded-card-lg overflow-hidden border-2 border-orange/20">
+                <Image
+                  src="/images/Remi-Sobomehin_edited_edited.jpg"
+                  alt="Remi Sobomehin, Founder and CEO of Ambition Angels"
+                  fill
+                  className="object-cover object-top"
+                />
               </div>
             </div>
 

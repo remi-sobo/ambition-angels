@@ -113,14 +113,15 @@ export default function AboutPage() {
         />
         <div className="container-site relative z-10">
           <div className="max-w-3xl">
-            <div className="inline-block text-xs font-medium text-orange bg-white border border-orange/20 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
+            <div className="inline-block text-xs font-medium text-orange bg-white border border-orange/20 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6 fade-up">
               About Us
             </div>
-            <h1 className="font-heading font-bold text-4xl lg:text-6xl text-white mb-6 leading-tight">
-              Every teen deserves a clear picture of what is possible and a real path to get there.
+            <h1 className="font-display font-black text-6xl lg:text-8xl text-white mb-6 leading-none tracking-tight uppercase fade-up stagger-1">
+              Every teen.<br />
+              <span className="text-orange">A real path.</span>
             </h1>
-            <p className="text-white/80 text-lg lg:text-xl max-w-2xl leading-relaxed">
-              Ambition Angels is a youth development organization building that path through technology, career exposure, and a deep belief in the potential of every student we serve.
+            <p className="text-white/85 text-lg lg:text-xl max-w-2xl leading-relaxed fade-up stagger-2">
+              Every teen deserves a clear picture of what is possible and a real path to get there. Ambition Angels is a youth development organization building that path through technology, career exposure, and a deep belief in the potential of every student we serve.
             </p>
           </div>
         </div>
@@ -130,7 +131,7 @@ export default function AboutPage() {
       <section className="section-pad">
         <div className="container-site">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-            <div className="lg:sticky lg:top-32">
+            <div className="lg:sticky lg:top-32 fade-up">
               <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
                 Where We Came From
               </p>
@@ -138,7 +139,7 @@ export default function AboutPage() {
                 This is not theory. This is our story.
               </h2>
             </div>
-            <div className="space-y-5 text-gray-warm leading-relaxed text-base lg:text-lg">
+            <div className="space-y-5 text-gray-warm leading-relaxed text-base lg:text-lg fade-up stagger-1">
               <p>
                 Remi Sobomehin and Demetric Sanders grew up together in Portland, Oregon, both attending Remi&apos;s father&apos;s community nonprofit as kids. Despite growing up in low-income, inner-city communities with no roadmap, they set their sights on Stanford. Eight years later, with the support of dedicated youth developers and the organizations that showed up for them, they made it.
               </p>
@@ -162,13 +163,13 @@ export default function AboutPage() {
       {/* BOARD OF DIRECTORS */}
       <section className="section-pad">
         <div className="container-site">
-          <div className="max-w-2xl mb-12">
+          <div className="max-w-2xl mb-12 fade-up">
             <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
               Our Board of Directors
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 fade-up stagger-1">
             {boardMembers.map((member) => (
               <div
                 key={member.name}
@@ -215,7 +216,7 @@ export default function AboutPage() {
       {/* ADVISORY BOARD */}
       <section className="section-pad bg-gray-light">
         <div className="container-site">
-          <div className="max-w-2xl mb-12">
+          <div className="max-w-2xl mb-12 fade-up">
             <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
               Our Advisors
             </p>
@@ -227,7 +228,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 fade-up stagger-1">
             {advisors.map((advisor) => (
               <div
                 key={advisor.name}

@@ -3,64 +3,67 @@
 import { useEffect, useRef, useState } from "react";
 
 type Props = {
-  target: string; // e.g. "3500", "87", "36"
-  prefix?: string; // e.g. ""
-  suffix?: string; // e.g. "+", "%"
-  duration?: number; // ms, default 1800
-  label: string;
+  /** Display value, e.g. "3,500+", "87%", "14%", "1,100+". */
+  value: string;
+  /** Animation duration in ms. */
+  duration?: number;
 };
 
-export default function AnimatedCounter({ target, prefix = "", suffix = "", duration = 1800, label }: Props) {
+/**
+ * Counts up to `value` when scrolled into view. Inherits all typography from
+ * the parent element, so it can drop into any stat treatment. Renders the
+ * final value immediately for users who prefer reduced motion.
+ */
+export default function AnimatedCounter({ value, duration = 1600 }: Props) {
+  const match = value.match(/^([^\d]*)([\d,]+)(.*)$/);
+  const prefix = match?.[1] ?? "";
+  const numTarget = match ? parseInt(match[2].replace(/,/g, ""), 10) : NaN;
+  const suffix = match?.[3] ?? "";
+  const hasComma = (match?.[2] ?? "").includes(",");
+
   const [count, setCount] = useState(0);
   const [started, setStarted] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const numTarget = parseInt(target.replace(/,/g, ""), 10);
+  const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-
+    if (!el || Number.isNaN(numTarget)) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !started) {
-          setStarted(true);
-        }
+        if (entry.isIntersecting) setStarted(true);
       },
-      { threshold: 0.5 }
+      { threshold: 0.4 }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [started]);
+  }, [numTarget]);
 
   useEffect(() => {
-    if (!started) return;
-
-    // Respect prefers-reduced-motion
+    if (!started || Number.isNaN(numTarget)) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setCount(numTarget);
       return;
     }
-
     const start = performance.now();
+    let frame: number;
     const tick = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
+      const progress = Math.min((now - start) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       setCount(Math.round(eased * numTarget));
-      if (progress < 1) requestAnimationFrame(tick);
+      if (progress < 1) frame = requestAnimationFrame(tick);
     };
-    requestAnimationFrame(tick);
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
   }, [started, numTarget, duration]);
 
-  const display = count >= 1000 ? count.toLocaleString() : count.toString();
+  if (Number.isNaN(numTarget)) return <span>{value}</span>;
 
+  const display = hasComma ? count.toLocaleString("en-US") : count.toString();
   return (
-    <div ref={ref} className="text-center">
-      <div className="font-heading font-bold text-4xl lg:text-5xl text-orange mb-1">
-        {prefix}{display}{suffix}
-      </div>
-      <div className="text-gray-mid text-sm">{label}</div>
-    </div>
+    <span ref={ref} aria-label={value}>
+      {prefix}
+      {display}
+      {suffix}
+    </span>
   );
 }

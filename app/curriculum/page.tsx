@@ -2,12 +2,49 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import {
+  Activity,
+  Brain,
+  Camera,
+  ChefHat,
+  ClipboardList,
+  Code2,
+  Dumbbell,
+  Flame,
+  Gamepad2,
+  Handshake,
+  Megaphone,
+  Palette,
+  PartyPopper,
+  PiggyBank,
+  Rocket,
+  Scissors,
+  Smartphone,
+  Stethoscope,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
-const tracks = [
+type Track = {
+  category: string;
+  title: string;
+  icon: LucideIcon;
+  employer: string;
+  employerDesc: string;
+  internshipDesc: string;
+  deliverable: string;
+  phases: string[];
+  /** Links to the career detail page at /curriculum/[slug] when one exists. */
+  slug?: string;
+};
+
+const tracks: Track[] = [
   {
     category: "Business & Entrepreneurship",
     title: "Entrepreneurship",
-    emoji: "🚀",
+    slug: "entrepreneurship",
+    icon: Rocket,
     employer: "Gen Tech",
     employerDesc: "A teen-only social video app startup",
     internshipDesc: "Intern for tech entrepreneurs building a new social video app for teens.",
@@ -17,7 +54,8 @@ const tracks = [
   {
     category: "Business & Entrepreneurship",
     title: "Marketing",
-    emoji: "📣",
+    slug: "marketing",
+    icon: Megaphone,
     employer: "YAP (Young and Powerful)",
     employerDesc: "A new streetwear brand empowering youth",
     internshipDesc: "Intern on the marketing team of a new fashion company that's trying to grow.",
@@ -27,7 +65,8 @@ const tracks = [
   {
     category: "Business & Entrepreneurship",
     title: "Sales",
-    emoji: "🤝",
+    slug: "sales",
+    icon: Handshake,
     employer: "Harmony Headphones",
     employerDesc: "An audio tech company launching premium headphones",
     internshipDesc: "Intern on the sales team at an audio technology company launching a new product line.",
@@ -37,7 +76,7 @@ const tracks = [
   {
     category: "Business & Entrepreneurship",
     title: "Social Media Management",
-    emoji: "📱",
+    icon: Smartphone,
     employer: "Royal",
     employerDesc: "An up-and-coming musical artist building a fanbase",
     internshipDesc: "Intern on the social media management team for an up-and-coming musical artist.",
@@ -47,7 +86,7 @@ const tracks = [
   {
     category: "Business & Entrepreneurship",
     title: "HR Management",
-    emoji: "👥",
+    icon: Users,
     employer: "OurMart",
     employerDesc: "A community-first retail brand with locations nationwide",
     internshipDesc: "Intern at a retail headquarters to help onboard new store employees for a busy season.",
@@ -57,7 +96,7 @@ const tracks = [
   {
     category: "Business & Entrepreneurship",
     title: "Event Planning",
-    emoji: "🎉",
+    icon: PartyPopper,
     employer: "Make Memories",
     employerDesc: "An event planning studio for parties, banquets, and festivals",
     internshipDesc: "Intern at an event agency to plan a victory rally for state-champion high school teams.",
@@ -67,7 +106,7 @@ const tracks = [
   {
     category: "Business & Entrepreneurship",
     title: "Project Management",
-    emoji: "📋",
+    icon: ClipboardList,
     employer: "Higher Learning",
     employerDesc: "A student-focused edtech platform",
     internshipDesc: "Intern at a tech company launching an innovative tutoring app for high schoolers.",
@@ -77,7 +116,8 @@ const tracks = [
   {
     category: "Business & Entrepreneurship",
     title: "Wealth Management",
-    emoji: "💰",
+    slug: "wealth-management",
+    icon: PiggyBank,
     employer: "Prosper Capital Advisors",
     employerDesc: "A private wealth management firm helping clients build lasting wealth",
     internshipDesc: "Intern at a wealth management firm to help a client build their personal wealth.",
@@ -87,7 +127,8 @@ const tracks = [
   {
     category: "Tech & Design",
     title: "Software Engineering",
-    emoji: "💻",
+    slug: "software-engineering",
+    icon: Code2,
     employer: "Tunesly",
     employerDesc: "A music streaming platform personalizing how we hear music",
     internshipDesc: "Intern at a music streaming tech company rethinking how we experience sound.",
@@ -97,7 +138,7 @@ const tracks = [
   {
     category: "Tech & Design",
     title: "UX/UI Design",
-    emoji: "🎨",
+    icon: Palette,
     employer: "Chatter",
     employerDesc: "A messaging app built for teens and young adults",
     internshipDesc: "Intern at a tech startup designing a chat app for teens and young adults.",
@@ -107,7 +148,8 @@ const tracks = [
   {
     category: "Tech & Design",
     title: "Game Design",
-    emoji: "🎮",
+    slug: "game-design",
+    icon: Gamepad2,
     employer: "Outbreak Interactive",
     employerDesc: "An indie studio known for immersive social gaming",
     internshipDesc: "Intern at an indie game studio developing a multiplayer adventure for teens.",
@@ -117,7 +159,8 @@ const tracks = [
   {
     category: "Health & Wellness",
     title: "Registered Nursing",
-    emoji: "🏥",
+    slug: "nursing",
+    icon: Stethoscope,
     employer: "University Hospital",
     employerDesc: "A medical center where expert nurses guide patient recovery",
     internshipDesc: "Intern at a hospital post-operative nursing unit helping care for a teen patient.",
@@ -127,7 +170,7 @@ const tracks = [
   {
     category: "Health & Wellness",
     title: "Physical Therapy",
-    emoji: "🦵",
+    icon: Activity,
     employer: "Rise & Recover Rehab",
     employerDesc: "A community clinic for safe, personalized rehab",
     internshipDesc: "Intern at a local rehab clinic helping design a recovery plan for a teen athlete.",
@@ -137,7 +180,7 @@ const tracks = [
   {
     category: "Health & Wellness",
     title: "Personal Training",
-    emoji: "💪",
+    icon: Dumbbell,
     employer: "Just Fitness",
     employerDesc: "A neighborhood gym where trainers coach clients toward better health",
     internshipDesc: "Intern at a gym where personal trainers help clients reach their fitness goals.",
@@ -147,7 +190,7 @@ const tracks = [
   {
     category: "Health & Wellness",
     title: "Mental Health Therapy",
-    emoji: "🧠",
+    icon: Brain,
     employer: "Head Up Wellness",
     employerDesc: "A youth mental health center built on compassionate care",
     internshipDesc: "Intern at a leading youth mental health center dedicated to compassionate therapy.",
@@ -157,7 +200,7 @@ const tracks = [
   {
     category: "Health & Wellness",
     title: "Firefighting",
-    emoji: "🔥",
+    icon: Flame,
     employer: "Station 53",
     employerDesc: "A firehouse responding to fires, medical calls, and rescues",
     internshipDesc: "Intern at a local fire station responding to community emergencies.",
@@ -167,7 +210,8 @@ const tracks = [
   {
     category: "Creative & Trades",
     title: "Chef / Culinary Arts",
-    emoji: "👨‍🍳",
+    slug: "culinary-arts",
+    icon: ChefHat,
     employer: "Fireside",
     employerDesc: "A neighborhood restaurant crafting themed menus for community events",
     internshipDesc: "Intern at a local restaurant creating a special prom menu for high schoolers.",
@@ -177,7 +221,7 @@ const tracks = [
   {
     category: "Creative & Trades",
     title: "Photography & Videography",
-    emoji: "📸",
+    icon: Camera,
     employer: "Imagine Images",
     employerDesc: "A full-service studio crafting photo and video experiences",
     internshipDesc: "Intern at a creative studio designing a graduation photoshoot and party video.",
@@ -187,7 +231,7 @@ const tracks = [
   {
     category: "Creative & Trades",
     title: "Stylist / Barber",
-    emoji: "✂️",
+    icon: Scissors,
     employer: "Cut-N-Style",
     employerDesc: "A community salon and barbershop offering classic cuts to intricate styles",
     internshipDesc: "Intern at a popular salon and barbershop in the heart of the community.",
@@ -224,15 +268,15 @@ export default function CurriculumPage() {
 
             {/* LEFT — text content */}
             <div>
-              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
+              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
                 Internship Tracks
               </p>
-              <h1 className="font-display font-black text-6xl lg:text-7xl text-cream mb-6 leading-none tracking-tight uppercase">
+              <h1 className="font-display font-black text-6xl lg:text-7xl text-cream mb-6 leading-none tracking-tight uppercase fade-up stagger-1">
                 19 career tracks.<br />
                 30 days each.<br />
                 <span className="text-orange">All free.</span>
               </h1>
-              <p className="text-gray-mid text-lg lg:text-xl leading-relaxed">
+              <p className="text-gray-mid text-lg lg:text-xl leading-relaxed fade-up stagger-2">
                 Each track is a simulated internship — a real employer, real deliverables, and real career skills. 15 minutes a day. On the phone they already have.
               </p>
 
@@ -253,7 +297,7 @@ export default function CurriculumPage() {
             </div>
 
             {/* RIGHT — photo */}
-            <div className="relative w-full aspect-[4/5] lg:aspect-auto lg:h-full lg:min-h-[520px] rounded-card-lg overflow-hidden">
+            <div className="relative w-full aspect-[4/5] lg:aspect-auto lg:h-full lg:min-h-[520px] rounded-card-lg overflow-hidden fade-up stagger-2">
               <Image
                 src="/images/curriculum-hero.jpg"
                 alt=""
@@ -278,7 +322,7 @@ export default function CurriculumPage() {
         <div className="container-site">
 
           {/* Filter buttons */}
-          <div className="flex flex-wrap gap-3 mb-10">
+          <div className="flex flex-wrap gap-3 mb-10 fade-up">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
@@ -299,14 +343,16 @@ export default function CurriculumPage() {
 
           {/* Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visible.map((track) => (
-              <div
-                key={track.title}
-                className="group bg-white border border-gray-light rounded-card-lg p-7 shadow-sm hover:shadow-lg hover:border-orange/30 hover:-translate-y-0.5 transition-all flex flex-col"
-              >
-                {/* Emoji + employer tag */}
+            {visible.map((track) => {
+              const cardClass =
+                "group bg-white border border-gray-light rounded-card-lg p-7 shadow-sm hover:shadow-lg hover:border-orange/30 hover:-translate-y-0.5 transition-all flex flex-col";
+              const inner = (
+                <>
+                {/* Icon + employer tag */}
                 <div className="flex items-start justify-between gap-3 mb-5">
-                  <span className="text-3xl leading-none">{track.emoji}</span>
+                  <div className="w-12 h-12 rounded-xl bg-orange-light border border-orange/20 flex items-center justify-center flex-shrink-0">
+                    <track.icon className="w-6 h-6 text-orange" strokeWidth={1.75} aria-hidden="true" />
+                  </div>
                   <span className="text-xs font-medium px-3 py-1 rounded-full bg-orange-light text-orange border border-orange/20 text-right leading-snug">
                     {track.employer}
                   </span>
@@ -351,12 +397,29 @@ export default function CurriculumPage() {
                     </svg>
                     Available in the App
                   </span>
-                  <span className="text-xs text-gray-warm bg-gray-light px-2.5 py-1 rounded-full">
-                    {track.category}
-                  </span>
+                  {track.slug ? (
+                    <span className="text-xs font-semibold text-orange">
+                      Career details &rarr;
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-warm bg-gray-light px-2.5 py-1 rounded-full">
+                      {track.category}
+                    </span>
+                  )}
                 </div>
-              </div>
-            ))}
+                </>
+              );
+
+              return track.slug ? (
+                <Link key={track.title} href={`/curriculum/${track.slug}`} className={cardClass}>
+                  {inner}
+                </Link>
+              ) : (
+                <div key={track.title} className={cardClass}>
+                  {inner}
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

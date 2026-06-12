@@ -10,7 +10,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Q2 2026 Investor Update — Ambition Angels",
+  title: "Q2 2026 Investor Update",
   description:
     "We know it works. Now we scale it. A Q2 2026 update from Remi Sobomehin, Founder of Ambition Angels.",
 };

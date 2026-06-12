@@ -159,7 +159,9 @@ async function loadData() {
         .neq("status", "done")
         .not("due_date", "is", null)
         .order("due_date", { ascending: true })
-        .limit(5),
+        // >= the merged-priorities slice (6) so a nearer task can never be
+        // displaced by a later grant deadline.
+        .limit(8),
       supabase.from("ops_tasks").select("id", { count: "exact", head: true }).neq("status", "done"),
       supabase.from("hs_deals").select("stage, amount").limit(1000),
       supabase
@@ -176,7 +178,7 @@ async function loadData() {
         .select("id, grant_id, kind, label, due_date, grants(name)")
         .in("status", ["upcoming", "in_progress"])
         .order("due_date", { ascending: true })
-        .limit(5),
+        .limit(8),
     ]);
 
   // ── Finance ──

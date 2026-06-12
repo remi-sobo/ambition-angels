@@ -1,0 +1,122 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { audit } from "@/lib/audit";
+
+const STAGES = [
+  "identify", "qualify", "cultivate", "solicit", "steward", "lost",
+] as const;
+
+const isISODate = (v: unknown): v is string =>
+  typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+/**
+ * POST /api/admin/opportunities — create a major-gift opportunity.
+ *
+ * Accepts either `constituent_id` (from a donor page) or a free-text
+ * `constituent_name`, mirroring the grants funder_name UX: we match an
+ * existing constituent case-insensitively (person full name or org name);
+ * no match creates a new person constituent and says so in `warning`.
+ */
+export async function POST(req: NextRequest) {
+  if (!(await isAuthed())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+
+  const supabase = getSupabaseAdmin();
+  let constituentId =
+    typeof body.constituent_id === "string" && /^[0-9a-f-]{36}$/i.test(body.constituent_id)
+      ? body.constituent_id
+      : null;
+  let warning: string | undefined;
+
+  if (!constituentId) {
+    const name = typeof body.constituent_name === "string" ? body.constituent_name.trim() : "";
+    if (!name) {
+      return NextResponse.json(
+        { error: "constituent_id or constituent_name is required" },
+        { status: 400 }
+      );
+    }
+
+    // Person match on "first last", org match on org_name.
+    const parts = name.split(/\s+/);
+    const first = parts[0] ?? "";
+    const rest = parts.slice(1).join(" ");
+    const { data: matches } = await supabase
+      .from("constituents")
+      .select("id, type, first_name, last_name, org_name")
+      .or(
+        [
+          `org_name.ilike.${name}`,
+          rest
+            ? `and(first_name.ilike.${first},last_name.ilike.${rest})`
+            : `first_name.ilike.${name}`,
+          rest ? "" : `last_name.ilike.${name}`,
+        ]
+          .filter(Boolean)
+          .join(",")
+      )
+      .limit(2);
+
+    if (matches && matches.length === 1) {
+      constituentId = matches[0].id;
+    } else if (matches && matches.length > 1) {
+      warning = `Multiple constituents match "${name}" — linked the first; verify on the donor page.`;
+      constituentId = matches[0].id;
+    } else {
+      const { data: created, error: cErr } = await supabase
+        .from("constituents")
+        .insert({
+          type: "person",
+          first_name: first || name,
+          last_name: rest || null,
+          source: "manual",
+        })
+        .select("id")
+        .single();
+      if (cErr || !created) {
+        console.error("Create constituent failed:", cErr?.message);
+        return NextResponse.json({ error: "Could not create constituent" }, { status: 500 });
+      }
+      constituentId = created.id;
+      warning = `Created a new constituent for "${name}" — add contact details on the donor page.`;
+    }
+  }
+
+  const insert: Record<string, unknown> = { constituent_id: constituentId };
+  if (typeof body.name === "string" && body.name.trim()) insert.name = body.name.trim();
+  if (STAGES.includes(body.stage as (typeof STAGES)[number])) insert.stage = body.stage;
+  if (typeof body.ask_amount === "number" && body.ask_amount >= 0)
+    insert.ask_amount = Math.round(body.ask_amount * 100) / 100;
+  if (isISODate(body.expected_close)) insert.expected_close = body.expected_close;
+  if (typeof body.probability === "number" && body.probability >= 0 && body.probability <= 100)
+    insert.probability = Math.round(body.probability);
+  if (typeof body.capacity_rating === "number" && body.capacity_rating >= 1 && body.capacity_rating <= 5)
+    insert.capacity_rating = Math.round(body.capacity_rating);
+  if (typeof body.next_step === "string" && body.next_step.trim())
+    insert.next_step = body.next_step.trim().slice(0, 500);
+  if (isISODate(body.next_step_due)) insert.next_step_due = body.next_step_due;
+  insert.owner = (await getAdminUser()) ?? null;
+
+  const { data: opp, error } = await supabase
+    .from("opportunities")
+    .insert(insert)
+    .select("id")
+    .single();
+  if (error || !opp) {
+    console.error("Create opportunity failed:", error?.message);
+    return NextResponse.json({ error: "Could not create opportunity" }, { status: 500 });
+  }
+
+  await audit(req, {
+    action: "fundraising.opportunity.create",
+    entityType: "opportunity",
+    entityId: opp.id,
+    after: insert,
+  });
+
+  return NextResponse.json({ id: opp.id, warning });
+}

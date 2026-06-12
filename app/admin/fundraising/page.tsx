@@ -146,9 +146,21 @@ export default async function MajorGiftsPage() {
                 </span>
               </header>
               <div className="space-y-2">
-                {col.map((o) => (
+                {col.slice(0, 12).map((o) => (
                   <OpportunityCard key={o.id} opp={o} />
                 ))}
+                {col.length > 12 && (
+                  <details>
+                    <summary className="text-xs text-gray-mid cursor-pointer hover:text-cream/70 px-1 py-1">
+                      Show {col.length - 12} more
+                    </summary>
+                    <div className="space-y-2 mt-2">
+                      {col.slice(12).map((o) => (
+                        <OpportunityCard key={o.id} opp={o} />
+                      ))}
+                    </div>
+                  </details>
+                )}
                 {col.length === 0 && (
                   <p className="text-xs text-gray-mid/60 px-1 pb-1">Empty</p>
                 )}

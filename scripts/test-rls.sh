@@ -48,6 +48,8 @@ ordered=(
   create_fundraising_core.sql
   create_grants.sql
   create_opportunities.sql
+  fix_audit_partition_rls.sql
+  import_hubspot_to_constituents.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

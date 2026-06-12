@@ -35,6 +35,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       else if (isISODate(body[f])) update[f] = body[f];
     }
   }
+  if (typeof body.accepting_applications === "boolean")
+    update.accepting_applications = body.accepting_applications;
   if ("capacity" in body) {
     if (body.capacity === null || body.capacity === "") update.capacity = null;
     else {

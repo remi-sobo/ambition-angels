@@ -46,10 +46,12 @@ export function CohortHeaderControls({
   cohortId,
   status,
   name,
+  acceptingApplications,
 }: {
   cohortId: string;
   status: string;
   name: string;
+  acceptingApplications: boolean;
 }) {
   const router = useRouter();
   const { busy, call } = useApi();
@@ -66,6 +68,22 @@ export function CohortHeaderControls({
 
   return (
     <div className="flex items-center gap-2">
+      <button
+        onClick={() =>
+          call(`/api/admin/cohorts/${cohortId}`, "PATCH", {
+            accepting_applications: !acceptingApplications,
+          })
+        }
+        disabled={busy}
+        title="Shows this cohort on the public /apply form"
+        className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+          acceptingApplications
+            ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
+            : "bg-white/5 text-gray-mid hover:bg-white/10"
+        }`}
+      >
+        {acceptingApplications ? "Accepting applications" : "Applications closed"}
+      </button>
       <select
         value={status}
         disabled={busy}

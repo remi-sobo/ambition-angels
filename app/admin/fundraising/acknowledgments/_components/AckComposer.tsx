@@ -53,9 +53,11 @@ export default function AckComposer({
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (j.warning) setError(j.warning);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Send failed");
+    } finally {
       setBusy("");
     }
   };
@@ -75,6 +77,7 @@ export default function AckComposer({
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed");
+    } finally {
       setBusy("");
     }
   };

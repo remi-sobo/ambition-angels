@@ -46,9 +46,6 @@ export async function POST(req: NextRequest) {
   if (error || !gift) {
     return NextResponse.json({ error: "Gift not found" }, { status: 404 });
   }
-  if (gift.acknowledgment_status === "sent") {
-    return NextResponse.json({ error: "This gift is already acknowledged" }, { status: 409 });
-  }
   const constituent = gift.constituent as unknown as {
     first_name: string | null;
     last_name: string | null;
@@ -77,6 +74,26 @@ export async function POST(req: NextRequest) {
       : "Thank you for supporting Ambition Angels";
   const text = receiptEmailText(personalNote, receiptGift);
   const html = receiptEmailHtml(personalNote, receiptGift);
+  const sentAt = new Date().toISOString();
+
+  // Claim the gift BEFORE emailing: an atomic conditional update is the
+  // double-send guard — two overlapping requests can't both pass it. If the
+  // email then fails, the claim is reverted.
+  const { data: claimed, error: claimErr } = await supabase
+    .from("gifts")
+    .update({ acknowledgment_status: "sent", acknowledged_at: sentAt })
+    .eq("id", giftId)
+    .eq("acknowledgment_status", "pending")
+    .select("id");
+  if (claimErr) {
+    return NextResponse.json({ error: claimErr.message }, { status: 500 });
+  }
+  if (!claimed || claimed.length === 0) {
+    return NextResponse.json(
+      { error: "This gift is already acknowledged (or being acknowledged right now)" },
+      { status: 409 }
+    );
+  }
 
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
@@ -87,17 +104,21 @@ export async function POST(req: NextRequest) {
       text,
       html,
     });
-    if (sendErr) {
-      console.error("Acknowledgment send failed:", sendErr);
-      return NextResponse.json({ error: "Email send failed" }, { status: 502 });
-    }
+    if (sendErr) throw sendErr;
   } catch (e) {
     console.error("Acknowledgment send failed:", e);
+    // The email never went out — release the claim so it can be retried.
+    await supabase
+      .from("gifts")
+      .update({ acknowledgment_status: "pending", acknowledged_at: null })
+      .eq("id", giftId);
     return NextResponse.json({ error: "Email send failed" }, { status: 502 });
   }
 
-  const sentAt = new Date().toISOString();
-  // Record the exact content (regenerable + auditable), then flip the gift.
+  // Email is out and the gift is already marked sent. A failure recording
+  // the content can't un-send the email — report it as a warning, never as
+  // failure (the queue must not re-email this gift).
+  let warning: string | undefined;
   const { error: ackErr } = await supabase.from("acknowledgments").insert({
     gift_id: giftId,
     template: "receipt-v1",
@@ -107,12 +128,10 @@ export async function POST(req: NextRequest) {
     sent_by: user,
     sent_at: sentAt,
   });
-  if (ackErr) console.error("acknowledgments insert failed:", ackErr.message);
-  const { error: giftErr } = await supabase
-    .from("gifts")
-    .update({ acknowledgment_status: "sent", acknowledged_at: sentAt })
-    .eq("id", giftId);
-  if (giftErr) console.error("gift ack-status update failed:", giftErr.message);
+  if (ackErr) {
+    console.error("acknowledgments insert failed:", ackErr.message);
+    warning = "Email sent, but the content record could not be stored.";
+  }
 
   await audit(req, {
     action: "fundraising.acknowledgment.send",
@@ -120,5 +139,5 @@ export async function POST(req: NextRequest) {
     entityId: giftId,
     after: { to: toEmail, subject, channel: "email" },
   });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, warning });
 }

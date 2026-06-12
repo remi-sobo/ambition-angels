@@ -21,19 +21,24 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getSupabaseAdmin();
-  const { data: gift, error } = await supabase
+  const sentAt = new Date().toISOString();
+  // Atomic conditional flip — same double-acknowledgment guard as /send.
+  const { data: claimed, error: claimErr } = await supabase
     .from("gifts")
-    .select("id, acknowledgment_status")
+    .update({ acknowledgment_status: "sent", acknowledged_at: sentAt })
     .eq("id", giftId)
-    .maybeSingle();
-  if (error || !gift) {
-    return NextResponse.json({ error: "Gift not found" }, { status: 404 });
+    .neq("acknowledgment_status", "sent")
+    .select("id");
+  if (claimErr) {
+    return NextResponse.json({ error: claimErr.message }, { status: 500 });
   }
-  if (gift.acknowledgment_status === "sent") {
-    return NextResponse.json({ error: "This gift is already acknowledged" }, { status: 409 });
+  if (!claimed || claimed.length === 0) {
+    return NextResponse.json(
+      { error: "Gift not found or already acknowledged" },
+      { status: 409 }
+    );
   }
 
-  const sentAt = new Date().toISOString();
   const { error: ackErr } = await supabase.from("acknowledgments").insert({
     gift_id: giftId,
     template: "manual",
@@ -43,13 +48,6 @@ export async function POST(req: NextRequest) {
     sent_at: sentAt,
   });
   if (ackErr) console.error("acknowledgments insert failed:", ackErr.message);
-  const { error: giftErr } = await supabase
-    .from("gifts")
-    .update({ acknowledgment_status: "sent", acknowledged_at: sentAt })
-    .eq("id", giftId);
-  if (giftErr) {
-    return NextResponse.json({ error: giftErr.message }, { status: 500 });
-  }
 
   await audit(req, {
     action: "fundraising.acknowledgment.mark",

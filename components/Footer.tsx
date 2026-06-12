@@ -8,6 +8,7 @@ const footerLinks = [
   { href: "/the-app", label: "The App" },
   { href: "/curriculum", label: "Curriculum" },
   { href: "/impact", label: "Impact" },
+  { href: "/for-adults", label: "For Guides" },
   { href: "/donate", label: "Donate" },
 ];
 

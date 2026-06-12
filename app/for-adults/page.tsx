@@ -254,7 +254,7 @@ export default function PartnersPage() {
               ))}
             </div>
 
-            <p className="text-white/30 text-sm leading-relaxed max-w-2xl">
+            <p className="text-white/60 text-sm leading-relaxed max-w-2xl">
               The reward can be monetary, an experience, or a privilege — additive or something they&apos;d normally lose. We&apos;ll give you a starter list of ideas that work. The point is the agreement.
             </p>
           </div>
@@ -309,13 +309,25 @@ export default function PartnersPage() {
               Low-income teens can apply directly through the app, make an agreement with Ambition Angels, and earn real rewards as they complete internships. We invest in them — and we keep investing as they grow.
             </p>
           </div>
-          <a
-            href="#"
-            className="inline-flex items-center justify-center bg-orange hover:bg-orange-dark text-white font-semibold text-base px-10 py-4 rounded-full transition-colors min-h-[56px] w-full sm:w-auto shadow-lg shadow-orange/20"
-          >
-            Download the App to Apply
-          </a>
-          <p className="mt-4 text-white/40 text-sm">
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center bg-orange hover:bg-orange-dark text-white font-semibold text-base px-10 py-4 rounded-full transition-colors min-h-[56px] w-full sm:w-auto shadow-lg shadow-orange/20"
+            >
+              Download for iOS to Apply
+            </a>
+            <a
+              href="https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-base px-10 py-4 rounded-full transition-colors min-h-[56px] w-full sm:w-auto"
+            >
+              Download for Android
+            </a>
+          </div>
+          <p className="mt-4 text-white/60 text-sm">
             The Ambition Fund is made possible by donors like you.{" "}
             <a href="/donate" className="text-orange hover:text-orange-dark underline underline-offset-2 transition-colors">
               Become a donor.

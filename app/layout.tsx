@@ -41,6 +41,34 @@ export const metadata: Metadata = {
   },
 };
 
+// Organization schema for Google's knowledge panel and nonprofit search results.
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "NGO",
+  name: "Ambition Angels",
+  url: "https://www.ambitionangels.org",
+  logo: "https://www.ambitionangels.org/images/logo-color.png",
+  description:
+    "Ambition Angels delivers free 30-day simulated career internships to teens on the phones they already have.",
+  email: "hello@ambitionangels.org",
+  taxID: "87-2513010",
+  nonprofitStatus: "Nonprofit501c3",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "380 Portage Ave",
+    addressLocality: "Palo Alto",
+    addressRegion: "CA",
+    postalCode: "94306",
+    addressCountry: "US",
+  },
+  sameAs: [
+    "https://www.linkedin.com/company/ambition-angels",
+    "https://www.youtube.com/@ambitionangels",
+    "https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279",
+    "https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN",
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -49,6 +77,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${bigShoulders.variable} ${poppins.variable} ${dmSans.variable}`}>
       <body className="antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
         <DonateModalProvider>
           <SiteChrome nav={<Nav />} footer={<Footer />}>
             {children}

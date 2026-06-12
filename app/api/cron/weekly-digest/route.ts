@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendOperatorEmail, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
+import { snapshotKpis } from "@/lib/kpis";
 
 /**
  * The Monday digest — Executive Briefing v0 (data-grounded, no model):
@@ -112,6 +113,9 @@ export async function GET(req: NextRequest) {
   if (gifts.length === 0 && todos.length === 0 && due.length === 0) {
     body += `<p>A quiet week — no new gifts, nothing overdue, nothing due in the next two weeks.</p>`;
   }
+
+  // Weekly KPI snapshot — powers the scorecard's 4-week trends.
+  await snapshotKpis(supabase);
 
   const sent = await sendOperatorEmail(
     `🌱 Your week: ${gifts.length} gift${gifts.length === 1 ? "" : "s"}${giftTotal > 0 ? ` (${fmtUsd(giftTotal)})` : ""}, ${due.length} deadline${due.length === 1 ? "" : "s"} ahead`,

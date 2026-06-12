@@ -46,18 +46,18 @@ export default function DonatePage() {
 
             {/* LEFT — copy */}
             <div>
-              <div className="inline-block text-xs font-medium text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
+              <div className="inline-block text-xs font-medium text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6 fade-up">
                 Become an Angel Investor in a Teen&apos;s Future
               </div>
 
-              <h1 className="font-display font-black text-5xl lg:text-6xl text-cream mb-7 leading-none tracking-tight uppercase">
+              <h1 className="font-display font-black text-5xl lg:text-6xl text-cream mb-7 leading-none tracking-tight uppercase fade-up stagger-1">
                 One gift.<br />
                 A teen&apos;s<br />
                 <span className="text-orange">whole</span><br />
                 future.
               </h1>
 
-              <blockquote className="border-l-4 border-orange pl-5 mb-5">
+              <blockquote className="border-l-4 border-orange pl-5 mb-5 fade-up stagger-2">
                 <p className="text-gray-mid text-base lg:text-lg leading-relaxed italic mb-2">
                   &ldquo;Every individual has massive potential. When teens are set on a pathway to an economically empowered future, we all benefit.&rdquo;
                 </p>
@@ -70,7 +70,7 @@ export default function DonatePage() {
                 Angel investors put real money behind founders before they&apos;ve proven themselves — because they believe in the potential. That&apos;s exactly what an Ambition Angel does for a teen. You invest before they&apos;ve had a chance to show the world what they can do. That&apos;s the bet. That&apos;s the belief.
               </p>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3 fade-up stagger-3">
                 {heroStats.map((s) => (
                   <div key={s.sub} className="bg-cream/5 border border-cream/10 rounded-card px-4 py-3">
                     <div className="font-display font-black text-xl text-orange tracking-tight">{s.label}</div>
@@ -82,7 +82,7 @@ export default function DonatePage() {
             </div>
 
             {/* RIGHT — Donate CTA */}
-            <div className="bg-cream rounded-card-lg shadow-2xl p-10 flex flex-col items-center justify-center text-center gap-6 min-h-[360px]">
+            <div className="bg-cream rounded-card-lg shadow-2xl p-10 flex flex-col items-center justify-center text-center gap-6 min-h-[360px] fade-up stagger-2">
               <div className="font-display font-black text-5xl text-ink tracking-tight leading-none uppercase">
                 Give <span className="text-orange">today.</span>
               </div>
@@ -187,7 +187,7 @@ export default function DonatePage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-up stagger-1">
             {[
               {
                 num: "01",

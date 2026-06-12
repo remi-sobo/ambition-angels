@@ -53,10 +53,10 @@ export default function Nav() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`text-sm font-medium transition-colors ${
+                  className={`relative text-sm font-medium transition-colors after:absolute after:left-0 after:-bottom-1.5 after:h-0.5 after:rounded-full after:bg-orange after:transition-all after:duration-200 ${
                     pathname === link.href
-                      ? "text-orange"
-                      : "text-charcoal hover:text-orange"
+                      ? "text-orange after:w-full"
+                      : "text-charcoal hover:text-orange after:w-0 hover:after:w-full"
                   }`}
                 >
                   {link.label}

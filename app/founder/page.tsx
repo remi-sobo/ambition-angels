@@ -30,7 +30,7 @@ export default function FounderPage() {
                 className="w-full h-full object-cover object-top"
               />
             </div>
-            <h1 className="font-heading font-bold text-4xl lg:text-6xl text-ink mb-3">
+            <h1 className="font-display font-black text-5xl lg:text-7xl text-ink tracking-tight leading-none uppercase mb-3">
               Remi Sobomehin
             </h1>
             <p className="text-gray-warm text-lg lg:text-xl">

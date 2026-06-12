@@ -3,14 +3,28 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { trackEvent } from "@/lib/analytics";
+import {
+  BarChart3,
+  Footprints,
+  GraduationCap,
+  Handshake,
+  HeartHandshake,
+  Home,
+  MessageCircle,
+  NotebookPen,
+  Pizza,
+  School,
+  Target,
+  Trophy,
+} from "lucide-react";
 
 const personas = [
-  { emoji: "👩‍🏫", role: "Teachers", desc: "Give your students career context without adding to your plate." },
-  { emoji: "🏀", role: "Coaches", desc: "Motivate players beyond the game. Help them see what they're playing toward." },
-  { emoji: "🙏", role: "Youth Group Leaders", desc: "Connect purpose and faith to their future in a concrete way." },
-  { emoji: "👨‍👧", role: "Parents", desc: "Finally have the career conversation you've been putting off. We'll guide you through it." },
-  { emoji: "🤝", role: "Mentors", desc: "Show up to every meeting with something real to work through together." },
-  { emoji: "🏫", role: "School Counselors", desc: "Scale career conversations across your entire caseload." },
+  { icon: GraduationCap, role: "Teachers", desc: "Give your students career context without adding to your plate." },
+  { icon: Trophy, role: "Coaches", desc: "Motivate players beyond the game. Help them see what they're playing toward." },
+  { icon: HeartHandshake, role: "Youth Group Leaders", desc: "Connect purpose and faith to their future in a concrete way." },
+  { icon: Home, role: "Parents", desc: "Finally have the career conversation you've been putting off. We'll guide you through it." },
+  { icon: Handshake, role: "Mentors", desc: "Show up to every meeting with something real to work through together." },
+  { icon: School, role: "School Counselors", desc: "Scale career conversations across your entire caseload." },
 ];
 
 const prompts = [
@@ -27,17 +41,17 @@ const steps = [
 
 const problemCards = [
   {
-    icon: "📊",
+    icon: BarChart3,
     stat: "Fewer than 5 careers",
     body: "Most teens have been exposed to fewer than 5 careers — usually whatever their parents do. The world has thousands of paths.",
   },
   {
-    icon: "🎯",
+    icon: Target,
     stat: "Future Orientation",
     body: "A teen's belief that their future is worth working toward is one of the strongest predictors of academic engagement. It can be built.",
   },
   {
-    icon: "💬",
+    icon: MessageCircle,
     stat: "The missing tool",
     body: "Teachers, coaches, and mentors want to have career conversations. They just don't have the language or tools to do it well.",
   },
@@ -114,18 +128,19 @@ export default function PartnersPage() {
         <div className="absolute inset-0 bg-ink/65" />
 
         <div className="container-site relative z-10 pt-28 pb-28 lg:pt-40 lg:pb-36">
-          <p className="text-xs font-bold text-orange uppercase tracking-widest mb-5">
+          <p className="text-xs font-bold text-orange uppercase tracking-widest mb-5 fade-up">
             For Guides
           </p>
-          <h1 className="font-heading font-bold text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl text-cream leading-tight tracking-tight mb-6 max-w-3xl">
-            You&apos;re already in their corner. Now we&apos;ll put something real in your hands.
+          <h1 className="font-display font-black text-6xl lg:text-8xl text-cream leading-none tracking-tight uppercase mb-6 max-w-3xl fade-up stagger-1">
+            In their corner?<br />
+            <span className="text-orange">Start here.</span>
           </h1>
-          <p className="text-gray-mid text-lg leading-relaxed max-w-xl mb-10">
-            We give you career conversation prompts, real-time insight into what your teen is learning, and a way to finally have the conversation you&apos;ve been putting off.
+          <p className="text-gray-mid text-lg leading-relaxed max-w-xl mb-10 fade-up stagger-2">
+            You&apos;re already in their corner — now we&apos;ll put something real in your hands. Career conversation prompts, real-time insight into what your teen is learning, and a way to finally have the conversation you&apos;ve been putting off.
           </p>
           <button
             onClick={scrollToWaitlist}
-            className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors min-h-[52px] inline-flex items-center w-full sm:w-auto justify-center"
+            className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors min-h-[52px] inline-flex items-center w-full sm:w-auto justify-center fade-up stagger-3"
           >
             Join the Waitlist
           </button>
@@ -147,7 +162,9 @@ export default function PartnersPage() {
                 key={card.stat}
                 className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm"
               >
-                <div className="text-4xl mb-5">{card.icon}</div>
+                <div className="w-12 h-12 rounded-xl bg-orange-light border border-orange/20 flex items-center justify-center mb-5">
+                  <card.icon className="w-6 h-6 text-orange" strokeWidth={1.75} aria-hidden="true" />
+                </div>
                 <div className="font-heading font-bold text-ink text-xl mb-3">{card.stat}</div>
                 <p className="text-gray-warm text-sm leading-relaxed">{card.body}</p>
               </div>
@@ -175,7 +192,7 @@ export default function PartnersPage() {
           {/* Teen / Guide split */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-10">
             {/* Teen */}
-            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-8">
+            <div className="bg-ink-soft border border-white/10 rounded-card-lg p-8">
               <div className="inline-block text-xs font-bold text-gray-mid uppercase tracking-widest bg-white/5 border border-white/10 rounded-full px-3 py-1 mb-6">
                 The Teen
               </div>
@@ -236,16 +253,18 @@ export default function PartnersPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               {[
-                { emoji: "🍕", tag: "For Parents", deal: "Complete 5 internships → pizza party of your choice" },
-                { emoji: "📝", tag: "For Teachers", deal: "Finish 3 internships → one get-out-of-a-test-free card" },
-                { emoji: "👟", tag: "For Coaches", deal: "Complete the sports business track → new kicks" },
+                { icon: Pizza, tag: "For Parents", deal: "Complete 5 internships → pizza party of your choice" },
+                { icon: NotebookPen, tag: "For Teachers", deal: "Finish 3 internships → one get-out-of-a-test-free card" },
+                { icon: Footprints, tag: "For Coaches", deal: "Complete the sports business track → new kicks" },
               ].map((card) => (
                 <div
                   key={card.tag}
-                  className="bg-[#1a1d27] rounded-card p-6"
+                  className="bg-ink-soft rounded-card p-6"
                   style={{ borderLeft: "4px solid #E8500A" }}
                 >
-                  <div className="text-3xl mb-4">{card.emoji}</div>
+                  <div className="w-11 h-11 rounded-xl bg-orange/10 border border-orange/25 flex items-center justify-center mb-4">
+                    <card.icon className="w-5 h-5 text-orange" strokeWidth={1.75} aria-hidden="true" />
+                  </div>
                   <div className="inline-block text-xs font-bold text-orange uppercase tracking-widest bg-orange/10 rounded-full px-2.5 py-1 mb-3">
                     {card.tag}
                   </div>
@@ -385,9 +404,11 @@ export default function PartnersPage() {
             {personas.map((p) => (
               <div
                 key={p.role}
-                className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-7 hover:border-orange/30 transition-colors"
+                className="bg-ink-soft border border-white/10 rounded-card-lg p-7 hover:border-orange/30 transition-colors"
               >
-                <div className="text-4xl mb-4">{p.emoji}</div>
+                <div className="w-12 h-12 rounded-xl bg-orange/10 border border-orange/25 flex items-center justify-center mb-4">
+                  <p.icon className="w-6 h-6 text-orange" strokeWidth={1.75} aria-hidden="true" />
+                </div>
                 <h3 className="font-heading font-bold text-cream text-lg mb-2">{p.role}</h3>
                 <p className="text-gray-mid text-sm leading-relaxed">{p.desc}</p>
               </div>

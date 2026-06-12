@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import ProgramPartnerSignupForm from "./SignupForm";
 import PageVisitedEvent from "@/components/PageVisitedEvent";
+import { Handshake, HeartHandshake, Home, Scale, School, Trophy } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Program Partners",
@@ -35,12 +36,12 @@ const dashboardFeatures = [
 ];
 
 const whoCards = [
-  { emoji: "🏫", title: "After-School Programs", body: "Add career exposure to your existing curriculum. No new staff. No new budget." },
-  { emoji: "🏀", title: "Coaches & Athletic Programs", body: "Give your athletes something to work toward beyond the game. 15 minutes on the bus counts." },
-  { emoji: "🙏", title: "Faith Communities", body: "Connect purpose and calling to real career exploration. Works in youth group, Sunday school, or weekly mentorship." },
-  { emoji: "⚖️", title: "Juvenile Justice Programs", body: "Career vision is one of the strongest predictors of re-engagement. We've built for this." },
-  { emoji: "🏠", title: "Foster Care & Group Homes", body: "Teens in care are often the furthest from career exposure. We meet them where they are." },
-  { emoji: "🤝", title: "Mentorship Programs", body: "Give every mentor something concrete to work through with their mentee. The prompts do the heavy lifting." },
+  { icon: School, title: "After-School Programs", body: "Add career exposure to your existing curriculum. No new staff. No new budget." },
+  { icon: Trophy, title: "Coaches & Athletic Programs", body: "Give your athletes something to work toward beyond the game. 15 minutes on the bus counts." },
+  { icon: HeartHandshake, title: "Faith Communities", body: "Connect purpose and calling to real career exploration. Works in youth group, Sunday school, or weekly mentorship." },
+  { icon: Scale, title: "Juvenile Justice Programs", body: "Career vision is one of the strongest predictors of re-engagement. We've built for this." },
+  { icon: Home, title: "Foster Care & Group Homes", body: "Teens in care are often the furthest from career exposure. We meet them where they are." },
+  { icon: Handshake, title: "Mentorship Programs", body: "Give every mentor something concrete to work through with their mentee. The prompts do the heavy lifting." },
 ];
 
 const steps = [
@@ -262,7 +263,9 @@ export default function ProgramPartnersPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {whoCards.map((card) => (
               <div key={card.title} className="bg-white border border-gray-light rounded-card-lg p-7 shadow-sm">
-                <div className="text-3xl mb-4">{card.emoji}</div>
+                <div className="w-12 h-12 rounded-xl bg-orange-light border border-orange/20 flex items-center justify-center mb-4">
+                  <card.icon className="w-6 h-6 text-orange" strokeWidth={1.75} aria-hidden="true" />
+                </div>
                 <h3 className="font-heading font-bold text-ink text-base mb-2">{card.title}</h3>
                 <p className="text-gray-warm text-sm leading-relaxed">{card.body}</p>
               </div>

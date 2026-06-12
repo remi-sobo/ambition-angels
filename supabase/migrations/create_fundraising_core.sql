@@ -268,6 +268,9 @@ begin
   end if;
 
   if d.email is not null and d.email <> '' then
+    -- Serialize concurrent ingests of the same email (two webhooks racing
+    -- the select-then-insert would otherwise create duplicate constituents).
+    perform pg_advisory_xact_lock(hashtext('constituent:' || d.org_id::text || ':' || lower(d.email)));
     select c.id into cid
     from constituents c
     where c.org_id = d.org_id
@@ -292,6 +295,12 @@ begin
     returning id into plan;
     if d.status = 'cancelled' then
       update recurring_plans set status = 'cancelled' where id = plan;
+    end if;
+    -- A renewal that finally carries a resolvable identity claims the
+    -- plan's earlier anonymous gifts for the same donor.
+    if cid is not null then
+      update gifts set constituent_id = cid
+      where recurring_plan_id = plan and constituent_id is null;
     end if;
   end if;
 

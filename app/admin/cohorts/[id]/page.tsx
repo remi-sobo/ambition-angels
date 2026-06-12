@@ -120,7 +120,12 @@ export default async function CohortPage({ params }: { params: { id: string } })
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3 mt-2 mb-1">
         <h1 className="font-heading font-bold text-2xl text-cream">{cohort.name}</h1>
-        <CohortHeaderControls cohortId={cohort.id} status={cohort.status} name={cohort.name} />
+        <CohortHeaderControls
+          cohortId={cohort.id}
+          status={cohort.status}
+          name={cohort.name}
+          acceptingApplications={Boolean(cohort.accepting_applications)}
+        />
       </div>
       <p className="text-gray-mid text-sm mb-6">
         {[cohort.program, cohort.term, cohort.location].filter(Boolean).join(" · ") || "—"}

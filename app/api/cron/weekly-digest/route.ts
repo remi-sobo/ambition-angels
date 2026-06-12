@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendOperatorEmail, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
 import { snapshotKpis } from "@/lib/kpis";
+import { generateBriefing } from "@/lib/briefing";
 
 /**
  * The Monday digest — Executive Briefing v0 (data-grounded, no model):
@@ -14,6 +15,7 @@ import { snapshotKpis } from "@/lib/kpis";
  * breakage, so a quiet week says so explicitly.
  */
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 function isAuthed(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -117,9 +119,24 @@ export async function GET(req: NextRequest) {
   // Weekly KPI snapshot — powers the scorecard's 4-week trends.
   await snapshotKpis(supabase);
 
+  // AI narration (Ring 4): generate + store the Monday edition; prepend the
+  // narrative when the model is available, degrade silently when not.
+  const briefing = await generateBriefing(supabase, "weekly");
+  if (briefing.narrative) {
+    body =
+      `<p style="font-size:15px;line-height:1.65;">${briefing.narrative}</p>` +
+      (briefing.priorities.length > 0
+        ? `<p style="font-weight:600;margin-top:12px;">Recommended priorities</p><ol>${briefing.priorities
+            .map((p) => `<li>${p}</li>`)
+            .join("")}</ol>`
+        : "") +
+      `<hr style="border:none;border-top:1px solid #F0EEE8;margin:16px 0;">` +
+      body;
+  }
+
   const sent = await sendOperatorEmail(
     `🌱 Your week: ${gifts.length} gift${gifts.length === 1 ? "" : "s"}${giftTotal > 0 ? ` (${fmtUsd(giftTotal)})` : ""}, ${due.length} deadline${due.length === 1 ? "" : "s"} ahead`,
-    operatorEmailShell("Good morning, Ambition Angels", body)
+    operatorEmailShell(briefing.headline ?? "Good morning, Ambition Angels", body)
   );
   return NextResponse.json({ sent });
 }

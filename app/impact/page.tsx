@@ -139,14 +139,15 @@ export default function ImpactPage() {
         {/* Dark overlay at 60% */}
         <div className="absolute inset-0 bg-ink/60" />
         <div className="container-site relative z-10">
-          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-5">
+          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-5 fade-up">
             Our Impact
           </p>
-          <h1 className="font-heading font-bold text-5xl lg:text-6xl text-cream leading-none tracking-tight mb-5 max-w-2xl">
-            Career exposure is one of the most powerful tools we have to help teens break the cycle of poverty.
+          <h1 className="font-display font-black text-6xl lg:text-8xl text-cream leading-none tracking-tight uppercase mb-6 max-w-2xl fade-up stagger-1">
+            Career exposure<br />
+            <span className="text-orange">works.</span>
           </h1>
-          <p className="text-gray-mid text-lg max-w-lg leading-relaxed">
-            We have the data. Here is what it shows.
+          <p className="text-gray-mid text-lg lg:text-xl max-w-2xl leading-relaxed fade-up stagger-2">
+            Career exposure is one of the most powerful tools we have to help teens break the cycle of poverty. We have the data. Here is what it shows.
           </p>
         </div>
       </section>
@@ -169,7 +170,7 @@ export default function ImpactPage() {
           <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">
             The Problem
           </p>
-          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-4">
+          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-4 fade-up">
             The gap is not ambition. It is access.
           </h2>
           <p className="text-gray-warm text-base leading-relaxed max-w-2xl mb-12">
@@ -178,7 +179,7 @@ export default function ImpactPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20">
             {/* Facts */}
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 fade-up stagger-1">
               {gapFacts.map((f) => (
                 <div
                   key={f.title}
@@ -203,7 +204,7 @@ export default function ImpactPage() {
               <p className="text-xs font-medium text-orange uppercase tracking-widest mb-5">
                 How We Respond
               </p>
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 fade-up stagger-2">
                 {howWeRespond.map((item) => (
                   <div
                     key={item.num}
@@ -230,7 +231,7 @@ export default function ImpactPage() {
 
             {/* Orange big number card */}
             <div
-              className="relative bg-orange rounded-card-lg p-14 text-center overflow-hidden"
+              className="relative bg-orange rounded-card-lg p-14 text-center overflow-hidden fade-up"
               style={{
                 backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)",
                 backgroundSize: "20px 20px",
@@ -275,10 +276,10 @@ export default function ImpactPage() {
           <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">
             From the Students
           </p>
-          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-10">
+          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-10 fade-up">
             What action looks like.
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 fade-up stagger-1">
             {quotes.map((q) => (
               <div key={q.name} className="bg-cream rounded-card-lg p-7 flex flex-col shadow-sm">
                 <div className="font-display font-black text-4xl text-orange leading-none mb-4">&ldquo;</div>
@@ -315,9 +316,9 @@ export default function ImpactPage() {
           <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream tracking-tight leading-tight mb-10 max-w-3xl">
             We did not invent the link between career exposure and economic mobility. We built a program to help deliver it at scale.
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/[0.08] rounded-card-lg overflow-hidden border border-white/[0.08]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/[0.08] rounded-card-lg overflow-hidden border border-white/[0.08] fade-up stagger-1">
             {research.map((r) => (
-              <div key={r.stat} className="bg-[#1a1d27] p-8">
+              <div key={r.stat} className="bg-ink-soft p-8">
                 <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-5">
                   {r.stat}
                 </div>
@@ -343,7 +344,7 @@ export default function ImpactPage() {
           <p className="text-gray-warm text-base leading-relaxed max-w-xl mb-10">
             Two areas. One question: does this program put teens on a different economic trajectory?
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 fade-up stagger-1">
             {measures.map((m) => (
               <div
                 key={m.title}

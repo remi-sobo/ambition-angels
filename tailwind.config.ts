@@ -16,6 +16,8 @@ const config: Config = {
           mid: "#F47840",
         },
         ink: "#0E0E0E",
+        // Raised-surface dark for cards on ink backgrounds (public site).
+        "ink-soft": "#1A1A1A",
         // BloomOS product chrome (docs/bloomos/06-design-system.md §2).
         navy: {
           DEFAULT: "#10214B",

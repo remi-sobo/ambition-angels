@@ -42,8 +42,8 @@ export default async function MeetPage() {
               <div className="inline-block text-xs font-bold text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
                 Meet with Remi
               </div>
-              <h1 className="font-heading font-bold text-5xl lg:text-6xl text-ink tracking-tight leading-[1.05] mb-6">
-                Let&rsquo;s talk.
+              <h1 className="font-display font-black text-6xl lg:text-8xl text-ink tracking-tight leading-none uppercase mb-6">
+                Let&rsquo;s <span className="text-orange">talk.</span>
               </h1>
               <p className="text-gray-warm text-lg leading-relaxed">
                 I&rsquo;m Remi, founder of Ambition Angels. Below are the kinds of

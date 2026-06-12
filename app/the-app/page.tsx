@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import AppDemo from "@/components/AppDemo";
+import AnimatedCounter from "@/components/AnimatedCounter";
 
 export const metadata: Metadata = {
   title: "The App",
@@ -123,7 +124,7 @@ export default function TheAppPage() {
       {/* INSIDE THE APP — interactive demo */}
       <section className="section-pad">
         <div className="container-site">
-          <div className="max-w-2xl mb-12">
+          <div className="max-w-2xl mb-12 fade-up">
             <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
               Inside the App
             </p>
@@ -138,7 +139,7 @@ export default function TheAppPage() {
           <AppDemo />
 
           {/* Slim three-card recap of the framework */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mt-16 pt-12 border-t border-gray-mid/40">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mt-16 pt-12 border-t border-gray-mid/40 fade-up">
             {recapSteps.map((step) => (
               <div key={step.number} className="relative">
                 <div className="flex items-baseline gap-3 mb-2">
@@ -175,7 +176,7 @@ export default function TheAppPage() {
           aria-hidden="true"
         />
         <div className="container-site relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
+          <div className="max-w-3xl mx-auto text-center fade-up">
             <p className="text-xs font-medium text-orange uppercase tracking-widest mb-6">
               The outcome
             </p>
@@ -195,7 +196,7 @@ export default function TheAppPage() {
       {/* SKILLS */}
       <section className="section-pad">
         <div className="container-site">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 fade-up">
             <div
               className="bg-orange-light rounded-card-lg p-8 lg:p-10 relative overflow-hidden"
               style={{
@@ -248,7 +249,7 @@ export default function TheAppPage() {
             {stats.map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="font-display font-black text-5xl lg:text-6xl text-white mb-1 tracking-tight">
-                  {stat.number}
+                  <AnimatedCounter value={stat.number} />
                 </div>
                 <div className="text-white/80 text-sm">{stat.label}</div>
               </div>
@@ -260,7 +261,7 @@ export default function TheAppPage() {
       {/* ARE YOU AN ADULT? */}
       <section className="section-pad">
         <div className="container-site">
-          <div className="max-w-2xl mx-auto text-center">
+          <div className="max-w-2xl mx-auto text-center fade-up">
             <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
               Are You an Adult?
             </p>
@@ -307,7 +308,7 @@ export default function TheAppPage() {
           aria-hidden="true"
         />
         <div className="container-site relative z-10">
-          <div className="max-w-2xl mx-auto text-center">
+          <div className="max-w-2xl mx-auto text-center fade-up">
             <h2 className="font-heading font-bold text-3xl lg:text-4xl text-cream mb-6">
               The app starts it. Real opportunity picks up from there.
             </h2>

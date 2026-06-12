@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import ScrollAnimations from "@/components/ScrollAnimations";
 
 export default function SiteChrome({
   nav,
@@ -28,6 +29,7 @@ export default function SiteChrome({
   return (
     <>
       {!standalone && nav}
+      {!standalone && <ScrollAnimations />}
       <main>{children}</main>
       {!standalone && footer}
     </>

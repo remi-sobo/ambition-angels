@@ -27,7 +27,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Command Center",
     items: [
       { label: "Overview", icon: "overview", href: "/admin" },
-      { label: "Executive Briefing", icon: "briefing", soon: true },
+      { label: "Executive Briefing", icon: "briefing", href: "/admin/briefing" },
     ],
   },
   {

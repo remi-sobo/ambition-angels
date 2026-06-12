@@ -77,6 +77,22 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const { flags } = analyzeDonor(allDates, todayISO(), Boolean(activePlan));
   const pendingAcks = gifts.filter((g) => g.acknowledgment_status === "pending").length;
 
+  // Funder-research attach: constituents imported from (or matched to)
+  // HubSpot carry external_ids.hubspot, which keys the research agent's
+  // briefs. Link straight to the brief when one exists; otherwise to the
+  // prospect page where the agent can be run.
+  const extIds = (c.external_ids ?? {}) as Record<string, unknown>;
+  const hubspotId = typeof extIds["hubspot"] === "string" ? (extIds["hubspot"] as string) : null;
+  let hasBrief = false;
+  if (hubspotId) {
+    const { data: brief } = await supabase
+      .from("fr_prospect_briefs")
+      .select("hubspot_id")
+      .eq("hubspot_id", hubspotId)
+      .maybeSingle();
+    hasBrief = !!brief;
+  }
+
   return (
     <div className="min-h-screen bg-ink">
       <div className="bg-[#13151f] border-b border-white/10 px-4 sm:px-6 lg:px-10 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
@@ -109,6 +125,14 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
             {FLAG_LABELS[f]}
           </span>
         ))}
+        {hubspotId && (
+          <Link
+            href={`/admin/fundraising/prospects/${hubspotId}`}
+            className="ml-auto text-[11px] font-semibold px-3 py-1 rounded-full bg-white/5 border border-white/10 text-cream/80 hover:text-cream hover:bg-white/10 transition-colors whitespace-nowrap"
+          >
+            {hasBrief ? "Research brief →" : "Run research →"}
+          </Link>
+        )}
       </div>
 
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 space-y-6">

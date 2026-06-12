@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import StatCard from "../_components/StatCard";
-import { NewCohortForm, COHORT_STATUS_LABELS } from "./_components/CohortControls";
+import { NewCohortForm } from "./_components/CohortControls";
+import { COHORT_STATUS_LABELS } from "./_lib/constants";
 import { pct } from "./_lib/rollups";
 
 // Cohorts & attendance (Ring 3, modules/02-program.md "Cohorts"):

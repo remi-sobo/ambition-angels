@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS } from "../_lib/stages";
 
 export type Student = {
   id: string;
@@ -25,23 +26,6 @@ export type Student = {
   external_source: string | null;
 };
 
-export const JOURNEY_STAGES = [
-  "discover", "learn", "practice", "connect", "launch",
-] as const;
-
-export const STAGE_ORDER = [
-  ...JOURNEY_STAGES, "alumni", "withdrawn",
-] as const;
-
-export const STAGE_LABELS: Record<string, string> = {
-  discover: "Discover",
-  learn: "Learn",
-  practice: "Practice",
-  connect: "Connect",
-  launch: "Launch",
-  alumni: "Alumni",
-  withdrawn: "Withdrawn",
-};
 
 const SOURCE_LABELS: Record<string, string> = {
   ygb: "YGB Camp",

@@ -7,7 +7,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { COHORT_STATUSES, COHORT_STATUS_LABELS } from "../../_components/CohortControls";
+import { COHORT_STATUSES, COHORT_STATUS_LABELS } from "../../_lib/constants";
 
 const inputCls =
   "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/40";

@@ -6,17 +6,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { STAGES, STAGE_LABELS } from "../_lib/stages";
 
-export const STAGES = [
-  "prospect", "qualified", "loi", "proposal", "submitted",
-  "awarded", "declined", "active", "closed",
-] as const;
-
-export const STAGE_LABELS: Record<string, string> = {
-  prospect: "Prospect", qualified: "Qualified", loi: "LOI",
-  proposal: "Proposal", submitted: "Submitted", awarded: "Awarded",
-  declined: "Declined", active: "Active", closed: "Closed",
-};
 
 const KINDS = [
   ["application", "Application"],

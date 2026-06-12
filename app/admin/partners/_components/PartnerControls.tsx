@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { STATUS_ORDER, STATUS_LABELS } from "../_lib/status";
 
 export type Partner = {
   id: string;
@@ -25,18 +26,6 @@ export type Partner = {
   external_source: string | null;
 };
 
-export const STATUS_ORDER = [
-  "prospect", "outreach", "pilot", "active", "anchor", "lapsed",
-] as const;
-
-export const STATUS_LABELS: Record<string, string> = {
-  prospect: "Prospects",
-  outreach: "In outreach",
-  pilot: "Pilots",
-  active: "Active",
-  anchor: "Anchor partners",
-  lapsed: "Lapsed",
-};
 
 const KIND_LABELS: Record<string, string> = {
   school: "School",

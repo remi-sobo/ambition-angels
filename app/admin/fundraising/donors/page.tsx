@@ -51,6 +51,26 @@ async function fetchAllGifts(supabase: ReturnType<typeof getSupabaseAdmin>) {
   return { gifts: out, error: null };
 }
 
+// Paginate active plans fully — the flag-suppression set must never be a
+// sample, or on-schedule monthly donors could get false lapse flags.
+async function fetchActivePlans(supabase: ReturnType<typeof getSupabaseAdmin>) {
+  const ids: Array<string | null> = [];
+  const PAGE = 1000;
+  let count: number | null = null;
+  for (let page = 0; page < 10; page++) {
+    const { data, count: c, error } = await supabase
+      .from("recurring_plans")
+      .select("constituent_id", { count: "exact" })
+      .eq("status", "active")
+      .range(page * PAGE, page * PAGE + PAGE - 1);
+    if (error) break;
+    if (c !== null) count = c;
+    ids.push(...((data ?? []).map((p) => p.constituent_id as string | null)));
+    if (!data || data.length < PAGE) break;
+  }
+  return { ids, count };
+}
+
 const chunk = <T,>(arr: T[], n: number): T[][] =>
   Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, (i + 1) * n));
 
@@ -58,7 +78,7 @@ export default async function DonorsPage() {
   const supabase = getSupabaseAdmin();
   const [{ gifts: allGifts, error: giftsError }, plansRes, constituentCountRes, pendingAcksRes] = await Promise.all([
     fetchAllGifts(supabase),
-    supabase.from("recurring_plans").select("constituent_id", { count: "exact" }).eq("status", "active").limit(1000),
+    fetchActivePlans(supabase),
     supabase.from("constituents").select("id", { count: "exact", head: true }),
     supabase.from("gifts").select("id", { count: "exact", head: true }).eq("acknowledgment_status", "pending"),
   ]);
@@ -136,9 +156,7 @@ export default async function DonorsPage() {
   // ── Retention intelligence (modules/03 §Donors 5) ──
   const today = todayISO();
   const activePlanDonors = new Set(
-    ((plansRes.data ?? []) as Array<{ constituent_id: string | null }>)
-      .map((p) => p.constituent_id)
-      .filter((id): id is string => id !== null)
+    plansRes.ids.filter((id): id is string => id !== null)
   );
   const flagsByDonor = new Map<string, RetentionFlag[]>();
   for (const [id, r] of Array.from(rollups.entries())) {

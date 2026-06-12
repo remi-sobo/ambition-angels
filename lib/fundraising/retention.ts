@@ -62,11 +62,13 @@ export function analyzeDonor(
   if (!gaveThisYear && gaveLastYear) flags.push("lybunt");
   if (!gaveThisYear && !gaveLastYear && gaveEarlier) flags.push("sybunt");
 
-  // Cadence: needs 3+ gifts to call it a rhythm. Overdue = 1.5× their
-  // median interval (floor 30 days so dense histories don't flap).
+  // Cadence: needs 3+ DISTINCT gift days to call it a rhythm (same-day
+  // gifts would zero the median). Overdue = 1.5× their median interval
+  // (floor 30 days so dense histories don't flap).
   let medianIntervalDays: number | null = null;
-  if (dates.length >= 3) {
-    const intervals = dates.slice(1).map((d, i) => daysBetween(dates[i], d)).sort((a, b) => a - b);
+  const uniqueDays = Array.from(new Set(dates));
+  if (uniqueDays.length >= 3) {
+    const intervals = uniqueDays.slice(1).map((d, i) => daysBetween(uniqueDays[i], d)).sort((a, b) => a - b);
     const mid = Math.floor(intervals.length / 2);
     medianIntervalDays =
       intervals.length % 2 === 1 ? intervals[mid] : Math.round((intervals[mid - 1] + intervals[mid]) / 2);

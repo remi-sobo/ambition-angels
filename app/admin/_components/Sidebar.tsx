@@ -33,7 +33,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Program",
     items: [
-      { label: "Students", icon: "students", href: "/admin/program" },
+      { label: "Students", icon: "students", href: "/admin/students" },
       { label: "Demo Day", icon: "demoday", href: "/admin/demoday" },
       { label: "YGB Camp", icon: "camp", href: "/admin/ygb" },
       { label: "Schools & Partners", icon: "schools", href: "/admin/partners" },

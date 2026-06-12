@@ -27,16 +27,6 @@ export type ApplicationView = {
   cohortName: string;
 };
 
-export const APP_STATUS_LABELS: Record<string, string> = {
-  new: "New",
-  eligible: "Eligible",
-  ineligible: "Ineligible",
-  waitlisted: "Waitlisted",
-  offered: "Offered",
-  accepted: "Accepted",
-  declined: "Declined",
-  expired: "Expired",
-};
 
 const PRIORITY_LABELS: Record<number, string> = { 1: "High", 2: "Standard", 3: "Low" };
 

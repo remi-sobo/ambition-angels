@@ -1,13 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import StatCard from "../_components/StatCard";
-import {
-  StudentRow,
-  NewStudentForm,
-  JOURNEY_STAGES,
-  STAGE_ORDER,
-  STAGE_LABELS,
-  type Student,
-} from "./_components/StudentControls";
+import { StudentRow, NewStudentForm, type Student } from "./_components/StudentControls";
+import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS } from "./_lib/stages";
 
 // Student spine (Ring 3, modules/02-program.md "Students"): one roster for
 // every teen across programs, organized by journey stage —

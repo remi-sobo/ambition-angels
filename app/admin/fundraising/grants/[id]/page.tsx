@@ -7,8 +7,8 @@ import {
   StageSelect,
   RequirementActions,
   AddRequirementForm,
-  STAGE_LABELS,
 } from "../_components/GrantControls";
+import { STAGE_LABELS } from "../_lib/stages";
 
 // Grant detail: award facts, stage control, and the requirements calendar.
 export const dynamic = "force-dynamic";

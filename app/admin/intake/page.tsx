@@ -4,10 +4,10 @@ import StatCard from "../_components/StatCard";
 import {
   ApplicationRow,
   OfferNextButton,
-  APP_STATUS_LABELS,
   type ApplicationView,
   type CohortOption,
 } from "./_components/IntakeControls";
+import { APP_STATUS_LABELS } from "./_lib/constants";
 
 // Intake pipeline (Ring 3, modules/02-program.md "Intake"): screen public
 // applications (eligible/ineligible), set priority tiers, run the waitlist

@@ -1,8 +1,86 @@
-export default function CompliancePage() {
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import StatCard from "../_components/StatCard";
+import {
+  ComplianceRow,
+  NewComplianceForm,
+  type ComplianceItem,
+} from "./_components/ComplianceControls";
+
+// Compliance calendar (Ring 4, modules/07-governance.md): every filing,
+// renewal, and policy deadline in one tickler. Marking an item filed rolls
+// its date forward a period — the calendar maintains itself. The daily
+// reminder email nudges at T-14/7/1 and on overdue.
+export const dynamic = "force-dynamic";
+
+export default async function CompliancePage() {
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from("compliance_items")
+    .select("*")
+    .order("due_date")
+    .limit(200);
+  const items = (data ?? []) as ComplianceItem[];
+
+  const today = new Date().toISOString().slice(0, 10);
+  const in60 = new Date(Date.now() + 60 * 86400_000).toISOString().slice(0, 10);
+  const open = items.filter((i) => i.status === "upcoming" || i.status === "in_progress");
+  const overdue = open.filter((i) => i.due_date < today);
+  const due60 = open.filter((i) => i.due_date >= today && i.due_date <= in60);
+  const later = open.filter((i) => i.due_date > in60);
+  const closed = items.filter((i) => i.status === "filed" || i.status === "waived");
+
+  const Section = ({ title, rows, tone }: { title: string; rows: ComplianceItem[]; tone?: "red" }) =>
+    rows.length === 0 ? null : (
+      <section>
+        <h2
+          className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${
+            tone === "red" ? "text-red-400" : "text-cream/70"
+          }`}
+        >
+          {title} ({rows.length})
+        </h2>
+        <div className="space-y-2">
+          {rows.map((i) => (
+            <ComplianceRow key={i.id} item={i} />
+          ))}
+        </div>
+      </section>
+    );
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <h1 className="text-3xl font-semibold">Compliance</h1>
-      <p className="mt-2 text-zinc-400">Filings, deadlines, tickler.</p>
+    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1000px]">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="font-heading font-bold text-2xl text-cream">Compliance</h1>
+          <p className="text-gray-mid text-sm mt-0.5">
+            Filings, renewals, and policy deadlines — none of them live in someone&apos;s head
+          </p>
+        </div>
+        <NewComplianceForm />
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 mb-8">
+        <StatCard
+          label="Overdue"
+          value={overdue.length}
+          sub={overdue.length > 0 ? "act now" : "clear"}
+          muted={overdue.length === 0}
+        />
+        <StatCard label="Due in 60 days" value={due60.length} />
+        <StatCard label="Tracked items" value={items.length} sub="rolls forward on filing" />
+      </div>
+
+      <div className="space-y-8">
+        <Section title="Overdue" rows={overdue} tone="red" />
+        <Section title="Next 60 days" rows={due60} />
+        <Section title="Later" rows={later} />
+        <Section title="Filed / waived" rows={closed} />
+        {items.length === 0 && (
+          <p className="text-sm text-gray-mid">
+            No compliance items — the seed template didn&apos;t load. Add your first deadline above.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

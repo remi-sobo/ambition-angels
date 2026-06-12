@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SegmentExportPanel from "./_components/SegmentExportPanel";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
@@ -202,6 +203,9 @@ export default async function DonorsPage() {
       </div>
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 space-y-6">
+        <div className="flex justify-end">
+          <SegmentExportPanel />
+        </div>
         {constituentFetchFailed && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-3 text-red-400 text-sm">
             Some donor records failed to load — the table below may be missing donors that the

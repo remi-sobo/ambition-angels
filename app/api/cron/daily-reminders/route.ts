@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   const today = plusDays(0);
   const targets = [plusDays(14), plusDays(7), plusDays(1)];
 
-  const [dueRes, overdueRes, movesRes] = await Promise.all([
+  const [dueRes, overdueRes, movesRes, compDueRes, compOverdueRes] = await Promise.all([
     supabase
       .from("grant_requirements")
       .select("id, kind, label, due_date, grant:grants(name)")
@@ -56,6 +56,19 @@ export async function GET(req: NextRequest) {
       .not("next_step_due", "is", null)
       .not("stage", "in", "(steward,lost)")
       .order("next_step_due")
+      .limit(10),
+    supabase
+      .from("compliance_items")
+      .select("id, title, jurisdiction, due_date")
+      .in("status", ["upcoming", "in_progress"])
+      .in("due_date", targets)
+      .order("due_date"),
+    supabase
+      .from("compliance_items")
+      .select("id, title, jurisdiction, due_date")
+      .in("status", ["upcoming", "in_progress"])
+      .lt("due_date", today)
+      .order("due_date")
       .limit(10),
   ]);
 
@@ -85,21 +98,38 @@ export async function GET(req: NextRequest) {
       : [c.first_name, c.last_name].filter(Boolean).join(" ") || (m.name ?? "Unknown");
   };
 
-  if (due.length === 0 && overdue.length === 0 && moves.length === 0) {
+  type Comp = { id: string; title: string; jurisdiction: string | null; due_date: string };
+  const compDue = (compDueRes.data ?? []) as Comp[];
+  const compOverdue = (compOverdueRes.data ?? []) as Comp[];
+
+  if (
+    due.length === 0 && overdue.length === 0 && moves.length === 0 &&
+    compDue.length === 0 && compOverdue.length === 0
+  ) {
     return NextResponse.json({ sent: false, reason: "nothing due" });
   }
 
   const reqLine = (r: Req) =>
     `<li><strong>${grantName(r.grant)}</strong> — ${r.label ?? r.kind.replace(/_/g, " ")} · due ${r.due_date}</li>`;
 
+  const compLine = (c: Comp) =>
+    `<li><strong>${c.title}</strong>${c.jurisdiction && c.jurisdiction !== "—" ? ` (${c.jurisdiction})` : ""} · due ${c.due_date}</li>`;
+
   let body = "";
+  if (compOverdue.length > 0) {
+    body += `<p style="color:#DC2626;font-weight:600;">⚠ Overdue compliance filings</p><ul>${compOverdue
+      .map(compLine)
+      .join("")}</ul>`;
+  }
   if (overdue.length > 0) {
     body += `<p style="color:#DC2626;font-weight:600;">⚠ Overdue grant deliverables</p><ul>${overdue
       .map(reqLine)
       .join("")}</ul>`;
   }
-  if (due.length > 0) {
-    body += `<p style="font-weight:600;">Coming up</p><ul>${due.map(reqLine).join("")}</ul>`;
+  if (due.length > 0 || compDue.length > 0) {
+    body += `<p style="font-weight:600;">Coming up</p><ul>${due.map(reqLine).join("")}${compDue
+      .map(compLine)
+      .join("")}</ul>`;
   }
   if (moves.length > 0) {
     body += `<p style="font-weight:600;">Major-gift moves due</p><ul>${moves
@@ -110,10 +140,17 @@ export async function GET(req: NextRequest) {
       .join("")}</ul>`;
   }
 
-  const count = due.length + overdue.length + moves.length;
+  const count =
+    due.length + overdue.length + moves.length + compDue.length + compOverdue.length;
   const sent = await sendOperatorEmail(
     `⏰ ${count} deadline${count === 1 ? "" : "s"} need attention`,
     operatorEmailShell("Deadlines & next moves", body)
   );
-  return NextResponse.json({ sent, due: due.length, overdue: overdue.length, moves: moves.length });
+  return NextResponse.json({
+    sent,
+    due: due.length,
+    overdue: overdue.length,
+    moves: moves.length,
+    compliance: compDue.length + compOverdue.length,
+  });
 }

@@ -50,6 +50,8 @@ ordered=(
   create_opportunities.sql
   fix_audit_partition_rls.sql
   import_hubspot_to_constituents.sql
+  create_segments.sql
+  create_compliance.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

@@ -95,24 +95,41 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Two failure shapes, two responses (exactly-once is impossible against
+  // an external mail API, so choose the safe side of each):
+  // - Resend returns an error object → the email definitively did NOT go
+  //   out: release the claim, fully retryable.
+  // - The call throws (network/timeout) → the email MAY have gone out:
+  //   keep the claim so the queue can't double-email a donor, and tell the
+  //   operator to verify in Resend.
+  let sendResult: Awaited<ReturnType<Resend["emails"]["send"]>>;
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const { error: sendErr } = await resend.emails.send({
+    sendResult = await resend.emails.send({
       from: "Ambition Angels <careers@mail.ambitionangels.org>",
       to: toEmail,
       subject,
       text,
       html,
     });
-    if (sendErr) throw sendErr;
   } catch (e) {
-    console.error("Acknowledgment send failed:", e);
-    // The email never went out — release the claim so it can be retried.
+    console.error("Acknowledgment send outcome unknown:", e);
+    return NextResponse.json(
+      {
+        error:
+          "Send status unknown — the gift stays marked as acknowledged so the donor can't be double-emailed. Check the Resend dashboard; if it truly failed, re-thank from the donor's profile.",
+      },
+      { status: 502 }
+    );
+  }
+  if (sendResult.error) {
+    console.error("Acknowledgment send rejected:", sendResult.error);
+    // Definitive rejection — release the claim for retry.
     await supabase
       .from("gifts")
       .update({ acknowledgment_status: "pending", acknowledged_at: null })
       .eq("id", giftId);
-    return NextResponse.json({ error: "Email send failed" }, { status: 502 });
+    return NextResponse.json({ error: "Email send failed — try again" }, { status: 502 });
   }
 
   // Email is out and the gift is already marked sent. A failure recording

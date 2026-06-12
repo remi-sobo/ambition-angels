@@ -55,6 +55,7 @@ ordered=(
   create_board.sql
   create_kpis_and_plan.sql
   create_briefings.sql
+  create_partners.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

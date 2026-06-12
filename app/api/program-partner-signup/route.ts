@@ -99,14 +99,20 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getSupabase();
-  const { error: dbError } = await supabase.from("program_partners").insert({
-    first_name,
-    last_name,
-    org_name,
-    email,
-    program_type,
+  // Writes straight onto the BloomOS partner spine (Ring 3) — the
+  // legacy program_partners table never existed in production, so this
+  // form was silently failing before.
+  const { error: dbError } = await supabase.from("partners").insert({
+    name: org_name,
+    kind: "nonprofit",
+    status: "prospect",
+    champion_name: [first_name, last_name].filter(Boolean).join(" "),
+    champion_email: String(email).toLowerCase(),
     teen_count: teen_count || null,
+    program_type,
     referral: referral || null,
+    external_source: "signup_form",
+    last_touch_at: new Date().toISOString().slice(0, 10),
   });
 
   if (dbError) {

@@ -184,7 +184,11 @@ create table if not exists acknowledgments (
   org_id uuid not null references orgs(id),
   gift_id uuid not null references gifts(id) on delete cascade,
   template text,
-  channel text check (channel in ('email','letter')),
+  channel text check (channel in ('email','letter','other')),
+  -- The exact content sent — receipts must be regenerable and auditable.
+  subject text,
+  body text,
+  sent_by text,
   sent_at timestamptz,
   pdf_path text,
   created_at timestamptz not null default now()

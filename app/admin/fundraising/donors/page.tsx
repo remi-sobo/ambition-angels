@@ -54,10 +54,11 @@ const chunk = <T,>(arr: T[], n: number): T[][] =>
 
 export default async function DonorsPage() {
   const supabase = getSupabaseAdmin();
-  const [{ gifts: allGifts, error: giftsError }, plansRes, constituentCountRes] = await Promise.all([
+  const [{ gifts: allGifts, error: giftsError }, plansRes, constituentCountRes, pendingAcksRes] = await Promise.all([
     fetchAllGifts(supabase),
     supabase.from("recurring_plans").select("id", { count: "exact", head: true }).eq("status", "active"),
     supabase.from("constituents").select("id", { count: "exact", head: true }),
+    supabase.from("gifts").select("id", { count: "exact", head: true }).eq("acknowledgment_status", "pending"),
   ]);
 
   // Tables not applied yet (the migration ships ahead of the prod apply).
@@ -130,9 +131,19 @@ export default async function DonorsPage() {
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#13151f] border-b border-white/10 px-4 sm:px-6 lg:px-10 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center justify-between gap-3">
+      <div className="bg-[#13151f] border-b border-white/10 px-4 sm:px-6 lg:px-10 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
         <span className="font-heading font-bold text-cream text-sm sm:text-base">Donors</span>
-        <span className="text-xs text-gray-mid">
+        <Link
+          href="/admin/fundraising/acknowledgments"
+          className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
+            (pendingAcksRes.count ?? 0) > 0
+              ? "text-orange bg-orange/10 border border-orange/30 hover:bg-orange/20"
+              : "text-gray-mid hover:text-cream"
+          }`}
+        >
+          Acknowledgments{(pendingAcksRes.count ?? 0) > 0 ? ` (${pendingAcksRes.count})` : ""}
+        </Link>
+        <span className="text-xs text-gray-mid ml-auto">
           {donors.length} donor{donors.length === 1 ? "" : "s"}
           {nonDonorConstituents > 0 ? ` · ${nonDonorConstituents} constituents without gifts` : ""}
         </span>

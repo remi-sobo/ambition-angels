@@ -1,297 +1,177 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import ProspectFilters from "./_components/ProspectFilters";
-import ProspectListTable, {
-  type ProspectRow,
-  type SortKey,
-  type SortDir,
-} from "./_components/ProspectListTable";
+import { money } from "../finance/_components/charts";
+import StatCard from "../_components/StatCard";
+import { NewOpportunityForm, OpportunityCard } from "./_components/PipelineBoard";
+import {
+  PIPELINE_STAGES,
+  STAGE_LABELS,
+  type OpportunityRow,
+} from "./_components/pipeline-stages";
 
-// ── searchParams parsing ───────────────────────────────────────────────────
+// Major Gifts — the moves-management pipeline (modules/03-fundraising.md
+// "Major Gifts"). /admin/fundraising is the pipeline home; the HubSpot
+// prospect-research list lives at /admin/fundraising/prospects.
+export const dynamic = "force-dynamic";
 
-type SearchParams = {
-  q?: string;
-  lifecycle?: string;
-  owner?: string;
-  scored?: string;
-  sort?: string;
-  dir?: string;
-  page?: string;
+type DbOpportunity = {
+  id: string;
+  name: string | null;
+  stage: string;
+  ask_amount: number | null;
+  expected_close: string | null;
+  probability: number | null;
+  capacity_rating: number | null;
+  owner: string | null;
+  next_step: string | null;
+  next_step_due: string | null;
+  constituent:
+    | {
+        id: string;
+        type: string;
+        first_name: string | null;
+        last_name: string | null;
+        org_name: string | null;
+        external_ids: Record<string, unknown> | null;
+      }
+    | null;
 };
 
-const VALID_SORT: ReadonlyArray<SortKey> = ["name", "last_activity", "score"];
-
-function parseSearchParams(sp: SearchParams) {
-  const q = (sp.q ?? "").trim();
-  const lifecycle = (sp.lifecycle ?? "").trim();
-  const owner = (sp.owner ?? "").trim();
-  const scored = sp.scored === "1";
-  const sort: SortKey = VALID_SORT.includes(sp.sort as SortKey)
-    ? (sp.sort as SortKey)
-    : "last_activity";
-  const dir: SortDir = sp.dir === "asc" ? "asc" : "desc";
-  const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
-  return { q, lifecycle, owner, scored, sort, dir, page };
+function constituentName(c: DbOpportunity["constituent"]): string {
+  if (!c) return "Unknown";
+  if (c.type === "organization") return c.org_name ?? "Unknown org";
+  return [c.first_name, c.last_name].filter(Boolean).join(" ") || "Unknown";
 }
 
-// ── Types from Supabase ────────────────────────────────────────────────────
-
-type ContactSlim = {
-  hubspot_id: string;
-  email: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  company: string | null;
-  lifecycle_stage: string | null;
-  owner_id: string | null;
-  last_activity_at: string | null;
-};
-
-type ScoreSlim = {
-  hubspot_contact_id: string;
-  score_total: number | null;
-};
-
-const PAGE_SIZE = 50;
-const SELECT_COLS =
-  "hubspot_id, email, first_name, last_name, company, lifecycle_stage, owner_id, last_activity_at";
-
-// Strip chars that break Supabase's .or() filter parser (commas,
-// parens, asterisk) or that would inject wildcards (%).
-function sanitizeSearch(s: string): string {
-  return s.replace(/[,()*%]/g, "").trim();
-}
-
-function sortContacts(
-  rows: ProspectRow[],
-  sort: SortKey,
-  dir: SortDir
-): ProspectRow[] {
-  const sign = dir === "asc" ? 1 : -1;
-  const cmpStr = (a: string | null, b: string | null) => {
-    if (a === b) return 0;
-    if (a === null || a === undefined) return 1; // nulls always last
-    if (b === null || b === undefined) return -1;
-    return a.localeCompare(b) * sign;
-  };
-  const cmpTime = (a: string | null, b: string | null) => {
-    if (a === b) return 0;
-    if (!a) return 1;
-    if (!b) return -1;
-    return (new Date(a).getTime() - new Date(b).getTime()) * sign;
-  };
-  const cmpNum = (a: number | null, b: number | null) => {
-    if (a === b) return 0;
-    if (a === null || a === undefined) return 1;
-    if (b === null || b === undefined) return -1;
-    return (a - b) * sign;
-  };
-
-  return [...rows].sort((x, y) => {
-    if (sort === "name") {
-      const xn = `${x.first_name ?? ""} ${x.last_name ?? ""}`.trim() || x.email;
-      const yn = `${y.first_name ?? ""} ${y.last_name ?? ""}`.trim() || y.email;
-      return cmpStr(xn, yn);
-    }
-    if (sort === "last_activity") return cmpTime(x.last_activity_at, y.last_activity_at);
-    return cmpNum(x.score_total, y.score_total);
-  });
-}
-
-// ── Page ───────────────────────────────────────────────────────────────────
-
-export default async function FundraisingProspectsPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  const { q, lifecycle, owner, scored, sort, dir, page } =
-    parseSearchParams(searchParams);
-
+export default async function MajorGiftsPage() {
   const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from("opportunities")
+    .select(
+      `id, name, stage, ask_amount, expected_close, probability,
+       capacity_rating, owner, next_step, next_step_due,
+       constituent:constituents ( id, type, first_name, last_name, org_name, external_ids )`
+    )
+    .order("next_step_due", { ascending: true, nullsFirst: false })
+    .order("updated_at", { ascending: false })
+    .limit(500);
 
-  // Query 1: contacts narrowed by server-side filters.
-  let contactsQuery = supabase.from("hs_contacts").select(SELECT_COLS);
-  const safeSearch = sanitizeSearch(q);
-  if (safeSearch.length > 0) {
-    const pattern = `%${safeSearch}%`;
-    contactsQuery = contactsQuery.or(
-      `first_name.ilike.${pattern},last_name.ilike.${pattern},email.ilike.${pattern}`
-    );
-  }
-  if (lifecycle) contactsQuery = contactsQuery.eq("lifecycle_stage", lifecycle);
-  if (owner) contactsQuery = contactsQuery.eq("owner_id", owner);
-
-  const { data: contactsRaw, error: contactsErr } = await contactsQuery;
-  if (contactsErr) {
-    console.error("[/admin/fundraising] contacts query failed:", {
-      code: contactsErr.code,
-      message: contactsErr.message,
-    });
-  }
-  const contacts: ContactSlim[] = (contactsRaw as ContactSlim[] | null) ?? [];
-
-  // Query 2: matching scores via IN(). Two-query merge instead of a join
-  // because there's no FK between hs_contacts.hubspot_id and
-  // fr_prospect_scores.hubspot_contact_id (PR 4 design — a prospect can
-  // be scored before the next sync runs).
-  let scoreMap = new Map<string, number | null>();
-  if (contacts.length > 0) {
-    const ids = contacts.map((c) => c.hubspot_id);
-    const { data: scoresRaw, error: scoresErr } = await supabase
-      .from("fr_prospect_scores")
-      .select("hubspot_contact_id, score_total")
-      .in("hubspot_contact_id", ids);
-    if (scoresErr) {
-      console.error("[/admin/fundraising] scores query failed:", {
-        code: scoresErr.code,
-        message: scoresErr.message,
-      });
-    }
-    const scores: ScoreSlim[] = (scoresRaw as ScoreSlim[] | null) ?? [];
-    scoreMap = new Map(scores.map((s) => [s.hubspot_contact_id, s.score_total]));
-  }
-
-  // Merge, scored-only filter, sort, paginate — all in JS for v1. With
-  // ~2.5k contacts and filters narrowing further, this stays fast.
-  let merged: ProspectRow[] = contacts.map((c) => ({
-    ...c,
-    score_total: scoreMap.get(c.hubspot_id) ?? null,
+  const opps: OpportunityRow[] = ((data ?? []) as unknown as DbOpportunity[]).map((o) => ({
+    id: o.id,
+    label: o.name ?? constituentName(o.constituent),
+    constituentId: o.constituent?.id ?? null,
+    constituentName: constituentName(o.constituent),
+    hubspotId:
+      typeof o.constituent?.external_ids?.["hubspot"] === "string"
+        ? (o.constituent.external_ids["hubspot"] as string)
+        : null,
+    stage: o.stage,
+    askAmount: o.ask_amount,
+    expectedClose: o.expected_close,
+    probability: o.probability,
+    capacityRating: o.capacity_rating,
+    owner: o.owner,
+    nextStep: o.next_step,
+    nextStepDue: o.next_step_due,
   }));
-  if (scored) merged = merged.filter((m) => m.score_total !== null);
 
-  const sorted = sortContacts(merged, sort, dir);
-  const totalCount = sorted.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const start = (safePage - 1) * PAGE_SIZE;
-  const pageRows = sorted.slice(start, start + PAGE_SIZE);
-
-  // Distinct dropdown values pulled from the full dataset (not from the
-  // current filter result) so dropdowns don't artificially narrow.
-  const { data: distinctRaw } = await supabase
-    .from("hs_contacts")
-    .select("lifecycle_stage, owner_id");
-  const distinct = (distinctRaw ?? []) as Array<
-    Pick<ContactSlim, "lifecycle_stage" | "owner_id">
-  >;
-  const lifecycleOptions = Array.from(
-    new Set(distinct.map((r) => r.lifecycle_stage).filter((v): v is string => !!v))
-  ).sort();
-  const ownerOptions = Array.from(
-    new Set(distinct.map((r) => r.owner_id).filter((v): v is string => !!v))
-  ).sort();
-
-  function buildSortHref(nextSort: SortKey, nextDir: SortDir): string {
-    const params = new URLSearchParams();
-    if (q) params.set("q", q);
-    if (lifecycle) params.set("lifecycle", lifecycle);
-    if (owner) params.set("owner", owner);
-    if (scored) params.set("scored", "1");
-    params.set("sort", nextSort);
-    params.set("dir", nextDir);
-    return `/admin/fundraising?${params.toString()}`;
-  }
-
-  function buildPageHref(p: number): string {
-    const params = new URLSearchParams();
-    if (q) params.set("q", q);
-    if (lifecycle) params.set("lifecycle", lifecycle);
-    if (owner) params.set("owner", owner);
-    if (scored) params.set("scored", "1");
-    if (sort !== "last_activity") params.set("sort", sort);
-    if (dir !== "desc") params.set("dir", dir);
-    if (p > 1) params.set("page", String(p));
-    const s = params.toString();
-    return s ? `/admin/fundraising?${s}` : "/admin/fundraising";
-  }
-
-  const fromIdx = totalCount === 0 ? 0 : start + 1;
-  const toIdx = Math.min(start + PAGE_SIZE, totalCount);
+  // Open stages carry weighted pipeline value; steward = committed.
+  const openStages = ["identify", "qualify", "cultivate", "solicit"];
+  const open = opps.filter((o) => openStages.includes(o.stage));
+  const committed = opps.filter((o) => o.stage === "steward");
+  const pipelineValue = open.reduce((s, o) => s + (o.askAmount ?? 0), 0);
+  const weightedValue = open.reduce(
+    (s, o) => s + ((o.askAmount ?? 0) * (o.probability ?? 50)) / 100,
+    0
+  );
+  const committedValue = committed.reduce((s, o) => s + (o.askAmount ?? 0), 0);
+  const today = new Date().toISOString().slice(0, 10);
+  const overdueMoves = open.filter((o) => o.nextStepDue && o.nextStepDue < today).length;
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-      <header className="flex items-baseline justify-between gap-4 mb-6 flex-wrap">
-        <h1 className="font-display font-black uppercase tracking-tight text-cream text-3xl sm:text-4xl leading-none">
-          Fundraising
-        </h1>
-        <div className="text-xs text-gray-mid">
-          {totalCount > 0 ? (
-            <>
-              Showing <span className="text-cream">{fromIdx}–{toIdx}</span> of{" "}
-              <span className="text-cream">{totalCount}</span>
-            </>
-          ) : (
-            "No matching prospects"
-          )}
+    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1400px]">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="font-heading font-bold text-2xl text-cream">Major Gifts</h1>
+          <p className="text-gray-mid text-sm mt-0.5">
+            Moves-management pipeline · Identification → Stewardship
+          </p>
         </div>
-      </header>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/fundraising/prospects"
+            className="text-xs font-semibold text-cream/70 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition-colors"
+          >
+            Prospect research →
+          </Link>
+          <NewOpportunityForm />
+        </div>
+      </div>
 
-      <ProspectFilters
-        q={q}
-        lifecycle={lifecycle}
-        owner={owner}
-        scored={scored}
-        lifecycleOptions={lifecycleOptions}
-        ownerOptions={ownerOptions}
-      />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        <StatCard
+          label="Open pipeline"
+          value={money(pipelineValue)}
+          sub={`${open.length} open ${open.length === 1 ? "ask" : "asks"}`}
+        />
+        <StatCard label="Weighted" value={money(weightedValue)} sub="ask × probability" />
+        <StatCard
+          label="Committed"
+          value={money(committedValue)}
+          sub={`${committed.length} in stewardship`}
+        />
+        <StatCard
+          label="Overdue next steps"
+          value={overdueMoves}
+          sub={overdueMoves > 0 ? "needs a move" : "all current"}
+          muted={overdueMoves === 0}
+        />
+      </div>
 
-      <ProspectListTable
-        rows={pageRows}
-        sort={sort}
-        dir={dir}
-        buildSortHref={buildSortHref}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 items-start">
+        {PIPELINE_STAGES.map((stage) => {
+          const col = opps.filter((o) => o.stage === stage);
+          const colValue = col.reduce((s, o) => s + (o.askAmount ?? 0), 0);
+          return (
+            <section
+              key={stage}
+              className="bg-white/[0.03] border border-white/10 rounded-card p-3 min-h-[120px]"
+            >
+              <header className="flex items-baseline justify-between px-1 mb-3">
+                <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70">
+                  {STAGE_LABELS[stage]}
+                </h2>
+                <span className="text-[11px] text-gray-mid tabular-nums">
+                  {col.length} · {money(colValue)}
+                </span>
+              </header>
+              <div className="space-y-2">
+                {col.map((o) => (
+                  <OpportunityCard key={o.id} opp={o} />
+                ))}
+                {col.length === 0 && (
+                  <p className="text-xs text-gray-mid/60 px-1 pb-1">Empty</p>
+                )}
+              </div>
+            </section>
+          );
+        })}
+      </div>
 
-      {totalPages > 1 && (
-        <nav
-          aria-label="Pagination"
-          className="mt-6 flex items-center justify-between text-xs text-gray-mid"
-        >
-          <div>
-            Page <span className="text-cream">{safePage}</span> of{" "}
-            <span className="text-cream">{totalPages}</span>
+      {opps.some((o) => o.stage === "lost") && (
+        <details className="mt-6">
+          <summary className="text-xs text-gray-mid cursor-pointer hover:text-cream/70">
+            Lost ({opps.filter((o) => o.stage === "lost").length})
+          </summary>
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-3">
+            {opps
+              .filter((o) => o.stage === "lost")
+              .map((o) => (
+                <OpportunityCard key={o.id} opp={o} />
+              ))}
           </div>
-          <div className="flex gap-2">
-            <PaginationLink
-              disabled={safePage <= 1}
-              href={buildPageHref(safePage - 1)}
-              label="← Prev"
-            />
-            <PaginationLink
-              disabled={safePage >= totalPages}
-              href={buildPageHref(safePage + 1)}
-              label="Next →"
-            />
-          </div>
-        </nav>
+        </details>
       )}
     </div>
-  );
-}
-
-function PaginationLink({
-  disabled,
-  href,
-  label,
-}: {
-  disabled: boolean;
-  href: string;
-  label: string;
-}) {
-  if (disabled) {
-    return (
-      <span className="px-3 py-1.5 rounded-lg border border-white/5 text-gray-mid/50 cursor-default">
-        {label}
-      </span>
-    );
-  }
-  return (
-    <Link
-      href={href}
-      className="px-3 py-1.5 rounded-lg border border-white/10 text-cream/80 hover:text-cream hover:bg-white/5"
-    >
-      {label}
-    </Link>
   );
 }

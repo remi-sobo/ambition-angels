@@ -89,8 +89,8 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Board", icon: "board", href: "/admin/board" },
       { label: "Compliance", icon: "compliance", href: "/admin/compliance" },
-      { label: "KPIs", icon: "kpis", soon: true },
-      { label: "Strategic Plan", icon: "strategy", href: "/strategy" },
+      { label: "KPIs", icon: "kpis", href: "/admin/kpis" },
+      { label: "Strategic Plan", icon: "strategy", href: "/admin/strategic-plan" },
     ],
   },
 ];

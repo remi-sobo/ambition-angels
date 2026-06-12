@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  let warning: string | undefined;
   const { error: ackErr } = await supabase.from("acknowledgments").insert({
     gift_id: giftId,
     template: "manual",
@@ -47,7 +48,10 @@ export async function POST(req: NextRequest) {
     sent_by: user,
     sent_at: sentAt,
   });
-  if (ackErr) console.error("acknowledgments insert failed:", ackErr.message);
+  if (ackErr) {
+    console.error("acknowledgments insert failed:", ackErr.message);
+    warning = "Marked as thanked, but the acknowledgment record could not be stored.";
+  }
 
   await audit(req, {
     action: "fundraising.acknowledgment.mark",
@@ -55,5 +59,5 @@ export async function POST(req: NextRequest) {
     entityId: giftId,
     after: { channel: "other" },
   });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, warning });
 }

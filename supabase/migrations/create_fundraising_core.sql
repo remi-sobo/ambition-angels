@@ -283,8 +283,8 @@ begin
 
     if cid is null then
       -- Older rows carry a single `name`; newer ones first/last.
-      fname := coalesce(d.first_name, nullif(split_part(coalesce(d.name, ''), ' ', 1), ''));
-      lname := coalesce(d.last_name, nullif(substr(coalesce(d.name, ''), length(split_part(coalesce(d.name, ''), ' ', 1)) + 2), ''));
+      fname := coalesce(d.first_name, nullif(split_part(coalesce(to_jsonb(d)->>'name', ''), ' ', 1), ''));
+      lname := coalesce(d.last_name, nullif(substr(coalesce(to_jsonb(d)->>'name', ''), length(split_part(coalesce(to_jsonb(d)->>'name', ''), ' ', 1)) + 2), ''));
       insert into constituents (org_id, type, first_name, last_name, emails, source)
       values (d.org_id, 'person', fname, lname, array[lower(d.email)], 'stripe')
       returning id into cid;

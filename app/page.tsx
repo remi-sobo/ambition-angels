@@ -1,9 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import CareerQuizModal from "@/components/CareerQuizModal";
 import IPhoneMockup from "@/components/IPhoneMockup";
+import AnimatedCounter from "@/components/AnimatedCounter";
 import { useDonateModal } from "@/components/DonateModalProvider";
 import { trackEvent } from "@/lib/analytics";
 
@@ -48,21 +49,6 @@ export default function Home() {
   const [quizOpen, setQuizOpen] = useState(false);
   const { openModal: openDonateModal } = useDonateModal();
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-    document.querySelectorAll(".fade-up").forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-
   return (
     <>
       <CareerQuizModal isOpen={quizOpen} onClose={() => setQuizOpen(false)} />
@@ -71,7 +57,7 @@ export default function Home() {
       <section className="relative min-h-[92vh] flex overflow-hidden">
 
         {/* LEFT -- photo fills this column */}
-        <div className="relative w-full lg:w-[58%] min-h-[50vh] lg:min-h-0">
+        <div className="relative w-full lg:w-[58%] min-h-[40vh] lg:min-h-0">
           <Image
             src="/images/hero-image.jpg"
             alt="Teen with phone, looking forward"
@@ -102,25 +88,25 @@ export default function Home() {
           />
 
           <div className="px-8 lg:px-12 py-20 pt-32 lg:pt-20 max-w-xl w-full">
-            <div className="inline-block text-xs font-medium text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
+            <div className="inline-block text-xs font-medium text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6 fade-up">
               Freshman Year to Career
             </div>
 
-            <h1 className="font-display font-black text-6xl lg:text-7xl text-cream mb-5 leading-none tracking-tight uppercase">
+            <h1 className="font-display font-black text-6xl lg:text-7xl text-cream mb-5 leading-none tracking-tight uppercase fade-up stagger-1">
               Career<br />
               exposure.<br />
               <span className="text-orange">In their<br />pocket.</span>
             </h1>
 
-            <p className="font-body text-gray-mid text-base lg:text-lg mb-8 leading-relaxed max-w-sm">
+            <p className="font-body text-gray-mid text-base lg:text-lg mb-8 leading-relaxed max-w-sm fade-up stagger-2">
               Teens discover real careers through simulated internships, on the phone they already have. Free for every student.
             </p>
 
             {/* App store buttons — primary */}
-            <p className="text-gray-mid/50 text-xs uppercase tracking-widest font-semibold mb-3">
+            <p className="text-gray-mid/50 text-xs uppercase tracking-widest font-semibold mb-3 fade-up stagger-3">
               Available now — free for every student.
             </p>
-            <div className="flex flex-wrap gap-3 mb-6">
+            <div className="flex flex-wrap gap-3 mb-6 fade-up stagger-3">
               <a
                 href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
                 target="_blank"
@@ -152,7 +138,7 @@ export default function Home() {
             </div>
 
             {/* Secondary CTAs */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 fade-up stagger-4">
               <button
                 onClick={() => {
                   trackEvent("career_quiz_cta_clicked");
@@ -243,11 +229,11 @@ export default function Home() {
         <div className="container-site relative z-10">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="fade-up stagger-1 text-center">
-              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">3,500+</div>
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight"><AnimatedCounter value="3,500+" /></div>
               <div className="text-gray-mid text-sm">Teens reached</div>
             </div>
             <div className="fade-up stagger-2 text-center">
-              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">87%</div>
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight"><AnimatedCounter value="87%" /></div>
               <div className="text-gray-mid text-sm">From Title I schools</div>
             </div>
             {/* 14% stat — dashed oval centered on the number */}
@@ -260,12 +246,12 @@ export default function Home() {
                 className="opacity-20 absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/4 pointer-events-none"
                 aria-hidden="true"
               />
-              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight relative z-10">14%</div>
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight relative z-10"><AnimatedCounter value="14%" /></div>
               <div className="text-gray-mid text-sm relative z-10">Increase in future orientation</div>
               <div className="text-gray-mid/60 text-xs relative z-10 mt-1 leading-snug max-w-[160px] mx-auto">A teen&apos;s belief that their future is worth working toward</div>
             </div>
             <div className="fade-up stagger-4 text-center">
-              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight">1,100+</div>
+              <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight"><AnimatedCounter value="1,100+" /></div>
               <div className="text-gray-mid text-sm">Hours of career exploration delivered</div>
             </div>
           </div>
@@ -370,7 +356,7 @@ export default function Home() {
             ].map((t, i) => (
               <div
                 key={t.name}
-                className={`bg-[#1a1a1a] border border-white/10 rounded-card-lg p-7 hover:border-white/20 hover:-translate-y-0.5 transition-all duration-200 fade-up stagger-${i + 1} flex flex-col`}
+                className={`bg-ink-soft border border-white/10 rounded-card-lg p-7 hover:border-white/20 hover:-translate-y-0.5 transition-all duration-200 fade-up stagger-${i + 1} flex flex-col`}
               >
                 <div className="font-display font-black text-6xl text-orange leading-none mb-3 -mt-1" aria-hidden="true">
                   &ldquo;

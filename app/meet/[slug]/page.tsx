@@ -8,9 +8,9 @@ type Props = { params: { slug: string } };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await fetchType(params.slug);
-  if (!t) return { title: "Meet with Remi | Ambition Angels" };
+  if (!t) return { title: "Meet with Remi" };
   return {
-    title: `${t.name} with Remi | Ambition Angels`,
+    title: `${t.name} with Remi`,
     description: t.description ?? undefined,
   };
 }

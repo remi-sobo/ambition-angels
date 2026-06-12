@@ -81,28 +81,6 @@ export const internships: Internship[] = [
       "Game design teaches you to think about how humans behave and how systems create behavior. That skill matters far beyond gaming.",
   },
   {
-    slug: "dental-hygiene",
-    title: "Dental Hygiene",
-    category: "Healthcare",
-    tag: "Healthcare",
-    duration: "30 days",
-    salaryRange: "$65K – $95K",
-    description:
-      "A hands-on healthcare career with strong pay, flexible hours, and real job security. No four-year degree required.",
-    longDescription:
-      "Dental hygienists are licensed healthcare professionals who clean teeth, examine patients for signs of disease, and teach patients about oral health. It is a stable, well-paying career that takes two years of school instead of four. This internship gives you a real look at what the job is like, what the training path looks like, and whether it fits your strengths.",
-    skills: ["Patient care", "Anatomy basics", "Medical charting", "Infection control", "Communication"],
-    dayInTheLife: [
-      "Shadow a hygienist through a full patient appointment",
-      "Learn the tools and techniques used in a cleaning",
-      "Study how oral health connects to overall body health",
-      "Chart a mock patient record and review it with a mentor",
-    ],
-    careers: ["Dental Hygienist", "Dental Assistant", "Office Manager", "Dental Sales Rep"],
-    whyItMatters:
-      "Healthcare is the largest employment sector in the US. Dental hygiene offers strong pay, meaningful patient contact, and a clear path from school to career.",
-  },
-  {
     slug: "wealth-management",
     title: "Wealth Management",
     category: "Finance",
@@ -191,28 +169,6 @@ export const internships: Internship[] = [
       "The US is projected to need over 200,000 new nurses per year through 2030. It is one of the most stable career paths in existence.",
   },
   {
-    slug: "real-estate",
-    title: "Real Estate",
-    category: "Finance",
-    tag: "Finance",
-    duration: "30 days",
-    salaryRange: "$50K – $300K+",
-    description:
-      "Land and buildings have built more wealth than almost anything else. Learn the business of real estate from the ground up.",
-    longDescription:
-      "Real estate is one of the most accessible paths to building real wealth. This internship covers how property markets work, how deals get structured, what agents and brokers do, and how investors think about returns. Whether you want a career in real estate or just want to understand how to own property one day, this internship builds that foundation.",
-    skills: ["Market analysis", "Negotiation", "Financial modeling", "Client relationships", "Contract basics"],
-    dayInTheLife: [
-      "Analyze a neighborhood's property values using real data",
-      "Walk through the numbers on a rental property investment",
-      "Practice explaining a listing to a first-time buyer",
-      "Study a real purchase contract and identify the key terms",
-    ],
-    careers: ["Real Estate Agent", "Property Manager", "Real Estate Investor", "Commercial Broker", "Appraiser"],
-    whyItMatters:
-      "Real estate creates more millionaires than any other asset class. Understanding it opens doors whether you work in the industry or not.",
-  },
-  {
     slug: "culinary-arts",
     title: "Culinary Arts",
     category: "Skilled Trades",
@@ -233,50 +189,6 @@ export const internships: Internship[] = [
     careers: ["Sous Chef", "Executive Chef", "Restaurant Owner", "Food Stylist", "Culinary Instructor"],
     whyItMatters:
       "Food brings people together. The culinary industry touches every part of society and offers real creative freedom for those who master the craft.",
-  },
-  {
-    slug: "social-work",
-    title: "Social Work",
-    category: "Public Service",
-    tag: "Public Service",
-    duration: "30 days",
-    salaryRange: "$40K – $80K",
-    description:
-      "For people who want to make a direct impact on other people's lives. Learn how social workers change communities one case at a time.",
-    longDescription:
-      "Social workers are advocates, counselors, and connectors who help people navigate some of the hardest moments of their lives. This internship introduces you to the breadth of the field, from child welfare to mental health to community organizing. You will learn the skills required, the paths into the profession, and whether this calling is yours.",
-    skills: ["Active listening", "Crisis assessment", "Case management", "Community resources", "Documentation"],
-    dayInTheLife: [
-      "Shadow a case manager through a client intake session",
-      "Map the social services available in a specific zip code",
-      "Practice a motivational interviewing technique",
-      "Analyze a real case study and propose a support plan",
-    ],
-    careers: ["Social Worker", "Case Manager", "School Counselor", "Community Organizer", "Nonprofit Director"],
-    whyItMatters:
-      "Social workers are on the front lines of every social challenge we face. This work creates ripple effects that last for generations.",
-  },
-  {
-    slug: "graphic-design",
-    title: "Graphic Design",
-    category: "Creative",
-    tag: "Creative",
-    duration: "30 days",
-    salaryRange: "$40K – $100K",
-    description:
-      "Visual communication is everywhere. Learn to design for real clients, build a portfolio, and understand the business behind creative work.",
-    longDescription:
-      "Graphic designers shape how the world looks, from the apps on your phone to the signs on the street. This internship covers design fundamentals like typography, color theory, layout, and hierarchy, then applies them to real briefs. You will learn industry tools, how to take client feedback, and how to build the portfolio that gets you hired.",
-    skills: ["Typography", "Color theory", "Layout design", "Brand identity", "Adobe / Figma basics"],
-    dayInTheLife: [
-      "Redesign a weak logo and explain every change you made",
-      "Create a social media graphic for a real nonprofit campaign",
-      "Review a design with a mentor and respond to feedback",
-      "Study three brands and analyze what makes their visuals work",
-    ],
-    careers: ["Graphic Designer", "Brand Designer", "Art Director", "UX Designer", "Creative Director"],
-    whyItMatters:
-      "Great design builds trust and moves people to act. Every brand, product, and cause needs someone who can translate ideas into visuals.",
   },
 ];
 

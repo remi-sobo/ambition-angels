@@ -4,7 +4,7 @@ import CompaniesContactForm from "./ContactForm";
 import PageVisitedEvent from "@/components/PageVisitedEvent";
 
 export const metadata: Metadata = {
-  title: "Corporate Partnership | Ambition Angels",
+  title: "Corporate Partnership",
   description:
     "Give the next generation a clear view of where work is going. Branded career paths, employee engagement, and measurable CSR impact.",
   robots: "noindex, nofollow",

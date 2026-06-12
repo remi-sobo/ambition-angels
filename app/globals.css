@@ -67,6 +67,17 @@
     height: auto;
   }
 
+  /* Brand-colored text selection */
+  ::selection {
+    background-color: var(--orange);
+    color: #ffffff;
+  }
+
+  /* Anchored sections (#waitlist, #the-deal, …) land below the fixed nav */
+  [id] {
+    scroll-margin-top: 6rem;
+  }
+
   /* Touch: eliminate 300ms tap delay on all buttons and links */
   button,
   a,

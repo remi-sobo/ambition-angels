@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { money } from "../../../finance/_components/charts";
 import StatCard from "../../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
+import { analyzeDonor, FLAG_LABELS, FLAG_HELP } from "@/lib/fundraising/retention";
+import { todayISO } from "../../../ops/_types/ops";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
 export const dynamic = "force-dynamic";
@@ -15,7 +17,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
 
   const supabase = getSupabaseAdmin();
-  const [cRes, giftsRes, plansRes, firstGiftRes, interactionsRes] = await Promise.all([
+  const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes] = await Promise.all([
     supabase.from("constituents").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("gifts")
@@ -27,14 +29,14 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .from("recurring_plans")
       .select("id, amount, frequency, status")
       .eq("constituent_id", params.id),
-    // Exact first gift, independent of the timeline's display cap.
+    // Full date history (dates only, cheap) — drives the first-gift stat
+    // AND retention flags, independent of the timeline's display cap.
     supabase
       .from("gifts")
       .select("gift_date")
       .eq("constituent_id", params.id)
       .order("gift_date", { ascending: true })
-      .limit(1)
-      .maybeSingle(),
+      .limit(5000),
     supabase
       .from("interactions")
       .select("id, kind, occurred_at, notes, logged_by")
@@ -71,6 +73,8 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const total = gifts.reduce((s, g) => s + g.amount, 0);
   const name = constituentName(c);
   const activePlan = plans.find((p) => p.status === "active");
+  const allDates = ((allDatesRes.data ?? []) as Array<{ gift_date: string }>).map((g) => g.gift_date);
+  const { flags } = analyzeDonor(allDates, todayISO(), Boolean(activePlan));
   const pendingAcks = gifts.filter((g) => g.acknowledgment_status === "pending").length;
 
   return (
@@ -88,6 +92,23 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         {c.do_not_contact && (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">Do not contact</span>
         )}
+        {flags.map((f) => (
+          <span
+            key={f}
+            title={FLAG_HELP[f]}
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+              f === "cadence_lapsed"
+                ? "bg-red-500/15 text-red-400"
+                : f === "lybunt"
+                ? "bg-amber-500/15 text-amber-400"
+                : f === "second_gift_watch"
+                ? "bg-blue-500/15 text-blue-400"
+                : "bg-white/10 text-gray-mid"
+            }`}
+          >
+            {FLAG_LABELS[f]}
+          </span>
+        ))}
       </div>
 
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 space-y-6">
@@ -96,7 +117,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
           <StatCard label="Gifts" value={gifts.length} sub={gifts.length > 0 ? `latest ${fmtDate(gifts[0].gift_date)}` : undefined} />
           <StatCard
             label="First Gift"
-            value={firstGiftRes.data?.gift_date ? fmtDate(firstGiftRes.data.gift_date) : "—"}
+            value={allDates[0] ? fmtDate(allDates[0]) : "—"}
           />
           <StatCard
             label="Acknowledgments"

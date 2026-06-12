@@ -1,12 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import StatCard from "../_components/StatCard";
-import {
-  PartnerRow,
-  NewPartnerForm,
-  STATUS_ORDER,
-  STATUS_LABELS,
-  type Partner,
-} from "./_components/PartnerControls";
+import { PartnerRow, NewPartnerForm, type Partner } from "./_components/PartnerControls";
+import { STATUS_ORDER, STATUS_LABELS } from "./_lib/status";
 
 // Schools & nonprofit partners (Ring 3, modules/02-program.md "Schools"):
 // the partner CRM — status pipeline, champion contact, MOU/data-agreement

@@ -5,14 +5,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export const COHORT_STATUSES = ["planning", "active", "completed", "archived"] as const;
 
-export const COHORT_STATUS_LABELS: Record<string, string> = {
-  planning: "Planning",
-  active: "Active",
-  completed: "Completed",
-  archived: "Archived",
-};
 
 const inputCls =
   "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/40";

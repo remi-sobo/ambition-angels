@@ -3,7 +3,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import { todayISO } from "../../ops/_types/ops";
-import { NewGrantForm, STAGES, STAGE_LABELS } from "./_components/GrantControls";
+import { NewGrantForm } from "./_components/GrantControls";
+import { STAGES, STAGE_LABELS } from "./_lib/stages";
 
 // Grants pipeline + requirements calendar (Ring 2,
 // modules/03-fundraising.md "Grants"). Pipeline columns mirror the spec

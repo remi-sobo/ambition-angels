@@ -46,6 +46,7 @@ ordered=(
   enable_rls_per_domain.sql
   create_connections_and_webhook_events.sql
   create_fundraising_core.sql
+  create_grants.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

@@ -12,7 +12,7 @@ import type { AdminUser } from "@/lib/admin/auth";
 
 type IconName =
   | "overview" | "briefing"
-  | "students" | "demoday" | "camp" | "schools" | "app" | "internships" | "career"
+  | "students" | "cohorts" | "demoday" | "camp" | "schools" | "app" | "internships" | "career"
   | "majorgifts" | "donors" | "grants" | "campaigns" | "events"
   | "finance" | "revenue" | "expenses" | "budget" | "cashflow"
   | "webanalytics" | "appanalytics" | "studentanalytics" | "surveys"
@@ -34,6 +34,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Program",
     items: [
       { label: "Students", icon: "students", href: "/admin/students" },
+      { label: "Cohorts", icon: "cohorts", href: "/admin/cohorts" },
       { label: "Demo Day", icon: "demoday", href: "/admin/demoday" },
       { label: "YGB Camp", icon: "camp", href: "/admin/ygb" },
       { label: "Schools & Partners", icon: "schools", href: "/admin/partners" },
@@ -115,6 +116,12 @@ const ICON_NODES: Record<IconName, ReactNode> = {
       <circle cx="9" cy="8" r="3.2" />
       <path d="M3.5 19.5v-1a4.5 4.5 0 0 1 4.5-4.5h2a4.5 4.5 0 0 1 4.5 4.5v1" />
       <path d="M15.5 5a3.2 3.2 0 0 1 0 6.1M17.5 14.2a4.5 4.5 0 0 1 3 4.3v1" />
+    </>
+  ),
+  cohorts: (
+    <>
+      <rect x="4" y="5.5" width="16" height="15" rx="2" />
+      <path d="M4 10h16M8 3.5v4M16 3.5v4M9 14.5l2 2 4-4" />
     </>
   ),
   demoday: (

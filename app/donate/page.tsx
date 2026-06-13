@@ -2,19 +2,13 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import DonateFaq from "@/components/DonateFaq";
 import DonateButton from "@/components/DonateButton";
+import { HEADLINE_STATS } from "@/lib/stats";
 
 export const metadata: Metadata = {
   title: "Donate",
   description:
     "Help teens reach their full potential. Your gift puts real career exposure in the pocket of every student who needs it.",
 };
-
-const heroStats = [
-  { label: "3,500+", sub: "Teens reached" },
-  { label: "87%", sub: "From Title I schools" },
-  { label: "14%", sub: "Increase in future orientation", note: "A teen's belief that their future is worth working toward" },
-  { label: "1,100+", sub: "Hours of career exploration delivered" },
-];
 
 export default function DonatePage() {
   return (
@@ -71,11 +65,11 @@ export default function DonatePage() {
               </p>
 
               <div className="flex flex-wrap gap-3 fade-up stagger-3">
-                {heroStats.map((s) => (
-                  <div key={s.sub} className="bg-cream/5 border border-cream/10 rounded-card px-4 py-3">
-                    <div className="font-display font-black text-xl text-orange tracking-tight">{s.label}</div>
-                    <div className="text-gray-mid text-xs">{s.sub}</div>
-                    {"note" in s && s.note && <div className="text-gray-mid/60 text-xs mt-0.5 italic leading-snug">{s.note}</div>}
+                {HEADLINE_STATS.map((s) => (
+                  <div key={s.label} className="bg-cream/5 border border-cream/10 rounded-card px-4 py-3">
+                    <div className="font-display font-black text-xl text-orange tracking-tight">{s.value}</div>
+                    <div className="text-gray-mid text-xs">{s.label}</div>
+                    {s.note && <div className="text-gray-mid/60 text-xs mt-0.5 italic leading-snug">{s.note}</div>}
                   </div>
                 ))}
               </div>

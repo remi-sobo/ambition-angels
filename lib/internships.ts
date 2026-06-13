@@ -190,6 +190,248 @@ export const internships: Internship[] = [
     whyItMatters:
       "Food brings people together. The culinary industry touches every part of society and offers real creative freedom for those who master the craft.",
   },
+  {
+    slug: "social-media-management",
+    title: "Social Media Management",
+    category: "Business",
+    tag: "Business",
+    duration: "30 days",
+    salaryRange: "$40K – $90K",
+    description:
+      "Turn attention into a career. Learn how brands and creators grow an audience, keep it engaged, and prove it worked.",
+    longDescription:
+      "Social media managers run the voice of a brand in the place teens already spend their time. This internship puts you on the team for an up-and-coming musical artist: you set goals, define the audience, plan content across platforms, drive engagement, and read the analytics to see what actually landed. You will learn that posting is the easy part — strategy is the job.",
+    skills: ["Content strategy", "Copywriting", "Platform analytics", "Community management", "Brand voice"],
+    dayInTheLife: [
+      "Define the target audience for an artist's next release",
+      "Build a one-week content calendar across two platforms",
+      "Write three post captions in the artist's voice",
+      "Read an engagement report and decide what to post more of",
+    ],
+    careers: ["Social Media Manager", "Content Creator", "Community Manager", "Brand Strategist", "Digital Marketer"],
+    whyItMatters:
+      "Every brand, artist, and cause now lives or dies by its presence online. People who can grow and hold an audience are in constant demand.",
+  },
+  {
+    slug: "human-resources",
+    title: "HR Management",
+    category: "Business",
+    tag: "Business",
+    duration: "30 days",
+    salaryRange: "$50K – $120K",
+    description:
+      "The people side of every company. Learn how teams get hired, onboarded, and set up to do their best work.",
+    longDescription:
+      "Human resources is how organizations take care of the people who make them run. In this internship you join a retail headquarters to onboard new store employees ahead of a busy season — building the plan that covers day one, safety, culture, training, and ongoing support. You will learn how good companies turn a new hire into a confident team member.",
+    skills: ["Communication", "Onboarding design", "Conflict resolution", "Policy basics", "Organization"],
+    dayInTheLife: [
+      "Map out a new employee's first day hour by hour",
+      "Draft a short culture-and-values welcome",
+      "Build a training checklist for a store role",
+      "Design a 30-day check-in to support a new hire",
+    ],
+    careers: ["HR Coordinator", "Recruiter", "People Operations Manager", "Training Specialist", "HR Director"],
+    whyItMatters:
+      "Every organization with employees needs people who understand people. HR is a stable, human-centered career with a clear path to leadership.",
+  },
+  {
+    slug: "event-planning",
+    title: "Event Planning",
+    category: "Business",
+    tag: "Business",
+    duration: "30 days",
+    salaryRange: "$40K – $95K",
+    description:
+      "Pull off the day everyone remembers. Learn how big events come together — budget, vendors, logistics, and the run-of-show.",
+    longDescription:
+      "Event planners turn an idea into a day that runs like clockwork. This internship drops you into an event studio planning a victory rally for state-champion high school teams. You will scope the event, set a budget, choose a theme and venue, line up vendors, and build the minute-by-minute plan that keeps the day on track — then review what worked afterward.",
+    skills: ["Project planning", "Budgeting", "Vendor coordination", "Logistics", "Problem solving under pressure"],
+    dayInTheLife: [
+      "Set the scope and goals for a championship rally",
+      "Build a working budget and find where to save",
+      "Compare two venues and make the call",
+      "Write a day-of run-of-show timeline",
+    ],
+    careers: ["Event Coordinator", "Event Planner", "Wedding Planner", "Conference Producer", "Venue Manager"],
+    whyItMatters:
+      "Events bring people together for the moments that matter. Planners who can run a flawless day are valued across every industry.",
+  },
+  {
+    slug: "project-management",
+    title: "Project Management",
+    category: "Business",
+    tag: "Business",
+    duration: "30 days",
+    salaryRange: "$60K – $135K",
+    description:
+      "The person who gets things shipped. Learn how to take a big goal and turn it into a plan a whole team can follow.",
+    longDescription:
+      "Project managers are the glue that keeps teams moving toward a goal. In this internship you help a tech company launch a tutoring app for high schoolers: defining scope, mapping stakeholders, building a schedule and budget, planning for risks, and supporting the launch. You will learn the skill every employer wants — making sure the right work happens at the right time.",
+    skills: ["Planning & scheduling", "Stakeholder communication", "Risk management", "Budgeting", "Prioritization"],
+    dayInTheLife: [
+      "Break an app launch into phases and milestones",
+      "List the stakeholders and what each one needs",
+      "Build a simple schedule with dependencies",
+      "Name three risks and a plan for each",
+    ],
+    careers: ["Project Coordinator", "Project Manager", "Program Manager", "Scrum Master", "Operations Lead"],
+    whyItMatters:
+      "Every team needs someone who can turn ambition into a plan and a plan into results. Project management skills transfer to any field.",
+  },
+  {
+    slug: "ux-ui-design",
+    title: "UX/UI Design",
+    category: "Technology",
+    tag: "Tech",
+    duration: "30 days",
+    salaryRange: "$65K – $150K",
+    description:
+      "Design the apps people love to use. Learn how research, layout, and testing turn a rough idea into a product that just works.",
+    longDescription:
+      "UX/UI designers decide how a product feels to use. This internship puts you on the team designing a chat app for teens: you will run user research, study the competition, build a design system, prototype screens, test them with real people, and plan the launch. You will learn to design for the human on the other side of the screen, not just to make things look good.",
+    skills: ["User research", "Wireframing", "Prototyping", "Design systems", "Usability testing"],
+    dayInTheLife: [
+      "Interview a potential user about how they message friends",
+      "Sketch three layouts for the same screen",
+      "Build a clickable prototype of the core flow",
+      "Run a quick usability test and note what confused people",
+    ],
+    careers: ["UX Designer", "UI Designer", "Product Designer", "Design Researcher", "Design Lead"],
+    whyItMatters:
+      "Every app, site, and device needs someone who makes it usable. UX/UI design is among the fastest-growing, best-paid creative careers.",
+  },
+  {
+    slug: "physical-therapy",
+    title: "Physical Therapy",
+    category: "Healthcare",
+    tag: "Healthcare",
+    duration: "30 days",
+    salaryRange: "$70K – $100K",
+    description:
+      "Help people move again. Learn how physical therapists rebuild strength and confidence after an injury.",
+    longDescription:
+      "Physical therapists get people back to the activities they love after injury or surgery. In this internship you help design a recovery plan for a teen soccer player coming back from ACL surgery — handling intake and safety, assessing the injury, setting goals, sequencing the rehab phases, and planning the at-home program. You will see what a hands-on healthcare career really looks like.",
+    skills: ["Anatomy basics", "Patient assessment", "Treatment planning", "Empathy", "Progress tracking"],
+    dayInTheLife: [
+      "Take an intake history for a teen athlete",
+      "Set safe, realistic recovery goals",
+      "Sequence the phases of an ACL rehab plan",
+      "Design a home exercise program for week one",
+    ],
+    careers: ["Physical Therapist", "PT Assistant", "Athletic Trainer", "Occupational Therapist", "Rehab Specialist"],
+    whyItMatters:
+      "An aging, active population needs more physical therapists every year. It is stable, hands-on, and deeply rewarding work.",
+  },
+  {
+    slug: "personal-training",
+    title: "Personal Training",
+    category: "Healthcare",
+    tag: "Healthcare",
+    duration: "30 days",
+    salaryRange: "$35K – $80K+",
+    description:
+      "Coach people to their goals. Learn how trainers assess clients, build programs, and keep them coming back.",
+    longDescription:
+      "Personal trainers turn health goals into real progress. This internship puts you in a neighborhood gym helping a new client: you will run an assessment, set goals, design a program, cover nutrition basics, plan sessions, and track progress over time. You will learn the coaching and communication skills that make a trainer worth coming back to — and how to turn it into a business.",
+    skills: ["Fitness assessment", "Program design", "Nutrition basics", "Coaching", "Motivation"],
+    dayInTheLife: [
+      "Assess a new client's fitness and goals",
+      "Design a balanced first-month program",
+      "Explain a nutrition basic in plain language",
+      "Plan a single session start to finish",
+    ],
+    careers: ["Personal Trainer", "Strength Coach", "Group Fitness Instructor", "Wellness Coach", "Gym Owner"],
+    whyItMatters:
+      "Health and fitness is a growing industry with flexible paths — from employee to entrepreneur — and the chance to change lives daily.",
+  },
+  {
+    slug: "mental-health-therapy",
+    title: "Mental Health Therapy",
+    category: "Healthcare",
+    tag: "Healthcare",
+    duration: "30 days",
+    salaryRange: "$50K – $100K",
+    description:
+      "Support people through the hard stuff. Learn how therapists listen, assess, and help teens build real resilience.",
+    longDescription:
+      "Mental health professionals help people understand themselves and navigate life's hardest moments. In this internship at a youth wellness center, you build a treatment plan for a teen facing stress — moving through assessment, understanding the challenge, setting goals, choosing interventions, monitoring progress, and planning for long-term resilience. You will learn what compassionate, skilled care actually involves.",
+    skills: ["Active listening", "Assessment basics", "Empathy", "Treatment planning", "Healthy boundaries"],
+    dayInTheLife: [
+      "Practice an intake conversation with a teen client",
+      "Identify the challenges behind the stress",
+      "Set supportive, realistic treatment goals",
+      "Choose a coping strategy and explain why it helps",
+    ],
+    careers: ["Therapist / Counselor", "Clinical Social Worker", "School Psychologist", "Youth Counselor", "Psychologist"],
+    whyItMatters:
+      "Demand for mental health care has never been higher, especially for youth. This field combines meaningful impact with strong job security.",
+  },
+  {
+    slug: "firefighting",
+    title: "Firefighting",
+    category: "Public Service",
+    tag: "Public Service",
+    duration: "30 days",
+    salaryRange: "$45K – $90K",
+    description:
+      "Run toward the emergency. Learn how firefighters respond, work as a team, and keep a community safe.",
+    longDescription:
+      "Firefighters are first responders trained for the worst day of someone's life. This internship puts you inside a fire station responding to community emergencies — from the alert and dispatch, through size-up and fire attack, to overhaul, safety, and the post-incident review. You will learn the discipline, teamwork, and decision-making that the job demands, and what the path into it looks like.",
+    skills: ["Situational awareness", "Teamwork", "Physical readiness", "Emergency response", "Clear communication"],
+    dayInTheLife: [
+      "Walk through what happens the moment a call comes in",
+      "Size up a scene and call the first priority",
+      "Learn each crew member's role on the team",
+      "Review an incident to find what to do better",
+    ],
+    careers: ["Firefighter", "EMT / Paramedic", "Fire Captain", "Fire Inspector", "Emergency Manager"],
+    whyItMatters:
+      "Firefighting is stable public-service work with strong pay, brotherhood, and a direct, daily impact on people's lives.",
+  },
+  {
+    slug: "photography-videography",
+    title: "Photography & Videography",
+    category: "Creative",
+    tag: "Creative",
+    duration: "30 days",
+    salaryRange: "$40K – $100K+",
+    description:
+      "Tell stories with a camera. Learn how creative studios shoot, edit, and deliver work clients love.",
+    longDescription:
+      "Photographers and videographers capture the moments people keep forever. This internship puts you in a creative studio producing a graduation photoshoot and party video — from the client consult and pre-production planning, through the shoot days, into editing, delivery, and managing the client relationship. You will learn that great media is half craft, half running a real creative business.",
+    skills: ["Composition", "Lighting basics", "Editing", "Client communication", "Project management"],
+    dayInTheLife: [
+      "Run a client consult to learn what they want",
+      "Build a shot list for a graduation shoot",
+      "Plan the gear and timeline for shoot day",
+      "Edit a short sequence and prep it for delivery",
+    ],
+    careers: ["Photographer", "Videographer", "Photo Editor", "Content Producer", "Creative Director"],
+    whyItMatters:
+      "Visual content drives everything online. Skilled photo and video creators can build careers as employees, freelancers, or studio owners.",
+  },
+  {
+    slug: "stylist-barber",
+    title: "Stylist / Barber",
+    category: "Skilled Trades",
+    tag: "Trades",
+    duration: "30 days",
+    salaryRange: "$35K – $90K+",
+    description:
+      "A craft, a chair, and a community. Learn the skills and the business behind a career in hair.",
+    longDescription:
+      "Stylists and barbers master a hands-on craft and often build a business around it. This internship puts you inside a community salon and barbershop, working through a personalized plan to enter the industry: skill development, practice, tools, client relationships, the business basics, and a long-term career plan. You will learn why a great chair is about trust as much as technique.",
+    skills: ["Cutting & styling fundamentals", "Tools & sanitation", "Client consultation", "Customer service", "Small-business basics"],
+    dayInTheLife: [
+      "Learn the core tools of the trade and their care",
+      "Practice a consultation to understand what a client wants",
+      "Map the licensing path in your state",
+      "Sketch a plan to build a loyal client base",
+    ],
+    careers: ["Barber", "Hair Stylist", "Salon Owner", "Color Specialist", "Booth Renter / Entrepreneur"],
+    whyItMatters:
+      "Skilled trades like barbering offer a fast path to earning, creative freedom, and the chance to own your own business.",
+  },
 ];
 
 export function getInternshipBySlug(slug: string): Internship | undefined {

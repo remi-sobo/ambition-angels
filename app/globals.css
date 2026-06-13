@@ -167,6 +167,88 @@
 .stagger-3 { animation-delay: 160ms; }
 .stagger-4 { animation-delay: 240ms; }
 
+/* ── Reveal system (transition-based) ─────────────────────────────────────
+   Newer, smoother alternative to .fade-up. Transition-based so each element
+   can carry an arbitrary --reveal-delay (set inline or auto-assigned to the
+   children of a [data-stagger] container by components/ScrollAnimations).
+   Add `.reveal` plus an optional direction modifier; ScrollAnimations adds
+   `.is-visible` when the element scrolls into view. */
+.reveal {
+  opacity: 0;
+  transform: translateY(36px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+.reveal-left  { transform: translateX(-44px); }
+.reveal-right { transform: translateX(44px); }
+.reveal-scale { transform: scale(0.92); }
+.reveal-blur  { filter: blur(8px); transition-property: opacity, transform, filter; }
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* ── Appear — CSS-only entrance that replays on (re)mount ──────────────────
+   For lists that re-render on interaction (e.g. the filterable curriculum
+   grid), where the IntersectionObserver in ScrollAnimations won't re-fire.
+   Cascade with an inline animation-delay per item. */
+@keyframes appear {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+.appear {
+  animation: appear 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Hover lift — cards that rise and deepen their shadow on hover ──────── */
+.hover-lift {
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 48px -16px rgba(14, 14, 14, 0.18);
+}
+
+/* ── Ambient float — used by the iPhone mockup ─────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-14px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ── Soft pulse glow — used behind hero CTAs / accents ─────────────────── */
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.08); }
+}
+.animate-glow {
+  animation: glowPulse 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+  .hover-lift:hover { transform: none; }
+  .animate-float,
+  .animate-glow { animation: none; }
+  .appear { animation: none; opacity: 1; transform: none; }
+}
+
 /* Stat counter animation */
 @keyframes countUp {
   from { opacity: 0; transform: translateY(12px); }

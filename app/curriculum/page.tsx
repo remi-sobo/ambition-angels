@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import CareerQuizModal from "@/components/CareerQuizModal";
+import { trackEvent } from "@/lib/analytics";
+import { Sparkles } from "lucide-react";
 import {
   Activity,
   Brain,
@@ -76,6 +79,7 @@ const tracks: Track[] = [
   {
     category: "Business & Entrepreneurship",
     title: "Social Media Management",
+    slug: "social-media-management",
     icon: Smartphone,
     employer: "Royal",
     employerDesc: "An up-and-coming musical artist building a fanbase",
@@ -86,6 +90,7 @@ const tracks: Track[] = [
   {
     category: "Business & Entrepreneurship",
     title: "HR Management",
+    slug: "human-resources",
     icon: Users,
     employer: "OurMart",
     employerDesc: "A community-first retail brand with locations nationwide",
@@ -96,6 +101,7 @@ const tracks: Track[] = [
   {
     category: "Business & Entrepreneurship",
     title: "Event Planning",
+    slug: "event-planning",
     icon: PartyPopper,
     employer: "Make Memories",
     employerDesc: "An event planning studio for parties, banquets, and festivals",
@@ -106,6 +112,7 @@ const tracks: Track[] = [
   {
     category: "Business & Entrepreneurship",
     title: "Project Management",
+    slug: "project-management",
     icon: ClipboardList,
     employer: "Higher Learning",
     employerDesc: "A student-focused edtech platform",
@@ -138,6 +145,7 @@ const tracks: Track[] = [
   {
     category: "Tech & Design",
     title: "UX/UI Design",
+    slug: "ux-ui-design",
     icon: Palette,
     employer: "Chatter",
     employerDesc: "A messaging app built for teens and young adults",
@@ -170,6 +178,7 @@ const tracks: Track[] = [
   {
     category: "Health & Wellness",
     title: "Physical Therapy",
+    slug: "physical-therapy",
     icon: Activity,
     employer: "Rise & Recover Rehab",
     employerDesc: "A community clinic for safe, personalized rehab",
@@ -180,6 +189,7 @@ const tracks: Track[] = [
   {
     category: "Health & Wellness",
     title: "Personal Training",
+    slug: "personal-training",
     icon: Dumbbell,
     employer: "Just Fitness",
     employerDesc: "A neighborhood gym where trainers coach clients toward better health",
@@ -190,6 +200,7 @@ const tracks: Track[] = [
   {
     category: "Health & Wellness",
     title: "Mental Health Therapy",
+    slug: "mental-health-therapy",
     icon: Brain,
     employer: "Head Up Wellness",
     employerDesc: "A youth mental health center built on compassionate care",
@@ -200,6 +211,7 @@ const tracks: Track[] = [
   {
     category: "Health & Wellness",
     title: "Firefighting",
+    slug: "firefighting",
     icon: Flame,
     employer: "Station 53",
     employerDesc: "A firehouse responding to fires, medical calls, and rescues",
@@ -221,6 +233,7 @@ const tracks: Track[] = [
   {
     category: "Creative & Trades",
     title: "Photography & Videography",
+    slug: "photography-videography",
     icon: Camera,
     employer: "Imagine Images",
     employerDesc: "A full-service studio crafting photo and video experiences",
@@ -231,6 +244,7 @@ const tracks: Track[] = [
   {
     category: "Creative & Trades",
     title: "Stylist / Barber",
+    slug: "stylist-barber",
     icon: Scissors,
     employer: "Cut-N-Style",
     employerDesc: "A community salon and barbershop offering classic cuts to intricate styles",
@@ -250,11 +264,14 @@ const CATEGORIES = [
 
 export default function CurriculumPage() {
   const [active, setActive] = useState("All");
+  const [quizOpen, setQuizOpen] = useState(false);
 
   const visible = active === "All" ? tracks : tracks.filter((t) => t.category === active);
 
   return (
     <>
+      <CareerQuizModal isOpen={quizOpen} onClose={() => setQuizOpen(false)} />
+
       {/* HERO */}
       <section
         className="section-pad bg-ink relative overflow-hidden"
@@ -321,6 +338,32 @@ export default function CurriculumPage() {
       <section className="section-pad bg-cream">
         <div className="container-site">
 
+          {/* Not sure where to start? — career quiz */}
+          <div className="reveal mb-10 flex flex-col sm:flex-row sm:items-center gap-5 rounded-card-lg border border-orange/20 bg-orange-light/60 px-6 py-5 sm:px-8">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="w-12 h-12 rounded-xl bg-orange text-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-orange/30">
+                <Sparkles className="w-6 h-6" strokeWidth={1.75} aria-hidden="true" />
+              </div>
+              <div>
+                <h2 className="font-heading font-bold text-ink text-lg leading-tight">
+                  Not sure which track fits?
+                </h2>
+                <p className="text-gray-warm text-sm leading-snug mt-0.5">
+                  Answer a few quick questions and we&apos;ll point you to careers worth exploring.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                trackEvent("career_quiz_cta_clicked", { source: "curriculum" });
+                setQuizOpen(true);
+              }}
+              className="bg-orange hover:bg-orange-dark text-white font-semibold text-sm px-7 py-3.5 rounded-full transition-all hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-orange/20 min-h-[48px] inline-flex items-center justify-center flex-shrink-0 self-start sm:self-auto"
+            >
+              Take the Career Quiz
+            </button>
+          </div>
+
           {/* Filter buttons */}
           <div className="flex flex-wrap gap-3 mb-10 fade-up">
             {CATEGORIES.map((cat) => (
@@ -342,10 +385,11 @@ export default function CurriculumPage() {
           </div>
 
           {/* Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visible.map((track) => {
+          <div key={active} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {visible.map((track, i) => {
               const cardClass =
-                "group bg-white border border-gray-light rounded-card-lg p-7 shadow-sm hover:shadow-lg hover:border-orange/30 hover:-translate-y-0.5 transition-all flex flex-col";
+                "appear hover-lift group bg-white border border-gray-light rounded-card-lg p-7 shadow-sm hover:border-orange/30 hover:shadow-lg flex flex-col";
+              const cardStyle = { animationDelay: `${Math.min(i, 8) * 55}ms` };
               const inner = (
                 <>
                 {/* Icon + employer tag */}
@@ -411,11 +455,11 @@ export default function CurriculumPage() {
               );
 
               return track.slug ? (
-                <Link key={track.title} href={`/curriculum/${track.slug}`} className={cardClass}>
+                <Link key={track.title} href={`/curriculum/${track.slug}`} className={cardClass} style={cardStyle}>
                   {inner}
                 </Link>
               ) : (
-                <div key={track.title} className={cardClass}>
+                <div key={track.title} className={cardClass} style={cardStyle}>
                   {inner}
                 </div>
               );

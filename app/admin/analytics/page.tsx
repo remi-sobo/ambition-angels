@@ -9,10 +9,10 @@ import AnalyticsView from "../AnalyticsView";
 export default function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#13151f] border-b border-white/10 px-4 sm:px-6 lg:px-10 py-3 sm:py-4 sticky admin-sticky-top z-30">
+      <div className="bg-[#13151f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30">
         <span className="font-heading font-bold text-cream text-sm sm:text-base">Website Analytics</span>
       </div>
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
+      <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8">
         <AnalyticsView />
       </div>
     </div>

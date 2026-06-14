@@ -1,5 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import SectionHeading from "../_components/SectionHeading";
 import StatCard from "../_components/StatCard";
+import PageHeader from "../_components/PageHeader";
 import { StudentRow, NewStudentForm, type Student } from "./_components/StudentControls";
 import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS } from "./_lib/stages";
 
@@ -28,16 +30,12 @@ export default async function StudentsPage() {
   const missingGuardian = engaged.filter((x) => !x.guardian_email && !x.guardian_phone);
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1100px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Students</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
-            One roster across programs · journey from discover to launch
-          </p>
-        </div>
-        <NewStudentForm />
-      </div>
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+      <PageHeader
+        title="Students"
+        subtitle="One roster across programs · journey from discover to launch"
+        actions={<NewStudentForm />}
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard label="On the roster" value={active.length} sub={`${students.length} all-time`} />
@@ -84,9 +82,9 @@ export default async function StudentsPage() {
           if (rows.length === 0) return null;
           return (
             <section key={stage}>
-              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-2">
+              <SectionHeading className="mb-2">
                 {STAGE_LABELS[stage]} ({rows.length})
-              </h2>
+              </SectionHeading>
               <div className="space-y-2">
                 {rows.map((s) => (
                   <StudentRow key={s.id} student={s} />

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import StatCard from "../_components/StatCard";
+import PageHeader from "../_components/PageHeader";
 import {
   ComplianceRow,
   NewComplianceForm,
@@ -48,16 +49,12 @@ export default async function CompliancePage() {
     );
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1000px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Compliance</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
-            Filings, renewals, and policy deadlines — none of them live in someone&apos;s head
-          </p>
-        </div>
-        <NewComplianceForm />
-      </div>
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
+      <PageHeader
+        title="Compliance"
+        subtitle="Filings, renewals, and policy deadlines — none of them live in someone's head"
+        actions={<NewComplianceForm />}
+      />
 
       <div className="grid grid-cols-3 gap-3 mb-8">
         <StatCard

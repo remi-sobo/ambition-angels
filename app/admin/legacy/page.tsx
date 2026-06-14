@@ -513,7 +513,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-ink">
 
       {/* ── HEADER ── */}
-      <div className="bg-[#13151f] border-b border-white/10 px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex items-center justify-between gap-3 sticky admin-sticky-top z-30 flex-wrap">
+      <div className="bg-[#13151f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3 sticky admin-sticky-top z-30 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
           <span className="font-heading font-bold text-cream text-sm sm:text-base">Admin Dashboard</span>
           {lastUpdated && (
@@ -550,7 +550,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 space-y-8">
+      <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-8">
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-3 text-red-400 text-sm">

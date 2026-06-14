@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
@@ -449,8 +450,20 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
   const navPanel = (
     <>
       <div className="px-5 py-5 border-b border-white/10">
-        <div className="font-display font-black text-xl uppercase tracking-tight text-cream">BloomOS</div>
-        <div className="text-[11px] tracking-wide text-cream/50 mt-0.5">
+        <div className="flex items-center gap-2.5">
+          <Image
+            src="/admin/bloomos-mark.png"
+            alt=""
+            width={32}
+            height={32}
+            className="rounded-lg shrink-0"
+            priority
+          />
+          <div className="font-display font-black text-xl uppercase tracking-tight text-cream leading-none">
+            Bloom<span className="text-[#A8B58C]">OS</span>
+          </div>
+        </div>
+        <div className="text-[11px] tracking-wide text-cream/50 mt-1.5">
           Operating System for Ambition Angels
         </div>
       </div>

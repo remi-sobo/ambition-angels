@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { computeKpis, formatKpi } from "@/lib/kpis";
 import { TargetEditor } from "./_components/KpiControls";
+import PageHeader from "../_components/PageHeader";
 
 // KPI scorecard (Ring 4, modules/07-governance.md): 12-ish indicators
 // computed live from the spine, with targets, RAG status, and a trend vs
@@ -63,14 +64,11 @@ export default async function KpisPage() {
   };
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1000px]">
-      <div className="mb-6">
-        <h1 className="font-heading font-bold text-2xl text-cream">KPIs</h1>
-        <p className="text-gray-mid text-sm mt-0.5">
-          Computed live from the spine — set targets, watch the trend. Snapshots write every
-          Monday; trends compare to ~4 weeks ago.
-        </p>
-      </div>
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
+      <PageHeader
+        title="KPIs"
+        subtitle="Computed live from the spine — set targets, watch the trend. Snapshots write every Monday; trends compare to ~4 weeks ago."
+      />
 
       <div className="space-y-2">
         {rows.map(({ k, target, owner, rag, trend, trendGood, prev }) => (

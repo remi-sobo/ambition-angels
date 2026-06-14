@@ -5,6 +5,7 @@
 // Mutations go through the admin APIs, then router.refresh().
 
 import { useState } from "react";
+import SectionHeading from "../../_components/SectionHeading";
 import { useRouter } from "next/navigation";
 
 export type BoardMember = {
@@ -423,9 +424,9 @@ export function MeetingCard({
       {open && (
         <div className="mt-4 space-y-4">
           <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-1.5">
+            <SectionHeading as="h3" className="mb-1.5">
               Agenda
-            </h3>
+            </SectionHeading>
             <ol className="space-y-1">
               {meeting.agenda.map((a, i) => (
                 <li key={i} className="text-[13px] text-cream/85">
@@ -466,9 +467,9 @@ export function MeetingCard({
           </div>
 
           <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-1.5">
+            <SectionHeading as="h3" className="mb-1.5">
               Attendance
-            </h3>
+            </SectionHeading>
             <div className="flex flex-wrap gap-2">
               {members.map((m) => {
                 const present = presentIds.has(m.id);
@@ -491,9 +492,9 @@ export function MeetingCard({
           </div>
 
           <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-1.5">
+            <SectionHeading as="h3" className="mb-1.5">
               Minutes
-            </h3>
+            </SectionHeading>
             {approved ? (
               <p className="text-[13px] text-cream/85 whitespace-pre-wrap border border-white/10 rounded-lg p-3 bg-white/[0.02]">
                 {meeting.minutes ?? "—"}

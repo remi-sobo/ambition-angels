@@ -1,5 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import SectionHeading from "../_components/SectionHeading";
 import StatCard from "../_components/StatCard";
+import PageHeader from "../_components/PageHeader";
 import { PartnerRow, NewPartnerForm, type Partner } from "./_components/PartnerControls";
 import { STATUS_ORDER, STATUS_LABELS } from "./_lib/status";
 
@@ -35,16 +37,12 @@ export default async function PartnersPage() {
   );
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1100px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Schools & Partners</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
-            Prospect → outreach → pilot → active → anchor · MOUs, champions, touch cadence
-          </p>
-        </div>
-        <NewPartnerForm />
-      </div>
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+      <PageHeader
+        title="Schools & Partners"
+        subtitle="Prospect → outreach → pilot → active → anchor · MOUs, champions, touch cadence"
+        actions={<NewPartnerForm />}
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         <StatCard label="Active partners" value={active.length} sub={`${live.length} in pipeline`} />
@@ -69,9 +67,9 @@ export default async function PartnersPage() {
           if (rows.length === 0) return null;
           return (
             <section key={status}>
-              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-2">
+              <SectionHeading className="mb-2">
                 {STATUS_LABELS[status]} ({rows.length})
-              </h2>
+              </SectionHeading>
               <div className="space-y-2">
                 {rows.map((p) => (
                   <PartnerRow key={p.id} partner={p} />

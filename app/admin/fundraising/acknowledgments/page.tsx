@@ -66,14 +66,14 @@ export default async function AcknowledgmentsPage() {
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#13151f] border-b border-white/10 px-4 sm:px-6 lg:px-10 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
+      <div className="bg-[#13151f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
         <Link href="/admin/fundraising/donors" className="text-xs font-semibold text-gray-mid hover:text-cream transition-colors">
           ← Donors
         </Link>
         <span className="font-heading font-bold text-cream text-sm sm:text-base">Acknowledgments</span>
       </div>
 
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 space-y-6">
+      <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard
             label="Awaiting Thanks"

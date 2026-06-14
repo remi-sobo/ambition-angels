@@ -9,25 +9,30 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // These four tokens are CSS-var-backed (channel triples) so the
+        // BloomOS admin can re-theme them within `.admin-shell` without
+        // touching the public Ambition Angels brand. :root holds the public
+        // values (see globals.css); `.admin-shell` overrides them to the
+        // warm, logo-matched palette. Channel format keeps `/opacity` working.
         orange: {
-          DEFAULT: "#E8500A",
-          dark: "#B83D06",
-          light: "#FFF0EA",
-          mid: "#F47840",
+          DEFAULT: "rgb(var(--c-orange) / <alpha-value>)",
+          dark: "rgb(var(--c-orange-dark) / <alpha-value>)",
+          light: "rgb(var(--c-orange-light) / <alpha-value>)",
+          mid: "rgb(var(--c-orange-mid) / <alpha-value>)",
         },
-        ink: "#0E0E0E",
+        ink: "rgb(var(--c-ink) / <alpha-value>)",
         // Raised-surface dark for cards on ink backgrounds (public site).
         "ink-soft": "#1A1A1A",
         // BloomOS product chrome (docs/bloomos/06-design-system.md §2).
         navy: {
-          DEFAULT: "#10214B",
-          light: "#1A2F63",
+          DEFAULT: "rgb(var(--c-navy) / <alpha-value>)",
+          light: "rgb(var(--c-navy-light) / <alpha-value>)",
         },
         charcoal: "#3D3D3D",
         "gray-warm": "#6B6960",
         "gray-mid": "#C8C6BE",
         "gray-light": "#F0EEE8",
-        cream: "#FAFAF8",
+        cream: "rgb(var(--c-cream) / <alpha-value>)",
       },
       fontFamily: {
         display: ["var(--font-display)", "sans-serif"],

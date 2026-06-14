@@ -140,7 +140,7 @@ export function CircleGauge({
   pct,
   size = 130,
   thickness = 14,
-  color = "#E8500A",
+  color = "#C0764E",
   trackColor = "rgba(255,255,255,0.08)",
   label,
   value,
@@ -199,7 +199,7 @@ export function Sparkline({
   values,
   width = 120,
   height = 36,
-  color = "#E8500A",
+  color = "#C0764E",
   fill,
 }: {
   values: number[];
@@ -340,7 +340,7 @@ export function CashFlowChart({
                 width={innerBarW}
                 height={expH}
                 rx={2}
-                fill="#E8500A"
+                fill="#C0764E"
                 opacity={0.85}
               />
             )}
@@ -395,7 +395,7 @@ export function CashFlowChart({
       {/* Legend */}
       <g transform={`translate(${pad.left} ${pad.top - 12})`}>
         <Swatch x={0} fill="#10b981" label="Revenue" />
-        <Swatch x={90} fill="#E8500A" label="Expense" />
+        <Swatch x={90} fill="#C0764E" label="Expense" />
         <g transform="translate(180 0)">
           <line x1={0} x2={16} y1={4} y2={4} stroke="#FAFAF8" strokeWidth={2} />
           <text x={22} y={8} className="fill-[#6B6960]" fontSize={10}>
@@ -429,7 +429,7 @@ export function ProgressBar({
   intent?: "ok" | "warn" | "over";
   height?: number;
 }) {
-  const c = intent === "over" ? "#ef4444" : intent === "warn" ? "#f59e0b" : "#E8500A";
+  const c = intent === "over" ? "#ef4444" : intent === "warn" ? "#f59e0b" : "#C0764E";
   const trackC = "rgba(255,255,255,0.06)";
   const fillPct = Math.min(1, Math.max(0, pct));
   const overflow = pct > 1 ? Math.min(1, pct - 1) : 0;

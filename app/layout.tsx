@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Big_Shoulders_Display, Poppins, DM_Sans } from "next/font/google";
+import { Big_Shoulders_Display, Poppins, DM_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
@@ -24,6 +24,16 @@ const poppins = Poppins({
 const dmSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-body",
+  display: "swap",
+});
+
+// BloomOS (admin) display/heading face. Scoped to `.admin-shell` in
+// globals.css so the public Ambition Angels site keeps Big Shoulders /
+// Poppins. Chosen to echo the geometric grotesque of the BloomOS wordmark.
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-grotesk",
   display: "swap",
 });
 
@@ -75,7 +85,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${bigShoulders.variable} ${poppins.variable} ${dmSans.variable}`}>
+    <html lang="en" className={`${bigShoulders.variable} ${poppins.variable} ${dmSans.variable} ${spaceGrotesk.variable}`}>
       <body className="antialiased">
         <script
           type="application/ld+json"

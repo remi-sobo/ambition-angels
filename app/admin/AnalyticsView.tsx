@@ -602,7 +602,7 @@ export default function AnalyticsView() {
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+    <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
       <div className="font-display font-black text-3xl lg:text-4xl text-orange tracking-tight leading-none mb-2 truncate">
         {value}
       </div>
@@ -622,7 +622,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+    <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
       <div className="px-6 py-5 border-b border-white/10">
         <h2 className="font-heading font-bold text-cream text-lg">{title}</h2>
         {subtitle && <p className="text-gray-mid text-xs mt-0.5">{subtitle}</p>}

@@ -61,7 +61,7 @@ export default async function BriefingPage() {
           )}
 
           {b.narrative && (
-            <div className="bg-[#161926] border border-orange/20 rounded-card p-5 text-[15px] text-cream/90 leading-relaxed whitespace-pre-wrap">
+            <div className="bg-[#1d1812] border border-orange/20 rounded-card p-5 text-[15px] text-cream/90 leading-relaxed whitespace-pre-wrap">
               {b.narrative}
             </div>
           )}
@@ -95,7 +95,7 @@ export default async function BriefingPage() {
                 ["Pipeline moves", String(b.data.week.pipelineMoves)],
                 ["Awaiting acknowledgment", String(b.data.todos.pendingAcks)],
               ].map(([label, value]) => (
-                <div key={label} className="bg-[#161926] border border-white/10 rounded-xl p-3">
+                <div key={label} className="bg-[#1d1812] border border-white/10 rounded-xl p-3">
                   <div className="text-[10px] uppercase tracking-wider text-gray-mid">{label}</div>
                   <div className="font-bold text-cream tabular-nums">{value}</div>
                 </div>

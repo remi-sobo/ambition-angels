@@ -281,7 +281,7 @@ function TypeRow({
     name: type.name,
     description: type.description ?? "",
     prep_notes: type.prep_notes ?? "",
-    color: type.color ?? "#E8500A",
+    color: type.color ?? "#C0764E",
     duration_minutes: type.duration_minutes,
     buffer_minutes: type.buffer_minutes,
     min_notice_hours: type.min_notice_hours,
@@ -498,7 +498,7 @@ function TypeRow({
         }
         :global(.admin-input:focus) {
           outline: none;
-          border-color: #e8500a;
+          border-color: #c0764e;
         }
       `}</style>
     </div>

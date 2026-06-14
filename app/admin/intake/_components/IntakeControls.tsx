@@ -92,7 +92,7 @@ export function ApplicationRow({
 
   return (
     <article
-      className={`bg-[#161926] border border-white/10 rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
+      className={`bg-[#1d1812] border border-white/10 rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-semibold text-cream">{app.name}</span>
@@ -150,9 +150,9 @@ export function ApplicationRow({
               onChange={(e) => patch({ cohort_id: e.target.value || null })}
               className="text-[11px] bg-white/5 border border-white/10 rounded-md px-2 py-1 text-cream/80 cursor-pointer max-w-[200px]"
             >
-              <option value="" className="bg-[#161926]">No cohort</option>
+              <option value="" className="bg-[#1d1812]">No cohort</option>
               {cohorts.map((c) => (
-                <option key={c.id} value={c.id} className="bg-[#161926]">{c.name}</option>
+                <option key={c.id} value={c.id} className="bg-[#1d1812]">{c.name}</option>
               ))}
             </select>
             <select
@@ -162,7 +162,7 @@ export function ApplicationRow({
               className="text-[11px] bg-white/5 border border-white/10 rounded-md px-2 py-1 text-cream/80 cursor-pointer"
             >
               {[1, 2, 3].map((p) => (
-                <option key={p} value={p} className="bg-[#161926]">{PRIORITY_LABELS[p]}</option>
+                <option key={p} value={p} className="bg-[#1d1812]">{PRIORITY_LABELS[p]}</option>
               ))}
             </select>
           </>

@@ -12,7 +12,7 @@
  * Scope is set to "/admin/" at registration time (see AdminPWA.tsx).
  */
 
-const CACHE = "aa-admin-v1";
+const CACHE = "aa-admin-v2";
 const CORE = ["/admin"];
 
 self.addEventListener("install", (event) => {
@@ -74,8 +74,13 @@ self.addEventListener("fetch", (event) => {
         if (cached) return cached;
         try {
           const fresh = await fetch(req);
-          const cache = await caches.open(CACHE);
-          cache.put(req, fresh.clone()).catch(() => undefined);
+          // Only cache successful responses — caching a 404/redirect here
+          // would pin a broken asset (cache-first) until the SW version
+          // bumps. This is what previously stuck a missing logo in place.
+          if (fresh && fresh.ok && fresh.type === "basic") {
+            const cache = await caches.open(CACHE);
+            cache.put(req, fresh.clone()).catch(() => undefined);
+          }
           return fresh;
         } catch {
           return new Response("Offline", { status: 503 });

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import StatCard from "../_components/StatCard";
+import PageHeader from "../_components/PageHeader";
 import { PartnerRow, NewPartnerForm, type Partner } from "./_components/PartnerControls";
 import { STATUS_ORDER, STATUS_LABELS } from "./_lib/status";
 
@@ -36,15 +37,11 @@ export default async function PartnersPage() {
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1100px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Schools & Partners</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
-            Prospect → outreach → pilot → active → anchor · MOUs, champions, touch cadence
-          </p>
-        </div>
-        <NewPartnerForm />
-      </div>
+      <PageHeader
+        title="Schools & Partners"
+        subtitle="Prospect → outreach → pilot → active → anchor · MOUs, champions, touch cadence"
+        actions={<NewPartnerForm />}
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         <StatCard label="Active partners" value={active.length} sub={`${live.length} in pipeline`} />

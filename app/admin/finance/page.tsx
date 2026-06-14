@@ -12,6 +12,7 @@ import {
   type DonutSeg,
   type MonthBucket,
 } from "./_components/charts";
+import PageHeader from "../_components/PageHeader";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -352,19 +353,11 @@ export default async function FinanceDashboardPage() {
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header — SubNav now lives in app/admin/finance/layout.tsx so it
           persists across every finance page. */}
-      <header>
-        <div className="text-[10px] uppercase tracking-[0.25em] text-orange/80 mb-1">
-          Fiscal year {cfg.year}
-        </div>
-        <h1 className="font-display font-black uppercase tracking-tight text-cream text-4xl sm:text-5xl leading-none">
-          Dashboard
-        </h1>
-        <p className="mt-2 text-sm text-gray-mid max-w-2xl">
-          Live picture of cash, burn, fundraising, and budget. Numbers
-          update as transactions are imported, categorized, and pledges
-          are received.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow={`Fiscal year ${cfg.year}`}
+        title="Dashboard"
+        subtitle="Live picture of cash, burn, fundraising, and budget. Numbers update as transactions are imported, categorized, and pledges are received."
+      />
 
       {/* Hero KPIs */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

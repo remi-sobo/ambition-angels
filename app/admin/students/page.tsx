@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import StatCard from "../_components/StatCard";
+import PageHeader from "../_components/PageHeader";
 import { StudentRow, NewStudentForm, type Student } from "./_components/StudentControls";
 import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS } from "./_lib/stages";
 
@@ -29,15 +30,11 @@ export default async function StudentsPage() {
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1100px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Students</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
-            One roster across programs · journey from discover to launch
-          </p>
-        </div>
-        <NewStudentForm />
-      </div>
+      <PageHeader
+        title="Students"
+        subtitle="One roster across programs · journey from discover to launch"
+        actions={<NewStudentForm />}
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard label="On the roster" value={active.length} sub={`${students.length} all-time`} />

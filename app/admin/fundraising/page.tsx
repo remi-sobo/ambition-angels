@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { money } from "../finance/_components/charts";
+import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
 import { NewOpportunityForm, OpportunityCard } from "./_components/PipelineBoard";
 import {
@@ -90,23 +91,21 @@ export default async function MajorGiftsPage() {
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1400px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Major Gifts</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
-            Moves-management pipeline · Identification → Stewardship
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin/fundraising/prospects"
-            className="text-xs font-semibold text-cream/70 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition-colors"
-          >
-            Prospect research →
-          </Link>
-          <NewOpportunityForm />
-        </div>
-      </div>
+      <PageHeader
+        title="Major Gifts"
+        subtitle="Moves-management pipeline · Identification → Stewardship"
+        actions={
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/fundraising/prospects"
+              className="text-xs font-semibold text-cream/70 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition-colors"
+            >
+              Prospect research →
+            </Link>
+            <NewOpportunityForm />
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         <StatCard

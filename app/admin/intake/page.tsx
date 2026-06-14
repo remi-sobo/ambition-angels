@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
 import {
   ApplicationRow,
@@ -108,21 +109,19 @@ export default async function IntakePage() {
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1100px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Intake</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
-            Applications from the public form · screen → waitlist → offer → roster
-          </p>
-        </div>
-        <a
-          href="/apply"
-          target="_blank"
-          className="text-xs font-semibold text-cream/70 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full transition-colors"
-        >
-          View public form ↗
-        </a>
-      </div>
+      <PageHeader
+        title="Intake"
+        subtitle="Applications from the public form · screen → waitlist → offer → roster"
+        actions={
+          <a
+            href="/apply"
+            target="_blank"
+            className="text-xs font-semibold text-cream/70 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full transition-colors"
+          >
+            View public form ↗
+          </a>
+        }
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard label="To screen" value={count("new")} sub="new applications" muted={count("new") === 0} />

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { GenerateButton } from "./_components/BriefingControls";
+import PageHeader from "../_components/PageHeader";
 import type { BriefingData } from "@/lib/briefing";
 
 // Executive Briefing (Ring 4, modules/01-command-center.md): the AI chief
@@ -34,15 +35,11 @@ export default async function BriefingPage() {
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[800px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Executive Briefing</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
-            Narrated from live data — every number is computed, never invented
-          </p>
-        </div>
-        <GenerateButton />
-      </div>
+      <PageHeader
+        title="Executive Briefing"
+        subtitle="Narrated from live data — every number is computed, never invented"
+        actions={<GenerateButton />}
+      />
 
       {!b ? (
         <p className="text-sm text-gray-mid">

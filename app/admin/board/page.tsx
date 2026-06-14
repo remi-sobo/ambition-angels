@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
 import {
   MemberRow,
@@ -63,15 +64,11 @@ export default async function BoardPage() {
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1100px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Board</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
-            Terms, conflict-of-interest, board giving, meetings & minutes
-          </p>
-        </div>
-        <NewMemberForm />
-      </div>
+      <PageHeader
+        title="Board"
+        subtitle="Terms, conflict-of-interest, board giving, meetings & minutes"
+        actions={<NewMemberForm />}
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         <StatCard label="Active members" value={active.length} />

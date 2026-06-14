@@ -34,7 +34,7 @@ export default async function BriefingPage() {
     | null;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[800px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[800px]">
       <PageHeader
         title="Executive Briefing"
         subtitle="Narrated from live data — every number is computed, never invented"

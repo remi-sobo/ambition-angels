@@ -64,7 +64,7 @@ export default async function KpisPage() {
   };
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1000px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
       <PageHeader
         title="KPIs"
         subtitle="Computed live from the spine — set targets, watch the trend. Snapshots write every Monday; trends compare to ~4 weeks ago."

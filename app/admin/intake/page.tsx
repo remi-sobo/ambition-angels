@@ -108,7 +108,7 @@ export default async function IntakePage() {
   const closedApps = apps.filter((a) => CLOSED.includes(a.status));
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <PageHeader
         title="Intake"
         subtitle="Applications from the public form · screen → waitlist → offer → roster"

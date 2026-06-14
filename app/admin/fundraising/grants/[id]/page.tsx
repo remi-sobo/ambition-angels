@@ -72,7 +72,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#13151f] border-b border-white/10 px-4 sm:px-6 lg:px-10 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3 flex-wrap">
+      <div className="bg-[#13151f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3 flex-wrap">
         <Link href="/admin/fundraising/grants" className="text-xs font-semibold text-gray-mid hover:text-cream transition-colors">
           ← Grants
         </Link>
@@ -85,7 +85,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
         </div>
       </div>
 
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 space-y-6">
+      <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <section className="lg:col-span-5 bg-[#1a1d27] border border-white/10 rounded-card-lg p-5 space-y-3">
             <h2 className="font-heading font-bold text-cream text-sm mb-1">Details</h2>

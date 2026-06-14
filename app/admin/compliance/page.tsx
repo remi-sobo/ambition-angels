@@ -49,7 +49,7 @@ export default async function CompliancePage() {
     );
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1000px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
       <PageHeader
         title="Compliance"
         subtitle="Filings, renewals, and policy deadlines — none of them live in someone's head"

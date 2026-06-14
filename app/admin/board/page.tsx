@@ -63,7 +63,7 @@ export default async function BoardPage() {
   ).length;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <PageHeader
         title="Board"
         subtitle="Terms, conflict-of-interest, board giving, meetings & minutes"

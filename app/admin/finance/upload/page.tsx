@@ -90,7 +90,7 @@ export default function FinanceUploadPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8">
       <header className="mb-8">
         <div className="flex items-baseline justify-between gap-4 mb-2 flex-wrap">
           <h1 className="font-display font-black uppercase tracking-tight text-cream text-3xl sm:text-4xl leading-none">

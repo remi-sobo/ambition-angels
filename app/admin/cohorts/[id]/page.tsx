@@ -114,7 +114,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
   const regulars = memberViews.filter((m) => m.regular).length;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <Link href="/admin/cohorts" className="text-[11px] text-gray-mid hover:text-cream">
         ← All cohorts
       </Link>

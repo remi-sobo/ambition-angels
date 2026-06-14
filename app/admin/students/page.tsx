@@ -29,7 +29,7 @@ export default async function StudentsPage() {
   const missingGuardian = engaged.filter((x) => !x.guardian_email && !x.guardian_phone);
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <PageHeader
         title="Students"
         subtitle="One roster across programs · journey from discover to launch"

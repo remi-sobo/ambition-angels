@@ -90,7 +90,7 @@ export default async function MajorGiftsPage() {
   const overdueMoves = open.filter((o) => o.nextStepDue && o.nextStepDue < today).length;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1400px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1400px]">
       <PageHeader
         title="Major Gifts"
         subtitle="Moves-management pipeline · Identification → Stewardship"

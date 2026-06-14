@@ -350,7 +350,7 @@ export default async function FinanceDashboardPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       {/* Header — SubNav now lives in app/admin/finance/layout.tsx so it
           persists across every finance page. */}
       <PageHeader
@@ -440,7 +440,7 @@ export default async function FinanceDashboardPage() {
 
       {/* Cash flow chart */}
       <section className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
-        <h2 className="text-sm uppercase tracking-widest text-orange/80 font-medium mb-1">
+        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-1">
           Cash flow · 12 months
         </h2>
         <p className="text-xs text-gray-mid mb-4">
@@ -453,7 +453,7 @@ export default async function FinanceDashboardPage() {
       {/* Splits */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
-          <h2 className="text-sm uppercase tracking-widest text-orange/80 font-medium mb-1">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-1">
             Functional split
           </h2>
           <p className="text-xs text-gray-mid mb-5">
@@ -494,7 +494,7 @@ export default async function FinanceDashboardPage() {
         </div>
 
         <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
-          <h2 className="text-sm uppercase tracking-widest text-orange/80 font-medium mb-1">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-1">
             Revenue by source
           </h2>
           <p className="text-xs text-gray-mid mb-5">
@@ -515,7 +515,7 @@ export default async function FinanceDashboardPage() {
       {/* Budget vs actual */}
       <section className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
         <div className="flex items-baseline justify-between flex-wrap gap-2 mb-4">
-          <h2 className="text-sm uppercase tracking-widest text-orange/80 font-medium">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70">
             Budget vs actual
           </h2>
           <Link
@@ -566,7 +566,7 @@ export default async function FinanceDashboardPage() {
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
           <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-sm uppercase tracking-widest text-orange/80 font-medium">
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70">
               Pledge pipeline
             </h2>
             <Link
@@ -595,7 +595,7 @@ export default async function FinanceDashboardPage() {
 
         <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
           <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-sm uppercase tracking-widest text-orange/80 font-medium">
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70">
               Recent transactions
             </h2>
             <Link

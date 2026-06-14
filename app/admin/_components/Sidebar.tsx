@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
@@ -451,13 +450,16 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
     <>
       <div className="px-5 py-5 border-b border-white/10">
         <div className="flex items-center gap-2.5">
-          <Image
+          {/* Plain <img> (not next/image): the admin PWA service worker is
+              cache-first under /admin/, and the raw static asset is far more
+              reliable there than the /_next/image optimizer round-trip. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/admin/bloomos-mark.png"
             alt=""
             width={32}
             height={32}
             className="rounded-lg shrink-0"
-            priority
           />
           <div className="font-display font-black text-xl uppercase tracking-tight text-cream leading-none">
             Bloom<span className="text-[#A8B58C]">OS</span>

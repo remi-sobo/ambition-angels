@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import SectionHeading from "../_components/SectionHeading";
 import StatCard from "../_components/StatCard";
 import PageHeader from "../_components/PageHeader";
 import { PartnerRow, NewPartnerForm, type Partner } from "./_components/PartnerControls";
@@ -66,9 +67,9 @@ export default async function PartnersPage() {
           if (rows.length === 0) return null;
           return (
             <section key={status}>
-              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-2">
+              <SectionHeading className="mb-2">
                 {STATUS_LABELS[status]} ({rows.length})
-              </h2>
+              </SectionHeading>
               <div className="space-y-2">
                 {rows.map((p) => (
                   <PartnerRow key={p.id} partner={p} />

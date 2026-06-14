@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import SectionHeading from "../_components/SectionHeading";
 import { GenerateButton } from "./_components/BriefingControls";
 import PageHeader from "../_components/PageHeader";
 import type { BriefingData } from "@/lib/briefing";
@@ -67,9 +68,9 @@ export default async function BriefingPage() {
 
           {b.priorities.length > 0 && (
             <section>
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-2">
+              <SectionHeading as="h3" className="mb-2">
                 Recommended priorities
-              </h3>
+              </SectionHeading>
               <ol className="space-y-2">
                 {b.priorities.map((p, i) => (
                   <li key={i} className="flex gap-3 text-sm text-cream/90">
@@ -84,9 +85,9 @@ export default async function BriefingPage() {
           )}
 
           <section>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-2">
+            <SectionHeading as="h3" className="mb-2">
               The week in numbers
-            </h3>
+            </SectionHeading>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
               {[
                 ["Gifts", `${b.data.week.gifts} · ${fmtUsd(b.data.week.giftTotal)}`],
@@ -104,9 +105,9 @@ export default async function BriefingPage() {
 
           {b.data.deadlines.length > 0 && (
             <section>
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-2">
+              <SectionHeading as="h3" className="mb-2">
                 Next two weeks
-              </h3>
+              </SectionHeading>
               <ul className="space-y-1 text-sm text-cream/85">
                 {b.data.deadlines.map((d, i) => (
                   <li key={i}>

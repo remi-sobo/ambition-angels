@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import SectionHeading from "../_components/SectionHeading";
 import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
 import {
@@ -96,9 +97,9 @@ export default async function BoardPage() {
       </div>
 
       <section className="mb-10">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-2">
+        <SectionHeading className="mb-2">
           Members
-        </h2>
+        </SectionHeading>
         <div className="space-y-2">
           {members.map((m) => (
             <MemberRow
@@ -119,9 +120,9 @@ export default async function BoardPage() {
 
       <section>
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70">
+          <SectionHeading>
             Meetings
-          </h2>
+          </SectionHeading>
           <NewMeetingForm />
         </div>
         <div className="space-y-3">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SectionHeading from "../_components/SectionHeading";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
@@ -173,9 +174,9 @@ export default async function IntakePage() {
               : [...rows].sort((a, b) => b.created_at.localeCompare(a.created_at));
           return (
             <section key={status}>
-              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-2">
+              <SectionHeading className="mb-2">
                 {APP_STATUS_LABELS[status]} ({rows.length})
-              </h2>
+              </SectionHeading>
               <div className="space-y-2">
                 {ordered.map((a) => (
                   <ApplicationRow key={a.id} app={toView(a)} cohorts={cohortOptions} />
@@ -187,9 +188,9 @@ export default async function IntakePage() {
 
         {closedApps.length > 0 && (
           <section>
-            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-2">
+            <SectionHeading className="mb-2">
               Closed ({closedApps.length})
-            </h2>
+            </SectionHeading>
             <div className="space-y-2">
               {closedApps.map((a) => (
                 <ApplicationRow key={a.id} app={toView(a)} cohorts={cohortOptions} />

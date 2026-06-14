@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import SectionHeading from "../_components/SectionHeading";
 import StatCard from "../_components/StatCard";
 import PageHeader from "../_components/PageHeader";
 import { StudentRow, NewStudentForm, type Student } from "./_components/StudentControls";
@@ -81,9 +82,9 @@ export default async function StudentsPage() {
           if (rows.length === 0) return null;
           return (
             <section key={stage}>
-              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-2">
+              <SectionHeading className="mb-2">
                 {STAGE_LABELS[stage]} ({rows.length})
-              </h2>
+              </SectionHeading>
               <div className="space-y-2">
                 {rows.map((s) => (
                   <StudentRow key={s.id} student={s} />

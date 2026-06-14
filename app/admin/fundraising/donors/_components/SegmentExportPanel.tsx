@@ -5,6 +5,7 @@
 // current filters as a named definition; segment chips export directly.
 
 import { useEffect, useState } from "react";
+import SectionHeading from "../../../_components/SectionHeading";
 
 type Segment = {
   id: string;
@@ -88,9 +89,9 @@ export default function SegmentExportPanel() {
   return (
     <div className="w-full bg-[#1a1d27] border border-white/10 rounded-card p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70">
+        <SectionHeading>
           Segments & CSV export
-        </h2>
+        </SectionHeading>
         <button onClick={() => setOpen(false)} className="text-xs text-gray-mid hover:text-cream">
           Close
         </button>

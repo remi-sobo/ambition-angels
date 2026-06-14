@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SectionHeading from "../../_components/SectionHeading";
 import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import StatCard from "../../_components/StatCard";
@@ -154,9 +155,9 @@ export default async function CohortPage({ params }: { params: { id: string } })
 
       <section className="mb-8">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70">
+          <SectionHeading>
             Sessions ({sessionViews.length})
-          </h2>
+          </SectionHeading>
           <NewSessionForm cohortId={cohort.id} />
         </div>
         <div className="space-y-2">
@@ -171,9 +172,9 @@ export default async function CohortPage({ params }: { params: { id: string } })
 
       <section>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70">
+          <SectionHeading>
             Members ({memberViews.length})
-          </h2>
+          </SectionHeading>
           <AddMemberForm cohortId={cohort.id} candidates={candidates} />
         </div>
         <div className="space-y-2">

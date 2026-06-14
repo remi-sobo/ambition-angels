@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SectionHeading from "../_components/SectionHeading";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { money } from "../finance/_components/charts";
 import PageHeader from "../_components/PageHeader";
@@ -137,9 +138,9 @@ export default async function MajorGiftsPage() {
               className="bg-white/[0.03] border border-white/10 rounded-card p-3 min-h-[120px]"
             >
               <header className="flex items-baseline justify-between px-1 mb-3">
-                <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70">
+                <SectionHeading>
                   {STAGE_LABELS[stage]}
-                </h2>
+                </SectionHeading>
                 <span className="text-[11px] text-gray-mid tabular-nums">
                   {col.length} · {money(colValue)}
                 </span>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SectionHeading from "../_components/SectionHeading";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { FinCategory } from "@/lib/finance/types";
 import { loadHubSpotPledges } from "@/lib/finance/hubspot-pledges";
@@ -440,9 +441,9 @@ export default async function FinanceDashboardPage() {
 
       {/* Cash flow chart */}
       <section className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-1">
+        <SectionHeading className="mb-1">
           Cash flow · 12 months
-        </h2>
+        </SectionHeading>
         <p className="text-xs text-gray-mid mb-4">
           Bars are revenue (up) and expense (down). The line traces ending
           balance, starting from the {money(cfg.startBal)} anchor.
@@ -453,9 +454,9 @@ export default async function FinanceDashboardPage() {
       {/* Splits */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-1">
+          <SectionHeading className="mb-1">
             Functional split
-          </h2>
+          </SectionHeading>
           <p className="text-xs text-gray-mid mb-5">
             How {money(expenseYTD)} of expense breaks down across program,
             admin, and fundraising — the same split a Form 990 reports.
@@ -494,9 +495,9 @@ export default async function FinanceDashboardPage() {
         </div>
 
         <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-1">
+          <SectionHeading className="mb-1">
             Revenue by source
-          </h2>
+          </SectionHeading>
           <p className="text-xs text-gray-mid mb-5">
             Received revenue plus actuals from bank transactions, grouped by
             who it came from. Projected pipeline shown separately below.
@@ -515,9 +516,9 @@ export default async function FinanceDashboardPage() {
       {/* Budget vs actual */}
       <section className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
         <div className="flex items-baseline justify-between flex-wrap gap-2 mb-4">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70">
+          <SectionHeading>
             Budget vs actual
-          </h2>
+          </SectionHeading>
           <Link
             href="/admin/finance/budget"
             className="text-xs text-gray-mid hover:text-cream"
@@ -566,9 +567,9 @@ export default async function FinanceDashboardPage() {
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
           <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70">
+            <SectionHeading>
               Pledge pipeline
-            </h2>
+            </SectionHeading>
             <Link
               href="/admin/finance/revenue"
               className="text-xs text-gray-mid hover:text-cream"
@@ -595,9 +596,9 @@ export default async function FinanceDashboardPage() {
 
         <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
           <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70">
+            <SectionHeading>
               Recent transactions
-            </h2>
+            </SectionHeading>
             <Link
               href="/admin/finance/transactions"
               className="text-xs text-gray-mid hover:text-cream"

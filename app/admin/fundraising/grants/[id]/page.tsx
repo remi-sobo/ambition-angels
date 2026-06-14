@@ -42,7 +42,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className="font-heading font-bold text-cream text-2xl mb-4">Grants</h1>
-        <div className="bg-[#1a1d27] border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-gray-mid leading-relaxed">
+        <div className="bg-[#231f18] border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-gray-mid leading-relaxed">
           The grants tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_grants.sql</code> via Actions → Apply DB migration,
           then reload.
@@ -72,7 +72,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#13151f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3 flex-wrap">
+      <div className="bg-[#19150f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3 flex-wrap">
         <Link href="/admin/fundraising/grants" className="text-xs font-semibold text-gray-mid hover:text-cream transition-colors">
           ← Grants
         </Link>
@@ -87,7 +87,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
 
       <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <section className="lg:col-span-5 bg-[#1a1d27] border border-white/10 rounded-card-lg p-5 space-y-3">
+          <section className="lg:col-span-5 bg-[#231f18] border border-white/10 rounded-card-lg p-5 space-y-3">
             <h2 className="font-heading font-bold text-cream text-sm mb-1">Details</h2>
             {facts.map(([label, value]) => (
               <div key={label} className="flex gap-3 text-xs">
@@ -98,7 +98,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
             {g.notes && <p className="text-xs text-gray-mid border-t border-white/10 pt-3 whitespace-pre-wrap">{g.notes}</p>}
           </section>
 
-          <section className="lg:col-span-7 bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+          <section className="lg:col-span-7 bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-white/10">
               <h2 className="font-heading font-bold text-cream text-sm">Requirements Calendar</h2>
             </div>

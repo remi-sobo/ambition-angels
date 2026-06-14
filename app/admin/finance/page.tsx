@@ -211,7 +211,7 @@ export default async function FinanceDashboardPage() {
     else functionalTotals.uncategorized += -t.amount;
   }
   const functionalSegs: DonutSeg[] = [
-    { label: "Program", value: functionalTotals.program, color: "#E8500A" },
+    { label: "Program", value: functionalTotals.program, color: "#C0764E" },
     { label: "Admin", value: functionalTotals.admin, color: "#FAFAF8" },
     { label: "Fundraising", value: functionalTotals.fundraising, color: "#10b981" },
     { label: "Uncategorized", value: functionalTotals.uncategorized, color: "#f59e0b" },
@@ -252,7 +252,7 @@ export default async function FinanceDashboardPage() {
   }
   const SOURCE_COLOR: Record<string, string> = {
     foundation: "#10b981",
-    individual: "#E8500A",
+    individual: "#C0764E",
     corporate: "#f59e0b",
     government: "#FAFAF8",
     accelerator: "#a78bfa",
@@ -417,7 +417,7 @@ export default async function FinanceDashboardPage() {
             pct={budgetPct}
             value={`${Math.round(budgetPct * 100)}%`}
             label="budget"
-            color={budgetPct > 1 ? "#ef4444" : budgetPct > 0.8 ? "#f59e0b" : "#E8500A"}
+            color={budgetPct > 1 ? "#ef4444" : budgetPct > 0.8 ? "#f59e0b" : "#C0764E"}
           />
         </Hero>
       </section>
@@ -689,7 +689,7 @@ function Hero({
       </div>
       {sparkline && sparkline.length > 1 && (
         <div className="mt-3 -mb-1">
-          <Sparkline values={sparkline} width={220} height={36} color="#E8500A" />
+          <Sparkline values={sparkline} width={220} height={36} color="#C0764E" />
         </div>
       )}
     </div>

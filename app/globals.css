@@ -26,6 +26,41 @@
     --gray-mid: #C8C6BE;
     --gray-light: #F0EEE8;
     --cream: #FAFAF8;
+
+    /* Channel triples backing the var-based Tailwind tokens (orange / ink /
+       cream / navy). These are the PUBLIC Ambition Angels values; the
+       BloomOS admin overrides them in `.admin-shell` below. */
+    --c-orange: 232 80 10;
+    --c-orange-dark: 184 61 6;
+    --c-orange-light: 255 240 234;
+    --c-orange-mid: 244 120 64;
+    --c-ink: 14 14 14;
+    --c-cream: 250 250 248;
+    --c-navy: 16 33 75;
+    --c-navy-light: 26 47 99;
+  }
+
+  /* ── BloomOS (admin) theme ─────────────────────────────────────────────
+     Warm, earthy palette pulled from the BloomOS logo (sage / terracotta /
+     charcoal / cream), scoped to the admin shell so the public marketing
+     site is untouched. Re-points the var-backed color tokens and swaps the
+     display/heading face to Space Grotesk. */
+  .admin-shell {
+    --c-orange: 192 118 78; /* terracotta — primary CTA / accent */
+    --c-orange-dark: 158 91 56;
+    --c-orange-light: 243 230 221;
+    --c-orange-mid: 206 144 112;
+    --c-ink: 23 20 15; /* warm near-black app background */
+    --c-cream: 240 239 226; /* warm cream text */
+    --c-navy: 38 32 25; /* espresso chrome (sidebar / top bar) */
+    --c-navy-light: 48 41 32;
+
+    /* Globals' focus ring + ::selection read this hex var. */
+    --orange: #c0764e;
+
+    /* BloomOS display/heading voice. Body stays DM Sans. */
+    --font-display: var(--font-grotesk);
+    --font-heading: var(--font-grotesk);
   }
 
   html {

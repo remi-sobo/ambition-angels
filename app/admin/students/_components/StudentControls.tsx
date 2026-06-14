@@ -81,7 +81,7 @@ export function StudentRow({ student }: { student: Student }) {
 
   return (
     <article
-      className={`bg-[#161926] border border-white/10 rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
+      className={`bg-[#1d1812] border border-white/10 rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-semibold text-cream">{fullName(student)}</span>
@@ -117,7 +117,7 @@ export function StudentRow({ student }: { student: Student }) {
           className="text-[11px] bg-white/5 border border-white/10 rounded-md px-2 py-1 text-cream/80 cursor-pointer"
         >
           {STAGE_ORDER.map((s) => (
-            <option key={s} value={s} className="bg-[#161926]">{STAGE_LABELS[s]}</option>
+            <option key={s} value={s} className="bg-[#1d1812]">{STAGE_LABELS[s]}</option>
           ))}
         </select>
         {next && (
@@ -297,7 +297,7 @@ export function NewStudentForm() {
         Stage
         <select className={`${inputCls} w-full mt-1`} value={stage} onChange={(e) => setStage(e.target.value)}>
           {STAGE_ORDER.map((s) => (
-            <option key={s} value={s} className="bg-[#161926]">{STAGE_LABELS[s]}</option>
+            <option key={s} value={s} className="bg-[#1d1812]">{STAGE_LABELS[s]}</option>
           ))}
         </select>
       </label>

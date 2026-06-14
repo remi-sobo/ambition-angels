@@ -461,7 +461,7 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
             height={32}
             className="rounded-lg shrink-0"
           />
-          <div className="font-display font-black text-xl uppercase tracking-tight text-cream leading-none">
+          <div className="font-display font-black text-2xl normal-case tracking-tight text-cream leading-none">
             Bloom<span className="text-[#A8B58C]">OS</span>
           </div>
         </div>

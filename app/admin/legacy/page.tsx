@@ -452,7 +452,7 @@ export default function AdminPage() {
           backgroundSize: "22px 22px",
         }}
       >
-        <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
+        <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
           <div className="font-display font-black text-3xl text-cream mb-1 tracking-tight uppercase">BloomOS</div>
           <div className="text-gray-mid text-sm mb-8">Operating System for Ambition Angels</div>
           {magicSent ? (
@@ -513,7 +513,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-ink">
 
       {/* ── HEADER ── */}
-      <div className="bg-[#13151f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3 sticky admin-sticky-top z-30 flex-wrap">
+      <div className="bg-[#19150f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3 sticky admin-sticky-top z-30 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
           <span className="font-heading font-bold text-cream text-sm sm:text-base">Admin Dashboard</span>
           {lastUpdated && (
@@ -587,7 +587,7 @@ export default function AdminPage() {
           <p className="text-xs font-bold text-white/20 uppercase tracking-widest mb-3">Career Quiz</p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
               {loading || !stats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -599,7 +599,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
               {loading || !stats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -611,7 +611,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
               {loading || !stats ? (
                 <><Skeleton className="h-10 w-28 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -625,7 +625,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
               {loading || !stats ? (
                 <><Skeleton className="h-7 w-full mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -643,7 +643,7 @@ export default function AdminPage() {
           <p className="text-xs font-bold text-white/20 uppercase tracking-widest mb-3">Donations</p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
               {loading || !donationStats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -657,7 +657,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
               {loading || !donationStats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -671,7 +671,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
               {loading || !donationStats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -685,7 +685,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
               {loading || !donationStats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -701,7 +701,7 @@ export default function AdminPage() {
         </div>
 
         {/* ── ROW 2: SUBMISSIONS TABLE ── */}
-        <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+        <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
           <div className="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
               <h2 className="font-heading font-bold text-cream text-lg">Career Quiz Submissions</h2>
@@ -871,7 +871,7 @@ export default function AdminPage() {
                       </tr>
 
                       {expandedId === s.id && (
-                        <tr key={`${s.id}-expanded`} className="bg-[#13151f]">
+                        <tr key={`${s.id}-expanded`} className="bg-[#19150f]">
                           <td colSpan={8} className="px-6 py-6">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                               <div>
@@ -943,7 +943,7 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 3: CAREER ANALYTICS ── */}
-        <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+        <section className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
           <h2 className="font-heading font-bold text-cream text-lg mb-6">Career Match Breakdown</h2>
           {loading || !stats ? (
             <div className="space-y-3">
@@ -965,7 +965,7 @@ export default function AdminPage() {
                   <div key={title} className="flex items-center gap-3">
                     <div className="w-44 text-xs text-gray-mid text-right flex-shrink-0 truncate">{title}</div>
                     <div className="flex-1 h-5 bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: "#E8500A" }} />
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: "#C0764E" }} />
                     </div>
                     <div className="w-7 text-xs text-gray-mid flex-shrink-0 text-right">{count}</div>
                   </div>
@@ -991,7 +991,7 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 4: DONATIONS FULL SECTION ── */}
-        <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+        <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
           {/* Header + tab bar */}
           <div className="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
@@ -1252,7 +1252,7 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 5: RECENT ACTIVITY FEED ── */}
-        <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-6">
+        <section className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
           <h2 className="font-heading font-bold text-cream text-lg mb-6">Recent Quiz Activity</h2>
           {loading ? (
             <div className="space-y-4">
@@ -1304,7 +1304,7 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 5: PARTNER WAITLIST ── */}
-        <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+        <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
           <div className="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
               <h2 className="font-heading font-bold text-cream text-lg">Partner Waitlist</h2>
@@ -1394,7 +1394,7 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 6: PROGRAM PARTNERS ── */}
-        <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+        <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
           <div className="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
               <h2 className="font-heading font-bold text-cream text-lg">Program Partners</h2>

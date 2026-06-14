@@ -82,7 +82,7 @@ export function PartnerRow({ partner }: { partner: Partner }) {
 
   return (
     <article
-      className={`bg-[#161926] border rounded-xl p-3 text-sm ${
+      className={`bg-[#1d1812] border rounded-xl p-3 text-sm ${
         mouExpired ? "border-red-500/40" : "border-white/10"
       } ${busy ? "opacity-60" : ""}`}
     >
@@ -133,7 +133,7 @@ export function PartnerRow({ partner }: { partner: Partner }) {
           className="text-[11px] bg-white/5 border border-white/10 rounded-md px-2 py-1 text-cream/80 cursor-pointer"
         >
           {STATUS_ORDER.map((s) => (
-            <option key={s} value={s} className="bg-[#161926]">{STATUS_LABELS[s]}</option>
+            <option key={s} value={s} className="bg-[#1d1812]">{STATUS_LABELS[s]}</option>
           ))}
         </select>
         <button
@@ -198,7 +198,7 @@ function InlineEdit({
         <select className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={kind}
           onChange={(e) => setKind(e.target.value)}>
           {Object.entries(KIND_LABELS).map(([k, v]) => (
-            <option key={k} value={k} className="bg-[#161926]">{v}</option>
+            <option key={k} value={k} className="bg-[#1d1812]">{v}</option>
           ))}
         </select>
       </label>
@@ -217,7 +217,7 @@ function InlineEdit({
         <select className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={mouStatus}
           onChange={(e) => setMouStatus(e.target.value)}>
           {["none", "drafting", "sent", "signed"].map((s) => (
-            <option key={s} value={s} className="bg-[#161926]">{s}</option>
+            <option key={s} value={s} className="bg-[#1d1812]">{s}</option>
           ))}
         </select>
       </label>
@@ -300,7 +300,7 @@ export function NewPartnerForm() {
         Type
         <select className={`${inputCls} w-full mt-1`} value={kind} onChange={(e) => setKind(e.target.value)}>
           {Object.entries(KIND_LABELS).map(([k, v]) => (
-            <option key={k} value={k} className="bg-[#161926]">{v}</option>
+            <option key={k} value={k} className="bg-[#1d1812]">{v}</option>
           ))}
         </select>
       </label>

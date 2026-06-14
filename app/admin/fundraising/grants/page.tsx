@@ -63,7 +63,7 @@ export default async function GrantsPage() {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className="font-heading font-bold text-cream text-2xl mb-4">Grants</h1>
-        <div className="bg-[#1a1d27] border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-gray-mid leading-relaxed">
+        <div className="bg-[#231f18] border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-gray-mid leading-relaxed">
           The grants tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_grants.sql</code> via Actions → Apply DB migration,
           then reload.
@@ -95,7 +95,7 @@ export default async function GrantsPage() {
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#13151f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center justify-between gap-3">
+      <div className="bg-[#19150f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center justify-between gap-3">
         <span className="font-heading font-bold text-cream text-sm sm:text-base">Grants</span>
         <span className="text-xs text-gray-mid">{grants.length} total{closedCount > 0 ? ` · ${closedCount} declined/closed` : ""}</span>
       </div>
@@ -122,7 +122,7 @@ export default async function GrantsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* ── Pipeline ── */}
-          <section className="lg:col-span-8 bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+          <section className="lg:col-span-8 bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-white/10">
               <h2 className="font-heading font-bold text-cream text-sm">Pipeline</h2>
             </div>
@@ -182,7 +182,7 @@ export default async function GrantsPage() {
           </section>
 
           {/* ── Requirements calendar ── */}
-          <section className="lg:col-span-4 bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+          <section className="lg:col-span-4 bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-white/10">
               <h2 className="font-heading font-bold text-cream text-sm">Upcoming Deadlines</h2>
             </div>

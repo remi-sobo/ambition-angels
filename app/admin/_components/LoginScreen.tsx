@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -64,17 +63,19 @@ export default function LoginScreen() {
         backgroundSize: "22px 22px",
       }}
     >
-      <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
+      <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
         <div className="flex items-center gap-3 mb-1">
-          <Image
+          {/* Plain <img> (not next/image): more reliable behind the admin
+              PWA's cache-first service worker than the image optimizer. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/admin/bloomos-mark.png"
             alt=""
             width={48}
             height={48}
             className="rounded-xl shrink-0"
-            priority
           />
-          <div className="font-display font-black text-3xl text-cream tracking-tight uppercase leading-none">
+          <div className="font-display font-black text-4xl text-cream tracking-tight normal-case leading-none">
             Bloom<span className="text-[#A8B58C]">OS</span>
           </div>
         </div>

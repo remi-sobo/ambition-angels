@@ -74,7 +74,7 @@ export default async function KpisPage() {
         {rows.map(({ k, target, owner, rag, trend, trendGood, prev }) => (
           <article
             key={k.key}
-            className="bg-[#161926] border border-white/10 rounded-xl p-3 flex flex-wrap items-center gap-3"
+            className="bg-[#1d1812] border border-white/10 rounded-xl p-3 flex flex-wrap items-center gap-3"
           >
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-cream text-sm">{k.label}</div>

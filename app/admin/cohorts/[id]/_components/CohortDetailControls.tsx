@@ -91,7 +91,7 @@ export function CohortHeaderControls({
         className="text-[11px] bg-white/5 border border-white/10 rounded-md px-2 py-1 text-cream/80 cursor-pointer"
       >
         {COHORT_STATUSES.map((s) => (
-          <option key={s} value={s} className="bg-[#161926]">{COHORT_STATUS_LABELS[s]}</option>
+          <option key={s} value={s} className="bg-[#1d1812]">{COHORT_STATUS_LABELS[s]}</option>
         ))}
       </select>
       <button
@@ -123,7 +123,7 @@ export function MemberRow({ cohortId, member }: { cohortId: string; member: Memb
 
   return (
     <article
-      className={`bg-[#161926] border border-white/10 rounded-xl px-3 py-2.5 text-sm flex flex-wrap items-center gap-2 ${busy ? "opacity-60" : ""}`}
+      className={`bg-[#1d1812] border border-white/10 rounded-xl px-3 py-2.5 text-sm flex flex-wrap items-center gap-2 ${busy ? "opacity-60" : ""}`}
     >
       <span className="font-semibold text-cream">{m.name}</span>
       {m.grade && <span className="text-[11px] text-gray-mid">Grade {m.grade}</span>}
@@ -152,7 +152,7 @@ export function MemberRow({ cohortId, member }: { cohortId: string; member: Memb
         className="text-[11px] bg-white/5 border border-white/10 rounded-md px-2 py-1 text-cream/80 cursor-pointer"
       >
         {MEMBER_STATUSES.map((s) => (
-          <option key={s} value={s} className="bg-[#161926]">{MEMBER_STATUS_LABELS[s]}</option>
+          <option key={s} value={s} className="bg-[#1d1812]">{MEMBER_STATUS_LABELS[s]}</option>
         ))}
       </select>
       <button
@@ -188,9 +188,9 @@ export function AddMemberForm({
         onChange={(e) => setStudentId(e.target.value)}
         className="text-[11px] bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-cream/80 max-w-[220px]"
       >
-        <option value="" className="bg-[#161926]">Add student…</option>
+        <option value="" className="bg-[#1d1812]">Add student…</option>
         {candidates.map((c) => (
-          <option key={c.id} value={c.id} className="bg-[#161926]">{c.label}</option>
+          <option key={c.id} value={c.id} className="bg-[#1d1812]">{c.label}</option>
         ))}
       </select>
       <button
@@ -240,7 +240,7 @@ export function SessionRow({
 
   return (
     <article
-      className={`bg-[#161926] border border-white/10 rounded-xl px-3 py-2.5 text-sm flex flex-wrap items-center gap-2 ${busy ? "opacity-60" : ""}`}
+      className={`bg-[#1d1812] border border-white/10 rounded-xl px-3 py-2.5 text-sm flex flex-wrap items-center gap-2 ${busy ? "opacity-60" : ""}`}
     >
       <span className="font-semibold text-cream tabular-nums">{s.session_date}</span>
       {s.title && <span className="text-cream/80">{s.title}</span>}

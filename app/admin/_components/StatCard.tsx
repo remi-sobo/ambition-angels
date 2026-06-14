@@ -29,7 +29,7 @@ export default function StatCard({
       ? "text-red-400 bg-red-500/10 border-red-500/20"
       : "text-gray-mid bg-white/5 border-white/10";
   return (
-    <div className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-5 min-w-0">
+    <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-5 min-w-0">
       <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-white/35 mb-2 truncate">
         {label}
       </div>

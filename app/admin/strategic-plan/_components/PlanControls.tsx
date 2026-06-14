@@ -167,7 +167,7 @@ export function GoalCard({
   };
 
   return (
-    <section className={`bg-[#161926] border border-white/10 rounded-card p-5 ${busy ? "opacity-60" : ""}`}>
+    <section className={`bg-[#1d1812] border border-white/10 rounded-card p-5 ${busy ? "opacity-60" : ""}`}>
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="font-heading font-semibold text-cream flex-1 min-w-0">{goal.title}</h2>
         <select
@@ -176,7 +176,7 @@ export function GoalCard({
           className={`text-[11px] font-semibold rounded-full px-2 py-1 border-0 cursor-pointer ${STATUS_STYLES[goal.status]}`}
         >
           {Object.entries(STATUS_LABELS).map(([k, v]) => (
-            <option key={k} value={k} className="bg-[#161926] text-cream">{v}</option>
+            <option key={k} value={k} className="bg-[#1d1812] text-cream">{v}</option>
           ))}
         </select>
         {goal.target_date && (

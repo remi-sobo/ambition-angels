@@ -72,7 +72,7 @@ export function NewGrantForm() {
     );
   }
   return (
-    <form onSubmit={submit} className="bg-[#1a1d27] border border-white/10 rounded-card-lg p-4 flex flex-wrap items-end gap-3 w-full">
+    <form onSubmit={submit} className="bg-[#231f18] border border-white/10 rounded-card-lg p-4 flex flex-wrap items-end gap-3 w-full">
       <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-white/35 font-semibold">
         Grant name *
         <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Koshland 2026" className={inputCls + " w-52"} />
@@ -187,7 +187,7 @@ export function StageSelect({
       className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-cream text-xs focus:outline-none focus:border-orange/40 disabled:opacity-50"
     >
       {STAGES.map((s) => (
-        <option key={s} value={s} className="bg-[#1a1d27]">
+        <option key={s} value={s} className="bg-[#231f18]">
           {STAGE_LABELS[s]}
         </option>
       ))}
@@ -270,7 +270,7 @@ export function AddRequirementForm({ grantId }: { grantId: string }) {
     <form onSubmit={submit} className="flex flex-wrap items-center gap-2 px-5 py-3 border-t border-white/10">
       <select value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls + " text-xs"}>
         {KINDS.map(([v, l]) => (
-          <option key={v} value={v} className="bg-[#1a1d27]">{l}</option>
+          <option key={v} value={v} className="bg-[#231f18]">{l}</option>
         ))}
       </select>
       <input type="date" required value={due} onChange={(e) => setDue(e.target.value)} className={inputCls + " text-xs"} />

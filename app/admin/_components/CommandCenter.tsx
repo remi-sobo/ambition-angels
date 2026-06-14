@@ -61,7 +61,7 @@ const pctDelta = (now: number, prev: number): Delta | undefined => {
   };
 };
 
-const CHART_COLORS = ["#E8500A", "#5B8DEF", "#2BB3A3", "#D9A406", "#8A93A6", "#E05C7A"];
+const CHART_COLORS = ["#C0764E", "#5B8DEF", "#2BB3A3", "#D9A406", "#8A93A6", "#E05C7A"];
 
 // ── Widget chrome ───────────────────────────────────────────────────────────
 
@@ -79,7 +79,7 @@ function Widget({
   className?: string;
 }) {
   return (
-    <section className={`bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden ${className ?? ""}`}>
+    <section className={`bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden ${className ?? ""}`}>
       <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3">
         <h2 className="font-heading font-bold text-cream text-sm">{title}</h2>
         {href && (

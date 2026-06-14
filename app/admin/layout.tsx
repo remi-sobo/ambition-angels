@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#10214B",
+  themeColor: "#262019",
   width: "device-width",
   initialScale: 1,
   // viewport-fit=cover lets us reach into the iOS safe-area insets so the

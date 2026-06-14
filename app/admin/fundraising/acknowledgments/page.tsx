@@ -48,7 +48,7 @@ export default async function AcknowledgmentsPage() {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className="font-heading font-bold text-cream text-2xl mb-4">Acknowledgments</h1>
-        <div className="bg-[#1a1d27] border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-gray-mid leading-relaxed">
+        <div className="bg-[#231f18] border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-gray-mid leading-relaxed">
           The fundraising tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_fundraising_core.sql</code> via Actions → Apply DB
           migration, then reload.
@@ -66,7 +66,7 @@ export default async function AcknowledgmentsPage() {
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#13151f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
+      <div className="bg-[#19150f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
         <Link href="/admin/fundraising/donors" className="text-xs font-semibold text-gray-mid hover:text-cream transition-colors">
           ← Donors
         </Link>
@@ -94,7 +94,7 @@ export default async function AcknowledgmentsPage() {
           />
         </div>
 
-        <section className="bg-[#1a1d27] border border-white/10 rounded-card-lg overflow-hidden">
+        <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
           {pending.length === 0 ? (
             <p className="p-8 text-gray-mid text-sm">
               Every gift has been thanked. New Stripe donations of $250+ will appear here

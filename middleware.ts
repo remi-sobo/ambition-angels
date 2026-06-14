@@ -25,7 +25,8 @@ import { updateSession } from "@/lib/supabase/middleware";
  */
 
 // Public assets under /admin that the browser must be able to fetch
-// without an auth cookie (PWA manifest + icons).
+// without an auth cookie (PWA manifest + icons, and the logo mark shown
+// on the unauthenticated login screen).
 const PUBLIC_ADMIN_PATHS = new Set([
   "/admin/manifest.webmanifest",
   "/admin/apple-touch-icon.png",
@@ -34,6 +35,7 @@ const PUBLIC_ADMIN_PATHS = new Set([
   "/admin/icon-192-maskable.png",
   "/admin/icon-512-maskable.png",
   "/admin/favicon-32.png",
+  "/admin/bloomos-mark.png",
 ]);
 
 // The lookbook's two reachable URLs. /demoday/favicon.png is intentionally

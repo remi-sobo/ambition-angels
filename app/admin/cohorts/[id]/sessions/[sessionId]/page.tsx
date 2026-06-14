@@ -57,7 +57,7 @@ export default async function SessionAttendancePage({
     : null;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[640px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[640px]">
       <Link href={`/admin/cohorts/${params.id}`} className="text-[11px] text-gray-mid hover:text-cream">
         ← {cohortName}
       </Link>

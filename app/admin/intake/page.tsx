@@ -1,5 +1,7 @@
 import Link from "next/link";
+import SectionHeading from "../_components/SectionHeading";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
 import {
   ApplicationRow,
@@ -107,22 +109,20 @@ export default async function IntakePage() {
   const closedApps = apps.filter((a) => CLOSED.includes(a.status));
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1100px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Intake</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
-            Applications from the public form · screen → waitlist → offer → roster
-          </p>
-        </div>
-        <a
-          href="/apply"
-          target="_blank"
-          className="text-xs font-semibold text-cream/70 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full transition-colors"
-        >
-          View public form ↗
-        </a>
-      </div>
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+      <PageHeader
+        title="Intake"
+        subtitle="Applications from the public form · screen → waitlist → offer → roster"
+        actions={
+          <a
+            href="/apply"
+            target="_blank"
+            className="text-xs font-semibold text-cream/70 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full transition-colors"
+          >
+            View public form ↗
+          </a>
+        }
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard label="To screen" value={count("new")} sub="new applications" muted={count("new") === 0} />
@@ -174,9 +174,9 @@ export default async function IntakePage() {
               : [...rows].sort((a, b) => b.created_at.localeCompare(a.created_at));
           return (
             <section key={status}>
-              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-2">
+              <SectionHeading className="mb-2">
                 {APP_STATUS_LABELS[status]} ({rows.length})
-              </h2>
+              </SectionHeading>
               <div className="space-y-2">
                 {ordered.map((a) => (
                   <ApplicationRow key={a.id} app={toView(a)} cohorts={cohortOptions} />
@@ -188,9 +188,9 @@ export default async function IntakePage() {
 
         {closedApps.length > 0 && (
           <section>
-            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-cream/70 mb-2">
+            <SectionHeading className="mb-2">
               Closed ({closedApps.length})
-            </h2>
+            </SectionHeading>
             <div className="space-y-2">
               {closedApps.map((a) => (
                 <ApplicationRow key={a.id} app={toView(a)} cohorts={cohortOptions} />

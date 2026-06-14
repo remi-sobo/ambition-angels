@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
 import {
   GoalCard,
@@ -25,19 +26,19 @@ export default async function StrategicPlanPage() {
   const doneInits = initiatives.filter((i) => i.status === "done").length;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1000px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Strategic Plan</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
+      <PageHeader
+        title="Strategic Plan"
+        subtitle={
+          <>
             Goals → initiatives, wired to the work · the framing deck lives in the{" "}
             <Link href="/strategy" className="text-orange hover:underline">
               Strategy Room
             </Link>
-          </p>
-        </div>
-        <NewGoalForm />
-      </div>
+          </>
+        }
+        actions={<NewGoalForm />}
+      />
 
       <div className="grid grid-cols-3 gap-3 mb-8">
         <StatCard label="Active goals" value={active.length} />

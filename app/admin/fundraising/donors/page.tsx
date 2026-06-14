@@ -184,7 +184,7 @@ export default async function DonorsPage() {
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#13151f] border-b border-white/10 px-4 sm:px-6 lg:px-10 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
+      <div className="bg-[#13151f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
         <span className="font-heading font-bold text-cream text-sm sm:text-base">Donors</span>
         <Link
           href="/admin/fundraising/acknowledgments"
@@ -202,7 +202,7 @@ export default async function DonorsPage() {
         </span>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 space-y-6">
+      <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <div className="flex justify-end">
           <SegmentExportPanel />
         </div>

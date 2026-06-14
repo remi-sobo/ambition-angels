@@ -85,7 +85,7 @@ export default async function CohortsPage() {
   const overallRate = attendedAll + absentAll > 0 ? attendedAll / (attendedAll + absentAll) : null;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-heading font-bold text-2xl text-cream">Cohorts</h1>

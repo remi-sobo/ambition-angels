@@ -3,6 +3,7 @@ import SectionHeading from "../_components/SectionHeading";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { money } from "../finance/_components/charts";
 import PageHeader from "../_components/PageHeader";
+import SectionSummary from "../_components/SectionSummary";
 import StatCard from "../_components/StatCard";
 import { NewOpportunityForm, OpportunityCard } from "./_components/PipelineBoard";
 import {
@@ -107,6 +108,8 @@ export default async function MajorGiftsPage() {
           </div>
         }
       />
+
+      <SectionSummary section="major_gifts" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         <StatCard

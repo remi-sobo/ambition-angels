@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import TaskEditModal from "@/app/admin/_components/TaskEditModal";
 import {
   formatDueLabel,
+  isTaskCategory,
   type AdminUserId,
   type Category,
   type OpsTask,
@@ -56,8 +57,10 @@ export default function ProjectTaskList({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          // Projects accept a wider category set than tasks; fall back to
+          // "other" when the project's category isn't a valid task category.
           title,
-          category: projectCategory,
+          category: isTaskCategory(projectCategory) ? projectCategory : "other",
           project_id: projectId,
           assigned_to: projectAssignedTo,
         }),

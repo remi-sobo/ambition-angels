@@ -8,8 +8,25 @@ import {
   categoryBadgeClass,
   categoryLabel,
   formatDueLabel,
+  priorityFlagClass,
+  priorityLabel,
+  todayISO,
   type OpsTask,
 } from "../_types/ops";
+
+/** Small filled flag used as the priority indicator. */
+export function PriorityFlag({ priority }: { priority: OpsTask["priority"] }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className={`w-3 h-3 shrink-0 ${priorityFlagClass(priority)}`}
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M4 1.5a.75.75 0 0 1 .75.75V3h7.1c.6 0 .92.71.53 1.16L10.3 6.5l2.18 2.34c.4.45.07 1.16-.53 1.16H4.75v4.25a.75.75 0 0 1-1.5 0V2.25A.75.75 0 0 1 4 1.5Z" />
+    </svg>
+  );
+}
 
 /**
  * Reusable task row used in Today, This Week, and project task lists.
@@ -71,6 +88,7 @@ export default function TaskRow({
 
   const isDone = task.status === "done";
   const isBlocked = task.status === "blocked";
+  const isOverdue = !!task.due_date && !isDone && task.due_date < todayISO();
 
   function toggleDone() {
     patch({ status: isDone ? "todo" : "done" });
@@ -105,6 +123,11 @@ export default function TaskRow({
       </button>
 
       <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+        {!isDone && (
+          <span title={`${priorityLabel(task.priority)} priority`}>
+            <PriorityFlag priority={task.priority} />
+          </span>
+        )}
         <button
           type="button"
           onClick={() => setEditOpen(true)}
@@ -122,6 +145,14 @@ export default function TaskRow({
         >
           {categoryLabel(task.category)}
         </span>
+        {(task.labels ?? []).map((label) => (
+          <span
+            key={label}
+            className="inline-block px-1.5 py-0.5 rounded text-[10px] tracking-wide font-medium border bg-tile text-ink-2 border-outline"
+          >
+            {label}
+          </span>
+        ))}
         {task.assigned_to && (
           <span
             className="inline-flex items-center gap-1 text-[11px] text-ink-2"
@@ -148,7 +179,12 @@ export default function TaskRow({
       </div>
 
       {task.due_date && (
-        <span className="shrink-0 text-xs text-ink-2 font-mono">
+        <span
+          className={`shrink-0 text-xs font-mono ${
+            isOverdue ? "text-expense font-semibold" : "text-ink-2"
+          }`}
+          title={isOverdue ? "Past due" : undefined}
+        >
           {formatDueLabel(task.due_date)}
         </span>
       )}

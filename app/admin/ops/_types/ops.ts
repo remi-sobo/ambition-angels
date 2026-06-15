@@ -6,6 +6,9 @@
  * via a small helper) — not stored.
  */
 
+// Project categories — the set ops_projects accepts. Kept distinct from the
+// task list below: PR Ops-2 narrowed the task taxonomy without migrating
+// projects, so the two constraints genuinely differ at the DB level.
 export const CATEGORIES = [
   "fundraising",
   "admin",
@@ -18,8 +21,28 @@ export const CATEGORIES = [
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
+// Task categories — THE canonical list for ops_tasks. This is the single
+// source the task dropdowns and the "By Category" panel both render from, so
+// they can never drift. Mirrors the ops_tasks_category_check constraint.
+export const TASK_CATEGORIES = [
+  "fundraising",
+  "program",
+  "product",
+  "finance",
+  "operations",
+  "compliance",
+  "board",
+  "other",
+] as const;
+export type TaskCategory = (typeof TASK_CATEGORIES)[number];
+
 export const TASK_STATUSES = ["todo", "in_progress", "done", "blocked"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+// Ordered most- to least-urgent; the array order doubles as the sort/group
+// order in the tasks surface.
+export const TASK_PRIORITIES = ["urgent", "high", "medium", "low"] as const;
+export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 
 export const PROJECT_STATUSES = ["active", "paused", "done", "archived"] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
@@ -31,8 +54,11 @@ export type OpsTask = {
   title: string;
   description: string | null;
   project_id: string | null;
-  category: Category;
+  category: TaskCategory;
   status: TaskStatus;
+  priority: TaskPriority;
+  parent_id: string | null; // self-FK: null = top-level, else a subtask
+  labels: string[];
   assigned_to: AdminUserId | null;
   created_by: AdminUserId;
   due_date: string | null; // ISO date (YYYY-MM-DD)
@@ -67,8 +93,16 @@ export function isCategory(v: unknown): v is Category {
   return typeof v === "string" && (CATEGORIES as readonly string[]).includes(v);
 }
 
+export function isTaskCategory(v: unknown): v is TaskCategory {
+  return typeof v === "string" && (TASK_CATEGORIES as readonly string[]).includes(v);
+}
+
 export function isTaskStatus(v: unknown): v is TaskStatus {
   return typeof v === "string" && (TASK_STATUSES as readonly string[]).includes(v);
+}
+
+export function isTaskPriority(v: unknown): v is TaskPriority {
+  return typeof v === "string" && (TASK_PRIORITIES as readonly string[]).includes(v);
 }
 
 export function isProjectStatus(v: unknown): v is ProjectStatus {
@@ -82,20 +116,47 @@ export function isAdminUserId(v: unknown): v is AdminUserId {
 // ── Style helpers ──────────────────────────────────────────────────────────
 // Centralized so all components render consistent colors.
 
-const CATEGORY_BADGE_STYLES: Record<Category, string> = {
+// Keyed by every category either table can hold (project + task lists), so a
+// single helper styles badges everywhere regardless of which surface renders.
+const CATEGORY_BADGE_STYLES: Record<string, string> = {
   fundraising: "bg-orange/15 text-orange border-orange/30",
   admin: "bg-zinc-500/15 text-zinc-700 border-zinc-500/30",
   board: "bg-purple-500/15 text-purple-700 border-purple-500/30",
   recruitment: "bg-cyan-500/15 text-cyan-700 border-cyan-500/30",
   program: "bg-revenue-bg text-revenue border-revenue/30",
+  product: "bg-indigo-500/15 text-indigo-700 border-indigo-500/30",
   finance: "bg-[#F4E8D0] text-[#A56A1B] border-[#D9BE86]",
+  operations: "bg-amber-500/15 text-amber-700 border-amber-500/30",
   compliance: "bg-rose-500/15 text-rose-700 border-rose-500/30",
   other: "bg-tile text-ink-2 border-outline",
 };
 
-export function categoryBadgeClass(c: Category | string): string {
-  if (isCategory(c)) return CATEGORY_BADGE_STYLES[c];
-  return CATEGORY_BADGE_STYLES.other;
+export function categoryBadgeClass(c: string): string {
+  return CATEGORY_BADGE_STYLES[c] ?? CATEGORY_BADGE_STYLES.other;
+}
+
+// ── Priority helpers ───────────────────────────────────────────────────────
+
+const PRIORITY_FLAG_STYLES: Record<TaskPriority, string> = {
+  urgent: "text-expense",
+  high: "text-orange",
+  medium: "text-amber-500",
+  low: "text-ink-3",
+};
+
+export function priorityFlagClass(p: TaskPriority | string): string {
+  if (isTaskPriority(p)) return PRIORITY_FLAG_STYLES[p];
+  return PRIORITY_FLAG_STYLES.medium;
+}
+
+export function priorityLabel(p: string): string {
+  return p.charAt(0).toUpperCase() + p.slice(1);
+}
+
+// Lower number = higher priority; used for grouping/sorting.
+export function priorityRank(p: TaskPriority | string): number {
+  const i = (TASK_PRIORITIES as readonly string[]).indexOf(p);
+  return i === -1 ? TASK_PRIORITIES.length : i;
 }
 
 const TASK_STATUS_BADGE_STYLES: Record<TaskStatus, string> = {

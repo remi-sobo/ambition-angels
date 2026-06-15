@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import {
-  isCategory,
+  isTaskCategory,
   isTaskStatus,
+  isTaskPriority,
   isAdminUserId,
   type OpsTask,
 } from "@/app/admin/ops/_types/ops";
@@ -12,6 +13,10 @@ import {
 
 function isISODate(v: unknown): v is string {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+}
+
+function isLabelArray(v: unknown): v is string[] {
+  return Array.isArray(v) && v.every((x) => typeof x === "string");
 }
 
 async function touchProject(
@@ -48,8 +53,17 @@ export async function POST(req: NextRequest) {
   if (!title) {
     return NextResponse.json({ error: "title is required" }, { status: 400 });
   }
-  if (!isCategory(body.category)) {
+  if (!isTaskCategory(body.category)) {
     return NextResponse.json({ error: "category is invalid" }, { status: 400 });
+  }
+  if (body.priority !== undefined && body.priority !== null && !isTaskPriority(body.priority)) {
+    return NextResponse.json({ error: "priority is invalid" }, { status: 400 });
+  }
+  if (body.labels !== undefined && body.labels !== null && !isLabelArray(body.labels)) {
+    return NextResponse.json({ error: "labels must be an array of strings" }, { status: 400 });
+  }
+  if (body.parent_id !== undefined && body.parent_id !== null && typeof body.parent_id !== "string") {
+    return NextResponse.json({ error: "parent_id must be a string" }, { status: 400 });
   }
   if (body.assigned_to !== undefined && body.assigned_to !== null && !isAdminUserId(body.assigned_to)) {
     return NextResponse.json({ error: "assigned_to is invalid" }, { status: 400 });
@@ -65,6 +79,9 @@ export async function POST(req: NextRequest) {
     title,
     description: typeof body.description === "string" ? body.description : null,
     category: body.category,
+    priority: (body.priority as string | undefined) ?? "medium",
+    parent_id: (body.parent_id as string | null | undefined) ?? null,
+    labels: isLabelArray(body.labels) ? body.labels : [],
     project_id: (body.project_id as string | null | undefined) ?? null,
     assigned_to: (body.assigned_to as "remi" | "shannon" | null | undefined) ?? null,
     created_by: createdBy,
@@ -114,7 +131,14 @@ export async function GET(req: NextRequest) {
     }
   }
   const category = url.searchParams.get("category");
-  if (category && isCategory(category)) q = q.eq("category", category);
+  if (category && isTaskCategory(category)) q = q.eq("category", category);
+
+  const priority = url.searchParams.get("priority");
+  if (priority && isTaskPriority(priority)) q = q.eq("priority", priority);
+
+  const parentId = url.searchParams.get("parent_id");
+  if (parentId === "none") q = q.is("parent_id", null);
+  else if (parentId) q = q.eq("parent_id", parentId);
 
   const assignee = url.searchParams.get("assigned_to");
   if (assignee === "unassigned") q = q.is("assigned_to", null);

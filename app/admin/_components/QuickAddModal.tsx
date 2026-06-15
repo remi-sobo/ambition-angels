@@ -4,9 +4,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { AdminUser } from "@/lib/admin/auth";
 import {
-  CATEGORIES,
+  TASK_CATEGORIES,
+  TASK_PRIORITIES,
   categoryLabel,
-  type Category,
+  priorityLabel,
+  type TaskCategory,
+  type TaskPriority,
 } from "@/app/admin/ops/_types/ops";
 
 /**
@@ -28,7 +31,8 @@ export default function QuickAddModal({
   const router = useRouter();
 
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<Category>("other");
+  const [category, setCategory] = useState<TaskCategory>("other");
+  const [priority, setPriority] = useState<TaskPriority>("medium");
   const [assignee, setAssignee] = useState<AdminUser | "">(currentUser ?? "");
   const [dueDate, setDueDate] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -90,6 +94,7 @@ export default function QuickAddModal({
         body: JSON.stringify({
           title: title.trim(),
           category,
+          priority,
           assigned_to: assignee || null,
           due_date: dueDate || null,
           project_id: projectId || null,
@@ -151,16 +156,32 @@ export default function QuickAddModal({
             <Field label="Category" required>
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value as Category)}
+                onChange={(e) => setCategory(e.target.value as TaskCategory)}
                 className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               >
-                {CATEGORIES.map((c) => (
+                {TASK_CATEGORIES.map((c) => (
                   <option key={c} value={c}>
                     {categoryLabel(c)}
                   </option>
                 ))}
               </select>
             </Field>
+            <Field label="Priority">
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as TaskPriority)}
+                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
+              >
+                {TASK_PRIORITIES.map((p) => (
+                  <option key={p} value={p}>
+                    {priorityLabel(p)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <Field label="Assigned to">
               <select
                 value={assignee}
@@ -172,9 +193,6 @@ export default function QuickAddModal({
                 <option value="shannon">Shannon</option>
               </select>
             </Field>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
             <Field label="Due date">
               <input
                 type="date"

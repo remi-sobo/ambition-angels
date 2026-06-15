@@ -1,21 +1,19 @@
-import Link from "next/link";
 import {
-  CATEGORIES,
+  TASK_CATEGORIES,
   categoryBadgeClass,
   categoryLabel,
-  type Category,
+  type TaskCategory,
 } from "../_types/ops";
 
 /**
- * Eight tiles, one per category, showing count of open tasks
- * (status != 'done'). Tile click navigates to the projects list filtered
- * by category. Tasks-by-category filter on the list page comes later;
- * filtering projects by category is the closest shipped surface.
+ * One tile per task category, showing the count of open tasks (status !=
+ * 'done'). Renders straight from TASK_CATEGORIES — the same single source the
+ * task dropdowns use — so the panel and the dropdowns can never drift.
  */
 export default function CategoryCounts({
   counts,
 }: {
-  counts: Record<Category, number>;
+  counts: Record<TaskCategory, number>;
 }) {
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
@@ -26,11 +24,10 @@ export default function CategoryCounts({
       </header>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-        {CATEGORIES.map((cat) => (
-          <Link
+        {TASK_CATEGORIES.map((cat) => (
+          <div
             key={cat}
-            href={`/admin/ops/projects?category=${cat}`}
-            className="block rounded-lg border-[1.5px] border-outline bg-surface shadow-panel hover:bg-[#EFE6D4] transition-colors px-3 py-3 text-center group"
+            className="block rounded-lg border-[1.5px] border-outline bg-surface shadow-panel px-3 py-3 text-center"
           >
             <div
               className={`inline-block px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(cat)} mb-2`}
@@ -41,7 +38,7 @@ export default function CategoryCounts({
               {counts[cat] ?? 0}
             </div>
             <div className="text-[10px] text-ink-2 mt-1">open</div>
-          </Link>
+          </div>
         ))}
       </div>
     </section>

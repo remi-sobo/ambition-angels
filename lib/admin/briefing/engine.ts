@@ -11,9 +11,15 @@ import {
   financeSource,
   tasksSource,
   complianceSource,
+  majorGiftsSource,
+  donorsSource,
+  engagementSource,
   type FinanceInput,
   type TasksInput,
   type ComplianceInput,
+  type MajorGiftsInput,
+  type DonorsInput,
+  type EngagementInput,
   type SourceCtx,
 } from "./sources";
 import type { DataAge } from "../dataAge";
@@ -24,6 +30,9 @@ export type GatheredInputs = {
   finance: FinanceInput;
   tasks: TasksInput;
   compliance: ComplianceInput;
+  majorGifts: MajorGiftsInput;
+  donors: DonorsInput;
+  engagement: EngagementInput;
 };
 
 /** Per-item decision state (from the bloomos_briefing_state table). */
@@ -100,6 +109,9 @@ export function buildBriefing(
     ...financeSource(gathered.finance, ctx),
     ...tasksSource(gathered.tasks, ctx),
     ...complianceSource(gathered.compliance, ctx),
+    ...majorGiftsSource(gathered.majorGifts, ctx),
+    ...donorsSource(gathered.donors, ctx),
+    ...engagementSource(gathered.engagement, ctx),
   ];
   const stale = staleItem(dataAge, now);
   if (stale) raw.push(stale);

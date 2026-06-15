@@ -5,7 +5,7 @@
  * config module, never a hardcoded literal.
  */
 import type { BriefingItem } from "../types";
-import { FINANCE, TASKS, COMPLIANCE } from "../../thresholds";
+import { FINANCE, TASKS, COMPLIANCE, MAJOR_GIFTS, DONORS, ENGAGEMENT } from "../../thresholds";
 
 export type SourceCtx = {
   now: number;
@@ -176,4 +176,120 @@ export function complianceSource(input: ComplianceInput, ctx: SourceCtx): Briefi
     }
   }
   return out;
+}
+
+// ── Major gifts ─────────────────────────────────────────────────────────────
+
+export type OpportunityLite = {
+  id: string;
+  name: string;
+  ask_amount: number | null;
+  next_step: string | null;
+  next_step_due: string | null;
+};
+export type MajorGiftsInput = { opportunities: OpportunityLite[] };
+
+export function majorGiftsSource(input: MajorGiftsInput, ctx: SourceCtx): BriefingItem[] {
+  const today = new Date(ctx.now).toISOString().slice(0, 10);
+  const out: BriefingItem[] = [];
+
+  const overdue = input.opportunities.filter(
+    (o) => o.next_step_due != null && o.next_step_due < today,
+  );
+  if (overdue.length > 0) {
+    const atStake = overdue.reduce((s, o) => s + (o.ask_amount ?? 0), 0);
+    const severity = overdue.length >= MAJOR_GIFTS.overdueStepCriticalCount ? "critical" : "watch";
+    out.push({
+      id: "major_gifts:overdue_step",
+      source: "major_gifts",
+      severity,
+      title: `${overdue.length} ask${overdue.length === 1 ? "" : "s"} with an overdue next step`,
+      detail: `${usd(atStake)} in asks have a next step past due — oldest: “${overdue[0].name}”.`,
+      metric: usd(atStake),
+      weight: atStake,
+      decisions: ["open", "snooze", "dismiss"],
+      deepLink: "/admin/fundraising",
+      ...stamp(ctx),
+    });
+  }
+
+  const stuck = input.opportunities.filter(
+    (o) => o.next_step == null && (o.ask_amount ?? 0) >= MAJOR_GIFTS.dollarFloorUsd,
+  );
+  if (stuck.length > 0) {
+    const atStake = stuck.reduce((s, o) => s + (o.ask_amount ?? 0), 0);
+    out.push({
+      id: "major_gifts:no_step",
+      source: "major_gifts",
+      severity: "watch",
+      title: `${stuck.length} high-value ask${stuck.length === 1 ? "" : "s"} with no next step`,
+      detail: `${usd(atStake)} sitting without a planned move.`,
+      metric: usd(atStake),
+      weight: atStake - 1, // just under overdue at equal dollars
+      decisions: ["open", "snooze", "dismiss"],
+      deepLink: "/admin/fundraising",
+      ...stamp(ctx),
+    });
+  }
+
+  return out;
+}
+
+// ── Donors (acknowledgments) ────────────────────────────────────────────────
+
+export type PendingGiftLite = { id: string; amount: number; gift_date: string };
+export type DonorsInput = { pendingGifts: PendingGiftLite[] };
+
+export function donorsSource(input: DonorsInput, ctx: SourceCtx): BriefingItem[] {
+  const cutoff = new Date(ctx.now - DONORS.ackWindowDays * DAY).toISOString().slice(0, 10);
+  const pastWindow = input.pendingGifts.filter((g) => g.gift_date <= cutoff);
+  if (pastWindow.length === 0) return [];
+
+  const irs = pastWindow.filter((g) => g.amount >= DONORS.irsThresholdUsd);
+  const severity = irs.length > 0 ? "critical" : "watch";
+  const detail =
+    irs.length > 0
+      ? `${pastWindow.length} unacknowledged past ${DONORS.ackWindowDays} days — ${irs.length} are ≥ ${usd(DONORS.irsThresholdUsd)} and need a written receipt (IRS Pub 1771).`
+      : `${pastWindow.length} gifts have waited more than ${DONORS.ackWindowDays} days for a thank-you.`;
+
+  return [
+    {
+      id: "donors:acks",
+      source: "donors",
+      severity,
+      title: `${pastWindow.length} gift${pastWindow.length === 1 ? "" : "s"} awaiting acknowledgment`,
+      detail,
+      metric: String(pastWindow.length),
+      weight: irs.length * 1_000 + pastWindow.length,
+      decisions: ["open", "snooze", "dismiss"],
+      deepLink: "/admin/fundraising/acknowledgments",
+      ...stamp(ctx),
+    },
+  ];
+}
+
+// ── Engagement (cohort attendance) ──────────────────────────────────────────
+
+export type SessionLite = { id: string; session_date: string; hasAttendance: boolean };
+export type EngagementInput = { sessions: SessionLite[] };
+
+export function engagementSource(input: EngagementInput, ctx: SourceCtx): BriefingItem[] {
+  const cutoff = new Date(ctx.now - ENGAGEMENT.attendanceGraceDays * DAY).toISOString().slice(0, 10);
+  const missing = input.sessions.filter((s) => !s.hasAttendance && s.session_date <= cutoff);
+  if (missing.length === 0) return [];
+
+  return [
+    {
+      id: "engagement:attendance",
+      source: "engagement",
+      severity: "watch",
+      title: `${missing.length} cohort session${missing.length === 1 ? "" : "s"} missing attendance`,
+      detail: `Attendance hasn't been recorded for ${missing.length} session${missing.length === 1 ? "" : "s"} held more than ${ENGAGEMENT.attendanceGraceDays} days ago.`,
+      metric: String(missing.length),
+      weight: missing.length,
+      decisions: ["open", "snooze", "dismiss"],
+      deepLink: "/admin/cohorts",
+      ...stamp(ctx),
+    },
+  ];
 }

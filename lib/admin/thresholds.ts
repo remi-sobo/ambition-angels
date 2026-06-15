@@ -35,6 +35,25 @@ export const COMPLIANCE = {
   dueSoonDays: 14,
 } as const;
 
+export const MAJOR_GIFTS = {
+  /** An open ask holding at least this much (USD) is "real dollars" worth flagging. */
+  dollarFloorUsd: 10_000,
+  /** Open ask count with an overdue next step at/above which it's critical. */
+  overdueStepCriticalCount: 3,
+} as const;
+
+export const DONORS = {
+  /** Days a gift can await acknowledgment before it's flagged. */
+  ackWindowDays: 30,
+  /** Gifts at/above this amount need a contemporaneous written receipt (IRS Pub 1771). */
+  irsThresholdUsd: 250,
+} as const;
+
+export const ENGAGEMENT = {
+  /** A past cohort session still missing attendance after this many days is a gap. */
+  attendanceGraceDays: 2,
+} as const;
+
 export const SNOOZE = {
   /** Default snooze length when an operator defers a briefing item. */
   hours: 24,

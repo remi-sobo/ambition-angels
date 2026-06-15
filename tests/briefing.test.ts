@@ -3,10 +3,21 @@ import {
   financeSource,
   tasksSource,
   complianceSource,
+  majorGiftsSource,
+  donorsSource,
+  engagementSource,
   type SourceCtx,
 } from "../lib/admin/briefing/sources";
 import { buildBriefing, rankItems, isHidden, type ItemState } from "../lib/admin/briefing/engine";
+import { summarize } from "../lib/admin/briefing/summary";
 import type { DataAge } from "../lib/admin/dataAge";
+
+// Empty inputs for the sources a given test isn't exercising.
+const EMPTY = {
+  majorGifts: { opportunities: [] },
+  donors: { pendingGifts: [] },
+  engagement: { sessions: [] },
+};
 
 const NOW = new Date("2026-06-15T12:00:00Z").getTime();
 const CTX: SourceCtx = { now: NOW, dataAgeDays: 1, staleFlag: false };
@@ -92,7 +103,7 @@ describe("engine: rank, cap, stale, hide", () => {
 
   test("stale spine becomes the top item", () => {
     const b = buildBriefing(
-      { finance: { runwayMonths: 12, cashOnHand: 100_000 }, tasks: { tasks: [] }, compliance: { items: [] } },
+      { finance: { runwayMonths: 12, cashOnHand: 100_000 }, tasks: { tasks: [] }, compliance: { items: [] }, ...EMPTY },
       STALE,
       new Map(),
       NOW,
@@ -116,7 +127,7 @@ describe("engine: rank, cap, stale, hide", () => {
       jurisdiction: null,
     }));
     const b = buildBriefing(
-      { finance: { runwayMonths: 1, cashOnHand: 10_000 }, tasks: { tasks }, compliance: { items: compliance } },
+      { finance: { runwayMonths: 1, cashOnHand: 10_000 }, tasks: { tasks }, compliance: { items: compliance }, ...EMPTY },
       FRESH,
       new Map(),
       NOW,
@@ -138,11 +149,87 @@ describe("engine: rank, cap, stale, hide", () => {
       ["finance:runway", { item_id: "finance:runway", decision: "dismiss", hidden_until: null }],
     ]);
     const b = buildBriefing(
-      { finance: { runwayMonths: 1, cashOnHand: 100_000 }, tasks: { tasks: [] }, compliance: { items: [] } },
+      { finance: { runwayMonths: 1, cashOnHand: 100_000 }, tasks: { tasks: [] }, compliance: { items: [] }, ...EMPTY },
       FRESH,
       states,
       NOW,
     );
     expect(b.top).toHaveLength(0);
+  });
+});
+
+describe("major gifts source", () => {
+  const o = (id: string, ask: number | null, step: string | null, due: number | null) => ({
+    id,
+    name: `Ask ${id}`,
+    ask_amount: ask,
+    next_step: step,
+    next_step_due: due == null ? null : dayStr(due),
+  });
+  test("≥3 overdue next steps → critical, sums dollars at stake", () => {
+    const items = majorGiftsSource(
+      { opportunities: [o("a", 5000, "Call", -1), o("b", 10000, "Email", -2), o("c", 20000, "Visit", -3)] },
+      CTX,
+    );
+    const overdue = items.find((i) => i.id === "major_gifts:overdue_step")!;
+    expect(overdue.severity).toBe("critical");
+    expect(overdue.metric).toBe("$35,000");
+  });
+  test("high-value ask with no next step → watch; small ask ignored", () => {
+    const items = majorGiftsSource(
+      { opportunities: [o("a", 50000, null, null), o("b", 100, null, null)] },
+      CTX,
+    );
+    const stuck = items.find((i) => i.id === "major_gifts:no_step")!;
+    expect(stuck.severity).toBe("watch");
+    expect(stuck.detail).toContain("$50,000");
+  });
+});
+
+describe("donors source", () => {
+  const g = (id: string, amount: number, ageDays: number) => ({
+    id,
+    amount,
+    gift_date: dayStr(-ageDays),
+  });
+  test("IRS-required gift past the window → critical", () => {
+    const [it] = donorsSource({ pendingGifts: [g("a", 500, 40)] }, CTX);
+    expect(it.severity).toBe("critical");
+    expect(it.detail).toContain("IRS");
+  });
+  test("small gift past window → watch; recent gift ignored", () => {
+    expect(donorsSource({ pendingGifts: [g("a", 50, 40)] }, CTX)[0].severity).toBe("watch");
+    expect(donorsSource({ pendingGifts: [g("b", 500, 2)] }, CTX)).toHaveLength(0);
+  });
+});
+
+describe("engagement source", () => {
+  const s = (id: string, ageDays: number, hasAttendance: boolean) => ({
+    id,
+    session_date: dayStr(-ageDays),
+    hasAttendance,
+  });
+  test("past session missing attendance → watch; recorded or recent ignored", () => {
+    const [it] = engagementSource({ sessions: [s("a", 5, false), s("b", 5, true), s("c", 0, false)] }, CTX);
+    expect(it.severity).toBe("watch");
+    expect(it.metric).toBe("1");
+  });
+});
+
+describe("section summaries", () => {
+  test("clear section → positive sentence + clear severity", () => {
+    const r = summarize("major_gifts", []);
+    expect(r.severity).toBe("clear");
+    expect(r.sentence.length).toBeGreaterThan(0);
+  });
+  test("summary uses the worst severity and joins titles", () => {
+    const items = majorGiftsSource(
+      { opportunities: [{ id: "a", name: "Ask a", ask_amount: 50000, next_step: null, next_step_due: dayStr(-1) }] },
+      CTX,
+    );
+    // one overdue (watch, <3) — severity is watch, sentence names the signal
+    const r = summarize("major_gifts", items);
+    expect(["critical", "watch"]).toContain(r.severity);
+    expect(r.sentence).toContain("overdue next step");
   });
 });

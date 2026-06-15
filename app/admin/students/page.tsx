@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import SectionHeading from "../_components/SectionHeading";
 import StatCard from "../_components/StatCard";
 import PageHeader from "../_components/PageHeader";
+import SectionSummary from "../_components/SectionSummary";
 import { StudentRow, NewStudentForm, type Student } from "./_components/StudentControls";
 import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS } from "./_lib/stages";
 
@@ -36,6 +37,8 @@ export default async function StudentsPage() {
         subtitle="One roster across programs · journey from discover to launch"
         actions={<NewStudentForm />}
       />
+
+      <SectionSummary section="students" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard label="On the roster" value={active.length} sub={`${students.length} all-time`} />

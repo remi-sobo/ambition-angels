@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import StatCard from "../_components/StatCard";
+import SectionSummary from "../_components/SectionSummary";
 import { NewCohortForm } from "./_components/CohortControls";
 import { COHORT_STATUS_LABELS } from "./_lib/constants";
 import { pct } from "./_lib/rollups";
@@ -95,6 +96,8 @@ export default async function CohortsPage() {
         </div>
         <NewCohortForm />
       </div>
+
+      <SectionSummary section="cohorts" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard label="Active cohorts" value={active.length} sub={`${cohorts.length} total`} />

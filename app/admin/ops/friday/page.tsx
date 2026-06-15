@@ -5,11 +5,11 @@ import TaskRowWithActions, {
   type TaskRowAction,
 } from "../_components/TaskRowWithActions";
 import {
-  CATEGORIES,
+  TASK_CATEGORIES,
   categoryBadgeClass,
   categoryLabel,
   type AdminUserId,
-  type Category,
+  type TaskCategory,
   type OpsTask,
 } from "../_types/ops";
 
@@ -97,22 +97,15 @@ export default async function FridayReviewPage() {
   const shippedDays = Array.from(shippedByDay.keys()).sort();
 
   // Slipped-by-category counts.
-  const slippedByCategory: Record<Category, number> = {
-    fundraising: 0,
-    admin: 0,
-    board: 0,
-    recruitment: 0,
-    program: 0,
-    finance: 0,
-    compliance: 0,
-    other: 0,
-  };
+  const slippedByCategory = Object.fromEntries(
+    TASK_CATEGORIES.map((c) => [c, 0])
+  ) as Record<TaskCategory, number>;
   for (const t of stillPinned) {
-    if (CATEGORIES.includes(t.category as Category)) {
-      slippedByCategory[t.category as Category]++;
+    if ((TASK_CATEGORIES as readonly string[]).includes(t.category)) {
+      slippedByCategory[t.category]++;
     }
   }
-  const slippedRows = (Object.entries(slippedByCategory) as Array<[Category, number]>)
+  const slippedRows = (Object.entries(slippedByCategory) as Array<[TaskCategory, number]>)
     .filter(([, n]) => n > 0)
     .sort((a, b) => b[1] - a[1]);
 

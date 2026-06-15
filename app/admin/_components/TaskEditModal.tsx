@@ -3,12 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  CATEGORIES,
+  TASK_CATEGORIES,
   TASK_STATUSES,
+  TASK_PRIORITIES,
   categoryLabel,
-  type Category,
+  priorityLabel,
+  type TaskCategory,
   type OpsTask,
   type TaskStatus,
+  type TaskPriority,
 } from "@/app/admin/ops/_types/ops";
 
 /**
@@ -38,8 +41,10 @@ export default function TaskEditModal({
 
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
-  const [category, setCategory] = useState<Category>(task.category);
+  const [category, setCategory] = useState<TaskCategory>(task.category);
   const [status, setStatus] = useState<TaskStatus>(task.status);
+  const [priority, setPriority] = useState<TaskPriority>(task.priority);
+  const [labels, setLabels] = useState((task.labels ?? []).join(", "));
   const [assignee, setAssignee] = useState<"remi" | "shannon" | "">(
     task.assigned_to ?? ""
   );
@@ -116,6 +121,11 @@ export default function TaskEditModal({
           description: description || null,
           category,
           status,
+          priority,
+          labels: labels
+            .split(",")
+            .map((l) => l.trim())
+            .filter(Boolean),
           assigned_to: assignee || null,
           due_date: dueDate || null,
           project_id: projectId || null,
@@ -197,10 +207,10 @@ export default function TaskEditModal({
             <Field label="Category" required>
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value as Category)}
+                onChange={(e) => setCategory(e.target.value as TaskCategory)}
                 className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
               >
-                {CATEGORIES.map((c) => (
+                {TASK_CATEGORIES.map((c) => (
                   <option key={c} value={c}>
                     {categoryLabel(c)}
                   </option>
@@ -219,6 +229,31 @@ export default function TaskEditModal({
                   </option>
                 ))}
               </select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Priority">
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as TaskPriority)}
+                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
+              >
+                {TASK_PRIORITIES.map((p) => (
+                  <option key={p} value={p}>
+                    {priorityLabel(p)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Labels">
+              <input
+                type="text"
+                value={labels}
+                onChange={(e) => setLabels(e.target.value)}
+                placeholder="comma, separated"
+                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+              />
             </Field>
           </div>
 

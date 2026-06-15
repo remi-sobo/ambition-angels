@@ -2,14 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
 import {
-  isCategory,
+  isTaskCategory,
   isTaskStatus,
+  isTaskPriority,
   isAdminUserId,
   type OpsTask,
 } from "@/app/admin/ops/_types/ops";
 
 function isISODate(v: unknown): v is string {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+}
+
+function isLabelArray(v: unknown): v is string[] {
+  return Array.isArray(v) && v.every((x) => typeof x === "string");
 }
 
 async function touchProject(
@@ -96,10 +101,31 @@ export async function PATCH(
     updates.description = body.description;
   }
   if ("category" in body) {
-    if (!isCategory(body.category)) {
+    if (!isTaskCategory(body.category)) {
       return NextResponse.json({ error: "category is invalid" }, { status: 400 });
     }
     updates.category = body.category;
+  }
+  if ("priority" in body) {
+    if (!isTaskPriority(body.priority)) {
+      return NextResponse.json({ error: "priority is invalid" }, { status: 400 });
+    }
+    updates.priority = body.priority;
+  }
+  if ("labels" in body) {
+    if (!isLabelArray(body.labels)) {
+      return NextResponse.json({ error: "labels must be an array of strings" }, { status: 400 });
+    }
+    updates.labels = body.labels;
+  }
+  if ("parent_id" in body) {
+    if (body.parent_id !== null && typeof body.parent_id !== "string") {
+      return NextResponse.json({ error: "parent_id must be a string or null" }, { status: 400 });
+    }
+    if (body.parent_id === params.id) {
+      return NextResponse.json({ error: "a task cannot be its own parent" }, { status: 400 });
+    }
+    updates.parent_id = body.parent_id;
   }
   if ("status" in body) {
     if (!isTaskStatus(body.status)) {

@@ -1,123 +1,61 @@
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import SectionHeading from "../_components/SectionHeading";
-import { GenerateButton } from "./_components/BriefingControls";
+import Link from "next/link";
 import PageHeader from "../_components/PageHeader";
-import type { BriefingData } from "@/lib/briefing";
+import { gatherBriefing } from "@/lib/admin/briefing/gather";
+import BriefingCard from "./_components/BriefingCard";
 
-// Executive Briefing (Ring 4, modules/01-command-center.md): the AI chief
-// of staff. Numbers come from the metric registry; the model only narrates.
-// Weekly editions generate with the Monday cron; this page also generates
-// on demand.
+// Executive Briefing v1 (spec Phase 4): a deterministic, ranked, capped daily
+// decision feed. Every item is computed from a real spine record (no model
+// calls), so opening this page every morning never touches the metered agent.
 export const dynamic = "force-dynamic";
 
-const fmtUsd = (n: number) =>
-  n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-
 export default async function BriefingPage() {
-  const supabase = getSupabaseAdmin();
-  const { data } = await supabase
-    .from("briefings")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const b = data as
-    | {
-        headline: string | null;
-        narrative: string | null;
-        priorities: string[];
-        data: BriefingData;
-        model: string | null;
-        kind: string;
-        created_at: string;
-      }
-    | null;
+  const briefing = await gatherBriefing();
+  const today = new Date(briefing.computedAt).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  const rest = briefing.items.slice(briefing.top.length);
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[800px]">
       <PageHeader
-        title="Executive Briefing"
-        subtitle="Narrated from live data — every number is computed, never invented"
-        actions={<GenerateButton />}
+        title="Needs you today"
+        subtitle={`What the spine says needs a decision · ${today}`}
+        actions={
+          <Link
+            href="/admin/briefing/weekly"
+            className="text-xs font-semibold text-orange hover:text-orange-dark"
+          >
+            Weekly briefing →
+          </Link>
+        }
       />
 
-      {!b ? (
-        <p className="text-sm text-ink-2">
-          No briefing yet — generate the first one, or wait for Monday&apos;s edition.
-        </p>
+      {briefing.top.length === 0 ? (
+        <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-10 text-center">
+          <div className="font-heading font-semibold text-lg text-ink-1">Nothing needs you today.</div>
+          <div className="text-sm text-ink-2 mt-1">{today} — the spine is clear.</div>
+        </div>
       ) : (
-        <article className="space-y-6">
-          <div className="text-[11px] text-ink-2">
-            {b.kind === "weekly" ? "Monday edition" : "On demand"} ·{" "}
-            {b.created_at.slice(0, 10)}
-            {b.model ? ` · narrated by ${b.model}` : " · data-only (narration unavailable)"}
-          </div>
+        <div className="space-y-3">
+          {briefing.top.map((it) => (
+            <BriefingCard key={it.id} item={it} />
+          ))}
 
-          {b.headline && (
-            <h2 className="font-heading font-bold text-xl text-ink-1 leading-snug">
-              {b.headline}
-            </h2>
-          )}
-
-          {b.narrative && (
-            <div className="bg-surface border border-orange/20 rounded-card p-5 text-[15px] text-ink-1 leading-relaxed whitespace-pre-wrap">
-              {b.narrative}
-            </div>
-          )}
-
-          {b.priorities.length > 0 && (
-            <section>
-              <SectionHeading as="h3" className="mb-2">
-                Recommended priorities
-              </SectionHeading>
-              <ol className="space-y-2">
-                {b.priorities.map((p, i) => (
-                  <li key={i} className="flex gap-3 text-sm text-ink-1">
-                    <span className="w-5 h-5 rounded-full bg-orange/15 text-orange text-[11px] font-bold flex items-center justify-center shrink-0">
-                      {i + 1}
-                    </span>
-                    {p}
-                  </li>
+          {briefing.restCount > 0 && (
+            <details>
+              <summary className="cursor-pointer text-xs font-semibold text-ink-2 hover:text-ink-1 px-1 py-2 select-none">
+                See all ({briefing.restCount} more)
+              </summary>
+              <div className="space-y-3 mt-3">
+                {rest.map((it) => (
+                  <BriefingCard key={it.id} item={it} />
                 ))}
-              </ol>
-            </section>
+              </div>
+            </details>
           )}
-
-          <section>
-            <SectionHeading as="h3" className="mb-2">
-              The week in numbers
-            </SectionHeading>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
-              {[
-                ["Gifts", `${b.data.week.gifts} · ${fmtUsd(b.data.week.giftTotal)}`],
-                ["New constituents", String(b.data.week.newConstituents)],
-                ["Pipeline moves", String(b.data.week.pipelineMoves)],
-                ["Awaiting acknowledgment", String(b.data.todos.pendingAcks)],
-              ].map(([label, value]) => (
-                <div key={label} className="bg-surface border-[1.5px] border-outline rounded-xl p-3">
-                  <div className="text-[10px] uppercase tracking-wider text-ink-2">{label}</div>
-                  <div className="font-bold text-ink-1 tabular-nums">{value}</div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {b.data.deadlines.length > 0 && (
-            <section>
-              <SectionHeading as="h3" className="mb-2">
-                Next two weeks
-              </SectionHeading>
-              <ul className="space-y-1 text-sm text-ink-1">
-                {b.data.deadlines.map((d, i) => (
-                  <li key={i}>
-                    <span className="text-ink-2 tabular-nums">{d.due}</span> · {d.what}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </article>
+        </div>
       )}
     </div>
   );

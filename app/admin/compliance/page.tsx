@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import StatCard from "../_components/StatCard";
 import PageHeader from "../_components/PageHeader";
+import SectionSummary from "../_components/SectionSummary";
 import {
   ComplianceRow,
   NewComplianceForm,
@@ -55,6 +56,8 @@ export default async function CompliancePage() {
         subtitle="Filings, renewals, and policy deadlines — none of them live in someone's head"
         actions={<NewComplianceForm />}
       />
+
+      <SectionSummary section="compliance" />
 
       <div className="grid grid-cols-3 gap-3 mb-8">
         <StatCard

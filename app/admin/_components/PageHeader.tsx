@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Canonical module page header for the BloomOS admin.
@@ -35,7 +36,7 @@ export default function PageHeader({
             {eyebrow}
           </div>
         ) : null}
-        <h1 className="font-heading font-bold text-2xl text-ink-1">{title}</h1>
+        <h1 className={TYPE.pageTitle}>{title}</h1>
         {subtitle ? (
           <p className="text-ink-2 text-sm mt-0.5">{subtitle}</p>
         ) : null}

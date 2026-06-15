@@ -149,17 +149,17 @@ export default function PledgesEditor({
   return (
     <div className="space-y-6">
       {/* Goal progress */}
-      <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5">
+      <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
         <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
-          <div className="text-sm text-gray-mid uppercase tracking-wide">
+          <div className="text-sm text-ink-2 uppercase tracking-wide">
             Toward {year} fundraising goal
           </div>
-          <div className="text-cream/80 text-sm">
+          <div className="text-ink-1 text-sm">
             <span className="text-orange font-medium">{fmt(towardsGoal)}</span>
-            <span className="text-gray-mid"> · received + secured</span>
+            <span className="text-ink-2"> · received + secured</span>
           </div>
         </div>
-        <div className="relative h-7 rounded-full bg-white/5 overflow-hidden">
+        <div className="relative h-7 rounded-full bg-tile overflow-hidden">
           {/* Probability-weighted projected layer (back). */}
           <div
             className="absolute inset-y-0 left-0 bg-orange/25"
@@ -172,14 +172,14 @@ export default function PledgesEditor({
           />
           {/* Goal threshold marker would go at 100%; here the bar's edge is
               the goal so we just label it. */}
-          <div className="absolute inset-0 flex items-center justify-between px-3 text-[10px] text-cream/80 font-medium">
+          <div className="absolute inset-0 flex items-center justify-between px-3 text-[10px] text-ink-1 font-medium">
             <span>{goalPct.toFixed(0)}% hard</span>
-            <span className="text-cream/60">
+            <span className="text-ink-2">
               {goalPctWithProj.toFixed(0)}% w/ weighted pipeline
             </span>
           </div>
         </div>
-        <div className="mt-2 text-xs text-gray-mid">
+        <div className="mt-2 text-xs text-ink-2">
           Goal {fmt(fundraisingGoal)} · weighted pipeline {fmt(projectedWeighted)} of {fmt(projectedTotal)} raw
         </div>
       </div>
@@ -197,20 +197,20 @@ export default function PledgesEditor({
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-cream text-sm font-medium"
+          className="px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium"
         >
           + Add pledge
         </button>
       )}
 
       {adding && (
-        <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5">
+        <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Field label="Source type">
               <select
                 value={src}
                 onChange={(e) => setSrc(e.target.value as Pledge["source_type"])}
-                className="w-full bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+                className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
               >
                 {SOURCE_TYPES.map((s) => (
                   <option key={s} value={s}>
@@ -224,7 +224,7 @@ export default function PledgesEditor({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Mott Foundation"
-                className="w-full bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+                className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
               />
             </Field>
             <Field label="Amount ($)">
@@ -233,14 +233,14 @@ export default function PledgesEditor({
                 onChange={(e) => setAmount(e.target.value)}
                 inputMode="decimal"
                 placeholder="50000"
-                className="w-full bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+                className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
               />
             </Field>
             <Field label="Status">
               <select
                 value={stat}
                 onChange={(e) => setStat(e.target.value as Pledge["status"])}
-                className="w-full bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+                className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
               >
                 <option value="projected">Projected</option>
                 <option value="secured">Secured</option>
@@ -253,7 +253,7 @@ export default function PledgesEditor({
                 onChange={(e) => setProb(e.target.value)}
                 inputMode="decimal"
                 placeholder="50"
-                className="w-full bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+                className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
               />
             </Field>
             <Field label="Expected date">
@@ -261,7 +261,7 @@ export default function PledgesEditor({
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+                className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
               />
             </Field>
             <Field label="Restricted?">
@@ -277,19 +277,19 @@ export default function PledgesEditor({
                     value={restrictedTo}
                     onChange={(e) => setRestrictedTo(e.target.value)}
                     placeholder="restricted to…"
-                    className="flex-1 bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+                    className="flex-1 bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
                   />
                 )}
               </div>
             </Field>
           </div>
-          {error && <p className="mt-3 text-xs text-red-300">{error}</p>}
+          {error && <p className="mt-3 text-xs text-expense">{error}</p>}
           <div className="mt-4 flex items-center gap-2">
             <button
               type="button"
               disabled={busy || !name || !amount}
               onClick={create}
-              className="px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-cream text-sm font-medium disabled:opacity-40"
+              className="px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
             >
               Save pledge
             </button>
@@ -299,7 +299,7 @@ export default function PledgesEditor({
                 setAdding(false);
                 setError(null);
               }}
-              className="px-3 py-1.5 rounded-lg text-cream/80 hover:text-cream text-sm"
+              className="px-3 py-1.5 rounded-lg text-ink-1 hover:text-ink-1 text-sm"
             >
               Cancel
             </button>
@@ -321,7 +321,7 @@ export default function PledgesEditor({
             <h2 className="text-[10px] uppercase tracking-widest text-orange/80 font-medium">
               From HubSpot pipeline
             </h2>
-            <div className="text-[11px] text-gray-mid">
+            <div className="text-[11px] text-ink-2">
               {hubspotPledges.length} deal{hubspotPledges.length === 1 ? "" : "s"} ·
               {" "}refresh via &ldquo;Sync HubSpot&rdquo; in the sidebar
             </div>
@@ -346,17 +346,17 @@ function HubSpotSection({
 }) {
   if (rows.length === 0) return null;
   return (
-    <div className="rounded-card-lg border border-white/10 bg-white/[0.02] overflow-hidden">
-      <header className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between">
+    <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel overflow-hidden">
+      <header className="px-4 py-2.5 border-b border-hairline flex items-center justify-between">
         <div className="text-[10px] uppercase tracking-widest text-orange font-medium">
           {title}
         </div>
-        <div className="text-xs text-gray-mid">
+        <div className="text-xs text-ink-2">
           {rows.length} · {fmt(rows.reduce((s, r) => s + r.amount, 0))}
         </div>
       </header>
       <table className="w-full text-xs">
-        <thead className="text-gray-mid uppercase tracking-wider">
+        <thead className="text-ink-2 uppercase tracking-wider">
           <tr>
             <th className="text-left px-3 py-2">Deal</th>
             <th className="text-left px-3 py-2 w-48">Contact / company</th>
@@ -370,29 +370,29 @@ function HubSpotSection({
         </thead>
         <tbody>
           {rows.map((d) => (
-            <tr key={d.deal_id} className="border-t border-white/5">
-              <td className="px-3 py-2 text-cream/85">{d.name}</td>
-              <td className="px-3 py-2 text-gray-mid">
+            <tr key={d.deal_id} className="border-t border-hairline">
+              <td className="px-3 py-2 text-ink-1">{d.name}</td>
+              <td className="px-3 py-2 text-ink-2">
                 {d.contact_name ?? d.company_name ?? "—"}
                 {d.contact_name && d.company_name && (
-                  <span className="text-[10px] text-gray-mid/70 block">
+                  <span className="text-[10px] text-ink-2/70 block">
                     {d.company_name}
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2 text-gray-mid">{d.stage ?? "—"}</td>
-              <td className="px-3 py-2 text-right font-mono text-cream/85">
+              <td className="px-3 py-2 text-ink-2">{d.stage ?? "—"}</td>
+              <td className="px-3 py-2 text-right font-mono text-ink-1">
                 {fmt(d.amount)}
               </td>
               {showProbability && (
                 <td className="px-3 py-2 text-right font-mono text-orange/90">
                   {fmt(d.amount * d.probability)}
-                  <span className="text-[10px] text-gray-mid block">
+                  <span className="text-[10px] text-ink-2 block">
                     @ {Math.round(d.probability * 100)}%
                   </span>
                 </td>
               )}
-              <td className="px-3 py-2 text-gray-mid font-mono">
+              <td className="px-3 py-2 text-ink-2 font-mono">
                 {d.close_date ?? "—"}
               </td>
             </tr>
@@ -416,16 +416,16 @@ function PledgeSection({
 }) {
   if (rows.length === 0) return null;
   return (
-    <div className="rounded-card-lg border border-white/10 bg-white/[0.02] overflow-hidden">
-      <header className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between">
+    <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel overflow-hidden">
+      <header className="px-4 py-2.5 border-b border-hairline flex items-center justify-between">
         <div className="text-[10px] uppercase tracking-widest text-orange font-medium">{title}</div>
-        <div className="text-xs text-gray-mid">
+        <div className="text-xs text-ink-2">
           {rows.length} ·{" "}
           {fmt(rows.reduce((s, r) => s + Number(r.amount), 0))}
         </div>
       </header>
       <table className="w-full text-xs">
-        <thead className="text-gray-mid uppercase tracking-wider">
+        <thead className="text-ink-2 uppercase tracking-wider">
           <tr>
             <th className="text-left px-3 py-2">Source</th>
             <th className="text-left px-3 py-2 w-32">Type</th>
@@ -438,17 +438,17 @@ function PledgeSection({
         </thead>
         <tbody>
           {rows.map((p) => (
-            <tr key={p.id} className="border-t border-white/5">
-              <td className="px-3 py-2 text-cream/85">{p.source_name}</td>
-              <td className="px-3 py-2 text-gray-mid">{p.source_type}</td>
-              <td className="px-3 py-2 text-right font-mono text-cream/85">
+            <tr key={p.id} className="border-t border-hairline">
+              <td className="px-3 py-2 text-ink-1">{p.source_name}</td>
+              <td className="px-3 py-2 text-ink-2">{p.source_type}</td>
+              <td className="px-3 py-2 text-right font-mono text-ink-1">
                 {fmt(Number(p.amount))}
               </td>
-              <td className="px-3 py-2 text-right text-gray-mid">
+              <td className="px-3 py-2 text-right text-ink-2">
                 {p.probability !== null ? `${Math.round(p.probability * 100)}%` : "—"}
               </td>
-              <td className="px-3 py-2 text-gray-mid font-mono">{p.expected_date ?? "—"}</td>
-              <td className="px-3 py-2 text-gray-mid">
+              <td className="px-3 py-2 text-ink-2 font-mono">{p.expected_date ?? "—"}</td>
+              <td className="px-3 py-2 text-ink-2">
                 {p.restricted ? (
                   <span className="text-orange">
                     {p.restricted_to ?? "yes"}
@@ -461,14 +461,14 @@ function PledgeSection({
                 {onMark && (
                   <button
                     onClick={() => onMark(p.id)}
-                    className="text-xs text-emerald-300 hover:text-emerald-200 mr-3"
+                    className="text-xs text-revenue hover:text-revenue mr-3"
                   >
                     Mark received
                   </button>
                 )}
                 <button
                   onClick={() => onDelete(p.id)}
-                  className="text-xs text-gray-mid hover:text-red-300"
+                  className="text-xs text-ink-2 hover:text-expense"
                 >
                   Delete
                 </button>
@@ -483,10 +483,10 @@ function PledgeSection({
 
 function Card({ label, value, count, accent }: { label: string; value: string; count: number; accent?: boolean }) {
   return (
-    <div className="rounded-card border border-white/10 bg-white/[0.02] p-3">
-      <div className="text-[10px] uppercase tracking-wider text-gray-mid mb-1">{label}</div>
-      <div className={`text-lg font-medium ${accent ? "text-orange" : "text-cream"}`}>{value}</div>
-      <div className="text-[10px] text-gray-mid mt-0.5">{count} pledges</div>
+    <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-3">
+      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}</div>
+      <div className={`text-lg font-medium ${accent ? "text-orange" : "text-ink-1"}`}>{value}</div>
+      <div className="text-[10px] text-ink-2 mt-0.5">{count} pledges</div>
     </div>
   );
 }
@@ -494,7 +494,7 @@ function Card({ label, value, count, accent }: { label: string; value: string; c
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-[10px] uppercase tracking-wider text-gray-mid mb-1">{label}</span>
+      <span className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}</span>
       {children}
     </label>
   );

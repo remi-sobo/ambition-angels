@@ -212,14 +212,14 @@ export default async function FundraisingProspectsPage({
   return (
     <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8">
       <header className="flex items-baseline justify-between gap-4 mb-6 flex-wrap">
-        <h1 className="font-display font-black uppercase tracking-tight text-cream text-3xl sm:text-4xl leading-none">
+        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
           Fundraising
         </h1>
-        <div className="text-xs text-gray-mid">
+        <div className="text-xs text-ink-2">
           {totalCount > 0 ? (
             <>
-              Showing <span className="text-cream">{fromIdx}–{toIdx}</span> of{" "}
-              <span className="text-cream">{totalCount}</span>
+              Showing <span className="text-ink-1">{fromIdx}–{toIdx}</span> of{" "}
+              <span className="text-ink-1">{totalCount}</span>
             </>
           ) : (
             "No matching prospects"
@@ -246,11 +246,11 @@ export default async function FundraisingProspectsPage({
       {totalPages > 1 && (
         <nav
           aria-label="Pagination"
-          className="mt-6 flex items-center justify-between text-xs text-gray-mid"
+          className="mt-6 flex items-center justify-between text-xs text-ink-2"
         >
           <div>
-            Page <span className="text-cream">{safePage}</span> of{" "}
-            <span className="text-cream">{totalPages}</span>
+            Page <span className="text-ink-1">{safePage}</span> of{" "}
+            <span className="text-ink-1">{totalPages}</span>
           </div>
           <div className="flex gap-2">
             <PaginationLink
@@ -281,7 +281,7 @@ function PaginationLink({
 }) {
   if (disabled) {
     return (
-      <span className="px-3 py-1.5 rounded-lg border border-white/5 text-gray-mid/50 cursor-default">
+      <span className="px-3 py-1.5 rounded-lg border border-hairline text-ink-2/50 cursor-default">
         {label}
       </span>
     );
@@ -289,7 +289,7 @@ function PaginationLink({
   return (
     <Link
       href={href}
-      className="px-3 py-1.5 rounded-lg border border-white/10 text-cream/80 hover:text-cream hover:bg-white/5"
+      className="px-3 py-1.5 rounded-lg border-[1.5px] border-outline text-ink-1 hover:text-ink-1 hover:bg-[#EFE6D4]"
     >
       {label}
     </Link>

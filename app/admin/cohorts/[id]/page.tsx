@@ -116,11 +116,11 @@ export default async function CohortPage({ params }: { params: { id: string } })
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
-      <Link href="/admin/cohorts" className="text-[11px] text-gray-mid hover:text-cream">
+      <Link href="/admin/cohorts" className="text-[11px] text-ink-2 hover:text-ink-1">
         ← All cohorts
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3 mt-2 mb-1">
-        <h1 className="font-heading font-bold text-2xl text-cream">{cohort.name}</h1>
+        <h1 className="font-heading font-bold text-2xl text-ink-1">{cohort.name}</h1>
         <CohortHeaderControls
           cohortId={cohort.id}
           status={cohort.status}
@@ -128,7 +128,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
           acceptingApplications={Boolean(cohort.accepting_applications)}
         />
       </div>
-      <p className="text-gray-mid text-sm mb-6">
+      <p className="text-ink-2 text-sm mb-6">
         {[cohort.program, cohort.term, cohort.location].filter(Boolean).join(" · ") || "—"}
         {cohort.start_date && (
           <span className="ml-1.5">
@@ -165,7 +165,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
             <SessionRow key={s.id} cohortId={cohort.id} session={s} enrolled={enrolled.length} />
           ))}
           {sessionViews.length === 0 && (
-            <p className="text-sm text-gray-mid">No sessions scheduled yet.</p>
+            <p className="text-sm text-ink-2">No sessions scheduled yet.</p>
           )}
         </div>
       </section>
@@ -182,7 +182,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
             <MemberRow key={m.memberId} cohortId={cohort.id} member={m} />
           ))}
           {memberViews.length === 0 && (
-            <p className="text-sm text-gray-mid">
+            <p className="text-sm text-ink-2">
               No students enrolled yet — pick one from the roster above.
             </p>
           )}

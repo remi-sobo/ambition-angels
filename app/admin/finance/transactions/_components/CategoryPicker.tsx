@@ -58,10 +58,10 @@ export default function CategoryPicker({
       <select
         value={value}
         onChange={(e) => save(e.target.value)}
-        className={`bg-ink border rounded px-2 py-1 text-xs text-cream max-w-[14rem] ${
+        className={`bg-ink border rounded px-2 py-1 text-xs text-ink-1 max-w-[14rem] ${
           value === ""
-            ? "border-amber-400/40 text-amber-200"
-            : "border-white/10"
+            ? "border-[#D9BE86] text-amber-200"
+            : "border-outline"
         }`}
       >
         <option value="">— Uncategorized —</option>
@@ -76,13 +76,13 @@ export default function CategoryPicker({
         ))}
       </select>
       {status === "saving" && (
-        <span className="text-[10px] text-gray-mid">saving…</span>
+        <span className="text-[10px] text-ink-2">saving…</span>
       )}
       {status === "saved" && (
-        <span className="text-[10px] text-emerald-300">saved</span>
+        <span className="text-[10px] text-revenue">saved</span>
       )}
       {status === "error" && (
-        <span className="text-[10px] text-red-300">error</span>
+        <span className="text-[10px] text-expense">error</span>
       )}
     </div>
   );

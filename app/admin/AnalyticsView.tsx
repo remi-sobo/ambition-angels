@@ -312,7 +312,7 @@ export default function AnalyticsView() {
             className={`text-xs font-semibold px-4 py-2 rounded-full border transition-colors ${
               period === p.id
                 ? "bg-orange text-white border-orange"
-                : "text-gray-mid border-white/10 hover:border-orange/40 hover:text-cream"
+                : "text-ink-2 border-outline hover:border-orange/40 hover:text-ink-1"
             }`}
           >
             {p.label}
@@ -321,7 +321,7 @@ export default function AnalyticsView() {
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-3 text-red-400 text-sm">
+        <div className="bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
           {error}
         </div>
       )}
@@ -363,17 +363,17 @@ export default function AnalyticsView() {
       {/* Top Pages */}
       <Section title="Top Pages" subtitle={`Top 15 by views · ${PERIODS.find((p) => p.id === period)?.label}`}>
         {/* Mobile cards */}
-        <div className="md:hidden divide-y divide-white/5">
+        <div className="md:hidden divide-y divide-hairline">
           {loading ? (
-            <p className="px-4 py-6 text-gray-mid text-sm">Loading…</p>
+            <p className="px-4 py-6 text-ink-2 text-sm">Loading…</p>
           ) : topPages.length === 0 ? (
-            <p className="px-4 py-6 text-gray-mid text-sm">No page views in this period yet.</p>
+            <p className="px-4 py-6 text-ink-2 text-sm">No page views in this period yet.</p>
           ) : (
             topPages.map((p) => (
               <div key={p.page} className="px-4 py-3">
-                <div className="text-cream font-mono text-xs break-all">{p.page}</div>
-                <div className="flex items-center justify-between mt-1 text-xs text-gray-mid">
-                  <span><span className="text-cream font-semibold">{p.views.toLocaleString()}</span> views · {p.pct.toFixed(1)}%</span>
+                <div className="text-ink-1 font-mono text-xs break-all">{p.page}</div>
+                <div className="flex items-center justify-between mt-1 text-xs text-ink-2">
+                  <span><span className="text-ink-1 font-semibold">{p.views.toLocaleString()}</span> views · {p.pct.toFixed(1)}%</span>
                   <span>{fmtSeconds(p.avgTime)}</span>
                 </div>
               </div>
@@ -384,9 +384,9 @@ export default function AnalyticsView() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-outline">
                 {["Page", "Views", "Avg Time on Page", "% of Total"].map((h) => (
-                  <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                  <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -394,16 +394,16 @@ export default function AnalyticsView() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={4} className="px-4 py-6 text-gray-mid text-sm">Loading…</td></tr>
+                <tr><td colSpan={4} className="px-4 py-6 text-ink-2 text-sm">Loading…</td></tr>
               ) : topPages.length === 0 ? (
-                <tr><td colSpan={4} className="px-4 py-6 text-gray-mid text-sm">No page views in this period yet.</td></tr>
+                <tr><td colSpan={4} className="px-4 py-6 text-ink-2 text-sm">No page views in this period yet.</td></tr>
               ) : (
                 topPages.map((p) => (
-                  <tr key={p.page} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="px-4 py-3 text-cream font-mono text-xs whitespace-nowrap">{p.page}</td>
-                    <td className="px-4 py-3 text-cream">{p.views.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-gray-mid text-xs">{fmtSeconds(p.avgTime)}</td>
-                    <td className="px-4 py-3 text-gray-mid text-xs">{p.pct.toFixed(1)}%</td>
+                  <tr key={p.page} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                    <td className="px-4 py-3 text-ink-1 font-mono text-xs whitespace-nowrap">{p.page}</td>
+                    <td className="px-4 py-3 text-ink-1">{p.views.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-ink-2 text-xs">{fmtSeconds(p.avgTime)}</td>
+                    <td className="px-4 py-3 text-ink-2 text-xs">{p.pct.toFixed(1)}%</td>
                   </tr>
                 ))
               )}
@@ -419,16 +419,16 @@ export default function AnalyticsView() {
             {deviceBreakdown.map((d) => (
               <div key={d.device} className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 flex-1">
-                  <span className="text-cream text-sm font-semibold w-20">{d.device}</span>
-                  <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                  <span className="text-ink-1 text-sm font-semibold w-20">{d.device}</span>
+                  <div className="flex-1 h-2 bg-tile rounded-full overflow-hidden">
                     <div
                       className="h-full bg-orange/60"
                       style={{ width: `${d.pct.toFixed(1)}%` }}
                     />
                   </div>
                 </div>
-                <span className="text-cream text-sm font-mono whitespace-nowrap">
-                  {d.count.toLocaleString()} <span className="text-gray-mid">· {d.pct.toFixed(0)}%</span>
+                <span className="text-ink-1 text-sm font-mono whitespace-nowrap">
+                  {d.count.toLocaleString()} <span className="text-ink-2">· {d.pct.toFixed(0)}%</span>
                 </span>
               </div>
             ))}
@@ -438,17 +438,17 @@ export default function AnalyticsView() {
         <Section title="Traffic Sources" subtitle="Top 5 + Direct">
           <div className="px-6 pb-6 flex flex-col gap-3">
             {loading ? (
-              <p className="text-gray-mid text-sm">Loading…</p>
+              <p className="text-ink-2 text-sm">Loading…</p>
             ) : traffic.length === 0 ? (
-              <p className="text-gray-mid text-sm">No traffic in this period yet.</p>
+              <p className="text-ink-2 text-sm">No traffic in this period yet.</p>
             ) : (
               traffic.map((t) => (
                 <div key={t.src} className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className="text-cream text-sm font-medium truncate flex-1">{t.src}</span>
+                    <span className="text-ink-1 text-sm font-medium truncate flex-1">{t.src}</span>
                   </div>
-                  <span className="text-cream text-sm font-mono whitespace-nowrap">
-                    {t.count.toLocaleString()} <span className="text-gray-mid">· {t.pct.toFixed(0)}%</span>
+                  <span className="text-ink-1 text-sm font-mono whitespace-nowrap">
+                    {t.count.toLocaleString()} <span className="text-ink-2">· {t.pct.toFixed(0)}%</span>
                   </span>
                 </div>
               ))
@@ -460,18 +460,18 @@ export default function AnalyticsView() {
       {/* Key Events */}
       <Section title="Key Events" subtitle="Click & interaction events — what people are actually doing">
         {/* Mobile cards */}
-        <div className="md:hidden divide-y divide-white/5">
+        <div className="md:hidden divide-y divide-hairline">
           {loading ? (
-            <p className="px-4 py-6 text-gray-mid text-sm">Loading…</p>
+            <p className="px-4 py-6 text-ink-2 text-sm">Loading…</p>
           ) : eventCounts.length === 0 ? (
-            <p className="px-4 py-6 text-gray-mid text-sm">No events in this period yet.</p>
+            <p className="px-4 py-6 text-ink-2 text-sm">No events in this period yet.</p>
           ) : (
             eventCounts.map((e) => (
               <div key={e.event_name} className="px-4 py-3 flex items-center justify-between gap-3">
-                <span className="text-cream font-mono text-xs break-all flex-1 min-w-0">{e.event_name}</span>
+                <span className="text-ink-1 font-mono text-xs break-all flex-1 min-w-0">{e.event_name}</span>
                 <div className="text-right flex-shrink-0">
-                  <div className="text-cream font-semibold text-sm">{e.count.toLocaleString()}</div>
-                  <div className="text-gray-mid text-[11px]">{e.allTime.toLocaleString()} all-time</div>
+                  <div className="text-ink-1 font-semibold text-sm">{e.count.toLocaleString()}</div>
+                  <div className="text-ink-2 text-[11px]">{e.allTime.toLocaleString()} all-time</div>
                 </div>
               </div>
             ))
@@ -481,9 +481,9 @@ export default function AnalyticsView() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm min-w-[520px]">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-outline">
                 {["Event Name", "Count (period)", "Count all time"].map((h) => (
-                  <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                  <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -491,15 +491,15 @@ export default function AnalyticsView() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={3} className="px-4 py-6 text-gray-mid text-sm">Loading…</td></tr>
+                <tr><td colSpan={3} className="px-4 py-6 text-ink-2 text-sm">Loading…</td></tr>
               ) : eventCounts.length === 0 ? (
-                <tr><td colSpan={3} className="px-4 py-6 text-gray-mid text-sm">No events in this period yet.</td></tr>
+                <tr><td colSpan={3} className="px-4 py-6 text-ink-2 text-sm">No events in this period yet.</td></tr>
               ) : (
                 eventCounts.map((e) => (
-                  <tr key={e.event_name} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="px-4 py-3 text-cream font-mono text-xs whitespace-nowrap">{e.event_name}</td>
-                    <td className="px-4 py-3 text-cream font-semibold">{e.count.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-gray-mid">{e.allTime.toLocaleString()}</td>
+                  <tr key={e.event_name} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                    <td className="px-4 py-3 text-ink-1 font-mono text-xs whitespace-nowrap">{e.event_name}</td>
+                    <td className="px-4 py-3 text-ink-1 font-semibold">{e.count.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-ink-2">{e.allTime.toLocaleString()}</td>
                   </tr>
                 ))
               )}
@@ -532,19 +532,19 @@ export default function AnalyticsView() {
       {/* Recent Activity */}
       <Section title="Recent Activity" subtitle="Last 50 page views (newest first)">
         {/* Mobile cards */}
-        <div className="md:hidden divide-y divide-white/5">
+        <div className="md:hidden divide-y divide-hairline">
           {loading ? (
-            <p className="px-4 py-6 text-gray-mid text-sm">Loading…</p>
+            <p className="px-4 py-6 text-ink-2 text-sm">Loading…</p>
           ) : recentActivity.length === 0 ? (
-            <p className="px-4 py-6 text-gray-mid text-sm">No page views yet.</p>
+            <p className="px-4 py-6 text-ink-2 text-sm">No page views yet.</p>
           ) : (
             recentActivity.map((v) => (
               <div key={String(v.id)} className="px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
-                  <span className="text-cream font-mono text-xs break-all flex-1 min-w-0">{v.page ?? "—"}</span>
-                  <span className="text-[11px] text-white/30 whitespace-nowrap flex-shrink-0">{timeAgo(v.created_at)}</span>
+                  <span className="text-ink-1 font-mono text-xs break-all flex-1 min-w-0">{v.page ?? "—"}</span>
+                  <span className="text-[11px] text-ink-3 whitespace-nowrap flex-shrink-0">{timeAgo(v.created_at)}</span>
                 </div>
-                <div className="text-[11px] text-gray-mid mt-1 flex flex-wrap gap-x-2">
+                <div className="text-[11px] text-ink-2 mt-1 flex flex-wrap gap-x-2">
                   <span>{v.device ?? "—"}</span>
                   <span>·</span>
                   <span>{refSource(v.referrer)}</span>
@@ -563,9 +563,9 @@ export default function AnalyticsView() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm min-w-[800px]">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-outline">
                 {["Page", "Device", "Source", "Time on Page", "When"].map((h) => (
-                  <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                  <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -573,19 +573,19 @@ export default function AnalyticsView() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} className="px-4 py-6 text-gray-mid text-sm">Loading…</td></tr>
+                <tr><td colSpan={5} className="px-4 py-6 text-ink-2 text-sm">Loading…</td></tr>
               ) : recentActivity.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-6 text-gray-mid text-sm">No page views yet.</td></tr>
+                <tr><td colSpan={5} className="px-4 py-6 text-ink-2 text-sm">No page views yet.</td></tr>
               ) : (
                 recentActivity.map((v) => (
-                  <tr key={String(v.id)} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="px-4 py-3 text-cream font-mono text-xs whitespace-nowrap">{v.page ?? "—"}</td>
-                    <td className="px-4 py-3 text-gray-mid text-xs">{v.device ?? "—"}</td>
-                    <td className="px-4 py-3 text-gray-mid text-xs">{refSource(v.referrer)}</td>
-                    <td className="px-4 py-3 text-gray-mid text-xs">
+                  <tr key={String(v.id)} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                    <td className="px-4 py-3 text-ink-1 font-mono text-xs whitespace-nowrap">{v.page ?? "—"}</td>
+                    <td className="px-4 py-3 text-ink-2 text-xs">{v.device ?? "—"}</td>
+                    <td className="px-4 py-3 text-ink-2 text-xs">{refSource(v.referrer)}</td>
+                    <td className="px-4 py-3 text-ink-2 text-xs">
                       {v.duration != null ? fmtSeconds(v.duration) : "—"}
                     </td>
-                    <td className="px-4 py-3 text-gray-mid text-xs whitespace-nowrap">{timeAgo(v.created_at)}</td>
+                    <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{timeAgo(v.created_at)}</td>
                   </tr>
                 ))
               )}
@@ -602,12 +602,12 @@ export default function AnalyticsView() {
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
+    <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
       <div className="font-display font-black text-3xl lg:text-4xl text-orange tracking-tight leading-none mb-2 truncate">
         {value}
       </div>
-      <div className="text-cream text-sm font-medium">{label}</div>
-      {sub && <div className="text-white/30 text-xs mt-1">{sub}</div>}
+      <div className="text-ink-1 text-sm font-medium">{label}</div>
+      {sub && <div className="text-ink-3 text-xs mt-1">{sub}</div>}
     </div>
   );
 }
@@ -622,10 +622,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
-      <div className="px-6 py-5 border-b border-white/10">
-        <h2 className="font-heading font-bold text-cream text-lg">{title}</h2>
-        {subtitle && <p className="text-gray-mid text-xs mt-0.5">{subtitle}</p>}
+    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+      <div className="px-6 py-5 border-b border-outline">
+        <h2 className="font-heading font-bold text-ink-1 text-lg">{title}</h2>
+        {subtitle && <p className="text-ink-2 text-xs mt-0.5">{subtitle}</p>}
       </div>
       {children}
     </section>
@@ -638,7 +638,7 @@ function Stat({ label, value }: { label: string; value: string }) {
       <div className="font-display font-black text-2xl text-orange tracking-tight leading-none mb-1">
         {value}
       </div>
-      <div className="text-gray-mid text-xs">{label}</div>
+      <div className="text-ink-2 text-xs">{label}</div>
     </div>
   );
 }

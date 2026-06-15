@@ -75,7 +75,7 @@ function SortHeader({
     >
       <Link
         href={buildHref(col, nextDir)}
-        className={`hover:text-cream ${isActive ? "text-orange" : "text-gray-mid"}`}
+        className={`hover:text-ink-1 ${isActive ? "text-orange" : "text-ink-2"}`}
       >
         {label}
         <span>{arrow}</span>
@@ -97,17 +97,17 @@ export default function ProspectListTable({
 }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-card border border-white/10 bg-black/30 p-8 text-center text-sm text-gray-mid">
+      <div className="rounded-card border-[1.5px] border-outline bg-black/30 p-8 text-center text-sm text-ink-2">
         No prospects match your filters.
       </div>
     );
   }
 
   return (
-    <div className="rounded-card border border-white/10 bg-black/30 overflow-hidden">
+    <div className="rounded-card border-[1.5px] border-outline bg-black/30 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="border-b border-white/10 bg-black/20">
+          <thead className="border-b border-outline bg-black/20">
             <tr>
               <SortHeader
                 label="Name"
@@ -116,16 +116,16 @@ export default function ProspectListTable({
                 dir={dir}
                 buildHref={buildSortHref}
               />
-              <th className="text-left pb-2 pr-4 text-[10px] uppercase tracking-wider text-gray-mid font-medium">
+              <th className="text-left pb-2 pr-4 text-[10px] uppercase tracking-wider text-ink-2 font-medium">
                 Email
               </th>
-              <th className="text-left pb-2 pr-4 text-[10px] uppercase tracking-wider text-gray-mid font-medium">
+              <th className="text-left pb-2 pr-4 text-[10px] uppercase tracking-wider text-ink-2 font-medium">
                 Company
               </th>
-              <th className="text-left pb-2 pr-4 text-[10px] uppercase tracking-wider text-gray-mid font-medium">
+              <th className="text-left pb-2 pr-4 text-[10px] uppercase tracking-wider text-ink-2 font-medium">
                 Lifecycle
               </th>
-              <th className="text-left pb-2 pr-4 text-[10px] uppercase tracking-wider text-gray-mid font-medium">
+              <th className="text-left pb-2 pr-4 text-[10px] uppercase tracking-wider text-ink-2 font-medium">
                 Owner ID
               </th>
               <SortHeader
@@ -148,39 +148,39 @@ export default function ProspectListTable({
               <th className="px-4 pt-1" colSpan={7}></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-hairline">
             {rows.map((r) => (
               <tr
                 key={r.hubspot_id}
-                className="hover:bg-white/5 transition-colors"
+                className="hover:bg-[#EFE6D4] transition-colors"
               >
                 <td className="py-2.5 pl-4 pr-4">
                   <Link
                     href={`/admin/fundraising/prospects/${encodeURIComponent(r.hubspot_id)}`}
-                    className="text-cream font-medium hover:text-orange block"
+                    className="text-ink-1 font-medium hover:text-orange block"
                   >
                     {displayName(r)}
                   </Link>
                 </td>
-                <td className="py-2.5 pr-4 text-cream/70 truncate max-w-[220px]">
-                  {r.email ?? <span className="text-gray-mid">—</span>}
+                <td className="py-2.5 pr-4 text-ink-2 truncate max-w-[220px]">
+                  {r.email ?? <span className="text-ink-2">—</span>}
                 </td>
-                <td className="py-2.5 pr-4 text-cream/70 truncate max-w-[160px]">
-                  {r.company ?? <span className="text-gray-mid">—</span>}
+                <td className="py-2.5 pr-4 text-ink-2 truncate max-w-[160px]">
+                  {r.company ?? <span className="text-ink-2">—</span>}
                 </td>
                 <td className="py-2.5 pr-4">
                   {r.lifecycle_stage ? (
-                    <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-white/5 border border-white/10 text-cream/80">
+                    <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-tile border-[1.5px] border-outline text-ink-1">
                       {r.lifecycle_stage}
                     </span>
                   ) : (
-                    <span className="text-gray-mid">—</span>
+                    <span className="text-ink-2">—</span>
                   )}
                 </td>
-                <td className="py-2.5 pr-4 text-cream/70 font-mono text-xs">
-                  {r.owner_id ?? <span className="text-gray-mid">—</span>}
+                <td className="py-2.5 pr-4 text-ink-2 font-mono text-xs">
+                  {r.owner_id ?? <span className="text-ink-2">—</span>}
                 </td>
-                <td className="py-2.5 pr-4 text-cream/70">
+                <td className="py-2.5 pr-4 text-ink-2">
                   {fmtRelative(r.last_activity_at)}
                 </td>
                 <td className="py-2.5 pr-4 text-right font-mono">
@@ -189,7 +189,7 @@ export default function ProspectListTable({
                       {r.score_total}
                     </span>
                   ) : (
-                    <span className="text-gray-mid">—</span>
+                    <span className="text-ink-2">—</span>
                   )}
                 </td>
               </tr>

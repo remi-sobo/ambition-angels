@@ -57,7 +57,7 @@ export function Donut({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
+          stroke="#E7DCC9"
           strokeWidth={thickness}
         />
         {sum > 0 &&
@@ -91,7 +91,7 @@ export function Donut({
                 x={size / 2}
                 y={size / 2 - 4}
                 textAnchor="middle"
-                className="fill-cream font-display font-black"
+                className="fill-[#2A201A] font-display font-black"
                 fontSize={size * 0.18}
               >
                 {centerValue}
@@ -102,7 +102,7 @@ export function Donut({
                 x={size / 2}
                 y={size / 2 + 18}
                 textAnchor="middle"
-                className="fill-[#6B6960]"
+                className="fill-[#9A8B7C]"
                 fontSize={11}
                 letterSpacing={1.5}
               >
@@ -120,11 +120,11 @@ export function Donut({
               className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
               style={{ background: s.color }}
             />
-            <span className="text-cream/80 truncate flex-1">{s.label}</span>
-            <span className="text-gray-mid font-mono">
+            <span className="text-ink-2 truncate flex-1">{s.label}</span>
+            <span className="text-ink-3 font-mono">
               {sum > 0 ? `${Math.round((s.value / sum) * 100)}%` : "—"}
             </span>
-            <span className="text-cream font-mono w-20 text-right">{formatValue(s.value)}</span>
+            <span className="text-ink-1 font-mono w-20 text-right">{formatValue(s.value)}</span>
           </li>
         ))}
       </ul>
@@ -140,8 +140,8 @@ export function CircleGauge({
   pct,
   size = 130,
   thickness = 14,
-  color = "#C0764E",
-  trackColor = "rgba(255,255,255,0.08)",
+  color = "#C0703C",
+  trackColor = "#E7DCC9",
   label,
   value,
 }: {
@@ -182,10 +182,10 @@ export function CircleGauge({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
         {value && (
-          <span className="font-display font-black text-cream text-xl leading-none">{value}</span>
+          <span className="font-display font-black text-ink-1 text-xl leading-none">{value}</span>
         )}
         {label && (
-          <span className="mt-1 text-[10px] uppercase tracking-wider text-gray-mid">{label}</span>
+          <span className="mt-1 text-[10px] uppercase tracking-wider text-ink-3">{label}</span>
         )}
       </div>
     </div>
@@ -199,7 +199,7 @@ export function Sparkline({
   values,
   width = 120,
   height = 36,
-  color = "#C0764E",
+  color = "#C0703C",
   fill,
 }: {
   values: number[];
@@ -291,7 +291,7 @@ export function CashFlowChart({
           x2={pad.left + innerW}
           y1={zeroY - innerH * 0.5 * p}
           y2={zeroY - innerH * 0.5 * p}
-          stroke="rgba(255,255,255,0.05)"
+          stroke="#E7DCC9"
           strokeWidth={1}
         />
       ))}
@@ -302,7 +302,7 @@ export function CashFlowChart({
           x2={pad.left + innerW}
           y1={zeroY + innerH * 0.5 * p}
           y2={zeroY + innerH * 0.5 * p}
-          stroke="rgba(255,255,255,0.05)"
+          stroke="#E7DCC9"
           strokeWidth={1}
         />
       ))}
@@ -311,7 +311,7 @@ export function CashFlowChart({
         x2={pad.left + innerW}
         y1={zeroY}
         y2={zeroY}
-        stroke="rgba(255,255,255,0.2)"
+        stroke="#C7B18C"
         strokeWidth={1}
       />
 
@@ -329,7 +329,7 @@ export function CashFlowChart({
                 width={innerBarW}
                 height={revH}
                 rx={2}
-                fill="#10b981"
+                fill="#2F7D5B"
                 opacity={0.85}
               />
             )}
@@ -340,7 +340,7 @@ export function CashFlowChart({
                 width={innerBarW}
                 height={expH}
                 rx={2}
-                fill="#C0764E"
+                fill="#B5482F"
                 opacity={0.85}
               />
             )}
@@ -348,7 +348,7 @@ export function CashFlowChart({
               x={cx}
               y={height - pad.bottom + 16}
               textAnchor="middle"
-              className="fill-[#6B6960]"
+              className="fill-[#9A8B7C]"
               fontSize={10}
               letterSpacing={1}
             >
@@ -362,7 +362,7 @@ export function CashFlowChart({
       <path
         d={balPath}
         fill="none"
-        stroke="#FAFAF8"
+        stroke="#2A201A"
         strokeWidth={2}
         strokeLinejoin="round"
         opacity={0.85}
@@ -370,23 +370,23 @@ export function CashFlowChart({
       {data.map((d, i) => {
         const x = pad.left + i * barW + barW / 2;
         const y = pad.top + balScale(d.ending);
-        return <circle key={i} cx={x} cy={y} r={3} fill="#FAFAF8" />;
+        return <circle key={i} cx={x} cy={y} r={3} fill="#2A201A" />;
       })}
 
       {/* y-axis labels (left = ±max for bars, right = balance) */}
-      <text x={pad.left - 8} y={zeroY - innerH * 0.5 + 4} textAnchor="end" className="fill-[#6B6960]" fontSize={10}>
+      <text x={pad.left - 8} y={zeroY - innerH * 0.5 + 4} textAnchor="end" className="fill-[#9A8B7C]" fontSize={10}>
         +{money(yMax)}
       </text>
-      <text x={pad.left - 8} y={zeroY + 4} textAnchor="end" className="fill-[#6B6960]" fontSize={10}>
+      <text x={pad.left - 8} y={zeroY + 4} textAnchor="end" className="fill-[#9A8B7C]" fontSize={10}>
         0
       </text>
-      <text x={pad.left - 8} y={zeroY + innerH * 0.5 + 4} textAnchor="end" className="fill-[#6B6960]" fontSize={10}>
+      <text x={pad.left - 8} y={zeroY + innerH * 0.5 + 4} textAnchor="end" className="fill-[#9A8B7C]" fontSize={10}>
         −{money(yMax)}
       </text>
       <text
         x={pad.left + innerW + 8}
         y={pad.top + balScale(maxBal) + 4}
-        className="fill-cream/70"
+        className="fill-[#6B5C4E]"
         fontSize={10}
       >
         {money(maxBal)}
@@ -394,11 +394,11 @@ export function CashFlowChart({
 
       {/* Legend */}
       <g transform={`translate(${pad.left} ${pad.top - 12})`}>
-        <Swatch x={0} fill="#10b981" label="Revenue" />
-        <Swatch x={90} fill="#C0764E" label="Expense" />
+        <Swatch x={0} fill="#2F7D5B" label="Revenue" />
+        <Swatch x={90} fill="#B5482F" label="Expense" />
         <g transform="translate(180 0)">
-          <line x1={0} x2={16} y1={4} y2={4} stroke="#FAFAF8" strokeWidth={2} />
-          <text x={22} y={8} className="fill-[#6B6960]" fontSize={10}>
+          <line x1={0} x2={16} y1={4} y2={4} stroke="#2A201A" strokeWidth={2} />
+          <text x={22} y={8} className="fill-[#9A8B7C]" fontSize={10}>
             Ending balance
           </text>
         </g>
@@ -411,7 +411,7 @@ function Swatch({ x, fill, label }: { x: number; fill: string; label: string }) 
   return (
     <g transform={`translate(${x} 0)`}>
       <rect width={10} height={10} rx={2} fill={fill} />
-      <text x={16} y={9} className="fill-[#6B6960]" fontSize={10}>
+      <text x={16} y={9} className="fill-[#9A8B7C]" fontSize={10}>
         {label}
       </text>
     </g>
@@ -429,8 +429,8 @@ export function ProgressBar({
   intent?: "ok" | "warn" | "over";
   height?: number;
 }) {
-  const c = intent === "over" ? "#ef4444" : intent === "warn" ? "#f59e0b" : "#C0764E";
-  const trackC = "rgba(255,255,255,0.06)";
+  const c = intent === "over" ? "#B5482F" : intent === "warn" ? "#B5762A" : "#C0703C";
+  const trackC = "#E7DCC9";
   const fillPct = Math.min(1, Math.max(0, pct));
   const overflow = pct > 1 ? Math.min(1, pct - 1) : 0;
   return (
@@ -445,7 +445,7 @@ export function ProgressBar({
       {overflow > 0 && (
         <div
           className="absolute inset-y-0 right-0 rounded-full"
-          style={{ width: `${overflow * 100}%`, background: "#ef4444", opacity: 0.7 }}
+          style={{ width: `${overflow * 100}%`, background: "#B5482F", opacity: 0.7 }}
         />
       )}
     </div>

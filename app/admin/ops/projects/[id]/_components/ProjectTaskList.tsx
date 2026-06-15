@@ -166,16 +166,16 @@ export default function ProjectTaskList({
 
   return (
     <>
-    <section className="rounded-card border border-white/10 bg-black/30 p-6">
-      <h2 className="text-xs uppercase tracking-wider text-gray-mid mb-4">
+    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+      <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
         Tasks{" "}
-        <span className="text-cream/40">
+        <span className="text-ink-3">
           ({tasks.length}{tasks.length > 0 ? `, ${tasks.filter((t) => t.status !== "done").length} open` : ""})
         </span>
       </h2>
 
       {tasks.length === 0 ? (
-        <p className="text-sm text-gray-mid italic mb-4">
+        <p className="text-sm text-ink-2 italic mb-4">
           No tasks yet. Add the first one below.
         </p>
       ) : (
@@ -196,14 +196,14 @@ export default function ProjectTaskList({
                   isDragOver
                     ? "border-orange/50 bg-orange/5"
                     : isDone
-                    ? "border-white/5 bg-white/[0.02] text-cream/50"
+                    ? "border-hairline bg-surface shadow-panel text-ink-3"
                     : isBlocked
-                    ? "border-red-500/20 bg-red-500/[0.04]"
-                    : "border-white/10 bg-white/[0.02] hover:bg-white/[0.05]"
+                    ? "border-expense/30 bg-expense-bg"
+                    : "border-outline bg-surface shadow-panel hover:bg-[#EFE6D4]"
                 }`}
               >
                 <span
-                  className="cursor-grab active:cursor-grabbing text-gray-mid hover:text-cream select-none px-1"
+                  className="cursor-grab active:cursor-grabbing text-ink-2 hover:text-ink-1 select-none px-1"
                   title="Drag to reorder"
                   aria-label="Drag handle"
                 >
@@ -215,8 +215,8 @@ export default function ProjectTaskList({
                   aria-label={isDone ? "Mark as not done" : "Mark as done"}
                   className={`shrink-0 w-5 h-5 rounded border flex items-center justify-center ${
                     isDone
-                      ? "bg-emerald-500/30 border-emerald-500/50 text-emerald-200"
-                      : "border-white/20 hover:border-orange/60"
+                      ? "bg-revenue-bg border-revenue/30 text-revenue"
+                      : "border-outline hover:border-orange/60"
                   }`}
                 >
                   {isDone && (
@@ -230,8 +230,8 @@ export default function ProjectTaskList({
                   onClick={() => setEditingTask(t)}
                   className={`flex-1 min-w-0 truncate text-left transition-colors ${
                     isDone
-                      ? "line-through text-cream/40 hover:text-cream/60"
-                      : "text-cream hover:text-orange"
+                      ? "line-through text-ink-3 hover:text-ink-2"
+                      : "text-ink-1 hover:text-orange"
                   }`}
                   title="Click to edit"
                 >
@@ -239,14 +239,14 @@ export default function ProjectTaskList({
                 </button>
                 {t.assigned_to && (
                   <span
-                    className="inline-flex w-4 h-4 rounded-full bg-white/10 text-cream/80 items-center justify-center text-[9px] font-bold uppercase"
+                    className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[9px] font-bold uppercase"
                     title={`Assigned to ${t.assigned_to}`}
                   >
                     {t.assigned_to.charAt(0)}
                   </span>
                 )}
                 {t.due_date && (
-                  <span className="text-[11px] text-cream/60 font-mono">
+                  <span className="text-[11px] text-ink-2 font-mono">
                     {formatDueLabel(t.due_date)}
                   </span>
                 )}
@@ -254,7 +254,7 @@ export default function ProjectTaskList({
                   onClick={() => deleteTask(t.id, t.title)}
                   disabled={busy}
                   aria-label="Delete task"
-                  className="text-cream/30 hover:text-red-300 text-xs px-1"
+                  className="text-ink-3 hover:text-expense text-xs px-1"
                   title="Delete task"
                 >
                   ✕
@@ -272,7 +272,7 @@ export default function ProjectTaskList({
           onChange={(e) => setNewTitle(e.target.value)}
           placeholder="Add a task (Enter to create)…"
           disabled={adding}
-          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-cream placeholder-gray-mid focus:outline-none focus:border-orange/50"
+          className="flex-1 bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
         />
         <button
           type="submit"
@@ -282,7 +282,7 @@ export default function ProjectTaskList({
           {adding ? "Adding…" : "Add"}
         </button>
       </form>
-      {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
+      {error && <p className="text-expense text-xs mt-2">{error}</p>}
     </section>
     {editingTask && (
       <TaskEditModal task={editingTask} onClose={() => setEditingTask(null)} />

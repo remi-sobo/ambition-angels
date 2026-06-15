@@ -35,9 +35,9 @@ export default function PageHeader({
             {eyebrow}
           </div>
         ) : null}
-        <h1 className="font-heading font-bold text-2xl text-cream">{title}</h1>
+        <h1 className="font-heading font-bold text-2xl text-ink-1">{title}</h1>
         {subtitle ? (
-          <p className="text-gray-mid text-sm mt-0.5">{subtitle}</p>
+          <p className="text-ink-2 text-sm mt-0.5">{subtitle}</p>
         ) : null}
       </div>
       {actions}

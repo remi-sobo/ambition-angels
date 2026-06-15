@@ -61,7 +61,7 @@ const pctDelta = (now: number, prev: number): Delta | undefined => {
   };
 };
 
-const CHART_COLORS = ["#C0764E", "#5B8DEF", "#2BB3A3", "#D9A406", "#8A93A6", "#E05C7A"];
+const CHART_COLORS = ["#C0703C", "#5B8DEF", "#2BB3A3", "#D9A406", "#8A93A6", "#E05C7A"];
 
 // ── Widget chrome ───────────────────────────────────────────────────────────
 
@@ -79,9 +79,9 @@ function Widget({
   className?: string;
 }) {
   return (
-    <section className={`bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden ${className ?? ""}`}>
-      <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3">
-        <h2 className="font-heading font-bold text-cream text-sm">{title}</h2>
+    <section className={`bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden ${className ?? ""}`}>
+      <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
+        <h2 className="font-heading font-bold text-ink-1 text-sm">{title}</h2>
         {href && (
           <Link href={href} className="text-xs font-semibold text-orange hover:text-orange-mid transition-colors whitespace-nowrap">
             {hrefLabel ?? "View"} →
@@ -94,7 +94,7 @@ function Widget({
 }
 
 const Empty = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-gray-mid text-sm">{children}</p>
+  <p className="text-ink-2 text-sm">{children}</p>
 );
 
 // ── Data ────────────────────────────────────────────────────────────────────
@@ -359,7 +359,7 @@ export default async function CommandCenter() {
           />
           <StatCard
             label="Organizational Health"
-            value={<span>—<span className="text-white/20 text-lg">/100</span></span>}
+            value={<span>—<span className="text-ink-3 text-lg">/100</span></span>}
             sub="composite lands with the metric registry"
             muted
           />
@@ -370,16 +370,16 @@ export default async function CommandCenter() {
           <Widget title="Financial Health" href="/admin/finance" hrefLabel="Finance" className="lg:col-span-7">
             <div className="grid grid-cols-3 gap-4 mb-5">
               {[
-                { label: "Revenue YTD", value: money(d.revenueYTD), cls: "text-green-400" },
-                { label: "Expenses YTD", value: money(d.expenseYTD), cls: "text-red-400" },
+                { label: "Revenue YTD", value: money(d.revenueYTD), cls: "text-revenue" },
+                { label: "Expenses YTD", value: money(d.expenseYTD), cls: "text-expense" },
                 {
                   label: "Net Surplus",
                   value: money(d.revenueYTD - d.expenseYTD),
-                  cls: d.revenueYTD - d.expenseYTD >= 0 ? "text-green-400" : "text-red-400",
+                  cls: d.revenueYTD - d.expenseYTD >= 0 ? "text-revenue" : "text-expense",
                 },
               ].map((s) => (
                 <div key={s.label}>
-                  <div className="text-[11px] uppercase tracking-wider text-white/35 font-semibold mb-1">{s.label}</div>
+                  <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-1">{s.label}</div>
                   <div className={`font-heading font-semibold text-lg [font-variant-numeric:tabular-nums] ${s.cls}`}>
                     {s.value}
                   </div>
@@ -401,10 +401,10 @@ export default async function CommandCenter() {
             ) : (
               <>
                 <div className="mb-4">
-                  <span className="font-heading font-semibold text-cream text-xl [font-variant-numeric:tabular-nums]">
+                  <span className="font-heading font-semibold text-ink-1 text-xl [font-variant-numeric:tabular-nums]">
                     {money(d.pipelineTotal)}
                   </span>
-                  <span className="text-xs text-gray-mid ml-2">total pipeline</span>
+                  <span className="text-xs text-ink-2 ml-2">total pipeline</span>
                 </div>
                 <div className="space-y-3">
                   {d.stages.map((s) => {
@@ -412,12 +412,12 @@ export default async function CommandCenter() {
                     return (
                       <div key={s.stage}>
                         <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-cream/80 font-medium truncate">{s.stage}</span>
-                          <span className="text-gray-mid whitespace-nowrap ml-2 [font-variant-numeric:tabular-nums]">
+                          <span className="text-ink-1 font-medium truncate">{s.stage}</span>
+                          <span className="text-ink-2 whitespace-nowrap ml-2 [font-variant-numeric:tabular-nums]">
                             {s.count} · {money(s.total)}
                           </span>
                         </div>
-                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-2 bg-tile rounded-full overflow-hidden">
                           <div className="h-full rounded-full bg-orange" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
@@ -446,18 +446,18 @@ export default async function CommandCenter() {
                   return (
                     <li key={p.key} className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <Link href={p.href} className="text-sm text-cream/90 font-medium truncate block hover:text-orange transition-colors">
+                        <Link href={p.href} className="text-sm text-ink-1 font-medium truncate block hover:text-orange transition-colors">
                           {p.title}
                         </Link>
-                        <div className="text-[11px] text-gray-mid capitalize">{p.sub}</div>
+                        <div className="text-[11px] text-ink-2 capitalize">{p.sub}</div>
                       </div>
                       <span
                         className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
                           overdue
-                            ? "bg-red-500/15 text-red-400"
+                            ? "bg-expense-bg text-expense"
                             : isToday
                             ? "bg-orange/15 text-orange"
-                            : "bg-white/5 text-gray-mid"
+                            : "bg-tile text-ink-2"
                         }`}
                       >
                         {overdue ? "Overdue" : isToday ? "Today" : p.due}
@@ -480,11 +480,11 @@ export default async function CommandCenter() {
                       <span className="text-orange font-bold text-xs">{donorName(x)[0]?.toUpperCase() ?? "$"}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm text-cream/90 font-medium truncate block">{donorName(x)}</span>
-                      <span className="text-[11px] text-gray-mid">{timeAgo(x.created_at)}</span>
+                      <span className="text-sm text-ink-1 font-medium truncate block">{donorName(x)}</span>
+                      <span className="text-[11px] text-ink-2">{timeAgo(x.created_at)}</span>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <div className="text-sm font-bold text-cream [font-variant-numeric:tabular-nums]">{money(x.amount)}</div>
+                      <div className="text-sm font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(x.amount)}</div>
                       {x.recurring && <div className="text-[10px] text-orange font-semibold">Monthly</div>}
                     </div>
                   </li>
@@ -509,7 +509,7 @@ export default async function CommandCenter() {
           </Widget>
         </div>
 
-        <div className="text-xs text-gray-mid pt-2">
+        <div className="text-xs text-ink-2 pt-2">
           Looking for the quiz and donation tables?{" "}
           <Link href="/admin/legacy" className="text-orange hover:text-orange-mid font-semibold">
             Open the legacy dashboard →

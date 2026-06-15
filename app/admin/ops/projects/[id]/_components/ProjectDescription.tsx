@@ -26,7 +26,7 @@ function renderInline(text: string, baseKey: string): ReactNode[] {
     const t = m[0];
     if (t.startsWith("`")) {
       out.push(
-        <code key={`${baseKey}-${i++}`} className="px-1 py-0.5 rounded bg-white/10 text-cream/90 text-[12px] font-mono">
+        <code key={`${baseKey}-${i++}`} className="px-1 py-0.5 rounded bg-tile text-ink-1 text-[12px] font-mono">
           {t.slice(1, -1)}
         </code>
       );
@@ -67,21 +67,21 @@ function renderMarkdown(md: string): ReactNode {
     const line = lines[i];
     if (line.startsWith("### ")) {
       out.push(
-        <h3 key={key++} className="text-base font-semibold text-cream mt-4 mb-2">
+        <h3 key={key++} className="text-base font-semibold text-ink-1 mt-4 mb-2">
           {renderInline(line.slice(4), `h3-${key}`)}
         </h3>
       );
       i++;
     } else if (line.startsWith("## ")) {
       out.push(
-        <h2 key={key++} className="text-lg font-semibold text-cream mt-5 mb-2">
+        <h2 key={key++} className="text-lg font-semibold text-ink-1 mt-5 mb-2">
           {renderInline(line.slice(3), `h2-${key}`)}
         </h2>
       );
       i++;
     } else if (line.startsWith("# ")) {
       out.push(
-        <h1 key={key++} className="text-xl font-bold text-cream mt-5 mb-3">
+        <h1 key={key++} className="text-xl font-bold text-ink-1 mt-5 mb-3">
           {renderInline(line.slice(2), `h1-${key}`)}
         </h1>
       );
@@ -91,7 +91,7 @@ function renderMarkdown(md: string): ReactNode {
       let j = 0;
       while (i < lines.length && lines[i].startsWith("- ")) {
         items.push(
-          <li key={`li-${key}-${j}`} className="ml-5 list-disc text-cream/85">
+          <li key={`li-${key}-${j}`} className="ml-5 list-disc text-ink-1">
             {renderInline(lines[i].slice(2), `li-${key}-${j}`)}
           </li>
         );
@@ -124,7 +124,7 @@ function renderMarkdown(md: string): ReactNode {
         idx < paraLines.length - 1 ? <br key={`br-${key}-${idx}`} /> : null,
       ]);
       out.push(
-        <p key={key++} className="text-sm text-cream/85 leading-relaxed my-2">
+        <p key={key++} className="text-sm text-ink-1 leading-relaxed my-2">
           {parts.map((x, idx) => (x === null ? null : <Fragment key={idx}>{x}</Fragment>))}
         </p>
       );
@@ -173,9 +173,9 @@ export default function ProjectDescription({
   }
 
   return (
-    <section className="rounded-card border border-white/10 bg-black/30 p-6">
+    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
       <div className="flex items-baseline justify-between gap-2 mb-3">
-        <h2 className="text-xs uppercase tracking-wider text-gray-mid">
+        <h2 className="text-xs uppercase tracking-wider text-ink-2">
           Description
         </h2>
         {!editing ? (
@@ -189,7 +189,7 @@ export default function ProjectDescription({
           <div className="flex items-center gap-3">
             <button
               onClick={cancel}
-              className="text-xs text-cream/70 hover:text-cream"
+              className="text-xs text-ink-2 hover:text-ink-1"
             >
               Cancel
             </button>
@@ -211,22 +211,22 @@ export default function ProjectDescription({
             onChange={(e) => setDraft(e.target.value)}
             rows={12}
             placeholder="Project plan, in markdown. Headings with #, lists with -, **bold**, *italic*, `code`, [links](url)."
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-cream placeholder-gray-mid font-mono focus:outline-none focus:border-orange/50"
+            className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 font-mono focus:outline-none focus:border-orange/50"
           />
-          {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
-          <div className="mt-4 pt-3 border-t border-white/5">
-            <div className="text-[10px] uppercase tracking-wider text-gray-mid mb-2">
+          {error && <p className="text-expense text-xs mt-2">{error}</p>}
+          <div className="mt-4 pt-3 border-t border-hairline">
+            <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-2">
               Preview
             </div>
             <div className="text-sm">
-              {draft ? renderMarkdown(draft) : <span className="text-gray-mid">Nothing yet.</span>}
+              {draft ? renderMarkdown(draft) : <span className="text-ink-2">Nothing yet.</span>}
             </div>
           </div>
         </>
       ) : description && description.trim() ? (
         <div>{renderMarkdown(description)}</div>
       ) : (
-        <p className="text-sm text-gray-mid italic">No description yet. Click Edit to add one.</p>
+        <p className="text-sm text-ink-2 italic">No description yet. Click Edit to add one.</p>
       )}
     </section>
   );

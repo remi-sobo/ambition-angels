@@ -63,7 +63,7 @@ export default function LoginScreen() {
         backgroundSize: "22px 22px",
       }}
     >
-      <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
+      <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
         <div className="flex items-center gap-3 mb-1">
           {/* Plain <img> (not next/image): more reliable behind the admin
               PWA's cache-first service worker than the image optimizer. */}
@@ -75,15 +75,15 @@ export default function LoginScreen() {
             height={48}
             className="rounded-xl shrink-0"
           />
-          <div className="font-display font-black text-4xl text-cream tracking-tight normal-case leading-none">
+          <div className="font-display font-black text-4xl text-ink-1 tracking-tight normal-case leading-none">
             Bloom<span className="text-[#A8B58C]">OS</span>
           </div>
         </div>
-        <div className="text-gray-mid text-sm mb-8">Operating System for Ambition Angels</div>
+        <div className="text-ink-2 text-sm mb-8">Operating System for Ambition Angels</div>
         {magicSent ? (
-          <div className="text-cream/80 text-sm leading-relaxed">
+          <div className="text-ink-1 text-sm leading-relaxed">
             Check your email — we sent a one-time sign-in link to{" "}
-            <span className="text-cream font-semibold">{email}</span>.
+            <span className="text-ink-1 font-semibold">{email}</span>.
           </div>
         ) : (
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
@@ -93,7 +93,7 @@ export default function LoginScreen() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
               autoComplete="email"
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/50"
+              className="bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50"
               autoFocus
             />
             <div className="relative">
@@ -103,13 +103,13 @@ export default function LoginScreen() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
                 autoComplete="current-password"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/50"
+                className="w-full bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 pr-12 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-mid hover:text-cream transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-2 hover:text-ink-1 transition-colors"
               >
                 {showPassword ? (
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -127,7 +127,7 @@ export default function LoginScreen() {
                 )}
               </button>
             </div>
-            {loginError && <p className="text-red-400 text-xs">{loginError}</p>}
+            {loginError && <p className="text-expense text-xs">{loginError}</p>}
             <button
               type="submit"
               disabled={loggingIn}
@@ -139,7 +139,7 @@ export default function LoginScreen() {
               type="button"
               onClick={handleMagicLink}
               disabled={loggingIn}
-              className="text-gray-mid hover:text-cream text-xs transition-colors disabled:opacity-60"
+              className="text-ink-2 hover:text-ink-1 text-xs transition-colors disabled:opacity-60"
             >
               Email me a one-time sign-in link instead
             </button>

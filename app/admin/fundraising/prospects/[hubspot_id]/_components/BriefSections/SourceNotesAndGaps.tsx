@@ -14,19 +14,19 @@ export default function SourceNotesAndGaps({
   return (
     <details
       {...(defaultOpen ? { open: true } : {})}
-      className="rounded-card border border-white/10 bg-black/30 p-6 group"
+      className="rounded-card border-[1.5px] border-outline bg-black/30 p-6 group"
     >
-      <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-gray-mid hover:text-cream">
+      <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1">
         Source notes &amp; gaps
       </summary>
 
       <div className="mt-4 space-y-5">
         {data.sources.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-cream/50 mb-2">
+            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
               Sources
             </div>
-            <ul className="space-y-1 text-xs text-cream/75">
+            <ul className="space-y-1 text-xs text-ink-2">
               {data.sources.map((s, i) => (
                 <li key={i} className="break-all">
                   {isUrl(s) ? (
@@ -49,13 +49,13 @@ export default function SourceNotesAndGaps({
 
         {data.gaps.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-amber-300/80 mb-2">
+            <div className="text-[10px] uppercase tracking-wider text-[#A56A1B]/80 mb-2">
               Gaps
             </div>
-            <ul className="space-y-1.5 text-xs text-cream/80">
+            <ul className="space-y-1.5 text-xs text-ink-1">
               {data.gaps.map((g, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="text-amber-300/60 shrink-0">·</span>
+                  <span className="text-[#A56A1B]/60 shrink-0">·</span>
                   <span>{g}</span>
                 </li>
               ))}
@@ -64,7 +64,7 @@ export default function SourceNotesAndGaps({
         )}
 
         {data.sources.length === 0 && data.gaps.length === 0 && (
-          <p className="text-sm text-gray-mid italic">
+          <p className="text-sm text-ink-2 italic">
             No sources or gaps logged.
           </p>
         )}

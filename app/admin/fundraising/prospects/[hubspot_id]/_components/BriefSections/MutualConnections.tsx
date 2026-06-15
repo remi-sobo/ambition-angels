@@ -10,16 +10,16 @@ export default function MutualConnections({
   return (
     <details
       {...(defaultOpen ? { open: true } : {})}
-      className="rounded-card border border-white/10 bg-black/30 p-6 group"
+      className="rounded-card border-[1.5px] border-outline bg-black/30 p-6 group"
     >
-      <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-gray-mid hover:text-cream">
+      <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1">
         Mutual connections{" "}
-        <span className="text-cream/40">({data.length})</span>
+        <span className="text-ink-3">({data.length})</span>
       </summary>
 
       <div className="mt-4">
         {data.length === 0 ? (
-          <p className="text-sm text-gray-mid italic">
+          <p className="text-sm text-ink-2 italic">
             No internal connections found in HubSpot for this prospect.
           </p>
         ) : (
@@ -27,13 +27,13 @@ export default function MutualConnections({
             {data.map((c, i) => (
               <li
                 key={i}
-                className="rounded-lg border border-white/10 bg-white/[0.02] p-3"
+                className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-3"
               >
-                <div className="font-medium text-cream text-sm">{c.name}</div>
-                <div className="text-xs text-cream/75 mt-1">
+                <div className="font-medium text-ink-1 text-sm">{c.name}</div>
+                <div className="text-xs text-ink-2 mt-1">
                   {c.how_connected}
                 </div>
-                <div className="text-[11px] text-gray-mid mt-1">
+                <div className="text-[11px] text-ink-2 mt-1">
                   Source: {c.source}
                 </div>
                 {c.recent_touch_if_any && (

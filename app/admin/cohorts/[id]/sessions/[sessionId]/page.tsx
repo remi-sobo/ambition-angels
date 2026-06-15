@@ -58,13 +58,13 @@ export default async function SessionAttendancePage({
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[640px]">
-      <Link href={`/admin/cohorts/${params.id}`} className="text-[11px] text-gray-mid hover:text-cream">
+      <Link href={`/admin/cohorts/${params.id}`} className="text-[11px] text-ink-2 hover:text-ink-1">
         ← {cohortName}
       </Link>
-      <h1 className="font-heading font-bold text-2xl text-cream mt-2">
+      <h1 className="font-heading font-bold text-2xl text-ink-1 mt-2">
         {session.title || "Session"}
       </h1>
-      <p className="text-gray-mid text-sm mt-0.5 mb-6 tabular-nums">
+      <p className="text-ink-2 text-sm mt-0.5 mb-6 tabular-nums">
         {session.session_date}
         {time ? ` · ${time}` : ""}
         {session.location ? ` · ${session.location}` : ""}

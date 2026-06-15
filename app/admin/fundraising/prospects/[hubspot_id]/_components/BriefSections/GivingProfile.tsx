@@ -3,11 +3,11 @@ import type { BriefContent } from "@/lib/agents/funder-research/types";
 function Field({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-cream/50 mb-1">
+      <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-1">
         {label}
       </div>
-      <div className="text-sm text-cream/85">
-        {value ?? <span className="text-gray-mid italic">unknown</span>}
+      <div className="text-sm text-ink-1">
+        {value ?? <span className="text-ink-2 italic">unknown</span>}
       </div>
     </div>
   );
@@ -23,9 +23,9 @@ export default function GivingProfile({
   return (
     <details
       {...(defaultOpen ? { open: true } : {})}
-      className="rounded-card border border-white/10 bg-black/30 p-6 group"
+      className="rounded-card border-[1.5px] border-outline bg-black/30 p-6 group"
     >
-      <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-gray-mid hover:text-cream">
+      <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1">
         Giving profile
       </summary>
 

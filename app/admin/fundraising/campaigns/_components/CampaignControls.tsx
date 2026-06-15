@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const inputCls =
-  "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/40";
+  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export function NewCampaignForm() {
   const router = useRouter();
@@ -63,24 +63,24 @@ export function NewCampaignForm() {
   return (
     <form
       onSubmit={submit}
-      className="w-full bg-white/[0.03] border border-white/10 rounded-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
+      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
     >
-      <label className="col-span-2 text-xs text-gray-mid">
+      <label className="col-span-2 text-xs text-ink-2">
         Name
         <input className={`${inputCls} w-full mt-1`} value={name}
           onChange={(e) => setName(e.target.value)} placeholder="FY26 Annual Fund" required autoFocus />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Goal $
         <input className={`${inputCls} w-full mt-1`} type="number" min="0" step="1000"
           value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="250000" />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Starts
         <input className={`${inputCls} w-full mt-1`} type="date" value={startsOn}
           onChange={(e) => setStartsOn(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Ends
         <input className={`${inputCls} w-full mt-1`} type="date" value={endsOn}
           onChange={(e) => setEndsOn(e.target.value)} />
@@ -91,10 +91,10 @@ export function NewCampaignForm() {
           {busy ? "Saving…" : "Create"}
         </button>
         <button type="button" onClick={() => setOpen(false)}
-          className="text-xs text-gray-mid hover:text-cream px-2">
+          className="text-xs text-ink-2 hover:text-ink-1 px-2">
           Cancel
         </button>
-        {error && <p className="text-red-400 text-xs self-center">{error}</p>}
+        {error && <p className="text-expense text-xs self-center">{error}</p>}
       </div>
     </form>
   );
@@ -130,7 +130,7 @@ export function NewAppealForm({ campaignId }: { campaignId: string }) {
   if (!open) {
     return (
       <button onClick={() => setOpen(true)}
-        className="text-[11px] text-gray-mid hover:text-cream border border-dashed border-white/15 rounded-full px-3 py-1 transition-colors">
+        className="text-[11px] text-ink-2 hover:text-ink-1 border border-dashed border-outline rounded-full px-3 py-1 transition-colors">
         + appeal
       </button>
     );
@@ -144,7 +144,7 @@ export function NewAppealForm({ campaignId }: { campaignId: string }) {
         className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full disabled:opacity-50">
         Add
       </button>
-      <button onClick={() => setOpen(false)} className="text-[11px] text-gray-mid hover:text-cream">
+      <button onClick={() => setOpen(false)} className="text-[11px] text-ink-2 hover:text-ink-1">
         ×
       </button>
     </span>
@@ -184,23 +184,23 @@ export function BulkAttributeForm({
 
   return (
     <div className="bg-orange/5 border border-orange/20 rounded-card p-4">
-      <p className="text-sm text-cream/80 mb-3">
+      <p className="text-sm text-ink-1 mb-3">
         <span className="font-semibold text-orange">{unattributed}</span> gift
         {unattributed === 1 ? "" : "s"} aren&apos;t attributed to a campaign yet. Assign the
         unattributed gifts in a date range (already-attributed gifts are never touched):
       </p>
       <div className="flex flex-wrap items-end gap-3">
-        <label className="text-xs text-gray-mid">
+        <label className="text-xs text-ink-2">
           From
           <input className={`${inputCls} block mt-1`} type="date" value={from}
             onChange={(e) => setFrom(e.target.value)} />
         </label>
-        <label className="text-xs text-gray-mid">
+        <label className="text-xs text-ink-2">
           To
           <input className={`${inputCls} block mt-1`} type="date" value={to}
             onChange={(e) => setTo(e.target.value)} />
         </label>
-        <label className="text-xs text-gray-mid">
+        <label className="text-xs text-ink-2">
           Campaign
           <select className={`${inputCls} block mt-1`} value={campaignId}
             onChange={(e) => setCampaignId(e.target.value)}>

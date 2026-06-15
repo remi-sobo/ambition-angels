@@ -79,7 +79,7 @@ export default async function PartnersPage() {
           );
         })}
         {partners.length === 0 && (
-          <p className="text-sm text-gray-mid">
+          <p className="text-sm text-ink-2">
             No partners yet — add your first school or nonprofit partner, or wait for the public
             signup form to feed prospects in.
           </p>

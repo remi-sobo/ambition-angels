@@ -116,7 +116,7 @@ export default function DemoDaySignups() {
         <button
           onClick={exportCsv}
           disabled={filtered.length === 0}
-          className="text-xs font-semibold text-cream/80 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-3 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Export CSV
         </button>
@@ -131,14 +131,14 @@ export default function DemoDaySignups() {
       )}
 
       {error && !tableMissing && (
-        <div className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="mt-4 rounded-lg border border-expense/30 bg-expense-bg px-4 py-3 text-sm text-expense">
           Couldn’t load signups: {error}
         </div>
       )}
 
       {/* Summary + search */}
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <span className="rounded-full bg-white/5 border border-white/10 px-3 py-1 text-xs text-cream/70">
+        <span className="rounded-full bg-tile border-[1.5px] border-outline px-3 py-1 text-xs text-ink-2">
           {signups.length} signup{signups.length === 1 ? "" : "s"}
         </span>
         <input
@@ -146,15 +146,15 @@ export default function DemoDaySignups() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search name, email, company…"
-          className="flex-1 min-w-[200px] max-w-sm rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-cream placeholder:text-gray-mid/60 focus:outline-none focus:border-orange/60"
+          className="flex-1 min-w-[200px] max-w-sm rounded-lg bg-tile border-[1.5px] border-outline px-3 py-2 text-sm text-ink-1 placeholder:text-ink-2/60 focus:outline-none focus:border-orange/60"
         />
       </div>
 
       {/* Body */}
       {!loaded ? (
-        <div className="mt-6 text-sm text-gray-mid">Loading signups…</div>
+        <div className="mt-6 text-sm text-ink-2">Loading signups…</div>
       ) : filtered.length === 0 ? (
-        <div className="mt-6 text-sm text-gray-mid">
+        <div className="mt-6 text-sm text-ink-2">
           {signups.length === 0 ? "No signups yet." : "No signups match your search."}
         </div>
       ) : (
@@ -162,12 +162,12 @@ export default function DemoDaySignups() {
           {/* Mobile: stacked cards */}
           <div className="mt-5 space-y-3 lg:hidden">
             {filtered.map((s) => (
-              <div key={s.id} className="rounded-card border border-white/10 bg-white/[0.03] p-4">
+              <div key={s.id} className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <span className="font-semibold text-cream">
+                  <span className="font-semibold text-ink-1">
                     {s.first_name} {s.last_name}
                   </span>
-                  <span className="text-xs text-gray-mid whitespace-nowrap">
+                  <span className="text-xs text-ink-2 whitespace-nowrap">
                     {fmtDate(s.created_at)}
                   </span>
                 </div>
@@ -178,7 +178,7 @@ export default function DemoDaySignups() {
                   {s.email}
                 </a>
                 {(s.phone || s.company || s.title) && (
-                  <div className="mt-1 text-sm text-gray-mid">
+                  <div className="mt-1 text-sm text-ink-2">
                     {[s.title, s.company, s.phone].filter(Boolean).join(" · ")}
                   </div>
                 )}
@@ -195,17 +195,17 @@ export default function DemoDaySignups() {
                   </div>
                 )}
                 {s.note && (
-                  <p className="mt-2 text-sm text-cream/80 whitespace-pre-wrap">{s.note}</p>
+                  <p className="mt-2 text-sm text-ink-1 whitespace-pre-wrap">{s.note}</p>
                 )}
               </div>
             ))}
           </div>
 
           {/* Desktop: table */}
-          <div className="mt-5 hidden lg:block overflow-x-auto rounded-card border border-white/10">
+          <div className="mt-5 hidden lg:block overflow-x-auto rounded-card border-[1.5px] border-outline">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-gray-mid">
+                <tr className="border-b border-outline text-left text-xs uppercase tracking-wide text-ink-2">
                   <th className="px-4 py-3 font-medium">When</th>
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Email</th>
@@ -217,9 +217,9 @@ export default function DemoDaySignups() {
               </thead>
               <tbody>
                 {filtered.map((s) => (
-                  <tr key={s.id} className="border-b border-white/5 align-top hover:bg-white/[0.02]">
-                    <td className="px-4 py-3 text-gray-mid whitespace-nowrap">{fmtDate(s.created_at)}</td>
-                    <td className="px-4 py-3 font-medium text-cream whitespace-nowrap">
+                  <tr key={s.id} className="border-b border-hairline align-top hover:bg-surface shadow-panel">
+                    <td className="px-4 py-3 text-ink-2 whitespace-nowrap">{fmtDate(s.created_at)}</td>
+                    <td className="px-4 py-3 font-medium text-ink-1 whitespace-nowrap">
                       {s.first_name} {s.last_name}
                     </td>
                     <td className="px-4 py-3">
@@ -227,8 +227,8 @@ export default function DemoDaySignups() {
                         {s.email}
                       </a>
                     </td>
-                    <td className="px-4 py-3 text-gray-mid whitespace-nowrap">{s.phone || "—"}</td>
-                    <td className="px-4 py-3 text-gray-mid">
+                    <td className="px-4 py-3 text-ink-2 whitespace-nowrap">{s.phone || "—"}</td>
+                    <td className="px-4 py-3 text-ink-2">
                       {[s.company, s.title].filter(Boolean).join(" · ") || "—"}
                     </td>
                     <td className="px-4 py-3">
@@ -244,11 +244,11 @@ export default function DemoDaySignups() {
                           ))}
                         </div>
                       ) : (
-                        <span className="text-gray-mid">—</span>
+                        <span className="text-ink-2">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-cream/80 max-w-xs whitespace-pre-wrap">
-                      {s.note || <span className="text-gray-mid">—</span>}
+                    <td className="px-4 py-3 text-ink-1 max-w-xs whitespace-pre-wrap">
+                      {s.note || <span className="text-ink-2">—</span>}
                     </td>
                   </tr>
                 ))}

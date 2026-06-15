@@ -24,23 +24,23 @@ export default function ThisWeekView({
   const days = Array.from(byDay.keys()).sort();
 
   return (
-    <section className="rounded-card border border-white/10 bg-black/30 p-6">
+    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
       <header className="flex items-baseline justify-between mb-4">
-        <h2 className="text-xs uppercase tracking-wider text-gray-mid">This Week</h2>
-        <span className="text-[10px] uppercase tracking-wider text-gray-mid">
+        <h2 className="text-xs uppercase tracking-wider text-ink-2">This Week</h2>
+        <span className="text-[10px] uppercase tracking-wider text-ink-2">
           {tasks.length} pinned
         </span>
       </header>
 
       {tasks.length === 0 ? (
-        <p className="text-sm text-gray-mid">
+        <p className="text-sm text-ink-2">
           Nothing pinned for this week yet.
         </p>
       ) : (
         <div className="space-y-5">
           {anytime.length > 0 && (
             <div>
-              <h3 className="text-[10px] uppercase tracking-wider text-cream/50 mb-2">
+              <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
                 Anytime this week
               </h3>
               <div className="space-y-1.5">
@@ -63,7 +63,7 @@ export default function ThisWeekView({
             });
             return (
               <div key={day}>
-                <h3 className="text-[10px] uppercase tracking-wider text-cream/50 mb-2">
+                <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
                   {label}
                 </h3>
                 <div className="space-y-1.5">

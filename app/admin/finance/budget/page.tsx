@@ -59,15 +59,15 @@ export default async function BudgetPage({
     <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8">
       <header className="mb-6 flex items-baseline justify-between gap-4 flex-wrap">
         <div>
-          <div className="flex items-center gap-3 text-xs text-gray-mid mb-1">
-            <Link href="/admin/finance" className="hover:text-cream">
+          <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
+            <Link href="/admin/finance" className="hover:text-ink-1">
               ← Finance
             </Link>
           </div>
-          <h1 className="font-display font-black uppercase tracking-tight text-cream text-3xl sm:text-4xl leading-none">
+          <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
             Budget · {year}
           </h1>
-          <p className="mt-2 text-sm text-gray-mid max-w-2xl">
+          <p className="mt-2 text-sm text-ink-2 max-w-2xl">
             Mirrors the Budget-{year} workbook tab. Base + Tier 1 / Tier 2
             contingency per line item. Activated contingency flips on once
             fundraising crosses the unlock threshold.
@@ -80,7 +80,7 @@ export default async function BudgetPage({
           >
             ⇪ Import from QuickBooks
           </Link>
-          <span className="text-gray-mid">·</span>
+          <span className="text-ink-2">·</span>
           {years.map((y) => (
             <Link
               key={y}
@@ -88,7 +88,7 @@ export default async function BudgetPage({
               className={`px-3 py-1 rounded-full border ${
                 y === year
                   ? "border-orange/60 bg-orange/15 text-orange"
-                  : "border-white/10 text-gray-mid hover:text-cream"
+                  : "border-outline text-ink-2 hover:text-ink-1"
               }`}
             >
               {y}

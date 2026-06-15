@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 
 
 const inputCls =
-  "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/40";
+  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export function NewCohortForm() {
   const router = useRouter();
@@ -60,40 +60,40 @@ export function NewCohortForm() {
 
   return (
     <form onSubmit={submit}
-      className="w-full bg-white/[0.03] border border-white/10 rounded-card p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end">
-      <label className="text-xs text-gray-mid col-span-2 lg:col-span-1">
+      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+      <label className="text-xs text-ink-2 col-span-2 lg:col-span-1">
         Name
         <input className={`${inputCls} w-full mt-1`} value={name} required autoFocus
           placeholder="YGB Creators Camp 2027" onChange={(e) => setName(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Program
         <input className={`${inputCls} w-full mt-1`} value={program}
           placeholder="YGB Creators Camp" onChange={(e) => setProgram(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Term
         <input className={`${inputCls} w-full mt-1`} value={term}
           placeholder="Summer 2027" onChange={(e) => setTerm(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Capacity
         <input className={`${inputCls} w-full mt-1`} value={capacity} type="number" min={1}
           placeholder="20" onChange={(e) => setCapacity(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Starts
         <input className={`${inputCls} w-full mt-1`} value={startDate} type="date"
           onChange={(e) => setStartDate(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Ends
         <input className={`${inputCls} w-full mt-1`} value={endDate} type="date"
           onChange={(e) => setEndDate(e.target.value)} />
       </label>
       <div className="col-span-full flex justify-end gap-2">
         <button type="button" onClick={() => setOpen(false)}
-          className="text-xs text-gray-mid hover:text-cream px-2 py-2">
+          className="text-xs text-ink-2 hover:text-ink-1 px-2 py-2">
           Cancel
         </button>
         <button type="submit" disabled={busy}

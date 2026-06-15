@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { PIPELINE_STAGES, type OpportunityRow } from "./pipeline-stages";
 
 const inputCls =
-  "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/40";
+  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const fmtMoney = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -74,9 +74,9 @@ export function NewOpportunityForm() {
   return (
     <form
       onSubmit={submit}
-      className="w-full bg-white/[0.03] border border-white/10 rounded-card p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end"
+      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end"
     >
-      <label className="col-span-2 text-xs text-gray-mid">
+      <label className="col-span-2 text-xs text-ink-2">
         Donor / prospect name
         <input
           className={`${inputCls} w-full mt-1`}
@@ -87,7 +87,7 @@ export function NewOpportunityForm() {
           autoFocus
         />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Ask amount
         <input
           className={`${inputCls} w-full mt-1`}
@@ -99,7 +99,7 @@ export function NewOpportunityForm() {
           placeholder="25000"
         />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Probability %
         <input
           className={`${inputCls} w-full mt-1`}
@@ -111,7 +111,7 @@ export function NewOpportunityForm() {
           placeholder="50"
         />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Capacity (1–5)
         <input
           className={`${inputCls} w-full mt-1`}
@@ -134,12 +134,12 @@ export function NewOpportunityForm() {
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-xs text-gray-mid hover:text-cream px-2"
+          className="text-xs text-ink-2 hover:text-ink-1 px-2"
         >
           Cancel
         </button>
       </div>
-      <label className="col-span-2 lg:col-span-4 text-xs text-gray-mid">
+      <label className="col-span-2 lg:col-span-4 text-xs text-ink-2">
         Next move
         <input
           className={`${inputCls} w-full mt-1`}
@@ -148,7 +148,7 @@ export function NewOpportunityForm() {
           placeholder="Coffee to introduce the spring cohort"
         />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Due
         <input
           className={`${inputCls} w-full mt-1`}
@@ -157,7 +157,7 @@ export function NewOpportunityForm() {
           onChange={(e) => setNextStepDue(e.target.value)}
         />
       </label>
-      {error && <p className="col-span-full text-red-400 text-xs">{error}</p>}
+      {error && <p className="col-span-full text-expense text-xs">{error}</p>}
     </form>
   );
 }
@@ -168,7 +168,7 @@ function CapacityDots({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <span
           key={i}
-          className={`w-1.5 h-1.5 rounded-full ${i <= rating ? "bg-orange" : "bg-white/15"}`}
+          className={`w-1.5 h-1.5 rounded-full ${i <= rating ? "bg-orange" : "bg-tile"}`}
         />
       ))}
     </span>
@@ -208,7 +208,7 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
   return (
     <article
       className={`bg-[#1d1812] border rounded-xl p-3 text-sm ${
-        overdue ? "border-red-500/40" : "border-white/10"
+        overdue ? "border-expense/30" : "border-outline"
       } ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -216,28 +216,28 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
           {opp.constituentId ? (
             <Link
               href={`/admin/fundraising/donors/${opp.constituentId}`}
-              className="font-semibold text-cream hover:text-orange transition-colors truncate block"
+              className="font-semibold text-ink-1 hover:text-orange transition-colors truncate block"
             >
               {opp.label}
             </Link>
           ) : (
-            <span className="font-semibold text-cream truncate block">{opp.label}</span>
+            <span className="font-semibold text-ink-1 truncate block">{opp.label}</span>
           )}
           {opp.label !== opp.constituentName && (
-            <span className="text-[11px] text-gray-mid truncate block">{opp.constituentName}</span>
+            <span className="text-[11px] text-ink-2 truncate block">{opp.constituentName}</span>
           )}
         </div>
         {opp.capacityRating != null && <CapacityDots rating={opp.capacityRating} />}
       </div>
 
-      <div className="flex items-center gap-2 mt-2 text-[12px] text-cream/80 tabular-nums">
+      <div className="flex items-center gap-2 mt-2 text-[12px] text-ink-1 tabular-nums">
         {opp.askAmount != null && <span className="font-semibold">{fmtMoney(opp.askAmount)}</span>}
         {opp.probability != null && (
-          <span className="text-gray-mid">{opp.probability}%</span>
+          <span className="text-ink-2">{opp.probability}%</span>
         )}
         {opp.owner && (
           <span
-            className="ml-auto w-5 h-5 rounded-full bg-white/10 text-[10px] flex items-center justify-center uppercase"
+            className="ml-auto w-5 h-5 rounded-full bg-tile text-[10px] flex items-center justify-center uppercase"
             title={opp.owner}
           >
             {opp.owner.charAt(0)}
@@ -246,7 +246,7 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
       </div>
 
       {opp.nextStep && (
-        <p className={`mt-2 text-[12px] leading-snug ${overdue ? "text-red-300" : "text-gray-mid"}`}>
+        <p className={`mt-2 text-[12px] leading-snug ${overdue ? "text-expense" : "text-ink-2"}`}>
           {opp.nextStep}
           {opp.nextStepDue && (
             <span className="whitespace-nowrap"> · {opp.nextStepDue.slice(5)}</span>
@@ -261,7 +261,7 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
               onClick={() => patch({ stage: PIPELINE_STAGES[stageIdx - 1] })}
               disabled={busy || stageIdx <= 0}
               title="Move back"
-              className="px-2 py-1 rounded-md text-[11px] bg-white/5 hover:bg-white/10 text-cream/70 disabled:opacity-30"
+              className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 disabled:opacity-30"
             >
               ◀
             </button>
@@ -269,7 +269,7 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
               onClick={() => patch({ stage: PIPELINE_STAGES[stageIdx + 1] })}
               disabled={busy || stageIdx < 0 || stageIdx >= PIPELINE_STAGES.length - 1}
               title="Advance stage"
-              className="px-2 py-1 rounded-md text-[11px] bg-white/5 hover:bg-white/10 text-cream/70 disabled:opacity-30"
+              className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 disabled:opacity-30"
             >
               ▶
             </button>
@@ -278,14 +278,14 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
           <button
             onClick={() => patch({ stage: "identify" })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] bg-white/5 hover:bg-white/10 text-cream/70"
+            className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
           >
             Reopen
           </button>
         )}
         <button
           onClick={() => setEditing((v) => !v)}
-          className="px-2 py-1 rounded-md text-[11px] bg-white/5 hover:bg-white/10 text-cream/70"
+          className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
         >
           Edit
         </button>
@@ -295,7 +295,7 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
               if (confirm("Mark this ask as lost?")) void patch({ stage: "lost" });
             }}
             disabled={busy}
-            className="ml-auto px-2 py-1 rounded-md text-[11px] text-gray-mid hover:text-red-300"
+            className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
           >
             Lost
           </button>
@@ -303,7 +303,7 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
         {opp.hubspotId && (
           <Link
             href={`/admin/fundraising/prospects/${opp.hubspotId}`}
-            className="ml-auto px-2 py-1 rounded-md text-[11px] text-gray-mid hover:text-cream"
+            className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
             title="Research brief"
           >
             Brief
@@ -343,34 +343,34 @@ function InlineEdit({
   };
 
   return (
-    <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-3 gap-2">
-      <label className="text-[10px] text-gray-mid">
+    <div className="mt-3 pt-3 border-t border-outline grid grid-cols-3 gap-2">
+      <label className="text-[10px] text-ink-2">
         Ask
         <input className={`${inputCls} w-full mt-0.5 !px-2 !py-1 !text-xs`} type="number" min="0"
           value={ask} onChange={(e) => setAsk(e.target.value)} />
       </label>
-      <label className="text-[10px] text-gray-mid">
+      <label className="text-[10px] text-ink-2">
         Prob %
         <input className={`${inputCls} w-full mt-0.5 !px-2 !py-1 !text-xs`} type="number" min="0" max="100"
           value={probability} onChange={(e) => setProbability(e.target.value)} />
       </label>
-      <label className="text-[10px] text-gray-mid">
+      <label className="text-[10px] text-ink-2">
         Capacity
         <input className={`${inputCls} w-full mt-0.5 !px-2 !py-1 !text-xs`} type="number" min="1" max="5"
           value={capacity} onChange={(e) => setCapacity(e.target.value)} />
       </label>
-      <label className="col-span-2 text-[10px] text-gray-mid">
+      <label className="col-span-2 text-[10px] text-ink-2">
         Next move
         <input className={`${inputCls} w-full mt-0.5 !px-2 !py-1 !text-xs`}
           value={nextStep} onChange={(e) => setNextStep(e.target.value)} />
       </label>
-      <label className="text-[10px] text-gray-mid">
+      <label className="text-[10px] text-ink-2">
         Due
         <input className={`${inputCls} w-full mt-0.5 !px-2 !py-1 !text-xs`} type="date"
           value={nextStepDue} onChange={(e) => setNextStepDue(e.target.value)} />
       </label>
       <div className="col-span-3 flex gap-2 justify-end">
-        <button onClick={onDone} className="text-[11px] text-gray-mid hover:text-cream px-2 py-1">
+        <button onClick={onDone} className="text-[11px] text-ink-2 hover:text-ink-1 px-2 py-1">
           Cancel
         </button>
         <button

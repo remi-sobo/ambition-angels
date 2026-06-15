@@ -67,13 +67,13 @@ export default function ProspectFilters({
         value={localQ}
         onChange={(e) => onSearchChange(e.target.value)}
         placeholder="Search name or email…"
-        className="flex-1 min-w-[200px] bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream placeholder-gray-mid focus:outline-none focus:border-orange/50"
+        className="flex-1 min-w-[200px] bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
       />
 
       <select
         value={lifecycle}
         onChange={(e) => pushParams({ lifecycle: e.target.value || null })}
-        className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream focus:outline-none focus:border-orange/50"
+        className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
       >
         <option value="">All lifecycles</option>
         {lifecycleOptions.map((opt) => (
@@ -86,7 +86,7 @@ export default function ProspectFilters({
       <select
         value={owner}
         onChange={(e) => pushParams({ owner: e.target.value || null })}
-        className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream font-mono text-xs focus:outline-none focus:border-orange/50"
+        className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 font-mono text-xs focus:outline-none focus:border-orange/50"
       >
         <option value="">All owners</option>
         {ownerOptions.map((opt) => (
@@ -96,7 +96,7 @@ export default function ProspectFilters({
         ))}
       </select>
 
-      <label className="flex items-center gap-2 cursor-pointer select-none text-cream/80">
+      <label className="flex items-center gap-2 cursor-pointer select-none text-ink-1">
         <input
           type="checkbox"
           checked={scored}

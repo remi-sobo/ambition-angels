@@ -43,25 +43,25 @@ export default async function BriefingPage() {
       />
 
       {!b ? (
-        <p className="text-sm text-gray-mid">
+        <p className="text-sm text-ink-2">
           No briefing yet — generate the first one, or wait for Monday&apos;s edition.
         </p>
       ) : (
         <article className="space-y-6">
-          <div className="text-[11px] text-gray-mid">
+          <div className="text-[11px] text-ink-2">
             {b.kind === "weekly" ? "Monday edition" : "On demand"} ·{" "}
             {b.created_at.slice(0, 10)}
             {b.model ? ` · narrated by ${b.model}` : " · data-only (narration unavailable)"}
           </div>
 
           {b.headline && (
-            <h2 className="font-heading font-bold text-xl text-cream leading-snug">
+            <h2 className="font-heading font-bold text-xl text-ink-1 leading-snug">
               {b.headline}
             </h2>
           )}
 
           {b.narrative && (
-            <div className="bg-[#1d1812] border border-orange/20 rounded-card p-5 text-[15px] text-cream/90 leading-relaxed whitespace-pre-wrap">
+            <div className="bg-[#1d1812] border border-orange/20 rounded-card p-5 text-[15px] text-ink-1 leading-relaxed whitespace-pre-wrap">
               {b.narrative}
             </div>
           )}
@@ -73,7 +73,7 @@ export default async function BriefingPage() {
               </SectionHeading>
               <ol className="space-y-2">
                 {b.priorities.map((p, i) => (
-                  <li key={i} className="flex gap-3 text-sm text-cream/90">
+                  <li key={i} className="flex gap-3 text-sm text-ink-1">
                     <span className="w-5 h-5 rounded-full bg-orange/15 text-orange text-[11px] font-bold flex items-center justify-center shrink-0">
                       {i + 1}
                     </span>
@@ -95,9 +95,9 @@ export default async function BriefingPage() {
                 ["Pipeline moves", String(b.data.week.pipelineMoves)],
                 ["Awaiting acknowledgment", String(b.data.todos.pendingAcks)],
               ].map(([label, value]) => (
-                <div key={label} className="bg-[#1d1812] border border-white/10 rounded-xl p-3">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-mid">{label}</div>
-                  <div className="font-bold text-cream tabular-nums">{value}</div>
+                <div key={label} className="bg-[#1d1812] border-[1.5px] border-outline rounded-xl p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-ink-2">{label}</div>
+                  <div className="font-bold text-ink-1 tabular-nums">{value}</div>
                 </div>
               ))}
             </div>
@@ -108,10 +108,10 @@ export default async function BriefingPage() {
               <SectionHeading as="h3" className="mb-2">
                 Next two weeks
               </SectionHeading>
-              <ul className="space-y-1 text-sm text-cream/85">
+              <ul className="space-y-1 text-sm text-ink-1">
                 {b.data.deadlines.map((d, i) => (
                   <li key={i}>
-                    <span className="text-gray-mid tabular-nums">{d.due}</span> · {d.what}
+                    <span className="text-ink-2 tabular-nums">{d.due}</span> · {d.what}
                   </li>
                 ))}
               </ul>

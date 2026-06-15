@@ -62,8 +62,8 @@ export default async function GrantsPage() {
   if (grantsRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-cream text-2xl mb-4">Grants</h1>
-        <div className="bg-[#231f18] border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-gray-mid leading-relaxed">
+        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Grants</h1>
+        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The grants tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_grants.sql</code> via Actions → Apply DB migration,
           then reload.
@@ -95,9 +95,9 @@ export default async function GrantsPage() {
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#19150f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center justify-between gap-3">
-        <span className="font-heading font-bold text-cream text-sm sm:text-base">Grants</span>
-        <span className="text-xs text-gray-mid">{grants.length} total{closedCount > 0 ? ` · ${closedCount} declined/closed` : ""}</span>
+      <div className="bg-[#19150f] border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center justify-between gap-3">
+        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Grants</span>
+        <span className="text-xs text-ink-2">{grants.length} total{closedCount > 0 ? ` · ${closedCount} declined/closed` : ""}</span>
       </div>
 
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
@@ -122,9 +122,9 @@ export default async function GrantsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* ── Pipeline ── */}
-          <section className="lg:col-span-8 bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-white/10">
-              <h2 className="font-heading font-bold text-cream text-sm">Pipeline</h2>
+          <section className="lg:col-span-8 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-outline">
+              <h2 className="font-heading font-bold text-ink-1 text-sm">Pipeline</h2>
             </div>
             <div className="overflow-x-auto">
               <div className="flex gap-3 p-4 min-w-[900px]">
@@ -133,10 +133,10 @@ export default async function GrantsPage() {
                   const total = items.reduce((s, g) => s + grantValue(g), 0);
                   return (
                     <div key={stage} className="flex-1 min-w-[120px]">
-                      <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-white/35 mb-0.5">
+                      <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-0.5">
                         {STAGE_LABELS[stage]}
                       </div>
-                      <div className="text-[11px] text-gray-mid mb-2 [font-variant-numeric:tabular-nums]">
+                      <div className="text-[11px] text-ink-2 mb-2 [font-variant-numeric:tabular-nums]">
                         {items.length} · {money(total)}
                       </div>
                       <div className="space-y-2">
@@ -144,10 +144,10 @@ export default async function GrantsPage() {
                           <Link
                             key={g.id}
                             href={`/admin/fundraising/grants/${g.id}`}
-                            className="block bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-2.5 py-2 transition-colors"
+                            className="block bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline rounded-lg px-2.5 py-2 transition-colors"
                           >
-                            <div className="text-xs font-medium text-cream truncate">{g.name}</div>
-                            <div className="text-[11px] text-gray-mid truncate">
+                            <div className="text-xs font-medium text-ink-1 truncate">{g.name}</div>
+                            <div className="text-[11px] text-ink-2 truncate">
                               {g.funder?.org_name ?? "—"}
                             </div>
                             <div className="text-[11px] text-orange font-semibold [font-variant-numeric:tabular-nums]">
@@ -162,8 +162,8 @@ export default async function GrantsPage() {
               </div>
             </div>
             {closedCount > 0 && (
-              <div className="px-4 py-3 border-t border-white/10">
-                <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-white/35 mb-2">
+              <div className="px-4 py-3 border-t border-outline">
+                <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-2">
                   Declined / Closed
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -171,7 +171,7 @@ export default async function GrantsPage() {
                     <Link
                       key={g.id}
                       href={`/admin/fundraising/grants/${g.id}`}
-                      className="text-xs text-white/40 hover:text-cream bg-white/5 border border-white/10 rounded-full px-2.5 py-1 transition-colors"
+                      className="text-xs text-ink-3 hover:text-ink-1 bg-tile border-[1.5px] border-outline rounded-full px-2.5 py-1 transition-colors"
                     >
                       {g.name} · {STAGE_LABELS[g.stage]}
                     </Link>
@@ -182,31 +182,31 @@ export default async function GrantsPage() {
           </section>
 
           {/* ── Requirements calendar ── */}
-          <section className="lg:col-span-4 bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-white/10">
-              <h2 className="font-heading font-bold text-cream text-sm">Upcoming Deadlines</h2>
+          <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-outline">
+              <h2 className="font-heading font-bold text-ink-1 text-sm">Upcoming Deadlines</h2>
             </div>
             {requirements.length === 0 ? (
-              <p className="p-6 text-gray-mid text-sm">
+              <p className="p-6 text-ink-2 text-sm">
                 No open deadlines. Every grant&apos;s LOIs, applications, and reports belong here —
                 add them from the grant&apos;s page.
               </p>
             ) : (
-              <ul className="divide-y divide-white/5">
+              <ul className="divide-y divide-hairline">
                 {requirements.map((r) => {
                   const isOverdue = r.due_date < today;
                   return (
                     <li key={r.id} className="px-5 py-3">
                       <Link href={`/admin/fundraising/grants/${r.grant_id}`} className="flex items-start justify-between gap-3 group">
                         <div className="min-w-0">
-                          <div className="text-sm text-cream/90 font-medium truncate group-hover:text-orange transition-colors">
+                          <div className="text-sm text-ink-1 font-medium truncate group-hover:text-orange transition-colors">
                             {r.label || KIND_LABELS[r.kind]}
                           </div>
-                          <div className="text-[11px] text-gray-mid truncate">{r.grants?.name}</div>
+                          <div className="text-[11px] text-ink-2 truncate">{r.grants?.name}</div>
                         </div>
                         <span
                           className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
-                            isOverdue ? "bg-red-500/15 text-red-400" : "bg-white/5 text-gray-mid"
+                            isOverdue ? "bg-expense-bg text-expense" : "bg-tile text-ink-2"
                           }`}
                         >
                           {isOverdue ? "Overdue · " : ""}{fmtDate(r.due_date)}

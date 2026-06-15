@@ -211,7 +211,7 @@ export default function DemoDayTracker() {
   }, [search, typeFilter, tagFilter, statusFilter, starredOnly, notedOnly, notes]);
 
   const selectCls =
-    "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-cream focus:outline-none focus:border-orange/50";
+    "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 focus:outline-none focus:border-orange/50";
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -228,7 +228,7 @@ export default function DemoDayTracker() {
           href="/demoday"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs font-semibold text-cream/80 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 rounded-lg transition-colors"
+          className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-3 py-2 rounded-lg transition-colors"
         >
           Open lookbook ↗
         </a>
@@ -253,7 +253,7 @@ export default function DemoDayTracker() {
       </div>
 
       {/* Filters */}
-      <div className="admin-sticky-top sticky z-10 -mx-4 sm:-mx-6 lg:-mx-8 mt-5 px-4 sm:px-6 lg:px-8 py-3 bg-ink/95 backdrop-blur border-y border-white/10">
+      <div className="admin-sticky-top sticky z-10 -mx-4 sm:-mx-6 lg:-mx-8 mt-5 px-4 sm:px-6 lg:px-8 py-3 bg-ink/95 backdrop-blur border-y border-outline">
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="search"
@@ -294,7 +294,7 @@ export default function DemoDayTracker() {
               "px-3 py-2 rounded-lg text-sm font-medium border transition-colors",
               starredOnly
                 ? "bg-orange/15 text-orange border-orange/30"
-                : "bg-white/5 text-cream/70 border-white/10 hover:text-cream",
+                : "bg-tile text-ink-2 border-outline hover:text-ink-1",
             ].join(" ")}
           >
             ★ Starred
@@ -305,22 +305,22 @@ export default function DemoDayTracker() {
               "px-3 py-2 rounded-lg text-sm font-medium border transition-colors",
               notedOnly
                 ? "bg-orange/15 text-orange border-orange/30"
-                : "bg-white/5 text-cream/70 border-white/10 hover:text-cream",
+                : "bg-tile text-ink-2 border-outline hover:text-ink-1",
             ].join(" ")}
           >
             Has note
           </button>
         </div>
-        <div className="mt-2 text-xs text-gray-mid">
+        <div className="mt-2 text-xs text-ink-2">
           Showing {filtered.length} of {ATTENDEES.length}
         </div>
       </div>
 
       {/* List */}
       <div className="mt-4 space-y-3">
-        {!loaded && <div className="text-sm text-gray-mid">Loading notes…</div>}
+        {!loaded && <div className="text-sm text-ink-2">Loading notes…</div>}
         {loaded && filtered.length === 0 && (
-          <div className="text-sm text-gray-mid">No one matches these filters.</div>
+          <div className="text-sm text-ink-2">No one matches these filters.</div>
         )}
         {filtered.map((a) => (
           <AttendeeCard
@@ -345,7 +345,7 @@ export default function DemoDayTracker() {
 
 function Chip({ label }: { label: string }) {
   return (
-    <span className="rounded-full bg-white/5 border border-white/10 px-3 py-1 text-cream/70">
+    <span className="rounded-full bg-tile border-[1.5px] border-outline px-3 py-1 text-ink-2">
       {label}
     </span>
   );
@@ -368,16 +368,16 @@ function AttendeeCard({
   onNoteChange: (v: string) => void;
   onNoteBlur: () => void;
 }) {
-  const typeColor = TYPE_COLORS[a.type] ?? "#6B6960";
+  const typeColor = TYPE_COLORS[a.type] ?? "#9A8B7C";
   return (
-    <div className="rounded-card border border-white/10 bg-white/[0.03] p-4">
+    <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-4">
       <div className="flex items-start gap-3">
         <button
           onClick={onToggleStar}
           aria-label={state.starred ? "Unstar" : "Star"}
           className={[
             "mt-0.5 text-lg leading-none transition-colors",
-            state.starred ? "text-orange" : "text-cream/30 hover:text-cream/60",
+            state.starred ? "text-orange" : "text-ink-3 hover:text-ink-2",
           ].join(" ")}
         >
           {state.starred ? "★" : "☆"}
@@ -385,7 +385,7 @@ function AttendeeCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="font-semibold text-cream">{a.name}</span>
+            <span className="font-semibold text-ink-1">{a.name}</span>
             <span
               className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide"
               style={{ backgroundColor: `${typeColor}22`, color: typeColor }}
@@ -394,7 +394,7 @@ function AttendeeCard({
               {a.type}
             </span>
           </div>
-          <div className="text-sm text-cream/70">
+          <div className="text-sm text-ink-2">
             {a.title}
             {a.title && a.company ? " · " : ""}
             {a.company}
@@ -405,7 +405,7 @@ function AttendeeCard({
               {a.tags.map((t) => (
                 <span
                   key={t}
-                  className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-cream/55"
+                  className="rounded bg-tile px-1.5 py-0.5 text-[10px] text-ink-2"
                 >
                   {t}
                 </span>
@@ -429,7 +429,7 @@ function AttendeeCard({
                 href={a.orgUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-cream/60 hover:text-cream"
+                className="text-ink-2 hover:text-ink-1"
               >
                 {a.company || "Website"} ↗
               </a>
@@ -437,8 +437,8 @@ function AttendeeCard({
           </div>
 
           {a.ffwdNote && (
-            <p className="mt-2 rounded-md bg-white/[0.03] border border-white/5 px-2.5 py-1.5 text-xs italic text-cream/55">
-              <span className="not-italic font-semibold text-cream/40">FF intel: </span>
+            <p className="mt-2 rounded-md bg-surface shadow-panel border border-hairline px-2.5 py-1.5 text-xs italic text-ink-2">
+              <span className="not-italic font-semibold text-ink-3">FF intel: </span>
               {a.ffwdNote}
             </p>
           )}
@@ -456,7 +456,7 @@ function AttendeeCard({
                   "rounded-md px-2 py-1 text-[11px] font-medium border transition-colors text-left whitespace-nowrap",
                   active
                     ? "bg-orange/15 text-orange border-orange/30"
-                    : "bg-white/5 text-cream/50 border-white/10 hover:text-cream/80",
+                    : "bg-tile text-ink-3 border-outline hover:text-ink-1",
                 ].join(" ")}
               >
                 {active ? "✓ " : ""}
@@ -475,9 +475,9 @@ function AttendeeCard({
           onBlur={onNoteBlur}
           rows={2}
           placeholder="Add a note…"
-          className="w-full resize-y rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-cream placeholder:text-cream/30 focus:outline-none focus:border-orange/50"
+          className="w-full resize-y rounded-lg bg-tile border-[1.5px] border-outline px-3 py-2 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/50"
         />
-        <div className="mt-1 flex items-center justify-between text-[11px] text-gray-mid">
+        <div className="mt-1 flex items-center justify-between text-[11px] text-ink-2">
           <span>
             {state.updated_by
               ? `Last edited by ${state.updated_by} ${fmtAgo(state.updated_at)}`
@@ -485,7 +485,7 @@ function AttendeeCard({
           </span>
           <span
             className={[
-              saveState === "error" ? "text-red-400" : "text-cream/40",
+              saveState === "error" ? "text-expense" : "text-ink-3",
             ].join(" ")}
           >
             {saveState === "saving" && "Saving…"}

@@ -62,13 +62,13 @@ export default async function StudentsPage() {
             <div
               key={s}
               className={`rounded-lg border px-2 py-2.5 text-center ${
-                n > 0 ? "bg-orange/10 border-orange/30" : "bg-white/[0.03] border-white/10"
+                n > 0 ? "bg-orange/10 border-orange/30" : "bg-surface shadow-panel border-outline"
               }`}
             >
-              <div className={`text-lg font-bold tabular-nums ${n > 0 ? "text-orange" : "text-gray-mid"}`}>
+              <div className={`text-lg font-bold tabular-nums ${n > 0 ? "text-orange" : "text-ink-2"}`}>
                 {n}
               </div>
-              <div className="text-[10px] uppercase tracking-wider text-cream/60">
+              <div className="text-[10px] uppercase tracking-wider text-ink-2">
                 {i + 1}. {STAGE_LABELS[s]}
               </div>
             </div>
@@ -94,7 +94,7 @@ export default async function StudentsPage() {
           );
         })}
         {students.length === 0 && (
-          <p className="text-sm text-gray-mid">
+          <p className="text-sm text-ink-2">
             No students yet — add one above, or run the create_students migration to import YGB
             campers and career-quiz teens.
           </p>

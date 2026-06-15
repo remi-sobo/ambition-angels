@@ -71,12 +71,12 @@ export default function ProjectListControls({
           value={localQ}
           onChange={(e) => onSearch(e.target.value)}
           placeholder="Search projects…"
-          className="flex-1 min-w-[200px] bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream placeholder-gray-mid focus:outline-none focus:border-orange/50"
+          className="flex-1 min-w-[200px] bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
         />
         <select
           value={status}
           onChange={(e) => pushParams({ status: e.target.value || null, page: null })}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream focus:outline-none focus:border-orange/50"
+          className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
         >
           <option value="active">Active</option>
           {PROJECT_STATUSES.filter((s) => s !== "active").map((s) => (
@@ -89,7 +89,7 @@ export default function ProjectListControls({
         <select
           value={category}
           onChange={(e) => pushParams({ category: e.target.value || null, page: null })}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream focus:outline-none focus:border-orange/50"
+          className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
         >
           <option value="">All categories</option>
           {CATEGORIES.map((c) => (
@@ -101,7 +101,7 @@ export default function ProjectListControls({
         <select
           value={assignee}
           onChange={(e) => pushParams({ assignee: e.target.value || null, page: null })}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream focus:outline-none focus:border-orange/50"
+          className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
         >
           <option value="">All assignees</option>
           <option value="me">Me ({currentUser ?? "remi"})</option>
@@ -189,10 +189,10 @@ function NewProjectModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-card border border-white/10 bg-ink shadow-2xl"
+        className="w-full max-w-md rounded-card border-[1.5px] border-outline bg-ink shadow-2xl"
       >
         <form onSubmit={submit} className="p-6 space-y-4">
-          <h2 className="text-lg font-display font-bold uppercase tracking-tight text-cream">
+          <h2 className="text-lg font-display font-bold uppercase tracking-tight text-ink-1">
             New Project
           </h2>
 
@@ -203,7 +203,7 @@ function NewProjectModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream placeholder-gray-mid focus:outline-none focus:border-orange/50"
+              className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
             />
           </Field>
 
@@ -211,7 +211,7 @@ function NewProjectModal({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as Category)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream focus:outline-none focus:border-orange/50"
+              className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>
@@ -228,7 +228,7 @@ function NewProjectModal({
                 onChange={(e) =>
                   setAssignee(e.target.value as "remi" | "shannon" | "")
                 }
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream focus:outline-none focus:border-orange/50"
+                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
               >
                 <option value="">Unassigned</option>
                 <option value="remi">Remi</option>
@@ -240,7 +240,7 @@ function NewProjectModal({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream focus:outline-none focus:border-orange/50"
+                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
               />
             </Field>
           </div>
@@ -250,17 +250,17 @@ function NewProjectModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-cream placeholder-gray-mid focus:outline-none focus:border-orange/50"
+              className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
             />
           </Field>
 
-          {error && <p className="text-red-400 text-xs">{error}</p>}
+          {error && <p className="text-expense text-xs">{error}</p>}
 
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="text-sm text-cream/70 hover:text-cream px-4 py-2"
+              className="text-sm text-ink-2 hover:text-ink-1 px-4 py-2"
             >
               Cancel
             </button>
@@ -289,7 +289,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <div className="text-[10px] uppercase tracking-wider text-gray-mid mb-1">
+      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">
         {label} {required && <span className="text-orange">*</span>}
       </div>
       {children}

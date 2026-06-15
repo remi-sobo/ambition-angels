@@ -62,7 +62,7 @@ export default async function StrategicPlanPage() {
           />
         ))}
         {goals.length === 0 && (
-          <p className="text-sm text-gray-mid">
+          <p className="text-sm text-ink-2">
             No goals yet — add the 3–5 strategic goals for the year, then break each into
             initiatives you can check off.
           </p>

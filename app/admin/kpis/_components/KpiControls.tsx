@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const inputCls =
-  "bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-cream text-xs placeholder-gray-mid focus:outline-none focus:border-orange/40";
+  "bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 text-xs placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export function TargetEditor({
   metricKey,
@@ -44,7 +44,7 @@ export function TargetEditor({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-[11px] text-gray-mid hover:text-cream px-2 py-1 rounded-md bg-white/5 hover:bg-white/10"
+        className="text-[11px] text-ink-2 hover:text-ink-1 px-2 py-1 rounded-md bg-tile hover:bg-[#EFE6D4]"
       >
         {owner ? owner : "Set target"}
       </button>
@@ -60,7 +60,7 @@ export function TargetEditor({
         className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-2.5 py-1 rounded-full disabled:opacity-50">
         Save
       </button>
-      <button onClick={() => setOpen(false)} className="text-[11px] text-gray-mid hover:text-cream">×</button>
+      <button onClick={() => setOpen(false)} className="text-[11px] text-ink-2 hover:text-ink-1">×</button>
     </span>
   );
 }

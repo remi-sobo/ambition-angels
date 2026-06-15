@@ -110,7 +110,7 @@ export default async function BoardPage() {
             />
           ))}
           {members.length === 0 && (
-            <p className="text-sm text-gray-mid">
+            <p className="text-sm text-ink-2">
               No board members yet — add your directors with their terms and emails (an email that
               matches a donor record links giving status automatically).
             </p>
@@ -130,7 +130,7 @@ export default async function BoardPage() {
             <MeetingCard key={mt.id} meeting={mt} members={active} />
           ))}
           {meetings.length === 0 && (
-            <p className="text-sm text-gray-mid">
+            <p className="text-sm text-ink-2">
               No meetings yet — create one to build the agenda, take attendance with a quorum
               check, and keep minutes that freeze on approval.
             </p>

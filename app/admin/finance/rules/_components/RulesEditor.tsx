@@ -127,13 +127,13 @@ export default function RulesEditor({ initialRules, categories }: Props) {
   return (
     <div className="space-y-6">
       {/* Create form */}
-      <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5">
-        <h2 className="text-sm uppercase tracking-wider text-gray-mid mb-3">
+      <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
+        <h2 className="text-sm uppercase tracking-wider text-ink-2 mb-3">
           Add rule
         </h2>
         <div className="grid sm:grid-cols-[1fr_auto_1fr_auto] gap-3 items-end">
           <div>
-            <label className="block text-[10px] uppercase tracking-wider text-gray-mid mb-1">
+            <label className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">
               When description …
             </label>
             <input
@@ -142,13 +142,13 @@ export default function RulesEditor({ initialRules, categories }: Props) {
               placeholder={
                 newType === "regex" ? "/regex/" : newType === "starts_with" ? "WF DIRECT PAY" : "GUSTO"
               }
-              className="w-full bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+              className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
             />
           </div>
           <select
             value={newType}
             onChange={(e) => setNewType(e.target.value as Rule["pattern_type"])}
-            className="bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
           >
             {PATTERN_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -159,7 +159,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
           <select
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
-            className="bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream"
+            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
           >
             <option value="">— Set category to —</option>
             {Array.from(new Set(categories.map((c) => c.group_name))).map((g) => (
@@ -178,22 +178,22 @@ export default function RulesEditor({ initialRules, categories }: Props) {
             type="button"
             disabled={busy || !newPattern.trim() || !newCategory}
             onClick={createRule}
-            className="px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-cream text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Add
           </button>
         </div>
-        {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
+        {error && <p className="mt-2 text-xs text-expense">{error}</p>}
       </div>
 
       {/* Seed + Apply CTAs */}
-      <div className="rounded-card border border-white/10 bg-white/[0.02] p-4 space-y-3">
+      <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-4 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <div className="text-sm text-cream font-medium">
+            <div className="text-sm text-ink-1 font-medium">
               Seed default rules
             </div>
-            <div className="text-xs text-gray-mid mt-0.5">
+            <div className="text-xs text-ink-2 mt-0.5">
               ~60 starter rules derived from real Ambition Angels CSV
               descriptions (Gusto, Paychex, Anthropic, OpenAI, Givebutter,
               etc.). Skips patterns you already have.
@@ -208,10 +208,10 @@ export default function RulesEditor({ initialRules, categories }: Props) {
             {busy ? "Working…" : "Seed defaults"}
           </button>
         </div>
-        <div className="flex items-center justify-between flex-wrap gap-3 pt-3 border-t border-white/5">
+        <div className="flex items-center justify-between flex-wrap gap-3 pt-3 border-t border-hairline">
           <div>
-            <div className="text-sm text-cream font-medium">Re-apply rules</div>
-            <div className="text-xs text-gray-mid mt-0.5">
+            <div className="text-sm text-ink-1 font-medium">Re-apply rules</div>
+            <div className="text-xs text-ink-2 mt-0.5">
               Runs the active rule list against every uncategorized transaction.
               Already-categorized rows are untouched.
             </div>
@@ -220,22 +220,22 @@ export default function RulesEditor({ initialRules, categories }: Props) {
             type="button"
             disabled={busy}
             onClick={applyAll}
-            className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-cream text-sm disabled:opacity-40"
+            className="px-3 py-1.5 rounded-lg border-[1.5px] border-outline bg-tile hover:bg-[#EFE6D4] text-ink-1 text-sm disabled:opacity-40"
           >
             {busy ? "Working…" : "Apply to uncategorized"}
           </button>
         </div>
       </div>
       {applyResult && (
-        <div className="rounded-card border border-emerald-400/40 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+        <div className="rounded-card border border-revenue/30 bg-revenue-bg p-3 text-sm text-revenue">
           {applyResult}
         </div>
       )}
 
       {/* Rule list */}
-      <div className="rounded-card-lg border border-white/10 bg-white/[0.02] overflow-hidden">
+      <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel overflow-hidden">
         <table className="w-full text-xs">
-          <thead className="bg-white/[0.03] text-gray-mid uppercase tracking-wider">
+          <thead className="bg-surface shadow-panel text-ink-2 uppercase tracking-wider">
             <tr>
               <th className="text-left px-3 py-2.5 w-8"></th>
               <th className="text-left px-3 py-2.5">Pattern</th>
@@ -249,14 +249,14 @@ export default function RulesEditor({ initialRules, categories }: Props) {
           <tbody>
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-gray-mid">
+                <td colSpan={7} className="px-3 py-10 text-center text-ink-2">
                   No rules yet. Add one above — for example,{" "}
-                  <code className="text-cream/80">contains GUSTO → Salaries &amp; wages</code>.
+                  <code className="text-ink-1">contains GUSTO → Salaries &amp; wages</code>.
                 </td>
               </tr>
             )}
             {sorted.map((r) => (
-              <tr key={r.id} className={`border-t border-white/5 ${r.enabled ? "" : "opacity-50"}`}>
+              <tr key={r.id} className={`border-t border-hairline ${r.enabled ? "" : "opacity-50"}`}>
                 <td className="px-3 py-2">
                   <input
                     type="checkbox"
@@ -265,20 +265,20 @@ export default function RulesEditor({ initialRules, categories }: Props) {
                     className="accent-orange"
                   />
                 </td>
-                <td className="px-3 py-2 font-mono text-cream/90">{r.pattern}</td>
-                <td className="px-3 py-2 text-gray-mid">{r.pattern_type.replace("_", " ")}</td>
-                <td className="px-3 py-2 text-cream/80">
+                <td className="px-3 py-2 font-mono text-ink-1">{r.pattern}</td>
+                <td className="px-3 py-2 text-ink-2">{r.pattern_type.replace("_", " ")}</td>
+                <td className="px-3 py-2 text-ink-1">
                   {catById.get(r.category_id)?.display_name ?? r.category_id}
-                  <span className="text-[10px] text-gray-mid ml-1.5">
+                  <span className="text-[10px] text-ink-2 ml-1.5">
                     {catById.get(r.category_id)?.group_name}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-right text-cream/80 font-mono">{r.hit_count}</td>
-                <td className="px-3 py-2 text-right text-cream/80 font-mono">{r.priority}</td>
+                <td className="px-3 py-2 text-right text-ink-1 font-mono">{r.hit_count}</td>
+                <td className="px-3 py-2 text-right text-ink-1 font-mono">{r.priority}</td>
                 <td className="px-3 py-2 text-right">
                   <button
                     onClick={() => remove(r.id)}
-                    className="text-gray-mid hover:text-red-300 text-xs"
+                    className="text-ink-2 hover:text-expense text-xs"
                   >
                     Delete
                   </button>

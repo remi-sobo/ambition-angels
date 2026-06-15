@@ -4,7 +4,7 @@ export default function Snapshot({ text }: { text: string }) {
       <div className="text-[10px] uppercase tracking-wider text-orange/80 mb-2">
         Snapshot
       </div>
-      <p className="text-cream text-base leading-relaxed">{text}</p>
+      <p className="text-ink-1 text-base leading-relaxed">{text}</p>
     </section>
   );
 }

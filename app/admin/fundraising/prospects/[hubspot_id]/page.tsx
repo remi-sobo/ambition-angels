@@ -54,10 +54,10 @@ function MetaItem({
 }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-gray-mid">
+      <div className="text-[10px] uppercase tracking-wider text-ink-2">
         {label}
       </div>
-      <div className="mt-0.5 text-sm text-cream/85">{children}</div>
+      <div className="mt-0.5 text-sm text-ink-1">{children}</div>
     </div>
   );
 }
@@ -150,19 +150,19 @@ export default async function ProspectDetailPage({ params }: PageProps) {
     <div className="max-w-5xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       <Link
         href="/admin/fundraising"
-        className="inline-block text-xs text-gray-mid hover:text-cream transition-colors"
+        className="inline-block text-xs text-ink-2 hover:text-ink-1 transition-colors"
       >
         ← Back to Fundraising
       </Link>
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <header className="rounded-card border border-white/10 bg-black/30 p-6">
+      <header className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="font-display font-black uppercase tracking-tight text-cream text-3xl sm:text-4xl leading-none">
+            <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
               {displayName(contact)}
             </h1>
-            <div className="mt-1 text-xs text-gray-mid font-mono">
+            <div className="mt-1 text-xs text-ink-2 font-mono">
               HubSpot ID {contact.hubspot_id}
             </div>
           </div>
@@ -188,18 +188,18 @@ export default async function ProspectDetailPage({ params }: PageProps) {
                 {contact.email}
               </a>
             ) : (
-              <span className="text-gray-mid">—</span>
+              <span className="text-ink-2">—</span>
             )}
           </MetaItem>
           <MetaItem label="Phone">
-            {contact.phone ?? <span className="text-gray-mid">—</span>}
+            {contact.phone ?? <span className="text-ink-2">—</span>}
           </MetaItem>
           <MetaItem label="Company">
-            {contact.company ?? <span className="text-gray-mid">—</span>}
+            {contact.company ?? <span className="text-ink-2">—</span>}
           </MetaItem>
           <MetaItem label="Lifecycle Stage">
             {contact.lifecycle_stage ?? (
-              <span className="text-gray-mid">—</span>
+              <span className="text-ink-2">—</span>
             )}
           </MetaItem>
           <MetaItem label="Owner ID">
@@ -229,11 +229,11 @@ export default async function ProspectDetailPage({ params }: PageProps) {
       <EngagementTimeline engagements={engagements} />
 
       {/* ── Raw HubSpot data (collapsed) ───────────────────────────────── */}
-      <details className="rounded-card border border-white/10 bg-black/30 p-6 group">
-        <summary className="cursor-pointer text-xs uppercase tracking-wider text-gray-mid hover:text-cream select-none">
+      <details className="rounded-card border-[1.5px] border-outline bg-black/30 p-6 group">
+        <summary className="cursor-pointer text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1 select-none">
           Raw HubSpot data
         </summary>
-        <pre className="mt-4 text-[11px] text-cream/70 font-mono leading-relaxed bg-black/40 border border-white/5 rounded-lg p-4 overflow-x-auto">
+        <pre className="mt-4 text-[11px] text-ink-2 font-mono leading-relaxed bg-black/40 border border-hairline rounded-lg p-4 overflow-x-auto">
           {JSON.stringify(contact.raw_json, null, 2)}
         </pre>
       </details>

@@ -95,22 +95,22 @@ export default function AckComposer({
         <button
           onClick={mark}
           disabled={busy === "mark"}
-          className="text-[11px] font-semibold text-gray-mid hover:text-cream transition-colors disabled:opacity-50"
+          className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 transition-colors disabled:opacity-50"
         >
           {busy === "mark" ? "Saving…" : "Mark as thanked"}
         </button>
-        {error && <span className="text-red-400 text-xs">{error}</span>}
+        {error && <span className="text-expense text-xs">{error}</span>}
       </span>
     );
   }
 
   return (
-    <div className="w-full mt-3 bg-[#19150f] border border-white/10 rounded-xl p-4 space-y-3">
+    <div className="w-full mt-3 bg-[#19150f] border-[1.5px] border-outline rounded-xl p-4 space-y-3">
       <div className="flex items-center gap-3 flex-wrap">
         <input
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
-          className="flex-1 min-w-[260px] bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm focus:outline-none focus:border-orange/40"
+          className="flex-1 min-w-[260px] bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40"
           placeholder="Subject"
         />
         <button
@@ -126,10 +126,10 @@ export default function AckComposer({
         onChange={(e) => setNote(e.target.value)}
         rows={5}
         placeholder="The personal note — write it yourself or draft with AI, then edit freely. Review before sending: AI drafts are suggestions, not sends."
-        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm leading-relaxed placeholder-gray-mid focus:outline-none focus:border-orange/40"
+        className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40"
       />
-      <div className="text-[11px] text-gray-mid leading-relaxed bg-white/5 border border-white/10 rounded-lg px-3 py-2 whitespace-pre-wrap">
-        <span className="text-white/40 font-semibold uppercase tracking-wider text-[10px] block mb-1">
+      <div className="text-[11px] text-ink-2 leading-relaxed bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 whitespace-pre-wrap">
+        <span className="text-ink-3 font-semibold uppercase tracking-wider text-[10px] block mb-1">
           Appended automatically (IRS receipt language — not editable)
         </span>
         {complianceBlock}
@@ -145,11 +145,11 @@ export default function AckComposer({
         <button
           onClick={() => setOpen(false)}
           disabled={busy !== ""}
-          className="text-xs font-semibold text-gray-mid hover:text-cream transition-colors"
+          className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
         >
           Close
         </button>
-        {error && <span className="text-red-400 text-xs">{error}</span>}
+        {error && <span className="text-expense text-xs">{error}</span>}
       </div>
     </div>
   );

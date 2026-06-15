@@ -20,16 +20,16 @@ export default function TodayView({
   const isEmpty = dueToday.length === 0 && pinnedToday.length === 0;
 
   return (
-    <section className="rounded-card border border-white/10 bg-black/30 p-6">
+    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
       <header className="flex items-baseline justify-between mb-4">
-        <h2 className="text-xs uppercase tracking-wider text-gray-mid">Today</h2>
-        <span className="text-[10px] uppercase tracking-wider text-gray-mid">
+        <h2 className="text-xs uppercase tracking-wider text-ink-2">Today</h2>
+        <span className="text-[10px] uppercase tracking-wider text-ink-2">
           {dueToday.length + pinnedToday.length} open
         </span>
       </header>
 
       {isEmpty ? (
-        <p className="text-sm text-gray-mid">
+        <p className="text-sm text-ink-2">
           Nothing for today yet. Use the{" "}
           <span className="inline-block px-1.5 py-0.5 rounded bg-orange/10 text-orange border border-orange/30 font-bold">
             +
@@ -40,7 +40,7 @@ export default function TodayView({
         <div className="space-y-5">
           {dueToday.length > 0 && (
             <div>
-              <h3 className="text-[10px] uppercase tracking-wider text-cream/50 mb-2">
+              <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
                 Due today
               </h3>
               <div className="space-y-1.5">
@@ -57,7 +57,7 @@ export default function TodayView({
 
           {pinnedToday.length > 0 && (
             <div>
-              <h3 className="text-[10px] uppercase tracking-wider text-cream/50 mb-2">
+              <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
                 Pinned for today
               </h3>
               <div className="space-y-1.5">

@@ -116,16 +116,16 @@ export default function BudgetEditor({ year, categories, initialBudget }: Props)
         <Stat label="Activated" value={`$${fmt(grand.act)}`} accent />
       </div>
       <div className="rounded-card border border-orange/30 bg-orange/5 p-4 text-sm flex items-baseline justify-between flex-wrap gap-2">
-        <span className="text-cream/80">Total budget ({year}, base + activated)</span>
+        <span className="text-ink-1">Total budget ({year}, base + activated)</span>
         <span className="font-display font-black text-2xl text-orange leading-none">
           ${fmt(grand.total)}
         </span>
       </div>
 
       {/* Editor table */}
-      <div className="rounded-card-lg border border-white/10 bg-white/[0.02] overflow-hidden">
+      <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel overflow-hidden">
         <table className="w-full text-xs">
-          <thead className="bg-white/[0.03] text-gray-mid uppercase tracking-wider">
+          <thead className="bg-surface shadow-panel text-ink-2 uppercase tracking-wider">
             <tr>
               <th className="text-left px-3 py-2.5">Line item</th>
               <th className="text-right px-3 py-2.5 w-32">Base</th>
@@ -178,20 +178,20 @@ function GroupBlock({
 }) {
   return (
     <>
-      <tr className="bg-white/[0.04] border-t-2 border-white/10">
+      <tr className="bg-tile border-t-2 border-outline">
         <td className="px-3 py-2 text-[10px] uppercase tracking-widest text-orange font-medium">
           {name}
         </td>
-        <td className="px-3 py-2 text-right text-cream/70 font-mono">
+        <td className="px-3 py-2 text-right text-ink-2 font-mono">
           ${fmt(totals.base)}
         </td>
-        <td className="px-3 py-2 text-right text-cream/70 font-mono">
+        <td className="px-3 py-2 text-right text-ink-2 font-mono">
           ${fmt(totals.t1)}
         </td>
-        <td className="px-3 py-2 text-right text-cream/70 font-mono">
+        <td className="px-3 py-2 text-right text-ink-2 font-mono">
           ${fmt(totals.t2)}
         </td>
-        <td className="px-3 py-2 text-right text-cream/70 font-mono">
+        <td className="px-3 py-2 text-right text-ink-2 font-mono">
           ${fmt(totals.act)}
         </td>
       </tr>
@@ -199,15 +199,15 @@ function GroupBlock({
         const r = rows.get(c.id);
         if (!r) return null;
         return (
-          <tr key={c.id} className="border-t border-white/5">
-            <td className="px-3 py-1.5 text-cream/85">
+          <tr key={c.id} className="border-t border-hairline">
+            <td className="px-3 py-1.5 text-ink-1">
               <div className="flex items-center gap-2">
                 <span>{c.display_name}</span>
                 {savingId === c.id && (
-                  <span className="text-[10px] text-gray-mid">saving…</span>
+                  <span className="text-[10px] text-ink-2">saving…</span>
                 )}
                 {errorId === c.id && (
-                  <span className="text-[10px] text-red-300">save failed</span>
+                  <span className="text-[10px] text-expense">save failed</span>
                 )}
               </div>
             </td>
@@ -267,7 +267,7 @@ function AmountCell({
         }}
         inputMode="decimal"
         placeholder="0"
-        className="w-24 bg-transparent border border-transparent hover:border-white/10 focus:border-orange/60 focus:bg-ink rounded px-1.5 py-1 text-right font-mono text-cream/85"
+        className="w-24 bg-transparent border border-transparent hover:border-outline focus:border-orange/60 focus:bg-ink rounded px-1.5 py-1 text-right font-mono text-ink-1"
       />
     </td>
   );
@@ -275,9 +275,9 @@ function AmountCell({
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="rounded-card border border-white/10 bg-white/[0.02] p-3">
-      <div className="text-[10px] uppercase tracking-wider text-gray-mid mb-1">{label}</div>
-      <div className={`text-lg font-medium ${accent ? "text-orange" : "text-cream"}`}>
+    <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-3">
+      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}</div>
+      <div className={`text-lg font-medium ${accent ? "text-orange" : "text-ink-1"}`}>
         {value}
       </div>
     </div>

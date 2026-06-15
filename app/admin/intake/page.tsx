@@ -117,7 +117,7 @@ export default async function IntakePage() {
           <a
             href="/apply"
             target="_blank"
-            className="text-xs font-semibold text-cream/70 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full transition-colors"
+            className="text-xs font-semibold text-ink-2 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"
           >
             View public form ↗
           </a>
@@ -136,13 +136,13 @@ export default async function IntakePage() {
           {seatStrips.map((c) => (
             <div
               key={c.id}
-              className="bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 flex flex-wrap items-center gap-2 text-[12px] text-cream/70"
+              className="bg-surface shadow-panel border-[1.5px] border-outline rounded-xl px-3 py-2.5 flex flex-wrap items-center gap-2 text-[12px] text-ink-2"
             >
-              <Link href={`/admin/cohorts/${c.id}`} className="font-semibold text-cream hover:text-orange">
+              <Link href={`/admin/cohorts/${c.id}`} className="font-semibold text-ink-1 hover:text-orange">
                 {c.name}
               </Link>
               {c.accepting_applications && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 uppercase tracking-wider">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-revenue-bg text-revenue uppercase tracking-wider">
                   Accepting
                 </span>
               )}
@@ -200,9 +200,9 @@ export default async function IntakePage() {
         )}
 
         {apps.length === 0 && (
-          <p className="text-sm text-gray-mid">
+          <p className="text-sm text-ink-2">
             No applications yet. Flag a cohort as &ldquo;Accepting applications&rdquo; on its page,
-            then share <span className="text-cream/80">ambitionangels.org/apply</span>.
+            then share <span className="text-ink-1">ambitionangels.org/apply</span>.
           </p>
         )}
       </div>

@@ -35,7 +35,7 @@ export default async function CompliancePage() {
       <section>
         <h2
           className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${
-            tone === "red" ? "text-red-400" : "text-cream/70"
+            tone === "red" ? "text-expense" : "text-ink-2"
           }`}
         >
           {title} ({rows.length})
@@ -73,7 +73,7 @@ export default async function CompliancePage() {
         <Section title="Later" rows={later} />
         <Section title="Filed / waived" rows={closed} />
         {items.length === 0 && (
-          <p className="text-sm text-gray-mid">
+          <p className="text-sm text-ink-2">
             No compliance items — the seed template didn&apos;t load. Add your first deadline above.
           </p>
         )}

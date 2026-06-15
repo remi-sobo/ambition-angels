@@ -23,10 +23,10 @@ type Cohort = {
 };
 
 const STATUS_CHIP: Record<string, string> = {
-  planning: "bg-white/10 text-gray-mid",
+  planning: "bg-tile text-ink-2",
   active: "bg-orange/15 text-orange",
-  completed: "bg-green-500/15 text-green-400",
-  archived: "bg-white/5 text-white/30",
+  completed: "bg-revenue-bg text-revenue",
+  archived: "bg-tile text-ink-3",
 };
 
 export default async function CohortsPage() {
@@ -88,8 +88,8 @@ export default async function CohortsPage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Cohorts</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
+          <h1 className="font-heading font-bold text-2xl text-ink-1">Cohorts</h1>
+          <p className="text-ink-2 text-sm mt-0.5">
             Program × term groups · sessions, roster-tap attendance, dosage
           </p>
         </div>
@@ -116,15 +116,15 @@ export default async function CohortsPage() {
             <Link
               key={c.id}
               href={`/admin/cohorts/${c.id}`}
-              className="block bg-[#1d1812] border border-white/10 rounded-card p-4 hover:border-orange/30 transition-colors"
+              className="block bg-[#1d1812] border-[1.5px] border-outline rounded-card p-4 hover:border-orange/30 transition-colors"
             >
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-heading font-semibold text-cream">{c.name}</span>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${STATUS_CHIP[c.status] ?? "bg-white/10 text-gray-mid"}`}>
+                <span className="font-heading font-semibold text-ink-1">{c.name}</span>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${STATUS_CHIP[c.status] ?? "bg-tile text-ink-2"}`}>
                   {COHORT_STATUS_LABELS[c.status] ?? c.status}
                 </span>
               </div>
-              <p className="text-[12px] text-gray-mid mt-1">
+              <p className="text-[12px] text-ink-2 mt-1">
                 {[c.program, c.term].filter(Boolean).join(" · ") || "—"}
                 {c.start_date && (
                   <span className="ml-1.5">
@@ -132,21 +132,21 @@ export default async function CohortsPage() {
                   </span>
                 )}
               </p>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 text-[12px] text-cream/70 tabular-nums">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 text-[12px] text-ink-2 tabular-nums">
                 <span>
-                  <span className="font-semibold text-cream">{r.enrolled}</span>
+                  <span className="font-semibold text-ink-1">{r.enrolled}</span>
                   {c.capacity ? ` / ${c.capacity}` : ""} enrolled
                 </span>
                 <span>
-                  <span className="font-semibold text-cream">{r.heldCount}</span>
+                  <span className="font-semibold text-ink-1">{r.heldCount}</span>
                   {" / "}{r.sessionCount} sessions held
                 </span>
                 <span>
-                  <span className="font-semibold text-cream">{pct(r.rate)}</span> attendance
+                  <span className="font-semibold text-ink-1">{pct(r.rate)}</span> attendance
                 </span>
               </div>
               {fill !== null && (
-                <div className="mt-2 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                <div className="mt-2 h-1.5 rounded-full bg-tile overflow-hidden">
                   <div className="h-full rounded-full bg-orange/70" style={{ width: `${fill}%` }} />
                 </div>
               )}
@@ -154,7 +154,7 @@ export default async function CohortsPage() {
           );
         })}
         {cohorts.length === 0 && (
-          <p className="text-sm text-gray-mid col-span-full">
+          <p className="text-sm text-ink-2 col-span-full">
             No cohorts yet — create one above, or run the create_cohorts_attendance migration to
             fold in YGB Creators Camp.
           </p>

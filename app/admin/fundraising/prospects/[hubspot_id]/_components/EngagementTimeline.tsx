@@ -11,11 +11,11 @@ export type HsEngagement = {
 };
 
 const TYPE_STYLES: Record<string, string> = {
-  email: "bg-blue-500/15 text-blue-300 border-blue-500/30",
-  meeting: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  note: "bg-gray-500/15 text-cream/70 border-gray-500/30",
-  task: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  call: "bg-purple-500/15 text-purple-300 border-purple-500/30",
+  email: "bg-blue-500/15 text-blue-700 border-blue-500/30",
+  meeting: "bg-revenue-bg text-revenue border-revenue/30",
+  note: "bg-gray-500/15 text-ink-2 border-gray-500/30",
+  task: "bg-[#F4E8D0] text-[#A56A1B] border-[#D9BE86]",
+  call: "bg-purple-500/15 text-purple-700 border-purple-500/30",
 };
 
 const PREVIEW_MAX = 200;
@@ -50,7 +50,7 @@ function fmtAbsolute(iso: string | null): string {
 
 function TypeBadge({ type }: { type: string | null }) {
   const cls =
-    TYPE_STYLES[type ?? ""] ?? "bg-white/5 text-cream/60 border-white/10";
+    TYPE_STYLES[type ?? ""] ?? "bg-tile text-ink-2 border-outline";
   return (
     <span
       className={`inline-block px-2 py-0.5 rounded border text-[10px] uppercase tracking-wider font-semibold ${cls}`}
@@ -67,24 +67,24 @@ function EngagementRow({ e }: { e: HsEngagement }) {
   const visible = !truncated || expanded ? preview : preview.slice(0, PREVIEW_MAX);
 
   return (
-    <li className="relative pl-6 pb-5 border-l border-white/10 last:border-l-transparent last:pb-0">
+    <li className="relative pl-6 pb-5 border-l border-outline last:border-l-transparent last:pb-0">
       <span className="absolute left-[-5px] top-1.5 h-2.5 w-2.5 rounded-full bg-orange/60 ring-2 ring-ink" />
       <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1">
         <TypeBadge type={e.engagement_type} />
         <span
-          className="text-xs text-gray-mid"
+          className="text-xs text-ink-2"
           title={fmtAbsolute(e.occurred_at)}
         >
           {fmtRelative(e.occurred_at)}
         </span>
       </div>
       {e.subject && (
-        <div className="mt-1.5 text-cream font-medium text-sm">{e.subject}</div>
+        <div className="mt-1.5 text-ink-1 font-medium text-sm">{e.subject}</div>
       )}
       {preview && (
-        <div className="mt-1 text-sm text-cream/70 leading-relaxed whitespace-pre-wrap break-words">
+        <div className="mt-1 text-sm text-ink-2 leading-relaxed whitespace-pre-wrap break-words">
           {visible}
-          {truncated && !expanded && <span className="text-gray-mid">…</span>}
+          {truncated && !expanded && <span className="text-ink-2">…</span>}
           {truncated && (
             <button
               type="button"
@@ -106,16 +106,16 @@ export default function EngagementTimeline({
   engagements: HsEngagement[];
 }) {
   return (
-    <section className="rounded-card border border-white/10 bg-black/30 p-6">
-      <h2 className="text-xs uppercase tracking-wider text-gray-mid mb-4">
+    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+      <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
         Recent Engagement{" "}
-        <span className="text-cream/40">
+        <span className="text-ink-3">
           ({engagements.length}
           {engagements.length === 50 ? " most recent" : ""})
         </span>
       </h2>
       {engagements.length === 0 ? (
-        <p className="text-sm text-gray-mid">No engagement history.</p>
+        <p className="text-sm text-ink-2">No engagement history.</p>
       ) : (
         <ol className="mt-2">
           {engagements.map((e) => (

@@ -72,7 +72,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#19150f] border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3 flex-wrap">
+      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3 flex-wrap">
         <Link href="/admin/fundraising/grants" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
           ← Grants
         </Link>

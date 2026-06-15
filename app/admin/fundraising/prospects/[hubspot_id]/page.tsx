@@ -156,7 +156,7 @@ export default async function ProspectDetailPage({ params }: PageProps) {
       </Link>
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <header className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+      <header className="rounded-card border-[1.5px] border-outline bg-surface p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
@@ -229,11 +229,11 @@ export default async function ProspectDetailPage({ params }: PageProps) {
       <EngagementTimeline engagements={engagements} />
 
       {/* ── Raw HubSpot data (collapsed) ───────────────────────────────── */}
-      <details className="rounded-card border-[1.5px] border-outline bg-black/30 p-6 group">
+      <details className="rounded-card border-[1.5px] border-outline bg-surface p-6 group">
         <summary className="cursor-pointer text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1 select-none">
           Raw HubSpot data
         </summary>
-        <pre className="mt-4 text-[11px] text-ink-2 font-mono leading-relaxed bg-black/40 border border-hairline rounded-lg p-4 overflow-x-auto">
+        <pre className="mt-4 text-[11px] text-ink-2 font-mono leading-relaxed bg-surface border border-hairline rounded-lg p-4 overflow-x-auto">
           {JSON.stringify(contact.raw_json, null, 2)}
         </pre>
       </details>

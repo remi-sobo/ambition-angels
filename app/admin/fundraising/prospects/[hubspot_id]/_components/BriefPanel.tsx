@@ -128,7 +128,7 @@ export default function BriefPanel({
   // ── Empty state ─────────────────────────────────────────────────────────
   if (!brief) {
     return (
-      <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h2 className="text-xs uppercase tracking-wider text-ink-2">
@@ -159,7 +159,7 @@ export default function BriefPanel({
   const c = brief.content;
   return (
     <section className="space-y-4">
-      <header className="rounded-card border-[1.5px] border-outline bg-black/30 p-4 flex items-center justify-between gap-4 flex-wrap">
+      <header className="rounded-card border-[1.5px] border-outline bg-surface p-4 flex items-center justify-between gap-4 flex-wrap">
         <div className="text-xs text-ink-2">
           Brief generated{" "}
           <span

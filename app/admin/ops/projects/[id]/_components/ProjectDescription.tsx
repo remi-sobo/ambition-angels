@@ -173,7 +173,7 @@ export default function ProjectDescription({
   }
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
       <div className="flex items-baseline justify-between gap-2 mb-3">
         <h2 className="text-xs uppercase tracking-wider text-ink-2">
           Description

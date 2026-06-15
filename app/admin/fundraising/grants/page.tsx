@@ -95,7 +95,7 @@ export default async function GrantsPage() {
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#19150f] border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center justify-between gap-3">
+      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center justify-between gap-3">
         <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Grants</span>
         <span className="text-xs text-ink-2">{grants.length} total{closedCount > 0 ? ` · ${closedCount} declined/closed` : ""}</span>
       </div>

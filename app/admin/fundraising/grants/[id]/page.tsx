@@ -41,8 +41,8 @@ export default async function GrantDetailPage({ params }: { params: { id: string
   if (gRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-cream text-2xl mb-4">Grants</h1>
-        <div className="bg-[#231f18] border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-gray-mid leading-relaxed">
+        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Grants</h1>
+        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The grants tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_grants.sql</code> via Actions → Apply DB migration,
           then reload.
@@ -72,11 +72,11 @@ export default async function GrantDetailPage({ params }: { params: { id: string
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#19150f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3 flex-wrap">
-        <Link href="/admin/fundraising/grants" className="text-xs font-semibold text-gray-mid hover:text-cream transition-colors">
+      <div className="bg-[#19150f] border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3 flex-wrap">
+        <Link href="/admin/fundraising/grants" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
           ← Grants
         </Link>
-        <span className="font-heading font-bold text-cream text-sm sm:text-base truncate">{g.name}</span>
+        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base truncate">{g.name}</span>
         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
           {STAGE_LABELS[g.stage] ?? g.stage}
         </span>
@@ -87,28 +87,28 @@ export default async function GrantDetailPage({ params }: { params: { id: string
 
       <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <section className="lg:col-span-5 bg-[#231f18] border border-white/10 rounded-card-lg p-5 space-y-3">
-            <h2 className="font-heading font-bold text-cream text-sm mb-1">Details</h2>
+          <section className="lg:col-span-5 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
+            <h2 className="font-heading font-bold text-ink-1 text-sm mb-1">Details</h2>
             {facts.map(([label, value]) => (
               <div key={label} className="flex gap-3 text-xs">
-                <span className="text-white/30 w-24 flex-shrink-0 uppercase tracking-wider font-semibold pt-px">{label}</span>
-                <span className="text-cream/85 break-words min-w-0">{value}</span>
+                <span className="text-ink-3 w-24 flex-shrink-0 uppercase tracking-wider font-semibold pt-px">{label}</span>
+                <span className="text-ink-1 break-words min-w-0">{value}</span>
               </div>
             ))}
-            {g.notes && <p className="text-xs text-gray-mid border-t border-white/10 pt-3 whitespace-pre-wrap">{g.notes}</p>}
+            {g.notes && <p className="text-xs text-ink-2 border-t border-outline pt-3 whitespace-pre-wrap">{g.notes}</p>}
           </section>
 
-          <section className="lg:col-span-7 bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-white/10">
-              <h2 className="font-heading font-bold text-cream text-sm">Requirements Calendar</h2>
+          <section className="lg:col-span-7 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-outline">
+              <h2 className="font-heading font-bold text-ink-1 text-sm">Requirements Calendar</h2>
             </div>
             {requirements.length === 0 ? (
-              <p className="px-5 py-6 text-gray-mid text-sm">
+              <p className="px-5 py-6 text-ink-2 text-sm">
                 No deadlines yet — add the application, reports, and anything else the funder
                 expects. Awarded grants auto-plot a final report at the period end.
               </p>
             ) : (
-              <ul className="divide-y divide-white/5">
+              <ul className="divide-y divide-hairline">
                 {requirements.map((r) => {
                   const open = r.status === "upcoming" || r.status === "in_progress";
                   const isOverdue = open && r.due_date < today;
@@ -117,26 +117,26 @@ export default async function GrantDetailPage({ params }: { params: { id: string
                       <span
                         className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
                           isOverdue
-                            ? "bg-red-500/15 text-red-400"
+                            ? "bg-expense-bg text-expense"
                             : open
-                            ? "bg-white/5 text-gray-mid"
-                            : "bg-green-500/10 text-green-400"
+                            ? "bg-tile text-ink-2"
+                            : "bg-revenue-bg text-revenue"
                         }`}
                       >
                         {fmtDate(r.due_date)}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className={`text-sm font-medium truncate ${open ? "text-cream/90" : "text-white/40 line-through"}`}>
+                        <div className={`text-sm font-medium truncate ${open ? "text-ink-1" : "text-ink-3 line-through"}`}>
                           {r.label || KIND_LABELS[r.kind]}
                         </div>
-                        {r.notes && <div className="text-[11px] text-gray-mid truncate">{r.notes}</div>}
+                        {r.notes && <div className="text-[11px] text-ink-2 truncate">{r.notes}</div>}
                       </div>
                       {r.status === "submitted" && r.submitted_at && (
-                        <span className="text-[11px] text-green-400 whitespace-nowrap">
+                        <span className="text-[11px] text-revenue whitespace-nowrap">
                           Submitted {new Date(r.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                         </span>
                       )}
-                      {r.status === "waived" && <span className="text-[11px] text-white/30">Waived</span>}
+                      {r.status === "waived" && <span className="text-[11px] text-ink-3">Waived</span>}
                       {open && <RequirementActions id={r.id} status={r.status} />}
                     </li>
                   );

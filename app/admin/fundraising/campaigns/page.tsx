@@ -61,8 +61,8 @@ export default async function CampaignsPage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="font-heading font-bold text-2xl text-cream">Campaigns</h1>
-          <p className="text-gray-mid text-sm mt-0.5">
+          <h1 className="font-heading font-bold text-2xl text-ink-1">Campaigns</h1>
+          <p className="text-ink-2 text-sm mt-0.5">
             Campaign → appeal attribution · every gift should carry a campaign
           </p>
         </div>
@@ -95,22 +95,22 @@ export default async function CampaignsPage() {
           const pct = c.goal && c.goal > 0 ? Math.min(100, (agg.total / Number(c.goal)) * 100) : null;
           const campaignAppeals = appeals.filter((a) => a.campaign_id === c.id);
           return (
-            <section key={c.id} className="bg-white/[0.03] border border-white/10 rounded-card p-5">
+            <section key={c.id} className="bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="font-heading font-semibold text-cream">{c.name}</h2>
-                <span className="text-sm text-cream/80 tabular-nums">
+                <h2 className="font-heading font-semibold text-ink-1">{c.name}</h2>
+                <span className="text-sm text-ink-1 tabular-nums">
                   {money(agg.total)}
-                  {c.goal ? <span className="text-gray-mid"> / {money(Number(c.goal))} goal</span> : null}
-                  <span className="text-gray-mid"> · {agg.count} gift{agg.count === 1 ? "" : "s"}</span>
+                  {c.goal ? <span className="text-ink-2"> / {money(Number(c.goal))} goal</span> : null}
+                  <span className="text-ink-2"> · {agg.count} gift{agg.count === 1 ? "" : "s"}</span>
                 </span>
               </div>
               {(c.starts_on || c.ends_on) && (
-                <p className="text-[11px] text-gray-mid mt-0.5">
+                <p className="text-[11px] text-ink-2 mt-0.5">
                   {c.starts_on ?? "…"} → {c.ends_on ?? "…"}
                 </p>
               )}
               {pct !== null && (
-                <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
+                <div className="mt-3 h-2 rounded-full bg-tile overflow-hidden">
                   <div className="h-full bg-orange" style={{ width: `${pct}%` }} />
                 </div>
               )}
@@ -120,7 +120,7 @@ export default async function CampaignsPage() {
                   return (
                     <span
                       key={a.id}
-                      className="text-[11px] bg-white/5 border border-white/10 rounded-full px-3 py-1 text-cream/70"
+                      className="text-[11px] bg-tile border-[1.5px] border-outline rounded-full px-3 py-1 text-ink-2"
                       title={a.source_code ? `Source code ${a.source_code}` : undefined}
                     >
                       {a.name} · {money(aa.total)}
@@ -133,7 +133,7 @@ export default async function CampaignsPage() {
           );
         })}
         {campaigns.length === 0 && (
-          <p className="text-sm text-gray-mid">
+          <p className="text-sm text-ink-2">
             No campaigns yet — create the first one (e.g. “FY26 Annual Fund”) and attribute your
             gift history to it.
           </p>

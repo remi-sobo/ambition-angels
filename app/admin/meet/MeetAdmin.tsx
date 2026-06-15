@@ -41,7 +41,7 @@ export default function MeetAdmin({ initial }: { initial: InitialData }) {
         </div>
       </header>
 
-      <nav className="flex gap-2 border-b border-white/10">
+      <nav className="flex gap-2 border-b border-outline">
         {(["bookings", "types", "blackouts"] as Tab[]).map((t) => (
           <button
             key={t}
@@ -50,8 +50,8 @@ export default function MeetAdmin({ initial }: { initial: InitialData }) {
             className={[
               "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors capitalize",
               tab === t
-                ? "text-cream border-orange"
-                : "text-cream/60 border-transparent hover:text-cream",
+                ? "text-ink-1 border-orange"
+                : "text-ink-2 border-transparent hover:text-ink-1",
             ].join(" ")}
           >
             {t}
@@ -92,7 +92,7 @@ export default function MeetAdmin({ initial }: { initial: InitialData }) {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="text-2xl font-semibold text-cream">{value}</div>
+      <div className="text-2xl font-semibold text-ink-1">{value}</div>
       <div className="text-xs uppercase tracking-widest text-zinc-500">
         {label}
       </div>
@@ -155,7 +155,7 @@ function BookingsTab({
         <button
           type="button"
           onClick={() => setShowPast((s) => !s)}
-          className="text-sm text-cream/70 hover:text-cream transition-colors"
+          className="text-sm text-ink-2 hover:text-ink-1 transition-colors"
         >
           {showPast ? "Hide" : "Show"} past + cancelled ({recent.length})
         </button>
@@ -181,10 +181,10 @@ function BookingTable({
   canCancel: boolean;
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-white/10">
+    <div className="overflow-x-auto rounded-lg border-[1.5px] border-outline">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-xs uppercase tracking-widest text-zinc-500 border-b border-white/10">
+          <tr className="text-left text-xs uppercase tracking-widest text-zinc-500 border-b border-outline">
             <th className="px-4 py-3 font-medium">When (PT)</th>
             <th className="px-4 py-3 font-medium">Type</th>
             <th className="px-4 py-3 font-medium">Attendee</th>
@@ -195,13 +195,13 @@ function BookingTable({
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.id} className="border-b border-white/5 last:border-0">
+            <tr key={r.id} className="border-b border-hairline last:border-0">
               <td className="px-4 py-3 whitespace-nowrap">
                 {formatDateTime(new Date(r.start_time))}
               </td>
               <td className="px-4 py-3">{r.meeting_type.name}</td>
               <td className="px-4 py-3">
-                <div className="text-cream">{r.attendee_name}</div>
+                <div className="text-ink-1">{r.attendee_name}</div>
                 <div className="text-xs text-zinc-500">{r.attendee_email}</div>
               </td>
               <td className="px-4 py-3 text-zinc-400">
@@ -232,10 +232,10 @@ function BookingTable({
 
 function StatusPill({ status }: { status: Booking["status"] }) {
   const styles: Record<Booking["status"], string> = {
-    confirmed: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-    cancelled: "bg-red-500/15 text-red-300 border-red-500/30",
-    no_show: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-    completed: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
+    confirmed: "bg-revenue-bg text-revenue border-revenue/30",
+    cancelled: "bg-expense-bg text-expense border-expense/30",
+    no_show: "bg-[#F4E8D0] text-[#A56A1B] border-[#D9BE86]",
+    completed: "bg-zinc-500/15 text-zinc-700 border-zinc-500/30",
   };
   return (
     <span
@@ -281,7 +281,7 @@ function TypeRow({
     name: type.name,
     description: type.description ?? "",
     prep_notes: type.prep_notes ?? "",
-    color: type.color ?? "#C0764E",
+    color: type.color ?? "#C0703C",
     duration_minutes: type.duration_minutes,
     buffer_minutes: type.buffer_minutes,
     min_notice_hours: type.min_notice_hours,
@@ -320,7 +320,7 @@ function TypeRow({
   }
 
   return (
-    <div className="rounded-lg border border-white/10 bg-black/20 p-5">
+    <div className="rounded-lg border-[1.5px] border-outline bg-black/20 p-5">
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           <span
@@ -357,7 +357,7 @@ function TypeRow({
             type="color"
             value={draft.color}
             onChange={(e) => setDraft({ ...draft, color: e.target.value })}
-            className="h-10 w-20 bg-transparent border border-white/10 rounded cursor-pointer"
+            className="h-10 w-20 bg-transparent border-[1.5px] border-outline rounded cursor-pointer"
           />
         </Field>
         <Field label="Description">
@@ -429,7 +429,7 @@ function TypeRow({
         </Field>
       </div>
 
-      <div className="mt-5 pt-5 border-t border-white/10">
+      <div className="mt-5 pt-5 border-t border-outline">
         <div className="text-xs text-zinc-500 uppercase tracking-widest mb-2">
           Location options
         </div>
@@ -452,7 +452,7 @@ function TypeRow({
                   "px-3 py-1.5 rounded text-xs border transition-colors",
                   selected
                     ? "bg-orange/20 text-orange border-orange/40"
-                    : "bg-white/5 text-cream/70 border-white/10 hover:bg-white/10",
+                    : "bg-tile text-ink-2 border-outline hover:bg-[#EFE6D4]",
                 ].join(" ")}
               >
                 {opt === "video" ? "Video" : "In person"}
@@ -498,7 +498,7 @@ function TypeRow({
         }
         :global(.admin-input:focus) {
           outline: none;
-          border-color: #c0764e;
+          border-color: #C0703C;
         }
       `}</style>
     </div>
@@ -595,7 +595,7 @@ function BlackoutsTab({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-white/10 bg-black/20 p-5">
+      <div className="rounded-lg border-[1.5px] border-outline bg-black/20 p-5">
         <h2 className="text-lg font-semibold mb-4">Add a blackout</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Start date">
@@ -650,7 +650,7 @@ function BlackoutsTab({
                     "px-3 py-1 rounded-full text-xs border transition-colors",
                     selected
                       ? "bg-orange/20 text-orange border-orange/40"
-                      : "bg-white/5 text-cream/70 border-white/10 hover:bg-white/10",
+                      : "bg-tile text-ink-2 border-outline hover:bg-[#EFE6D4]",
                   ].join(" ")}
                 >
                   {t.name}
@@ -659,7 +659,7 @@ function BlackoutsTab({
             })}
           </div>
         </div>
-        {err && <p className="mt-3 text-sm text-red-400">{err}</p>}
+        {err && <p className="mt-3 text-sm text-expense">{err}</p>}
         <button
           type="button"
           disabled={saving || !draft.start_date || !draft.end_date}
@@ -679,10 +679,10 @@ function BlackoutsTab({
             {blackouts.map((b) => (
               <li
                 key={b.id}
-                className="flex items-center justify-between gap-4 rounded-lg border border-white/10 bg-black/20 px-4 py-3"
+                className="flex items-center justify-between gap-4 rounded-lg border-[1.5px] border-outline bg-black/20 px-4 py-3"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="text-cream">
+                  <div className="text-ink-1">
                     {b.start_date} → {b.end_date}
                   </div>
                   <div className="text-xs text-zinc-500 truncate">
@@ -696,7 +696,7 @@ function BlackoutsTab({
                   type="button"
                   disabled={busy === b.id}
                   onClick={() => remove(b.id)}
-                  className="text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
+                  className="text-xs text-expense hover:text-expense transition-colors disabled:opacity-50"
                 >
                   {busy === b.id ? "Deleting…" : "Delete"}
                 </button>

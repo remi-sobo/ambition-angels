@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { COHORT_STATUSES, COHORT_STATUS_LABELS } from "../../_lib/constants";
 
 const inputCls =
-  "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/40";
+  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const MEMBER_STATUSES = ["enrolled", "completed", "dropped"] as const;
 const MEMBER_STATUS_LABELS: Record<string, string> = {
@@ -78,8 +78,8 @@ export function CohortHeaderControls({
         title="Shows this cohort on the public /apply form"
         className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
           acceptingApplications
-            ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
-            : "bg-white/5 text-gray-mid hover:bg-white/10"
+            ? "bg-revenue-bg text-revenue hover:bg-revenue-bg"
+            : "bg-tile text-ink-2 hover:bg-[#EFE6D4]"
         }`}
       >
         {acceptingApplications ? "Accepting applications" : "Applications closed"}
@@ -88,7 +88,7 @@ export function CohortHeaderControls({
         value={status}
         disabled={busy}
         onChange={(e) => call(`/api/admin/cohorts/${cohortId}`, "PATCH", { status: e.target.value })}
-        className="text-[11px] bg-white/5 border border-white/10 rounded-md px-2 py-1 text-cream/80 cursor-pointer"
+        className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1 text-ink-1 cursor-pointer"
       >
         {COHORT_STATUSES.map((s) => (
           <option key={s} value={s} className="bg-[#1d1812]">{COHORT_STATUS_LABELS[s]}</option>
@@ -96,7 +96,7 @@ export function CohortHeaderControls({
       </select>
       <button
         onClick={() => void remove()}
-        className="px-2 py-1 rounded-md text-[11px] text-gray-mid hover:text-red-300"
+        className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
       >
         Delete
       </button>
@@ -123,21 +123,21 @@ export function MemberRow({ cohortId, member }: { cohortId: string; member: Memb
 
   return (
     <article
-      className={`bg-[#1d1812] border border-white/10 rounded-xl px-3 py-2.5 text-sm flex flex-wrap items-center gap-2 ${busy ? "opacity-60" : ""}`}
+      className={`bg-[#1d1812] border-[1.5px] border-outline rounded-xl px-3 py-2.5 text-sm flex flex-wrap items-center gap-2 ${busy ? "opacity-60" : ""}`}
     >
-      <span className="font-semibold text-cream">{m.name}</span>
-      {m.grade && <span className="text-[11px] text-gray-mid">Grade {m.grade}</span>}
+      <span className="font-semibold text-ink-1">{m.name}</span>
+      {m.grade && <span className="text-[11px] text-ink-2">Grade {m.grade}</span>}
       {m.regular && (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 uppercase tracking-wider">
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-revenue-bg text-revenue uppercase tracking-wider">
           Regular
         </span>
       )}
       {m.consecutiveAbsences >= 2 && (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 uppercase tracking-wider">
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense uppercase tracking-wider">
           {m.consecutiveAbsences} absences in a row
         </span>
       )}
-      <span className="ml-auto text-[11px] tabular-nums text-gray-mid">
+      <span className="ml-auto text-[11px] tabular-nums text-ink-2">
         {m.rateText}{m.attended + m.absent > 0 ? ` · ${m.attended}/${m.attended + m.absent} sessions` : ""}
       </span>
       <select
@@ -149,7 +149,7 @@ export function MemberRow({ cohortId, member }: { cohortId: string; member: Memb
             status: e.target.value,
           })
         }
-        className="text-[11px] bg-white/5 border border-white/10 rounded-md px-2 py-1 text-cream/80 cursor-pointer"
+        className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1 text-ink-1 cursor-pointer"
       >
         {MEMBER_STATUSES.map((s) => (
           <option key={s} value={s} className="bg-[#1d1812]">{MEMBER_STATUS_LABELS[s]}</option>
@@ -161,7 +161,7 @@ export function MemberRow({ cohortId, member }: { cohortId: string; member: Memb
             void call(`/api/admin/cohorts/${cohortId}/members`, "DELETE", { student_id: m.studentId });
         }}
         disabled={busy}
-        className="px-2 py-1 rounded-md text-[11px] text-gray-mid hover:text-red-300"
+        className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
       >
         Remove
       </button>
@@ -186,7 +186,7 @@ export function AddMemberForm({
       <select
         value={studentId}
         onChange={(e) => setStudentId(e.target.value)}
-        className="text-[11px] bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-cream/80 max-w-[220px]"
+        className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1.5 text-ink-1 max-w-[220px]"
       >
         <option value="" className="bg-[#1d1812]">Add student…</option>
         {candidates.map((c) => (
@@ -220,9 +220,9 @@ export type SessionView = {
 };
 
 const SESSION_CHIP: Record<string, string> = {
-  scheduled: "bg-white/10 text-gray-mid",
-  held: "bg-green-500/15 text-green-400",
-  canceled: "bg-red-500/10 text-red-400/70",
+  scheduled: "bg-tile text-ink-2",
+  held: "bg-revenue-bg text-revenue",
+  canceled: "bg-expense-bg text-expense/70",
 };
 
 export function SessionRow({
@@ -240,15 +240,15 @@ export function SessionRow({
 
   return (
     <article
-      className={`bg-[#1d1812] border border-white/10 rounded-xl px-3 py-2.5 text-sm flex flex-wrap items-center gap-2 ${busy ? "opacity-60" : ""}`}
+      className={`bg-[#1d1812] border-[1.5px] border-outline rounded-xl px-3 py-2.5 text-sm flex flex-wrap items-center gap-2 ${busy ? "opacity-60" : ""}`}
     >
-      <span className="font-semibold text-cream tabular-nums">{s.session_date}</span>
-      {s.title && <span className="text-cream/80">{s.title}</span>}
-      {time && <span className="text-[11px] text-gray-mid">{time}</span>}
+      <span className="font-semibold text-ink-1 tabular-nums">{s.session_date}</span>
+      {s.title && <span className="text-ink-1">{s.title}</span>}
+      {time && <span className="text-[11px] text-ink-2">{time}</span>}
       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${SESSION_CHIP[s.status] ?? ""}`}>
         {s.status}
       </span>
-      <span className="ml-auto text-[11px] tabular-nums text-gray-mid">
+      <span className="ml-auto text-[11px] tabular-nums text-ink-2">
         {s.marked > 0 ? `${s.attended}/${s.marked} present` : `${enrolled} enrolled`}
       </span>
       {s.status !== "canceled" && (
@@ -263,7 +263,7 @@ export function SessionRow({
         <button
           onClick={() => call(`/api/admin/sessions/${s.id}`, "PATCH", { status: "canceled" })}
           disabled={busy}
-          className="px-2 py-1 rounded-md text-[11px] bg-white/5 hover:bg-white/10 text-cream/70"
+          className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
         >
           Cancel
         </button>
@@ -274,7 +274,7 @@ export function SessionRow({
             void call(`/api/admin/sessions/${s.id}`, "DELETE");
         }}
         disabled={busy}
-        className="px-2 py-1 rounded-md text-[11px] text-gray-mid hover:text-red-300"
+        className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
       >
         Delete
       </button>
@@ -313,24 +313,24 @@ export function NewSessionForm({ cohortId }: { cohortId: string }) {
           setOpen(false);
         });
       }}
-      className="w-full bg-white/[0.03] border border-white/10 rounded-card p-3 grid grid-cols-2 lg:grid-cols-5 gap-2 items-end"
+      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-3 grid grid-cols-2 lg:grid-cols-5 gap-2 items-end"
     >
-      <label className="text-[10px] text-gray-mid">
+      <label className="text-[10px] text-ink-2">
         Date
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} type="date"
           value={date} required onChange={(e) => setDate(e.target.value)} />
       </label>
-      <label className="text-[10px] text-gray-mid">
+      <label className="text-[10px] text-ink-2">
         Title
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={title}
           placeholder="Workshop" onChange={(e) => setTitle(e.target.value)} />
       </label>
-      <label className="text-[10px] text-gray-mid">
+      <label className="text-[10px] text-ink-2">
         Starts
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} type="time"
           value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
       </label>
-      <label className="text-[10px] text-gray-mid">
+      <label className="text-[10px] text-ink-2">
         Ends
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} type="time"
           value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
@@ -341,7 +341,7 @@ export function NewSessionForm({ cohortId }: { cohortId: string }) {
           Add
         </button>
         <button type="button" onClick={() => setOpen(false)}
-          className="text-[11px] text-gray-mid hover:text-cream px-1">
+          className="text-[11px] text-ink-2 hover:text-ink-1 px-1">
           Cancel
         </button>
       </div>

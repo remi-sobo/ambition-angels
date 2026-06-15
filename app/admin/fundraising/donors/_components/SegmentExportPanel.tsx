@@ -14,7 +14,7 @@ type Segment = {
 };
 
 const inputCls =
-  "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/40";
+  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 function toQuery(def: Record<string, string>): string {
   const p = new URLSearchParams();
@@ -79,7 +79,7 @@ export default function SegmentExportPanel() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs font-semibold text-cream/70 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition-colors"
+        className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
       >
         Segments & export
       </button>
@@ -87,12 +87,12 @@ export default function SegmentExportPanel() {
   }
 
   return (
-    <div className="w-full bg-[#231f18] border border-white/10 rounded-card p-4 space-y-3">
+    <div className="w-full bg-tile shadow-tile border-[1.5px] border-outline rounded-card p-4 space-y-3">
       <div className="flex items-center justify-between">
         <SectionHeading>
           Segments & CSV export
         </SectionHeading>
-        <button onClick={() => setOpen(false)} className="text-xs text-gray-mid hover:text-cream">
+        <button onClick={() => setOpen(false)} className="text-xs text-ink-2 hover:text-ink-1">
           Close
         </button>
       </div>
@@ -127,26 +127,26 @@ export default function SegmentExportPanel() {
         <button
           onClick={() => void saveSegment()}
           disabled={busy}
-          className="text-xs font-semibold text-cream/80 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition-colors disabled:opacity-50"
+          className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors disabled:opacity-50"
         >
           Save as segment
         </button>
         {segments.map((s) => (
           <span
             key={s.id}
-            className="inline-flex items-center gap-1.5 text-xs bg-white/5 border border-white/10 rounded-full pl-3 pr-1.5 py-1"
+            className="inline-flex items-center gap-1.5 text-xs bg-tile border-[1.5px] border-outline rounded-full pl-3 pr-1.5 py-1"
           >
             <button
               onClick={() => exportCsv(s.definition)}
               title={`Export “${s.name}”`}
-              className="text-cream/80 hover:text-orange transition-colors"
+              className="text-ink-1 hover:text-orange transition-colors"
             >
               {s.name}
             </button>
             <button
               onClick={() => void deleteSegment(s.id)}
               title="Delete segment"
-              className="w-4 h-4 rounded-full text-gray-mid hover:text-red-400 leading-none"
+              className="w-4 h-4 rounded-full text-ink-2 hover:text-expense leading-none"
             >
               ×
             </button>

@@ -88,8 +88,8 @@ export default async function DonorsPage() {
   if (giftsError || allGifts === null) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-cream text-2xl mb-4">Donors</h1>
-        <div className="bg-[#231f18] border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-gray-mid leading-relaxed">
+        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Donors</h1>
+        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_fundraising_core.sql</code> via Actions → Apply DB
           migration, then reload — existing Stripe donations backfill automatically.
@@ -175,28 +175,28 @@ export default async function DonorsPage() {
     trueCount: Array.from(flagsByDonor.values()).filter((fl) => fl.includes(flag)).length,
   });
   const FLAG_STYLES: Record<RetentionFlag, string> = {
-    lybunt: "bg-amber-500/15 text-amber-400",
-    sybunt: "bg-white/10 text-gray-mid",
-    cadence_lapsed: "bg-red-500/15 text-red-400",
+    lybunt: "bg-[#F4E8D0] text-[#A56A1B]",
+    sybunt: "bg-tile text-ink-2",
+    cadence_lapsed: "bg-expense-bg text-expense",
     second_gift_watch: "bg-blue-500/15 text-blue-400",
   };
   const RETENTION_BUCKETS: RetentionFlag[] = ["lybunt", "cadence_lapsed", "second_gift_watch", "sybunt"];
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#19150f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
-        <span className="font-heading font-bold text-cream text-sm sm:text-base">Donors</span>
+      <div className="bg-[#19150f] border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
+        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Donors</span>
         <Link
           href="/admin/fundraising/acknowledgments"
           className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
             (pendingAcksRes.count ?? 0) > 0
               ? "text-orange bg-orange/10 border border-orange/30 hover:bg-orange/20"
-              : "text-gray-mid hover:text-cream"
+              : "text-ink-2 hover:text-ink-1"
           }`}
         >
           Acknowledgments{(pendingAcksRes.count ?? 0) > 0 ? ` (${pendingAcksRes.count})` : ""}
         </Link>
-        <span className="text-xs text-gray-mid ml-auto">
+        <span className="text-xs text-ink-2 ml-auto">
           {donors.length} donor{donors.length === 1 ? "" : "s"}
           {nonDonorConstituents > 0 ? ` · ${nonDonorConstituents} constituents without gifts` : ""}
         </span>
@@ -207,7 +207,7 @@ export default async function DonorsPage() {
           <SegmentExportPanel />
         </div>
         {constituentFetchFailed && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-3 text-red-400 text-sm">
+          <div className="bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
             Some donor records failed to load — the table below may be missing donors that the
             totals include. Reload to retry.
           </div>
@@ -220,13 +220,13 @@ export default async function DonorsPage() {
         </div>
 
         {/* ── Retention intelligence ── */}
-        <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="font-heading font-bold text-cream text-sm">Retention Intelligence</h2>
-            <div className="text-xs text-gray-mid">
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="font-heading font-bold text-ink-1 text-sm">Retention Intelligence</h2>
+            <div className="text-xs text-ink-2">
               {retention.rate !== null ? (
                 <>
-                  <span className={`font-bold ${retention.rate >= 0.43 ? "text-green-400" : "text-amber-400"}`}>
+                  <span className={`font-bold ${retention.rate >= 0.43 ? "text-revenue" : "text-[#A56A1B]"}`}>
                     {Math.round(retention.rate * 100)}%
                   </span>{" "}
                   of last year&apos;s {retention.lastYearDonors} donors retained so far this year · sector benchmark ≈ 43%
@@ -237,11 +237,11 @@ export default async function DonorsPage() {
             </div>
           </div>
           {flagsByDonor.size === 0 ? (
-            <p className="px-5 py-5 text-gray-mid text-sm">
+            <p className="px-5 py-5 text-ink-2 text-sm">
               No retention flags — every donor is on their usual rhythm.
             </p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-outline">
               {RETENTION_BUCKETS.map((flag) => {
                 const { members, trueCount } = bucket(flag);
                 return (
@@ -250,21 +250,21 @@ export default async function DonorsPage() {
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${FLAG_STYLES[flag]}`}>
                         {FLAG_LABELS[flag]}
                       </span>
-                      <span className="text-xs text-gray-mid [font-variant-numeric:tabular-nums]">{trueCount}</span>
+                      <span className="text-xs text-ink-2 [font-variant-numeric:tabular-nums]">{trueCount}</span>
                     </div>
-                    <p className="text-[11px] text-white/35 mb-2 leading-snug">{FLAG_HELP[flag]}</p>
+                    <p className="text-[11px] text-ink-3 mb-2 leading-snug">{FLAG_HELP[flag]}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {members.slice(0, 6).map(({ c }) => (
                         <Link
                           key={c.id}
                           href={`/admin/fundraising/donors/${c.id}`}
-                          className="text-[11px] text-cream/75 hover:text-orange bg-white/5 border border-white/10 rounded-full px-2 py-0.5 transition-colors truncate max-w-[150px]"
+                          className="text-[11px] text-ink-2 hover:text-orange bg-tile border-[1.5px] border-outline rounded-full px-2 py-0.5 transition-colors truncate max-w-[150px]"
                         >
                           {constituentName(c)}
                         </Link>
                       ))}
                       {members.length > 6 && (
-                        <span className="text-[11px] text-white/30 px-1 py-0.5">+{members.length - 6} more</span>
+                        <span className="text-[11px] text-ink-3 px-1 py-0.5">+{members.length - 6} more</span>
                       )}
                     </div>
                   </div>
@@ -274,9 +274,9 @@ export default async function DonorsPage() {
           )}
         </section>
 
-        <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {donors.length === 0 ? (
-            <p className="p-8 text-gray-mid text-sm">
+            <p className="p-8 text-ink-2 text-sm">
               No donors yet. Stripe donations flow in automatically; Givebutter and manual gift
               entry arrive later in Ring 2.
             </p>
@@ -284,28 +284,28 @@ export default async function DonorsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[820px]">
                 <thead>
-                  <tr className="border-b border-white/10">
+                  <tr className="border-b border-outline">
                     {["Donor", "Email", "Total Given", "Gifts", "First Gift", "Latest Gift", ""].map((h) => (
-                      <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
+                      <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {donors.map(({ c, r }) => (
-                    <tr key={c.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <tr key={c.id} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
                       <td className="px-5 py-3.5">
                         <Link href={`/admin/fundraising/donors/${c.id}`} className="flex items-center gap-3 group">
                           <span className="w-8 h-8 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0 text-orange font-bold text-xs">
                             {constituentName(c)[0]?.toUpperCase()}
                           </span>
-                          <span className="font-medium text-cream group-hover:text-orange transition-colors">
+                          <span className="font-medium text-ink-1 group-hover:text-orange transition-colors">
                             {constituentName(c)}
                           </span>
                           {r.recurring && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
                           )}
                           {c.do_not_contact && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400">Do not contact</span>
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-expense-bg text-expense">Do not contact</span>
                           )}
                           {(flagsByDonor.get(c.id) ?? []).map((f) => (
                             <span key={f} title={FLAG_HELP[f]} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${FLAG_STYLES[f]}`}>
@@ -314,11 +314,11 @@ export default async function DonorsPage() {
                           ))}
                         </Link>
                       </td>
-                      <td className="px-5 py-3.5 text-gray-mid text-xs">{c.emails[0] ?? "—"}</td>
-                      <td className="px-5 py-3.5 font-bold text-cream [font-variant-numeric:tabular-nums]">{money(r.total)}</td>
-                      <td className="px-5 py-3.5 text-gray-mid [font-variant-numeric:tabular-nums]">{r.count}</td>
-                      <td className="px-5 py-3.5 text-gray-mid text-xs whitespace-nowrap">{fmtDate(r.first)}</td>
-                      <td className="px-5 py-3.5 text-gray-mid text-xs whitespace-nowrap">{fmtDate(r.last)}</td>
+                      <td className="px-5 py-3.5 text-ink-2 text-xs">{c.emails[0] ?? "—"}</td>
+                      <td className="px-5 py-3.5 font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(r.total)}</td>
+                      <td className="px-5 py-3.5 text-ink-2 [font-variant-numeric:tabular-nums]">{r.count}</td>
+                      <td className="px-5 py-3.5 text-ink-2 text-xs whitespace-nowrap">{fmtDate(r.first)}</td>
+                      <td className="px-5 py-3.5 text-ink-2 text-xs whitespace-nowrap">{fmtDate(r.last)}</td>
                       <td className="px-5 py-3.5 text-right">
                         <Link href={`/admin/fundraising/donors/${c.id}`} className="text-xs font-semibold text-orange hover:text-orange-mid">
                           Profile →
@@ -327,11 +327,11 @@ export default async function DonorsPage() {
                     </tr>
                   ))}
                   {anonCount > 0 && (
-                    <tr className="border-b border-white/5">
-                      <td className="px-5 py-3.5 text-gray-mid italic">Anonymous / no identity</td>
-                      <td className="px-5 py-3.5 text-gray-mid text-xs">—</td>
-                      <td className="px-5 py-3.5 font-bold text-cream/70 [font-variant-numeric:tabular-nums]">{money(anonTotal)}</td>
-                      <td className="px-5 py-3.5 text-gray-mid [font-variant-numeric:tabular-nums]">{anonCount}</td>
+                    <tr className="border-b border-hairline">
+                      <td className="px-5 py-3.5 text-ink-2 italic">Anonymous / no identity</td>
+                      <td className="px-5 py-3.5 text-ink-2 text-xs">—</td>
+                      <td className="px-5 py-3.5 font-bold text-ink-2 [font-variant-numeric:tabular-nums]">{money(anonTotal)}</td>
+                      <td className="px-5 py-3.5 text-ink-2 [font-variant-numeric:tabular-nums]">{anonCount}</td>
                       <td className="px-5 py-3.5" colSpan={3} />
                     </tr>
                   )}

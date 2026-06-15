@@ -16,16 +16,16 @@ export default function Greeting({ org }: { org: string }) {
   });
   return (
     <div>
-      <div className="text-xs text-gray-mid mb-1" suppressHydrationWarning>
+      <div className="text-xs text-ink-2 mb-1" suppressHydrationWarning>
         {date}
       </div>
       <h1
-        className="font-heading font-bold text-cream text-2xl sm:text-3xl tracking-tight"
+        className="font-heading font-bold text-ink-1 text-2xl sm:text-3xl tracking-tight"
         suppressHydrationWarning
       >
         Good {part}, {org}.
       </h1>
-      <p className="text-gray-mid text-sm mt-1">
+      <p className="text-ink-2 text-sm mt-1">
         Here&apos;s what&apos;s happening across your mission today.
       </p>
     </div>

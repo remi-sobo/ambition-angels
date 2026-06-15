@@ -203,27 +203,27 @@ export default async function MondayPlanPage() {
   return (
     <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       <header>
-        <h1 className="font-display font-black uppercase tracking-tight text-cream text-3xl sm:text-4xl leading-none">
+        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
           Monday Plan
         </h1>
         <div className="mt-2 flex items-baseline gap-3 flex-wrap text-sm">
-          <span className="text-gray-mid">Week of {fmtWeekHeader(mondayDate)}</span>
-          <span className="text-cream/50">·</span>
-          <span className="text-cream/70">Planning as {cap(currentUser)}</span>
+          <span className="text-ink-2">Week of {fmtWeekHeader(mondayDate)}</span>
+          <span className="text-ink-3">·</span>
+          <span className="text-ink-2">Planning as {cap(currentUser)}</span>
         </div>
-        <Link href="/admin/ops" className="mt-2 inline-block text-xs text-gray-mid hover:text-cream">
+        <Link href="/admin/ops" className="mt-2 inline-block text-xs text-ink-2 hover:text-ink-1">
           ← Ops
         </Link>
       </header>
 
       {/* ── Section 1: Slipped from last week ──────────────────────────── */}
       {slippedRaw.length > 0 && (
-        <section className="rounded-card border border-amber-500/30 bg-amber-500/[0.04] p-6">
-          <h2 className="text-xs uppercase tracking-wider text-amber-300 mb-1">
+        <section className="rounded-card border border-[#D9BE86] bg-amber-500/[0.04] p-6">
+          <h2 className="text-xs uppercase tracking-wider text-[#A56A1B] mb-1">
             From last week
           </h2>
-          <p className="text-sm text-cream/80 mb-4">
-            <span className="font-semibold text-cream">{slippedRaw.length}</span>{" "}
+          <p className="text-sm text-ink-1 mb-4">
+            <span className="font-semibold text-ink-1">{slippedRaw.length}</span>{" "}
             {slippedRaw.length === 1 ? "item" : "items"} from last week didn&apos;t
             ship. Carry over, mark done, or drop:
           </p>
@@ -237,7 +237,7 @@ export default async function MondayPlanPage() {
                     projectName={t.project_id ? projectNames.get(t.project_id) : null}
                     actions={slippedActions}
                   />
-                  <div className="text-[10px] text-amber-300/70 pl-3">
+                  <div className="text-[10px] text-[#A56A1B]/70 pl-3">
                     {overdue} day{overdue === 1 ? "" : "s"} since last touched
                   </div>
                 </div>
@@ -248,12 +248,12 @@ export default async function MondayPlanPage() {
       )}
 
       {/* ── Section 2: This week's commitment ──────────────────────────── */}
-      <section className="rounded-card border border-white/10 bg-black/30 p-6">
-        <h2 className="text-xs uppercase tracking-wider text-gray-mid mb-4">
+      <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+        <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
           This Week
         </h2>
         {pinnedThisWeek.length === 0 ? (
-          <p className="text-sm text-gray-mid">
+          <p className="text-sm text-ink-2">
             Nothing pinned for this week yet. Use the section below to add
             commitments.
           </p>
@@ -261,7 +261,7 @@ export default async function MondayPlanPage() {
           <div className="space-y-5">
             {anytime.length > 0 && (
               <div>
-                <h3 className="text-[10px] uppercase tracking-wider text-cream/50 mb-2">
+                <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
                   Anytime this week
                 </h3>
                 <div className="space-y-1.5">
@@ -285,7 +285,7 @@ export default async function MondayPlanPage() {
               });
               return (
                 <div key={day}>
-                  <h3 className="text-[10px] uppercase tracking-wider text-cream/50 mb-2">
+                  <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
                     {label}
                   </h3>
                   <div className="space-y-1.5">
@@ -306,25 +306,25 @@ export default async function MondayPlanPage() {
       </section>
 
       {/* ── Section 3: Candidates ──────────────────────────────────────── */}
-      <section className="rounded-card border border-white/10 bg-black/30 p-6">
-        <h2 className="text-xs uppercase tracking-wider text-gray-mid mb-4">
+      <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+        <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
           Candidates for this week
         </h2>
 
         {/* 3a: Open tasks not pinned */}
         <details open className="group mb-4">
           <summary className="cursor-pointer select-none flex items-baseline gap-2 mb-2">
-            <span className="text-sm font-medium text-cream group-open:text-orange transition-colors">
+            <span className="text-sm font-medium text-ink-1 group-open:text-orange transition-colors">
               Open tasks ({candidatesAll.length})
             </span>
-            <span className="text-[11px] text-gray-mid">
+            <span className="text-[11px] text-ink-2">
               {candidates.length === 0
                 ? "nothing unpinned"
                 : "sorted by due date, then most-neglected first"}
             </span>
           </summary>
           {candidates.length === 0 ? (
-            <p className="text-sm text-gray-mid mt-2 pl-2 italic">
+            <p className="text-sm text-ink-2 mt-2 pl-2 italic">
               No unpinned open tasks. You&apos;re already on top of it.
             </p>
           ) : (
@@ -338,7 +338,7 @@ export default async function MondayPlanPage() {
                 />
               ))}
               {hasMoreCandidates && (
-                <p className="text-xs text-gray-mid pl-2 pt-1">
+                <p className="text-xs text-ink-2 pl-2 pt-1">
                   {candidatesAll.length - 25} more open tasks not shown.
                 </p>
               )}
@@ -349,15 +349,15 @@ export default async function MondayPlanPage() {
         {/* 3b: Neglected active projects */}
         <details className="group mb-4">
           <summary className="cursor-pointer select-none flex items-baseline gap-2 mb-2">
-            <span className="text-sm font-medium text-cream group-open:text-orange transition-colors">
+            <span className="text-sm font-medium text-ink-1 group-open:text-orange transition-colors">
               Active projects ({neglectedProjects.length})
             </span>
-            <span className="text-[11px] text-gray-mid">
+            <span className="text-[11px] text-ink-2">
               sorted by neglect — least recently touched first
             </span>
           </summary>
           {neglectedProjects.length === 0 ? (
-            <p className="text-sm text-gray-mid mt-2 pl-2 italic">
+            <p className="text-sm text-ink-2 mt-2 pl-2 italic">
               No active projects assigned to you (or unassigned).
             </p>
           ) : (
@@ -366,9 +366,9 @@ export default async function MondayPlanPage() {
                 <Link
                   key={p.id}
                   href={`/admin/ops/projects/${p.id}`}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors group/row"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg border-[1.5px] border-outline bg-surface shadow-panel hover:bg-[#EFE6D4] transition-colors group/row"
                 >
-                  <span className="text-sm text-cream group-hover/row:text-orange flex-1 truncate">
+                  <span className="text-sm text-ink-1 group-hover/row:text-orange flex-1 truncate">
                     {p.title}
                   </span>
                   <span
@@ -376,10 +376,10 @@ export default async function MondayPlanPage() {
                   >
                     {categoryLabel(p.category)}
                   </span>
-                  <span className="shrink-0 text-[11px] text-cream/60 font-mono">
+                  <span className="shrink-0 text-[11px] text-ink-2 font-mono">
                     {openCounts.get(p.id) ?? 0} open
                   </span>
-                  <span className="shrink-0 text-[11px] text-amber-300/70 font-mono">
+                  <span className="shrink-0 text-[11px] text-[#A56A1B]/70 font-mono">
                     {formatRelative(p.last_touched_at)}
                   </span>
                 </Link>
@@ -391,14 +391,14 @@ export default async function MondayPlanPage() {
         {/* 3c: Other person's pinned tasks (read-only) */}
         <details className="group">
           <summary className="cursor-pointer select-none flex items-baseline gap-2 mb-2">
-            <span className="text-sm font-medium text-cream group-open:text-orange transition-colors">
+            <span className="text-sm font-medium text-ink-1 group-open:text-orange transition-colors">
               {otherPerson ? `${cap(otherPerson)}'s pinned tasks` : "Counterpart"}{" "}
               ({otherPersonPinned.length})
             </span>
-            <span className="text-[11px] text-gray-mid">read-only</span>
+            <span className="text-[11px] text-ink-2">read-only</span>
           </summary>
           {otherPersonPinned.length === 0 ? (
-            <p className="text-sm text-gray-mid mt-2 pl-2 italic">
+            <p className="text-sm text-ink-2 mt-2 pl-2 italic">
               {otherPerson ? cap(otherPerson) : "They"} hasn&apos;t pinned anything for this week yet.
             </p>
           ) : (

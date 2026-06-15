@@ -128,37 +128,37 @@ export default async function FridayReviewPage() {
   return (
     <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       <header>
-        <h1 className="font-display font-black uppercase tracking-tight text-cream text-3xl sm:text-4xl leading-none">
+        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
           Friday Review
         </h1>
         <div className="mt-2 flex items-baseline gap-3 flex-wrap text-sm">
-          <span className="text-gray-mid">Week of {fmtWeekHeader(mondayDate)}</span>
-          <span className="text-cream/50">·</span>
-          <span className="text-cream/70">Reviewing as {cap(currentUser)}</span>
+          <span className="text-ink-2">Week of {fmtWeekHeader(mondayDate)}</span>
+          <span className="text-ink-3">·</span>
+          <span className="text-ink-2">Reviewing as {cap(currentUser)}</span>
         </div>
-        <Link href="/admin/ops" className="mt-2 inline-block text-xs text-gray-mid hover:text-cream">
+        <Link href="/admin/ops" className="mt-2 inline-block text-xs text-ink-2 hover:text-ink-1">
           ← Ops
         </Link>
       </header>
 
       {/* ── Section 1: What shipped this week ──────────────────────────── */}
-      <section className="rounded-card border border-white/10 bg-black/30 p-6">
+      <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
         <header className="flex items-baseline justify-between mb-4 gap-4 flex-wrap">
-          <h2 className="text-xs uppercase tracking-wider text-gray-mid">
+          <h2 className="text-xs uppercase tracking-wider text-ink-2">
             What shipped this week
           </h2>
           <div>
-            <span className="font-display font-black text-emerald-300 text-3xl leading-none">
+            <span className="font-display font-black text-revenue text-3xl leading-none">
               {shipped.length}
             </span>{" "}
-            <span className="text-xs text-gray-mid uppercase tracking-wider">
+            <span className="text-xs text-ink-2 uppercase tracking-wider">
               task{shipped.length === 1 ? "" : "s"} completed
             </span>
           </div>
         </header>
 
         {shipped.length === 0 ? (
-          <p className="text-sm text-gray-mid">
+          <p className="text-sm text-ink-2">
             Nothing marked done this week yet. Mark some tasks as done before
             reviewing.
           </p>
@@ -173,7 +173,7 @@ export default async function FridayReviewPage() {
               });
               return (
                 <div key={day}>
-                  <h3 className="text-[10px] uppercase tracking-wider text-cream/50 mb-2">
+                  <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
                     {label}
                   </h3>
                   <div className="space-y-1.5">
@@ -195,13 +195,13 @@ export default async function FridayReviewPage() {
       </section>
 
       {/* ── Section 2: Still pinned, not done ──────────────────────────── */}
-      <section className="rounded-card border border-white/10 bg-black/30 p-6">
-        <h2 className="text-xs uppercase tracking-wider text-gray-mid mb-4">
+      <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+        <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
           Still pinned, not done{" "}
-          <span className="text-cream/40">({stillPinned.length})</span>
+          <span className="text-ink-3">({stillPinned.length})</span>
         </h2>
         {stillPinned.length === 0 ? (
-          <p className="text-sm text-emerald-300">
+          <p className="text-sm text-revenue">
             Everything pinned for this week is done. Solid week.
           </p>
         ) : (
@@ -220,25 +220,25 @@ export default async function FridayReviewPage() {
 
       {/* ── Section 3: Slipped by category (only if non-zero) ──────────── */}
       {slippedRows.length > 0 && (
-        <section className="rounded-card border border-white/10 bg-black/30 p-6">
-          <h2 className="text-xs uppercase tracking-wider text-gray-mid mb-1">
+        <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+          <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-1">
             Slipped categories
           </h2>
-          <p className="text-xs text-gray-mid mb-4">
+          <p className="text-xs text-ink-2 mb-4">
             Visibility only — patterns in what got pushed.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {slippedRows.map(([cat, count]) => (
               <div
                 key={cat}
-                className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 flex items-center justify-between"
+                className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel px-3 py-2 flex items-center justify-between"
               >
                 <span
                   className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(cat)}`}
                 >
                   {categoryLabel(cat)}
                 </span>
-                <span className="font-display font-bold text-cream text-lg">
+                <span className="font-display font-bold text-ink-1 text-lg">
                   {count}
                 </span>
               </div>

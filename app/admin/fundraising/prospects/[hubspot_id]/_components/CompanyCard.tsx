@@ -24,25 +24,25 @@ export default function CompanyCard({
   rawCompanyName: string | null;
 }) {
   return (
-    <section className="rounded-card border border-white/10 bg-black/30 p-6">
-      <h2 className="text-xs uppercase tracking-wider text-gray-mid mb-4">
+    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+      <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
         Associated Company
       </h2>
 
       {!company ? (
         rawCompanyName ? (
           <div className="text-sm">
-            <div className="text-cream font-semibold">{rawCompanyName}</div>
-            <div className="text-xs text-gray-mid mt-1">
+            <div className="text-ink-1 font-semibold">{rawCompanyName}</div>
+            <div className="text-xs text-ink-2 mt-1">
               Not in synced company records.
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-mid">No company on file.</p>
+          <p className="text-sm text-ink-2">No company on file.</p>
         )
       ) : (
         <div className="space-y-3">
-          <div className="text-cream font-semibold text-base">
+          <div className="text-ink-1 font-semibold text-base">
             {company.name ?? "—"}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
@@ -57,19 +57,19 @@ export default function CompanyCard({
                   {company.domain}
                 </a>
               ) : (
-                <span className="text-gray-mid">—</span>
+                <span className="text-ink-2">—</span>
               )}
             </Field>
             <Field label="Industry">
-              <span className="text-cream/80">{company.industry ?? "—"}</span>
+              <span className="text-ink-1">{company.industry ?? "—"}</span>
             </Field>
             <Field label="Owner ID">
-              <span className="text-cream/80 font-mono text-xs">
+              <span className="text-ink-1 font-mono text-xs">
                 {company.owner_id ?? "—"}
               </span>
             </Field>
             <Field label="Last Activity">
-              <span className="text-cream/80">
+              <span className="text-ink-1">
                 {fmtDate(company.last_activity_at)}
               </span>
             </Field>
@@ -89,7 +89,7 @@ function Field({
 }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-gray-mid">
+      <div className="text-[10px] uppercase tracking-wider text-ink-2">
         {label}
       </div>
       <div className="mt-0.5">{children}</div>

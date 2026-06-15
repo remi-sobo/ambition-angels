@@ -39,7 +39,7 @@ export default function SubNav() {
             className={`px-3 py-1.5 rounded-full border transition-colors ${
               active
                 ? "border-orange/60 bg-orange/15 text-orange"
-                : "border-white/10 text-cream/70 hover:text-cream hover:bg-white/5"
+                : "border-outline text-ink-2 hover:text-ink-1 hover:bg-[#EFE6D4]"
             }`}
           >
             {l.label}

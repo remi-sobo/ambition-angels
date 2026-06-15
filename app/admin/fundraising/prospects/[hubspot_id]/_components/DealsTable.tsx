@@ -30,18 +30,18 @@ function fmtDate(iso: string | null): string {
 
 export default function DealsTable({ deals }: { deals: HsDeal[] }) {
   return (
-    <section className="rounded-card border border-white/10 bg-black/30 p-6">
-      <h2 className="text-xs uppercase tracking-wider text-gray-mid mb-4">
+    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+      <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
         Associated Deals
       </h2>
 
       {deals.length === 0 ? (
-        <p className="text-sm text-gray-mid">No deals associated.</p>
+        <p className="text-sm text-ink-2">No deals associated.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-[10px] uppercase tracking-wider text-gray-mid border-b border-white/10">
+              <tr className="text-[10px] uppercase tracking-wider text-ink-2 border-b border-outline">
                 <th className="text-left font-medium pb-2 pr-4">Deal</th>
                 <th className="text-right font-medium pb-2 pr-4">Amount</th>
                 <th className="text-left font-medium pb-2 pr-4">Stage</th>
@@ -50,23 +50,23 @@ export default function DealsTable({ deals }: { deals: HsDeal[] }) {
                 <th className="text-left font-medium pb-2">Last Activity</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-hairline">
               {deals.map((d) => (
-                <tr key={d.hubspot_id} className="text-cream/85">
+                <tr key={d.hubspot_id} className="text-ink-1">
                   <td className="py-2.5 pr-4">{d.name ?? "—"}</td>
                   <td className="py-2.5 pr-4 text-right font-mono">
                     {fmtAmount(d.amount)}
                   </td>
                   <td className="py-2.5 pr-4">
                     {d.stage ? (
-                      <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-white/5 border border-white/10">
+                      <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-tile border-[1.5px] border-outline">
                         {d.stage}
                       </span>
                     ) : (
-                      <span className="text-gray-mid">—</span>
+                      <span className="text-ink-2">—</span>
                     )}
                   </td>
-                  <td className="py-2.5 pr-4 text-cream/70">
+                  <td className="py-2.5 pr-4 text-ink-2">
                     {d.pipeline ?? "—"}
                   </td>
                   <td className="py-2.5 pr-4">{fmtDate(d.close_date)}</td>

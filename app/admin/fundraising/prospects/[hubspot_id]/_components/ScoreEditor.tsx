@@ -166,16 +166,16 @@ export default function ScoreEditor({
   }
 
   return (
-    <section className="rounded-card border border-white/10 bg-black/30 p-6">
+    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
       <div className="flex items-baseline justify-between gap-4 mb-4 flex-wrap">
-        <h2 className="text-xs uppercase tracking-wider text-gray-mid">
+        <h2 className="text-xs uppercase tracking-wider text-ink-2">
           Prospect Score
         </h2>
         {lastSaved && lastSaved.scored_at && (
-          <div className="text-[11px] text-gray-mid">
+          <div className="text-[11px] text-ink-2">
             Last scored by{" "}
-            <span className="text-cream">{cap(lastSaved.scored_by)}</span> ·{" "}
-            <span className="text-cream">{fmtAbsolute(lastSaved.scored_at)}</span>
+            <span className="text-ink-1">{cap(lastSaved.scored_by)}</span> ·{" "}
+            <span className="text-ink-1">{fmtAbsolute(lastSaved.scored_at)}</span>
           </div>
         )}
       </div>
@@ -187,10 +187,10 @@ export default function ScoreEditor({
           return (
             <label key={d.key} className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="text-sm text-cream font-medium leading-tight">
+                <div className="text-sm text-ink-1 font-medium leading-tight">
                   {d.label}
                 </div>
-                <div className="text-[11px] text-gray-mid leading-tight mt-0.5">
+                <div className="text-[11px] text-ink-2 leading-tight mt-0.5">
                   {d.helper}
                 </div>
               </div>
@@ -201,8 +201,8 @@ export default function ScoreEditor({
                 value={v}
                 onChange={(e) => setField(d.key, e.target.value)}
                 placeholder="—"
-                className={`w-16 text-center font-mono bg-white/5 border rounded-lg px-2 py-1.5 text-cream focus:outline-none focus:border-orange/50 ${
-                  err ? "border-red-500/50" : "border-white/10"
+                className={`w-16 text-center font-mono bg-tile border rounded-lg px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50 ${
+                  err ? "border-expense/30" : "border-outline"
                 }`}
                 aria-invalid={err ? true : undefined}
                 aria-label={`${d.label} score, 0 to 10`}
@@ -213,7 +213,7 @@ export default function ScoreEditor({
       </div>
 
       <div className="mt-4">
-        <label className="block text-[10px] uppercase tracking-wider text-gray-mid mb-1">
+        <label className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">
           Notes
         </label>
         <textarea
@@ -221,22 +221,22 @@ export default function ScoreEditor({
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
           placeholder="Why this score — context, sources, what you'd do next."
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-cream placeholder-gray-mid focus:outline-none focus:border-orange/50"
+          className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
         />
       </div>
 
-      <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between gap-3 flex-wrap">
+      <div className="mt-5 pt-4 border-t border-hairline flex items-center justify-between gap-3 flex-wrap">
         <div className="text-sm">
-          <span className="text-gray-mid uppercase tracking-wider text-xs">
+          <span className="text-ink-2 uppercase tracking-wider text-xs">
             Total
           </span>{" "}
           <span className="font-display font-bold text-orange text-2xl ml-1 align-middle">
             {liveTotal}
           </span>{" "}
-          <span className="text-gray-mid">/ 70</span>
+          <span className="text-ink-2">/ 70</span>
         </div>
         <div className="flex items-center gap-3">
-          {error && <span className="text-red-400 text-xs">{error}</span>}
+          {error && <span className="text-expense text-xs">{error}</span>}
           <button
             type="button"
             onClick={handleSave}

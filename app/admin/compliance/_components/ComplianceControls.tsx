@@ -21,7 +21,7 @@ export type ComplianceItem = {
 };
 
 const inputCls =
-  "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/40";
+  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const KIND_LABELS: Record<string, string> = {
   form_990: "IRS 990",
@@ -77,25 +77,25 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
   return (
     <article
       className={`bg-[#1d1812] border rounded-xl p-3 text-sm ${
-        overdue ? "border-red-500/40" : "border-white/10"
+        overdue ? "border-expense/30" : "border-outline"
       } ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/10 text-gray-mid uppercase tracking-wider">
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
           {KIND_LABELS[item.kind] ?? item.kind}
         </span>
-        <span className="font-semibold text-cream">{item.title}</span>
+        <span className="font-semibold text-ink-1">{item.title}</span>
         {item.jurisdiction && item.jurisdiction !== "—" && (
-          <span className="text-[11px] text-gray-mid">{item.jurisdiction}</span>
+          <span className="text-[11px] text-ink-2">{item.jurisdiction}</span>
         )}
         <span
           className={`ml-auto text-[12px] tabular-nums ${
-            overdue ? "text-red-300 font-semibold" : "text-cream/80"
+            overdue ? "text-expense font-semibold" : "text-ink-1"
           }`}
         >
           {item.due_date}
           {item.recur !== "none" && (
-            <span className="text-gray-mid"> · {item.recur}</span>
+            <span className="text-ink-2"> · {item.recur}</span>
           )}
         </span>
       </div>
@@ -104,13 +104,13 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
           <button
             onClick={() => patch({ status: "in_progress" })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] bg-white/5 hover:bg-white/10 text-cream/70"
+            className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
           >
             Start
           </button>
         )}
         {item.status === "in_progress" && (
-          <span className="px-2 py-1 text-[11px] text-amber-400">In progress</span>
+          <span className="px-2 py-1 text-[11px] text-[#A56A1B]">In progress</span>
         )}
         {openItem && (
           <button
@@ -125,7 +125,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
           <button
             onClick={() => patch({ status: "waived" })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] text-gray-mid hover:text-cream"
+            className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
           >
             Waive
           </button>
@@ -134,7 +134,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
           <button
             onClick={() => patch({ status: "upcoming" })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] bg-white/5 hover:bg-white/10 text-cream/70"
+            className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
           >
             Reopen
           </button>
@@ -142,7 +142,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
         {item.notes && (
           <button
             onClick={() => setShowNotes((v) => !v)}
-            className="px-2 py-1 rounded-md text-[11px] text-gray-mid hover:text-cream"
+            className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
           >
             {showNotes ? "Hide notes" : "Notes"}
           </button>
@@ -150,13 +150,13 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
         <button
           onClick={() => void remove()}
           disabled={busy}
-          className="ml-auto px-2 py-1 rounded-md text-[11px] text-gray-mid hover:text-red-300"
+          className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
         >
           Delete
         </button>
       </div>
       {showNotes && item.notes && (
-        <p className="mt-2 text-[12px] text-gray-mid leading-relaxed border-t border-white/10 pt-2">
+        <p className="mt-2 text-[12px] text-ink-2 leading-relaxed border-t border-outline pt-2">
           {item.notes}
           {item.last_filed_at && (
             <span className="block mt-1">Last filed {item.last_filed_at.slice(0, 10)}.</span>
@@ -222,14 +222,14 @@ export function NewComplianceForm() {
   return (
     <form
       onSubmit={submit}
-      className="w-full bg-white/[0.03] border border-white/10 rounded-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
+      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
     >
-      <label className="col-span-2 text-xs text-gray-mid">
+      <label className="col-span-2 text-xs text-ink-2">
         Title
         <input className={`${inputCls} w-full mt-1`} value={title} required autoFocus
           placeholder="Workers' comp premium audit" onChange={(e) => setTitle(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Type
         <select className={`${inputCls} w-full mt-1`} value={kind} onChange={(e) => setKind(e.target.value)}>
           {Object.entries(KIND_LABELS).map(([k, v]) => (
@@ -237,12 +237,12 @@ export function NewComplianceForm() {
           ))}
         </select>
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Due
         <input className={`${inputCls} w-full mt-1`} type="date" value={dueDate} required
           onChange={(e) => setDueDate(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Repeats
         <select className={`${inputCls} w-full mt-1`} value={recur} onChange={(e) => setRecur(e.target.value)}>
           <option value="annual">Annually</option>
@@ -251,7 +251,7 @@ export function NewComplianceForm() {
           <option value="none">One-time</option>
         </select>
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Jurisdiction
         <input className={`${inputCls} w-full mt-1`} value={jurisdiction} placeholder="IRS / CA / —"
           onChange={(e) => setJurisdiction(e.target.value)} />
@@ -262,10 +262,10 @@ export function NewComplianceForm() {
           {busy ? "Saving…" : "Create"}
         </button>
         <button type="button" onClick={() => setOpen(false)}
-          className="text-xs text-gray-mid hover:text-cream px-2">
+          className="text-xs text-ink-2 hover:text-ink-1 px-2">
           Cancel
         </button>
-        {error && <p className="text-red-400 text-xs self-center">{error}</p>}
+        {error && <p className="text-expense text-xs self-center">{error}</p>}
       </div>
     </form>
   );

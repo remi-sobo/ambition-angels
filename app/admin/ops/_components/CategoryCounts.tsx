@@ -18,9 +18,9 @@ export default function CategoryCounts({
   counts: Record<Category, number>;
 }) {
   return (
-    <section className="rounded-card border border-white/10 bg-black/30 p-6">
+    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
       <header className="flex items-baseline justify-between mb-4">
-        <h2 className="text-xs uppercase tracking-wider text-gray-mid">
+        <h2 className="text-xs uppercase tracking-wider text-ink-2">
           By Category
         </h2>
       </header>
@@ -30,17 +30,17 @@ export default function CategoryCounts({
           <Link
             key={cat}
             href={`/admin/ops/projects?category=${cat}`}
-            className="block rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors px-3 py-3 text-center group"
+            className="block rounded-lg border-[1.5px] border-outline bg-surface shadow-panel hover:bg-[#EFE6D4] transition-colors px-3 py-3 text-center group"
           >
             <div
               className={`inline-block px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(cat)} mb-2`}
             >
               {categoryLabel(cat)}
             </div>
-            <div className="font-display font-black text-cream text-2xl leading-none">
+            <div className="font-display font-black text-ink-1 text-2xl leading-none">
               {counts[cat] ?? 0}
             </div>
-            <div className="text-[10px] text-gray-mid mt-1">open</div>
+            <div className="text-[10px] text-ink-2 mt-1">open</div>
           </Link>
         ))}
       </div>

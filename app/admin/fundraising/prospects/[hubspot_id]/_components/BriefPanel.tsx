@@ -128,13 +128,13 @@ export default function BriefPanel({
   // ── Empty state ─────────────────────────────────────────────────────────
   if (!brief) {
     return (
-      <section className="rounded-card border border-white/10 bg-black/30 p-6">
+      <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="text-xs uppercase tracking-wider text-gray-mid">
+            <h2 className="text-xs uppercase tracking-wider text-ink-2">
               Research brief
             </h2>
-            <p className="mt-1 text-sm text-cream/70">No research brief yet.</p>
+            <p className="mt-1 text-sm text-ink-2">No research brief yet.</p>
           </div>
           <button
             onClick={trigger}
@@ -145,7 +145,7 @@ export default function BriefPanel({
           </button>
         </div>
         {generating && (
-          <p className="mt-3 text-xs text-cream/60 italic">
+          <p className="mt-3 text-xs text-ink-2 italic">
             Researching… this can take 30–90 seconds. Web search is running in
             the background.
           </p>
@@ -159,17 +159,17 @@ export default function BriefPanel({
   const c = brief.content;
   return (
     <section className="space-y-4">
-      <header className="rounded-card border border-white/10 bg-black/30 p-4 flex items-center justify-between gap-4 flex-wrap">
-        <div className="text-xs text-gray-mid">
+      <header className="rounded-card border-[1.5px] border-outline bg-black/30 p-4 flex items-center justify-between gap-4 flex-wrap">
+        <div className="text-xs text-ink-2">
           Brief generated{" "}
           <span
-            className="text-cream"
+            className="text-ink-1"
             title={fmtAbsolute(brief.generated_at)}
           >
             {fmtRelative(brief.generated_at)}
           </span>
           {brief.template_version && (
-            <span className="ml-3 text-[10px] uppercase tracking-wider text-cream/40 font-mono">
+            <span className="ml-3 text-[10px] uppercase tracking-wider text-ink-3 font-mono">
               tmpl {brief.template_version}
             </span>
           )}
@@ -184,14 +184,14 @@ export default function BriefPanel({
       </header>
 
       {generating && (
-        <div className="rounded-lg border border-orange/30 bg-orange/[0.06] p-3 text-xs text-cream/80">
+        <div className="rounded-lg border border-orange/30 bg-orange/[0.06] p-3 text-xs text-ink-1">
           Researching… this can take 30–90 seconds. Web search is running in
           the background.
         </div>
       )}
 
       {warning && (
-        <div className="rounded-lg border border-amber-400/30 bg-amber-400/[0.05] p-3 text-xs text-amber-200">
+        <div className="rounded-lg border border-[#D9BE86] bg-amber-400/[0.05] p-3 text-xs text-amber-200">
           {warning}
         </div>
       )}
@@ -220,10 +220,10 @@ function ErrorBannerView({
 }) {
   const tone =
     err.kind === "rate_limit"
-      ? "border-amber-400/40 bg-amber-400/[0.07] text-amber-200"
+      ? "border-[#D9BE86] bg-amber-400/[0.07] text-amber-200"
       : err.kind === "budget"
-      ? "border-red-500/40 bg-red-500/[0.07] text-red-200"
-      : "border-red-500/30 bg-red-500/[0.05] text-red-200";
+      ? "border-expense/30 bg-expense-bg text-expense"
+      : "border-expense/30 bg-expense-bg text-expense";
   const title =
     err.kind === "rate_limit"
       ? "Rate limit hit"

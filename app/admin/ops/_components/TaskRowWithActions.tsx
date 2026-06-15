@@ -37,11 +37,11 @@ const VARIANT_CLASSES: Record<NonNullable<TaskRowAction["variant"]>, string> = {
   primary:
     "bg-orange/15 text-orange border border-orange/30 hover:bg-orange/25",
   danger:
-    "bg-red-500/10 text-red-300 border border-red-500/30 hover:bg-red-500/20",
+    "bg-expense-bg text-expense border border-expense/30 hover:bg-expense-bg",
   ghost:
-    "text-cream/60 hover:text-cream border border-transparent hover:bg-white/5",
+    "text-ink-2 hover:text-ink-1 border border-transparent hover:bg-[#EFE6D4]",
   default:
-    "bg-white/5 text-cream/80 border border-white/10 hover:bg-white/10",
+    "bg-tile text-ink-1 border-[1.5px] border-outline hover:bg-[#EFE6D4]",
 };
 
 export default function TaskRowWithActions({
@@ -96,10 +96,10 @@ export default function TaskRowWithActions({
     <div
       className={`group flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${
         isDone
-          ? "border-white/5 bg-white/[0.02] text-cream/50"
+          ? "border-hairline bg-surface shadow-panel text-ink-3"
           : isBlocked
-          ? "border-red-500/20 bg-red-500/[0.04]"
-          : "border-white/10 bg-white/[0.02] hover:bg-white/[0.05]"
+          ? "border-expense/30 bg-expense-bg"
+          : "border-outline bg-surface shadow-panel hover:bg-[#EFE6D4]"
       }`}
     >
       {showCheckbox && !readOnly && (
@@ -109,8 +109,8 @@ export default function TaskRowWithActions({
           aria-label={isDone ? "Mark as not done" : "Mark as done"}
           className={`shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
             isDone
-              ? "bg-emerald-500/30 border-emerald-500/50 text-emerald-200"
-              : "border-white/20 hover:border-orange/60"
+              ? "bg-revenue-bg border-revenue/30 text-revenue"
+              : "border-outline hover:border-orange/60"
           }`}
         >
           {isDone && (
@@ -124,8 +124,8 @@ export default function TaskRowWithActions({
         <span
           className={`shrink-0 w-5 h-5 rounded border flex items-center justify-center ${
             isDone
-              ? "bg-emerald-500/30 border-emerald-500/50 text-emerald-200"
-              : "border-white/10"
+              ? "bg-revenue-bg border-revenue/30 text-revenue"
+              : "border-outline"
           }`}
           aria-label={isDone ? "Done" : "Not done"}
         >
@@ -141,7 +141,7 @@ export default function TaskRowWithActions({
         {readOnly ? (
           <span
             className={`text-sm ${
-              isDone ? "line-through text-cream/40" : "text-cream"
+              isDone ? "line-through text-ink-3" : "text-ink-1"
             } truncate min-w-[120px]`}
           >
             {task.title}
@@ -152,8 +152,8 @@ export default function TaskRowWithActions({
             onClick={() => setEditOpen(true)}
             className={`text-sm text-left truncate min-w-[120px] transition-colors ${
               isDone
-                ? "line-through text-cream/40 hover:text-cream/60"
-                : "text-cream hover:text-orange"
+                ? "line-through text-ink-3 hover:text-ink-2"
+                : "text-ink-1 hover:text-orange"
             }`}
             title="Click to edit"
           >
@@ -167,7 +167,7 @@ export default function TaskRowWithActions({
         </span>
         {task.assigned_to && (
           <span
-            className="inline-flex w-4 h-4 rounded-full bg-white/10 text-cream/80 items-center justify-center text-[9px] font-bold uppercase"
+            className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[9px] font-bold uppercase"
             title={`Assigned to ${task.assigned_to}`}
           >
             {task.assigned_to.charAt(0)}
@@ -182,19 +182,19 @@ export default function TaskRowWithActions({
           </Link>
         )}
         {isBlocked && (
-          <span className="text-[10px] uppercase tracking-wider text-red-300 font-semibold">
+          <span className="text-[10px] uppercase tracking-wider text-expense font-semibold">
             blocked
           </span>
         )}
       </div>
 
       {showDueDate && task.due_date && !completedTimestamp && (
-        <span className="shrink-0 text-xs text-cream/60 font-mono">
+        <span className="shrink-0 text-xs text-ink-2 font-mono">
           {formatDueLabel(task.due_date)}
         </span>
       )}
       {completedTimestamp && (
-        <span className="shrink-0 text-xs text-emerald-300/80 font-mono">
+        <span className="shrink-0 text-xs text-revenue/80 font-mono">
           {new Date(completedTimestamp).toLocaleTimeString("en-US", {
             hour: "numeric",
             minute: "2-digit",

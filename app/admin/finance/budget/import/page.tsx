@@ -148,36 +148,36 @@ export default function QbBudgetImportPage() {
   return (
     <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8">
       <header className="mb-6">
-        <div className="flex items-center gap-3 text-xs text-gray-mid mb-1">
-          <Link href={`/admin/finance/budget?year=${year}`} className="hover:text-cream">
+        <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
+          <Link href={`/admin/finance/budget?year=${year}`} className="hover:text-ink-1">
             ← Budget
           </Link>
         </div>
-        <h1 className="font-display font-black uppercase tracking-tight text-cream text-3xl sm:text-4xl leading-none">
+        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
           Import budget from QuickBooks
         </h1>
-        <p className="mt-2 text-sm text-gray-mid max-w-2xl">
+        <p className="mt-2 text-sm text-ink-2 max-w-2xl">
           Drop a CSV exported from QuickBooks Budget Overview (or any CSV
           with an Account column and a Total column). We match account names
           to your categories, show what we&apos;ll write, and let you fix any
-          unmatched rows before commit. Only <span className="text-cream">base_amount</span> changes —
+          unmatched rows before commit. Only <span className="text-ink-1">base_amount</span> changes —
           contingency tiers stay where they were.
         </p>
       </header>
 
-      <section className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 mb-6">
+      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 mb-6">
         <div className="grid sm:grid-cols-[auto_1fr_auto] gap-4 items-end">
           <label className="block">
-            <span className="block text-[10px] uppercase tracking-wider text-gray-mid mb-1">Year</span>
+            <span className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">Year</span>
             <input
               value={year}
               onChange={(e) => setYear(Number(e.target.value) || year)}
               inputMode="numeric"
-              className="bg-ink border border-white/10 rounded px-2 py-1.5 text-sm text-cream w-24"
+              className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
             />
           </label>
           <label className="block">
-            <span className="block text-[10px] uppercase tracking-wider text-gray-mid mb-1">QuickBooks CSV</span>
+            <span className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">QuickBooks CSV</span>
             <input
               type="file"
               accept=".csv,text/csv"
@@ -187,14 +187,14 @@ export default function QbBudgetImportPage() {
                 setError(null);
                 setSuccess(null);
               }}
-              className="block text-sm text-cream file:mr-3 file:rounded-lg file:border-0 file:bg-orange file:text-cream file:px-3 file:py-2 file:text-xs file:font-medium file:cursor-pointer hover:file:bg-orange-dark"
+              className="block text-sm text-ink-1 file:mr-3 file:rounded-lg file:border-0 file:bg-orange file:text-white file:px-3 file:py-2 file:text-xs file:font-medium file:cursor-pointer hover:file:bg-orange-dark"
             />
           </label>
           <button
             type="button"
             disabled={!file || busy !== "idle"}
             onClick={doPreview}
-            className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-cream text-sm font-medium disabled:opacity-40"
+            className="px-4 py-2 rounded-lg bg-tile hover:bg-[#EFE6D4] text-ink-1 text-sm font-medium disabled:opacity-40"
           >
             {busy === "previewing" ? "Parsing…" : "Preview"}
           </button>
@@ -202,12 +202,12 @@ export default function QbBudgetImportPage() {
       </section>
 
       {error && (
-        <div className="mb-6 rounded-card border border-red-400/40 bg-red-500/10 p-4 text-sm text-red-200">
+        <div className="mb-6 rounded-card border border-expense/30 bg-expense-bg p-4 text-sm text-expense">
           {error}
         </div>
       )}
       {success && (
-        <div className="mb-6 rounded-card border border-emerald-400/40 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+        <div className="mb-6 rounded-card border border-revenue/30 bg-revenue-bg p-4 text-sm text-revenue">
           {success}
         </div>
       )}
@@ -222,14 +222,14 @@ export default function QbBudgetImportPage() {
           </div>
 
           {/* Matched */}
-          <div className="rounded-card-lg border border-white/10 bg-white/[0.02] overflow-hidden">
-            <header className="px-4 py-2.5 border-b border-white/5">
+          <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel overflow-hidden">
+            <header className="px-4 py-2.5 border-b border-hairline">
               <div className="text-[10px] uppercase tracking-widest text-orange font-medium">
                 Will overwrite
               </div>
             </header>
             <table className="w-full text-xs">
-              <thead className="bg-white/[0.03] text-gray-mid uppercase tracking-wider">
+              <thead className="bg-surface shadow-panel text-ink-2 uppercase tracking-wider">
                 <tr>
                   <th className="text-left px-3 py-2">QB account</th>
                   <th className="text-left px-3 py-2">→ Category</th>
@@ -240,19 +240,19 @@ export default function QbBudgetImportPage() {
               </thead>
               <tbody>
                 {preview.matched.length === 0 ? (
-                  <tr><td colSpan={5} className="px-3 py-6 text-center text-gray-mid">No automatic matches yet — map them below.</td></tr>
+                  <tr><td colSpan={5} className="px-3 py-6 text-center text-ink-2">No automatic matches yet — map them below.</td></tr>
                 ) : (
                   preview.matched.map((m) => {
                     const delta = m.amount - m.current_base;
                     return (
-                      <tr key={m.account + m.category_id} className="border-t border-white/5">
-                        <td className="px-3 py-1.5 text-cream/85">{m.account}</td>
-                        <td className="px-3 py-1.5 text-gray-mid">{m.category_id}</td>
-                        <td className="px-3 py-1.5 text-right font-mono text-gray-mid">{fmt(m.current_base)}</td>
-                        <td className="px-3 py-1.5 text-right font-mono text-cream">{fmt(m.amount)}</td>
+                      <tr key={m.account + m.category_id} className="border-t border-hairline">
+                        <td className="px-3 py-1.5 text-ink-1">{m.account}</td>
+                        <td className="px-3 py-1.5 text-ink-2">{m.category_id}</td>
+                        <td className="px-3 py-1.5 text-right font-mono text-ink-2">{fmt(m.current_base)}</td>
+                        <td className="px-3 py-1.5 text-right font-mono text-ink-1">{fmt(m.amount)}</td>
                         <td
                           className={`px-3 py-1.5 text-right font-mono ${
-                            delta > 0 ? "text-emerald-300" : delta < 0 ? "text-red-300" : "text-gray-mid"
+                            delta > 0 ? "text-revenue" : delta < 0 ? "text-expense" : "text-ink-2"
                           }`}
                         >
                           {delta === 0 ? "—" : `${delta > 0 ? "+" : ""}${fmt(delta)}`}
@@ -267,19 +267,19 @@ export default function QbBudgetImportPage() {
 
           {/* Unmatched with manual mapping */}
           {preview.unmatched.length > 0 && (
-            <div className="rounded-card-lg border border-amber-400/30 bg-amber-500/5 overflow-hidden">
-              <header className="px-4 py-2.5 border-b border-white/5">
-                <div className="text-[10px] uppercase tracking-widest text-amber-300 font-medium">
+            <div className="rounded-card-lg border border-[#D9BE86] bg-[#F4E8D0] overflow-hidden">
+              <header className="px-4 py-2.5 border-b border-hairline">
+                <div className="text-[10px] uppercase tracking-widest text-[#A56A1B] font-medium">
                   Needs mapping
                 </div>
-                <p className="text-[11px] text-gray-mid mt-1">
+                <p className="text-[11px] text-ink-2 mt-1">
                   We couldn&apos;t auto-match these QB accounts. Pick a category
                   for each — or leave as &ldquo;skip&rdquo; to leave that QB line out of
                   the import.
                 </p>
               </header>
               <table className="w-full text-xs">
-                <thead className="bg-white/[0.03] text-gray-mid uppercase tracking-wider">
+                <thead className="bg-surface shadow-panel text-ink-2 uppercase tracking-wider">
                   <tr>
                     <th className="text-left px-3 py-2">QB account</th>
                     <th className="text-right px-3 py-2 w-32">Amount</th>
@@ -288,16 +288,16 @@ export default function QbBudgetImportPage() {
                 </thead>
                 <tbody>
                   {preview.unmatched.map((u) => (
-                    <tr key={u.account} className="border-t border-white/5">
-                      <td className="px-3 py-1.5 text-cream/85">{u.account}</td>
-                      <td className="px-3 py-1.5 text-right font-mono text-cream">{fmt(u.amount)}</td>
+                    <tr key={u.account} className="border-t border-hairline">
+                      <td className="px-3 py-1.5 text-ink-1">{u.account}</td>
+                      <td className="px-3 py-1.5 text-right font-mono text-ink-1">{fmt(u.amount)}</td>
                       <td className="px-3 py-1.5">
                         <select
                           value={overrides[u.account] ?? ""}
                           onChange={(e) =>
                             setOverrides((o) => ({ ...o, [u.account]: e.target.value }))
                           }
-                          className="bg-ink border border-white/10 rounded px-2 py-1 text-xs text-cream max-w-xs"
+                          className="bg-ink border-[1.5px] border-outline rounded px-2 py-1 text-xs text-ink-1 max-w-xs"
                         >
                           <option value="">— skip this row —</option>
                           {/* Suggested first */}
@@ -340,14 +340,14 @@ export default function QbBudgetImportPage() {
               type="button"
               disabled={busy !== "idle"}
               onClick={doCommit}
-              className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-cream text-sm font-medium disabled:opacity-40"
+              className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
             >
               {busy === "committing" ? "Writing…" : `Commit ${preview.matched_count + Object.values(overrides).filter(Boolean).length} budget lines`}
             </button>
             <button
               type="button"
               onClick={() => { setPreview(null); setOverrides({}); }}
-              className="px-4 py-2 rounded-lg text-cream/80 hover:text-cream text-sm"
+              className="px-4 py-2 rounded-lg text-ink-1 hover:text-ink-1 text-sm"
             >
               Cancel
             </button>
@@ -369,10 +369,10 @@ function Stat({
   accent?: boolean;
   tone?: "warn";
 }) {
-  const valueClass = tone === "warn" ? "text-amber-300" : accent ? "text-orange" : "text-cream";
+  const valueClass = tone === "warn" ? "text-[#A56A1B]" : accent ? "text-orange" : "text-ink-1";
   return (
-    <div className="rounded-card border border-white/10 bg-white/[0.02] p-3">
-      <div className="text-[10px] uppercase tracking-wider text-gray-mid mb-1">{label}</div>
+    <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-3">
+      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}</div>
       <div className={`text-lg font-medium ${valueClass}`}>{value}</div>
     </div>
   );

@@ -485,7 +485,7 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
                     className={[
                       "flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-colors",
                       active === item.href
-                        ? "bg-orange text-white shadow-sm"
+                        ? "bg-orange text-[#FFF6EC] shadow-sm"
                         : "text-cream/70 hover:text-cream hover:bg-white/10",
                     ].join(" ")}
                   >

@@ -19,13 +19,13 @@ const CYCLE = ["present", "late", "excused", "absent", null] as const;
 
 const MARK_STYLES: Record<string, { row: string; chip: string; label: string }> = {
   present: {
-    row: "border-green-500/40 bg-green-500/[0.07]",
-    chip: "bg-green-500/20 text-green-400",
+    row: "border-revenue/30 bg-revenue-bg",
+    chip: "bg-revenue-bg text-revenue",
     label: "Present",
   },
   late: {
-    row: "border-yellow-500/40 bg-yellow-500/[0.07]",
-    chip: "bg-yellow-500/20 text-yellow-400",
+    row: "border-[#D9BE86] bg-yellow-500/[0.07]",
+    chip: "bg-[#F4E8D0] text-[#A56A1B]",
     label: "Late",
   },
   excused: {
@@ -34,8 +34,8 @@ const MARK_STYLES: Record<string, { row: string; chip: string; label: string }> 
     label: "Excused",
   },
   absent: {
-    row: "border-red-500/40 bg-red-500/[0.07]",
-    chip: "bg-red-500/20 text-red-400",
+    row: "border-expense/30 bg-expense-bg",
+    chip: "bg-expense-bg text-expense",
     label: "Absent",
   },
 };
@@ -98,10 +98,10 @@ export default function AttendanceSheet({
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span className="text-[12px] tabular-nums text-cream/70">
-          <span className="text-green-400 font-semibold">{counts.present + counts.late}</span> here
+        <span className="text-[12px] tabular-nums text-ink-2">
+          <span className="text-revenue font-semibold">{counts.present + counts.late}</span> here
           {" · "}
-          <span className="text-red-400 font-semibold">{counts.absent}</span> absent
+          <span className="text-expense font-semibold">{counts.absent}</span> absent
           {counts.excused > 0 && (
             <>
               {" · "}
@@ -109,7 +109,7 @@ export default function AttendanceSheet({
             </>
           )}
           {" · "}
-          <span className="text-gray-mid">{counts.unmarked} unmarked</span>
+          <span className="text-ink-2">{counts.unmarked} unmarked</span>
         </span>
         {counts.unmarked > 0 && (
           <button
@@ -130,14 +130,14 @@ export default function AttendanceSheet({
               key={e.studentId}
               onClick={() => tap(e)}
               className={`w-full flex items-center gap-3 rounded-xl border px-4 py-4 text-left transition-colors select-none active:scale-[0.99] ${
-                style ? style.row : "border-white/10 bg-[#1d1812] hover:border-white/25"
+                style ? style.row : "border-outline bg-[#1d1812] hover:border-outline"
               }`}
             >
-              <span className="font-semibold text-cream text-base">{e.name}</span>
-              {e.grade && <span className="text-[11px] text-gray-mid">Grade {e.grade}</span>}
+              <span className="font-semibold text-ink-1 text-base">{e.name}</span>
+              {e.grade && <span className="text-[11px] text-ink-2">Grade {e.grade}</span>}
               <span
                 className={`ml-auto text-[11px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                  style ? style.chip : "bg-white/5 text-gray-mid"
+                  style ? style.chip : "bg-tile text-ink-2"
                 }`}
               >
                 {style ? style.label : "Tap to mark"}
@@ -146,11 +146,11 @@ export default function AttendanceSheet({
           );
         })}
         {roster.length === 0 && (
-          <p className="text-sm text-gray-mid">No enrolled students in this cohort yet.</p>
+          <p className="text-sm text-ink-2">No enrolled students in this cohort yet.</p>
         )}
       </div>
 
-      <p className="text-[11px] text-gray-mid mt-4">
+      <p className="text-[11px] text-ink-2 mt-4">
         Tap a name to cycle present → late → excused → absent → unmarked. Every tap saves
         instantly.
       </p>

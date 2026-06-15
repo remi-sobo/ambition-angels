@@ -18,7 +18,7 @@ export default function DemoDayTabs() {
     <div>
       {/* Tab switcher */}
       <div className="px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8">
-        <div className="inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-1">
+        <div className="inline-flex rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-1">
           {TABS.map((t) => (
             <button
               key={t.value}
@@ -26,7 +26,7 @@ export default function DemoDayTabs() {
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 tab === t.value
                   ? "bg-orange text-white"
-                  : "text-cream/70 hover:text-cream hover:bg-white/5"
+                  : "text-ink-2 hover:text-ink-1 hover:bg-[#EFE6D4]"
               }`}
             >
               {t.label}

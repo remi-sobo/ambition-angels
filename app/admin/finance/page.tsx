@@ -211,10 +211,10 @@ export default async function FinanceDashboardPage() {
     else functionalTotals.uncategorized += -t.amount;
   }
   const functionalSegs: DonutSeg[] = [
-    { label: "Program", value: functionalTotals.program, color: "#C0764E" },
-    { label: "Admin", value: functionalTotals.admin, color: "#FAFAF8" },
-    { label: "Fundraising", value: functionalTotals.fundraising, color: "#10b981" },
-    { label: "Uncategorized", value: functionalTotals.uncategorized, color: "#f59e0b" },
+    { label: "Program", value: functionalTotals.program, color: "#C0703C" },
+    { label: "Admin", value: functionalTotals.admin, color: "#2A201A" },
+    { label: "Fundraising", value: functionalTotals.fundraising, color: "#2F7D5B" },
+    { label: "Uncategorized", value: functionalTotals.uncategorized, color: "#B5762A" },
   ].filter((s) => s.value > 0.0001);
 
   // ── Revenue source mix (from pledges + actual revenue txns) ────────────
@@ -251,19 +251,19 @@ export default async function FinanceDashboardPage() {
     sourceTotals.set(src, (sourceTotals.get(src) ?? 0) + t.amount);
   }
   const SOURCE_COLOR: Record<string, string> = {
-    foundation: "#10b981",
-    individual: "#C0764E",
-    corporate: "#f59e0b",
-    government: "#FAFAF8",
+    foundation: "#2F7D5B",
+    individual: "#C0703C",
+    corporate: "#B5762A",
+    government: "#2A201A",
     accelerator: "#a78bfa",
     earned: "#60a5fa",
-    other: "#6B6960",
+    other: "#9A8B7C",
   };
   const sourceSegs: DonutSeg[] = Array.from(sourceTotals.entries())
     .map(([k, v]) => ({
       label: k.charAt(0).toUpperCase() + k.slice(1),
       value: v,
-      color: SOURCE_COLOR[k] ?? "#6B6960",
+      color: SOURCE_COLOR[k] ?? "#9A8B7C",
     }))
     .sort((a, b) => b.value - a.value);
 
@@ -401,7 +401,7 @@ export default async function FinanceDashboardPage() {
             pct={goalPct}
             value={`${Math.round(goalPct * 100)}%`}
             label="goal"
-            color="#10b981"
+            color="#2F7D5B"
           />
         </Hero>
         <Hero
@@ -417,7 +417,7 @@ export default async function FinanceDashboardPage() {
             pct={budgetPct}
             value={`${Math.round(budgetPct * 100)}%`}
             label="budget"
-            color={budgetPct > 1 ? "#ef4444" : budgetPct > 0.8 ? "#f59e0b" : "#C0764E"}
+            color={budgetPct > 1 ? "#B5482F" : budgetPct > 0.8 ? "#B5762A" : "#C0703C"}
           />
         </Hero>
       </section>
@@ -440,11 +440,11 @@ export default async function FinanceDashboardPage() {
       </section>
 
       {/* Cash flow chart */}
-      <section className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
+      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
         <SectionHeading className="mb-1">
           Cash flow · 12 months
         </SectionHeading>
-        <p className="text-xs text-gray-mid mb-4">
+        <p className="text-xs text-ink-2 mb-4">
           Bars are revenue (up) and expense (down). The line traces ending
           balance, starting from the {money(cfg.startBal)} anchor.
         </p>
@@ -453,11 +453,11 @@ export default async function FinanceDashboardPage() {
 
       {/* Splits */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
+        <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
           <SectionHeading className="mb-1">
             Functional split
           </SectionHeading>
-          <p className="text-xs text-gray-mid mb-5">
+          <p className="text-xs text-ink-2 mb-5">
             How {money(expenseYTD)} of expense breaks down across program,
             admin, and fundraising — the same split a Form 990 reports.
           </p>
@@ -494,11 +494,11 @@ export default async function FinanceDashboardPage() {
           )}
         </div>
 
-        <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
+        <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
           <SectionHeading className="mb-1">
             Revenue by source
           </SectionHeading>
-          <p className="text-xs text-gray-mid mb-5">
+          <p className="text-xs text-ink-2 mb-5">
             Received revenue plus actuals from bank transactions, grouped by
             who it came from. Projected pipeline shown separately below.
           </p>
@@ -514,14 +514,14 @@ export default async function FinanceDashboardPage() {
       </section>
 
       {/* Budget vs actual */}
-      <section className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
+      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
         <div className="flex items-baseline justify-between flex-wrap gap-2 mb-4">
           <SectionHeading>
             Budget vs actual
           </SectionHeading>
           <Link
             href="/admin/finance/budget"
-            className="text-xs text-gray-mid hover:text-cream"
+            className="text-xs text-ink-2 hover:text-ink-1"
           >
             Edit budget →
           </Link>
@@ -537,18 +537,18 @@ export default async function FinanceDashboardPage() {
               return (
                 <li key={r.group} className="text-xs">
                   <div className="flex items-baseline justify-between mb-1">
-                    <span className="uppercase tracking-wider text-cream/85 font-medium">
+                    <span className="uppercase tracking-wider text-ink-1 font-medium">
                       {r.group}
                     </span>
-                    <span className="font-mono text-cream/80">
-                      {money(r.actual)} <span className="text-gray-mid">/ {money(r.budget)}</span>
+                    <span className="font-mono text-ink-1">
+                      {money(r.actual)} <span className="text-ink-2">/ {money(r.budget)}</span>
                       <span
                         className={`ml-2 ${
                           intent === "over"
-                            ? "text-red-300"
+                            ? "text-expense"
                             : intent === "warn"
-                            ? "text-amber-300"
-                            : "text-emerald-300"
+                            ? "text-[#A56A1B]"
+                            : "text-revenue"
                         }`}
                       >
                         {Math.round(pct * 100)}%
@@ -565,14 +565,14 @@ export default async function FinanceDashboardPage() {
 
       {/* Bottom strip: pledges + recent transactions */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
+        <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
           <div className="flex items-baseline justify-between mb-4">
             <SectionHeading>
               Pledge pipeline
             </SectionHeading>
             <Link
               href="/admin/finance/revenue"
-              className="text-xs text-gray-mid hover:text-cream"
+              className="text-xs text-ink-2 hover:text-ink-1"
             >
               Manage →
             </Link>
@@ -582,26 +582,26 @@ export default async function FinanceDashboardPage() {
             <Cell label="Secured" value={money(securedTotal)} accent />
             <Cell label="Projected" value={money(projectedWeighted)} subtle />
           </div>
-          <div className="text-[10px] uppercase tracking-wider text-gray-mid mb-2">
+          <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-2">
             Toward {money(cfg.goal)} goal
           </div>
           <ProgressBar pct={goalPct} intent={goalPct >= 1 ? "ok" : "warn"} height={10} />
           {cfg.goal > 0 && (
-            <div className="text-xs text-gray-mid mt-2">
+            <div className="text-xs text-ink-2 mt-2">
               {Math.round(goalPct * 100)}% hard ·{" "}
               {Math.round(((raisedHard + projectedWeighted) / cfg.goal) * 100)}% with weighted pipeline
             </div>
           )}
         </div>
 
-        <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5 sm:p-6">
+        <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
           <div className="flex items-baseline justify-between mb-4">
             <SectionHeading>
               Recent transactions
             </SectionHeading>
             <Link
               href="/admin/finance/transactions"
-              className="text-xs text-gray-mid hover:text-cream"
+              className="text-xs text-ink-2 hover:text-ink-1"
             >
               All →
             </Link>
@@ -615,20 +615,20 @@ export default async function FinanceDashboardPage() {
                 return (
                   <li
                     key={t.id}
-                    className="grid grid-cols-[5rem_1fr_6rem] gap-3 py-1.5 border-t border-white/5 first:border-t-0"
+                    className="grid grid-cols-[5rem_1fr_6rem] gap-3 py-1.5 border-t border-hairline first:border-t-0"
                   >
-                    <span className="font-mono text-cream/70">{t.txn_date.slice(5)}</span>
-                    <span className="text-cream/85 truncate" title={t.description}>
+                    <span className="font-mono text-ink-2">{t.txn_date.slice(5)}</span>
+                    <span className="text-ink-1 truncate" title={t.description}>
                       {t.description}
                       {c && (
-                        <span className="text-gray-mid text-[10px] ml-2">
+                        <span className="text-ink-2 text-[10px] ml-2">
                           {c.display_name}
                         </span>
                       )}
                     </span>
                     <span
                       className={`text-right font-mono ${
-                        Number(t.amount) >= 0 ? "text-emerald-300" : "text-cream/85"
+                        Number(t.amount) >= 0 ? "text-revenue" : "text-ink-1"
                       }`}
                     >
                       {money(Number(t.amount))}
@@ -666,22 +666,22 @@ function Hero({
   children?: React.ReactNode;
 }) {
   const dotClass =
-    accent === "orange" ? "text-orange" : "text-cream";
+    accent === "orange" ? "text-orange" : "text-ink-1";
   return (
-    <div className="relative rounded-card-lg border border-white/10 bg-white/[0.02] p-5 overflow-hidden">
+    <div className="relative rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 overflow-hidden">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-widest text-gray-mid">{label}</div>
+          <div className="text-[10px] uppercase tracking-widest text-ink-2">{label}</div>
           <div className={`mt-1 font-display font-black text-3xl ${dotClass} leading-none`}>
             {value}
           </div>
-          {sub && <div className="mt-2 text-xs text-gray-mid">{sub}</div>}
+          {sub && <div className="mt-2 text-xs text-ink-2">{sub}</div>}
           {typeof delta === "number" && Math.abs(delta) > 0.0001 && (
             <div className="mt-1 text-xs">
-              <span className={delta >= 0 ? "text-emerald-300" : "text-red-300"}>
+              <span className={delta >= 0 ? "text-revenue" : "text-expense"}>
                 {delta >= 0 ? "▲" : "▼"} {money(Math.abs(delta))}
               </span>{" "}
-              <span className="text-gray-mid">{deltaLabel}</span>
+              <span className="text-ink-2">{deltaLabel}</span>
             </div>
           )}
         </div>
@@ -689,7 +689,7 @@ function Hero({
       </div>
       {sparkline && sparkline.length > 1 && (
         <div className="mt-3 -mb-1">
-          <Sparkline values={sparkline} width={220} height={36} color="#C0764E" />
+          <Sparkline values={sparkline} width={220} height={36} color="#C0703C" />
         </div>
       )}
     </div>
@@ -709,13 +709,13 @@ function Mini({
 }) {
   const valueClass =
     tone === "warn"
-      ? "text-amber-300"
+      ? "text-[#A56A1B]"
       : tone === "good"
-      ? "text-emerald-300"
-      : "text-cream";
+      ? "text-revenue"
+      : "text-ink-1";
   const inner = (
-    <div className="rounded-card border border-white/10 bg-white/[0.02] p-3 hover:bg-white/[0.04] transition-colors">
-      <div className="text-[10px] uppercase tracking-widest text-gray-mid mb-1">{label}</div>
+    <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-3 hover:bg-[#EFE6D4] transition-colors">
+      <div className="text-[10px] uppercase tracking-widest text-ink-2 mb-1">{label}</div>
       <div className={`text-lg font-medium ${valueClass}`}>{value}</div>
     </div>
   );
@@ -725,7 +725,7 @@ function Mini({
 
 function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-sm text-gray-mid py-8 text-center border border-dashed border-white/10 rounded-card">
+    <div className="text-sm text-ink-2 py-8 text-center border border-dashed border-outline rounded-card">
       {children}
     </div>
   );
@@ -744,10 +744,10 @@ function Cell({
 }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-gray-mid mb-1">{label}</div>
+      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}</div>
       <div
         className={`text-lg font-medium font-mono ${
-          accent ? "text-orange" : subtle ? "text-cream/60" : "text-cream"
+          accent ? "text-orange" : subtle ? "text-ink-2" : "text-ink-1"
         }`}
       >
         {value}

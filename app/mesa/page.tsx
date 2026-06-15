@@ -4,9 +4,24 @@ import Image from "next/image";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import { MESA } from "@/lib/mesa";
 
+const MESA_DESCRIPTION = `A career-readiness partnership between Ambition Angels and MESA at ${MESA.collegeName}: real career exposure, a team that guides students, and a coach for the ones ready to go further.`;
+
 export const metadata: Metadata = {
   title: "MESA Partnership",
-  description: `A career-readiness partnership between Ambition Angels and MESA at ${MESA.collegeName}: real career exposure, a team that guides students, and a coach for the ones ready to go further.`,
+  description: MESA_DESCRIPTION,
+  alternates: { canonical: "/mesa" },
+  openGraph: {
+    title: "Ambition Angels x MESA Partnership",
+    description: MESA_DESCRIPTION,
+    url: "/mesa",
+    type: "website",
+    images: ["/opengraph-image.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ambition Angels x MESA Partnership",
+    description: MESA_DESCRIPTION,
+  },
 };
 
 const dotTexture = {
@@ -229,37 +244,38 @@ export default function MesaPage() {
           </div>
 
           <div className="relative">
-            {/* Desktop connector line through the three nodes */}
+            {/* Desktop connector line, threaded through the node centers.
+                The nodes (ring-ink) sit on top and mask where it crosses. */}
             <div
-              className="hidden lg:block absolute top-7 left-[16.666%] right-[16.666%] h-0.5 bg-gradient-to-r from-orange via-orange/70 to-orange/25"
+              className="hidden lg:block absolute top-7 left-[16.666%] right-[16.666%] h-0.5 -translate-y-1/2 bg-gradient-to-r from-orange via-orange/70 to-orange/25"
               aria-hidden="true"
             />
 
-            <ol className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-5 relative">
+            <ol className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-5">
               {layers.map((l, i) => (
-                <li key={l.num} className="relative">
-                  {/* Mobile vertical connector between cards */}
+                <li
+                  key={l.num}
+                  className={`relative flex flex-col items-center fade-up stagger-${i + 1}`}
+                >
+                  {/* Mobile vertical connector from the previous card */}
                   {i > 0 && (
                     <div
-                      className="lg:hidden absolute -top-6 left-7 w-0.5 h-6 bg-gradient-to-b from-orange/25 to-orange/60"
+                      className="lg:hidden absolute left-1/2 -translate-x-1/2 -top-10 w-0.5 h-10 bg-gradient-to-b from-orange/25 to-orange/60"
                       aria-hidden="true"
                     />
                   )}
 
-                  <div className={`bg-ink-soft border border-white/10 rounded-card-lg p-7 h-full flex flex-col fade-up stagger-${i + 1}`}>
-                    {/* Number node, sits on the desktop connector line */}
-                    <div className="flex items-center gap-4 mb-5">
-                      <span className="w-14 h-14 rounded-full bg-orange text-white font-display font-black text-2xl flex items-center justify-center flex-shrink-0 ring-8 ring-ink">
-                        {l.num}
-                      </span>
-                      <div>
-                        <div className="text-xs font-bold text-orange uppercase tracking-widest">
-                          {l.layer}
-                        </div>
-                        <div className="font-heading font-semibold text-cream text-lg tracking-tight">
-                          {l.title}
-                        </div>
-                      </div>
+                  {/* Number node — centered so the connector runs through it */}
+                  <span className="relative z-10 w-14 h-14 rounded-full bg-orange text-white font-display font-black text-2xl flex items-center justify-center flex-shrink-0 ring-8 ring-ink mb-5">
+                    {l.num}
+                  </span>
+
+                  <div className="bg-ink-soft border border-white/10 rounded-card-lg p-7 w-full flex-1 flex flex-col">
+                    <div className="text-xs font-bold text-orange uppercase tracking-widest mb-1">
+                      {l.layer}
+                    </div>
+                    <div className="font-heading font-semibold text-cream text-lg tracking-tight mb-3">
+                      {l.title}
                     </div>
 
                     <p className="text-gray-mid text-sm leading-relaxed flex-1 mb-6">

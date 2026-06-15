@@ -629,7 +629,7 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
       {/* ── Desktop sidebar (visible >= lg) ───────────────────────────── */}
       {/* Sticky + h-screen pins the chrome while the content column scrolls;
           the section nav scrolls internally when taller than the viewport. */}
-      <aside className="hidden lg:flex w-[248px] shrink-0 border-r border-white/10 bg-navy flex-col lg:sticky lg:top-0 lg:h-screen">
+      <aside className="hidden lg:flex w-[248px] shrink-0 border-r border-white/10 bg-navy flex-col lg:sticky lg:top-0 lg:h-screen lg:pt-[env(safe-area-inset-top)]">
         {navPanel}
       </aside>
     </>

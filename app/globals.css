@@ -332,15 +332,12 @@
 }
 
 @media (min-width: 1024px) {
-  .admin-shell {
-    /* Push both sidebar and main column below the iOS status bar in
-       PWA standalone mode. The extra 0.5rem buys a little breathing
-       room so the AA Admin header isn't flush against the clock. */
-    padding-top: calc(env(safe-area-inset-top) + 0.5rem);
-  }
-
   .admin-main {
-    padding-top: 0;
+    /* Clear the iOS status bar in PWA standalone, plus a little breathing
+       room so the greeting isn't flush against the clock. Applied to the
+       content column only (not the shared shell) so the full-height espresso
+       sidebar can paint all the way to the top. */
+    padding-top: calc(env(safe-area-inset-top) + 0.5rem);
   }
 }
 

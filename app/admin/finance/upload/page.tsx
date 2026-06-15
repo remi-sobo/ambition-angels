@@ -183,7 +183,7 @@ export default function FinanceUploadPage() {
               <summary className="text-xs uppercase tracking-wider text-expense cursor-pointer hover:text-expense">
                 First {errorSample.length} lines we saw in the file
               </summary>
-              <pre className="mt-2 text-[11px] font-mono text-ink-1 bg-black/30 rounded p-3 overflow-x-auto">
+              <pre className="mt-2 text-[11px] font-mono text-ink-1 bg-surface rounded p-3 overflow-x-auto">
                 {errorSample.join("\n")}
               </pre>
             </details>

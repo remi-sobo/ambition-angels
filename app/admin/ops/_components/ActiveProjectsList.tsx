@@ -15,9 +15,9 @@ export default function ActiveProjectsList({
   openTaskCounts: Map<string, number>;
 }) {
   return (
-    <section className="rounded-card border border-white/10 bg-black/30 p-6">
+    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
       <header className="flex items-baseline justify-between mb-4">
-        <h2 className="text-xs uppercase tracking-wider text-gray-mid">
+        <h2 className="text-xs uppercase tracking-wider text-ink-2">
           Active Projects
         </h2>
         <Link
@@ -29,7 +29,7 @@ export default function ActiveProjectsList({
       </header>
 
       {projects.length === 0 ? (
-        <p className="text-sm text-gray-mid">
+        <p className="text-sm text-ink-2">
           No active projects yet. Create one from the projects page.
         </p>
       ) : (
@@ -40,10 +40,10 @@ export default function ActiveProjectsList({
               <Link
                 key={p.id}
                 href={`/admin/ops/projects/${p.id}`}
-                className="block rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors p-4 group"
+                className="block rounded-lg border-[1.5px] border-outline bg-surface shadow-panel hover:bg-[#EFE6D4] transition-colors p-4 group"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className="text-sm font-medium text-cream group-hover:text-orange transition-colors truncate">
+                  <h3 className="text-sm font-medium text-ink-1 group-hover:text-orange transition-colors truncate">
                     {p.title}
                   </h3>
                   <span
@@ -52,11 +52,11 @@ export default function ActiveProjectsList({
                     {categoryLabel(p.category)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-cream/60">
+                <div className="flex items-center justify-between text-[11px] text-ink-2">
                   <div className="flex items-center gap-3">
                     {p.assigned_to && (
                       <span className="inline-flex items-center gap-1">
-                        <span className="inline-flex w-4 h-4 rounded-full bg-white/10 text-cream/80 items-center justify-center text-[9px] font-bold uppercase">
+                        <span className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[9px] font-bold uppercase">
                           {p.assigned_to.charAt(0)}
                         </span>
                         <span>{p.assigned_to}</span>
@@ -69,7 +69,7 @@ export default function ActiveProjectsList({
                       {open} open task{open === 1 ? "" : "s"}
                     </span>
                   </div>
-                  <span className="text-cream/40">{formatRelative(p.last_touched_at)}</span>
+                  <span className="text-ink-3">{formatRelative(p.last_touched_at)}</span>
                 </div>
               </Link>
             );

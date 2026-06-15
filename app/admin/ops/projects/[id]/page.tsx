@@ -38,7 +38,7 @@ export default async function ProjectDetailPage({
     <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       <Link
         href="/admin/ops/projects"
-        className="inline-block text-xs text-gray-mid hover:text-cream transition-colors"
+        className="inline-block text-xs text-ink-2 hover:text-ink-1 transition-colors"
       >
         ← Back to Projects
       </Link>

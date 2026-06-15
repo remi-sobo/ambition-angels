@@ -9,7 +9,7 @@ export default function FinanceLayout({ children }: { children: ReactNode }) {
   return (
     <div>
       <div
-        className="sticky admin-sticky-top z-30 bg-ink/95 backdrop-blur-sm border-b border-white/5"
+        className="sticky admin-sticky-top z-30 bg-ink/95 backdrop-blur-sm border-b border-hairline"
       >
         <div className="max-w-7xl px-4 lg:px-8 py-3 flex items-center justify-between gap-3 flex-wrap">
           <span className="text-[10px] uppercase tracking-[0.25em] text-orange/80">

@@ -25,7 +25,7 @@ export default function SectionHeading({
 }) {
   return (
     <Tag
-      className={`text-[11px] font-semibold uppercase tracking-wider text-cream/70${
+      className={`text-[11px] font-semibold uppercase tracking-wider text-ink-2${
         className ? ` ${className}` : ""
       }`}
     >

@@ -99,7 +99,7 @@ export default async function MajorGiftsPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/admin/fundraising/prospects"
-              className="text-xs font-semibold text-cream/70 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition-colors"
+              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
             >
               Prospect research →
             </Link>
@@ -135,13 +135,13 @@ export default async function MajorGiftsPage() {
           return (
             <section
               key={stage}
-              className="bg-white/[0.03] border border-white/10 rounded-card p-3 min-h-[120px]"
+              className="bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-3 min-h-[120px]"
             >
               <header className="flex items-baseline justify-between px-1 mb-3">
                 <SectionHeading>
                   {STAGE_LABELS[stage]}
                 </SectionHeading>
-                <span className="text-[11px] text-gray-mid tabular-nums">
+                <span className="text-[11px] text-ink-2 tabular-nums">
                   {col.length} · {money(colValue)}
                 </span>
               </header>
@@ -151,7 +151,7 @@ export default async function MajorGiftsPage() {
                 ))}
                 {col.length > 12 && (
                   <details>
-                    <summary className="text-xs text-gray-mid cursor-pointer hover:text-cream/70 px-1 py-1">
+                    <summary className="text-xs text-ink-2 cursor-pointer hover:text-ink-2 px-1 py-1">
                       Show {col.length - 12} more
                     </summary>
                     <div className="space-y-2 mt-2">
@@ -162,7 +162,7 @@ export default async function MajorGiftsPage() {
                   </details>
                 )}
                 {col.length === 0 && (
-                  <p className="text-xs text-gray-mid/60 px-1 pb-1">Empty</p>
+                  <p className="text-xs text-ink-2/60 px-1 pb-1">Empty</p>
                 )}
               </div>
             </section>
@@ -172,7 +172,7 @@ export default async function MajorGiftsPage() {
 
       {opps.some((o) => o.stage === "lost") && (
         <details className="mt-6">
-          <summary className="text-xs text-gray-mid cursor-pointer hover:text-cream/70">
+          <summary className="text-xs text-ink-2 cursor-pointer hover:text-ink-2">
             Lost ({opps.filter((o) => o.stage === "lost").length})
           </summary>
           <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-3">

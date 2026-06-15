@@ -57,10 +57,10 @@ export default async function KpisPage() {
     });
 
   const RAG: Record<string, string> = {
-    green: "bg-green-500/15 text-green-400",
-    amber: "bg-amber-500/15 text-amber-400",
-    red: "bg-red-500/15 text-red-400",
-    none: "bg-white/5 text-gray-mid",
+    green: "bg-revenue-bg text-revenue",
+    amber: "bg-[#F4E8D0] text-[#A56A1B]",
+    red: "bg-expense-bg text-expense",
+    none: "bg-tile text-ink-2",
   };
 
   return (
@@ -74,20 +74,20 @@ export default async function KpisPage() {
         {rows.map(({ k, target, owner, rag, trend, trendGood, prev }) => (
           <article
             key={k.key}
-            className="bg-[#1d1812] border border-white/10 rounded-xl p-3 flex flex-wrap items-center gap-3"
+            className="bg-[#1d1812] border-[1.5px] border-outline rounded-xl p-3 flex flex-wrap items-center gap-3"
           >
             <div className="min-w-0 flex-1">
-              <div className="font-semibold text-cream text-sm">{k.label}</div>
-              {k.hint && <div className="text-[11px] text-gray-mid">{k.hint}</div>}
+              <div className="font-semibold text-ink-1 text-sm">{k.label}</div>
+              {k.hint && <div className="text-[11px] text-ink-2">{k.hint}</div>}
             </div>
             <div className="text-right">
-              <div className="text-lg font-bold text-cream tabular-nums">
+              <div className="text-lg font-bold text-ink-1 tabular-nums">
                 {formatKpi(k, k.value)}
               </div>
               {prev != null && trend !== "flat" && (
                 <div
                   className={`text-[11px] tabular-nums ${
-                    trendGood ? "text-green-400" : "text-red-300"
+                    trendGood ? "text-revenue" : "text-expense"
                   }`}
                 >
                   {trend === "up" ? "↑" : "↓"} from {formatKpi(k, prev)}

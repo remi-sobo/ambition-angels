@@ -20,9 +20,32 @@ const config: Config = {
           light: "rgb(var(--c-orange-light) / <alpha-value>)",
           mid: "rgb(var(--c-orange-mid) / <alpha-value>)",
         },
-        ink: "rgb(var(--c-ink) / <alpha-value>)",
+        ink: {
+          DEFAULT: "rgb(var(--c-ink) / <alpha-value>)",
+          // Text-on-cream ramp for the BloomOS admin (cream workspace).
+          // Plain hexes — admin-only, never consumed by the public site.
+          1: "#2A201A", // primary ink
+          2: "#6B5C4E", // secondary
+          3: "#9A8B7C", // tertiary / uppercase labels
+        },
         // Raised-surface dark for cards on ink backgrounds (public site).
         "ink-soft": "#1A1A1A",
+        // ── BloomOS admin cream-workspace surfaces / data (admin-only) ──────
+        // Cream-tuned, fixed values. Only referenced inside app/admin/*, so
+        // they never bleed into the public Ambition Angels brand.
+        app: "#F5EFE2", // cream workspace background
+        surface: "#FFFDF8", // card / panel surface
+        tile: "#FBF6EC", // recessed tile (stat cards, inputs)
+        hairline: "#E7DCC9", // internal dividers, chart axes, progress tracks
+        outline: "#C7B18C", // stronger card outline
+        revenue: {
+          DEFAULT: "#2F7D5B", // revenue green (deepened for cream)
+          bg: "#E2EFE5", // pale revenue background
+        },
+        expense: {
+          DEFAULT: "#B5482F", // expense / overdue red (deepened for cream)
+          bg: "#F6E3DC", // pale expense background
+        },
         // BloomOS product chrome (docs/bloomos/06-design-system.md §2).
         navy: {
           DEFAULT: "rgb(var(--c-navy) / <alpha-value>)",
@@ -46,6 +69,11 @@ const config: Config = {
       borderRadius: {
         card: "1.25rem",
         "card-lg": "1.75rem",
+      },
+      boxShadow: {
+        // BloomOS admin cream-workspace elevation (admin-only).
+        panel: "0 1px 3px rgba(60,40,20,.06)",
+        tile: "0 1px 2px rgba(60,40,20,.05)",
       },
     },
   },

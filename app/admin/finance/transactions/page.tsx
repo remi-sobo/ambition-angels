@@ -115,12 +115,12 @@ export default async function TransactionsPage({
     <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8">
       <header className="flex items-baseline justify-between gap-4 mb-6 flex-wrap">
         <div>
-          <div className="flex items-center gap-3 text-xs text-gray-mid mb-1">
-            <Link href="/admin/finance" className="hover:text-cream">
+          <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
+            <Link href="/admin/finance" className="hover:text-ink-1">
               ← Finance
             </Link>
           </div>
-          <h1 className="font-display font-black uppercase tracking-tight text-cream text-3xl sm:text-4xl leading-none">
+          <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
             Transactions
           </h1>
         </div>
@@ -128,14 +128,14 @@ export default async function TransactionsPage({
           {uncategorizedCount && uncategorizedCount > 0 ? (
             <Link
               href="/admin/finance/transactions?category=uncategorized"
-              className="rounded-full border border-amber-400/40 bg-amber-500/10 text-amber-200 px-3 py-1 hover:bg-amber-500/20"
+              className="rounded-full border border-[#D9BE86] bg-[#F4E8D0] text-amber-200 px-3 py-1 hover:bg-[#F4E8D0]"
             >
               {uncategorizedCount} uncategorized →
             </Link>
           ) : null}
           <Link
             href="/admin/finance/upload"
-            className="rounded-full bg-orange hover:bg-orange-dark text-cream px-3 py-1"
+            className="rounded-full bg-orange hover:bg-orange-dark text-white px-3 py-1"
           >
             + Import CSV
           </Link>
@@ -144,10 +144,10 @@ export default async function TransactionsPage({
 
       <TransactionFilters categories={categories} />
 
-      <div className="rounded-card-lg border border-white/10 bg-white/[0.02] overflow-hidden">
+      <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead className="bg-white/[0.03] text-gray-mid uppercase tracking-wider">
+            <thead className="bg-surface shadow-panel text-ink-2 uppercase tracking-wider">
               <tr>
                 <th className="text-left px-3 py-2.5 w-[6.5rem]">Date</th>
                 <th className="text-left px-3 py-2.5">Description</th>
@@ -159,7 +159,7 @@ export default async function TransactionsPage({
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-10 text-center text-gray-mid">
+                  <td colSpan={5} className="px-3 py-10 text-center text-ink-2">
                     {total === 0
                       ? "No transactions yet — upload a CSV to get started."
                       : "No transactions match these filters."}
@@ -169,23 +169,23 @@ export default async function TransactionsPage({
               {rows.map((r) => {
                 const cat = r.category_id ? catById.get(r.category_id) : null;
                 return (
-                  <tr key={r.id} className="border-t border-white/5 hover:bg-white/[0.015]">
-                    <td className="px-3 py-2 font-mono text-cream/90 align-top">
+                  <tr key={r.id} className="border-t border-hairline hover:bg-[#EFE6D4]">
+                    <td className="px-3 py-2 font-mono text-ink-1 align-top">
                       {r.txn_date}
                     </td>
-                    <td className="px-3 py-2 text-cream/85 max-w-md align-top">
+                    <td className="px-3 py-2 text-ink-1 max-w-md align-top">
                       <div className="truncate" title={r.description}>
                         {r.description}
                       </div>
                       {r.source_file && (
-                        <div className="text-[10px] text-gray-mid mt-0.5 truncate">
+                        <div className="text-[10px] text-ink-2 mt-0.5 truncate">
                           {r.source_file}
                         </div>
                       )}
                     </td>
                     <td
                       className={`px-3 py-2 text-right font-mono align-top ${
-                        r.amount >= 0 ? "text-emerald-300" : "text-cream/85"
+                        r.amount >= 0 ? "text-revenue" : "text-ink-1"
                       }`}
                     >
                       {fmtMoney(r.amount)}
@@ -197,7 +197,7 @@ export default async function TransactionsPage({
                         categories={categories}
                       />
                       {cat?.functional_class && (
-                        <div className="text-[10px] text-gray-mid mt-1 uppercase tracking-wider">
+                        <div className="text-[10px] text-ink-2 mt-1 uppercase tracking-wider">
                           {cat.functional_class}
                         </div>
                       )}
@@ -224,12 +224,12 @@ export default async function TransactionsPage({
       {totalPages > 1 && (
         <nav
           aria-label="Pagination"
-          className="mt-4 flex items-center justify-between text-xs text-gray-mid"
+          className="mt-4 flex items-center justify-between text-xs text-ink-2"
         >
           <div>
-            Page <span className="text-cream">{safePage}</span> of{" "}
-            <span className="text-cream">{totalPages}</span> ·{" "}
-            <span className="text-cream">{total.toLocaleString()}</span> total
+            Page <span className="text-ink-1">{safePage}</span> of{" "}
+            <span className="text-ink-1">{totalPages}</span> ·{" "}
+            <span className="text-ink-1">{total.toLocaleString()}</span> total
           </div>
           <div className="flex gap-2">
             <PageLink
@@ -264,7 +264,7 @@ function PageLink({
 }) {
   if (disabled) {
     return (
-      <span className="px-3 py-1.5 rounded-lg border border-white/5 text-gray-mid/40 cursor-default">
+      <span className="px-3 py-1.5 rounded-lg border border-hairline text-ink-2/40 cursor-default">
         {label}
       </span>
     );
@@ -278,7 +278,7 @@ function PageLink({
   return (
     <Link
       href={s ? `/admin/finance/transactions?${s}` : "/admin/finance/transactions"}
-      className="px-3 py-1.5 rounded-lg border border-white/10 text-cream/80 hover:text-cream hover:bg-white/5"
+      className="px-3 py-1.5 rounded-lg border-[1.5px] border-outline text-ink-1 hover:text-ink-1 hover:bg-[#EFE6D4]"
     >
       {label}
     </Link>

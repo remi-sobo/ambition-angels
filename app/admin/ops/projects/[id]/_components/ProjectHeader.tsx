@@ -76,7 +76,7 @@ export default function ProjectHeader({ project }: { project: OpsProject }) {
   }
 
   return (
-    <section className="rounded-card border border-white/10 bg-black/30 p-6">
+    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
       <div className="flex items-start justify-between gap-3 mb-4">
         {titleEditing ? (
           <input
@@ -91,7 +91,7 @@ export default function ProjectHeader({ project }: { project: OpsProject }) {
                 setTitleEditing(false);
               }
             }}
-            className="font-display font-black uppercase tracking-tight text-cream text-2xl sm:text-3xl bg-white/5 border border-orange/40 rounded-lg px-3 py-1 focus:outline-none flex-1 min-w-0"
+            className="font-display font-black uppercase tracking-tight text-ink-1 text-2xl sm:text-3xl bg-tile border border-orange/40 rounded-lg px-3 py-1 focus:outline-none flex-1 min-w-0"
           />
         ) : (
           <h1
@@ -99,7 +99,7 @@ export default function ProjectHeader({ project }: { project: OpsProject }) {
               setTitleDraft(project.title);
               setTitleEditing(true);
             }}
-            className="font-display font-black uppercase tracking-tight text-cream text-2xl sm:text-3xl leading-tight cursor-pointer hover:text-orange transition-colors flex-1 min-w-0"
+            className="font-display font-black uppercase tracking-tight text-ink-1 text-2xl sm:text-3xl leading-tight cursor-pointer hover:text-orange transition-colors flex-1 min-w-0"
             title="Click to edit"
           >
             {project.title}
@@ -108,7 +108,7 @@ export default function ProjectHeader({ project }: { project: OpsProject }) {
         <button
           onClick={deleteProject}
           disabled={busy}
-          className="shrink-0 text-xs text-red-300 hover:text-red-200 border border-red-500/30 hover:border-red-500/50 bg-red-500/10 px-3 py-1.5 rounded-lg"
+          className="shrink-0 text-xs text-expense hover:text-expense border border-expense/30 hover:border-expense/30 bg-expense-bg px-3 py-1.5 rounded-lg"
         >
           Delete
         </button>
@@ -120,10 +120,10 @@ export default function ProjectHeader({ project }: { project: OpsProject }) {
             value={project.category}
             onChange={(e) => patch({ category: e.target.value })}
             disabled={busy}
-            className={`w-full bg-white/5 border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-orange/50 ${categoryBadgeClass(project.category)}`}
+            className={`w-full bg-tile border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-orange/50 ${categoryBadgeClass(project.category)}`}
           >
             {CATEGORIES.map((c) => (
-              <option key={c} value={c} className="bg-ink text-cream">
+              <option key={c} value={c} className="bg-ink text-ink-1">
                 {categoryLabel(c)}
               </option>
             ))}
@@ -135,10 +135,10 @@ export default function ProjectHeader({ project }: { project: OpsProject }) {
             value={project.status}
             onChange={(e) => patch({ status: e.target.value })}
             disabled={busy}
-            className={`w-full bg-white/5 border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-orange/50 ${projectStatusBadgeClass(project.status)}`}
+            className={`w-full bg-tile border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-orange/50 ${projectStatusBadgeClass(project.status)}`}
           >
             {PROJECT_STATUSES.map((s) => (
-              <option key={s} value={s} className="bg-ink text-cream">
+              <option key={s} value={s} className="bg-ink text-ink-1">
                 {s}
               </option>
             ))}
@@ -150,7 +150,7 @@ export default function ProjectHeader({ project }: { project: OpsProject }) {
             value={project.assigned_to ?? ""}
             onChange={(e) => patch({ assigned_to: e.target.value || null })}
             disabled={busy}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-cream focus:outline-none focus:border-orange/50"
+            className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-sm text-ink-1 focus:outline-none focus:border-orange/50"
           >
             <option value="">Unassigned</option>
             <option value="remi">Remi</option>
@@ -164,12 +164,12 @@ export default function ProjectHeader({ project }: { project: OpsProject }) {
             value={project.due_date ?? ""}
             onChange={(e) => patch({ due_date: e.target.value || null })}
             disabled={busy}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-cream focus:outline-none focus:border-orange/50"
+            className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-sm text-ink-1 focus:outline-none focus:border-orange/50"
           />
         </FieldGroup>
 
         <FieldGroup label="Created">
-          <div className="text-sm text-cream/80 py-1.5">
+          <div className="text-sm text-ink-1 py-1.5">
             {new Date(project.created_at).toLocaleDateString("en-US", {
               year: "numeric",
               month: "short",
@@ -180,7 +180,7 @@ export default function ProjectHeader({ project }: { project: OpsProject }) {
         </FieldGroup>
 
         <FieldGroup label="Last touched">
-          <div className="text-sm text-cream/80 py-1.5">
+          <div className="text-sm text-ink-1 py-1.5">
             {new Date(project.last_touched_at).toLocaleString("en-US", {
               month: "short",
               day: "numeric",
@@ -197,7 +197,7 @@ export default function ProjectHeader({ project }: { project: OpsProject }) {
 function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-gray-mid mb-1">
+      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">
         {label}
       </div>
       {children}

@@ -84,13 +84,13 @@ export function isAdminUserId(v: unknown): v is AdminUserId {
 
 const CATEGORY_BADGE_STYLES: Record<Category, string> = {
   fundraising: "bg-orange/15 text-orange border-orange/30",
-  admin: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
-  board: "bg-purple-500/15 text-purple-300 border-purple-500/30",
-  recruitment: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30",
-  program: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  finance: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  compliance: "bg-rose-500/15 text-rose-300 border-rose-500/30",
-  other: "bg-white/5 text-cream/70 border-white/10",
+  admin: "bg-zinc-500/15 text-zinc-700 border-zinc-500/30",
+  board: "bg-purple-500/15 text-purple-700 border-purple-500/30",
+  recruitment: "bg-cyan-500/15 text-cyan-700 border-cyan-500/30",
+  program: "bg-revenue-bg text-revenue border-revenue/30",
+  finance: "bg-[#F4E8D0] text-[#A56A1B] border-[#D9BE86]",
+  compliance: "bg-rose-500/15 text-rose-700 border-rose-500/30",
+  other: "bg-tile text-ink-2 border-outline",
 };
 
 export function categoryBadgeClass(c: Category | string): string {
@@ -99,10 +99,10 @@ export function categoryBadgeClass(c: Category | string): string {
 }
 
 const TASK_STATUS_BADGE_STYLES: Record<TaskStatus, string> = {
-  todo: "bg-white/5 text-cream/70 border-white/10",
-  in_progress: "bg-blue-500/15 text-blue-300 border-blue-500/30",
-  done: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  blocked: "bg-red-500/15 text-red-300 border-red-500/30",
+  todo: "bg-tile text-ink-2 border-outline",
+  in_progress: "bg-blue-500/15 text-blue-700 border-blue-500/30",
+  done: "bg-revenue-bg text-revenue border-revenue/30",
+  blocked: "bg-expense-bg text-expense border-expense/30",
 };
 
 export function taskStatusBadgeClass(s: TaskStatus | string): string {
@@ -111,9 +111,9 @@ export function taskStatusBadgeClass(s: TaskStatus | string): string {
 }
 
 const PROJECT_STATUS_BADGE_STYLES: Record<ProjectStatus, string> = {
-  active: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  paused: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  done: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+  active: "bg-revenue-bg text-revenue border-revenue/30",
+  paused: "bg-[#F4E8D0] text-[#A56A1B] border-[#D9BE86]",
+  done: "bg-blue-500/15 text-blue-700 border-blue-500/30",
   archived: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
 };
 

@@ -81,10 +81,10 @@ export default function TaskRow({
     <div
       className={`group flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${
         isDone
-          ? "border-white/5 bg-white/[0.02] text-cream/50"
+          ? "border-hairline bg-surface shadow-panel text-ink-3"
           : isBlocked
-          ? "border-red-500/20 bg-red-500/[0.04] hover:bg-red-500/[0.07]"
-          : "border-white/10 bg-white/[0.02] hover:bg-white/[0.05]"
+          ? "border-expense/30 bg-expense-bg hover:bg-expense-bg"
+          : "border-outline bg-surface shadow-panel hover:bg-[#EFE6D4]"
       }`}
     >
       <button
@@ -93,8 +93,8 @@ export default function TaskRow({
         aria-label={isDone ? "Mark as not done" : "Mark as done"}
         className={`shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
           isDone
-            ? "bg-emerald-500/30 border-emerald-500/50 text-emerald-200"
-            : "border-white/20 hover:border-orange/60"
+            ? "bg-revenue-bg border-revenue/30 text-revenue"
+            : "border-outline hover:border-orange/60"
         }`}
       >
         {isDone && (
@@ -110,8 +110,8 @@ export default function TaskRow({
           onClick={() => setEditOpen(true)}
           className={`text-sm text-left truncate min-w-[120px] transition-colors ${
             isDone
-              ? "line-through text-cream/40 hover:text-cream/60"
-              : "text-cream hover:text-orange"
+              ? "line-through text-ink-3 hover:text-ink-2"
+              : "text-ink-1 hover:text-orange"
           }`}
           title="Click to edit"
         >
@@ -124,10 +124,10 @@ export default function TaskRow({
         </span>
         {task.assigned_to && (
           <span
-            className="inline-flex items-center gap-1 text-[11px] text-cream/60"
+            className="inline-flex items-center gap-1 text-[11px] text-ink-2"
             title={`Assigned to ${task.assigned_to}`}
           >
-            <span className="inline-flex w-4 h-4 rounded-full bg-white/10 text-cream/80 items-center justify-center text-[9px] font-bold uppercase">
+            <span className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[9px] font-bold uppercase">
               {task.assigned_to.charAt(0)}
             </span>
           </span>
@@ -141,14 +141,14 @@ export default function TaskRow({
           </Link>
         )}
         {isBlocked && (
-          <span className="text-[10px] uppercase tracking-wider text-red-300 font-semibold">
+          <span className="text-[10px] uppercase tracking-wider text-expense font-semibold">
             blocked
           </span>
         )}
       </div>
 
       {task.due_date && (
-        <span className="shrink-0 text-xs text-cream/60 font-mono">
+        <span className="shrink-0 text-xs text-ink-2 font-mono">
           {formatDueLabel(task.due_date)}
         </span>
       )}
@@ -158,13 +158,13 @@ export default function TaskRow({
           onClick={() => setShowMenu((v) => !v)}
           disabled={busy}
           aria-label="Task actions"
-          className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded hover:bg-white/10 text-cream/60 hover:text-cream flex items-center justify-center"
+          className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded hover:bg-[#EFE6D4] text-ink-2 hover:text-ink-1 flex items-center justify-center"
         >
           ⋯
         </button>
         {showMenu && (
           <div
-            className="absolute right-0 top-7 z-20 w-48 rounded-lg border border-white/10 bg-ink shadow-xl py-1 text-xs"
+            className="absolute right-0 top-7 z-20 w-48 rounded-lg border-[1.5px] border-outline bg-ink shadow-xl py-1 text-xs"
             onMouseLeave={() => setShowMenu(false)}
           >
             <ActionItem
@@ -187,7 +187,7 @@ export default function TaskRow({
               }
               label={isBlocked ? "Unblock" : "Mark blocked"}
             />
-            <div className="border-t border-white/10 my-1" />
+            <div className="border-t border-outline my-1" />
             <ActionItem onClick={deleteTask} label="Delete" danger />
           </div>
         )}
@@ -212,8 +212,8 @@ function ActionItem({
   return (
     <button
       onClick={onClick}
-      className={`block w-full text-left px-3 py-1.5 hover:bg-white/5 ${
-        danger ? "text-red-300 hover:text-red-200" : "text-cream/80 hover:text-cream"
+      className={`block w-full text-left px-3 py-1.5 hover:bg-[#EFE6D4] ${
+        danger ? "text-expense hover:text-expense" : "text-ink-1 hover:text-ink-1"
       }`}
     >
       {label}

@@ -41,22 +41,28 @@
   }
 
   /* ── BloomOS (admin) theme ─────────────────────────────────────────────
-     Warm, earthy palette pulled from the BloomOS logo (sage / terracotta /
-     charcoal / cream), scoped to the admin shell so the public marketing
-     site is untouched. Re-points the var-backed color tokens and swaps the
-     display/heading face to Space Grotesk. */
+     Cream-light workspace with a near-espresso brown sidebar, scoped to the
+     admin shell so the public marketing site is untouched. Re-points the
+     var-backed color tokens and swaps the display/heading face to Space
+     Grotesk. Surfaces / data colors live as fixed tokens in tailwind.config
+     (app / surface / tile / hairline / outline / revenue / expense).
+
+     `--c-ink` becomes the cream workspace, so every `bg-ink` (app shell, form
+     inputs, dropdowns, modals, sticky headers) flips to cream in one move.
+     `--c-cream` stays light: only the espresso sidebar still relies on it for
+     its light text, and the sidebar is left dark on purpose. */
   .admin-shell {
-    --c-orange: 192 118 78; /* terracotta — primary CTA / accent */
-    --c-orange-dark: 158 91 56;
+    --c-orange: 192 112 60; /* terracotta accent — #C0703C, deepened for cream */
+    --c-orange-dark: 168 94 48; /* terracotta link / hover — #A85E30 */
     --c-orange-light: 243 230 221;
     --c-orange-mid: 206 144 112;
-    --c-ink: 23 20 15; /* warm near-black app background */
-    --c-cream: 240 239 226; /* warm cream text */
-    --c-navy: 38 32 25; /* espresso chrome (sidebar / top bar) */
-    --c-navy-light: 48 41 32;
+    --c-ink: 245 239 226; /* cream workspace background — #F5EFE2 */
+    --c-cream: 240 239 226; /* light text — used only by the dark sidebar */
+    --c-navy: 35 22 13; /* espresso sidebar / top bar — #23160D */
+    --c-navy-light: 50 36 26; /* sidebar hover / raised — #32241A */
 
     /* Globals' focus ring + ::selection read this hex var. */
-    --orange: #c0764e;
+    --orange: #c0703c;
 
     /* BloomOS display/heading voice. Body stays DM Sans. */
     --font-display: var(--font-grotesk);

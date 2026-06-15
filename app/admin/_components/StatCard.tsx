@@ -24,18 +24,18 @@ export default function StatCard({
 }) {
   const deltaColor =
     delta?.direction === "up"
-      ? "text-green-400 bg-green-500/10 border-green-500/20"
+      ? "text-revenue bg-revenue-bg border-revenue/30"
       : delta?.direction === "down"
-      ? "text-red-400 bg-red-500/10 border-red-500/20"
-      : "text-gray-mid bg-white/5 border-white/10";
+      ? "text-expense bg-expense-bg border-expense/30"
+      : "text-ink-2 bg-tile border-outline";
   return (
-    <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-5 min-w-0">
-      <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-white/35 mb-2 truncate">
+    <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 min-w-0">
+      <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-2 truncate">
         {label}
       </div>
       <div
         className={`font-heading font-semibold text-[28px] leading-none tracking-tight [font-variant-numeric:tabular-nums] ${
-          muted ? "text-white/30" : "text-cream"
+          muted ? "text-ink-3" : "text-ink-1"
         }`}
       >
         {value}
@@ -49,7 +49,7 @@ export default function StatCard({
             {delta.text}
           </span>
         )}
-        {sub && <span className="text-xs text-gray-mid truncate">{sub}</span>}
+        {sub && <span className="text-xs text-ink-2 truncate">{sub}</span>}
       </div>
       {spark && spark.length > 1 && (
         <div className="mt-3">

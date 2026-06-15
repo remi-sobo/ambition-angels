@@ -34,7 +34,7 @@ export type BoardMeeting = {
 };
 
 const inputCls =
-  "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/40";
+  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const ROLE_LABELS: Record<string, string> = {
   chair: "Chair",
@@ -98,22 +98,22 @@ export function MemberRow({
 
   return (
     <article
-      className={`bg-[#1d1812] border border-white/10 rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
+      className={`bg-[#1d1812] border-[1.5px] border-outline rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-semibold text-cream">{member.name}</span>
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/10 text-gray-mid uppercase tracking-wider">
+        <span className="font-semibold text-ink-1">{member.name}</span>
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
           {ROLE_LABELS[member.officer_role] ?? member.officer_role}
         </span>
         {member.status !== "active" && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-gray-mid">
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-tile text-ink-2">
             {member.status}
           </span>
         )}
         {member.term_end && (
           <span
             className={`text-[11px] tabular-nums ${
-              termPast ? "text-red-300 font-semibold" : termSoon ? "text-amber-400" : "text-gray-mid"
+              termPast ? "text-expense font-semibold" : termSoon ? "text-[#A56A1B]" : "text-ink-2"
             }`}
             title={`Term ${member.term_number}`}
           >
@@ -123,13 +123,13 @@ export function MemberRow({
         )}
         <span className="ml-auto flex items-center gap-2 text-[11px]">
           <span
-            className={coiCurrent ? "text-green-400" : "text-red-300"}
+            className={coiCurrent ? "text-revenue" : "text-expense"}
             title={member.coi_signed_at ? `COI signed ${member.coi_signed_at}` : "No COI on file"}
           >
             COI {coiCurrent ? "✓" : "✗"}
           </span>
           <span
-            className={gaveThisYear ? "text-green-400" : "text-gray-mid"}
+            className={gaveThisYear ? "text-revenue" : "text-ink-2"}
             title={
               member.constituent_id
                 ? gaveThisYear
@@ -154,7 +154,7 @@ export function MemberRow({
         )}
         <button
           onClick={() => setEditing((v) => !v)}
-          className="px-2 py-1 rounded-md text-[11px] bg-white/5 hover:bg-white/10 text-cream/70"
+          className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
         >
           Edit
         </button>
@@ -162,7 +162,7 @@ export function MemberRow({
           <button
             onClick={() => patch({ status: "past" })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] text-gray-mid hover:text-cream"
+            className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
           >
             Mark past
           </button>
@@ -170,7 +170,7 @@ export function MemberRow({
           <button
             onClick={() => patch({ status: "active" })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] text-gray-mid hover:text-cream"
+            className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
           >
             Reactivate
           </button>
@@ -178,14 +178,14 @@ export function MemberRow({
         <button
           onClick={() => void remove()}
           disabled={busy}
-          className="ml-auto px-2 py-1 rounded-md text-[11px] text-gray-mid hover:text-red-300"
+          className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
         >
           Remove
         </button>
       </div>
       {editing && (
-        <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-end gap-3">
-          <label className="text-[10px] text-gray-mid">
+        <div className="mt-3 pt-3 border-t border-outline flex flex-wrap items-end gap-3">
+          <label className="text-[10px] text-ink-2">
             Officer role
             <select
               className={`${inputCls} block mt-0.5 !py-1 !text-xs`}
@@ -197,7 +197,7 @@ export function MemberRow({
               ))}
             </select>
           </label>
-          <label className="text-[10px] text-gray-mid">
+          <label className="text-[10px] text-ink-2">
             Term ends
             <input
               className={`${inputCls} block mt-0.5 !py-1 !text-xs`}
@@ -274,19 +274,19 @@ export function NewMemberForm() {
   return (
     <form
       onSubmit={submit}
-      className="w-full bg-white/[0.03] border border-white/10 rounded-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
+      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
     >
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Name
         <input className={`${inputCls} w-full mt-1`} value={name} required autoFocus
           onChange={(e) => setName(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Email
         <input className={`${inputCls} w-full mt-1`} type="email" value={email}
           placeholder="links giving automatically" onChange={(e) => setEmail(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Role
         <select className={`${inputCls} w-full mt-1`} value={role} onChange={(e) => setRole(e.target.value)}>
           {Object.entries(ROLE_LABELS).map(([k, v]) => (
@@ -294,7 +294,7 @@ export function NewMemberForm() {
           ))}
         </select>
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Term ends
         <input className={`${inputCls} w-full mt-1`} type="date" value={termEnd}
           onChange={(e) => setTermEnd(e.target.value)} />
@@ -305,11 +305,11 @@ export function NewMemberForm() {
           {busy ? "Saving…" : "Add"}
         </button>
         <button type="button" onClick={() => setOpen(false)}
-          className="text-xs text-gray-mid hover:text-cream px-2">
+          className="text-xs text-ink-2 hover:text-ink-1 px-2">
           Cancel
         </button>
       </div>
-      {error && <p className="col-span-full text-red-400 text-xs">{error}</p>}
+      {error && <p className="col-span-full text-expense text-xs">{error}</p>}
     </form>
   );
 }
@@ -402,23 +402,23 @@ export function MeetingCard({
   };
 
   return (
-    <article className={`bg-[#1d1812] border border-white/10 rounded-xl p-4 text-sm ${busy ? "opacity-60" : ""}`}>
+    <article className={`bg-[#1d1812] border-[1.5px] border-outline rounded-xl p-4 text-sm ${busy ? "opacity-60" : ""}`}>
       <button className="w-full flex flex-wrap items-center gap-2 text-left" onClick={() => setOpen((v) => !v)}>
-        <span className="font-semibold text-cream">{meeting.title}</span>
-        <span className="text-[12px] text-gray-mid tabular-nums">{meeting.meeting_date}</span>
+        <span className="font-semibold text-ink-1">{meeting.title}</span>
+        <span className="text-[12px] text-ink-2 tabular-nums">{meeting.meeting_date}</span>
         <span
           className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-            approved ? "bg-green-500/15 text-green-400" : "bg-amber-500/15 text-amber-400"
+            approved ? "bg-revenue-bg text-revenue" : "bg-[#F4E8D0] text-[#A56A1B]"
           }`}
         >
           {approved ? "Minutes approved" : "Draft"}
         </span>
         {meeting.attendance.length > 0 && (
-          <span className={`text-[11px] ${quorum ? "text-green-400" : "text-red-300"}`}>
+          <span className={`text-[11px] ${quorum ? "text-revenue" : "text-expense"}`}>
             {presentCount}/{members.length} present · quorum {quorum ? "met" : "NOT met"}
           </span>
         )}
-        <span className="ml-auto text-gray-mid text-xs">{open ? "▲" : "▼"}</span>
+        <span className="ml-auto text-ink-2 text-xs">{open ? "▲" : "▼"}</span>
       </button>
 
       {open && (
@@ -429,17 +429,17 @@ export function MeetingCard({
             </SectionHeading>
             <ol className="space-y-1">
               {meeting.agenda.map((a, i) => (
-                <li key={i} className="text-[13px] text-cream/85">
+                <li key={i} className="text-[13px] text-ink-1">
                   {i + 1}. {a.title}
                   {a.kind === "consent" && (
-                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-gray-mid">
+                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-tile text-ink-2">
                       consent block
                     </span>
                   )}
                 </li>
               ))}
               {meeting.agenda.length === 0 && (
-                <li className="text-[12px] text-gray-mid">No items yet.</li>
+                <li className="text-[12px] text-ink-2">No items yet.</li>
               )}
             </ol>
             {!approved && (
@@ -454,12 +454,12 @@ export function MeetingCard({
                   }}
                 />
                 <button onClick={() => addAgendaItem("normal")}
-                  className="text-[11px] bg-white/5 hover:bg-white/10 text-cream/70 px-3 rounded-lg">
+                  className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 rounded-lg">
                   Add
                 </button>
                 <button onClick={() => addAgendaItem("consent")}
                   title="Routine approvals bundled into one motion"
-                  className="text-[11px] bg-white/5 hover:bg-white/10 text-cream/70 px-3 rounded-lg">
+                  className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 rounded-lg">
                   Add to consent
                 </button>
               </div>
@@ -480,8 +480,8 @@ export function MeetingCard({
                     onClick={() => toggleAttendance(m.id)}
                     className={`text-[11px] px-3 py-1 rounded-full border transition-colors ${
                       present
-                        ? "bg-green-500/15 text-green-400 border-green-500/30"
-                        : "bg-white/5 text-gray-mid border-white/10 hover:text-cream"
+                        ? "bg-revenue-bg text-revenue border-revenue/30"
+                        : "bg-tile text-ink-2 border-outline hover:text-ink-1"
                     }`}
                   >
                     {m.name.split(" ")[0]} {present ? "✓" : ""}
@@ -496,7 +496,7 @@ export function MeetingCard({
               Minutes
             </SectionHeading>
             {approved ? (
-              <p className="text-[13px] text-cream/85 whitespace-pre-wrap border border-white/10 rounded-lg p-3 bg-white/[0.02]">
+              <p className="text-[13px] text-ink-1 whitespace-pre-wrap border-[1.5px] border-outline rounded-lg p-3 bg-surface shadow-panel">
                 {meeting.minutes ?? "—"}
               </p>
             ) : (
@@ -511,7 +511,7 @@ export function MeetingCard({
                   <button
                     onClick={() => void patch({ minutes })}
                     disabled={busy}
-                    className="text-[11px] bg-white/5 hover:bg-white/10 text-cream/70 px-3 py-1.5 rounded-lg"
+                    className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 py-1.5 rounded-lg"
                   >
                     Save draft
                   </button>

@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#262019",
+  themeColor: "#23160D",
   width: "device-width",
   initialScale: 1,
   // viewport-fit=cover lets us reach into the iOS safe-area insets so the
@@ -53,7 +53,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // The floating QuickAddButton is still gated on authed since its
   // actions all require a valid session.
   return (
-    <div className="admin-shell min-h-screen lg:flex bg-ink text-cream">
+    <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
       <AdminPWA />
       <Sidebar currentUser={user} />
       <main className="admin-main flex-1 min-w-0 overflow-y-auto">{children}</main>

@@ -228,7 +228,7 @@ const PAGE_SIZE = 25;
 // ── Skeleton ───────────────────────────────────────────────────────────────
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-white/10 rounded-lg ${className}`} />;
+  return <div className={`animate-pulse bg-tile rounded-lg ${className}`} />;
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────
@@ -452,13 +452,13 @@ export default function AdminPage() {
           backgroundSize: "22px 22px",
         }}
       >
-        <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
-          <div className="font-display font-black text-3xl text-cream mb-1 tracking-tight uppercase">BloomOS</div>
-          <div className="text-gray-mid text-sm mb-8">Operating System for Ambition Angels</div>
+        <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
+          <div className="font-display font-black text-3xl text-ink-1 mb-1 tracking-tight uppercase">BloomOS</div>
+          <div className="text-ink-2 text-sm mb-8">Operating System for Ambition Angels</div>
           {magicSent ? (
-            <div className="text-cream/80 text-sm leading-relaxed">
+            <div className="text-ink-1 text-sm leading-relaxed">
               Check your email — we sent a one-time sign-in link to{" "}
-              <span className="text-cream font-semibold">{email}</span>.
+              <span className="text-ink-1 font-semibold">{email}</span>.
             </div>
           ) : (
             <form onSubmit={handleLogin} className="flex flex-col gap-4">
@@ -468,7 +468,7 @@ export default function AdminPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email"
                 autoComplete="email"
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/50"
+                className="bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50"
                 autoFocus
               />
               <input
@@ -477,9 +477,9 @@ export default function AdminPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
                 autoComplete="current-password"
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/50"
+                className="bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50"
               />
-              {loginError && <p className="text-red-400 text-xs">{loginError}</p>}
+              {loginError && <p className="text-expense text-xs">{loginError}</p>}
               <button
                 type="submit"
                 disabled={loggingIn}
@@ -491,7 +491,7 @@ export default function AdminPage() {
                 type="button"
                 onClick={handleMagicLink}
                 disabled={loggingIn}
-                className="text-gray-mid hover:text-cream text-xs transition-colors disabled:opacity-60"
+                className="text-ink-2 hover:text-ink-1 text-xs transition-colors disabled:opacity-60"
               >
                 Email me a one-time sign-in link instead
               </button>
@@ -513,11 +513,11 @@ export default function AdminPage() {
     <div className="min-h-screen bg-ink">
 
       {/* ── HEADER ── */}
-      <div className="bg-[#19150f] border-b border-white/10 px-4 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3 sticky admin-sticky-top z-30 flex-wrap">
+      <div className="bg-[#19150f] border-b border-outline px-4 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3 sticky admin-sticky-top z-30 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="font-heading font-bold text-cream text-sm sm:text-base">Admin Dashboard</span>
+          <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Admin Dashboard</span>
           {lastUpdated && (
-            <span className="text-xs text-gray-mid hidden md:block">
+            <span className="text-xs text-ink-2 hidden md:block">
               · Updated {fmtLastUpdated(lastUpdated)}
             </span>
           )}
@@ -536,14 +536,14 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => exportSubmissionsCSV(filtered)}
-            className="text-xs font-semibold text-white/60 bg-white/5 border border-white/10 px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 transition-colors"
+            className="text-xs font-semibold text-ink-2 bg-tile border-[1.5px] border-outline px-3 sm:px-4 py-2 rounded-full hover:bg-[#EFE6D4] transition-colors"
           >
             <span className="sm:hidden">CSV</span>
             <span className="hidden sm:inline">Export CSV</span>
           </button>
           <button
             onClick={handleLogout}
-            className="text-xs font-semibold text-white/40 hover:text-white/70 transition-colors hidden sm:inline-block"
+            className="text-xs font-semibold text-ink-3 hover:text-ink-2 transition-colors hidden sm:inline-block"
           >
             Logout
           </button>
@@ -553,13 +553,13 @@ export default function AdminPage() {
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-8">
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-3 text-red-400 text-sm">
+          <div className="bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
             {error}
           </div>
         )}
 
         {/* ── MAIN VIEW TABS ── */}
-        <div className="flex gap-1 border-b border-white/10">
+        <div className="flex gap-1 border-b border-outline">
           {([
             { id: "overview", label: "Overview" },
             { id: "analytics", label: "Analytics" },
@@ -570,7 +570,7 @@ export default function AdminPage() {
               className={`px-5 py-3 text-sm font-semibold transition-colors border-b-2 -mb-px ${
                 mainView === t.id
                   ? "text-orange border-orange"
-                  : "text-gray-mid border-transparent hover:text-cream"
+                  : "text-ink-2 border-transparent hover:text-ink-1"
               }`}
             >
               {t.label}
@@ -584,54 +584,54 @@ export default function AdminPage() {
 
         {/* ── ROW 1A: QUIZ PULSE CARDS ── */}
         <div>
-          <p className="text-xs font-bold text-white/20 uppercase tracking-widest mb-3">Career Quiz</p>
+          <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Career Quiz</p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
               {loading || !stats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
                 <>
                   <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">{stats.thisMonth}</div>
-                  <div className="text-gray-mid text-sm font-medium">Submissions this month</div>
-                  <div className="text-white/30 text-xs mt-1">{stats.allTime} all time</div>
+                  <div className="text-ink-2 text-sm font-medium">Submissions this month</div>
+                  <div className="text-ink-3 text-xs mt-1">{stats.allTime} all time</div>
                 </>
               )}
             </div>
 
-            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
               {loading || !stats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
                 <>
                   <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">{stats.emailRate}%</div>
-                  <div className="text-gray-mid text-sm font-medium">Email capture rate</div>
-                  <div className="text-white/30 text-xs mt-1">{stats.withEmail} of {stats.allTime} left email</div>
+                  <div className="text-ink-2 text-sm font-medium">Email capture rate</div>
+                  <div className="text-ink-3 text-xs mt-1">{stats.withEmail} of {stats.allTime} left email</div>
                 </>
               )}
             </div>
 
-            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
               {loading || !stats ? (
                 <><Skeleton className="h-10 w-28 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
                 <>
                   <div className="font-display font-black text-3xl text-orange tracking-tight leading-none mb-2">
-                    {teenPct}%<span className="text-white/30 text-2xl mx-1">·</span>{adultPct}%
+                    {teenPct}%<span className="text-ink-3 text-2xl mx-1">·</span>{adultPct}%
                   </div>
-                  <div className="text-gray-mid text-sm font-medium">Quiz audience split</div>
-                  <div className="text-white/30 text-xs mt-1">teens · adults</div>
+                  <div className="text-ink-2 text-sm font-medium">Quiz audience split</div>
+                  <div className="text-ink-3 text-xs mt-1">teens · adults</div>
                 </>
               )}
             </div>
 
-            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
               {loading || !stats ? (
                 <><Skeleton className="h-7 w-full mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
                 <>
-                  <div className="font-heading font-bold text-xl text-cream leading-tight mb-2 min-h-[3rem] flex items-center">{stats.topCareer}</div>
-                  <div className="text-gray-mid text-sm font-medium">Most matched career</div>
+                  <div className="font-heading font-bold text-xl text-ink-1 leading-tight mb-2 min-h-[3rem] flex items-center">{stats.topCareer}</div>
+                  <div className="text-ink-2 text-sm font-medium">Most matched career</div>
                 </>
               )}
             </div>
@@ -640,10 +640,10 @@ export default function AdminPage() {
 
         {/* ── ROW 1B: DONATION PULSE CARDS ── */}
         <div>
-          <p className="text-xs font-bold text-white/20 uppercase tracking-widest mb-3">Donations</p>
+          <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Donations</p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
               {loading || !donationStats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -651,13 +651,13 @@ export default function AdminPage() {
                   <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-2">
                     {fmtMoney(donationStats.totalRaised)}
                   </div>
-                  <div className="text-gray-mid text-sm font-medium">Total raised</div>
-                  <div className="text-white/30 text-xs mt-1">{fmtMoney(donationStats.thisMonthRaised)} this month</div>
+                  <div className="text-ink-2 text-sm font-medium">Total raised</div>
+                  <div className="text-ink-3 text-xs mt-1">{fmtMoney(donationStats.thisMonthRaised)} this month</div>
                 </>
               )}
             </div>
 
-            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
               {loading || !donationStats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -665,13 +665,13 @@ export default function AdminPage() {
                   <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">
                     {donationStats.donorsThisMonth}
                   </div>
-                  <div className="text-gray-mid text-sm font-medium">Donors this month</div>
-                  <div className="text-white/30 text-xs mt-1">{donationStats.donorCount} total unique</div>
+                  <div className="text-ink-2 text-sm font-medium">Donors this month</div>
+                  <div className="text-ink-3 text-xs mt-1">{donationStats.donorCount} total unique</div>
                 </>
               )}
             </div>
 
-            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
               {loading || !donationStats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -679,13 +679,13 @@ export default function AdminPage() {
                   <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">
                     {donationStats.recurringDonors}
                   </div>
-                  <div className="text-gray-mid text-sm font-medium">Recurring donors</div>
-                  <div className="text-white/30 text-xs mt-1">Monthly givers</div>
+                  <div className="text-ink-2 text-sm font-medium">Recurring donors</div>
+                  <div className="text-ink-3 text-xs mt-1">Monthly givers</div>
                 </>
               )}
             </div>
 
-            <div className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
+            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
               {loading || !donationStats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -693,7 +693,7 @@ export default function AdminPage() {
                   <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-2">
                     {fmtMoney(donationStats.avgGift)}
                   </div>
-                  <div className="text-gray-mid text-sm font-medium">Average gift size</div>
+                  <div className="text-ink-2 text-sm font-medium">Average gift size</div>
                 </>
               )}
             </div>
@@ -701,19 +701,19 @@ export default function AdminPage() {
         </div>
 
         {/* ── ROW 2: SUBMISSIONS TABLE ── */}
-        <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
-          <div className="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+          <div className="px-6 py-5 border-b border-outline flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
-              <h2 className="font-heading font-bold text-cream text-lg">Career Quiz Submissions</h2>
-              <p className="text-gray-mid text-xs mt-0.5">{filtered.length} result{filtered.length !== 1 ? "s" : ""} · {totalPages} page{totalPages !== 1 ? "s" : ""}</p>
+              <h2 className="font-heading font-bold text-ink-1 text-lg">Career Quiz Submissions</h2>
+              <p className="text-ink-2 text-xs mt-0.5">{filtered.length} result{filtered.length !== 1 ? "s" : ""} · {totalPages} page{totalPages !== 1 ? "s" : ""}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex rounded-lg overflow-hidden border border-white/10">
+              <div className="flex rounded-lg overflow-hidden border-[1.5px] border-outline">
                 {(["week", "month", "all"] as const).map((f) => (
                   <button
                     key={f}
                     onClick={() => setDateFilter(f)}
-                    className={`text-xs font-semibold px-3 py-2 transition-colors ${dateFilter === f ? "bg-orange text-white" : "text-gray-mid hover:text-cream"}`}
+                    className={`text-xs font-semibold px-3 py-2 transition-colors ${dateFilter === f ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1"}`}
                   >
                     {f === "week" ? "This Week" : f === "month" ? "This Month" : "All Time"}
                   </button>
@@ -724,19 +724,19 @@ export default function AdminPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search name, email, location…"
-                className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-xs placeholder-gray-mid focus:outline-none focus:border-orange/40 w-52"
+                className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-xs placeholder-ink-3 focus:outline-none focus:border-orange/40 w-52"
               />
             </div>
           </div>
 
           {/* Mobile: stacked cards (≤ md). The full table stays for tablet+. */}
-          <div className="md:hidden divide-y divide-white/5">
+          <div className="md:hidden divide-y divide-hairline">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="px-4 py-4"><Skeleton className="h-16 w-full" /></div>
               ))
             ) : paginated.length === 0 ? (
-              <p className="px-4 py-10 text-center text-gray-mid text-sm">No submissions found.</p>
+              <p className="px-4 py-10 text-center text-ink-2 text-sm">No submissions found.</p>
             ) : (
               paginated.map((s) => {
                 const open = expandedId === s.id;
@@ -744,35 +744,35 @@ export default function AdminPage() {
                   <div
                     key={s.id}
                     onClick={() => setExpandedId(open ? null : s.id)}
-                    className={`px-4 py-4 transition-colors ${open ? "bg-orange/10" : "active:bg-white/5"}`}
+                    className={`px-4 py-4 transition-colors ${open ? "bg-orange/10" : "active:bg-tile"}`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-cream text-sm truncate">{s.teen_name || "Anonymous"}</span>
+                          <span className="font-semibold text-ink-1 text-sm truncate">{s.teen_name || "Anonymous"}</span>
                           {s.audience && (
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-white/10 text-gray-mid"}`}>{s.audience}</span>
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>{s.audience}</span>
                           )}
                         </div>
-                        <div className="text-xs text-gray-mid mt-0.5">
+                        <div className="text-xs text-ink-2 mt-0.5">
                           {fmtDate(s.created_at)}{s.location ? ` · ${s.location}` : ""}
                         </div>
                       </div>
                       {s.money_vs_meaning !== null && (
-                        <span className="text-xs font-semibold text-cream flex-shrink-0">
-                          {s.money_vs_meaning}<span className="text-white/30">/10</span>
+                        <span className="text-xs font-semibold text-ink-1 flex-shrink-0">
+                          {s.money_vs_meaning}<span className="text-ink-3">/10</span>
                         </span>
                       )}
                     </div>
                     {s.career_matches && s.career_matches.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {s.career_matches.slice(0, 3).map((c, i) => (
-                          <span key={i} className="text-[11px] bg-white/5 border border-white/10 text-gray-mid px-2 py-0.5 rounded-full">{c.title}</span>
+                          <span key={i} className="text-[11px] bg-tile border-[1.5px] border-outline text-ink-2 px-2 py-0.5 rounded-full">{c.title}</span>
                         ))}
                       </div>
                     )}
                     {open && (
-                      <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+                      <div className="mt-4 pt-4 border-t border-outline space-y-3">
                         <div className="text-[10px] font-bold text-orange uppercase tracking-widest">Quiz Answers</div>
                         <div className="space-y-1.5 text-xs">
                           {[
@@ -787,8 +787,8 @@ export default function AdminPage() {
                             ["Future Self", s.future_self],
                           ].map(([label, val]) => val ? (
                             <div key={String(label)} className="flex gap-2">
-                              <span className="text-white/30 w-28 flex-shrink-0">{label}</span>
-                              <span className="text-gray-mid break-words min-w-0">{String(val)}</span>
+                              <span className="text-ink-3 w-28 flex-shrink-0">{label}</span>
+                              <span className="text-ink-2 break-words min-w-0">{String(val)}</span>
                             </div>
                           ) : null)}
                         </div>
@@ -797,12 +797,12 @@ export default function AdminPage() {
                             <div className="text-[10px] font-bold text-orange uppercase tracking-widest pt-2">All Matches</div>
                             <div className="space-y-1.5">
                               {s.career_matches.map((c, i) => (
-                                <div key={i} className="bg-white/5 rounded-lg px-2.5 py-1.5">
+                                <div key={i} className="bg-tile rounded-lg px-2.5 py-1.5">
                                   <div className="flex items-center justify-between gap-2">
-                                    <span className="text-xs font-semibold text-cream truncate">{i + 1}. {c.title}</span>
+                                    <span className="text-xs font-semibold text-ink-1 truncate">{i + 1}. {c.title}</span>
                                     <span className="text-[11px] text-orange font-semibold whitespace-nowrap flex-shrink-0">{c.salary}</span>
                                   </div>
-                                  {c.why && <div className="text-[11px] text-gray-mid mt-0.5 italic">{c.why}</div>}
+                                  {c.why && <div className="text-[11px] text-ink-2 mt-0.5 italic">{c.why}</div>}
                                 </div>
                               ))}
                             </div>
@@ -819,16 +819,16 @@ export default function AdminPage() {
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm min-w-[900px]">
               <thead>
-                <tr className="border-b border-white/10">
+                <tr className="border-b border-outline">
                   {["Date", "Name", "Email", "Audience", "Age", "Location", "Top 3 Careers", "💰 Score"].map((h) => (
-                    <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
+                    <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="border-b border-white/5">
+                    <tr key={i} className="border-b border-hairline">
                       {Array.from({ length: 8 }).map((_, j) => (
                         <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-full" /></td>
                       ))}
@@ -836,7 +836,7 @@ export default function AdminPage() {
                   ))
                 ) : paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-16 text-gray-mid">No submissions found.</td>
+                    <td colSpan={8} className="text-center py-16 text-ink-2">No submissions found.</td>
                   </tr>
                 ) : (
                   paginated.map((s) => (
@@ -844,28 +844,28 @@ export default function AdminPage() {
                       <tr
                         key={s.id}
                         onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                        className={`border-b border-white/5 cursor-pointer transition-colors ${expandedId === s.id ? "bg-orange/10" : "hover:bg-white/5"}`}
+                        className={`border-b border-hairline cursor-pointer transition-colors ${expandedId === s.id ? "bg-orange/10" : "hover:bg-[#EFE6D4]"}`}
                       >
-                        <td className="px-5 py-4 text-gray-mid whitespace-nowrap text-xs">{fmtDate(s.created_at)}</td>
-                        <td className="px-5 py-4 font-medium text-cream whitespace-nowrap">{s.teen_name || <span className="text-white/20">—</span>}</td>
-                        <td className="px-5 py-4 text-gray-mid text-xs">{s.email || <span className="text-white/20">—</span>}</td>
+                        <td className="px-5 py-4 text-ink-2 whitespace-nowrap text-xs">{fmtDate(s.created_at)}</td>
+                        <td className="px-5 py-4 font-medium text-ink-1 whitespace-nowrap">{s.teen_name || <span className="text-ink-3">—</span>}</td>
+                        <td className="px-5 py-4 text-ink-2 text-xs">{s.email || <span className="text-ink-3">—</span>}</td>
                         <td className="px-5 py-4">
                           {s.audience ? (
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-white/10 text-gray-mid"}`}>{s.audience}</span>
-                          ) : <span className="text-white/20">—</span>}
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>{s.audience}</span>
+                          ) : <span className="text-ink-3">—</span>}
                         </td>
-                        <td className="px-5 py-4 text-gray-mid text-xs">{s.age || "—"}</td>
-                        <td className="px-5 py-4 text-gray-mid text-xs whitespace-nowrap">{s.location || "—"}</td>
+                        <td className="px-5 py-4 text-ink-2 text-xs">{s.age || "—"}</td>
+                        <td className="px-5 py-4 text-ink-2 text-xs whitespace-nowrap">{s.location || "—"}</td>
                         <td className="px-5 py-4">
                           <div className="flex flex-wrap gap-1">
                             {s.career_matches?.slice(0, 3).map((c, i) => (
-                              <span key={i} className="text-xs bg-white/5 border border-white/10 text-gray-mid px-2 py-0.5 rounded-full whitespace-nowrap">{c.title}</span>
-                            )) ?? <span className="text-white/20">—</span>}
+                              <span key={i} className="text-xs bg-tile border-[1.5px] border-outline text-ink-2 px-2 py-0.5 rounded-full whitespace-nowrap">{c.title}</span>
+                            )) ?? <span className="text-ink-3">—</span>}
                           </div>
                         </td>
-                        <td className="px-5 py-4 text-gray-mid text-xs">
+                        <td className="px-5 py-4 text-ink-2 text-xs">
                           {s.money_vs_meaning !== null ? (
-                            <span className="font-semibold text-cream">{s.money_vs_meaning}<span className="text-white/30">/10</span></span>
+                            <span className="font-semibold text-ink-1">{s.money_vs_meaning}<span className="text-ink-3">/10</span></span>
                           ) : "—"}
                         </td>
                       </tr>
@@ -891,15 +891,15 @@ export default function AdminPage() {
                                     ["Money vs Meaning", s.money_vs_meaning !== null ? `${s.money_vs_meaning}/10` : null],
                                   ].map(([label, val]) => val ? (
                                     <div key={String(label)} className="flex gap-2 text-xs">
-                                      <span className="text-white/30 w-44 flex-shrink-0">{label}</span>
-                                      <span className="text-gray-mid">{String(val)}</span>
+                                      <span className="text-ink-3 w-44 flex-shrink-0">{label}</span>
+                                      <span className="text-ink-2">{String(val)}</span>
                                     </div>
                                   ) : null)}
                                 </div>
                                 {s.email && (
-                                  <div className="mt-4 pt-4 border-t border-white/10">
+                                  <div className="mt-4 pt-4 border-t border-outline">
                                     <div className="text-xs font-bold text-orange uppercase tracking-widest mb-1">Email Sent To</div>
-                                    <div className="text-gray-mid text-xs">{s.email}</div>
+                                    <div className="text-ink-2 text-xs">{s.email}</div>
                                   </div>
                                 )}
                               </div>
@@ -907,17 +907,17 @@ export default function AdminPage() {
                                 <div className="text-xs font-bold text-orange uppercase tracking-widest mb-3">All Career Matches</div>
                                 <div className="space-y-2">
                                   {s.career_matches?.map((c, i) => (
-                                    <div key={i} className="bg-white/5 rounded-lg px-3 py-2">
+                                    <div key={i} className="bg-tile rounded-lg px-3 py-2">
                                       <div className="flex items-start justify-between gap-2">
                                         <div>
-                                          <span className="text-xs font-bold text-white/30 mr-2">{i + 1}.</span>
-                                          <span className="text-xs font-semibold text-cream">{c.title}</span>
+                                          <span className="text-xs font-bold text-ink-3 mr-2">{i + 1}.</span>
+                                          <span className="text-xs font-semibold text-ink-1">{c.title}</span>
                                         </div>
                                         <span className="text-xs text-orange font-semibold whitespace-nowrap flex-shrink-0">{c.salary}</span>
                                       </div>
-                                      {c.why && <div className="text-xs text-gray-mid mt-0.5 ml-4 italic">{c.why}</div>}
+                                      {c.why && <div className="text-xs text-ink-2 mt-0.5 ml-4 italic">{c.why}</div>}
                                     </div>
-                                  )) ?? <span className="text-white/20 text-xs">No matches recorded</span>}
+                                  )) ?? <span className="text-ink-3 text-xs">No matches recorded</span>}
                                 </div>
                               </div>
                             </div>
@@ -932,19 +932,19 @@ export default function AdminPage() {
           </div>
 
           {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
-              <span className="text-xs text-gray-mid">Page {page} of {totalPages} · {filtered.length} rows</span>
+            <div className="px-6 py-4 border-t border-outline flex items-center justify-between">
+              <span className="text-xs text-ink-2">Page {page} of {totalPages} · {filtered.length} rows</span>
               <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="text-xs font-semibold text-gray-mid bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors">← Prev</button>
-                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="text-xs font-semibold text-gray-mid bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors">Next →</button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="text-xs font-semibold text-ink-2 bg-tile border-[1.5px] border-outline px-3 py-1.5 rounded-lg hover:bg-[#EFE6D4] disabled:opacity-30 transition-colors">← Prev</button>
+                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="text-xs font-semibold text-ink-2 bg-tile border-[1.5px] border-outline px-3 py-1.5 rounded-lg hover:bg-[#EFE6D4] disabled:opacity-30 transition-colors">Next →</button>
               </div>
             </div>
           )}
         </section>
 
         {/* ── ROW 3: CAREER ANALYTICS ── */}
-        <section className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
-          <h2 className="font-heading font-bold text-cream text-lg mb-6">Career Match Breakdown</h2>
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+          <h2 className="font-heading font-bold text-ink-1 text-lg mb-6">Career Match Breakdown</h2>
           {loading || !stats ? (
             <div className="space-y-3">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -956,25 +956,25 @@ export default function AdminPage() {
               ))}
             </div>
           ) : stats.careerBreakdown.length === 0 ? (
-            <p className="text-gray-mid text-sm">No career match data yet.</p>
+            <p className="text-ink-2 text-sm">No career match data yet.</p>
           ) : (
             <div className="space-y-3 mb-8">
               {stats.careerBreakdown.map(({ title, count }) => {
                 const pct = Math.round((count / maxCareerCount) * 100);
                 return (
                   <div key={title} className="flex items-center gap-3">
-                    <div className="w-44 text-xs text-gray-mid text-right flex-shrink-0 truncate">{title}</div>
-                    <div className="flex-1 h-5 bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: "#C0764E" }} />
+                    <div className="w-44 text-xs text-ink-2 text-right flex-shrink-0 truncate">{title}</div>
+                    <div className="flex-1 h-5 bg-tile rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: "#C0703C" }} />
                     </div>
-                    <div className="w-7 text-xs text-gray-mid flex-shrink-0 text-right">{count}</div>
+                    <div className="w-7 text-xs text-ink-2 flex-shrink-0 text-right">{count}</div>
                   </div>
                 );
               })}
             </div>
           )}
           {stats && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-6 border-t border-white/10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-6 border-t border-outline">
               {[
                 { label: "Avg money vs meaning", value: `${stats.avgMoneyVsMeaning}/10` },
                 { label: "Most common age", value: stats.mostCommonAge },
@@ -982,8 +982,8 @@ export default function AdminPage() {
                 { label: "Most common work style", value: stats.mostCommonWorkStyle },
               ].map((item) => (
                 <div key={item.label}>
-                  <div className="text-xs text-white/30 uppercase tracking-widest font-semibold mb-1">{item.label}</div>
-                  <div className="font-heading font-semibold text-cream text-sm truncate">{item.value || "N/A"}</div>
+                  <div className="text-xs text-ink-3 uppercase tracking-widest font-semibold mb-1">{item.label}</div>
+                  <div className="font-heading font-semibold text-ink-1 text-sm truncate">{item.value || "N/A"}</div>
                 </div>
               ))}
             </div>
@@ -991,20 +991,20 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 4: DONATIONS FULL SECTION ── */}
-        <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {/* Header + tab bar */}
-          <div className="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="px-6 py-5 border-b border-outline flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
-              <h2 className="font-heading font-bold text-cream text-lg">Donations</h2>
-              <p className="text-gray-mid text-xs mt-0.5">Powered by Stripe</p>
+              <h2 className="font-heading font-bold text-ink-1 text-lg">Donations</h2>
+              <p className="text-ink-2 text-xs mt-0.5">Powered by Stripe</p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex rounded-lg overflow-hidden border border-white/10">
+              <div className="flex rounded-lg overflow-hidden border-[1.5px] border-outline">
                 {(["feed", "table", "profiles"] as const).map((t) => (
                   <button
                     key={t}
                     onClick={() => setActiveTab(t)}
-                    className={`text-xs font-semibold px-3 py-2 transition-colors capitalize ${activeTab === t ? "bg-orange text-white" : "text-gray-mid hover:text-cream"}`}
+                    className={`text-xs font-semibold px-3 py-2 transition-colors capitalize ${activeTab === t ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1"}`}
                   >
                     {t === "feed" ? "Recent" : t === "table" ? "All Donations" : "Donor Profiles"}
                   </button>
@@ -1013,7 +1013,7 @@ export default function AdminPage() {
               {activeTab === "table" && (
                 <button
                   onClick={() => exportDonationsCSV(filteredDonations)}
-                  className="text-xs font-semibold text-white/60 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                  className="text-xs font-semibold text-ink-2 bg-tile border-[1.5px] border-outline px-3 py-1.5 rounded-lg hover:bg-[#EFE6D4] transition-colors"
                 >
                   Export CSV
                 </button>
@@ -1029,29 +1029,29 @@ export default function AdminPage() {
                   {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
                 </div>
               ) : !donationStats || donationStats.donations.length === 0 ? (
-                <p className="text-gray-mid text-sm">No donations recorded yet.</p>
+                <p className="text-ink-2 text-sm">No donations recorded yet.</p>
               ) : (
                 <div className="space-y-1">
                   {donationStats.donations.slice(0, 20).map((d) => (
-                    <div key={d.id} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors">
+                    <div key={d.id} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-[#EFE6D4] transition-colors">
                       <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
                         <span className="text-orange font-bold text-xs">{donorInitial(d)}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-cream text-sm">{donorDisplayName(d)}</span>
+                          <span className="font-semibold text-ink-1 text-sm">{donorDisplayName(d)}</span>
                           {d.recurring && (
                             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
                           )}
                           {d.status && d.status !== "succeeded" && (
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 capitalize">{d.status}</span>
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense capitalize">{d.status}</span>
                           )}
                         </div>
-                        {d.email && <div className="text-xs text-gray-mid">{d.email}</div>}
+                        {d.email && <div className="text-xs text-ink-2">{d.email}</div>}
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <div className="font-bold text-cream">{fmtMoney(d.amount)}</div>
-                        <div className="text-xs text-white/30">{timeAgo(d.created_at)}</div>
+                        <div className="font-bold text-ink-1">{fmtMoney(d.amount)}</div>
+                        <div className="text-xs text-ink-3">{timeAgo(d.created_at)}</div>
                       </div>
                     </div>
                   ))}
@@ -1063,24 +1063,24 @@ export default function AdminPage() {
           {/* ── ALL DONATIONS TABLE ── */}
           {activeTab === "table" && (
             <>
-              <div className="px-6 pt-4 pb-3 border-b border-white/10 flex items-center gap-3">
+              <div className="px-6 pt-4 pb-3 border-b border-outline flex items-center gap-3">
                 <input
                   type="text"
                   value={donationSearch}
                   onChange={(e) => setDonationSearch(e.target.value)}
                   placeholder="Search name or email…"
-                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-xs placeholder-gray-mid focus:outline-none focus:border-orange/40 w-56"
+                  className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-xs placeholder-ink-3 focus:outline-none focus:border-orange/40 w-56"
                 />
-                <span className="text-xs text-gray-mid">{filteredDonations.length} donation{filteredDonations.length !== 1 ? "s" : ""}</span>
+                <span className="text-xs text-ink-2">{filteredDonations.length} donation{filteredDonations.length !== 1 ? "s" : ""}</span>
               </div>
               {/* Mobile cards */}
-              <div className="md:hidden divide-y divide-white/5">
+              <div className="md:hidden divide-y divide-hairline">
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="px-4 py-3"><Skeleton className="h-12 w-full" /></div>
                   ))
                 ) : paginatedDonations.length === 0 ? (
-                  <p className="px-4 py-10 text-center text-gray-mid text-sm">No donations found.</p>
+                  <p className="px-4 py-10 text-center text-ink-2 text-sm">No donations found.</p>
                 ) : (
                   paginatedDonations.map((d) => (
                     <div key={d.id} className="px-4 py-3 flex items-center gap-3">
@@ -1089,19 +1089,19 @@ export default function AdminPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-cream text-sm truncate">{donorDisplayName(d)}</span>
+                          <span className="font-medium text-ink-1 text-sm truncate">{donorDisplayName(d)}</span>
                           {d.recurring && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
                           )}
                         </div>
-                        <div className="text-[11px] text-gray-mid">
+                        <div className="text-[11px] text-ink-2">
                           {fmtDate(d.created_at)}{d.email ? ` · ${d.email}` : ""}
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <div className="font-bold text-cream text-sm">{fmtMoney(d.amount)}</div>
+                        <div className="font-bold text-ink-1 text-sm">{fmtMoney(d.amount)}</div>
                         {d.status && d.status !== "succeeded" && (
-                          <div className="text-[10px] text-red-400 capitalize">{d.status}</div>
+                          <div className="text-[10px] text-expense capitalize">{d.status}</div>
                         )}
                       </div>
                     </div>
@@ -1112,41 +1112,41 @@ export default function AdminPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-white/10">
+                    <tr className="border-b border-outline">
                       {["Date", "Donor", "Email", "Amount", "Type", "Status"].map((h) => (
-                        <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
+                        <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       Array.from({ length: 5 }).map((_, i) => (
-                        <tr key={i} className="border-b border-white/5">
+                        <tr key={i} className="border-b border-hairline">
                           {Array.from({ length: 6 }).map((_, j) => (
                             <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-full" /></td>
                           ))}
                         </tr>
                       ))
                     ) : paginatedDonations.length === 0 ? (
-                      <tr><td colSpan={6} className="text-center py-16 text-gray-mid">No donations found.</td></tr>
+                      <tr><td colSpan={6} className="text-center py-16 text-ink-2">No donations found.</td></tr>
                     ) : (
                       paginatedDonations.map((d) => (
-                        <tr key={d.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="px-5 py-4 text-gray-mid text-xs whitespace-nowrap">{fmtDate(d.created_at)}</td>
-                          <td className="px-5 py-4 font-medium text-cream">{donorDisplayName(d)}</td>
-                          <td className="px-5 py-4 text-gray-mid text-xs">{d.email || "—"}</td>
-                          <td className="px-5 py-4 font-bold text-cream">{fmtMoney(d.amount)}</td>
+                        <tr key={d.id} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                          <td className="px-5 py-4 text-ink-2 text-xs whitespace-nowrap">{fmtDate(d.created_at)}</td>
+                          <td className="px-5 py-4 font-medium text-ink-1">{donorDisplayName(d)}</td>
+                          <td className="px-5 py-4 text-ink-2 text-xs">{d.email || "—"}</td>
+                          <td className="px-5 py-4 font-bold text-ink-1">{fmtMoney(d.amount)}</td>
                           <td className="px-5 py-4">
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${d.recurring ? "bg-orange/20 text-orange" : "bg-white/10 text-gray-mid"}`}>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${d.recurring ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>
                               {d.recurring ? "Monthly" : "One-time"}
                             </span>
                           </td>
                           <td className="px-5 py-4">
                             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
-                              !d.status || d.status === "succeeded" ? "bg-green-500/20 text-green-400" :
-                              d.status === "failed" ? "bg-red-500/20 text-red-400" :
-                              d.status === "cancelled" ? "bg-white/10 text-gray-mid" :
-                              "bg-white/10 text-gray-mid"
+                              !d.status || d.status === "succeeded" ? "bg-revenue-bg text-revenue" :
+                              d.status === "failed" ? "bg-expense-bg text-expense" :
+                              d.status === "cancelled" ? "bg-tile text-ink-2" :
+                              "bg-tile text-ink-2"
                             }`}>
                               {d.status || "succeeded"}
                             </span>
@@ -1158,11 +1158,11 @@ export default function AdminPage() {
                 </table>
               </div>
               {donationTotalPages > 1 && (
-                <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
-                  <span className="text-xs text-gray-mid">Page {donationPage} of {donationTotalPages}</span>
+                <div className="px-6 py-4 border-t border-outline flex items-center justify-between">
+                  <span className="text-xs text-ink-2">Page {donationPage} of {donationTotalPages}</span>
                   <div className="flex gap-2">
-                    <button onClick={() => setDonationPage((p) => Math.max(1, p - 1))} disabled={donationPage === 1} className="text-xs font-semibold text-gray-mid bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors">← Prev</button>
-                    <button onClick={() => setDonationPage((p) => Math.min(donationTotalPages, p + 1))} disabled={donationPage === donationTotalPages} className="text-xs font-semibold text-gray-mid bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors">Next →</button>
+                    <button onClick={() => setDonationPage((p) => Math.max(1, p - 1))} disabled={donationPage === 1} className="text-xs font-semibold text-ink-2 bg-tile border-[1.5px] border-outline px-3 py-1.5 rounded-lg hover:bg-[#EFE6D4] disabled:opacity-30 transition-colors">← Prev</button>
+                    <button onClick={() => setDonationPage((p) => Math.min(donationTotalPages, p + 1))} disabled={donationPage === donationTotalPages} className="text-xs font-semibold text-ink-2 bg-tile border-[1.5px] border-outline px-3 py-1.5 rounded-lg hover:bg-[#EFE6D4] disabled:opacity-30 transition-colors">Next →</button>
                   </div>
                 </div>
               )}
@@ -1177,10 +1177,10 @@ export default function AdminPage() {
                   {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
                 </div>
               ) : !donationStats || donationStats.donorProfiles.length === 0 ? (
-                <p className="text-gray-mid text-sm">No donor data yet.</p>
+                <p className="text-ink-2 text-sm">No donor data yet.</p>
               ) : (
                 <>
-                <div className="md:hidden divide-y divide-white/5 -mx-6">
+                <div className="md:hidden divide-y divide-hairline -mx-6">
                   {donationStats.donorProfiles.map((p, i) => (
                     <div key={p.email + i} className="px-6 py-3 flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
@@ -1190,14 +1190,14 @@ export default function AdminPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-cream text-sm truncate">
+                          <span className="font-medium text-ink-1 text-sm truncate">
                             {[p.firstName, p.lastName].filter(Boolean).join(" ") || "Anonymous"}
                           </span>
                           {p.recurring && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
                           )}
                         </div>
-                        <div className="text-[11px] text-gray-mid">
+                        <div className="text-[11px] text-ink-2">
                           {p.donationCount} gift{p.donationCount !== 1 ? "s" : ""} · last {fmtDate(p.lastDonation)}
                         </div>
                       </div>
@@ -1209,15 +1209,15 @@ export default function AdminPage() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm min-w-[750px]">
                     <thead>
-                      <tr className="border-b border-white/10">
+                      <tr className="border-b border-outline">
                         {["Donor", "Email", "Total Given", "Donations", "First Gift", "Last Gift", "Type"].map((h) => (
-                          <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-4 py-3 whitespace-nowrap">{h}</th>
+                          <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {donationStats.donorProfiles.map((p, i) => (
-                        <tr key={p.email + i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                        <tr key={p.email + i} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
@@ -1225,18 +1225,18 @@ export default function AdminPage() {
                                   {(p.firstName?.[0] ?? p.email?.[0] ?? "$").toUpperCase()}
                                 </span>
                               </div>
-                              <span className="font-medium text-cream text-sm whitespace-nowrap">
+                              <span className="font-medium text-ink-1 text-sm whitespace-nowrap">
                                 {[p.firstName, p.lastName].filter(Boolean).join(" ") || "Anonymous"}
                               </span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-gray-mid text-xs">{p.email !== "Anonymous" ? p.email : "—"}</td>
+                          <td className="px-4 py-3 text-ink-2 text-xs">{p.email !== "Anonymous" ? p.email : "—"}</td>
                           <td className="px-4 py-3 font-bold text-orange text-sm">{fmtMoney(p.totalGiven)}</td>
-                          <td className="px-4 py-3 text-gray-mid text-sm">{p.donationCount}</td>
-                          <td className="px-4 py-3 text-gray-mid text-xs whitespace-nowrap">{fmtDate(p.firstDonation)}</td>
-                          <td className="px-4 py-3 text-gray-mid text-xs whitespace-nowrap">{fmtDate(p.lastDonation)}</td>
+                          <td className="px-4 py-3 text-ink-2 text-sm">{p.donationCount}</td>
+                          <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{fmtDate(p.firstDonation)}</td>
+                          <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{fmtDate(p.lastDonation)}</td>
                           <td className="px-4 py-3">
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.recurring ? "bg-orange/20 text-orange" : "bg-white/10 text-gray-mid"}`}>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.recurring ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>
                               {p.recurring ? "Monthly" : "One-time"}
                             </span>
                           </td>
@@ -1252,8 +1252,8 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 5: RECENT ACTIVITY FEED ── */}
-        <section className="bg-[#231f18] border border-white/10 rounded-card-lg p-6">
-          <h2 className="font-heading font-bold text-cream text-lg mb-6">Recent Quiz Activity</h2>
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+          <h2 className="font-heading font-bold text-ink-1 text-lg mb-6">Recent Quiz Activity</h2>
           {loading ? (
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -1267,19 +1267,19 @@ export default function AdminPage() {
               ))}
             </div>
           ) : recentTen.length === 0 ? (
-            <p className="text-gray-mid text-sm">No submissions yet.</p>
+            <p className="text-ink-2 text-sm">No submissions yet.</p>
           ) : (
             <div className="space-y-1">
               {recentTen.map((s) => (
-                <div key={s.id} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors">
+                <div key={s.id} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-[#EFE6D4] transition-colors">
                   <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
                     <span className="text-orange font-bold text-xs">{s.teen_name ? s.teen_name[0].toUpperCase() : "?"}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-cream text-sm">{s.teen_name || "Anonymous"}</span>
-                      {s.location && <span className="text-gray-mid text-xs">· {s.location}</span>}
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-white/10 text-gray-mid"}`}>
+                      <span className="font-semibold text-ink-1 text-sm">{s.teen_name || "Anonymous"}</span>
+                      {s.location && <span className="text-ink-2 text-xs">· {s.location}</span>}
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>
                         {s.audience || "unknown"}
                       </span>
                       {s.email && (
@@ -1291,12 +1291,12 @@ export default function AdminPage() {
                       )}
                     </div>
                     {s.career_matches?.[0] && (
-                      <div className="text-xs text-gray-mid mt-0.5">
-                        Top match: <span className="text-cream">{s.career_matches[0].title}</span>
+                      <div className="text-xs text-ink-2 mt-0.5">
+                        Top match: <span className="text-ink-1">{s.career_matches[0].title}</span>
                       </div>
                     )}
                   </div>
-                  <div className="text-xs text-white/30 flex-shrink-0">{timeAgo(s.created_at)}</div>
+                  <div className="text-xs text-ink-3 flex-shrink-0">{timeAgo(s.created_at)}</div>
                 </div>
               ))}
             </div>
@@ -1304,11 +1304,11 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 5: PARTNER WAITLIST ── */}
-        <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
-          <div className="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+          <div className="px-6 py-5 border-b border-outline flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
-              <h2 className="font-heading font-bold text-cream text-lg">Partner Waitlist</h2>
-              <p className="text-gray-mid text-xs mt-0.5">
+              <h2 className="font-heading font-bold text-ink-1 text-lg">Partner Waitlist</h2>
+              <p className="text-ink-2 text-xs mt-0.5">
                 {partnerData ? `${partnerData.signups.length} total signup${partnerData.signups.length !== 1 ? "s" : ""}` : "Guides waiting for access"}
               </p>
             </div>
@@ -1320,7 +1320,7 @@ export default function AdminPage() {
                 {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
               </div>
             ) : partnerData.signups.length === 0 ? (
-              <p className="text-gray-mid text-sm">No signups yet.</p>
+              <p className="text-ink-2 text-sm">No signups yet.</p>
             ) : (
               <>
                 {/* Count + role breakdown */}
@@ -1329,28 +1329,28 @@ export default function AdminPage() {
                     <div className="font-display font-black text-6xl text-orange tracking-tight leading-none">
                       {partnerData.signups.length}
                     </div>
-                    <div className="text-gray-mid text-sm mt-1">total waitlist signups</div>
+                    <div className="text-ink-2 text-sm mt-1">total waitlist signups</div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {partnerData.roleBreakdown.map(({ role, count }) => (
-                      <div key={role} className="bg-white/5 border border-white/10 rounded-full px-4 py-1.5 flex items-center gap-2">
-                        <span className="text-cream text-sm font-semibold">{count}</span>
-                        <span className="text-gray-mid text-xs">{role}</span>
+                      <div key={role} className="bg-tile border-[1.5px] border-outline rounded-full px-4 py-1.5 flex items-center gap-2">
+                        <span className="text-ink-1 text-sm font-semibold">{count}</span>
+                        <span className="text-ink-2 text-xs">{role}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Mobile cards */}
-                <div className="md:hidden divide-y divide-white/5 -mx-6">
+                <div className="md:hidden divide-y divide-hairline -mx-6">
                   {partnerData.signups.map((s) => (
                     <div key={s.id} className="px-6 py-3">
                       <div className="flex items-center justify-between gap-3">
-                        <span className="font-medium text-cream text-sm truncate">{s.first_name} {s.last_name}</span>
+                        <span className="font-medium text-ink-1 text-sm truncate">{s.first_name} {s.last_name}</span>
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange flex-shrink-0">{s.role}</span>
                       </div>
-                      <div className="text-[11px] text-gray-mid mt-0.5 truncate">{s.email}</div>
-                      <div className="text-[11px] text-white/30 mt-0.5">
+                      <div className="text-[11px] text-ink-2 mt-0.5 truncate">{s.email}</div>
+                      <div className="text-[11px] text-ink-3 mt-0.5">
                         {fmtDate(s.created_at)}{s.teen_count ? ` · ${s.teen_count} teens` : ""}
                       </div>
                     </div>
@@ -1361,9 +1361,9 @@ export default function AdminPage() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm min-w-[700px]">
                     <thead>
-                      <tr className="border-b border-white/10">
+                      <tr className="border-b border-outline">
                         {["Name", "Email", "Role", "Teen Count", "Date"].map((h) => (
-                          <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                          <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
                             {h}
                           </th>
                         ))}
@@ -1371,18 +1371,18 @@ export default function AdminPage() {
                     </thead>
                     <tbody>
                       {partnerData.signups.map((s) => (
-                        <tr key={s.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="px-4 py-3 font-medium text-cream whitespace-nowrap">
+                        <tr key={s.id} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                          <td className="px-4 py-3 font-medium text-ink-1 whitespace-nowrap">
                             {s.first_name} {s.last_name}
                           </td>
-                          <td className="px-4 py-3 text-gray-mid text-xs">{s.email}</td>
+                          <td className="px-4 py-3 text-ink-2 text-xs">{s.email}</td>
                           <td className="px-4 py-3">
                             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange">
                               {s.role}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-gray-mid text-xs">{s.teen_count ?? "—"}</td>
-                          <td className="px-4 py-3 text-gray-mid text-xs whitespace-nowrap">{fmtDate(s.created_at)}</td>
+                          <td className="px-4 py-3 text-ink-2 text-xs">{s.teen_count ?? "—"}</td>
+                          <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{fmtDate(s.created_at)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1394,11 +1394,11 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 6: PROGRAM PARTNERS ── */}
-        <section className="bg-[#231f18] border border-white/10 rounded-card-lg overflow-hidden">
-          <div className="px-6 py-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+          <div className="px-6 py-5 border-b border-outline flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
-              <h2 className="font-heading font-bold text-cream text-lg">Program Partners</h2>
-              <p className="text-gray-mid text-xs mt-0.5">
+              <h2 className="font-heading font-bold text-ink-1 text-lg">Program Partners</h2>
+              <p className="text-ink-2 text-xs mt-0.5">
                 {programData ? `${programData.signups.length} total signup${programData.signups.length !== 1 ? "s" : ""}` : "Organizations signed up for access"}
               </p>
             </div>
@@ -1410,7 +1410,7 @@ export default function AdminPage() {
                 {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
               </div>
             ) : programData.signups.length === 0 ? (
-              <p className="text-gray-mid text-sm">No program partner signups yet.</p>
+              <p className="text-ink-2 text-sm">No program partner signups yet.</p>
             ) : (
               <>
                 {/* Count + type breakdown */}
@@ -1419,30 +1419,30 @@ export default function AdminPage() {
                     <div className="font-display font-black text-6xl text-orange tracking-tight leading-none">
                       {programData.signups.length}
                     </div>
-                    <div className="text-gray-mid text-sm mt-1">program partner signups</div>
+                    <div className="text-ink-2 text-sm mt-1">program partner signups</div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {programData.typeBreakdown.map(({ type, count }) => (
-                      <div key={type} className="bg-white/5 border border-white/10 rounded-full px-4 py-1.5 flex items-center gap-2">
-                        <span className="text-cream text-sm font-semibold">{count}</span>
-                        <span className="text-gray-mid text-xs">{type}</span>
+                      <div key={type} className="bg-tile border-[1.5px] border-outline rounded-full px-4 py-1.5 flex items-center gap-2">
+                        <span className="text-ink-1 text-sm font-semibold">{count}</span>
+                        <span className="text-ink-2 text-xs">{type}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Mobile cards */}
-                <div className="md:hidden divide-y divide-white/5 -mx-6">
+                <div className="md:hidden divide-y divide-hairline -mx-6">
                   {programData.signups.map((s) => (
                     <div key={s.id} className="px-6 py-3">
                       <div className="flex items-center justify-between gap-3">
-                        <span className="font-medium text-cream text-sm truncate">{s.org_name}</span>
+                        <span className="font-medium text-ink-1 text-sm truncate">{s.org_name}</span>
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange flex-shrink-0">{s.program_type}</span>
                       </div>
-                      <div className="text-[11px] text-gray-mid mt-0.5 truncate">
+                      <div className="text-[11px] text-ink-2 mt-0.5 truncate">
                         {s.first_name} {s.last_name} · {s.email}
                       </div>
-                      <div className="text-[11px] text-white/30 mt-0.5">
+                      <div className="text-[11px] text-ink-3 mt-0.5">
                         {fmtDate(s.created_at)}{s.teen_count ? ` · ${s.teen_count} teens` : ""}
                       </div>
                     </div>
@@ -1453,9 +1453,9 @@ export default function AdminPage() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm min-w-[800px]">
                     <thead>
-                      <tr className="border-b border-white/10">
+                      <tr className="border-b border-outline">
                         {["Org Name", "Contact", "Email", "Program Type", "Teen Count", "Date"].map((h) => (
-                          <th key={h} className="text-left text-xs font-semibold text-white/30 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                          <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
                             {h}
                           </th>
                         ))}
@@ -1463,19 +1463,19 @@ export default function AdminPage() {
                     </thead>
                     <tbody>
                       {programData.signups.map((s) => (
-                        <tr key={s.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="px-4 py-3 font-medium text-cream whitespace-nowrap">{s.org_name}</td>
-                          <td className="px-4 py-3 text-gray-mid text-sm whitespace-nowrap">
+                        <tr key={s.id} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                          <td className="px-4 py-3 font-medium text-ink-1 whitespace-nowrap">{s.org_name}</td>
+                          <td className="px-4 py-3 text-ink-2 text-sm whitespace-nowrap">
                             {s.first_name} {s.last_name}
                           </td>
-                          <td className="px-4 py-3 text-gray-mid text-xs">{s.email}</td>
+                          <td className="px-4 py-3 text-ink-2 text-xs">{s.email}</td>
                           <td className="px-4 py-3">
                             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange">
                               {s.program_type}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-gray-mid text-xs">{s.teen_count ?? "—"}</td>
-                          <td className="px-4 py-3 text-gray-mid text-xs whitespace-nowrap">{fmtDate(s.created_at)}</td>
+                          <td className="px-4 py-3 text-ink-2 text-xs">{s.teen_count ?? "—"}</td>
+                          <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{fmtDate(s.created_at)}</td>
                         </tr>
                       ))}
                     </tbody>

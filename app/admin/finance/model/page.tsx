@@ -50,10 +50,10 @@ export default async function FinanceModelPage() {
         <div className="text-[10px] uppercase tracking-[0.25em] text-orange/80 mb-1">
           Live from the founder model
         </div>
-        <h1 className="font-display font-black uppercase tracking-tight text-cream text-4xl sm:text-5xl leading-none">
+        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-4xl sm:text-5xl leading-none">
           Model
         </h1>
-        <p className="mt-2 text-sm text-gray-mid max-w-2xl">
+        <p className="mt-2 text-sm text-ink-2 max-w-2xl">
           The four numbers that decide whether we keep going. Pulled directly
           from the source-of-truth Google Sheet — refreshes hourly.
         </p>
@@ -85,7 +85,7 @@ export default async function FinanceModelPage() {
             />
           </section>
 
-          <footer className="flex items-center justify-between gap-3 text-xs text-gray-mid pt-2">
+          <footer className="flex items-center justify-between gap-3 text-xs text-ink-2 pt-2">
             <span>Last fetched {fmtTime(status.data.fetchedAt)}</span>
             <a
               href={status.data.sheetUrl}
@@ -117,13 +117,13 @@ function Card({
 }) {
   const valueClass =
     tone === "warn"
-      ? "text-amber-300"
+      ? "text-[#A56A1B]"
       : accent === "orange"
       ? "text-orange"
-      : "text-cream";
+      : "text-ink-1";
   return (
-    <div className="rounded-card-lg border border-white/10 bg-white/[0.02] p-5">
-      <div className="text-[10px] uppercase tracking-widest text-gray-mid">
+    <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
+      <div className="text-[10px] uppercase tracking-widest text-ink-2">
         {label}
       </div>
       <div
@@ -137,11 +137,11 @@ function Card({
 
 function NotConfigured({ missing }: { missing: string[] }) {
   return (
-    <div className="rounded-card border border-amber-400/30 bg-amber-400/5 p-6 space-y-3">
+    <div className="rounded-card border border-[#D9BE86] bg-[#F4E8D0] p-6 space-y-3">
       <div className="text-sm font-semibold text-amber-200">
         Not configured yet
       </div>
-      <p className="text-sm text-cream/80 leading-relaxed">
+      <p className="text-sm text-ink-1 leading-relaxed">
         The Finance Model page is wired up but missing configuration. Once the
         items below are set, this page will render live KPIs from the source
         sheet on every visit (cached 1 hour).
@@ -151,10 +151,10 @@ function NotConfigured({ missing }: { missing: string[] }) {
           <li key={m}>{m}</li>
         ))}
       </ul>
-      <p className="text-xs text-gray-mid leading-relaxed">
+      <p className="text-xs text-ink-2 leading-relaxed">
         Env vars belong in Vercel (Production + Preview + Development).
         The Apps Script Web App source lives at{" "}
-        <code className="text-cream/90">scripts/finance-model-webhook.gs</code>{" "}
+        <code className="text-ink-1">scripts/finance-model-webhook.gs</code>{" "}
         — paste it into the sheet&apos;s Extensions → Apps Script editor.
       </p>
     </div>
@@ -163,17 +163,17 @@ function NotConfigured({ missing }: { missing: string[] }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-card border border-red-400/30 bg-red-400/5 p-6 space-y-2">
-      <div className="text-sm font-semibold text-red-200">
+    <div className="rounded-card border border-expense/30 bg-expense-bg p-6 space-y-2">
+      <div className="text-sm font-semibold text-expense">
         Couldn&apos;t reach the sheet
       </div>
-      <p className="text-sm text-cream/80 leading-relaxed">
+      <p className="text-sm text-ink-1 leading-relaxed">
         Google Sheets API returned an error. The most likely causes are:
         the service account hasn&apos;t been granted Viewer on the spreadsheet,
         the spreadsheet ID is wrong, or the private key newline escaping is
         off. Full error below.
       </p>
-      <pre className="mt-2 text-[11px] text-red-100/80 font-mono bg-black/40 border border-white/5 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">
+      <pre className="mt-2 text-[11px] text-expense font-mono bg-black/40 border border-hairline rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">
         {message}
       </pre>
     </div>

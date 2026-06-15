@@ -20,13 +20,13 @@ export type PlanInitiative = {
 };
 
 const inputCls =
-  "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/40";
+  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const STATUS_STYLES: Record<string, string> = {
-  on_track: "bg-green-500/15 text-green-400",
-  at_risk: "bg-amber-500/15 text-amber-400",
-  behind: "bg-red-500/15 text-red-400",
-  done: "bg-white/10 text-gray-mid",
+  on_track: "bg-revenue-bg text-revenue",
+  at_risk: "bg-[#F4E8D0] text-[#A56A1B]",
+  behind: "bg-expense-bg text-expense",
+  done: "bg-tile text-ink-2",
 };
 const STATUS_LABELS: Record<string, string> = {
   on_track: "On track",
@@ -73,14 +73,14 @@ export function NewGoalForm() {
   }
   return (
     <form onSubmit={submit}
-      className="w-full bg-white/[0.03] border border-white/10 rounded-card p-4 flex flex-wrap items-end gap-3">
-      <label className="flex-1 min-w-[240px] text-xs text-gray-mid">
+      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 flex flex-wrap items-end gap-3">
+      <label className="flex-1 min-w-[240px] text-xs text-ink-2">
         Goal
         <input className={`${inputCls} w-full mt-1`} value={title} required autoFocus
           placeholder="Serve 2,500 students across 35 school partners"
           onChange={(e) => setTitle(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Target date
         <input className={`${inputCls} block mt-1`} type="date" value={targetDate}
           onChange={(e) => setTargetDate(e.target.value)} />
@@ -90,7 +90,7 @@ export function NewGoalForm() {
         {busy ? "Saving…" : "Create"}
       </button>
       <button type="button" onClick={() => setOpen(false)}
-        className="text-xs text-gray-mid hover:text-cream px-2">
+        className="text-xs text-ink-2 hover:text-ink-1 px-2">
         Cancel
       </button>
     </form>
@@ -167,33 +167,33 @@ export function GoalCard({
   };
 
   return (
-    <section className={`bg-[#1d1812] border border-white/10 rounded-card p-5 ${busy ? "opacity-60" : ""}`}>
+    <section className={`bg-[#1d1812] border-[1.5px] border-outline rounded-card p-5 ${busy ? "opacity-60" : ""}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="font-heading font-semibold text-cream flex-1 min-w-0">{goal.title}</h2>
+        <h2 className="font-heading font-semibold text-ink-1 flex-1 min-w-0">{goal.title}</h2>
         <select
           value={goal.status}
           onChange={(e) => void patchGoal({ status: e.target.value })}
           className={`text-[11px] font-semibold rounded-full px-2 py-1 border-0 cursor-pointer ${STATUS_STYLES[goal.status]}`}
         >
           {Object.entries(STATUS_LABELS).map(([k, v]) => (
-            <option key={k} value={k} className="bg-[#1d1812] text-cream">{v}</option>
+            <option key={k} value={k} className="bg-[#1d1812] text-ink-1">{v}</option>
           ))}
         </select>
         {goal.target_date && (
-          <span className="text-[11px] text-gray-mid tabular-nums">by {goal.target_date}</span>
+          <span className="text-[11px] text-ink-2 tabular-nums">by {goal.target_date}</span>
         )}
         <button onClick={() => void removeGoal()}
-          className="text-[11px] text-gray-mid hover:text-red-300 px-1">
+          className="text-[11px] text-ink-2 hover:text-expense px-1">
           Delete
         </button>
       </div>
 
       {initiatives.length > 0 && (
         <div className="mt-3 flex items-center gap-3">
-          <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
+          <div className="flex-1 h-2 rounded-full bg-tile overflow-hidden">
             <div className="h-full bg-orange transition-all" style={{ width: `${pct}%` }} />
           </div>
-          <span className="text-[11px] text-gray-mid tabular-nums">
+          <span className="text-[11px] text-ink-2 tabular-nums">
             {done}/{initiatives.length}
           </span>
         </div>
@@ -207,16 +207,16 @@ export function GoalCard({
               className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${
                 i.status === "done"
                   ? "bg-orange border-orange text-white"
-                  : "border-white/25 text-transparent hover:border-orange/60"
+                  : "border-outline text-transparent hover:border-orange/60"
               }`}
               aria-label={i.status === "done" ? "Mark not done" : "Mark done"}
             >
               ✓
             </button>
-            <span className={i.status === "done" ? "text-gray-mid line-through" : "text-cream/85"}>
+            <span className={i.status === "done" ? "text-ink-2 line-through" : "text-ink-1"}>
               {i.title}
             </span>
-            {i.owner && <span className="text-[10px] text-gray-mid">· {i.owner}</span>}
+            {i.owner && <span className="text-[10px] text-ink-2">· {i.owner}</span>}
           </li>
         ))}
       </ul>
@@ -232,7 +232,7 @@ export function GoalCard({
           }}
         />
         <button onClick={() => void addInitiative()} disabled={busy}
-          className="text-[11px] bg-white/5 hover:bg-white/10 text-cream/70 px-3 rounded-lg">
+          className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 rounded-lg">
           Add
         </button>
       </div>

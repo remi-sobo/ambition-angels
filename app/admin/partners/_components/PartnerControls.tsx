@@ -36,7 +36,7 @@ const KIND_LABELS: Record<string, string> = {
 };
 
 const inputCls =
-  "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-cream text-sm placeholder-gray-mid focus:outline-none focus:border-orange/40";
+  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export function PartnerRow({ partner }: { partner: Partner }) {
   const router = useRouter();
@@ -83,12 +83,12 @@ export function PartnerRow({ partner }: { partner: Partner }) {
   return (
     <article
       className={`bg-[#1d1812] border rounded-xl p-3 text-sm ${
-        mouExpired ? "border-red-500/40" : "border-white/10"
+        mouExpired ? "border-expense/30" : "border-outline"
       } ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-semibold text-cream">{partner.name}</span>
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/10 text-gray-mid uppercase tracking-wider">
+        <span className="font-semibold text-ink-1">{partner.name}</span>
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
           {KIND_LABELS[partner.kind] ?? partner.kind}
         </span>
         {partner.mou_status !== "none" && (
@@ -96,9 +96,9 @@ export function PartnerRow({ partner }: { partner: Partner }) {
             className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
               partner.mou_status === "signed"
                 ? mouExpired
-                  ? "bg-red-500/15 text-red-300"
-                  : "bg-green-500/15 text-green-400"
-                : "bg-amber-500/15 text-amber-400"
+                  ? "bg-expense-bg text-expense"
+                  : "bg-revenue-bg text-revenue"
+                : "bg-[#F4E8D0] text-[#A56A1B]"
             }`}
           >
             MOU {partner.mou_status}
@@ -106,15 +106,15 @@ export function PartnerRow({ partner }: { partner: Partner }) {
           </span>
         )}
         {partner.teen_count && (
-          <span className="text-[11px] text-gray-mid">{partner.teen_count} teens</span>
+          <span className="text-[11px] text-ink-2">{partner.teen_count} teens</span>
         )}
-        <span className={`ml-auto text-[11px] tabular-nums ${stale ? "text-amber-400" : "text-gray-mid"}`}>
+        <span className={`ml-auto text-[11px] tabular-nums ${stale ? "text-[#A56A1B]" : "text-ink-2"}`}>
           {partner.last_touch_at ? `touched ${partner.last_touch_at}` : "never touched"}
         </span>
       </div>
 
       {(partner.champion_name || partner.champion_email) && (
-        <p className="text-[12px] text-gray-mid mt-1">
+        <p className="text-[12px] text-ink-2 mt-1">
           Champion: {partner.champion_name ?? "—"}
           {partner.champion_email && (
             <a href={`mailto:${partner.champion_email}`} className="text-orange/80 hover:text-orange ml-1.5">
@@ -130,7 +130,7 @@ export function PartnerRow({ partner }: { partner: Partner }) {
           value={partner.status}
           disabled={busy}
           onChange={(e) => patch({ status: e.target.value })}
-          className="text-[11px] bg-white/5 border border-white/10 rounded-md px-2 py-1 text-cream/80 cursor-pointer"
+          className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1 text-ink-1 cursor-pointer"
         >
           {STATUS_ORDER.map((s) => (
             <option key={s} value={s} className="bg-[#1d1812]">{STATUS_LABELS[s]}</option>
@@ -145,14 +145,14 @@ export function PartnerRow({ partner }: { partner: Partner }) {
         </button>
         <button
           onClick={() => setEditing((v) => !v)}
-          className="px-2 py-1 rounded-md text-[11px] bg-white/5 hover:bg-white/10 text-cream/70"
+          className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
         >
           Edit
         </button>
         <button
           onClick={() => void remove()}
           disabled={busy}
-          className="ml-auto px-2 py-1 rounded-md text-[11px] text-gray-mid hover:text-red-300"
+          className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
         >
           Delete
         </button>
@@ -192,8 +192,8 @@ function InlineEdit({
   };
 
   return (
-    <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-2 lg:grid-cols-6 gap-2 items-end">
-      <label className="text-[10px] text-gray-mid">
+    <div className="mt-3 pt-3 border-t border-outline grid grid-cols-2 lg:grid-cols-6 gap-2 items-end">
+      <label className="text-[10px] text-ink-2">
         Type
         <select className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={kind}
           onChange={(e) => setKind(e.target.value)}>
@@ -202,17 +202,17 @@ function InlineEdit({
           ))}
         </select>
       </label>
-      <label className="text-[10px] text-gray-mid">
+      <label className="text-[10px] text-ink-2">
         Champion
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={championName}
           onChange={(e) => setChampionName(e.target.value)} />
       </label>
-      <label className="text-[10px] text-gray-mid">
+      <label className="text-[10px] text-ink-2">
         Champion email
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={championEmail}
           onChange={(e) => setChampionEmail(e.target.value)} />
       </label>
-      <label className="text-[10px] text-gray-mid">
+      <label className="text-[10px] text-ink-2">
         MOU
         <select className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={mouStatus}
           onChange={(e) => setMouStatus(e.target.value)}>
@@ -221,18 +221,18 @@ function InlineEdit({
           ))}
         </select>
       </label>
-      <label className="text-[10px] text-gray-mid">
+      <label className="text-[10px] text-ink-2">
         MOU ends
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} type="date" value={mouEnd}
           onChange={(e) => setMouEnd(e.target.value)} />
       </label>
-      <label className="text-[10px] text-gray-mid">
+      <label className="text-[10px] text-ink-2">
         Data agreement
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} type="date" value={dsa}
           onChange={(e) => setDsa(e.target.value)} />
       </label>
       <div className="col-span-full flex justify-end gap-2">
-        <button onClick={onDone} className="text-[11px] text-gray-mid hover:text-cream px-2 py-1">
+        <button onClick={onDone} className="text-[11px] text-ink-2 hover:text-ink-1 px-2 py-1">
           Cancel
         </button>
         <button onClick={() => void save()}
@@ -290,13 +290,13 @@ export function NewPartnerForm() {
 
   return (
     <form onSubmit={submit}
-      className="w-full bg-white/[0.03] border border-white/10 rounded-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end">
-      <label className="text-xs text-gray-mid">
+      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+      <label className="text-xs text-ink-2">
         Organization
         <input className={`${inputCls} w-full mt-1`} value={name} required autoFocus
           placeholder="Roosevelt Middle School" onChange={(e) => setName(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Type
         <select className={`${inputCls} w-full mt-1`} value={kind} onChange={(e) => setKind(e.target.value)}>
           {Object.entries(KIND_LABELS).map(([k, v]) => (
@@ -304,12 +304,12 @@ export function NewPartnerForm() {
           ))}
         </select>
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Champion
         <input className={`${inputCls} w-full mt-1`} value={championName}
           placeholder="site coordinator / counselor" onChange={(e) => setChampionName(e.target.value)} />
       </label>
-      <label className="text-xs text-gray-mid">
+      <label className="text-xs text-ink-2">
         Champion email
         <input className={`${inputCls} w-full mt-1`} type="email" value={championEmail}
           onChange={(e) => setChampionEmail(e.target.value)} />
@@ -320,7 +320,7 @@ export function NewPartnerForm() {
           {busy ? "Saving…" : "Add"}
         </button>
         <button type="button" onClick={() => setOpen(false)}
-          className="text-xs text-gray-mid hover:text-cream px-2">
+          className="text-xs text-ink-2 hover:text-ink-1 px-2">
           Cancel
         </button>
       </div>

@@ -2,11 +2,11 @@ import type { BriefContent, Person } from "@/lib/agents/funder-research/types";
 
 function PersonCard({ p }: { p: Person }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
-      <div className="font-medium text-cream text-sm">{p.name}</div>
-      {p.title && <div className="text-xs text-cream/70 mt-0.5">{p.title}</div>}
+    <div className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-3">
+      <div className="font-medium text-ink-1 text-sm">{p.name}</div>
+      {p.title && <div className="text-xs text-ink-2 mt-0.5">{p.title}</div>}
       {p.professional_background && (
-        <div className="text-xs text-cream/60 mt-2 leading-relaxed">
+        <div className="text-xs text-ink-2 mt-2 leading-relaxed">
           {p.professional_background}
         </div>
       )}
@@ -34,20 +34,20 @@ export default function People({
   return (
     <details
       {...(defaultOpen ? { open: true } : {})}
-      className="rounded-card border border-white/10 bg-black/30 p-6 group"
+      className="rounded-card border-[1.5px] border-outline bg-black/30 p-6 group"
     >
-      <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-gray-mid hover:text-cream">
+      <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1">
         People
       </summary>
 
       <div className="mt-4 space-y-5">
         {!hasAny && (
-          <p className="text-sm text-gray-mid italic">No people surfaced.</p>
+          <p className="text-sm text-ink-2 italic">No people surfaced.</p>
         )}
 
         {data.primary_contact && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-cream/50 mb-2">
+            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
               Primary contact
             </div>
             <PersonCard p={data.primary_contact} />
@@ -56,7 +56,7 @@ export default function People({
 
         {data.board_members.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-cream/50 mb-2">
+            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
               Board members
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -69,7 +69,7 @@ export default function People({
 
         {data.staff_of_note.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-cream/50 mb-2">
+            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
               Staff of note
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

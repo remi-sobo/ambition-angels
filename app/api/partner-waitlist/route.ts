@@ -104,7 +104,13 @@ export async function POST(req: NextRequest) {
     problem_to_solve,
   } = body;
 
-  if (!first_name || !last_name || !email || !role) {
+  // The /mesa/students page reuses this submission path for a lightweight
+  // student signup (first name + email only), tagged role "MESA Student".
+  // Students have no last name field and must not receive the Guide-branded
+  // confirmation email below.
+  const isStudent = role === "MESA Student";
+
+  if (!first_name || !email || !role || (!isStudent && !last_name)) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -112,7 +118,7 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabase();
   const { error: dbError } = await supabase.from("partner_waitlist").insert({
     first_name,
-    last_name,
+    last_name: last_name || "",
     email,
     role,
     teen_count: teen_count || null,
@@ -123,23 +129,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
   }
 
-  // Send confirmation email (non-blocking — don't fail the request if email fails)
-  try {
-    await getResend().emails.send({
-      from: "Ambition Angels <careers@mail.ambitionangels.org>",
-      to: email,
-      subject: "You're on the Ambition Angels Guide waitlist",
-      html: buildConfirmationHTML(first_name, role),
-    });
-  } catch (emailErr) {
-    console.error("Resend error:", emailErr);
-    // Don't fail — DB write succeeded
+  // Send the Guide confirmation email (non-blocking). Skipped for MESA
+  // students: that email describes Guide access and would confuse a student.
+  if (!isStudent) {
+    try {
+      await getResend().emails.send({
+        from: "Ambition Angels <careers@mail.ambitionangels.org>",
+        to: email,
+        subject: "You're on the Ambition Angels Guide waitlist",
+        html: buildConfirmationHTML(first_name, role),
+      });
+    } catch (emailErr) {
+      console.error("Resend error:", emailErr);
+      // Don't fail — DB write succeeded
+    }
   }
 
   // Notification to Remi (non-blocking)
   try {
     const isCorporate = role === "Corporate Partner";
-    const subjectPrefix = isCorporate ? "New company inquiry" : "New Guide waitlist signup";
+    const subjectPrefix = isCorporate
+      ? "New company inquiry"
+      : isStudent
+        ? "New MESA student signup"
+        : "New Guide waitlist signup";
     await getResend().emails.send({
       from: "Ambition Angels <careers@mail.ambitionangels.org>",
       to: "remi@ambitionangels.org",

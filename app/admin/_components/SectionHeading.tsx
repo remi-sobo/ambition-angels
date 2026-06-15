@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * In-body section heading for the BloomOS admin — the small uppercase label
@@ -25,9 +26,7 @@ export default function SectionHeading({
 }) {
   return (
     <Tag
-      className={`text-[11px] font-semibold uppercase tracking-wider text-ink-2${
-        className ? ` ${className}` : ""
-      }`}
+      className={`${TYPE.sectionHeader}${className ? ` ${className}` : ""}`}
     >
       {children}
     </Tag>

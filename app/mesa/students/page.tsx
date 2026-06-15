@@ -5,9 +5,24 @@ import AppStoreButtons from "@/components/AppStoreButtons";
 import StudentSignup from "./StudentSignup";
 import { MESA } from "@/lib/mesa";
 
+const STUDENTS_DESCRIPTION = `Explore real careers on your phone and earn a ${MESA.rewardPerInternship} gift card every time you finish an internship. Free for MESA students at ${MESA.collegeName}.`;
+
 export const metadata: Metadata = {
   title: "Get Paid to Explore Careers | MESA",
-  description: `Explore real careers on your phone and earn a ${MESA.rewardPerInternship} gift card every time you finish an internship. Free for MESA students at ${MESA.collegeName}.`,
+  description: STUDENTS_DESCRIPTION,
+  alternates: { canonical: "/mesa/students" },
+  openGraph: {
+    title: "Get paid to figure out your future | MESA x Ambition Angels",
+    description: STUDENTS_DESCRIPTION,
+    url: "/mesa/students",
+    type: "website",
+    images: ["/opengraph-image.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Get paid to figure out your future | MESA x Ambition Angels",
+    description: STUDENTS_DESCRIPTION,
+  },
 };
 
 const dotTexture = {
@@ -238,9 +253,9 @@ export default function MesaStudentsPage() {
       </section>
 
       {/* ── B5 · THE MONEY IS REAL ───────────────────────────────────────── */}
-      <section className="section-pad bg-orange relative overflow-hidden">
+      <section className="section-pad bg-orange-dark relative overflow-hidden">
         <div
-          className="absolute inset-0 opacity-100"
+          className="absolute inset-0"
           style={{
             backgroundImage:
               "radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)",
@@ -249,13 +264,13 @@ export default function MesaStudentsPage() {
           aria-hidden="true"
         />
         <div className="container-site relative z-10">
-          <p className="text-xs font-bold text-white/80 uppercase tracking-widest mb-4 fade-up">
+          <p className="text-xs font-bold text-orange-light uppercase tracking-widest mb-4 fade-up">
             About that {MESA.rewardPerInternship}
           </p>
           <h2 className="font-heading font-bold text-4xl lg:text-5xl text-white tracking-tight leading-tight mb-5 max-w-2xl fade-up stagger-1">
             Your time has value. We pay it.
           </h2>
-          <p className="text-white/90 text-lg leading-relaxed max-w-2xl fade-up stagger-2">
+          <p className="text-white text-lg leading-relaxed max-w-2xl fade-up stagger-2">
             Every internship you finish earns a {MESA.rewardPerInternship} gift
             card from real brands. This is not points. This is not a maybe.
             Finish the work, get the reward.

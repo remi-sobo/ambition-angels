@@ -76,7 +76,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
 
   return (
     <article
-      className={`bg-[#1d1812] border rounded-xl p-3 text-sm ${
+      className={`bg-surface border rounded-xl p-3 text-sm ${
         overdue ? "border-expense/30" : "border-outline"
       } ${busy ? "opacity-60" : ""}`}
     >

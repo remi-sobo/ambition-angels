@@ -513,7 +513,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-ink">
 
       {/* ── HEADER ── */}
-      <div className="bg-[#19150f] border-b border-outline px-4 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3 sticky admin-sticky-top z-30 flex-wrap">
+      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3 sticky admin-sticky-top z-30 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
           <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Admin Dashboard</span>
           {lastUpdated && (
@@ -871,7 +871,7 @@ export default function AdminPage() {
                       </tr>
 
                       {expandedId === s.id && (
-                        <tr key={`${s.id}-expanded`} className="bg-[#19150f]">
+                        <tr key={`${s.id}-expanded`} className="bg-tile">
                           <td colSpan={8} className="px-6 py-6">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                               <div>

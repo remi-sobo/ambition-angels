@@ -184,7 +184,7 @@ export default async function DonorsPage() {
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-[#19150f] border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
+      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
         <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Donors</span>
         <Link
           href="/admin/fundraising/acknowledgments"

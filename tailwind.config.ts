@@ -46,6 +46,33 @@ const config: Config = {
           DEFAULT: "#B5482F", // expense / overdue red (deepened for cream)
           bg: "#F6E3DC", // pale expense background
         },
+        // ── BloomOS five-value status scale (spec Phase 0, AA-verified) ─────
+        // One meaning per color, shared by chips (Phase 3) and the briefing
+        // engine (Phase 4). `*` is the saturated hue (fills/dots/borders);
+        // `*-text` meets WCAG AA as small text on cream; `*-bg` is the pale
+        // chip tint (ink-1 label reads AAA on every tint). Nothing outside
+        // this scale gets a status color — otherwise it is `neutral`.
+        status: {
+          critical: "#B5482F",
+          "critical-text": "#9E3A24", // 6.70 AA on surface
+          "critical-bg": "#F6E3DC",
+          watch: "#B5762A",
+          "watch-text": "#8A5A12", // 4.87 AA on watch-bg
+          "watch-bg": "#F4E8D0",
+          due: "#C0703C", // clay — fill/border/dot only (AA-large as text)
+          "due-bg": "#F6E3D2",
+          healthy: "#2F7D5B", // 4.91 AA on surface
+          "healthy-bg": "#E2EFE5",
+          neutral: "#6B5C4E", // = ink-2
+          "neutral-bg": "#FBF6EC", // = tile
+        },
+        // Deliberate dark "attention" surface. Reserved for the briefing
+        // engine's critical state (Phase 4) — light text on it reads AAA.
+        // Distinct from the espresso sidebar chrome (`navy`).
+        attention: {
+          DEFAULT: "#23160D",
+          fg: "#F5EFE2",
+        },
         // BloomOS product chrome (docs/bloomos/06-design-system.md §2).
         navy: {
           DEFAULT: "rgb(var(--c-navy) / <alpha-value>)",

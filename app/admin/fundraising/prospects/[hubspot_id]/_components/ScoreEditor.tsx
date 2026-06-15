@@ -166,7 +166,7 @@ export default function ScoreEditor({
   }
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
       <div className="flex items-baseline justify-between gap-4 mb-4 flex-wrap">
         <h2 className="text-xs uppercase tracking-wider text-ink-2">
           Prospect Score

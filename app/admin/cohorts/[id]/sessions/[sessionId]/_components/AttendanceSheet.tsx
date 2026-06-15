@@ -130,7 +130,7 @@ export default function AttendanceSheet({
               key={e.studentId}
               onClick={() => tap(e)}
               className={`w-full flex items-center gap-3 rounded-xl border px-4 py-4 text-left transition-colors select-none active:scale-[0.99] ${
-                style ? style.row : "border-outline bg-[#1d1812] hover:border-outline"
+                style ? style.row : "border-outline bg-surface hover:border-outline"
               }`}
             >
               <span className="font-semibold text-ink-1 text-base">{e.name}</span>

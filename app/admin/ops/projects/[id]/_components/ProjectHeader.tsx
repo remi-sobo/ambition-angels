@@ -76,7 +76,7 @@ export default function ProjectHeader({ project }: { project: OpsProject }) {
   }
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
       <div className="flex items-start justify-between gap-3 mb-4">
         {titleEditing ? (
           <input

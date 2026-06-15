@@ -173,7 +173,7 @@ function ErrorPanel({ message }: { message: string }) {
         the spreadsheet ID is wrong, or the private key newline escaping is
         off. Full error below.
       </p>
-      <pre className="mt-2 text-[11px] text-expense font-mono bg-black/40 border border-hairline rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">
+      <pre className="mt-2 text-[11px] text-expense font-mono bg-surface border border-hairline rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">
         {message}
       </pre>
     </div>

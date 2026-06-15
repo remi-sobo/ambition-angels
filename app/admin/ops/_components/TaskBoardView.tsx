@@ -93,7 +93,7 @@ export default function TaskBoardView({
                 setHoverCol(null);
               }}
               className={`rounded-card border-[1.5px] p-3 min-h-[8rem] transition-colors ${
-                isOver ? "border-orange/50 bg-orange/5" : "border-outline bg-black/30"
+                isOver ? "border-orange/50 bg-orange/5" : "border-outline bg-surface"
               }`}
             >
               <header className="flex items-center justify-between mb-3 px-1">

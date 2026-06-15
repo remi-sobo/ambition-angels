@@ -320,7 +320,7 @@ function TypeRow({
   }
 
   return (
-    <div className="rounded-lg border-[1.5px] border-outline bg-black/20 p-5">
+    <div className="rounded-lg border-[1.5px] border-outline bg-tile p-5">
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           <span
@@ -595,7 +595,7 @@ function BlackoutsTab({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border-[1.5px] border-outline bg-black/20 p-5">
+      <div className="rounded-lg border-[1.5px] border-outline bg-tile p-5">
         <h2 className="text-lg font-semibold mb-4">Add a blackout</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Start date">
@@ -679,7 +679,7 @@ function BlackoutsTab({
             {blackouts.map((b) => (
               <li
                 key={b.id}
-                className="flex items-center justify-between gap-4 rounded-lg border-[1.5px] border-outline bg-black/20 px-4 py-3"
+                className="flex items-center justify-between gap-4 rounded-lg border-[1.5px] border-outline bg-tile px-4 py-3"
               >
                 <div className="flex-1 min-w-0">
                   <div className="text-ink-1">

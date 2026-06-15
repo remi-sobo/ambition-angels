@@ -248,7 +248,7 @@ export default async function MondayPlanPage() {
       )}
 
       {/* ── Section 2: This week's commitment ──────────────────────────── */}
-      <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
         <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
           This Week
         </h2>
@@ -306,7 +306,7 @@ export default async function MondayPlanPage() {
       </section>
 
       {/* ── Section 3: Candidates ──────────────────────────────────────── */}
-      <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
         <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
           Candidates for this week
         </h2>

@@ -169,15 +169,15 @@ export default async function ProjectsListPage({
       />
 
       {projects.length === 0 ? (
-        <div className="rounded-card border-[1.5px] border-outline bg-black/30 p-8 text-center text-sm text-ink-2">
+        <div className="rounded-card border-[1.5px] border-outline bg-surface p-8 text-center text-sm text-ink-2">
           No projects match your filters. Try clearing them, or use{" "}
           <span className="text-orange">+ New project</span> above.
         </div>
       ) : (
-        <div className="rounded-card border-[1.5px] border-outline bg-black/30 overflow-hidden">
+        <div className="rounded-card border-[1.5px] border-outline bg-surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-outline bg-black/20">
+              <thead className="border-b border-outline bg-tile">
                 <tr>
                   <SortHeader label="Title"        col="title"           current={sort} dir={dir} buildHref={buildSortHref} />
                   <ColHeader  label="Category" />

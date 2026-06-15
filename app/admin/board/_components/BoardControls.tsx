@@ -98,7 +98,7 @@ export function MemberRow({
 
   return (
     <article
-      className={`bg-[#1d1812] border-[1.5px] border-outline rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
+      className={`bg-surface border-[1.5px] border-outline rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-semibold text-ink-1">{member.name}</span>
@@ -402,7 +402,7 @@ export function MeetingCard({
   };
 
   return (
-    <article className={`bg-[#1d1812] border-[1.5px] border-outline rounded-xl p-4 text-sm ${busy ? "opacity-60" : ""}`}>
+    <article className={`bg-surface border-[1.5px] border-outline rounded-xl p-4 text-sm ${busy ? "opacity-60" : ""}`}>
       <button className="w-full flex flex-wrap items-center gap-2 text-left" onClick={() => setOpen((v) => !v)}>
         <span className="font-semibold text-ink-1">{meeting.title}</span>
         <span className="text-[12px] text-ink-2 tabular-nums">{meeting.meeting_date}</span>

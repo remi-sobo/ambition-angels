@@ -105,7 +105,7 @@ export default function AckComposer({
   }
 
   return (
-    <div className="w-full mt-3 bg-[#19150f] border-[1.5px] border-outline rounded-xl p-4 space-y-3">
+    <div className="w-full mt-3 bg-tile border-[1.5px] border-outline rounded-xl p-4 space-y-3">
       <div className="flex items-center gap-3 flex-wrap">
         <input
           value={subject}

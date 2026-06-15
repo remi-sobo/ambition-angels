@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CategoryTag, ScoreBadge } from "@/app/admin/_components/StatusChip";
 
 export type SortKey = "name" | "last_activity" | "score";
 export type SortDir = "asc" | "desc";
@@ -107,7 +108,7 @@ export default function ProspectListTable({
     <div className="rounded-card border-[1.5px] border-outline bg-surface overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="border-b border-outline bg-tile">
+          <thead className="sticky top-0 z-10 border-b border-outline bg-tile">
             <tr>
               <SortHeader
                 label="Name"
@@ -170,9 +171,7 @@ export default function ProspectListTable({
                 </td>
                 <td className="py-2.5 pr-4">
                   {r.lifecycle_stage ? (
-                    <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-tile border-[1.5px] border-outline text-ink-1">
-                      {r.lifecycle_stage}
-                    </span>
+                    <CategoryTag category={r.lifecycle_stage}>{r.lifecycle_stage}</CategoryTag>
                   ) : (
                     <span className="text-ink-2">—</span>
                   )}
@@ -183,14 +182,8 @@ export default function ProspectListTable({
                 <td className="py-2.5 pr-4 text-ink-2">
                   {fmtRelative(r.last_activity_at)}
                 </td>
-                <td className="py-2.5 pr-4 text-right font-mono">
-                  {r.score_total !== null && r.score_total !== undefined ? (
-                    <span className="text-orange font-semibold">
-                      {r.score_total}
-                    </span>
-                  ) : (
-                    <span className="text-ink-2">—</span>
-                  )}
+                <td className="py-2.5 pr-4 text-right">
+                  <ScoreBadge score={r.score_total} />
                 </td>
               </tr>
             ))}

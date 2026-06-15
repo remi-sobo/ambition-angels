@@ -10,6 +10,36 @@
  * hardcoded literal.
  */
 
+// ── Briefing engine thresholds (spec Phase 4) ───────────────────────────────
+// Every signal source reads its cutoffs from here — never a hardcoded literal —
+// so leadership can retune what counts as critical/watch without code changes.
+
+export const FINANCE = {
+  /** Months of runway at/below which finance is critical (red). */
+  runwayCriticalMonths: 3,
+  /** Months of runway at/below which finance is a watch (amber). */
+  runwayWatchMonths: 6,
+  /** Cash on hand (USD) at/below which we flag a watch regardless of runway. */
+  cashFloorUsd: 25_000,
+} as const;
+
+export const TASKS = {
+  /** Overdue task count at/above which tasks are a watch. */
+  overdueWatchCount: 1,
+  /** Overdue task count at/above which tasks are critical. */
+  overdueCriticalCount: 5,
+} as const;
+
+export const COMPLIANCE = {
+  /** A compliance item due within this many days is "due soon". Overdue is critical. */
+  dueSoonDays: 14,
+} as const;
+
+export const SNOOZE = {
+  /** Default snooze length when an operator defers a briefing item. */
+  hours: 24,
+} as const;
+
 export const DATA_AGE = {
   /**
    * Days since the last *full successful* HubSpot sync before the spine is

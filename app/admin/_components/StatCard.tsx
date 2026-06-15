@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Sparkline } from "../finance/_components/charts";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // The universal stat card (docs/bloomos/06-design-system.md §4.1):
 // label (11px uppercase) → value (28-32px semibold, tabular-nums) →
@@ -30,14 +31,10 @@ export default function StatCard({
       : "text-ink-2 bg-tile border-outline";
   return (
     <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 min-w-0">
-      <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-2 truncate">
+      <div className={`${TYPE.cardLabel} mb-2 truncate`}>
         {label}
       </div>
-      <div
-        className={`font-heading font-semibold text-[28px] leading-none tracking-tight [font-variant-numeric:tabular-nums] ${
-          muted ? "text-ink-3" : "text-ink-1"
-        }`}
-      >
+      <div className={`${TYPE.cardMetric} ${muted ? "!text-ink-3" : ""}`}>
         {value}
       </div>
       <div className="mt-2 flex items-center gap-2 min-h-[20px]">

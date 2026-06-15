@@ -116,23 +116,16 @@ export function isAdminUserId(v: unknown): v is AdminUserId {
 // ── Style helpers ──────────────────────────────────────────────────────────
 // Centralized so all components render consistent colors.
 
-// Keyed by every category either table can hold (project + task lists), so a
-// single helper styles badges everywhere regardless of which surface renders.
-const CATEGORY_BADGE_STYLES: Record<string, string> = {
-  fundraising: "bg-orange/15 text-orange border-orange/30",
-  admin: "bg-zinc-500/15 text-zinc-700 border-zinc-500/30",
-  board: "bg-purple-500/15 text-purple-700 border-purple-500/30",
-  recruitment: "bg-cyan-500/15 text-cyan-700 border-cyan-500/30",
-  program: "bg-revenue-bg text-revenue border-revenue/30",
-  product: "bg-indigo-500/15 text-indigo-700 border-indigo-500/30",
-  finance: "bg-[#F4E8D0] text-[#A56A1B] border-[#D9BE86]",
-  operations: "bg-amber-500/15 text-amber-700 border-amber-500/30",
-  compliance: "bg-rose-500/15 text-rose-700 border-rose-500/30",
-  other: "bg-tile text-ink-2 border-outline",
-};
+// Categories are taxonomy, not status — under the five-value scale they render
+// neutral (saturated color is reserved for the five status values). The
+// category hue survives only as a dot via <CategoryTag> (lib/admin/status.ts).
+const NEUTRAL_BADGE = "bg-status-neutral-bg text-ink-2 border-outline";
 
-export function categoryBadgeClass(c: string): string {
-  return CATEGORY_BADGE_STYLES[c] ?? CATEGORY_BADGE_STYLES.other;
+// Category is intentionally ignored now that all categories render neutral;
+// the signature is kept so existing call sites need no change.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function categoryBadgeClass(category: string): string {
+  return NEUTRAL_BADGE;
 }
 
 // ── Priority helpers ───────────────────────────────────────────────────────
@@ -140,7 +133,7 @@ export function categoryBadgeClass(c: string): string {
 const PRIORITY_FLAG_STYLES: Record<TaskPriority, string> = {
   urgent: "text-expense",
   high: "text-orange",
-  medium: "text-amber-500",
+  medium: "text-status-watch-text",
   low: "text-ink-3",
 };
 
@@ -159,11 +152,13 @@ export function priorityRank(p: TaskPriority | string): number {
   return i === -1 ? TASK_PRIORITIES.length : i;
 }
 
+// Statuses map onto the five-value scale: blocked→critical, done→healthy,
+// todo/in_progress carry no severity → neutral. (Token chips, ink-1 label.)
 const TASK_STATUS_BADGE_STYLES: Record<TaskStatus, string> = {
-  todo: "bg-tile text-ink-2 border-outline",
-  in_progress: "bg-blue-500/15 text-blue-700 border-blue-500/30",
-  done: "bg-revenue-bg text-revenue border-revenue/30",
-  blocked: "bg-expense-bg text-expense border-expense/30",
+  todo: "bg-status-neutral-bg text-ink-2 border-outline",
+  in_progress: "bg-status-neutral-bg text-ink-1 border-outline",
+  done: "bg-status-healthy-bg text-ink-1 border-status-healthy/30",
+  blocked: "bg-status-critical-bg text-ink-1 border-status-critical/30",
 };
 
 export function taskStatusBadgeClass(s: TaskStatus | string): string {
@@ -172,10 +167,10 @@ export function taskStatusBadgeClass(s: TaskStatus | string): string {
 }
 
 const PROJECT_STATUS_BADGE_STYLES: Record<ProjectStatus, string> = {
-  active: "bg-revenue-bg text-revenue border-revenue/30",
-  paused: "bg-[#F4E8D0] text-[#A56A1B] border-[#D9BE86]",
-  done: "bg-blue-500/15 text-blue-700 border-blue-500/30",
-  archived: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
+  active: "bg-status-due-bg text-ink-1 border-status-due/30",
+  paused: "bg-status-watch-bg text-ink-1 border-status-watch/30",
+  done: "bg-status-healthy-bg text-ink-1 border-status-healthy/30",
+  archived: "bg-status-neutral-bg text-ink-2 border-outline",
 };
 
 export function projectStatusBadgeClass(s: ProjectStatus | string): string {

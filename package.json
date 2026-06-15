@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "qa:visual": "playwright test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",
@@ -34,6 +35,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

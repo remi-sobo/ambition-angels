@@ -9,6 +9,7 @@ import {
 } from "../finance/_components/charts";
 import StatCard, { type Delta } from "./StatCard";
 import Greeting from "./Greeting";
+import BriefingStrip from "./BriefingStrip";
 import { todayISO } from "../ops/_types/ops";
 
 // Command Center v1 (docs/bloomos/06-design-system.md §5): finance + ops +
@@ -326,6 +327,9 @@ export default async function CommandCenter() {
     <div className="min-h-screen bg-ink">
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <Greeting org="Ambition Angels" />
+
+        {/* ── Needs you today (Phase 6): the day starts here, above the metrics ── */}
+        <BriefingStrip />
 
         {/* ── KPI strip ── */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">

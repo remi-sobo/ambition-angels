@@ -135,7 +135,7 @@ export default async function FridayReviewPage() {
       </header>
 
       {/* ── Section 1: What shipped this week ──────────────────────────── */}
-      <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
         <header className="flex items-baseline justify-between mb-4 gap-4 flex-wrap">
           <h2 className="text-xs uppercase tracking-wider text-ink-2">
             What shipped this week
@@ -188,7 +188,7 @@ export default async function FridayReviewPage() {
       </section>
 
       {/* ── Section 2: Still pinned, not done ──────────────────────────── */}
-      <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
         <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
           Still pinned, not done{" "}
           <span className="text-ink-3">({stillPinned.length})</span>
@@ -213,7 +213,7 @@ export default async function FridayReviewPage() {
 
       {/* ── Section 3: Slipped by category (only if non-zero) ──────────── */}
       {slippedRows.length > 0 && (
-        <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+        <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
           <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-1">
             Slipped categories
           </h2>

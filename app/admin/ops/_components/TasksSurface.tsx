@@ -33,7 +33,7 @@ export default function TasksSurface({
   const [groupBy, setGroupBy] = useState<GroupBy>("priority");
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-black/30 p-6">
+    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
       <header className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
           <h2 className="text-xs uppercase tracking-wider text-ink-2">Tasks</h2>

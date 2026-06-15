@@ -116,7 +116,7 @@ export default async function CohortsPage() {
             <Link
               key={c.id}
               href={`/admin/cohorts/${c.id}`}
-              className="block bg-[#1d1812] border-[1.5px] border-outline rounded-card p-4 hover:border-orange/30 transition-colors"
+              className="block bg-surface border-[1.5px] border-outline rounded-card p-4 hover:border-orange/30 transition-colors"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-heading font-semibold text-ink-1">{c.name}</span>

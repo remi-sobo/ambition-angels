@@ -23,7 +23,7 @@ export default function GivingProfile({
   return (
     <details
       {...(defaultOpen ? { open: true } : {})}
-      className="rounded-card border-[1.5px] border-outline bg-black/30 p-6 group"
+      className="rounded-card border-[1.5px] border-outline bg-surface p-6 group"
     >
       <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1">
         Giving profile

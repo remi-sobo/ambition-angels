@@ -97,17 +97,17 @@ export default function ProspectListTable({
 }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-card border-[1.5px] border-outline bg-black/30 p-8 text-center text-sm text-ink-2">
+      <div className="rounded-card border-[1.5px] border-outline bg-surface p-8 text-center text-sm text-ink-2">
         No prospects match your filters.
       </div>
     );
   }
 
   return (
-    <div className="rounded-card border-[1.5px] border-outline bg-black/30 overflow-hidden">
+    <div className="rounded-card border-[1.5px] border-outline bg-surface overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="border-b border-outline bg-black/20">
+          <thead className="border-b border-outline bg-tile">
             <tr>
               <SortHeader
                 label="Name"

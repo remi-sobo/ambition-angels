@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data: campaign } = await supabase
     .from("campaigns")
     .select("id, name")

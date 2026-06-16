@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { autoPlotFinalReport } from "@/lib/fundraising/grants";
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     ? (body.stage as string)
     : "prospect";
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
 
   let funderId: string | null = null;
   if (typeof body.funder_id === "string" && /^[0-9a-f-]{36}$/i.test(body.funder_id)) {

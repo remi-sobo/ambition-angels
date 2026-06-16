@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import { todayISO } from "../../ops/_types/ops";
@@ -44,7 +44,7 @@ const fmtDate = (iso: string) =>
 const BOARD_STAGES = ["prospect", "qualified", "loi", "proposal", "submitted", "awarded", "active"] as const;
 
 export default async function GrantsPage() {
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const [grantsRes, reqsRes] = await Promise.all([
     supabase
       .from("grants")

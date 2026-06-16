@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   if (typeof body?.source_code === "string" && body.source_code.trim())
     insert.source_code = body.source_code.trim().slice(0, 60);
 
-  const { data, error } = await getSupabaseAdmin()
+  const { data, error } = await createServerSupabase()
     .from("appeals")
     .insert(insert)
     .select("id")

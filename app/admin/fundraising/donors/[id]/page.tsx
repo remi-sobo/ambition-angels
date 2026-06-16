@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../../finance/_components/charts";
 import StatCard from "../../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
@@ -16,7 +16,7 @@ const fmtDate = (iso: string) =>
 export default async function DonorProfilePage({ params }: { params: { id: string } }) {
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes] = await Promise.all([
     supabase.from("constituents").select("*").eq("id", params.id).maybeSingle(),
     supabase

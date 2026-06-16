@@ -237,6 +237,10 @@ Phase 3: Rivalry features. Grants AI drafting and funder reports; Campaigns Fund
 
 Phase 4: Productization readiness. Tenant onboarding, migration tooling, security posture, support model. Out of scope to detail here. Gated by Phase 0A.
 
+Known pre-tenant-2 issues (surfaced during Phase 0A, deliberately not fixed there — they are harmless while Ambition Angels is the only org, and resolving them is part of making a second live tenant safe):
+- `fr_prospect_scores.hubspot_contact_id` carries a global `UNIQUE` constraint. With `org_id` now on the table it should be a composite `UNIQUE (org_id, hubspot_contact_id)`; otherwise two tenants can never score the same HubSpot contact id. Single-org-harmless today.
+- Stripe and Givebutter ingestion set `org_id` via the column default (the resident Ambition Angels org), not by resolving the org from the payload. Correct for one tenant, wrong for two: before a second tenant is onboarded, each webhook/ingestion path must resolve the correct `org_id` per event (e.g. from the connected account / integration the event arrived on) instead of relying on the default.
+
 ## Definition of done
 
 Overall:

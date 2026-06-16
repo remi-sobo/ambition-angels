@@ -19,6 +19,24 @@ create or replace function auth.uid() returns uuid
 language sql stable
 as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 
+-- pg_cron stub: the audit_log partition migrations call cron.schedule /
+-- cron.unschedule. Scheduling is a Supabase platform concern, not under test
+-- here, so these are inert shims that let those migrations apply fully against
+-- a plain Postgres (the rotation job itself is never exercised by the tests).
+create schema if not exists cron;
+create table if not exists cron.job (
+  jobid bigserial primary key,
+  jobname text,
+  schedule text,
+  command text
+);
+create or replace function cron.schedule(job_name text, schedule text, command text)
+returns bigint language sql as
+$$ insert into cron.job (jobname, schedule, command) values (job_name, schedule, command) returning jobid $$;
+create or replace function cron.unschedule(job_name text)
+returns boolean language sql as
+$$ delete from cron.job where jobname = job_name; select true; $$;
+
 do $$ begin create role authenticated nologin; exception when duplicate_object then null; end $$;
 do $$ begin create role anon nologin; exception when duplicate_object then null; end $$;
 

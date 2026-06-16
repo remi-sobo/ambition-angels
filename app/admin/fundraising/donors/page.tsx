@@ -1,6 +1,6 @@
 import Link from "next/link";
 import SegmentExportPanel from "./_components/SegmentExportPanel";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
@@ -36,7 +36,7 @@ const fmtDate = (iso: string) =>
 // Page through the whole gifts spine so KPIs and rollups are exact, not a
 // recency sample. Bounded at 50 pages (50k gifts) — revisit with SQL-side
 // aggregation long before that's real.
-async function fetchAllGifts(supabase: ReturnType<typeof getSupabaseAdmin>) {
+async function fetchAllGifts(supabase: ReturnType<typeof createServerSupabase>) {
   const out: Gift[] = [];
   const PAGE = 1000;
   for (let page = 0; page < 50; page++) {
@@ -54,7 +54,7 @@ async function fetchAllGifts(supabase: ReturnType<typeof getSupabaseAdmin>) {
 
 // Paginate active plans fully — the flag-suppression set must never be a
 // sample, or on-schedule monthly donors could get false lapse flags.
-async function fetchActivePlans(supabase: ReturnType<typeof getSupabaseAdmin>) {
+async function fetchActivePlans(supabase: ReturnType<typeof createServerSupabase>) {
   const ids: Array<string | null> = [];
   const PAGE = 1000;
   let count: number | null = null;
@@ -76,7 +76,7 @@ const chunk = <T,>(arr: T[], n: number): T[][] =>
   Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, (i + 1) * n));
 
 export default async function DonorsPage() {
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const [{ gifts: allGifts, error: giftsError }, plansRes, constituentCountRes, pendingAcksRes] = await Promise.all([
     fetchAllGifts(supabase),
     fetchActivePlans(supabase),

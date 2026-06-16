@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
@@ -97,7 +97,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "No valid fields" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data: before } = await supabase
     .from("opportunities")
     .select("*")
@@ -131,7 +131,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data: before } = await supabase
     .from("opportunities")
     .select("*")

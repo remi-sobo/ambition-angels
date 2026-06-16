@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SegmentExportPanel from "./_components/SegmentExportPanel";
 import DonorsTable, { type DonorRow } from "./_components/DonorsTable";
+import { NewDonorForm } from "./_components/ConstituentControls";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
@@ -205,16 +206,19 @@ export default async function DonorsPage() {
             (nonDonorConstituents > 0 ? ` · ${nonDonorConstituents} constituents without gifts` : "")
           }
           actions={
-            <Link
-              href="/admin/fundraising/acknowledgments"
-              className={`text-xs font-semibold px-4 py-2 rounded-full transition-colors ${
-                (pendingAcksRes.count ?? 0) > 0
-                  ? "text-orange bg-orange/10 border border-orange/30 hover:bg-orange/20"
-                  : "text-ink-2 hover:text-ink-1 border-[1.5px] border-outline bg-tile"
-              }`}
-            >
-              Acknowledgments{(pendingAcksRes.count ?? 0) > 0 ? ` (${pendingAcksRes.count})` : ""}
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/admin/fundraising/acknowledgments"
+                className={`text-xs font-semibold px-4 py-2 rounded-full transition-colors ${
+                  (pendingAcksRes.count ?? 0) > 0
+                    ? "text-orange bg-orange/10 border border-orange/30 hover:bg-orange/20"
+                    : "text-ink-2 hover:text-ink-1 border-[1.5px] border-outline bg-tile"
+                }`}
+              >
+                Acknowledgments{(pendingAcksRes.count ?? 0) > 0 ? ` (${pendingAcksRes.count})` : ""}
+              </Link>
+              <NewDonorForm />
+            </div>
           }
         />
         <div className="flex justify-end">

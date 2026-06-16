@@ -7,6 +7,7 @@ import { constituentName } from "@/lib/fundraising/display";
 import { analyzeDonor, FLAG_LABELS, FLAG_HELP } from "@/lib/fundraising/retention";
 import { todayISO } from "../../../ops/_types/ops";
 import { GiftEntryForm, GiftRowActions } from "../_components/GiftControls";
+import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentControls";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
 export const dynamic = "force-dynamic";
@@ -160,7 +161,27 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
-            <h2 className="font-heading font-bold text-ink-1 text-sm mb-1">Profile</h2>
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <h2 className="font-heading font-bold text-ink-1 text-sm">Profile</h2>
+              <EditDonorButton
+                donor={{
+                  id: c.id,
+                  type: c.type === "organization" ? "organization" : "person",
+                  first_name: c.first_name,
+                  last_name: c.last_name,
+                  org_name: c.org_name,
+                  emails: (c.emails as string[]) ?? [],
+                  phones: (c.phones as string[]) ?? [],
+                  street: c.street,
+                  city: c.city,
+                  state: c.state,
+                  postal_code: c.postal_code,
+                  tags: (c.tags as string[]) ?? [],
+                  do_not_contact: c.do_not_contact,
+                  notes: c.notes,
+                }}
+              />
+            </div>
             {[
               ["Type", c.type],
               ["Email", (c.emails as string[])[0] ?? "—"],
@@ -219,8 +240,9 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         </div>
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+          <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
             <h2 className="font-heading font-bold text-ink-1 text-sm">Interactions</h2>
+            <LogInteractionForm constituentId={c.id} />
           </div>
           {interactions.length === 0 ? (
             <p className="p-6 text-ink-2 text-sm">

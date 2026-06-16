@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
+import PageHeader from "../../_components/PageHeader";
+import Pipeline from "../../_components/Pipeline";
 import { todayISO } from "../../ops/_types/ops";
 import { NewGrantForm } from "./_components/GrantControls";
 import { STAGES, STAGE_LABELS } from "./_lib/stages";
@@ -95,12 +97,11 @@ export default async function GrantsPage() {
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center justify-between gap-3">
-        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Grants</span>
-        <span className="text-xs text-ink-2">{grants.length} total{closedCount > 0 ? ` · ${closedCount} declined/closed` : ""}</span>
-      </div>
-
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+        <PageHeader
+          title="Grants"
+          subtitle={`${grants.length} total${closedCount > 0 ? ` · ${closedCount} declined/closed` : ""}`}
+        />
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1 min-w-0">
             <StatCard label="Open Pipeline" value={money(openPipeline)} sub="prospect → submitted" />
@@ -121,65 +122,53 @@ export default async function GrantsPage() {
         <NewGrantForm />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* ── Pipeline ── */}
-          <section className="lg:col-span-8 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-outline">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Pipeline</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <div className="flex gap-3 p-4 min-w-[900px]">
-                {BOARD_STAGES.map((stage) => {
-                  const items = byStage.get(stage) ?? [];
-                  const total = items.reduce((s, g) => s + grantValue(g), 0);
-                  return (
-                    <div key={stage} className="flex-1 min-w-[120px]">
-                      <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-0.5">
-                        {STAGE_LABELS[stage]}
-                      </div>
-                      <div className="text-[11px] text-ink-2 mb-2 [font-variant-numeric:tabular-nums]">
-                        {items.length} · {money(total)}
-                      </div>
-                      <div className="space-y-2">
-                        {items.map((g) => (
-                          <Link
-                            key={g.id}
-                            href={`/admin/fundraising/grants/${g.id}`}
-                            className="block bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline rounded-lg px-2.5 py-2 transition-colors"
-                          >
-                            <div className="text-xs font-medium text-ink-1 truncate">{g.name}</div>
-                            <div className="text-[11px] text-ink-2 truncate">
-                              {g.funder?.org_name ?? "—"}
-                            </div>
-                            <div className="text-[11px] text-orange font-semibold [font-variant-numeric:tabular-nums]">
-                              {grantValue(g) > 0 ? money(grantValue(g)) : ""}
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
+          {/* ── Pipeline (shared component) ── */}
+          <div className="lg:col-span-8">
+            <Pipeline<Grant>
+              title="Pipeline"
+              columns={BOARD_STAGES.map((stage) => ({
+                key: stage,
+                label: STAGE_LABELS[stage],
+                items: byStage.get(stage) ?? [],
+              }))}
+              getCardKey={(g) => g.id}
+              columnSummary={(items) =>
+                `${items.length} · ${money(items.reduce((s, g) => s + grantValue(g), 0))}`
+              }
+              renderCard={(g) => (
+                <Link
+                  href={`/admin/fundraising/grants/${g.id}`}
+                  className="block bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline rounded-lg px-2.5 py-2 transition-colors"
+                >
+                  <div className="text-xs font-medium text-ink-1 truncate">{g.name}</div>
+                  <div className="text-[11px] text-ink-2 truncate">{g.funder?.org_name ?? "—"}</div>
+                  <div className="text-[11px] text-orange font-semibold [font-variant-numeric:tabular-nums]">
+                    {grantValue(g) > 0 ? money(grantValue(g)) : ""}
+                  </div>
+                </Link>
+              )}
+              footer={
+                closedCount > 0 ? (
+                  <>
+                    <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-2">
+                      Declined / Closed
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-            {closedCount > 0 && (
-              <div className="px-4 py-3 border-t border-outline">
-                <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-2">
-                  Declined / Closed
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {[...(byStage.get("declined") ?? []), ...(byStage.get("closed") ?? [])].map((g) => (
-                    <Link
-                      key={g.id}
-                      href={`/admin/fundraising/grants/${g.id}`}
-                      className="text-xs text-ink-3 hover:text-ink-1 bg-tile border-[1.5px] border-outline rounded-full px-2.5 py-1 transition-colors"
-                    >
-                      {g.name} · {STAGE_LABELS[g.stage]}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
+                    <div className="flex flex-wrap gap-2">
+                      {[...(byStage.get("declined") ?? []), ...(byStage.get("closed") ?? [])].map((g) => (
+                        <Link
+                          key={g.id}
+                          href={`/admin/fundraising/grants/${g.id}`}
+                          className="text-xs text-ink-3 hover:text-ink-1 bg-tile border-[1.5px] border-outline rounded-full px-2.5 py-1 transition-colors"
+                        >
+                          {g.name} · {STAGE_LABELS[g.stage]}
+                        </Link>
+                      ))}
+                    </div>
+                  </>
+                ) : undefined
+              }
+            />
+          </div>
 
           {/* ── Requirements calendar ── */}
           <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">

@@ -6,6 +6,7 @@ import StatCard from "../../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import { analyzeDonor, FLAG_LABELS, FLAG_HELP } from "@/lib/fundraising/retention";
 import { todayISO } from "../../../ops/_types/ops";
+import { GiftEntryForm, GiftRowActions } from "../_components/GiftControls";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
 
   const supabase = createServerSupabase();
-  const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes] = await Promise.all([
+  const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes, campaignsRes, fundsRes, appealsRes] = await Promise.all([
     supabase.from("constituents").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("gifts")
@@ -43,6 +44,10 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .eq("constituent_id", params.id)
       .order("occurred_at", { ascending: false })
       .limit(50),
+    // Attribution options for manual gift entry (Epic A).
+    supabase.from("campaigns").select("id, name").order("created_at", { ascending: false }).limit(100),
+    supabase.from("funds").select("id, name").order("name").limit(100),
+    supabase.from("appeals").select("id, name").order("name").limit(200),
   ]);
 
   // Query error = tables not applied yet (same grace state as the list
@@ -69,6 +74,9 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const interactions = (interactionsRes.data ?? []) as Array<{
     id: string; kind: string; occurred_at: string; notes: string | null; logged_by: string | null;
   }>;
+  const campaignOpts = (campaignsRes.data ?? []) as Array<{ id: string; name: string }>;
+  const fundOpts = (fundsRes.data ?? []) as Array<{ id: string; name: string }>;
+  const appealOpts = (appealsRes.data ?? []) as Array<{ id: string; name: string }>;
 
   const total = gifts.reduce((s, g) => s + g.amount, 0);
   const name = constituentName(c);
@@ -170,22 +178,28 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
           </section>
 
           <section className="lg:col-span-8 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-outline">
+            <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
               <h2 className="font-heading font-bold text-ink-1 text-sm">Giving Timeline</h2>
+              <GiftEntryForm
+                constituentId={c.id}
+                campaigns={campaignOpts}
+                funds={fundOpts}
+                appeals={appealOpts}
+              />
             </div>
             {gifts.length === 0 ? (
               <p className="p-6 text-ink-2 text-sm">No gifts recorded.</p>
             ) : (
               <ul className="divide-y divide-hairline">
                 {gifts.map((g) => (
-                  <li key={g.id} className="px-5 py-3 flex items-center gap-4">
+                  <li key={g.id} className="px-5 py-3 flex items-center gap-4 group">
                     <span className="text-xs text-ink-2 w-24 flex-shrink-0">{fmtDate(g.gift_date)}</span>
                     <span className="font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(g.amount)}</span>
                     <span className="text-[10px] uppercase tracking-wider text-ink-3">{g.method}</span>
                     {g.recurring_plan_id && (
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
                     )}
-                    <span className="ml-auto text-[11px]">
+                    <span className="ml-auto text-[11px] flex items-center gap-3">
                       {g.acknowledgment_status === "sent" ? (
                         <span className="text-revenue">Thanked</span>
                       ) : g.acknowledgment_status === "pending" ? (
@@ -193,6 +207,9 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                       ) : (
                         <span className="text-ink-3">—</span>
                       )}
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <GiftRowActions id={g.id} />
+                      </span>
                     </span>
                   </li>
                 ))}

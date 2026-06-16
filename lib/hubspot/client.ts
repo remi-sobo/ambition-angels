@@ -67,3 +67,34 @@ export async function hubspotGet<T = unknown>(path: string): Promise<T> {
 
   return (await res.json()) as T;
 }
+
+/**
+ * POST / PATCH JSON to api.hubapi.com with bearer auth (the write path —
+ * outbound sync to a connected HubSpot). Same auth + error contract as
+ * hubspotGet; the token is never serialized into errors.
+ *
+ * Callers should only reach this when a HubSpot connection is enabled (see
+ * lib/hubspot/connection.ts) — standalone orgs never hit the network.
+ */
+async function hubspotSend<T>(method: "POST" | "PATCH", path: string, body: unknown): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`${HUBSPOT_BASE_URL}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new HubSpotError(res.status, text, path);
+  }
+  return (await res.json()) as T;
+}
+
+export const hubspotPost = <T = unknown>(path: string, body: unknown): Promise<T> =>
+  hubspotSend<T>("POST", path, body);
+export const hubspotPatch = <T = unknown>(path: string, body: unknown): Promise<T> =>
+  hubspotSend<T>("PATCH", path, body);

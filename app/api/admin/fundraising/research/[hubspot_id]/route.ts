@@ -18,7 +18,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { generateBriefForContact } from "@/lib/agents/funder-research/generate-brief";
 import {
@@ -70,7 +70,7 @@ export async function POST(
     return NextResponse.json({ error: "Missing hubspot_id" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
 
   // ── 1. Rate limit ───────────────────────────────────────────────────────
   const windowStartIso = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "gift_id is required" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const sentAt = new Date().toISOString();
   // Atomic conditional flip — same double-acknowledgment guard as /send.
   const { data: claimed, error: claimErr } = await supabase

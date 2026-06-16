@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ANTHROPIC_API_KEY is not configured" }, { status: 503 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data: gift, error } = await supabase
     .from("gifts")
     .select("id, amount, gift_date, recurring_plan_id, constituent_id")

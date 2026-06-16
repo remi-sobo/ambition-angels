@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   let constituentId =
     typeof body.constituent_id === "string" && /^[0-9a-f-]{36}$/i.test(body.constituent_id)
       ? body.constituent_id

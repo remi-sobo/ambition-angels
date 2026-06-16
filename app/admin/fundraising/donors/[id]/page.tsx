@@ -8,6 +8,7 @@ import { analyzeDonor, FLAG_LABELS, FLAG_HELP } from "@/lib/fundraising/retentio
 import { todayISO } from "../../../ops/_types/ops";
 import { GiftEntryForm, GiftRowActions } from "../_components/GiftControls";
 import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentControls";
+import { HouseholdControls } from "../_components/HouseholdControls";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
 export const dynamic = "force-dynamic";
@@ -106,6 +107,50 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .eq("hubspot_id", hubspotId)
       .maybeSingle();
     hasBrief = !!brief;
+  }
+
+  // ── Household (Epic D1): the donor's household + combined member giving,
+  // plus the list of households for the join control. ──
+  const { data: householdsList } = await supabase
+    .from("households")
+    .select("id, name")
+    .order("name")
+    .limit(500);
+  const households = (householdsList ?? []) as Array<{ id: string; name: string }>;
+  const householdId = (c.household_id as string | null) ?? null;
+  let household:
+    | { name: string; total: number; members: Array<{ id: string; name: string; total: number }> }
+    | null = null;
+  if (householdId) {
+    const [hhRes, membersRes] = await Promise.all([
+      supabase.from("households").select("name").eq("id", householdId).maybeSingle(),
+      supabase
+        .from("constituents")
+        .select("id, type, first_name, last_name, org_name")
+        .eq("household_id", householdId),
+    ]);
+    const members = (membersRes.data ?? []) as Array<{
+      id: string; type: string; first_name: string | null; last_name: string | null; org_name: string | null;
+    }>;
+    const memberIds = members.map((m) => m.id);
+    const totals = new Map<string, number>();
+    if (memberIds.length > 0) {
+      const { data: hg } = await supabase
+        .from("gifts")
+        .select("constituent_id, amount")
+        .in("constituent_id", memberIds)
+        .limit(10000);
+      for (const g of (hg ?? []) as Array<{ constituent_id: string | null; amount: number }>) {
+        if (g.constituent_id) totals.set(g.constituent_id, (totals.get(g.constituent_id) ?? 0) + Number(g.amount));
+      }
+    }
+    if (hhRes.data) {
+      household = {
+        name: hhRes.data.name as string,
+        total: Array.from(totals.values()).reduce((s, v) => s + v, 0),
+        members: members.map((m) => ({ id: m.id, name: constituentName(m), total: totals.get(m.id) ?? 0 })),
+      };
+    }
   }
 
   // ── Unified activity stream (Epic C): gifts + interactions + thank-yous,
@@ -301,6 +346,47 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
             )}
           </section>
         </div>
+
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="font-heading font-bold text-ink-1 text-sm">
+              Household{household ? ` · ${household.name}` : ""}
+            </h2>
+            <HouseholdControls
+              constituentId={c.id}
+              currentHouseholdId={householdId}
+              households={households}
+            />
+          </div>
+          {household ? (
+            <div className="px-5 py-4">
+              <div className="text-xs text-ink-2 mb-3">
+                Combined household giving{" "}
+                <span className="font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(household.total)}</span>
+                {` · ${household.members.length} member${household.members.length === 1 ? "" : "s"}`}
+              </div>
+              <ul className="flex flex-wrap gap-2">
+                {household.members.map((m) => (
+                  <li key={m.id}>
+                    <Link
+                      href={`/admin/fundraising/donors/${m.id}`}
+                      className={`text-[11px] rounded-full px-3 py-1 border-[1.5px] border-outline transition-colors ${
+                        m.id === c.id ? "bg-orange/10 text-orange" : "bg-tile text-ink-2 hover:text-orange"
+                      }`}
+                    >
+                      {m.name} · {money(m.total)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="px-5 py-4 text-ink-2 text-sm">
+              Not in a household. Create one to roll up giving for spouses or family, or join an
+              existing household.
+            </p>
+          )}
+        </section>
       </div>
     </div>
   );

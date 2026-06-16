@@ -9,6 +9,7 @@ import { todayISO } from "../../../ops/_types/ops";
 import { GiftEntryForm, GiftRowActions } from "../_components/GiftControls";
 import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentControls";
 import { HouseholdControls } from "../_components/HouseholdControls";
+import { AddSoftCredit, SoftCreditChip, SC_TYPE_LABEL } from "../_components/SoftCreditControls";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
 export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
 
   const supabase = createServerSupabase();
-  const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes, campaignsRes, fundsRes, appealsRes] = await Promise.all([
+  const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes, campaignsRes, fundsRes, appealsRes, scReceivedRes] = await Promise.all([
     supabase.from("constituents").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("gifts")
@@ -55,6 +56,8 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
     supabase.from("campaigns").select("id, name").order("created_at", { ascending: false }).limit(100),
     supabase.from("funds").select("id, name").order("name").limit(100),
     supabase.from("appeals").select("id, name").order("name").limit(200),
+    // Soft credits this donor *received* (recognition only) — Epic D3.
+    supabase.from("soft_credits").select("amount").eq("constituent_id", params.id).limit(5000),
   ]);
 
   // Query error = tables not applied yet (same grace state as the list
@@ -86,7 +89,32 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const fundOpts = (fundsRes.data ?? []) as Array<{ id: string; name: string }>;
   const appealOpts = (appealsRes.data ?? []) as Array<{ id: string; name: string }>;
 
+  // Soft credits ON this donor's gifts (Epic D2): credited party + type per
+  // gift, for the timeline.
+  const giftIds = gifts.map((g) => g.id);
+  const scByGift = new Map<string, Array<{ id: string; type: string; name: string }>>();
+  if (giftIds.length > 0) {
+    const { data: scRows } = await supabase
+      .from("soft_credits")
+      .select("id, gift_id, type, constituent:constituents ( type, first_name, last_name, org_name )")
+      .in("gift_id", giftIds)
+      .limit(2000);
+    for (const sc of (scRows ?? []) as unknown as Array<{
+      id: string; gift_id: string; type: string;
+      constituent: { type: string; first_name: string | null; last_name: string | null; org_name: string | null } | null;
+    }>) {
+      const list = scByGift.get(sc.gift_id) ?? [];
+      list.push({ id: sc.id, type: sc.type, name: sc.constituent ? constituentName(sc.constituent) : "Unknown" });
+      scByGift.set(sc.gift_id, list);
+    }
+  }
+  // Recognition received = soft credits where this donor is the credited party
+  // (Epic D3). Revenue counts only hard-credit gifts; recognition adds these.
+  const recognitionReceived = ((scReceivedRes.data ?? []) as Array<{ amount: number }>)
+    .reduce((s, r) => s + Number(r.amount), 0);
+
   const total = gifts.reduce((s, g) => s + g.amount, 0);
+  const recognition = total + recognitionReceived;
   const name = constituentName(c);
   const activePlan = plans.find((p) => p.status === "active");
   const allDates = ((allDatesRes.data ?? []) as Array<{ gift_date: string }>).map((g) => g.gift_date);
@@ -223,7 +251,11 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
 
       <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Lifetime Giving" value={money(total)} />
+          <StatCard
+            label="Lifetime Giving"
+            value={money(total)}
+            sub={recognitionReceived > 0 ? `${money(recognition)} recognition incl. soft credits` : undefined}
+          />
           <StatCard label="Gifts" value={gifts.length} sub={gifts.length > 0 ? `latest ${fmtDate(gifts[0].gift_date)}` : undefined} />
           <StatCard
             label="First Gift"
@@ -297,27 +329,41 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                 {activity.map((ev) => {
                   if (ev.kind === "gift") {
                     const g = ev.gift;
+                    const scList = scByGift.get(g.id) ?? [];
                     return (
-                      <li key={`g-${g.id}`} className="px-5 py-3 flex items-center gap-4 group">
-                        <span className="text-xs text-ink-2 w-24 flex-shrink-0">{fmtWhen(g.gift_date)}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-revenue font-semibold w-14 flex-shrink-0">Gift</span>
-                        <span className="font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(g.amount)}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-ink-3">{g.method}</span>
-                        {g.recurring_plan_id && (
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
-                        )}
-                        <span className="ml-auto text-[11px] flex items-center gap-3">
-                          {g.acknowledgment_status === "sent" ? (
-                            <span className="text-revenue">Thanked</span>
-                          ) : g.acknowledgment_status === "pending" ? (
-                            <span className="text-orange">Thank-you pending</span>
-                          ) : (
-                            <span className="text-ink-3">—</span>
+                      <li key={`g-${g.id}`} className="px-5 py-3 group">
+                        <div className="flex items-center gap-4">
+                          <span className="text-xs text-ink-2 w-24 flex-shrink-0">{fmtWhen(g.gift_date)}</span>
+                          <span className="text-[10px] uppercase tracking-wider text-revenue font-semibold w-14 flex-shrink-0">Gift</span>
+                          <span className="font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(g.amount)}</span>
+                          <span className="text-[10px] uppercase tracking-wider text-ink-3">{g.method}</span>
+                          {g.recurring_plan_id && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
                           )}
-                          <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <GiftRowActions id={g.id} />
+                          <span className="ml-auto text-[11px] flex items-center gap-3">
+                            {g.acknowledgment_status === "sent" ? (
+                              <span className="text-revenue">Thanked</span>
+                            ) : g.acknowledgment_status === "pending" ? (
+                              <span className="text-orange">Thank-you pending</span>
+                            ) : (
+                              <span className="text-ink-3">—</span>
+                            )}
+                            <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <GiftRowActions id={g.id} />
+                            </span>
                           </span>
-                        </span>
+                        </div>
+                        <div className="mt-1 ml-24 flex flex-wrap items-center gap-1.5">
+                          {scList.map((sc) => (
+                            <SoftCreditChip
+                              key={sc.id}
+                              giftId={g.id}
+                              id={sc.id}
+                              label={`${sc.name} · ${SC_TYPE_LABEL[sc.type] ?? sc.type}`}
+                            />
+                          ))}
+                          <AddSoftCredit giftId={g.id} />
+                        </div>
                       </li>
                     );
                   }

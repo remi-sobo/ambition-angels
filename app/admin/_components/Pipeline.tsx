@@ -22,6 +22,7 @@ export default function Pipeline<T>({
   footer,
   minColWidth = 120,
   minBoardWidth = 900,
+  maxVisible,
   emptyHint,
 }: {
   /** Optional board heading rendered in the card header. */
@@ -35,6 +36,8 @@ export default function Pipeline<T>({
   footer?: ReactNode;
   minColWidth?: number;
   minBoardWidth?: number;
+  /** Cap visible cards per column; the rest collapse behind "Show N more". */
+  maxVisible?: number;
   /** Shown inside a column with no items. */
   emptyHint?: ReactNode;
 }) {
@@ -58,6 +61,22 @@ export default function Pipeline<T>({
               <div className="space-y-2">
                 {col.items.length === 0 && emptyHint != null ? (
                   <div className="text-[11px] text-ink-3">{emptyHint}</div>
+                ) : maxVisible != null && col.items.length > maxVisible ? (
+                  <>
+                    {col.items.slice(0, maxVisible).map((item) => (
+                      <div key={getCardKey(item)}>{renderCard(item)}</div>
+                    ))}
+                    <details>
+                      <summary className="text-xs text-ink-2 cursor-pointer hover:text-ink-1 px-1 py-1">
+                        Show {col.items.length - maxVisible} more
+                      </summary>
+                      <div className="space-y-2 mt-2">
+                        {col.items.slice(maxVisible).map((item) => (
+                          <div key={getCardKey(item)}>{renderCard(item)}</div>
+                        ))}
+                      </div>
+                    </details>
+                  </>
                 ) : (
                   col.items.map((item) => (
                     <div key={getCardKey(item)}>{renderCard(item)}</div>

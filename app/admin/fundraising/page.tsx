@@ -1,8 +1,8 @@
 import Link from "next/link";
-import SectionHeading from "../_components/SectionHeading";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../finance/_components/charts";
 import PageHeader from "../_components/PageHeader";
+import Pipeline from "../_components/Pipeline";
 import SectionSummary from "../_components/SectionSummary";
 import StatCard from "../_components/StatCard";
 import { NewOpportunityForm, OpportunityCard } from "./_components/PipelineBoard";
@@ -131,62 +131,36 @@ export default async function MajorGiftsPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 items-start">
-        {PIPELINE_STAGES.map((stage) => {
-          const col = opps.filter((o) => o.stage === stage);
-          const colValue = col.reduce((s, o) => s + (o.askAmount ?? 0), 0);
-          return (
-            <section
-              key={stage}
-              className="bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-3 min-h-[120px]"
-            >
-              <header className="flex items-baseline justify-between px-1 mb-3">
-                <SectionHeading>
-                  {STAGE_LABELS[stage]}
-                </SectionHeading>
-                <span className="text-[11px] text-ink-2 tabular-nums">
-                  {col.length} · {money(colValue)}
-                </span>
-              </header>
-              <div className="space-y-2">
-                {col.slice(0, 12).map((o) => (
-                  <OpportunityCard key={o.id} opp={o} />
-                ))}
-                {col.length > 12 && (
-                  <details>
-                    <summary className="text-xs text-ink-2 cursor-pointer hover:text-ink-2 px-1 py-1">
-                      Show {col.length - 12} more
-                    </summary>
-                    <div className="space-y-2 mt-2">
-                      {col.slice(12).map((o) => (
-                        <OpportunityCard key={o.id} opp={o} />
-                      ))}
-                    </div>
-                  </details>
-                )}
-                {col.length === 0 && (
-                  <p className="text-xs text-ink-2/60 px-1 pb-1">Empty</p>
-                )}
+      <Pipeline<OpportunityRow>
+        columns={PIPELINE_STAGES.map((stage) => ({
+          key: stage,
+          label: STAGE_LABELS[stage],
+          items: opps.filter((o) => o.stage === stage),
+        }))}
+        getCardKey={(o) => o.id}
+        columnSummary={(items) =>
+          `${items.length} · ${money(items.reduce((s, o) => s + (o.askAmount ?? 0), 0))}`
+        }
+        renderCard={(o) => <OpportunityCard opp={o} />}
+        maxVisible={12}
+        emptyHint="Empty"
+        footer={
+          opps.some((o) => o.stage === "lost") ? (
+            <details>
+              <summary className="text-xs text-ink-2 cursor-pointer hover:text-ink-1">
+                Lost ({opps.filter((o) => o.stage === "lost").length})
+              </summary>
+              <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-3">
+                {opps
+                  .filter((o) => o.stage === "lost")
+                  .map((o) => (
+                    <OpportunityCard key={o.id} opp={o} />
+                  ))}
               </div>
-            </section>
-          );
-        })}
-      </div>
-
-      {opps.some((o) => o.stage === "lost") && (
-        <details className="mt-6">
-          <summary className="text-xs text-ink-2 cursor-pointer hover:text-ink-2">
-            Lost ({opps.filter((o) => o.stage === "lost").length})
-          </summary>
-          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-3">
-            {opps
-              .filter((o) => o.stage === "lost")
-              .map((o) => (
-                <OpportunityCard key={o.id} opp={o} />
-              ))}
-          </div>
-        </details>
-      )}
+            </details>
+          ) : undefined
+        }
+      />
     </div>
   );
 }

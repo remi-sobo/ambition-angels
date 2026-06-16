@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { pushOpportunityToHubSpot } from "@/lib/hubspot/sync-out";
 
 const STAGES = [
   "identify", "qualify", "cultivate", "solicit", "steward", "lost",
@@ -119,6 +120,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     before,
     after: update,
   });
+
+  // Keep the linked HubSpot deal in sync (no-op when standalone).
+  await pushOpportunityToHubSpot(params.id);
 
   return NextResponse.json({ ok: true });
 }

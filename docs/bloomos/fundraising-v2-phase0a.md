@@ -82,11 +82,15 @@ the org-2 user reads **zero** AA fundraising rows and is **denied** inserts
 still reads and writes its own rows. That cross-org assertion is the Phase 0A
 definition of done.
 
-### Manual app smoke (do this once after applying the migrations to the real DB)
+### Manual app smoke (the real merge gate — run on a Vercel preview)
 
-Sign in to BloomOS as the AA owner (Remi) and confirm each page renders its
-data (these now read through the user session, so this proves RLS did not lock
-the operator out):
+The automated owner smoke above is a DB-level proxy and covers **reads only**.
+The actual gate before merge is a manual smoke in a **live authenticated
+session on a Vercel preview deploy**, signed in as the AA owner (Remi). Page
+loads alone are not enough — exercise at least one **write** per major surface,
+because the swap moves writes onto the user session under RLS too.
+
+**Read pass — each page renders its data:**
 
 1. `/admin/fundraising` — overview / opportunities pipeline
 2. `/admin/fundraising/donors` — donor rollups + KPIs
@@ -98,8 +102,21 @@ the operator out):
 8. `/admin/fundraising/prospects` — prospect list (hs_contacts + scores)
 9. `/admin/fundraising/prospects/[hubspot_id]` — a prospect detail
 
-Also exercise one write per area (create a grant, advance an opportunity, mark
-an acknowledgment) to confirm writes still succeed for the owner.
+**Write pass — each must succeed as the AA owner (these prove RLS allows the
+operator's writes, which the read-only proxy did not cover):**
+
+- **Opportunity:** create a new opportunity, then advance its stage
+  (`/admin/fundraising` → inline new ask → move a card).
+- **Prospect score:** save/update a prospect's score
+  (`/admin/fundraising/prospects/[hubspot_id]` → seven-dimension score editor).
+- **Acknowledgment:** mark a gift acknowledged
+  (`/admin/fundraising/acknowledgments` → mark / approve in the queue).
+- **Segment:** save a donor segment
+  (`/admin/fundraising/donors` → segment export panel → save segment).
+
+Optionally also create a grant and advance a grant requirement. If any page
+renders empty or any write errors, do **not** merge — report it back; an empty
+render or a denied write means RLS is filtering the owner where it shouldn't.
 
 ## Apply order
 

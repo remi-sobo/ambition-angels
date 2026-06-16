@@ -67,6 +67,13 @@ export async function POST(req: NextRequest) {
       case "invoice.payment_failed": {
         const invoice = event.data.object as InvoiceWebhook;
         const amt = ((invoice.amount_due ?? 0) / 100).toFixed(2);
+        // Flag the recurring plan so the dashboard surfaces it for follow-up.
+        if (invoice.subscription) {
+          await supabase
+            .from("recurring_plans")
+            .update({ last_payment_failed_at: new Date().toISOString() })
+            .eq("external_id", invoice.subscription);
+        }
         await getResend().emails.send({
           from: "Ambition Angels <careers@mail.ambitionangels.org>",
           to: "remi@ambitionangels.org",
@@ -115,6 +122,13 @@ export async function POST(req: NextRequest) {
             subscription_id: invoice.subscription,
             status: "succeeded",
           });
+
+          // A successful renewal clears any prior failure flag and records the
+          // last charge for the recurring dashboard.
+          await supabase
+            .from("recurring_plans")
+            .update({ last_charged_at: new Date().toISOString(), last_payment_failed_at: null })
+            .eq("external_id", invoice.subscription);
 
           // Notify Remi on recurring renewals (non-blocking)
           void getResend().emails.send({

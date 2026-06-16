@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { pushConstituentToHubSpot } from "@/lib/hubspot/sync-out";
 
 // Epic B — constituent (donor) records by hand. Until now constituents were
 // only created as a side effect of a gift/opportunity/grant; this lets staff
@@ -67,6 +68,10 @@ export async function POST(req: NextRequest) {
     entityId: data.id,
     after: insert,
   });
+
+  // Outbound sync to a connected HubSpot (no-op when standalone). Fail-soft:
+  // the local record is already committed regardless of the push outcome.
+  await pushConstituentToHubSpot(data.id);
 
   return NextResponse.json({ id: data.id });
 }

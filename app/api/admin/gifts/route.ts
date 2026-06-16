@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { pushGiftToHubSpot } from "@/lib/hubspot/sync-out";
 
 // Epic A — manual / offline gift entry. The Stripe pipeline auto-ingests
 // online gifts via the donations trigger; this is the path for checks, cash,
@@ -124,6 +125,9 @@ export async function POST(req: NextRequest) {
     entityId: gift.id,
     after: insert,
   });
+
+  // Mirror to a connected HubSpot as a closed-won deal (opt-in; no-op otherwise).
+  await pushGiftToHubSpot(gift.id);
 
   return NextResponse.json({ id: gift.id, constituent_id: constituentId, warning });
 }

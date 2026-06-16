@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { pushOpportunityToHubSpot } from "@/lib/hubspot/sync-out";
 
 const STAGES = [
   "identify", "qualify", "cultivate", "solicit", "steward", "lost",
@@ -117,6 +118,9 @@ export async function POST(req: NextRequest) {
     entityId: opp.id,
     after: insert,
   });
+
+  // Mirror to a connected HubSpot as a deal (no-op when standalone).
+  await pushOpportunityToHubSpot(opp.id);
 
   return NextResponse.json({ id: opp.id, warning });
 }

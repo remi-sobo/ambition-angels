@@ -9,6 +9,7 @@ import {
   AddRequirementForm,
 } from "../_components/GrantControls";
 import { STAGE_LABELS } from "../_lib/stages";
+import PageHeader from "../../../_components/PageHeader";
 
 // Grant detail: award facts, stage control, and the requirements calendar.
 export const dynamic = "force-dynamic";
@@ -72,20 +73,23 @@ export default async function GrantDetailPage({ params }: { params: { id: string
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3 flex-wrap">
-        <Link href="/admin/fundraising/grants" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
-          ← Grants
-        </Link>
-        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base truncate">{g.name}</span>
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
-          {STAGE_LABELS[g.stage] ?? g.stage}
-        </span>
-        <div className="ml-auto">
-          <StageSelect grantId={g.id} stage={g.stage} periodEnd={g.period_end ?? null} />
-        </div>
-      </div>
-
       <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+        <PageHeader
+          eyebrow={
+            <Link href="/admin/fundraising/grants" className="hover:text-ink-1 transition-colors">
+              ← Grants
+            </Link>
+          }
+          title={
+            <span className="flex items-center gap-3 flex-wrap">
+              <span className="truncate">{g.name}</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
+                {STAGE_LABELS[g.stage] ?? g.stage}
+              </span>
+            </span>
+          }
+          actions={<StageSelect grantId={g.id} stage={g.stage} periodEnd={g.period_end ?? null} />}
+        />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <section className="lg:col-span-5 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
             <h2 className="font-heading font-bold text-ink-1 text-sm mb-1">Details</h2>

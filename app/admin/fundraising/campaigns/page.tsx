@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import {
@@ -13,7 +13,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function CampaignsPage() {
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const [campaignsRes, appealsRes, giftsRes, unattributedRes] = await Promise.all([
     supabase
       .from("campaigns")

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../../finance/_components/charts";
 import { todayISO } from "../../../ops/_types/ops";
 import {
@@ -24,7 +24,7 @@ const fmtDate = (iso: string) =>
 export default async function GrantDetailPage({ params }: { params: { id: string } }) {
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const [gRes, reqsRes] = await Promise.all([
     supabase
       .from("grants")

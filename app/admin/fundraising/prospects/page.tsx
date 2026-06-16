@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import ProspectFilters from "../_components/ProspectFilters";
 import ProspectListTable, {
   type ProspectRow,
@@ -108,7 +108,7 @@ export default async function FundraisingProspectsPage({
   const { q, lifecycle, owner, scored, sort, dir, page } =
     parseSearchParams(searchParams);
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
 
   // Query 1: contacts narrowed by server-side filters.
   let contactsQuery = supabase.from("hs_contacts").select(SELECT_COLS);

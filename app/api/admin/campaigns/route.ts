@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (isISODate(body?.starts_on)) insert.starts_on = body!.starts_on;
   if (isISODate(body?.ends_on)) insert.ends_on = body!.ends_on;
 
-  const { data, error } = await getSupabaseAdmin()
+  const { data, error } = await createServerSupabase()
     .from("campaigns")
     .insert(insert)
     .select("id")

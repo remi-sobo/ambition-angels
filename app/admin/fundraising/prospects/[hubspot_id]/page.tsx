@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import ScoreEditor, { type ProspectScore } from "./_components/ScoreEditor";
 import CompanyCard, { type HsCompany } from "./_components/CompanyCard";
 import DealsTable, { type HsDeal } from "./_components/DealsTable";
@@ -68,7 +68,7 @@ type PageProps = { params: { hubspot_id: string } };
 
 export default async function ProspectDetailPage({ params }: PageProps) {
   const hubspotId = params.hubspot_id;
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
 
   // Five queries that key off the URL param — no inter-dependency, all
   // fan out in parallel. Company is fetched in a second step because it

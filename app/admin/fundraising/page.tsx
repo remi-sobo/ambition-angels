@@ -1,6 +1,6 @@
 import Link from "next/link";
 import SectionHeading from "../_components/SectionHeading";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../finance/_components/charts";
 import PageHeader from "../_components/PageHeader";
 import SectionSummary from "../_components/SectionSummary";
@@ -47,7 +47,7 @@ function constituentName(c: DbOpportunity["constituent"]): string {
 }
 
 export default async function MajorGiftsPage() {
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data } = await supabase
     .from("opportunities")
     .select(

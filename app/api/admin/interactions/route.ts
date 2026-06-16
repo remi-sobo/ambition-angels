@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { pushInteractionToHubSpot } from "@/lib/hubspot/sync-out";
 
 // Epic B — log a touch (call/email/meeting/event/note) against a donor. Feeds
 // the Interactions timeline on the donor profile.
@@ -49,5 +50,9 @@ export async function POST(req: NextRequest) {
     entityId: data.id,
     after: insert,
   });
+
+  // Mirror to a connected HubSpot as an engagement (no-op when standalone).
+  await pushInteractionToHubSpot(data.id);
+
   return NextResponse.json({ id: data.id });
 }

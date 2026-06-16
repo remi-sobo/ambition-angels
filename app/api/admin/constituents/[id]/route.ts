@@ -33,6 +33,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const tags = strArr(body.tags);
   if (tags) update.tags = tags;
   if (typeof body.do_not_contact === "boolean") update.do_not_contact = body.do_not_contact;
+  // Household membership: a uuid joins, explicit null leaves.
+  if (isUuid(body.household_id)) update.household_id = body.household_id;
+  else if (body.household_id === null) update.household_id = null;
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });

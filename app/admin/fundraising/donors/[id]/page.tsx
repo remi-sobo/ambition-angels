@@ -15,6 +15,11 @@ export const dynamic = "force-dynamic";
 const fmtDate = (iso: string) =>
   new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
+// Handles both calendar-day strings (gift_date, length 10) and full
+// timestamps (occurred_at / acknowledged_at).
+const fmtWhen = (s: string) =>
+  new Date(s.length === 10 ? s + "T00:00:00" : s).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
 export default async function DonorProfilePage({ params }: { params: { id: string } }) {
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
 
@@ -23,7 +28,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
     supabase.from("constituents").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("gifts")
-      .select("id, amount, gift_date, method, acknowledgment_status, recurring_plan_id, external_source")
+      .select("id, amount, gift_date, method, acknowledgment_status, acknowledged_at, recurring_plan_id, external_source")
       .eq("constituent_id", params.id)
       .order("gift_date", { ascending: false })
       .limit(500),
@@ -69,7 +74,8 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const c = cRes.data;
   const gifts = ((giftsRes.data ?? []) as Array<{
     id: string; amount: number; gift_date: string; method: string;
-    acknowledgment_status: string; recurring_plan_id: string | null; external_source: string | null;
+    acknowledgment_status: string; acknowledged_at: string | null;
+    recurring_plan_id: string | null; external_source: string | null;
   }>).map((g) => ({ ...g, amount: Number(g.amount) }));
   const plans = (plansRes.data ?? []) as Array<{ id: string; amount: number; frequency: string; status: string }>;
   const interactions = (interactionsRes.data ?? []) as Array<{
@@ -101,6 +107,32 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .maybeSingle();
     hasBrief = !!brief;
   }
+
+  // ── Unified activity stream (Epic C): gifts + interactions + thank-yous,
+  // newest first. gift_date is a calendar day (anchored at noon so it sorts
+  // sanely against the timestamped events); the rest are timestamptz.
+  type GiftEv = (typeof gifts)[number];
+  type IntEv = (typeof interactions)[number];
+  type Activity =
+    | { kind: "gift"; sort: number; gift: GiftEv }
+    | { kind: "interaction"; sort: number; interaction: IntEv }
+    | { kind: "ack"; sort: number; at: string; amount: number };
+  const ms = (s: string) => {
+    const t = Date.parse(s);
+    return Number.isNaN(t) ? 0 : t;
+  };
+  const activity: Activity[] = [
+    ...gifts.map((g): Activity => ({ kind: "gift", sort: ms(g.gift_date + "T12:00:00"), gift: g })),
+    ...interactions.map((i): Activity => ({ kind: "interaction", sort: ms(i.occurred_at), interaction: i })),
+    ...gifts
+      .filter((g) => g.acknowledgment_status === "sent" && g.acknowledged_at)
+      .map((g): Activity => ({
+        kind: "ack",
+        sort: ms(g.acknowledged_at as string),
+        at: g.acknowledged_at as string,
+        amount: g.amount,
+      })),
+  ].sort((a, b) => b.sort - a.sort);
 
   return (
     <div className="min-h-screen bg-ink">
@@ -199,73 +231,76 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
           </section>
 
           <section className="lg:col-span-8 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Giving Timeline</h2>
-              <GiftEntryForm
-                constituentId={c.id}
-                campaigns={campaignOpts}
-                funds={fundOpts}
-                appeals={appealOpts}
-              />
+            <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+              <h2 className="font-heading font-bold text-ink-1 text-sm">Activity</h2>
+              <div className="flex items-center gap-2">
+                <LogInteractionForm constituentId={c.id} />
+                <GiftEntryForm
+                  constituentId={c.id}
+                  campaigns={campaignOpts}
+                  funds={fundOpts}
+                  appeals={appealOpts}
+                />
+              </div>
             </div>
-            {gifts.length === 0 ? (
-              <p className="p-6 text-ink-2 text-sm">No gifts recorded.</p>
+            {activity.length === 0 ? (
+              <p className="p-6 text-ink-2 text-sm">
+                No activity yet. Gifts, logged calls/emails/meetings, and thank-yous appear here.
+              </p>
             ) : (
               <ul className="divide-y divide-hairline">
-                {gifts.map((g) => (
-                  <li key={g.id} className="px-5 py-3 flex items-center gap-4 group">
-                    <span className="text-xs text-ink-2 w-24 flex-shrink-0">{fmtDate(g.gift_date)}</span>
-                    <span className="font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(g.amount)}</span>
-                    <span className="text-[10px] uppercase tracking-wider text-ink-3">{g.method}</span>
-                    {g.recurring_plan_id && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
-                    )}
-                    <span className="ml-auto text-[11px] flex items-center gap-3">
-                      {g.acknowledgment_status === "sent" ? (
-                        <span className="text-revenue">Thanked</span>
-                      ) : g.acknowledgment_status === "pending" ? (
-                        <span className="text-orange">Thank-you pending</span>
-                      ) : (
-                        <span className="text-ink-3">—</span>
-                      )}
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <GiftRowActions id={g.id} />
-                      </span>
-                    </span>
-                  </li>
-                ))}
+                {activity.map((ev) => {
+                  if (ev.kind === "gift") {
+                    const g = ev.gift;
+                    return (
+                      <li key={`g-${g.id}`} className="px-5 py-3 flex items-center gap-4 group">
+                        <span className="text-xs text-ink-2 w-24 flex-shrink-0">{fmtWhen(g.gift_date)}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-revenue font-semibold w-14 flex-shrink-0">Gift</span>
+                        <span className="font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(g.amount)}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-ink-3">{g.method}</span>
+                        {g.recurring_plan_id && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
+                        )}
+                        <span className="ml-auto text-[11px] flex items-center gap-3">
+                          {g.acknowledgment_status === "sent" ? (
+                            <span className="text-revenue">Thanked</span>
+                          ) : g.acknowledgment_status === "pending" ? (
+                            <span className="text-orange">Thank-you pending</span>
+                          ) : (
+                            <span className="text-ink-3">—</span>
+                          )}
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <GiftRowActions id={g.id} />
+                          </span>
+                        </span>
+                      </li>
+                    );
+                  }
+                  if (ev.kind === "interaction") {
+                    const i = ev.interaction;
+                    return (
+                      <li key={`i-${i.id}`} className="px-5 py-3 text-sm flex items-start gap-4">
+                        <span className="text-xs text-ink-2 w-24 flex-shrink-0 pt-px">{fmtWhen(i.occurred_at)}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-orange font-semibold w-14 flex-shrink-0 pt-1">{i.kind}</span>
+                        <div className="min-w-0">
+                          {i.logged_by && <div className="text-xs text-ink-3">{i.logged_by}</div>}
+                          {i.notes && <p className="text-ink-1 text-sm mt-0.5">{i.notes}</p>}
+                        </div>
+                      </li>
+                    );
+                  }
+                  return (
+                    <li key={`a-${ev.at}-${ev.amount}`} className="px-5 py-3 flex items-center gap-4">
+                      <span className="text-xs text-ink-2 w-24 flex-shrink-0">{fmtWhen(ev.at)}</span>
+                      <span className="text-[10px] uppercase tracking-wider text-revenue font-semibold w-14 flex-shrink-0">Thanked</span>
+                      <span className="text-xs text-ink-2">Thank-you sent for a {money(ev.amount)} gift</span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>
         </div>
-
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">Interactions</h2>
-            <LogInteractionForm constituentId={c.id} />
-          </div>
-          {interactions.length === 0 ? (
-            <p className="p-6 text-ink-2 text-sm">
-              No touches logged yet. Calls, emails, and meetings will appear here as the
-              communication log fills in.
-            </p>
-          ) : (
-            <ul className="divide-y divide-hairline">
-              {interactions.map((i) => (
-                <li key={i.id} className="px-5 py-3 text-sm flex items-start gap-4">
-                  <span className="text-[10px] uppercase tracking-wider text-orange font-semibold w-16 flex-shrink-0 pt-1">{i.kind}</span>
-                  <div className="min-w-0">
-                    <div className="text-xs text-ink-2">
-                      {new Date(i.occurred_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      {i.logged_by ? ` · ${i.logged_by}` : ""}
-                    </div>
-                    {i.notes && <p className="text-ink-1 text-sm mt-0.5">{i.notes}</p>}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
       </div>
     </div>
   );

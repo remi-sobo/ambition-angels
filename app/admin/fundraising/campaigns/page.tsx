@@ -1,6 +1,7 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
+import PageHeader from "../../_components/PageHeader";
 import {
   NewCampaignForm,
   NewAppealForm,
@@ -59,15 +60,11 @@ export default async function CampaignsPage() {
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-ink-1">Campaigns</h1>
-          <p className="text-ink-2 text-sm mt-0.5">
-            Campaign → appeal attribution · every gift should carry a campaign
-          </p>
-        </div>
-        <NewCampaignForm />
-      </div>
+      <PageHeader
+        title="Campaigns"
+        subtitle="Campaign → appeal attribution · every gift should carry a campaign"
+        actions={<NewCampaignForm />}
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         <StatCard label="Campaigns" value={campaigns.length} />

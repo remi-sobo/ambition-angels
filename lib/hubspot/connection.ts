@@ -14,8 +14,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
  * for now (same as the read sync); moving it into the encrypted
  * `connections.access_token_enc` column is a follow-up.
  */
-export async function hubspotWriteEnabled(): Promise<boolean> {
-  if (!process.env.HUBSPOT_ACCESS_TOKEN) return false;
+async function hubspotMeta(): Promise<Record<string, unknown> | null> {
+  if (!process.env.HUBSPOT_ACCESS_TOKEN) return null;
   try {
     const { data } = await getSupabaseAdmin()
       .from("connections")
@@ -24,11 +24,25 @@ export async function hubspotWriteEnabled(): Promise<boolean> {
       .eq("status", "active")
       .limit(1)
       .maybeSingle();
-    if (!data) return false;
-    const meta = (data.meta ?? {}) as Record<string, unknown>;
-    return meta.sync_out === true;
+    if (!data) return null;
+    return (data.meta ?? {}) as Record<string, unknown>;
   } catch {
     // Missing table / any error → fail closed (standalone).
-    return false;
+    return null;
   }
+}
+
+export async function hubspotWriteEnabled(): Promise<boolean> {
+  const meta = await hubspotMeta();
+  return meta?.sync_out === true;
+}
+
+/**
+ * Pushing every gift to HubSpot as a closed-won Deal is opinionated (Deals are
+ * really a pipeline construct), so it requires an extra opt-in beyond sync_out.
+ * Opportunities → Deals only needs sync_out.
+ */
+export async function hubspotGiftDealsEnabled(): Promise<boolean> {
+  const meta = await hubspotMeta();
+  return meta?.sync_out === true && meta?.sync_gifts_as_deals === true;
 }

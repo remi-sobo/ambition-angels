@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
@@ -10,7 +10,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data: before } = await supabase
     .from("segments")
     .select("*")

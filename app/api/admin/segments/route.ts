@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
@@ -10,7 +10,7 @@ export async function GET() {
   if (!(await isAuthed())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const { data, error } = await getSupabaseAdmin()
+  const { data, error } = await createServerSupabase()
     .from("segments")
     .select("id, name, definition, created_by, created_at")
     .order("created_at", { ascending: false })
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     if (typeof v === "string" && v.trim() !== "") definition[k] = v.trim().slice(0, 200);
   }
 
-  const { data, error } = await getSupabaseAdmin()
+  const { data, error } = await createServerSupabase()
     .from("segments")
     .insert({ name, definition, created_by: (await getAdminUser()) ?? null })
     .select("id")

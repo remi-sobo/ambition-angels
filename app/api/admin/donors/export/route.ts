@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   const minTotal = Number(p.get("min_total") ?? "") || 0;
   const since = /^\d{4}-\d{2}-\d{2}$/.test(p.get("since") ?? "") ? p.get("since")! : "";
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   let query = supabase
     .from("constituents")
     .select(

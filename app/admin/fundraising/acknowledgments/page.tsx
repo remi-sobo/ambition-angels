@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
@@ -34,7 +34,7 @@ const daysSince = (iso: string) =>
   Math.max(Math.floor((Date.now() - new Date(iso + "T00:00:00").getTime()) / 86400000), 0);
 
 export default async function AcknowledgmentsPage() {
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data, error } = await supabase
     .from("gifts")
     .select(

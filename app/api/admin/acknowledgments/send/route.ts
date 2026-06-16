@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import {
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "RESEND_API_KEY is not configured" }, { status: 503 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data: gift, error } = await supabase
     .from("gifts")
     .select(

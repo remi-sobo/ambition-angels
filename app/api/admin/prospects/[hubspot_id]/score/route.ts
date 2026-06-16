@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 
 // ── Validation ─────────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ export async function POST(
   const notes = parseNotes(body.notes);
   const scoredBy = await getAdminUser();
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data, error } = await supabase
     .from("fr_prospect_scores")
     .upsert(

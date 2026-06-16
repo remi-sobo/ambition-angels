@@ -56,6 +56,13 @@ ordered=(
   create_kpis_and_plan.sql
   create_briefings.sql
   create_partners.sql
+  upgrade_ops_tasks_priority_subtasks_labels.sql
+  create_students.sql
+  create_cohorts_attendance.sql
+  create_applications.sql
+  create_bloomos_briefing_state.sql
+  mark_hs_staging_readonly.sql
+  assert_fundraising_org_id.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

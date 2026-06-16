@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (typeof body.label === "string" && body.label.trim()) insert.label = body.label.slice(0, 200);
   if (typeof body.notes === "string" && body.notes.trim()) insert.notes = body.notes.slice(0, 1000);
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data, error } = await supabase
     .from("grant_requirements")
     .insert(insert)

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import SegmentExportPanel from "./_components/SegmentExportPanel";
+import DonorsTable, { type DonorRow } from "./_components/DonorsTable";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
+import PageHeader from "../../_components/PageHeader";
 import { constituentName } from "@/lib/fundraising/display";
 import { analyzeDonor, retentionRate, FLAG_LABELS, FLAG_HELP, type RetentionFlag } from "@/lib/fundraising/retention";
 import { todayISO } from "../../ops/_types/ops";
@@ -29,9 +31,6 @@ type Gift = {
   gift_date: string;
   recurring_plan_id: string | null;
 };
-
-const fmtDate = (iso: string) =>
-  new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 // Page through the whole gifts spine so KPIs and rollups are exact, not a
 // recency sample. Bounded at 50 pages (50k gifts) — revisit with SQL-side
@@ -182,27 +181,42 @@ export default async function DonorsPage() {
   };
   const RETENTION_BUCKETS: RetentionFlag[] = ["lybunt", "cadence_lapsed", "second_gift_watch", "sybunt"];
 
+  // Plain, serializable rows for the shared DataTable (a client component).
+  const donorRows: DonorRow[] = donors.map(({ c, r }) => ({
+    id: c.id,
+    name: constituentName(c),
+    email: c.emails[0] ?? null,
+    total: r.total,
+    count: r.count,
+    first: r.first,
+    last: r.last,
+    recurring: r.recurring,
+    doNotContact: c.do_not_contact,
+    flags: flagsByDonor.get(c.id) ?? [],
+  }));
+
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
-        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Donors</span>
-        <Link
-          href="/admin/fundraising/acknowledgments"
-          className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-            (pendingAcksRes.count ?? 0) > 0
-              ? "text-orange bg-orange/10 border border-orange/30 hover:bg-orange/20"
-              : "text-ink-2 hover:text-ink-1"
-          }`}
-        >
-          Acknowledgments{(pendingAcksRes.count ?? 0) > 0 ? ` (${pendingAcksRes.count})` : ""}
-        </Link>
-        <span className="text-xs text-ink-2 ml-auto">
-          {donors.length} donor{donors.length === 1 ? "" : "s"}
-          {nonDonorConstituents > 0 ? ` · ${nonDonorConstituents} constituents without gifts` : ""}
-        </span>
-      </div>
-
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+        <PageHeader
+          title="Donors"
+          subtitle={
+            `${donors.length} donor${donors.length === 1 ? "" : "s"}` +
+            (nonDonorConstituents > 0 ? ` · ${nonDonorConstituents} constituents without gifts` : "")
+          }
+          actions={
+            <Link
+              href="/admin/fundraising/acknowledgments"
+              className={`text-xs font-semibold px-4 py-2 rounded-full transition-colors ${
+                (pendingAcksRes.count ?? 0) > 0
+                  ? "text-orange bg-orange/10 border border-orange/30 hover:bg-orange/20"
+                  : "text-ink-2 hover:text-ink-1 border-[1.5px] border-outline bg-tile"
+              }`}
+            >
+              Acknowledgments{(pendingAcksRes.count ?? 0) > 0 ? ` (${pendingAcksRes.count})` : ""}
+            </Link>
+          }
+        />
         <div className="flex justify-end">
           <SegmentExportPanel />
         </div>
@@ -274,72 +288,25 @@ export default async function DonorsPage() {
           )}
         </section>
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          {donors.length === 0 ? (
+        {donors.length === 0 ? (
+          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <p className="p-8 text-ink-2 text-sm">
               No donors yet. Stripe donations flow in automatically; Givebutter and manual gift
               entry arrive later in Ring 2.
             </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[820px]">
-                <thead>
-                  <tr className="border-b border-outline">
-                    {["Donor", "Email", "Total Given", "Gifts", "First Gift", "Latest Gift", ""].map((h) => (
-                      <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {donors.map(({ c, r }) => (
-                    <tr key={c.id} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
-                      <td className="px-5 py-3.5">
-                        <Link href={`/admin/fundraising/donors/${c.id}`} className="flex items-center gap-3 group">
-                          <span className="w-8 h-8 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0 text-orange font-bold text-xs">
-                            {constituentName(c)[0]?.toUpperCase()}
-                          </span>
-                          <span className="font-medium text-ink-1 group-hover:text-orange transition-colors">
-                            {constituentName(c)}
-                          </span>
-                          {r.recurring && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
-                          )}
-                          {c.do_not_contact && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-expense-bg text-expense">Do not contact</span>
-                          )}
-                          {(flagsByDonor.get(c.id) ?? []).map((f) => (
-                            <span key={f} title={FLAG_HELP[f]} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${FLAG_STYLES[f]}`}>
-                              {FLAG_LABELS[f]}
-                            </span>
-                          ))}
-                        </Link>
-                      </td>
-                      <td className="px-5 py-3.5 text-ink-2 text-xs">{c.emails[0] ?? "—"}</td>
-                      <td className="px-5 py-3.5 font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(r.total)}</td>
-                      <td className="px-5 py-3.5 text-ink-2 [font-variant-numeric:tabular-nums]">{r.count}</td>
-                      <td className="px-5 py-3.5 text-ink-2 text-xs whitespace-nowrap">{fmtDate(r.first)}</td>
-                      <td className="px-5 py-3.5 text-ink-2 text-xs whitespace-nowrap">{fmtDate(r.last)}</td>
-                      <td className="px-5 py-3.5 text-right">
-                        <Link href={`/admin/fundraising/donors/${c.id}`} className="text-xs font-semibold text-orange hover:text-orange-mid">
-                          Profile →
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                  {anonCount > 0 && (
-                    <tr className="border-b border-hairline">
-                      <td className="px-5 py-3.5 text-ink-2 italic">Anonymous / no identity</td>
-                      <td className="px-5 py-3.5 text-ink-2 text-xs">—</td>
-                      <td className="px-5 py-3.5 font-bold text-ink-2 [font-variant-numeric:tabular-nums]">{money(anonTotal)}</td>
-                      <td className="px-5 py-3.5 text-ink-2 [font-variant-numeric:tabular-nums]">{anonCount}</td>
-                      <td className="px-5 py-3.5" colSpan={3} />
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+          </section>
+        ) : (
+          <>
+            <DonorsTable rows={donorRows} />
+            {anonCount > 0 && (
+              <p className="text-xs text-ink-3 px-1">
+                Plus {anonCount} anonymous gift{anonCount === 1 ? "" : "s"} totaling{" "}
+                <span className="font-semibold text-ink-2 [font-variant-numeric:tabular-nums]">{money(anonTotal)}</span>{" "}
+                with no donor identity (not shown in the table; counted in totals above).
+              </p>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

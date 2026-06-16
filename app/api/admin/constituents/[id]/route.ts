@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { pushConstituentToHubSpot } from "@/lib/hubspot/sync-out";
 
 const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
@@ -47,5 +48,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     entityId: params.id,
     after: update,
   });
+
+  // Outbound sync to a connected HubSpot (no-op when standalone).
+  await pushConstituentToHubSpot(params.id);
+
   return NextResponse.json({ ok: true });
 }

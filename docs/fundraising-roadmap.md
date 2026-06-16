@@ -207,6 +207,43 @@ has a migration. Phase 1 and Epics G/H/K need **no schema changes**.
 unit tests in `tests/` alongside `retention`/`availability`; UI verified on the
 preview per the usual owner gate.
 
+---
+
+## Phase X — HubSpot two-way sync *(stand-alone **or** connected CRM)*
+
+Goal: BloomOS works fully on its own, and *optionally* reads from and writes to
+an org's existing HubSpot. **Off by default** — activates only when an org has
+an active `connections` row (`provider='hubspot'`) with `meta.sync_out = true`,
+so standalone behavior never changes.
+
+**Agreed design decisions:**
+- **System of record:** BloomOS is authoritative (protects the `gifts` revenue
+  spine); HubSpot is kept in sync; inbound applies to HubSpot-owned contact
+  fields. *(Configurable; flip to HubSpot-authoritative later if needed.)*
+- **Scope:** all four object families — Constituents↔Contacts,
+  Organizations↔Companies, Interactions↔Engagements, Gifts/Opportunities↔Deals.
+- **Mechanism:** outbound push on local write + inbound HubSpot webhooks (the
+  `connections` + `webhook_events` infra already exists).
+
+**Foundations already present:** read-only import (`hs_*` mirror, `hs_sync_jobs`),
+encrypted token store (`connections`), deduped inbound log (`webhook_events`),
+and `constituents.external_ids.hubspot` linkage.
+
+| Ticket | Touches | Size |
+|---|---|---|
+| X1. Write client + connection gate (off by default) | `lib/hubspot/client.ts` (`hubspotPost`/`hubspotPatch`), `lib/hubspot/connection.ts` | S |
+| X2. Outbound Contacts/Companies push on constituent write | `lib/hubspot/sync-out.ts`; wired into `constituents` routes | M |
+| X3. Outbound Interactions→Engagements | extend `sync-out`; wired into `interactions` route | M |
+| X4. Outbound Gifts/Opportunities→Deals (or custom object) | extend `sync-out`; `gifts`/`opportunities` routes | L |
+| X5. Durable outbound queue + retry (via `hs_sync_jobs`/Inngest) + upsert-by-email dedupe | sync infra | M |
+| X6. Inbound webhook apply (HubSpot → BloomOS) | `app/api/webhooks/hubspot`, `webhook_events`, field-ownership apply | L |
+| X7. Connection management UI (connect/disconnect, scope toggles, status) | new admin settings surface; `connections` | M |
+| X8. Move token to encrypted `connections.access_token_enc` (off env) | `connection.ts`, crypto helper | M |
+
+**Slices land independently; X1–X2 are the foundation (this PR).** Until X7,
+connecting is a manual `connections` row; until X8, the token is the existing
+`HUBSPOT_ACCESS_TOKEN` env var.
+
 ## Sizing key
 
 S ≤ 1 day · M 2–4 days · L 1–2 weeks.

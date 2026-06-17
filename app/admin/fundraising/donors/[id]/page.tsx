@@ -12,6 +12,7 @@ import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentC
 import { HouseholdControls } from "../_components/HouseholdControls";
 import { AddSoftCredit, SoftCreditChip, SC_TYPE_LABEL } from "../_components/SoftCreditControls";
 import EmailActions from "../_components/EmailActions";
+import { EntityTasks } from "../../../_components/EntityTasks";
 import ConstituentDangerZone from "../_components/ConstituentDangerZone";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
@@ -532,6 +533,8 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
             )}
           </section>
         </div>
+
+        <EntityTasks entityType="constituent" entityId={c.id} entityLabel={name} defaultCategory="fundraising" />
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">

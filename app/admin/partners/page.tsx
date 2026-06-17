@@ -1,7 +1,8 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import StatCard from "../_components/StatCard";
 import PageHeader from "../_components/PageHeader";
-import { NewPartnerForm, type Partner } from "./_components/PartnerControls";
+import { NewPartnerForm } from "./_components/PartnerControls";
+import { type Partner } from "./_lib/partners";
 import PartnersWorkspace from "./_components/PartnersWorkspace";
 
 // Schools & nonprofit partners (Ring 3, modules/02-program.md "Schools"):

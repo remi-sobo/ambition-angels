@@ -12,7 +12,7 @@ import {
   STATUS_ORDER, STATUS_LABELS, STATUS_SHORT, STATUS_STYLE,
   TAB_STATUSES, NEXT_STATUS, type TabKey, type PartnerStatus,
 } from "../_lib/status";
-import { KIND_LABELS, type Partner } from "./PartnerControls";
+import { KIND_LABELS, type Partner } from "../_lib/partners";
 import { scoreBand, SCORE_BAND_STYLE } from "../_lib/rubric";
 
 const TABS: { key: TabKey; label: string }[] = [

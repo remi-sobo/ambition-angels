@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { Blackout, Booking, MeetingType } from "@/lib/database.types";
+import type { OpsTask } from "@/app/admin/ops/_types/ops";
+import ConnectionsBacklog from "./ConnectionsBacklog";
 
 type BookingWithType = Booking & { meeting_type: MeetingType };
 
@@ -11,12 +13,20 @@ type InitialData = {
   recent: BookingWithType[];
   blackouts: Blackout[];
   last30Count: number;
+  connections: OpsTask[];
 };
 
-type Tab = "bookings" | "types" | "blackouts";
+type Tab = "connections" | "bookings" | "types" | "blackouts";
+
+const TAB_LABELS: Record<Tab, string> = {
+  connections: "Connections",
+  bookings: "Bookings",
+  types: "Types",
+  blackouts: "Blackouts",
+};
 
 export default function MeetAdmin({ initial }: { initial: InitialData }) {
-  const [tab, setTab] = useState<Tab>("bookings");
+  const [tab, setTab] = useState<Tab>("connections");
   const [types, setTypes] = useState(initial.types);
   const [upcoming, setUpcoming] = useState(initial.upcoming);
   const [recent, setRecent] = useState(initial.recent);
@@ -27,6 +37,12 @@ export default function MeetAdmin({ initial }: { initial: InitialData }) {
     return ms < Date.now() + 7 * 24 * 3600_000;
   }).length;
 
+  // Connections come straight from the server prop (no local copy) so a
+  // router.refresh() after any task edit / reorder flows the new list through.
+  const openConnections = initial.connections.filter(
+    (t) => t.status !== "done"
+  ).length;
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8">
       <header>
@@ -35,6 +51,7 @@ export default function MeetAdmin({ initial }: { initial: InitialData }) {
           Bookings, meeting types, blackouts.
         </p>
         <div className="mt-5 flex gap-6 text-sm">
+          <Stat label="Open connections" value={openConnections} />
           <Stat label="Upcoming" value={upcoming.length} />
           <Stat label="This week" value={upcomingThisWeek} />
           <Stat label="Last 30d" value={initial.last30Count} />
@@ -42,23 +59,26 @@ export default function MeetAdmin({ initial }: { initial: InitialData }) {
       </header>
 
       <nav className="flex gap-2 border-b border-outline">
-        {(["bookings", "types", "blackouts"] as Tab[]).map((t) => (
+        {(["connections", "bookings", "types", "blackouts"] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
             className={[
-              "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors capitalize",
+              "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
               tab === t
                 ? "text-ink-1 border-orange"
                 : "text-ink-2 border-transparent hover:text-ink-1",
             ].join(" ")}
           >
-            {t}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </nav>
 
+      {tab === "connections" && (
+        <ConnectionsBacklog connections={initial.connections} />
+      )}
       {tab === "bookings" && (
         <BookingsTab
           upcoming={upcoming}

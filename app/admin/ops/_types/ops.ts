@@ -49,6 +49,14 @@ export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
 export type AdminUserId = "remi" | "shannon";
 
+// The label that marks an ops_task as a "connection" — Shannon's scheduling
+// backlog in the Meetings tab. The backlog reads ops_tasks filtered to this
+// label + assigned_to='shannon'; candidates promoted from email (Phase 4) and
+// the manual "+ New connection" form (Phase 3) both stamp it. Lives on labels
+// (not category) because the task UI groups/filters by the fixed category
+// taxonomy, and 'scheduling' is a cross-cutting facet, not a department.
+export const SCHEDULING_LABEL = "scheduling";
+
 export type OpsTask = {
   id: string;
   title: string;

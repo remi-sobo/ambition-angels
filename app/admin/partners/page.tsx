@@ -13,8 +13,9 @@ import PartnersWorkspace from "./_components/PartnersWorkspace";
 export const dynamic = "force-dynamic";
 
 export default async function PartnersPage() {
+  const today = new Date().toISOString().slice(0, 10);
   const supabase = getSupabaseAdmin();
-  const [partnersRes, contactsRes] = await Promise.all([
+  const [partnersRes, contactsRes, tasksRes] = await Promise.all([
     supabase
       .from("partners")
       .select("*")
@@ -23,6 +24,13 @@ export default async function PartnersPage() {
     supabase
       .from("partner_contacts")
       .select("partner_id, first_name, last_name, is_primary")
+      .limit(2000),
+    // Open tasks linked to partner orgs — for the per-row "tasks due" chip.
+    supabase
+      .from("ops_tasks")
+      .select("linked_entity_id, due_date")
+      .eq("linked_entity_type", "partner")
+      .neq("status", "done")
       .limit(2000),
   ]);
 
@@ -40,14 +48,26 @@ export default async function PartnersPage() {
       if (name) primary.set(c.partner_id, name);
     }
   }
+  // Roll up open tasks → count + overdue count per org.
+  const openTasks = new Map<string, number>();
+  const overdueTasks = new Map<string, number>();
+  for (const t of (tasksRes.data ?? []) as Array<{ linked_entity_id: string | null; due_date: string | null }>) {
+    if (!t.linked_entity_id) continue;
+    openTasks.set(t.linked_entity_id, (openTasks.get(t.linked_entity_id) ?? 0) + 1);
+    if (t.due_date && t.due_date < today) {
+      overdueTasks.set(t.linked_entity_id, (overdueTasks.get(t.linked_entity_id) ?? 0) + 1);
+    }
+  }
+
   const partners: Partner[] = base.map((p) => ({
     ...p,
     contact_count: counts.get(p.id) ?? 0,
     primary_contact: primary.get(p.id) ?? null,
+    open_tasks: openTasks.get(p.id) ?? 0,
+    overdue_tasks: overdueTasks.get(p.id) ?? 0,
   }));
 
   // ── KPIs ──
-  const today = new Date().toISOString().slice(0, 10);
   const in90 = new Date(Date.now() + 90 * 86400_000).toISOString().slice(0, 10);
   const cut30 = new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10);
   const live = partners.filter((p) => p.status !== "lapsed");

@@ -25,6 +25,8 @@ export type DonorRow = {
   flags: RetentionFlag[];
   engagement: number;
   band: EngagementBand;
+  openTasks: number;
+  overdueTasks: number;
 };
 
 const FLAG_STYLES: Record<RetentionFlag, string> = {
@@ -128,6 +130,25 @@ export default function DonorsTable({ rows }: { rows: DonorRow[] }) {
           {r.engagement}
         </span>
       ),
+    },
+    {
+      key: "tasks",
+      header: "Tasks",
+      align: "right",
+      value: (r) => r.openTasks,
+      render: (r) =>
+        r.openTasks > 0 ? (
+          <span
+            title={r.overdueTasks ? `${r.overdueTasks} overdue` : "open tasks"}
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full [font-variant-numeric:tabular-nums] ${
+              r.overdueTasks ? "bg-expense-bg text-expense" : "bg-orange/15 text-orange"
+            }`}
+          >
+            {r.openTasks}{r.overdueTasks ? ` · ${r.overdueTasks} overdue` : ""}
+          </span>
+        ) : (
+          <span className="text-ink-3 text-xs">—</span>
+        ),
     },
     {
       key: "profile",

@@ -4,6 +4,7 @@ import DonorsTable, { type DonorRow } from "./_components/DonorsTable";
 import { NewDonorForm } from "./_components/ConstituentControls";
 import FilterTabs from "../_components/FilterTabs";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { money } from "../../finance/_components/charts";
 import StatCard, { type Delta } from "../../_components/StatCard";
 import PageHeader from "../../_components/PageHeader";
@@ -265,6 +266,27 @@ export default async function DonorsPage({
   ];
   const segmentLabel = segmentOptions.find((s) => s.value === segment)?.label ?? "All";
 
+  // Open tasks linked to donors — for the "Tasks" column. ops_tasks has RLS
+  // disabled, so read it with the service-role client (the page otherwise
+  // uses the session client).
+  const openTaskCount = new Map<string, number>();
+  const overdueTaskCount = new Map<string, number>();
+  {
+    const { data: taskRows } = await getSupabaseAdmin()
+      .from("ops_tasks")
+      .select("linked_entity_id, due_date")
+      .eq("linked_entity_type", "constituent")
+      .neq("status", "done")
+      .limit(5000);
+    for (const t of (taskRows ?? []) as Array<{ linked_entity_id: string | null; due_date: string | null }>) {
+      if (!t.linked_entity_id) continue;
+      openTaskCount.set(t.linked_entity_id, (openTaskCount.get(t.linked_entity_id) ?? 0) + 1);
+      if (t.due_date && t.due_date < today) {
+        overdueTaskCount.set(t.linked_entity_id, (overdueTaskCount.get(t.linked_entity_id) ?? 0) + 1);
+      }
+    }
+  }
+
   // Plain, serializable rows for the shared DataTable (a client component).
   // Display total/count respect the year; engagement is scored over lifetime.
   const donorRows: DonorRow[] = donors.map(({ c, lifetime, total, count }) => {
@@ -282,6 +304,8 @@ export default async function DonorsPage({
       flags: flagsByDonor.get(c.id) ?? [],
       engagement: eng.score,
       band: eng.band,
+      openTasks: openTaskCount.get(c.id) ?? 0,
+      overdueTasks: overdueTaskCount.get(c.id) ?? 0,
     };
   });
 

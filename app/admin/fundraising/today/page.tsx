@@ -6,6 +6,7 @@ import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "../../ops/_types/ops";
 import GmailSyncButton from "../_components/GmailSyncButton";
+import SuggestedMoves from "../_components/SuggestedMoves";
 
 // Today's Fundraising Moves (Phase 2) — the operator home screen. Answers "who
 // needs me today," assembled deterministically from the spine (opportunities +
@@ -145,6 +146,10 @@ export default async function TodaysMovesPage() {
         <StatCard label="Closing ≤30d" value={closing.length} sub="open asks" />
         <StatCard label="Thank-yous due" value={acks.length} sub={acks.length > 0 ? money(acksValue) : "all caught up"} muted={acks.length === 0} />
         <StatCard label="Recent gifts" value={recent.length} sub={recent.length > 0 ? `${money(recentValue)} · 14d` : "none yet"} />
+      </div>
+
+      <div className="mb-4">
+        <SuggestedMoves />
       </div>
 
       <div className="space-y-4">

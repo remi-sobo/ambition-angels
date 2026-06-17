@@ -11,6 +11,7 @@ import { GiftEntryForm, GiftRowActions } from "../_components/GiftControls";
 import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentControls";
 import { HouseholdControls } from "../_components/HouseholdControls";
 import { AddSoftCredit, SoftCreditChip, SC_TYPE_LABEL } from "../_components/SoftCreditControls";
+import EmailActions from "../_components/EmailActions";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
 export const dynamic = "force-dynamic";
@@ -27,7 +28,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
 
   const supabase = createServerSupabase();
-  const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes, campaignsRes, fundsRes, appealsRes, scReceivedRes] = await Promise.all([
+  const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes, campaignsRes, fundsRes, appealsRes, scReceivedRes, oppsRes] = await Promise.all([
     supabase.from("constituents").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("gifts")
@@ -49,16 +50,23 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .limit(5000),
     supabase
       .from("interactions")
-      .select("id, kind, occurred_at, notes, logged_by")
+      .select("id, kind, occurred_at, notes, logged_by, direction, subject, thread_id, body_preview, is_private")
       .eq("constituent_id", params.id)
       .order("occurred_at", { ascending: false })
-      .limit(50),
+      .limit(100),
     // Attribution options for manual gift entry (Epic A).
     supabase.from("campaigns").select("id, name").order("created_at", { ascending: false }).limit(100),
     supabase.from("funds").select("id, name").order("name").limit(100),
     supabase.from("appeals").select("id, name").order("name").limit(200),
     // Soft credits this donor *received* (recognition only) — Epic D3.
     supabase.from("soft_credits").select("amount").eq("constituent_id", params.id).limit(5000),
+    // Open asks → the "next move" block (Constituent 360 v1).
+    supabase
+      .from("opportunities")
+      .select("id, name, stage, next_step, next_step_due, ask_amount, expected_close")
+      .eq("constituent_id", params.id)
+      .order("next_step_due", { ascending: true, nullsFirst: false })
+      .limit(20),
   ]);
 
   // Query error = tables not applied yet (same grace state as the list
@@ -85,7 +93,21 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const plans = (plansRes.data ?? []) as Array<{ id: string; amount: number; frequency: string; status: string }>;
   const interactions = (interactionsRes.data ?? []) as Array<{
     id: string; kind: string; occurred_at: string; notes: string | null; logged_by: string | null;
+    direction: string | null; subject: string | null; thread_id: string | null;
+    body_preview: string | null; is_private: boolean | null;
   }>;
+  const opps = (oppsRes.data ?? []) as Array<{
+    id: string; name: string | null; stage: string; next_step: string | null;
+    next_step_due: string | null; ask_amount: number | null; expected_close: string | null;
+  }>;
+  // Next move: soonest-due open ask with a next step (Constituent 360 v1).
+  const OPEN_STAGES = ["identify", "qualify", "cultivate", "solicit"];
+  const openOpps = opps.filter((o) => OPEN_STAGES.includes(o.stage));
+  const nextMove =
+    openOpps
+      .filter((o) => o.next_step)
+      .sort((a, b) => (a.next_step_due ?? "9999").localeCompare(b.next_step_due ?? "9999"))[0] ?? null;
+  const todayStr = todayISO();
   const campaignOpts = (campaignsRes.data ?? []) as Array<{ id: string; name: string }>;
   const fundOpts = (fundsRes.data ?? []) as Array<{ id: string; name: string }>;
   const appealOpts = (appealsRes.data ?? []) as Array<{ id: string; name: string }>;
@@ -284,6 +306,41 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
           />
         </div>
 
+        {openOpps.length > 0 && (
+          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg px-5 py-4 flex items-center gap-4 flex-wrap">
+            <span className="text-[10px] uppercase tracking-wider text-orange font-semibold">Next move</span>
+            {nextMove ? (
+              <>
+                <span className="text-sm text-ink-1 font-medium">{nextMove.next_step}</span>
+                {nextMove.next_step_due && (
+                  <span
+                    className={`text-xs font-semibold ${
+                      nextMove.next_step_due < todayStr ? "text-expense" : "text-ink-2"
+                    }`}
+                  >
+                    {nextMove.next_step_due < todayStr ? "Overdue · " : "Due "}
+                    {fmtDate(nextMove.next_step_due)}
+                  </span>
+                )}
+                <span className="text-[11px] text-ink-3 capitalize">{nextMove.stage}</span>
+                {nextMove.ask_amount ? (
+                  <span className="text-[11px] text-ink-3">· ask {money(Number(nextMove.ask_amount))}</span>
+                ) : null}
+              </>
+            ) : (
+              <span className="text-sm text-ink-2">
+                {openOpps.length} open {openOpps.length === 1 ? "ask" : "asks"} · no next step set
+              </span>
+            )}
+            <Link
+              href="/admin/fundraising"
+              className="ml-auto text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors"
+            >
+              Major Gifts →
+            </Link>
+          </section>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
             <div className="flex items-start justify-between gap-2 mb-1">
@@ -385,13 +442,70 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                   }
                   if (ev.kind === "interaction") {
                     const i = ev.interaction;
+                    const isEmail = i.kind === "email";
+                    const gmailUrl = i.thread_id
+                      ? `https://mail.google.com/mail/u/0/#all/${i.thread_id}`
+                      : null;
+                    if (i.is_private) {
+                      return (
+                        <li
+                          key={`i-${i.id}`}
+                          className="px-5 py-2 text-xs flex items-center gap-4 text-ink-3 group"
+                        >
+                          <span className="w-24 flex-shrink-0">{fmtWhen(i.occurred_at)}</span>
+                          <span className="italic">Hidden {isEmail ? "email" : i.kind}</span>
+                          <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                            <EmailActions interactionId={i.id} isPrivate />
+                          </span>
+                        </li>
+                      );
+                    }
                     return (
-                      <li key={`i-${i.id}`} className="px-5 py-3 text-sm flex items-start gap-4">
+                      <li key={`i-${i.id}`} className="px-5 py-3 text-sm flex items-start gap-4 group">
                         <span className="text-xs text-ink-2 w-24 flex-shrink-0 pt-px">{fmtWhen(i.occurred_at)}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-orange font-semibold w-14 flex-shrink-0 pt-1">{i.kind}</span>
-                        <div className="min-w-0">
-                          {i.logged_by && <div className="text-xs text-ink-3">{i.logged_by}</div>}
-                          {i.notes && <p className="text-ink-1 text-sm mt-0.5">{i.notes}</p>}
+                        <span className="text-[10px] uppercase tracking-wider text-orange font-semibold w-14 flex-shrink-0 pt-1">
+                          {isEmail ? (i.direction === "outbound" ? "Sent" : "Email") : i.kind}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          {isEmail ? (
+                            <>
+                              <div className="flex items-center gap-2">
+                                {i.subject ? (
+                                  <span className="text-ink-1 font-medium break-words">{i.subject}</span>
+                                ) : (
+                                  <span className="text-ink-3 italic">(no subject)</span>
+                                )}
+                                {i.direction && (
+                                  <span className="text-[10px] text-ink-3 whitespace-nowrap">
+                                    {i.direction === "outbound" ? "→ sent" : "← received"}
+                                  </span>
+                                )}
+                              </div>
+                              {i.body_preview && (
+                                <p className="text-ink-2 text-xs mt-0.5 line-clamp-2">{i.body_preview}</p>
+                              )}
+                              <div className="flex items-center gap-3 mt-1">
+                                {gmailUrl && (
+                                  <a
+                                    href={gmailUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[10px] text-ink-3 hover:text-orange"
+                                  >
+                                    Open in Gmail ↗
+                                  </a>
+                                )}
+                                <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <EmailActions interactionId={i.id} isPrivate={false} />
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {i.logged_by && <div className="text-xs text-ink-3">{i.logged_by}</div>}
+                              {i.notes && <p className="text-ink-1 text-sm mt-0.5">{i.notes}</p>}
+                            </>
+                          )}
                         </div>
                       </li>
                     );

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import PageHeader from "../../_components/PageHeader";
 import HubSpotSettings from "./_components/HubSpotSettings";
@@ -39,6 +40,19 @@ export default async function FundraisingSettingsPage() {
           secretPresent={!!process.env.HUBSPOT_CLIENT_SECRET}
           flags={flags}
         />
+
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-outline">
+            <h2 className="font-heading font-bold text-ink-1 text-sm">Data hygiene</h2>
+            <p className="text-[11px] text-ink-3">Keep the constituent list clean</p>
+          </div>
+          <div className="px-5 py-4">
+            <Link href="/admin/fundraising/duplicates" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
+              Find &amp; merge duplicates →
+            </Link>
+            <p className="text-[11px] text-ink-3 mt-1">Surfaces constituents that share an email so you can merge their history into one record.</p>
+          </div>
+        </section>
       </div>
     </div>
   );

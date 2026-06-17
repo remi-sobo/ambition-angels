@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { sendOperatorEmail, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
+import { sendOperatorEmailTo, getOperatorEmails, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
 import { snapshotKpis } from "@/lib/kpis";
 import { generateBriefing } from "@/lib/briefing";
-import { gatherCrmOverdue, crmTaskHref } from "@/lib/admin/crmOverdue";
+import {
+  gatherCrmOverdue, groupOverdue, assigneeFromEmail, crmTaskHref, type CrmOverdue,
+} from "@/lib/admin/crmOverdue";
 
 /**
  * The Monday digest — Executive Briefing v0 (data-grounded, no model):
@@ -105,29 +107,8 @@ export async function GET(req: NextRequest) {
     todos.push(`<strong>${pendingAcksRes.count}</strong> gift${pendingAcksRes.count === 1 ? "" : "s"} awaiting acknowledgment`);
   if ((overdueMovesRes.count ?? 0) > 0)
     todos.push(`<strong>${overdueMovesRes.count}</strong> major-gift move${overdueMovesRes.count === 1 ? "" : "s"} overdue`);
-  if (crmOverdue.total > 0)
-    todos.push(`<strong>${crmOverdue.total}</strong> CRM task${crmOverdue.total === 1 ? "" : "s"} overdue (${crmOverdue.partners.length} partner · ${crmOverdue.donors.length} donor)`);
   if (todos.length > 0) {
     body += `<p style="font-weight:600;margin-top:16px;">Needs you</p><ul><li>${todos.join("</li><li>")}</li></ul>`;
-  }
-
-  // Overdue across CRM — itemised, grouped by partners then donors.
-  if (crmOverdue.total > 0) {
-    const li = (t: (typeof crmOverdue.partners)[number]) =>
-      `<li><a href="${crmTaskHref(t, true)}" style="color:#E8500A;text-decoration:none;font-weight:600;">${t.label}</a>` +
-      ` — ${t.title} · <span style="color:#B83D06;">${t.daysOverdue}d overdue</span></li>`;
-    const group = (heading: string, rows: typeof crmOverdue.partners) =>
-      rows.length === 0
-        ? ""
-        : `<p style="font-weight:600;margin:12px 0 4px;">${heading} (${rows.length})</p><ul style="margin-top:0;">${rows
-            .slice(0, 10)
-            .map(li)
-            .join("")}${rows.length > 10 ? `<li style="color:#6B6960;">+${rows.length - 10} more</li>` : ""}</ul>`;
-    body +=
-      `<hr style="border:none;border-top:1px solid #F0EEE8;margin:16px 0;">` +
-      `<p style="font-weight:700;margin:0 0 4px;">⏰ Overdue across CRM</p>` +
-      group("Partners", crmOverdue.partners) +
-      group("Donors", crmOverdue.donors);
   }
 
   if (due.length > 0) {
@@ -136,7 +117,7 @@ export async function GET(req: NextRequest) {
       .join("")}</ul>`;
   }
 
-  if (gifts.length === 0 && todos.length === 0 && due.length === 0) {
+  if (gifts.length === 0 && todos.length === 0 && due.length === 0 && crmOverdue.total === 0) {
     body += `<p>A quiet week — no new gifts, nothing overdue, nothing due in the next two weeks.</p>`;
   }
 
@@ -158,9 +139,41 @@ export async function GET(req: NextRequest) {
       body;
   }
 
-  const sent = await sendOperatorEmail(
-    `🌱 Your week: ${gifts.length} gift${gifts.length === 1 ? "" : "s"}${giftTotal > 0 ? ` (${fmtUsd(giftTotal)})` : ""}, ${due.length} deadline${due.length === 1 ? "" : "s"} ahead`,
-    operatorEmailShell(briefing.headline ?? "Good morning, Ambition Angels", body)
-  );
-  return NextResponse.json({ sent });
+  // ── Personalised "overdue across CRM" section, scoped per operator ───────
+  const taskLi = (t: CrmOverdue["all"][number]) =>
+    `<li><a href="${crmTaskHref(t, true)}" style="color:#E8500A;text-decoration:none;font-weight:600;">${t.label}</a>` +
+    ` — ${t.title} · <span style="color:#B83D06;">${t.daysOverdue}d overdue</span></li>`;
+  const subGroup = (heading: string, rows: CrmOverdue["all"]) =>
+    rows.length === 0
+      ? ""
+      : `<p style="font-weight:600;margin:12px 0 4px;">${heading} (${rows.length})</p><ul style="margin-top:0;">${rows
+          .slice(0, 10)
+          .map(taskLi)
+          .join("")}${rows.length > 10 ? `<li style="color:#6B6960;">+${rows.length - 10} more</li>` : ""}</ul>`;
+  const section = (heading: string, g: CrmOverdue) =>
+    g.total === 0
+      ? ""
+      : `<hr style="border:none;border-top:1px solid #F0EEE8;margin:16px 0;">` +
+        `<p style="font-weight:700;margin:0 0 4px;">${heading}</p>` +
+        subGroup("Partners", g.partners) +
+        subGroup("Donors", g.donors);
+
+  const subject = `🌱 Your week: ${gifts.length} gift${gifts.length === 1 ? "" : "s"}${giftTotal > 0 ? ` (${fmtUsd(giftTotal)})` : ""}, ${due.length} deadline${due.length === 1 ? "" : "s"} ahead`;
+  const headline = briefing.headline ?? "Good morning, Ambition Angels";
+
+  // One personalised email per operator: their overdue CRM tasks (+ the
+  // unassigned ones, so nothing falls through). Unmatched recipients get the
+  // org-wide list.
+  const operators = await getOperatorEmails();
+  let sent = 0;
+  for (const email of operators) {
+    const who = assigneeFromEmail(email);
+    const personal = who
+      ? section("⏰ Your overdue CRM tasks", groupOverdue(crmOverdue.all.filter((t) => t.assignedTo === who))) +
+        section("Unassigned overdue", groupOverdue(crmOverdue.all.filter((t) => t.assignedTo === null)))
+      : section("⏰ Overdue across CRM", crmOverdue);
+    const ok = await sendOperatorEmailTo(email, subject, operatorEmailShell(headline, body + personal));
+    if (ok) sent += 1;
+  }
+  return NextResponse.json({ sent, recipients: operators.length });
 }

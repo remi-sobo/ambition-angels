@@ -6,6 +6,7 @@
 // cell rendering, and bulk actions.
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import DataTable, { type Column, type BulkAction } from "../../../_components/DataTable";
 import { money } from "../../../finance/_components/charts";
 import { FLAG_LABELS, FLAG_HELP, type RetentionFlag } from "@/lib/fundraising/retention";
@@ -48,6 +49,14 @@ const fmtDate = (iso: string) =>
   });
 
 export default function DonorsTable({ rows }: { rows: DonorRow[] }) {
+  const router = useRouter();
+  const bulkConstituents = (ids: string[], action: "archive" | "unarchive" | "delete") =>
+    fetch("/api/admin/constituents/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids, action }),
+    });
+
   const columns: Column<DonorRow>[] = [
     {
       key: "name",
@@ -147,6 +156,39 @@ export default function DonorsTable({ rows }: { rows: DonorRow[] }) {
           .writeText(emails.join(", "))
           .then(() => alert(`Copied ${emails.length} email${emails.length === 1 ? "" : "s"} to the clipboard.`))
           .catch(() => alert("Could not access the clipboard."));
+      },
+    },
+    {
+      label: "Archive",
+      run: (selected) => {
+        if (!confirm(`Archive ${selected.length} donor(s)? They'll be hidden from lists but keep all history.`)) return;
+        void bulkConstituents(selected.map((r) => r.id), "archive").then(() => router.refresh());
+      },
+    },
+    {
+      label: "Unarchive",
+      run: (selected) => {
+        void bulkConstituents(selected.map((r) => r.id), "unarchive").then(() => router.refresh());
+      },
+    },
+    {
+      label: "Delete (no gifts)",
+      run: (selected) => {
+        const deletable = selected.filter((r) => r.count === 0);
+        const blocked = selected.length - deletable.length;
+        if (deletable.length === 0) {
+          alert("None of the selected donors can be deleted — they all have gifts. Archive them instead.");
+          return;
+        }
+        if (
+          !confirm(
+            `Permanently delete ${deletable.length} donor(s) with no gifts?` +
+              (blocked > 0 ? ` ${blocked} with giving history will be skipped.` : "") +
+              " This cannot be undone."
+          )
+        )
+          return;
+        void bulkConstituents(deletable.map((r) => r.id), "delete").then(() => router.refresh());
       },
     },
   ];

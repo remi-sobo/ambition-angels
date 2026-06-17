@@ -9,6 +9,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import DataTable, { type Column, type BulkAction } from "../../../_components/DataTable";
 import { CategoryTag, ScoreBadge } from "@/app/admin/_components/StatusChip";
 
@@ -54,11 +55,14 @@ export default function ProspectsTable({
   rows,
   lifecycleOptions,
   ownerOptions,
+  disqualifiedView = false,
 }: {
   rows: ProspectRow[];
   lifecycleOptions: string[];
   ownerOptions: string[];
+  disqualifiedView?: boolean;
 }) {
+  const router = useRouter();
   const [lifecycle, setLifecycle] = useState("");
   const [owner, setOwner] = useState("");
   const [scored, setScored] = useState(false);
@@ -148,6 +152,28 @@ export default function ProspectsTable({
           .catch(() => alert("Could not access the clipboard."));
       },
     },
+    disqualifiedView
+      ? {
+          label: "Requalify",
+          run: (selected) => {
+            void fetch("/api/admin/fundraising/prospects/disqualify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ hubspot_ids: selected.map((r) => r.hubspot_id), disqualified: false }),
+            }).then(() => router.refresh());
+          },
+        }
+      : {
+          label: "Disqualify",
+          run: (selected) => {
+            if (!confirm(`Remove ${selected.length} prospect(s) from the working list? You can requalify them later.`)) return;
+            void fetch("/api/admin/fundraising/prospects/disqualify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ hubspot_ids: selected.map((r) => r.hubspot_id), disqualified: true }),
+            }).then(() => router.refresh());
+          },
+        },
   ];
 
   return (

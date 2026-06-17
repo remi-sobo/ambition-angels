@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { AdminUser } from "@/lib/admin/auth";
 import TaskListView, { type GroupBy } from "./TaskListView";
 import TaskBoardView from "./TaskBoardView";
 import type { OpsTask } from "../_types/ops";
 
 type View = "list" | "board";
+type LinkFilter = "all" | "any" | "partner" | "constituent";
+
+const LINK_OPTIONS: { value: LinkFilter; label: string }[] = [
+  { value: "all", label: "All tasks" },
+  { value: "any", label: "CRM-linked" },
+  { value: "partner", label: "Partners" },
+  { value: "constituent", label: "Donors" },
+];
 
 const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
   { value: "priority", label: "Priority" },
@@ -31,16 +39,40 @@ export default function TasksSurface({
 }) {
   const [view, setView] = useState<View>("list");
   const [groupBy, setGroupBy] = useState<GroupBy>("priority");
+  const [linkFilter, setLinkFilter] = useState<LinkFilter>("all");
+
+  const visibleTasks = useMemo(() => {
+    if (linkFilter === "all") return tasks;
+    if (linkFilter === "any") return tasks.filter((t) => !!t.linked_entity_type);
+    return tasks.filter((t) => t.linked_entity_type === linkFilter);
+  }, [tasks, linkFilter]);
 
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
       <header className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
           <h2 className="text-xs uppercase tracking-wider text-ink-2">Tasks</h2>
-          <span className="text-[11px] text-ink-3">{tasks.length}</span>
+          <span className="text-[11px] text-ink-3">
+            {visibleTasks.length}
+            {linkFilter !== "all" && tasks.length !== visibleTasks.length ? ` / ${tasks.length}` : ""}
+          </span>
         </div>
 
         <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ink-2">
+            Linked
+            <select
+              value={linkFilter}
+              onChange={(e) => setLinkFilter(e.target.value as LinkFilter)}
+              className="bg-tile border-[1.5px] border-outline rounded-lg px-2.5 py-1.5 text-xs text-ink-1 normal-case tracking-normal focus:outline-none focus:border-orange/50"
+            >
+              {LINK_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
           {view === "list" && (
             <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ink-2">
               Group by
@@ -79,13 +111,13 @@ export default function TasksSurface({
 
       {view === "list" ? (
         <TaskListView
-          tasks={tasks}
+          tasks={visibleTasks}
           projectNames={projectNames}
           groupBy={groupBy}
           currentUser={currentUser}
         />
       ) : (
-        <TaskBoardView tasks={tasks} projectNames={projectNames} />
+        <TaskBoardView tasks={visibleTasks} projectNames={projectNames} />
       )}
     </section>
   );

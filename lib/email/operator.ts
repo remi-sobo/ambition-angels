@@ -23,6 +23,21 @@ export async function sendOperatorEmail(subject: string, html: string): Promise<
   }
   const to = await getOperatorEmails();
   if (to.length === 0) return false;
+  return sendTo(key, to, subject, html);
+}
+
+// Single-recipient send — used when the body is personalised per operator
+// (e.g. the assignee-scoped Monday digest).
+export async function sendOperatorEmailTo(to: string, subject: string, html: string): Promise<boolean> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    console.error("sendOperatorEmailTo: RESEND_API_KEY not set");
+    return false;
+  }
+  return sendTo(key, to, subject, html);
+}
+
+async function sendTo(key: string, to: string | string[], subject: string, html: string): Promise<boolean> {
   try {
     const resend = new Resend(key);
     const { error } = await resend.emails.send({

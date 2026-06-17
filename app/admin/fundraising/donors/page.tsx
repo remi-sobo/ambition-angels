@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SegmentExportPanel from "./_components/SegmentExportPanel";
+import FilterTabs from "../_components/FilterTabs";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
@@ -11,6 +12,9 @@ import { todayISO } from "../../ops/_types/ops";
 // fundraising core schema. Gift ingestion is automatic (Stripe trigger);
 // Givebutter and manual entry land in later chunks.
 export const dynamic = "force-dynamic";
+
+// $10k+ lifetime giving marks a major donor (derived segment, not a tag).
+const MAJOR_DONOR_THRESHOLD = 10000;
 
 type Constituent = {
   id: string;
@@ -75,7 +79,13 @@ async function fetchActivePlans(supabase: ReturnType<typeof createServerSupabase
 const chunk = <T,>(arr: T[], n: number): T[][] =>
   Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, (i + 1) * n));
 
-export default async function DonorsPage() {
+type SegmentKey = "all" | "individual" | "organization" | "major" | "lapsed";
+
+export default async function DonorsPage({
+  searchParams,
+}: {
+  searchParams?: { year?: string; segment?: string };
+}) {
   const supabase = createServerSupabase();
   const [{ gifts: allGifts, error: giftsError }, plansRes, constituentCountRes, pendingAcksRes] = await Promise.all([
     fetchAllGifts(supabase),
@@ -100,6 +110,15 @@ export default async function DonorsPage() {
 
   const gifts = allGifts.map((g) => ({ ...g, amount: Number(g.amount) }));
 
+  // ── Filters (URL-driven) ────────────────────────────────────────────────
+  // Year is the calendar fiscal year and scopes KPIs + the donor table by
+  // gift_date. Retention and the major/lapsed segments stay all-time/lifetime
+  // because they are inherently cross-year designations.
+  const currentYear = new Date().getFullYear();
+  const year = searchParams?.year ?? String(currentYear);
+  const segment = (searchParams?.segment ?? "all") as SegmentKey;
+  const inYear = (iso: string) => year === "all" || iso.slice(0, 4) === year;
+
   type Rollup = {
     total: number;
     count: number;
@@ -108,16 +127,22 @@ export default async function DonorsPage() {
     recurring: boolean;
     dates: string[];
   };
-  const rollups = new Map<string, Rollup>();
+  // All-time rollups: lifetime total (major), full date history (retention).
+  const rollupsAll = new Map<string, Rollup>();
+  // Period rollups: total + count within the selected year (KPIs + table).
+  const periodRollups = new Map<string, { total: number; count: number }>();
   let anonTotal = 0;
   let anonCount = 0;
   for (const g of gifts) {
+    const inPeriod = inYear(g.gift_date);
     if (!g.constituent_id) {
-      anonTotal += g.amount;
-      anonCount += 1;
+      if (inPeriod) {
+        anonTotal += g.amount;
+        anonCount += 1;
+      }
       continue;
     }
-    const r = rollups.get(g.constituent_id) ?? {
+    const r = rollupsAll.get(g.constituent_id) ?? {
       total: 0, count: 0, first: g.gift_date, last: g.gift_date, recurring: false, dates: [],
     };
     r.dates.push(g.gift_date);
@@ -126,15 +151,27 @@ export default async function DonorsPage() {
     if (g.gift_date < r.first) r.first = g.gift_date;
     if (g.gift_date > r.last) r.last = g.gift_date;
     if (g.recurring_plan_id) r.recurring = true;
-    rollups.set(g.constituent_id, r);
+    rollupsAll.set(g.constituent_id, r);
+
+    if (inPeriod) {
+      const p = periodRollups.get(g.constituent_id) ?? { total: 0, count: 0 };
+      p.total += g.amount;
+      p.count += 1;
+      periodRollups.set(g.constituent_id, p);
+    }
   }
+
+  // The rollup map that drives the visible list: period when a year is
+  // selected, lifetime when "all time".
+  const displayRollups = year === "all" ? null : periodRollups;
+  const displayIds = Array.from((displayRollups ?? rollupsAll).keys());
 
   // Fetch exactly the constituents that have gifts, by id — no arbitrary
   // list cap can drop a donor whose gifts we counted.
-  const donorIds = Array.from(rollups.keys());
   const constituents: Constituent[] = [];
   let constituentFetchFailed = false;
-  for (const ids of chunk(donorIds, 200)) {
+  for (const ids of chunk(displayIds, 200)) {
+    if (ids.length === 0) continue;
     const { data, error } = await supabase
       .from("constituents")
       .select("id, type, first_name, last_name, org_name, emails, do_not_contact, source")
@@ -146,34 +183,74 @@ export default async function DonorsPage() {
     constituents.push(...((data ?? []) as Constituent[]));
   }
 
-  const donors = constituents
-    .filter((c) => rollups.has(c.id))
-    .map((c) => ({ c, r: rollups.get(c.id)! }))
-    .sort((a, b) => b.r.total - a.r.total);
-  const nonDonorConstituents = Math.max((constituentCountRes.count ?? donors.length) - donors.length, 0);
-
-  const totalRaised = gifts.reduce((s, g) => s + g.amount, 0);
-
-  // ── Retention intelligence (modules/03 §Donors 5) ──
+  // ── Retention intelligence (modules/03 §Donors 5) — always all-time ──
   const today = todayISO();
   const activePlanDonors = new Set(
     plansRes.ids.filter((id): id is string => id !== null)
   );
   const flagsByDonor = new Map<string, RetentionFlag[]>();
-  for (const [id, r] of Array.from(rollups.entries())) {
+  for (const [id, r] of Array.from(rollupsAll.entries())) {
     const { flags } = analyzeDonor(r.dates, today, activePlanDonors.has(id));
     if (flags.length > 0) flagsByDonor.set(id, flags);
   }
   const retention = retentionRate(
-    Array.from(rollups.values()).map((r) => r.dates),
+    Array.from(rollupsAll.values()).map((r) => r.dates),
     today
   );
-  // Chips can only render loaded constituents, but counts must reflect the
-  // true flagged total (the partial-load banner explains any gap).
-  const bucket = (flag: RetentionFlag) => ({
-    members: donors.filter(({ c }) => flagsByDonor.get(c.id)?.includes(flag)),
-    trueCount: Array.from(flagsByDonor.values()).filter((fl) => fl.includes(flag)).length,
-  });
+
+  // Build the display rows, then apply the segment filter.
+  const isLapsed = (id: string) => {
+    const f = flagsByDonor.get(id) ?? [];
+    return f.includes("lybunt") || f.includes("sybunt");
+  };
+  const matchesSegment = (c: Constituent): boolean => {
+    switch (segment) {
+      case "individual": return c.type === "person";
+      case "organization": return c.type === "organization";
+      case "major": return (rollupsAll.get(c.id)?.total ?? 0) >= MAJOR_DONOR_THRESHOLD;
+      case "lapsed": return isLapsed(c.id);
+      default: return true;
+    }
+  };
+
+  const donors = constituents
+    .filter((c) => (displayRollups ?? rollupsAll).has(c.id))
+    .filter(matchesSegment)
+    .map((c) => {
+      const lifetime = rollupsAll.get(c.id);
+      const shown = (displayRollups ?? rollupsAll).get(c.id)!;
+      return {
+        c,
+        total: "total" in shown ? shown.total : 0,
+        count: "count" in shown ? shown.count : 0,
+        first: lifetime?.first ?? "",
+        last: lifetime?.last ?? "",
+        recurring: lifetime?.recurring ?? false,
+      };
+    })
+    .sort((a, b) => b.total - a.total);
+
+  const periodGiftCount = gifts.filter((g) => inYear(g.gift_date)).length;
+  const totalRaised = gifts.filter((g) => inYear(g.gift_date)).reduce((s, g) => s + g.amount, 0);
+  const nonDonorConstituents = Math.max(
+    (constituentCountRes.count ?? 0) - (displayRollups ?? rollupsAll).size,
+    0
+  );
+
+  const yearLabel = year === "all" ? "all time" : year;
+  const yearOptions = [
+    { value: String(currentYear), label: "This year" },
+    { value: String(currentYear - 1), label: "Last year" },
+    { value: "all", label: "All time" },
+  ];
+  const segmentOptions = [
+    { value: "all", label: "All" },
+    { value: "individual", label: "Individuals" },
+    { value: "organization", label: "Organizations" },
+    { value: "major", label: "Major ($10k+)" },
+    { value: "lapsed", label: "Lapsed" },
+  ];
+
   const FLAG_STYLES: Record<RetentionFlag, string> = {
     lybunt: "bg-[#F4E8D0] text-[#A56A1B]",
     sybunt: "bg-tile text-ink-2",
@@ -181,6 +258,10 @@ export default async function DonorsPage() {
     second_gift_watch: "bg-blue-500/15 text-blue-400",
   };
   const RETENTION_BUCKETS: RetentionFlag[] = ["lybunt", "cadence_lapsed", "second_gift_watch", "sybunt"];
+  const bucket = (flag: RetentionFlag) => ({
+    members: donors.filter(({ c }) => flagsByDonor.get(c.id)?.includes(flag)),
+    trueCount: Array.from(flagsByDonor.values()).filter((fl) => fl.includes(flag)).length,
+  });
 
   return (
     <div className="min-h-screen bg-ink">
@@ -198,13 +279,33 @@ export default async function DonorsPage() {
         </Link>
         <span className="text-xs text-ink-2 ml-auto">
           {donors.length} donor{donors.length === 1 ? "" : "s"}
-          {nonDonorConstituents > 0 ? ` · ${nonDonorConstituents} constituents without gifts` : ""}
+          {segment === "all" && nonDonorConstituents > 0
+            ? ` · ${nonDonorConstituents} constituents without gifts`
+            : ""}
         </span>
       </div>
 
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-        <div className="flex justify-end">
-          <SegmentExportPanel />
+        {/* ── Filters ── */}
+        <div className="flex flex-wrap items-center gap-3">
+          <FilterTabs
+            options={yearOptions}
+            current={year}
+            paramKey="year"
+            basePath="/admin/fundraising/donors"
+            extraParams={{ segment }}
+          />
+          <FilterTabs
+            options={segmentOptions}
+            current={segment}
+            paramKey="segment"
+            basePath="/admin/fundraising/donors"
+            extraParams={{ year }}
+            size="sm"
+          />
+          <div className="ml-auto">
+            <SegmentExportPanel />
+          </div>
         </div>
         {constituentFetchFailed && (
           <div className="bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
@@ -213,13 +314,13 @@ export default async function DonorsPage() {
           </div>
         )}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total Raised" value={money(totalRaised)} sub={`${gifts.length} gifts on the spine`} />
-          <StatCard label="Donors" value={donors.length} sub={anonCount > 0 ? `+ ${anonCount} anonymous gifts` : "with at least one gift"} />
-          <StatCard label="Average Gift" value={gifts.length > 0 ? money(totalRaised / gifts.length) : "—"} />
+          <StatCard label="Total Raised" value={money(totalRaised)} sub={`${periodGiftCount} gifts · ${yearLabel}`} />
+          <StatCard label="Donors" value={donors.length} sub={segment === "all" ? `gave ${yearLabel}` : segmentOptions.find((s) => s.value === segment)?.label} />
+          <StatCard label="Average Gift" value={periodGiftCount > 0 ? money(totalRaised / periodGiftCount) : "—"} sub={yearLabel} />
           <StatCard label="Active Recurring Plans" value={plansRes.count ?? 0} sub="monthly givers" />
         </div>
 
-        {/* ── Retention intelligence ── */}
+        {/* ── Retention intelligence (always year-over-year) ── */}
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
             <h2 className="font-heading font-bold text-ink-1 text-sm">Retention Intelligence</h2>
@@ -277,21 +378,21 @@ export default async function DonorsPage() {
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {donors.length === 0 ? (
             <p className="p-8 text-ink-2 text-sm">
-              No donors yet. Stripe donations flow in automatically; Givebutter and manual gift
-              entry arrive later in Ring 2.
+              No donors match this filter{year === "all" ? "" : ` for ${yearLabel}`}. Try a
+              different year or segment.
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[820px]">
                 <thead>
                   <tr className="border-b border-outline">
-                    {["Donor", "Email", "Total Given", "Gifts", "First Gift", "Latest Gift", ""].map((h) => (
+                    {["Donor", "Email", year === "all" ? "Total Given" : `Given ${yearLabel}`, "Gifts", "First Gift", "Latest Gift", ""].map((h) => (
                       <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {donors.map(({ c, r }) => (
+                  {donors.map(({ c, total, count, first, last, recurring }) => (
                     <tr key={c.id} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
                       <td className="px-5 py-3.5">
                         <Link href={`/admin/fundraising/donors/${c.id}`} className="flex items-center gap-3 group">
@@ -301,8 +402,11 @@ export default async function DonorsPage() {
                           <span className="font-medium text-ink-1 group-hover:text-orange transition-colors">
                             {constituentName(c)}
                           </span>
-                          {r.recurring && (
+                          {recurring && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
+                          )}
+                          {(rollupsAll.get(c.id)?.total ?? 0) >= MAJOR_DONOR_THRESHOLD && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-revenue/15 text-revenue">Major</span>
                           )}
                           {c.do_not_contact && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-expense-bg text-expense">Do not contact</span>
@@ -315,10 +419,10 @@ export default async function DonorsPage() {
                         </Link>
                       </td>
                       <td className="px-5 py-3.5 text-ink-2 text-xs">{c.emails[0] ?? "—"}</td>
-                      <td className="px-5 py-3.5 font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(r.total)}</td>
-                      <td className="px-5 py-3.5 text-ink-2 [font-variant-numeric:tabular-nums]">{r.count}</td>
-                      <td className="px-5 py-3.5 text-ink-2 text-xs whitespace-nowrap">{fmtDate(r.first)}</td>
-                      <td className="px-5 py-3.5 text-ink-2 text-xs whitespace-nowrap">{fmtDate(r.last)}</td>
+                      <td className="px-5 py-3.5 font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(total)}</td>
+                      <td className="px-5 py-3.5 text-ink-2 [font-variant-numeric:tabular-nums]">{count}</td>
+                      <td className="px-5 py-3.5 text-ink-2 text-xs whitespace-nowrap">{first ? fmtDate(first) : "—"}</td>
+                      <td className="px-5 py-3.5 text-ink-2 text-xs whitespace-nowrap">{last ? fmtDate(last) : "—"}</td>
                       <td className="px-5 py-3.5 text-right">
                         <Link href={`/admin/fundraising/donors/${c.id}`} className="text-xs font-semibold text-orange hover:text-orange-mid">
                           Profile →
@@ -326,7 +430,7 @@ export default async function DonorsPage() {
                       </td>
                     </tr>
                   ))}
-                  {anonCount > 0 && (
+                  {segment === "all" && anonCount > 0 && (
                     <tr className="border-b border-hairline">
                       <td className="px-5 py-3.5 text-ink-2 italic">Anonymous / no identity</td>
                       <td className="px-5 py-3.5 text-ink-2 text-xs">—</td>

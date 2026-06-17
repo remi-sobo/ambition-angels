@@ -21,6 +21,7 @@ export type OpportunityRow = {
   constituentName: string;
   hubspotId: string | null;
   stage: string;
+  pipeline: string | null;
   askAmount: number | null;
   expectedClose: string | null;
   probability: number | null;

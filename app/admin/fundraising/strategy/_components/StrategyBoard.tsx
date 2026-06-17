@@ -18,7 +18,7 @@ export type FunderRow = {
   constituentId: string | null;
   name: string;
   email: string | null;
-  hasHubspot: boolean;
+  hubspotId: string | null;
 };
 
 const STAGES: { key: string; label: string; cls: string }[] = [
@@ -30,7 +30,14 @@ const STAGES: { key: string; label: string; cls: string }[] = [
   { key: "passed", label: "Passed", cls: "text-ink-3" },
 ];
 
-type SearchResult = { id: string; name: string; type: string; email: string | null; hasHubspot: boolean };
+type SearchResult = {
+  kind: "constituent" | "prospect";
+  id: string | null;
+  hubspotId: string | null;
+  name: string;
+  type: string;
+  email: string | null;
+};
 
 export default function StrategyBoard({ angleId, funders }: { angleId: string; funders: FunderRow[] }) {
   const grouped = STAGES.map((s) => ({ ...s, items: funders.filter((f) => f.stage === s.key) }));
@@ -91,7 +98,7 @@ function AddFunder({ angleId }: { angleId: string }) {
     }, 250);
   }, []);
 
-  const add = async (body: { constituent_id?: string; constituent_name?: string }) => {
+  const add = async (body: { constituent_id?: string; constituent_name?: string; hubspot_id?: string }) => {
     setBusy(true);
     try {
       const r = await fetch("/api/admin/strategy/funder-angles", {
@@ -130,12 +137,21 @@ function AddFunder({ angleId }: { angleId: string }) {
           <div className="absolute z-20 left-0 right-0 mt-1 bg-tile border-[1.5px] border-outline rounded-lg shadow-lg overflow-hidden">
             {results.map((res) => (
               <button
-                key={res.id}
+                key={res.kind === "prospect" ? `p-${res.hubspotId}` : `c-${res.id}`}
                 type="button"
-                onClick={() => add({ constituent_id: res.id })}
+                onClick={() =>
+                  add(res.kind === "prospect" ? { hubspot_id: res.hubspotId! } : { constituent_id: res.id! })
+                }
                 className="w-full text-left px-3 py-2 text-sm hover:bg-[#EFE6D4] flex items-center justify-between gap-2"
               >
-                <span className="text-ink-1 font-medium truncate">{res.name}</span>
+                <span className="text-ink-1 font-medium truncate">
+                  {res.name}
+                  {res.kind === "prospect" && (
+                    <span className="ml-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">
+                      prospect · promote
+                    </span>
+                  )}
+                </span>
                 <span className="text-ink-3 text-xs truncate">{res.email ?? res.type}</span>
               </button>
             ))}
@@ -192,6 +208,25 @@ function FunderCard({ funder }: { funder: FunderRow }) {
       setBusy(false);
     }
   };
+
+  const pursue = async () => {
+    if (!confirm(`Create an opportunity for ${funder.name} and move to Pursuing?`)) return;
+    setBusy(true);
+    try {
+      const r = await fetch(`/api/admin/strategy/funder-angles/${funder.id}/pursue`, { method: "POST" });
+      if (!r.ok) throw new Error();
+      router.refresh();
+    } catch {
+      alert("Could not create the opportunity — try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Research is gated on qualification (protects the agent budget) and needs a
+  // HubSpot mirror row (the agent reads hs_*).
+  const researchEligible = ["qualified", "researched", "pursuing"].includes(funder.stage);
+  const canPursue = ["qualified", "researched"].includes(funder.stage) && !funder.opportunityId;
 
   const decisionCls =
     decision === "pursue"
@@ -270,16 +305,39 @@ function FunderCard({ funder }: { funder: FunderRow }) {
             <option value="pass">Pass</option>
           </select>
         </label>
-        {funder.hasHubspot ? (
-          <span className="text-[10px] text-ink-3" title="Has a HubSpot mirror row — research available in Phase 3">
-            HubSpot ✓
-          </span>
-        ) : (
-          <span className="text-[10px] text-ink-3" title="Spine-only — research unavailable">
-            no HubSpot
-          </span>
-        )}
       </div>
+
+      {(researchEligible || funder.opportunityId || canPursue) && (
+        <div className="flex items-center gap-3 flex-wrap text-[11px]">
+          {researchEligible &&
+            (funder.hubspotId ? (
+              <Link
+                href={`/admin/fundraising/prospects/${encodeURIComponent(funder.hubspotId)}`}
+                className="font-semibold text-ink-2 hover:text-orange transition-colors"
+              >
+                Research →
+              </Link>
+            ) : (
+              <span className="text-ink-3" title="The research agent needs a HubSpot mirror row">
+                Not in HubSpot — research unavailable
+              </span>
+            ))}
+          {funder.opportunityId ? (
+            <Link href="/admin/fundraising" className="font-semibold text-revenue hover:text-orange transition-colors">
+              Opportunity created ✓ · Major Gifts
+            </Link>
+          ) : canPursue ? (
+            <button
+              type="button"
+              onClick={pursue}
+              disabled={busy}
+              className="font-semibold px-3 py-1 rounded-full bg-orange text-white hover:bg-orange-dark transition-colors disabled:opacity-60"
+            >
+              Pursue → opportunity
+            </button>
+          ) : null}
+        </div>
+      )}
 
       <textarea
         value={notes}

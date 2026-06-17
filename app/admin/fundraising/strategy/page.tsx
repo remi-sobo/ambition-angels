@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import PageHeader from "../../_components/PageHeader";
+import NewAngleForm from "./_components/NewAngleForm";
 
 // Strategy tab (Phase 1) — the internal twin of the public Strategy Room.
 // Eight funding angles, now read from the strategy_angles table (seeded from
@@ -67,6 +68,7 @@ export default async function StrategyPage() {
       <PageHeader
         title="Strategy"
         subtitle={`${angles.length} funding angles · the internal twin of the Strategy Room`}
+        actions={<NewAngleForm />}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

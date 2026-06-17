@@ -45,10 +45,12 @@ export default function ProspectFilters({
     for (const [k, v] of Object.entries(merged)) {
       if (v !== null && v !== "") params.set(k, v);
     }
-    // Any filter change resets pagination + sort to defaults.
+    // Any filter change resets the list to its default view.
     const qs = params.toString();
     startTransition(() => {
-      router.push(qs ? `/admin/fundraising?${qs}` : "/admin/fundraising");
+      router.push(
+        qs ? `/admin/fundraising/prospects?${qs}` : "/admin/fundraising/prospects"
+      );
     });
   }
 

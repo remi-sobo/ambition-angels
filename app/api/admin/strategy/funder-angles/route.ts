@@ -11,6 +11,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { resolveConstituent } from "@/lib/fundraising/constituent-resolve";
+import { promoteHsContact } from "@/lib/fundraising/promote-hs-contact";
 
 export const dynamic = "force-dynamic";
 
@@ -27,19 +28,34 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createServerSupabase();
-  const resolved = await resolveConstituent(supabase, {
-    constituentId: body.constituent_id,
-    name: body.constituent_name,
-  });
-  if ("error" in resolved) {
-    return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+
+  // A mirror-only prospect joins by hubspot_id (promote to the spine first);
+  // otherwise resolve a picked constituent or a free-text name.
+  let constituentId: string;
+  let warning: string | undefined;
+  if (typeof body.hubspot_id === "string" && body.hubspot_id.trim()) {
+    const promoted = await promoteHsContact(supabase, body.hubspot_id);
+    if ("error" in promoted) {
+      return NextResponse.json({ error: promoted.error }, { status: promoted.status });
+    }
+    constituentId = promoted.constituentId;
+  } else {
+    const resolved = await resolveConstituent(supabase, {
+      constituentId: body.constituent_id,
+      name: body.constituent_name,
+    });
+    if ("error" in resolved) {
+      return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+    }
+    constituentId = resolved.constituentId;
+    warning = resolved.warning;
   }
 
   const { data, error } = await supabase
     .from("funder_angles")
     .insert({
       angle_id: body.angle_id,
-      constituent_id: resolved.constituentId,
+      constituent_id: constituentId,
       stage: "shortlist",
       created_by: (await getAdminUser()) ?? null,
     })
@@ -58,8 +74,8 @@ export async function POST(req: NextRequest) {
     action: "fundraising.funder_angle.create",
     entityType: "funder_angles",
     entityId: data.id,
-    after: { angle_id: body.angle_id, constituent_id: resolved.constituentId },
+    after: { angle_id: body.angle_id, constituent_id: constituentId },
   });
 
-  return NextResponse.json({ id: data.id, warning: resolved.warning });
+  return NextResponse.json({ id: data.id, warning });
 }

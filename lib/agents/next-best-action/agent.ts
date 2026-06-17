@@ -100,13 +100,20 @@ function formatCandidates(candidates: NbaCandidate[], today: string): string {
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(n)));
 
+export type NbaResult = {
+  recommendations: NbaRecommendation[];
+  tokensInput: number;
+  tokensOutput: number;
+  model: string;
+};
+
 export async function runNextBestAction(
   candidates: NbaCandidate[],
   today: string
-): Promise<NbaRecommendation[]> {
+): Promise<NbaResult> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("NBA agent: ANTHROPIC_API_KEY must be set");
-  if (candidates.length === 0) return [];
+  if (candidates.length === 0) return { recommendations: [], tokensInput: 0, tokensOutput: 0, model: NBA_MODEL };
 
   const client = new Anthropic({ apiKey: key });
   const validIds = new Set(candidates.map((c) => c.opportunity_id));
@@ -128,14 +135,21 @@ export async function runNextBestAction(
     tool_choice: { type: "tool", name: "submit_recommendations" },
   });
 
+  const u = response.usage;
+  const tokensInput =
+    (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
+  const tokensOutput = u.output_tokens ?? 0;
+  const model = response.model ?? NBA_MODEL;
+  const empty = { recommendations: [] as NbaRecommendation[], tokensInput, tokensOutput, model };
+
   const toolUse = response.content.find(
     (b): b is Anthropic.Messages.ToolUseBlock =>
       b.type === "tool_use" && b.name === "submit_recommendations"
   );
-  if (!toolUse) return [];
+  if (!toolUse) return empty;
 
   const raw = (toolUse.input as { recommendations?: unknown }).recommendations;
-  if (!Array.isArray(raw)) return [];
+  if (!Array.isArray(raw)) return empty;
 
   const out: NbaRecommendation[] = [];
   for (const r of raw as Record<string, unknown>[]) {
@@ -153,5 +167,12 @@ export async function runNextBestAction(
     });
   }
   out.sort((a, b) => a.priority - b.priority);
-  return out;
+  return { recommendations: out, tokensInput, tokensOutput, model };
+}
+
+// Sonnet rough rates per million tokens (matches the model used above).
+export const NBA_INPUT_PER_MILLION_USD = 3;
+export const NBA_OUTPUT_PER_MILLION_USD = 15;
+export function estimateNbaCostUsd(tokensInput: number, tokensOutput: number): number {
+  return (tokensInput * NBA_INPUT_PER_MILLION_USD + tokensOutput * NBA_OUTPUT_PER_MILLION_USD) / 1_000_000;
 }

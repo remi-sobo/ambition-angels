@@ -15,10 +15,17 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getOrgContext } from "@/lib/admin/auth";
+import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "@/app/admin/ops/_types/ops";
-import { runNextBestAction } from "@/lib/agents/next-best-action/agent";
+import { runNextBestAction, estimateNbaCostUsd } from "@/lib/agents/next-best-action/agent";
+
+// Shared monthly agent wallet (same cap as the research route) + a rate limit,
+// so "Suggest next moves" can't run uncapped.
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const MONTHLY_BUDGET_HARD_USD = 20;
+const MONTHLY_BUDGET_WARN_USD = 12;
 import type {
   NbaCandidate,
   NbaCardRecommendation,
@@ -136,6 +143,51 @@ export async function POST() {
   const supabase = createServerSupabase();
   const today = todayISO();
 
+  const currentUser = await getAdminUser();
+  if (!currentUser) return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });
+
+  // Rate limit: count this user's recent NBA runs in the activity log.
+  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+  const { count: recentCount } = await supabase
+    .from("fr_agent_activity_log")
+    .select("id", { count: "exact", head: true })
+    .eq("triggered_by", currentUser)
+    .filter("metadata->>kind", "eq", "next_best_action")
+    .gte("created_at", windowStart);
+  if ((recentCount ?? 0) >= RATE_LIMIT_MAX) {
+    return NextResponse.json(
+      { error: `Rate limit: ${RATE_LIMIT_MAX} suggestion runs per 10 minutes. Try again shortly.` },
+      { status: 429 }
+    );
+  }
+
+  // Monthly budget: sum estimated cost across all agent runs this month.
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const { data: mtdRows } = await supabase
+    .from("fr_agent_activity_log")
+    .select("metadata")
+    .gte("created_at", monthStart.toISOString());
+  let mtdSpendUsd = 0;
+  for (const r of (mtdRows ?? []) as Array<{ metadata: { estimated_cost_usd?: number } | null }>) {
+    const c = Number(r.metadata?.estimated_cost_usd ?? 0);
+    if (Number.isFinite(c)) mtdSpendUsd += c;
+  }
+  if (mtdSpendUsd >= MONTHLY_BUDGET_HARD_USD) {
+    return NextResponse.json(
+      {
+        error: `Monthly agent budget exceeded ($${MONTHLY_BUDGET_HARD_USD}). Resets next month.`,
+        mtd_spend_usd: Number(mtdSpendUsd.toFixed(2)),
+      },
+      { status: 402 }
+    );
+  }
+  const budgetWarning =
+    mtdSpendUsd >= MONTHLY_BUDGET_WARN_USD
+      ? `Approaching monthly budget: $${mtdSpendUsd.toFixed(2)} of $${MONTHLY_BUDGET_HARD_USD}.`
+      : null;
+
   const { data: oppData, error: oppErr } = await supabase
     .from("opportunities")
     .select(
@@ -226,16 +278,31 @@ export async function POST() {
   const shortlist = candidates.slice(0, MAX_CANDIDATES);
   const byId = new Map(opps.map((o) => [o.id, o]));
 
-  let recs;
+  let result;
   try {
-    recs = await runNextBestAction(shortlist, today);
+    result = await runNextBestAction(shortlist, today);
   } catch (e) {
     console.error("NBA agent error:", e instanceof Error ? e.message : e);
     return NextResponse.json({ error: "Suggestion generation failed" }, { status: 502 });
   }
+  const recs = result.recommendations;
+
+  // Record spend on the shared agent wallet (drives the budget cap above).
+  const costUsd = estimateNbaCostUsd(result.tokensInput, result.tokensOutput);
+  await supabase.from("fr_agent_activity_log").insert({
+    created_by: "agent",
+    triggered_by: currentUser,
+    action_type: "other",
+    prompt_summary: `Next-best-action over ${shortlist.length} open opportunities`,
+    model_used: result.model,
+    tokens_input: result.tokensInput,
+    tokens_output: result.tokensOutput,
+    status: "success",
+    metadata: { kind: "next_best_action", estimated_cost_usd: Number(costUsd.toFixed(4)), suggestions: recs.length },
+  });
 
   if (recs.length === 0) {
-    return NextResponse.json({ recommendations: [], stats: await fetchStats(supabase) });
+    return NextResponse.json({ recommendations: [], stats: await fetchStats(supabase), budgetWarning });
   }
 
   // Persist: supersede prior open suggestions for these opportunities, then
@@ -288,5 +355,5 @@ export async function POST() {
     };
   });
 
-  return NextResponse.json({ recommendations: cards, stats: await fetchStats(supabase) });
+  return NextResponse.json({ recommendations: cards, stats: await fetchStats(supabase), budgetWarning });
 }

@@ -26,25 +26,38 @@ export async function resolveConstituent(
     return { error: "constituent_id or constituent_name is required", status: 400 };
   }
 
-  // Person match on "first last", org match on org_name.
+  // Person match on "first last", org match on org_name. The raw values used
+  // for matching are sanitized first: PostgREST or() is a flat grammar, so an
+  // unescaped comma/paren/star/percent would break the filter or inject an
+  // operator. (The original, unsanitized values are still used for the insert
+  // below.)
   const parts = name.split(/\s+/);
   const first = parts[0] ?? "";
   const rest = parts.slice(1).join(" ");
-  const { data: matches } = await supabase
-    .from("constituents")
-    .select("id, type, first_name, last_name, org_name")
-    .or(
-      [
-        `org_name.ilike.${name}`,
-        rest
-          ? `and(first_name.ilike.${first},last_name.ilike.${rest})`
-          : `first_name.ilike.${name}`,
-        rest ? "" : `last_name.ilike.${name}`,
-      ]
-        .filter(Boolean)
-        .join(",")
-    )
-    .limit(2);
+  const clean = (s: string) => s.replace(/[(),*%]/g, " ").trim();
+  const nameF = clean(name);
+  const firstF = clean(first);
+  const restF = clean(rest);
+
+  let matches: { id: string }[] | null = null;
+  if (nameF) {
+    const { data } = await supabase
+      .from("constituents")
+      .select("id, type, first_name, last_name, org_name")
+      .or(
+        [
+          `org_name.ilike.${nameF}`,
+          restF
+            ? `and(first_name.ilike.${firstF},last_name.ilike.${restF})`
+            : `first_name.ilike.${nameF}`,
+          restF ? "" : `last_name.ilike.${nameF}`,
+        ]
+          .filter(Boolean)
+          .join(",")
+      )
+      .limit(2);
+    matches = data;
+  }
 
   if (matches && matches.length === 1) return { constituentId: matches[0].id };
   if (matches && matches.length > 1) {

@@ -1,90 +1,100 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import SectionHeading from "../_components/SectionHeading";
 import StatCard from "../_components/StatCard";
 import PageHeader from "../_components/PageHeader";
-import { PartnerRow, NewPartnerForm, type Partner } from "./_components/PartnerControls";
-import { STATUS_ORDER, STATUS_LABELS } from "./_lib/status";
+import { NewPartnerForm, type Partner } from "./_components/PartnerControls";
+import PartnersWorkspace from "./_components/PartnersWorkspace";
 
 // Schools & nonprofit partners (Ring 3, modules/02-program.md "Schools"):
-// the partner CRM — status pipeline, champion contact, MOU/data-agreement
-// tracking with renewal countdowns, and touch cadence. The public
-// /program-partners signup form feeds prospects in automatically.
+// the partner CRM — a Prospect → Emerging → Pilot → Active → Anchor
+// pipeline, a contacts directory per org, MOU/data-agreement tracking, and
+// a logged touch/meeting timeline. The public /program-partners signup form
+// feeds prospects in automatically.
 export const dynamic = "force-dynamic";
 
 export default async function PartnersPage() {
   const supabase = getSupabaseAdmin();
-  const { data } = await supabase
-    .from("partners")
-    .select("*")
-    .order("last_touch_at", { ascending: false, nullsFirst: false })
-    .limit(300);
-  const partners = (data ?? []) as Partner[];
+  const [partnersRes, contactsRes] = await Promise.all([
+    supabase
+      .from("partners")
+      .select("*")
+      .order("last_touch_at", { ascending: false, nullsFirst: false })
+      .limit(500),
+    supabase
+      .from("partner_contacts")
+      .select("partner_id, first_name, last_name, is_primary")
+      .limit(2000),
+  ]);
 
+  const base = (partnersRes.data ?? []) as Partner[];
+
+  // Roll up contacts → count + primary name per org (no SQL group-by).
+  const counts = new Map<string, number>();
+  const primary = new Map<string, string>();
+  for (const c of (contactsRes.data ?? []) as Array<{
+    partner_id: string; first_name: string | null; last_name: string | null; is_primary: boolean;
+  }>) {
+    counts.set(c.partner_id, (counts.get(c.partner_id) ?? 0) + 1);
+    if (c.is_primary || !primary.has(c.partner_id)) {
+      const name = [c.first_name, c.last_name].filter(Boolean).join(" ").trim();
+      if (name) primary.set(c.partner_id, name);
+    }
+  }
+  const partners: Partner[] = base.map((p) => ({
+    ...p,
+    contact_count: counts.get(p.id) ?? 0,
+    primary_contact: primary.get(p.id) ?? null,
+  }));
+
+  // ── KPIs ──
   const today = new Date().toISOString().slice(0, 10);
   const in90 = new Date(Date.now() + 90 * 86400_000).toISOString().slice(0, 10);
+  const cut30 = new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10);
   const live = partners.filter((p) => p.status !== "lapsed");
   const active = partners.filter((p) => p.status === "active" || p.status === "anchor");
+  const emerging = partners.filter((p) => p.status === "outreach" || p.status === "pilot");
+  const prospects = partners.filter((p) => p.status === "prospect");
   const mouExpiring = live.filter(
     (p) => p.mou_status === "signed" && p.mou_end && p.mou_end >= today && p.mou_end <= in90
   );
   const mouExpired = live.filter(
     (p) => p.mou_status === "signed" && p.mou_end && p.mou_end < today
   );
-  const staleTouch = active.filter(
-    (p) =>
-      !p.last_touch_at ||
-      p.last_touch_at < new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10)
-  );
+  const staleTouch = active.filter((p) => !p.last_touch_at || p.last_touch_at < cut30);
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <PageHeader
         title="Schools & Partners"
-        subtitle="Prospect → outreach → pilot → active → anchor · MOUs, champions, touch cadence"
+        subtitle="Prospect → emerging → pilot → active → anchor · contacts, MOUs, touch cadence"
         actions={<NewPartnerForm />}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        <StatCard label="Active partners" value={active.length} sub={`${live.length} in pipeline`} />
-        <StatCard
-          label="MOUs expiring"
-          value={mouExpiring.length + mouExpired.length}
-          sub={mouExpired.length > 0 ? `${mouExpired.length} already expired` : "next 90 days"}
-          muted={mouExpiring.length + mouExpired.length === 0}
-        />
+        <StatCard label="Active partners" value={active.length} sub={`${live.length} live in pipeline`} />
+        <StatCard label="Emerging" value={emerging.length} sub="in outreach / piloting" muted={emerging.length === 0} />
+        <StatCard label="Prospects" value={prospects.length} sub="cold + inbound" muted={prospects.length === 0} />
         <StatCard
           label="Need a touch"
-          value={staleTouch.length}
-          sub="active, 30+ days quiet"
-          muted={staleTouch.length === 0}
+          value={staleTouch.length + mouExpiring.length + mouExpired.length}
+          sub={
+            mouExpired.length > 0
+              ? `${mouExpired.length} MOU expired`
+              : mouExpiring.length > 0
+              ? `${mouExpiring.length} MOU expiring`
+              : "active, 30+ days quiet"
+          }
+          muted={staleTouch.length + mouExpiring.length + mouExpired.length === 0}
         />
-        <StatCard label="Inbound prospects" value={partners.filter((p) => p.status === "prospect").length} sub="incl. signup form" />
       </div>
 
-      <div className="space-y-8">
-        {STATUS_ORDER.map((status) => {
-          const rows = partners.filter((p) => p.status === status);
-          if (rows.length === 0) return null;
-          return (
-            <section key={status}>
-              <SectionHeading className="mb-2">
-                {STATUS_LABELS[status]} ({rows.length})
-              </SectionHeading>
-              <div className="space-y-2">
-                {rows.map((p) => (
-                  <PartnerRow key={p.id} partner={p} />
-                ))}
-              </div>
-            </section>
-          );
-        })}
-        {partners.length === 0 && (
-          <p className="text-sm text-ink-2">
-            No partners yet — add your first school or nonprofit partner, or wait for the public
-            signup form to feed prospects in.
-          </p>
-        )}
-      </div>
+      {partners.length === 0 ? (
+        <p className="text-sm text-ink-2">
+          No partners yet — add your first school or nonprofit partner, or wait for the public
+          signup form to feed prospects in.
+        </p>
+      ) : (
+        <PartnersWorkspace partners={partners} />
+      )}
     </div>
   );
 }

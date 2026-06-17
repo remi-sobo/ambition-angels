@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { Blackout, Booking, MeetingType } from "@/lib/database.types";
+import { SCHEDULING_LABEL, type OpsTask } from "@/app/admin/ops/_types/ops";
 import MeetAdmin from "./MeetAdmin";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ async function fetchAll() {
   const supabase = getSupabaseAdmin();
   const nowIso = new Date().toISOString();
 
-  const [typesRes, upcomingRes, recentRes, blackoutsRes, statsRes] = await Promise.all([
+  const [typesRes, upcomingRes, recentRes, blackoutsRes, statsRes, connectionsRes] = await Promise.all([
     supabase
       .from("meeting_types")
       .select("*")
@@ -36,6 +37,15 @@ async function fetchAll() {
       .from("bookings")
       .select("id, status, created_at, meeting_type_id", { count: "exact" })
       .gte("created_at", new Date(Date.now() - 30 * 24 * 3600_000).toISOString()),
+    // Shannon's connection backlog: scheduling tasks assigned to her, in her
+    // display_order (nulls last), oldest first as a stable tiebreak.
+    supabase
+      .from("ops_tasks")
+      .select("*")
+      .eq("assigned_to", "shannon")
+      .contains("labels", [SCHEDULING_LABEL])
+      .order("display_order", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: true }),
   ]);
 
   return {
@@ -44,6 +54,7 @@ async function fetchAll() {
     recent: (recentRes.data ?? []) as BookingWithType[],
     blackouts: (blackoutsRes.data ?? []) as Blackout[],
     last30Count: statsRes.count ?? 0,
+    connections: (connectionsRes.data ?? []) as OpsTask[],
   };
 }
 

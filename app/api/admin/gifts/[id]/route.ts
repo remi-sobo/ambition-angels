@@ -65,6 +65,27 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   if (!isUuid(params.id)) return NextResponse.json({ error: "Bad id" }, { status: 400 });
 
   const supabase = createServerSupabase();
+
+  // Only hand-entered gifts are deletable. Payment/CRM-sourced gifts
+  // (Stripe, Givebutter, HubSpot deals) are real money that would re-sync
+  // anyway — the correct action is to refund/void upstream, not delete here.
+  const { data: gift } = await supabase
+    .from("gifts")
+    .select("external_source")
+    .eq("id", params.id)
+    .maybeSingle();
+  if (!gift) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const synced = ["stripe", "givebutter", "hubspot_deal"];
+  if (gift.external_source && synced.includes(gift.external_source)) {
+    return NextResponse.json(
+      {
+        error: `This is a synced ${gift.external_source} gift. Refund or void it at the source; it can't be deleted here.`,
+        source: gift.external_source,
+      },
+      { status: 409 }
+    );
+  }
+
   const { error } = await supabase.from("gifts").delete().eq("id", params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

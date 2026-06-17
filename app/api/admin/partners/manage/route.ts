@@ -4,6 +4,7 @@ import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const KINDS = ["school", "district", "nonprofit", "company", "other"] as const;
+const STATUSES = ["prospect", "outreach", "pilot", "active", "anchor", "lapsed"] as const;
 
 export async function POST(req: NextRequest) {
   if (!(await isAuthed())) {
@@ -15,6 +16,11 @@ export async function POST(req: NextRequest) {
 
   const insert: Record<string, unknown> = { name };
   if (KINDS.includes(body?.kind as (typeof KINDS)[number])) insert.kind = body!.kind;
+  if (STATUSES.includes(body?.status as (typeof STATUSES)[number])) insert.status = body!.status;
+  for (const f of ["city", "region", "domain"] as const) {
+    if (typeof body?.[f] === "string" && (body[f] as string).trim())
+      insert[f] = (body[f] as string).trim().slice(0, 120);
+  }
   if (typeof body?.champion_name === "string" && body.champion_name.trim())
     insert.champion_name = body.champion_name.trim().slice(0, 120);
   if (typeof body?.champion_email === "string" && body.champion_email.includes("@"))

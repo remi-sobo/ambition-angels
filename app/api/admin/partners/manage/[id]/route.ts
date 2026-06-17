@@ -30,12 +30,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
   }
   if (body.touch === true) update.last_touch_at = new Date().toISOString().slice(0, 10);
-  for (const f of ["champion_name", "champion_email", "champion_role", "notes"] as const) {
+  for (const f of [
+    "champion_name", "champion_email", "champion_role", "city", "region", "domain", "teen_count", "program_type", "notes",
+  ] as const) {
     if (f in body) {
       if (body[f] === null || body[f] === "") update[f] = null;
       else if (typeof body[f] === "string")
         update[f] = (body[f] as string).trim().slice(0, f === "notes" ? 2000 : 120);
     }
+  }
+  if ("priority_score" in body) {
+    const n = Number(body.priority_score);
+    if (body.priority_score === null || body.priority_score === "") update.priority_score = null;
+    else if (Number.isFinite(n)) update.priority_score = Math.max(0, Math.min(100, Math.round(n)));
   }
   if (typeof body.name === "string" && body.name.trim())
     update.name = body.name.trim().slice(0, 200);

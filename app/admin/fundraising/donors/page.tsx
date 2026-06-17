@@ -1,16 +1,18 @@
 import Link from "next/link";
 import SegmentExportPanel from "./_components/SegmentExportPanel";
+import DonorsTable, { type DonorRow } from "./_components/DonorsTable";
 import FilterTabs from "../_components/FilterTabs";
+import PageHeader from "../../_components/PageHeader";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../finance/_components/charts";
-import StatCard from "../../_components/StatCard";
+import StatCard, { type Delta } from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import { analyzeDonor, retentionRate, FLAG_LABELS, FLAG_HELP, type RetentionFlag } from "@/lib/fundraising/retention";
 import { todayISO } from "../../ops/_types/ops";
 
 // Donors v1 (Ring 2): constituent list with giving rollups, fed by the
-// fundraising core schema. Gift ingestion is automatic (Stripe trigger);
-// Givebutter and manual entry land in later chunks.
+// fundraising core schema. Migrated onto the shared page anatomy + DataTable
+// (Phase 0B). Gift ingestion is automatic (Stripe trigger + HubSpot sync).
 export const dynamic = "force-dynamic";
 
 // $10k+ lifetime giving marks a major donor (derived segment, not a tag).
@@ -33,9 +35,6 @@ type Gift = {
   gift_date: string;
   recurring_plan_id: string | null;
 };
-
-const fmtDate = (iso: string) =>
-  new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 // Page through the whole gifts spine so KPIs and rollups are exact, not a
 // recency sample. Bounded at 50 pages (50k gifts) — revisit with SQL-side
@@ -81,6 +80,13 @@ const chunk = <T,>(arr: T[], n: number): T[][] =>
 
 type SegmentKey = "all" | "individual" | "organization" | "major" | "lapsed";
 
+const FLAG_STYLES: Record<RetentionFlag, string> = {
+  lybunt: "bg-[#F4E8D0] text-[#A56A1B]",
+  sybunt: "bg-tile text-ink-2",
+  cadence_lapsed: "bg-expense-bg text-expense",
+  second_gift_watch: "bg-blue-500/15 text-blue-400",
+};
+
 export default async function DonorsPage({
   searchParams,
 }: {
@@ -97,8 +103,8 @@ export default async function DonorsPage({
   // Tables not applied yet (the migration ships ahead of the prod apply).
   if (giftsError || allGifts === null) {
     return (
-      <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Donors</h1>
+      <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1400px]">
+        <PageHeader title="Donors" />
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_fundraising_core.sql</code> via Actions → Apply DB
@@ -198,7 +204,7 @@ export default async function DonorsPage({
     today
   );
 
-  // Build the display rows, then apply the segment filter.
+  // Segment filter (derived, not tags).
   const isLapsed = (id: string) => {
     const f = flagsByDonor.get(id) ?? [];
     return f.includes("lybunt") || f.includes("sybunt");
@@ -213,29 +219,51 @@ export default async function DonorsPage({
     }
   };
 
-  const donors = constituents
+  const rows: DonorRow[] = constituents
     .filter((c) => (displayRollups ?? rollupsAll).has(c.id))
     .filter(matchesSegment)
     .map((c) => {
       const lifetime = rollupsAll.get(c.id);
       const shown = (displayRollups ?? rollupsAll).get(c.id)!;
       return {
-        c,
-        total: "total" in shown ? shown.total : 0,
-        count: "count" in shown ? shown.count : 0,
-        first: lifetime?.first ?? "",
-        last: lifetime?.last ?? "",
+        id: c.id,
+        name: constituentName(c),
+        email: c.emails[0] ?? null,
+        total: shown.total,
+        count: shown.count,
+        first: lifetime?.first ?? null,
+        last: lifetime?.last ?? null,
         recurring: lifetime?.recurring ?? false,
+        major: (lifetime?.total ?? 0) >= MAJOR_DONOR_THRESHOLD,
+        doNotContact: c.do_not_contact,
+        flags: (flagsByDonor.get(c.id) ?? []).map((f) => ({
+          label: FLAG_LABELS[f], help: FLAG_HELP[f], style: FLAG_STYLES[f],
+        })),
       };
-    })
-    .sort((a, b) => b.total - a.total);
+    });
 
-  const periodGiftCount = gifts.filter((g) => inYear(g.gift_date)).length;
-  const totalRaised = gifts.filter((g) => inYear(g.gift_date)).reduce((s, g) => s + g.amount, 0);
+  // ── KPIs (scoped to the selected year) ──
+  const periodGifts = gifts.filter((g) => inYear(g.gift_date));
+  const totalRaised = periodGifts.reduce((s, g) => s + g.amount, 0);
+  const periodGiftCount = periodGifts.length;
   const nonDonorConstituents = Math.max(
     (constituentCountRes.count ?? 0) - (displayRollups ?? rollupsAll).size,
     0
   );
+
+  const priorYear = year === "all" ? null : String(Number(year) - 1);
+  const priorRaised = priorYear
+    ? gifts.filter((g) => g.gift_date.slice(0, 4) === priorYear).reduce((s, g) => s + g.amount, 0)
+    : null;
+  const raisedDelta: Delta | undefined =
+    priorRaised && priorRaised > 0
+      ? {
+          text: `${totalRaised >= priorRaised ? "+" : ""}${Math.round(
+            ((totalRaised - priorRaised) / priorRaised) * 100
+          )}% vs ${priorYear}`,
+          direction: totalRaised >= priorRaised ? "up" : "down",
+        }
+      : undefined;
 
   const yearLabel = year === "all" ? "all time" : year;
   const yearOptions = [
@@ -250,201 +278,136 @@ export default async function DonorsPage({
     { value: "major", label: "Major ($10k+)" },
     { value: "lapsed", label: "Lapsed" },
   ];
+  const segmentLabel = segmentOptions.find((s) => s.value === segment)?.label ?? "All";
 
-  const FLAG_STYLES: Record<RetentionFlag, string> = {
-    lybunt: "bg-[#F4E8D0] text-[#A56A1B]",
-    sybunt: "bg-tile text-ink-2",
-    cadence_lapsed: "bg-expense-bg text-expense",
-    second_gift_watch: "bg-blue-500/15 text-blue-400",
-  };
   const RETENTION_BUCKETS: RetentionFlag[] = ["lybunt", "cadence_lapsed", "second_gift_watch", "sybunt"];
   const bucket = (flag: RetentionFlag) => ({
-    members: donors.filter(({ c }) => flagsByDonor.get(c.id)?.includes(flag)),
+    members: rows.filter((r) => r.flags.some((f) => f.label === FLAG_LABELS[flag])),
     trueCount: Array.from(flagsByDonor.values()).filter((fl) => fl.includes(flag)).length,
   });
 
   return (
-    <div className="min-h-screen bg-ink">
-      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
-        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Donors</span>
-        <Link
-          href="/admin/fundraising/acknowledgments"
-          className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-            (pendingAcksRes.count ?? 0) > 0
-              ? "text-orange bg-orange/10 border border-orange/30 hover:bg-orange/20"
-              : "text-ink-2 hover:text-ink-1"
-          }`}
-        >
-          Acknowledgments{(pendingAcksRes.count ?? 0) > 0 ? ` (${pendingAcksRes.count})` : ""}
-        </Link>
-        <span className="text-xs text-ink-2 ml-auto">
-          {donors.length} donor{donors.length === 1 ? "" : "s"}
-          {segment === "all" && nonDonorConstituents > 0
-            ? ` · ${nonDonorConstituents} constituents without gifts`
-            : ""}
-        </span>
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1400px] space-y-6">
+      <PageHeader
+        title="Donors"
+        subtitle={
+          <>
+            {rows.length} donor{rows.length === 1 ? "" : "s"}
+            {segment === "all" && nonDonorConstituents > 0
+              ? ` · ${nonDonorConstituents} constituents without gifts`
+              : ""}
+          </>
+        }
+        actions={
+          <Link
+            href="/admin/fundraising/acknowledgments"
+            className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
+              (pendingAcksRes.count ?? 0) > 0
+                ? "text-orange bg-orange/10 border border-orange/30 hover:bg-orange/20"
+                : "text-ink-2 hover:text-ink-1 bg-tile border-[1.5px] border-outline"
+            }`}
+          >
+            Acknowledgments{(pendingAcksRes.count ?? 0) > 0 ? ` (${pendingAcksRes.count})` : ""}
+          </Link>
+        }
+      />
+
+      {/* ── Filters ── */}
+      <div className="flex flex-wrap items-center gap-3">
+        <FilterTabs
+          options={yearOptions}
+          current={year}
+          paramKey="year"
+          basePath="/admin/fundraising/donors"
+          extraParams={{ segment }}
+        />
+        <FilterTabs
+          options={segmentOptions}
+          current={segment}
+          paramKey="segment"
+          basePath="/admin/fundraising/donors"
+          extraParams={{ year }}
+          size="sm"
+        />
+        <div className="ml-auto">
+          <SegmentExportPanel />
+        </div>
       </div>
 
-      <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-        {/* ── Filters ── */}
-        <div className="flex flex-wrap items-center gap-3">
-          <FilterTabs
-            options={yearOptions}
-            current={year}
-            paramKey="year"
-            basePath="/admin/fundraising/donors"
-            extraParams={{ segment }}
-          />
-          <FilterTabs
-            options={segmentOptions}
-            current={segment}
-            paramKey="segment"
-            basePath="/admin/fundraising/donors"
-            extraParams={{ year }}
-            size="sm"
-          />
-          <div className="ml-auto">
-            <SegmentExportPanel />
+      {constituentFetchFailed && (
+        <div className="bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
+          Some donor records failed to load — the table below may be missing donors that the
+          totals include. Reload to retry.
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Total Raised" value={money(totalRaised)} sub={`${periodGiftCount} gifts · ${yearLabel}`} delta={raisedDelta} />
+        <StatCard label="Donors" value={rows.length} sub={segment === "all" ? `gave ${yearLabel}` : segmentLabel} />
+        <StatCard label="Average Gift" value={periodGiftCount > 0 ? money(totalRaised / periodGiftCount) : "—"} sub={yearLabel} />
+        <StatCard label="Active Recurring Plans" value={plansRes.count ?? 0} sub="monthly givers" />
+      </div>
+
+      {/* ── Retention intelligence (always year-over-year) ── */}
+      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+        <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+          <h2 className="font-heading font-bold text-ink-1 text-sm">Retention Intelligence</h2>
+          <div className="text-xs text-ink-2">
+            {retention.rate !== null ? (
+              <>
+                <span className={`font-bold ${retention.rate >= 0.43 ? "text-revenue" : "text-[#A56A1B]"}`}>
+                  {Math.round(retention.rate * 100)}%
+                </span>{" "}
+                of last year&apos;s {retention.lastYearDonors} donors retained so far this year · sector benchmark ≈ 43%
+              </>
+            ) : (
+              "Retention rate appears once there's a full prior year of giving"
+            )}
           </div>
         </div>
-        {constituentFetchFailed && (
-          <div className="bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
-            Some donor records failed to load — the table below may be missing donors that the
-            totals include. Reload to retry.
+        {flagsByDonor.size === 0 ? (
+          <p className="px-5 py-5 text-ink-2 text-sm">
+            No retention flags — every donor is on their usual rhythm.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-outline">
+            {RETENTION_BUCKETS.map((flag) => {
+              const { members, trueCount } = bucket(flag);
+              return (
+                <div key={flag} className="px-5 py-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${FLAG_STYLES[flag]}`}>
+                      {FLAG_LABELS[flag]}
+                    </span>
+                    <span className="text-xs text-ink-2 [font-variant-numeric:tabular-nums]">{trueCount}</span>
+                  </div>
+                  <p className="text-[11px] text-ink-3 mb-2 leading-snug">{FLAG_HELP[flag]}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {members.slice(0, 6).map((r) => (
+                      <Link
+                        key={r.id}
+                        href={`/admin/fundraising/donors/${r.id}`}
+                        className="text-[11px] text-ink-2 hover:text-orange bg-tile border-[1.5px] border-outline rounded-full px-2 py-0.5 transition-colors truncate max-w-[150px]"
+                      >
+                        {r.name}
+                      </Link>
+                    ))}
+                    {members.length > 6 && (
+                      <span className="text-[11px] text-ink-3 px-1 py-0.5">+{members.length - 6} more</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total Raised" value={money(totalRaised)} sub={`${periodGiftCount} gifts · ${yearLabel}`} />
-          <StatCard label="Donors" value={donors.length} sub={segment === "all" ? `gave ${yearLabel}` : segmentOptions.find((s) => s.value === segment)?.label} />
-          <StatCard label="Average Gift" value={periodGiftCount > 0 ? money(totalRaised / periodGiftCount) : "—"} sub={yearLabel} />
-          <StatCard label="Active Recurring Plans" value={plansRes.count ?? 0} sub="monthly givers" />
-        </div>
+      </section>
 
-        {/* ── Retention intelligence (always year-over-year) ── */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">Retention Intelligence</h2>
-            <div className="text-xs text-ink-2">
-              {retention.rate !== null ? (
-                <>
-                  <span className={`font-bold ${retention.rate >= 0.43 ? "text-revenue" : "text-[#A56A1B]"}`}>
-                    {Math.round(retention.rate * 100)}%
-                  </span>{" "}
-                  of last year&apos;s {retention.lastYearDonors} donors retained so far this year · sector benchmark ≈ 43%
-                </>
-              ) : (
-                "Retention rate appears once there's a full prior year of giving"
-              )}
-            </div>
-          </div>
-          {flagsByDonor.size === 0 ? (
-            <p className="px-5 py-5 text-ink-2 text-sm">
-              No retention flags — every donor is on their usual rhythm.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-outline">
-              {RETENTION_BUCKETS.map((flag) => {
-                const { members, trueCount } = bucket(flag);
-                return (
-                  <div key={flag} className="px-5 py-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${FLAG_STYLES[flag]}`}>
-                        {FLAG_LABELS[flag]}
-                      </span>
-                      <span className="text-xs text-ink-2 [font-variant-numeric:tabular-nums]">{trueCount}</span>
-                    </div>
-                    <p className="text-[11px] text-ink-3 mb-2 leading-snug">{FLAG_HELP[flag]}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {members.slice(0, 6).map(({ c }) => (
-                        <Link
-                          key={c.id}
-                          href={`/admin/fundraising/donors/${c.id}`}
-                          className="text-[11px] text-ink-2 hover:text-orange bg-tile border-[1.5px] border-outline rounded-full px-2 py-0.5 transition-colors truncate max-w-[150px]"
-                        >
-                          {constituentName(c)}
-                        </Link>
-                      ))}
-                      {members.length > 6 && (
-                        <span className="text-[11px] text-ink-3 px-1 py-0.5">+{members.length - 6} more</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          {donors.length === 0 ? (
-            <p className="p-8 text-ink-2 text-sm">
-              No donors match this filter{year === "all" ? "" : ` for ${yearLabel}`}. Try a
-              different year or segment.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[820px]">
-                <thead>
-                  <tr className="border-b border-outline">
-                    {["Donor", "Email", year === "all" ? "Total Given" : `Given ${yearLabel}`, "Gifts", "First Gift", "Latest Gift", ""].map((h) => (
-                      <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {donors.map(({ c, total, count, first, last, recurring }) => (
-                    <tr key={c.id} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
-                      <td className="px-5 py-3.5">
-                        <Link href={`/admin/fundraising/donors/${c.id}`} className="flex items-center gap-3 group">
-                          <span className="w-8 h-8 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0 text-orange font-bold text-xs">
-                            {constituentName(c)[0]?.toUpperCase()}
-                          </span>
-                          <span className="font-medium text-ink-1 group-hover:text-orange transition-colors">
-                            {constituentName(c)}
-                          </span>
-                          {recurring && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
-                          )}
-                          {(rollupsAll.get(c.id)?.total ?? 0) >= MAJOR_DONOR_THRESHOLD && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-revenue/15 text-revenue">Major</span>
-                          )}
-                          {c.do_not_contact && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-expense-bg text-expense">Do not contact</span>
-                          )}
-                          {(flagsByDonor.get(c.id) ?? []).map((f) => (
-                            <span key={f} title={FLAG_HELP[f]} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${FLAG_STYLES[f]}`}>
-                              {FLAG_LABELS[f]}
-                            </span>
-                          ))}
-                        </Link>
-                      </td>
-                      <td className="px-5 py-3.5 text-ink-2 text-xs">{c.emails[0] ?? "—"}</td>
-                      <td className="px-5 py-3.5 font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(total)}</td>
-                      <td className="px-5 py-3.5 text-ink-2 [font-variant-numeric:tabular-nums]">{count}</td>
-                      <td className="px-5 py-3.5 text-ink-2 text-xs whitespace-nowrap">{first ? fmtDate(first) : "—"}</td>
-                      <td className="px-5 py-3.5 text-ink-2 text-xs whitespace-nowrap">{last ? fmtDate(last) : "—"}</td>
-                      <td className="px-5 py-3.5 text-right">
-                        <Link href={`/admin/fundraising/donors/${c.id}`} className="text-xs font-semibold text-orange hover:text-orange-mid">
-                          Profile →
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                  {segment === "all" && anonCount > 0 && (
-                    <tr className="border-b border-hairline">
-                      <td className="px-5 py-3.5 text-ink-2 italic">Anonymous / no identity</td>
-                      <td className="px-5 py-3.5 text-ink-2 text-xs">—</td>
-                      <td className="px-5 py-3.5 font-bold text-ink-2 [font-variant-numeric:tabular-nums]">{money(anonTotal)}</td>
-                      <td className="px-5 py-3.5 text-ink-2 [font-variant-numeric:tabular-nums]">{anonCount}</td>
-                      <td className="px-5 py-3.5" colSpan={3} />
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      </div>
+      <DonorsTable
+        rows={rows}
+        totalHeader={year === "all" ? "Total Given" : `Given ${yearLabel}`}
+        anon={segment === "all" && anonCount > 0 ? { total: anonTotal, count: anonCount } : null}
+      />
     </div>
   );
 }

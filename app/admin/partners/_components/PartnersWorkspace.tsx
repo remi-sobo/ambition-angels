@@ -13,6 +13,7 @@ import {
   TAB_STATUSES, NEXT_STATUS, type TabKey, type PartnerStatus,
 } from "../_lib/status";
 import { KIND_LABELS, type Partner } from "./PartnerControls";
+import { scoreBand, SCORE_BAND_STYLE } from "../_lib/rubric";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "pipeline", label: "Pipeline" },
@@ -60,12 +61,21 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
     });
   }, [partners, tab, q, kind, region]);
 
+  // Highest-fit first, then unscored, then alphabetical.
+  const byScore = (a: Partner, b: Partner) => {
+    const sa = a.priority_score ?? -1, sb = b.priority_score ?? -1;
+    if (sa !== sb) return sb - sa;
+    return a.name.localeCompare(b.name);
+  };
+
   // Group by stage (pipeline/all) or flat (prospects).
   const groups = useMemo(() => {
-    if (tab === "prospects") return [{ status: "prospect" as PartnerStatus, rows: filtered }];
+    if (tab === "prospects") {
+      return [{ status: "prospect" as PartnerStatus, rows: [...filtered].sort(byScore) }];
+    }
     const order = STATUS_ORDER.filter((s) => (TAB_STATUSES[tab] as readonly string[]).includes(s));
     return order
-      .map((status) => ({ status, rows: filtered.filter((p) => p.status === status) }))
+      .map((status) => ({ status, rows: filtered.filter((p) => p.status === status).sort(byScore) }))
       .filter((g) => g.rows.length > 0);
   }, [filtered, tab]);
 
@@ -197,6 +207,14 @@ function PartnerRow({ partner: p }: { partner: Partner }) {
         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
           {KIND_LABELS[p.kind] ?? p.kind}
         </span>
+        {p.priority_score != null && (
+          <span
+            title="Fit score"
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${SCORE_BAND_STYLE[scoreBand(p.priority_score)]}`}
+          >
+            {p.priority_score}
+          </span>
+        )}
         {geo && <span className="text-[11px] text-ink-2">{geo}</span>}
         {typeof p.contact_count === "number" && p.contact_count > 0 && (
           <span className="text-[11px] text-ink-3">

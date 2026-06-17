@@ -9,6 +9,9 @@ import {
   type ContactT,
 } from "./_components/PartnerProfileControls";
 import { AdvanceStage } from "./_components/AdvanceStage";
+import { RubricEditor } from "./_components/RubricEditor";
+import { MergeControl } from "./_components/MergeControl";
+import { type ScoreFactors } from "../_lib/rubric";
 
 // Partner org profile + contacts directory + activity timeline (Ring 3).
 export const dynamic = "force-dynamic";
@@ -26,7 +29,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
   const supabase = getSupabaseAdmin();
 
-  const [pRes, contactsRes, intsRes] = await Promise.all([
+  const [pRes, contactsRes, intsRes, candRes] = await Promise.all([
     supabase.from("partners").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("partner_contacts")
@@ -40,6 +43,8 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
       .eq("partner_id", params.id)
       .order("occurred_at", { ascending: false })
       .limit(200),
+    // Candidate orgs for the "merge a duplicate in" picker.
+    supabase.from("partners").select("id, name, kind, city, status").order("name").limit(500),
   ]);
 
   if (!pRes.data) notFound();
@@ -48,6 +53,9 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
   const interactions = (intsRes.data ?? []) as Array<{
     id: string; kind: string; occurred_at: string; notes: string | null;
     logged_by: string | null; contact_id: string | null;
+  }>;
+  const candidates = (candRes.data ?? []) as Array<{
+    id: string; name: string; kind: string; city: string | null; status: string;
   }>;
 
   const contactName = (id: string | null) => {
@@ -111,7 +119,6 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
               ["Type", KIND_LABELS[p.kind] ?? p.kind],
               ["Area", geo || "—"],
               ["Website", websiteHref ? "link" : "—"],
-              ["Priority", p.priority_score != null ? `${p.priority_score}/100` : "—"],
               ["Source", p.external_source ?? "manual"],
             ].map(([label, value]) => (
               <div key={label} className="flex gap-3 text-xs">
@@ -126,11 +133,22 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
             {p.notes && <p className="text-xs text-ink-2 border-t border-outline pt-3 whitespace-pre-wrap">{p.notes}</p>}
 
             <div className="border-t border-outline pt-3">
+              <RubricEditor
+                partnerId={p.id}
+                initial={(p.score_factors as ScoreFactors | null) ?? null}
+              />
+            </div>
+
+            <div className="border-t border-outline pt-3">
               <h3 className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-2">Agreements</h3>
               <MouControls partner={{
                 id: p.id, mou_status: p.mou_status, mou_end: p.mou_end,
                 data_agreement_signed: p.data_agreement_signed,
               }} />
+            </div>
+
+            <div className="border-t border-outline pt-3">
+              <MergeControl keepId={p.id} keepName={p.name} candidates={candidates} />
             </div>
           </section>
 

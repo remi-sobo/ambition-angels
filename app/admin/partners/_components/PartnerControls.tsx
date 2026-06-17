@@ -16,6 +16,7 @@ export type Partner = {
   region: string | null;
   domain: string | null;
   priority_score: number | null;
+  score_factors: Record<string, number> | null;
   champion_name: string | null;
   champion_email: string | null;
   teen_count: string | null;

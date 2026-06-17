@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendOperatorEmail, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
 import { snapshotKpis } from "@/lib/kpis";
 import { generateBriefing } from "@/lib/briefing";
+import { gatherCrmOverdue, crmTaskHref } from "@/lib/admin/crmOverdue";
 
 /**
  * The Monday digest — Executive Briefing v0 (data-grounded, no model):
@@ -76,6 +77,8 @@ export async function GET(req: NextRequest) {
         .not("stage", "in", "(steward,lost)"),
     ]);
 
+  const crmOverdue = await gatherCrmOverdue(today);
+
   const gifts = (giftsRes.data ?? []) as Array<{ amount: number }>;
   const giftTotal = gifts.reduce((s, g) => s + Number(g.amount), 0);
   type Req = {
@@ -102,8 +105,29 @@ export async function GET(req: NextRequest) {
     todos.push(`<strong>${pendingAcksRes.count}</strong> gift${pendingAcksRes.count === 1 ? "" : "s"} awaiting acknowledgment`);
   if ((overdueMovesRes.count ?? 0) > 0)
     todos.push(`<strong>${overdueMovesRes.count}</strong> major-gift move${overdueMovesRes.count === 1 ? "" : "s"} overdue`);
+  if (crmOverdue.total > 0)
+    todos.push(`<strong>${crmOverdue.total}</strong> CRM task${crmOverdue.total === 1 ? "" : "s"} overdue (${crmOverdue.partners.length} partner · ${crmOverdue.donors.length} donor)`);
   if (todos.length > 0) {
     body += `<p style="font-weight:600;margin-top:16px;">Needs you</p><ul><li>${todos.join("</li><li>")}</li></ul>`;
+  }
+
+  // Overdue across CRM — itemised, grouped by partners then donors.
+  if (crmOverdue.total > 0) {
+    const li = (t: (typeof crmOverdue.partners)[number]) =>
+      `<li><a href="${crmTaskHref(t, true)}" style="color:#E8500A;text-decoration:none;font-weight:600;">${t.label}</a>` +
+      ` — ${t.title} · <span style="color:#B83D06;">${t.daysOverdue}d overdue</span></li>`;
+    const group = (heading: string, rows: typeof crmOverdue.partners) =>
+      rows.length === 0
+        ? ""
+        : `<p style="font-weight:600;margin:12px 0 4px;">${heading} (${rows.length})</p><ul style="margin-top:0;">${rows
+            .slice(0, 10)
+            .map(li)
+            .join("")}${rows.length > 10 ? `<li style="color:#6B6960;">+${rows.length - 10} more</li>` : ""}</ul>`;
+    body +=
+      `<hr style="border:none;border-top:1px solid #F0EEE8;margin:16px 0;">` +
+      `<p style="font-weight:700;margin:0 0 4px;">⏰ Overdue across CRM</p>` +
+      group("Partners", crmOverdue.partners) +
+      group("Donors", crmOverdue.donors);
   }
 
   if (due.length > 0) {

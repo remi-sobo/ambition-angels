@@ -65,6 +65,10 @@ export type OpsTask = {
   pinned_for_today: boolean;
   pinned_for_this_week: boolean;
   display_order: number | null;
+  // Optional CRM link — the partner org / constituent this task hangs off.
+  linked_entity_type: "partner" | "constituent" | null;
+  linked_entity_id: string | null;
+  linked_label: string | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;

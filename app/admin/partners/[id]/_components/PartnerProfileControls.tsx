@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { KIND_LABELS, inputCls } from "../../_components/PartnerControls";
+import { KIND_LABELS, inputCls } from "../../_lib/partners";
 import { STATUS_ORDER, STATUS_LABELS } from "../../_lib/status";
 
 const splitCsv = (s: string): string[] =>

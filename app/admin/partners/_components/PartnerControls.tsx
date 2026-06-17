@@ -1,49 +1,12 @@
 "use client";
 
-// Shared partner client pieces: the Partner type, kind labels, the shared
-// input style, and the "+ Add partner" form. The interactive list lives in
-// PartnersWorkspace; the org profile lives under [id]/.
+// The "+ Add partner" form. Shared constants/types (KIND_LABELS, inputCls,
+// the Partner type) live in ../_lib/partners so Server Components can import
+// them without pulling a "use client" module's values across the boundary.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-export type Partner = {
-  id: string;
-  name: string;
-  kind: string;
-  status: string;
-  city: string | null;
-  region: string | null;
-  domain: string | null;
-  priority_score: number | null;
-  score_factors: Record<string, number> | null;
-  champion_name: string | null;
-  champion_email: string | null;
-  teen_count: string | null;
-  program_type: string | null;
-  mou_status: string;
-  mou_start: string | null;
-  mou_end: string | null;
-  data_agreement_signed: string | null;
-  referral: string | null;
-  notes: string | null;
-  last_touch_at: string | null;
-  external_source: string | null;
-  // Derived (joined in the page query), not columns:
-  contact_count?: number;
-  primary_contact?: string | null;
-};
-
-export const KIND_LABELS: Record<string, string> = {
-  school: "School",
-  district: "District",
-  nonprofit: "Nonprofit",
-  company: "Company",
-  other: "Other",
-};
-
-export const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+import { KIND_LABELS, inputCls } from "../_lib/partners";
 
 export function NewPartnerForm() {
   const router = useRouter();

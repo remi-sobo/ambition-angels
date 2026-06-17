@@ -5,6 +5,7 @@ import { money } from "../../../finance/_components/charts";
 import StatCard from "../../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import { analyzeDonor, FLAG_LABELS, FLAG_HELP } from "@/lib/fundraising/retention";
+import { scoreDonor, BAND_LABEL, type EngagementBand } from "@/lib/fundraising/engagement";
 import { todayISO } from "../../../ops/_types/ops";
 import { GiftEntryForm, GiftRowActions } from "../_components/GiftControls";
 import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentControls";
@@ -119,6 +120,13 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const activePlan = plans.find((p) => p.status === "active");
   const allDates = ((allDatesRes.data ?? []) as Array<{ gift_date: string }>).map((g) => g.gift_date);
   const { flags } = analyzeDonor(allDates, todayISO(), Boolean(activePlan));
+  const engagement = scoreDonor(allDates, total, Boolean(activePlan), todayISO());
+  const ENG_STYLES: Record<EngagementBand, string> = {
+    strong: "bg-revenue/15 text-revenue",
+    steady: "bg-blue-500/15 text-blue-400",
+    at_risk: "bg-[#F4E8D0] text-[#A56A1B]",
+    none: "bg-tile text-ink-3 border border-outline",
+  };
   const pendingAcks = gifts.filter((g) => g.acknowledgment_status === "pending").length;
 
   // Funder-research attach: constituents imported from (or matched to)
@@ -221,6 +229,14 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         )}
         {c.do_not_contact && (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense">Do not contact</span>
+        )}
+        {engagement.band !== "none" && (
+          <span
+            title={`Engagement ${engagement.score}/100`}
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${ENG_STYLES[engagement.band]}`}
+          >
+            Engagement {engagement.score} · {BAND_LABEL[engagement.band]}
+          </span>
         )}
         {flags.map((f) => (
           <span

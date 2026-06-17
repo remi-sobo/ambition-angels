@@ -46,11 +46,19 @@ export default async function FundraisingSettingsPage() {
             <h2 className="font-heading font-bold text-ink-1 text-sm">Data hygiene</h2>
             <p className="text-[11px] text-ink-3">Keep the constituent list clean</p>
           </div>
-          <div className="px-5 py-4">
-            <Link href="/admin/fundraising/duplicates" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
-              Find &amp; merge duplicates →
-            </Link>
-            <p className="text-[11px] text-ink-3 mt-1">Surfaces constituents that share an email so you can merge their history into one record.</p>
+          <div className="px-5 py-4 space-y-3">
+            <div>
+              <Link href="/admin/fundraising/import" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
+                Import donors &amp; gifts from CSV →
+              </Link>
+              <p className="text-[11px] text-ink-3 mt-1">Map columns, preview, and commit — dedupes by email against existing constituents.</p>
+            </div>
+            <div>
+              <Link href="/admin/fundraising/duplicates" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
+                Find &amp; merge duplicates →
+              </Link>
+              <p className="text-[11px] text-ink-3 mt-1">Surfaces constituents that share an email so you can merge their history into one record.</p>
+            </div>
           </div>
         </section>
       </div>

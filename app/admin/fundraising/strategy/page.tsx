@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import PageHeader from "../../_components/PageHeader";
 
@@ -54,6 +55,13 @@ export default async function StrategyPage() {
 
   const angles = (data ?? []) as Angle[];
 
+  // Funder counts per angle for the card footer.
+  const { data: faRows } = await supabase.from("funder_angles").select("angle_id");
+  const counts = new Map<string, number>();
+  for (const r of (faRows ?? []) as { angle_id: string }[]) {
+    counts.set(r.angle_id, (counts.get(r.angle_id) ?? 0) + 1);
+  }
+
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <PageHeader
@@ -65,9 +73,10 @@ export default async function StrategyPage() {
         {angles.map((a) => {
           const badge = a.status_badge ? BADGE[a.status_badge] : null;
           return (
-            <section
+            <Link
               key={a.id}
-              className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 flex flex-col gap-3"
+              href={`/admin/fundraising/strategy/${a.key}`}
+              className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 flex flex-col gap-3 hover:border-orange/40 transition-colors group"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -111,7 +120,16 @@ export default async function StrategyPage() {
                   </div>
                 )}
               </dl>
-            </section>
+
+              <div className="border-t border-outline pt-3 flex items-center justify-between text-[11px]">
+                <span className="text-ink-3">
+                  {counts.get(a.id) ?? 0} funder{(counts.get(a.id) ?? 0) === 1 ? "" : "s"}
+                </span>
+                <span className="font-semibold text-ink-2 group-hover:text-orange transition-colors">
+                  Open funnel →
+                </span>
+              </div>
+            </Link>
           );
         })}
       </div>

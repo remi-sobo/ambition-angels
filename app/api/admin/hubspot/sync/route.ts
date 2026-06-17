@@ -350,8 +350,23 @@ async function runChunk(jobInput: JobRow): Promise<JobRow> {
     }
   }
 
-  // Finalize if we've run out of steps.
+  // Finalize if we've run out of steps. Before closing the job, propagate the
+  // freshly-refreshed hs_* mirror into the fundraising spine (constituents,
+  // opportunities with granular stage + pipeline, deduped gifts, AIG tags,
+  // interactions) via the idempotent DB function. This is what makes the
+  // HubSpot sync "ongoing" rather than a one-time import — see
+  // supabase/migrations/create_fr_hubspot_sync_function.sql.
   if (!job.current_step) {
+    try {
+      const { error } = await supabase().rpc("fr_sync_hubspot_to_spine");
+      if (error) throw new Error(error.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      job.errors = [
+        ...job.errors,
+        { step: "engagements", message: `spine sync: ${msg}`, occurred_at: new Date().toISOString() },
+      ];
+    }
     job.status = job.errors.length > 0 ? "partial" : "completed";
     job.finished_at = new Date().toISOString();
   }

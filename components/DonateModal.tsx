@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { trackEvent } from "@/lib/analytics";
 import {
   Elements,
   CardElement,
+  PaymentRequestButtonElement,
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
 
-import type { Stripe } from "@stripe/stripe-js";
+import type { Stripe, PaymentRequest } from "@stripe/stripe-js";
 
 const CARD_STYLE = {
   style: {
@@ -32,6 +33,12 @@ const PRESETS = [
   { amount: 1000,  label: "$1,000", desc: "Fund a full classroom cohort" },
 ];
 
+// Processing-fee gross-up so the org nets the donor's intended amount.
+const FEE_PCT = 0.029;
+const FEE_FIXED = 0.3;
+const fmtUsd = (n: number) =>
+  n.toLocaleString("en-US", { minimumFractionDigits: n % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 });
+
 // ── Inner form (needs Stripe context) ──────────────────────────────────────
 
 interface FormProps {
@@ -46,6 +53,7 @@ function DonateForm({ onClose }: FormProps) {
   const [customAmount, setCustomAmount] = useState("");
   const [useCustom, setUseCustom] = useState(false);
   const [recurring, setRecurring] = useState(false);
+  const [coverFee, setCoverFee] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -53,128 +61,154 @@ function DonateForm({ onClose }: FormProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [otherWaysOpen, setOtherWaysOpen] = useState(false);
+  const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
 
-  const finalAmount = useCustom
-    ? Math.max(1, parseFloat(customAmount) || 0)
-    : amount;
+  const baseAmount = useCustom ? Math.max(1, parseFloat(customAmount) || 0) : amount;
+  const feePreview = Math.max(0, Math.round(((baseAmount + FEE_FIXED) / (1 - FEE_PCT) - baseAmount) * 100) / 100);
+  const feeAmount = coverFee ? feePreview : 0;
+  const chargedAmount = Math.round((baseAmount + feeAmount) * 100) / 100;
+  const displayAmount = fmtUsd(chargedAmount);
 
-  const displayAmount = useCustom
-    ? (parseFloat(customAmount) || 0).toFixed(0)
-    : amount.toLocaleString();
+  // Record + receipt + success, shared by the card and wallet paths.
+  const finalize = useCallback(
+    async (opts: {
+      paymentId: string; isRecurring: boolean; subscriptionId?: string;
+      fn: string; ln: string; em: string; amount: number;
+    }) => {
+      await Promise.allSettled([
+        fetch("/api/save-donation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstName: opts.fn, lastName: opts.ln, email: opts.em, amount: opts.amount,
+            recurring: opts.isRecurring, stripePaymentId: opts.paymentId, subscriptionId: opts.subscriptionId,
+          }),
+        }),
+        opts.em && fetch("/api/send-receipt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: `${opts.fn} ${opts.ln}`.trim(), email: opts.em, amount: opts.amount, recurring: opts.isRecurring }),
+        }),
+      ]);
+      trackEvent("donation_completed", { amount: opts.amount, recurring: opts.isRecurring });
+      setSuccess(true);
+    },
+    []
+  );
+
+  // ── Apple / Google Pay (one-time only) ──
+  // Latest charged amount in a ref so the persistent paymentmethod handler
+  // never reads a stale closure when presets / cover-fee change.
+  const chargedRef = useRef(chargedAmount);
+  useEffect(() => { chargedRef.current = chargedAmount; }, [chargedAmount]);
+
+  useEffect(() => {
+    if (!stripe) return;
+    const pr = stripe.paymentRequest({
+      country: "US",
+      currency: "usd",
+      total: { label: "Ambition Angels donation", amount: Math.round(chargedRef.current * 100) },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
+    pr.canMakePayment().then((res) => { if (res) setPaymentRequest(pr); });
+
+    pr.on("paymentmethod", async (ev) => {
+      try {
+        const amt = chargedRef.current;
+        const res = await fetch("/api/create-payment-intent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: amt, name: ev.payerName, email: ev.payerEmail, recurring: false }),
+        });
+        const data = await res.json();
+        if (!res.ok) { ev.complete("fail"); setError(data.error || "Payment failed"); return; }
+
+        const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+          data.clientSecret, { payment_method: ev.paymentMethod.id }, { handleActions: false }
+        );
+        if (confirmError) { ev.complete("fail"); setError(confirmError.message ?? "Payment failed"); return; }
+        ev.complete("success");
+
+        if (paymentIntent && paymentIntent.status === "requires_action") {
+          const { error: actionErr } = await stripe.confirmCardPayment(data.clientSecret);
+          if (actionErr) { setError(actionErr.message ?? "Payment failed"); return; }
+        }
+
+        const parts = (ev.payerName ?? "").trim().split(/\s+/);
+        await finalize({
+          paymentId: paymentIntent!.id, isRecurring: false,
+          fn: parts[0] ?? "", ln: parts.slice(1).join(" "), em: ev.payerEmail ?? "", amount: amt,
+        });
+      } catch (err) {
+        ev.complete("fail");
+        setError(err instanceof Error ? err.message : "Payment failed");
+      }
+    });
+  }, [stripe, finalize]);
+
+  // Keep the wallet sheet's total in sync with the chosen amount.
+  useEffect(() => {
+    if (paymentRequest) {
+      paymentRequest.update({ total: { label: "Ambition Angels donation", amount: Math.round(chargedAmount * 100) } });
+    }
+  }, [chargedAmount, paymentRequest]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!stripe || !elements) return;
-      if (finalAmount < 1) {
-        setError("Please enter a valid amount.");
-        return;
-      }
-      if (!firstName || !email) {
-        setError("First name and email are required.");
-        return;
-      }
+      if (chargedAmount < 1) { setError("Please enter a valid amount."); return; }
+      if (!firstName || !email) { setError("First name and email are required."); return; }
 
       setLoading(true);
       setError(null);
 
       const card = elements.getElement(CardElement);
       if (!card) { setLoading(false); return; }
-
       const fullName = `${firstName} ${lastName}`.trim();
 
       try {
         if (recurring) {
-          // ── Recurring: create PM first, then subscription ──
           const { paymentMethod, error: pmError } = await stripe.createPaymentMethod({
-            type: "card",
-            card,
-            billing_details: { name: fullName, email },
+            type: "card", card, billing_details: { name: fullName, email },
           });
-
           if (pmError) throw new Error(pmError.message);
 
           const res = await fetch("/api/create-payment-intent", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              amount: finalAmount,
-              name: fullName,
-              email,
-              recurring: true,
-              paymentMethodId: paymentMethod!.id,
-            }),
+            body: JSON.stringify({ amount: chargedAmount, name: fullName, email, recurring: true, paymentMethodId: paymentMethod!.id }),
           });
-
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Failed to set up subscription");
 
           if (data.clientSecret) {
-            const { error: confirmError, paymentIntent } =
-              await stripe.confirmCardPayment(data.clientSecret);
+            const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret);
             if (confirmError) throw new Error(confirmError.message);
-
-            await Promise.allSettled([
-              fetch("/api/save-donation", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  firstName, lastName, email, amount: finalAmount,
-                  recurring: true,
-                  stripePaymentId: paymentIntent?.id ?? data.subscriptionId,
-                  subscriptionId: data.subscriptionId,
-                }),
-              }),
-              email && fetch("/api/send-receipt", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: fullName, email, amount: finalAmount, recurring: true }),
-              }),
-            ]);
+            await finalize({
+              paymentId: paymentIntent?.id ?? data.subscriptionId, isRecurring: true, subscriptionId: data.subscriptionId,
+              fn: firstName, ln: lastName, em: email, amount: chargedAmount,
+            });
           }
-
-          trackEvent("donation_completed", { amount: finalAmount, recurring });
-          setSuccess(true);
         } else {
-          // ── One-time PaymentIntent ──
           const res = await fetch("/api/create-payment-intent", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ amount: finalAmount, name: fullName, email, recurring: false }),
+            body: JSON.stringify({ amount: chargedAmount, name: fullName, email, recurring: false }),
           });
-
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Failed to create payment");
 
-          const { error: confirmError, paymentIntent } =
-            await stripe.confirmCardPayment(data.clientSecret, {
-              payment_method: {
-                card,
-                billing_details: { name: fullName, email },
-              },
-            });
-
+          const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
+            payment_method: { card, billing_details: { name: fullName, email } },
+          });
           if (confirmError) throw new Error(confirmError.message);
 
-          await Promise.allSettled([
-            fetch("/api/save-donation", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                firstName, lastName, email, amount: finalAmount,
-                recurring: false,
-                stripePaymentId: paymentIntent!.id,
-              }),
-            }),
-            email && fetch("/api/send-receipt", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name: fullName, email, amount: finalAmount, recurring: false }),
-            }),
-          ]);
-
-          trackEvent("donation_completed", { amount: finalAmount, recurring });
-          setSuccess(true);
+          await finalize({
+            paymentId: paymentIntent!.id, isRecurring: false,
+            fn: firstName, ln: lastName, em: email, amount: chargedAmount,
+          });
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
@@ -182,7 +216,7 @@ function DonateForm({ onClose }: FormProps) {
         setLoading(false);
       }
     },
-    [stripe, elements, finalAmount, firstName, lastName, email, recurring]
+    [stripe, elements, chargedAmount, firstName, lastName, email, recurring, finalize]
   );
 
   // Success screen
@@ -293,6 +327,33 @@ function DonateForm({ onClose }: FormProps) {
         )}
       </div>
 
+      {/* Cover the fee */}
+      <label className="flex items-center gap-2.5 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={coverFee}
+          onChange={(e) => setCoverFee(e.target.checked)}
+          className="w-4 h-4 accent-orange"
+        />
+        <span className="text-sm text-gray-warm">
+          Add <strong className="text-ink">${fmtUsd(feePreview)}</strong> so 100% of my gift reaches Ambition Angels
+        </span>
+      </label>
+
+      {/* Apple / Google Pay (one-time) */}
+      {paymentRequest && !recurring && (
+        <div>
+          <PaymentRequestButtonElement
+            options={{ paymentRequest, style: { paymentRequestButton: { theme: "dark", height: "48px" } } }}
+          />
+          <div className="flex items-center gap-3 my-1">
+            <span className="h-px bg-gray-light flex-1" />
+            <span className="text-xs text-gray-mid">or pay with card</span>
+            <span className="h-px bg-gray-light flex-1" />
+          </div>
+        </div>
+      )}
+
       {/* Name + Email */}
       <div className="grid grid-cols-2 gap-3">
         <input
@@ -392,6 +453,22 @@ function DonateForm({ onClose }: FormProps) {
                 <p>Routing: <span className="font-mono text-ink">121000248</span></p>
                 <p>Account: <span className="font-mono text-ink">2245119926</span></p>
                 <p className="pt-1 text-gray-mid">EIN 87-2513010</p>
+              </div>
+            </div>
+            {/* Stock */}
+            <div className="bg-gray-light/60 rounded-xl p-4">
+              <div className="text-xs font-bold text-ink uppercase tracking-widest mb-2">Stock / Securities</div>
+              <div className="text-xs text-gray-warm leading-relaxed space-y-0.5">
+                <p>Gifts of appreciated stock are tax-smart.</p>
+                <p className="pt-1">Email <a href="mailto:remi@ambitionangels.org" className="text-orange font-medium">remi@ambitionangels.org</a> for DTC transfer instructions.</p>
+              </div>
+            </div>
+            {/* DAF */}
+            <div className="bg-gray-light/60 rounded-xl p-4">
+              <div className="text-xs font-bold text-ink uppercase tracking-widest mb-2">Donor-Advised Fund</div>
+              <div className="text-xs text-gray-warm leading-relaxed space-y-0.5">
+                <p>Recommend a grant through your DAF.</p>
+                <p className="pt-1">Legal name <span className="font-semibold text-ink">Ambition Angels Inc.</span> · EIN <span className="font-mono text-ink">87-2513010</span></p>
               </div>
             </div>
           </div>

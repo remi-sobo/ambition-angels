@@ -57,6 +57,11 @@ export type AdminUserId = "remi" | "shannon";
 // taxonomy, and 'scheduling' is a cross-cutting facet, not a department.
 export const SCHEDULING_LABEL = "scheduling";
 
+// Connections still need a concrete department category (ops_tasks.category is
+// NOT NULL and the scheduling facet rides on labels, not category). Scheduling
+// is operations work, so connections file under 'operations' on the Ops surface.
+export const SCHEDULING_TASK_CATEGORY: TaskCategory = "operations";
+
 export type OpsTask = {
   id: string;
   title: string;

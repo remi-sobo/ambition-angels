@@ -11,6 +11,8 @@ import {
   STAGE_LABELS,
   type OpportunityRow,
 } from "./_components/pipeline-stages";
+import FilterTabs from "./_components/FilterTabs";
+import { HUBSPOT_PIPELINES, FUNDRAISING_PIPELINE_ID } from "@/lib/hubspot/stage-map";
 
 // Major Gifts — the moves-management pipeline (modules/03-fundraising.md
 // "Major Gifts"). /admin/fundraising is the pipeline home; the HubSpot
@@ -21,6 +23,7 @@ type DbOpportunity = {
   id: string;
   name: string | null;
   stage: string;
+  pipeline: string | null;
   ask_amount: number | null;
   expected_close: string | null;
   probability: number | null;
@@ -46,20 +49,24 @@ function constituentName(c: DbOpportunity["constituent"]): string {
   return [c.first_name, c.last_name].filter(Boolean).join(" ") || "Unknown";
 }
 
-export default async function MajorGiftsPage() {
+export default async function MajorGiftsPage({
+  searchParams,
+}: {
+  searchParams?: { pipeline?: string; year?: string };
+}) {
   const supabase = createServerSupabase();
   const { data } = await supabase
     .from("opportunities")
     .select(
-      `id, name, stage, ask_amount, expected_close, probability,
+      `id, name, stage, pipeline, ask_amount, expected_close, probability,
        capacity_rating, owner, next_step, next_step_due,
        constituent:constituents ( id, type, first_name, last_name, org_name, external_ids )`
     )
     .order("next_step_due", { ascending: true, nullsFirst: false })
     .order("updated_at", { ascending: false })
-    .limit(500);
+    .limit(1000);
 
-  const opps: OpportunityRow[] = ((data ?? []) as unknown as DbOpportunity[]).map((o) => ({
+  const allOpps: OpportunityRow[] = ((data ?? []) as unknown as DbOpportunity[]).map((o) => ({
     id: o.id,
     label: o.name ?? constituentName(o.constituent),
     constituentId: o.constituent?.id ?? null,
@@ -69,6 +76,7 @@ export default async function MajorGiftsPage() {
         ? (o.constituent.external_ids["hubspot"] as string)
         : null,
     stage: o.stage,
+    pipeline: o.pipeline,
     askAmount: o.ask_amount,
     expectedClose: o.expected_close,
     probability: o.probability,
@@ -77,6 +85,31 @@ export default async function MajorGiftsPage() {
     nextStep: o.next_step,
     nextStepDue: o.next_step_due,
   }));
+
+  // ── Filters (URL-driven) ────────────────────────────────────────────────
+  // Pipeline defaults to the fundraising (Sales) pipeline so Major Gifts is
+  // money-only; partnerships / angel connectors are opt-in. Year is the
+  // calendar fiscal year and drives the close forecast (expected_close).
+  const pipelineFilter = searchParams?.pipeline ?? FUNDRAISING_PIPELINE_ID;
+  const currentYear = new Date().getFullYear();
+  const year = searchParams?.year ?? String(currentYear);
+
+  const opps =
+    pipelineFilter === "all"
+      ? allOpps
+      : allOpps.filter((o) => (o.pipeline ?? "default") === pipelineFilter);
+
+  const pipelineOptions = [
+    { value: "all", label: "All pipelines" },
+    { value: "default", label: HUBSPOT_PIPELINES["default"] },
+    { value: "59855776", label: HUBSPOT_PIPELINES["59855776"] },
+    { value: "727459407", label: HUBSPOT_PIPELINES["727459407"] },
+  ];
+  const yearOptions = [
+    { value: String(currentYear), label: "This year" },
+    { value: String(currentYear - 1), label: "Last year" },
+    { value: "all", label: "All time" },
+  ];
 
   // Open stages carry weighted pipeline value; steward = committed.
   const openStages = ["identify", "qualify", "cultivate", "solicit"];
@@ -90,6 +123,18 @@ export default async function MajorGiftsPage() {
   const committedValue = committed.reduce((s, o) => s + (o.askAmount ?? 0), 0);
   const today = new Date().toISOString().slice(0, 10);
   const overdueMoves = open.filter((o) => o.nextStepDue && o.nextStepDue < today).length;
+
+  // Forecast: open asks expected to close in the selected year (by
+  // expected_close). "All time" = every open ask with a close date set.
+  const closing = open.filter(
+    (o) => o.expectedClose && (year === "all" || o.expectedClose.slice(0, 4) === year)
+  );
+  const closingValue = closing.reduce((s, o) => s + (o.askAmount ?? 0), 0);
+  const closingWeighted = closing.reduce(
+    (s, o) => s + ((o.askAmount ?? 0) * (o.probability ?? 50)) / 100,
+    0
+  );
+  const closingLabel = year === "all" ? "Closing (all open)" : `Closing ${year}`;
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1400px]">
@@ -111,23 +156,44 @@ export default async function MajorGiftsPage() {
 
       <SectionSummary section="major_gifts" />
 
+      {/* ── Filters ── */}
+      <div className="flex flex-wrap items-center gap-3 mb-5">
+        <FilterTabs
+          options={pipelineOptions}
+          current={pipelineFilter}
+          paramKey="pipeline"
+          basePath="/admin/fundraising"
+          extraParams={{ year }}
+        />
+        <FilterTabs
+          options={yearOptions}
+          current={year}
+          paramKey="year"
+          basePath="/admin/fundraising"
+          extraParams={{ pipeline: pipelineFilter }}
+        />
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         <StatCard
           label="Open pipeline"
           value={money(pipelineValue)}
-          sub={`${open.length} open ${open.length === 1 ? "ask" : "asks"}`}
+          sub={`${open.length} open ${open.length === 1 ? "ask" : "asks"}${
+            overdueMoves > 0 ? ` · ${overdueMoves} overdue` : ""
+          }`}
         />
         <StatCard label="Weighted" value={money(weightedValue)} sub="ask × probability" />
+        <StatCard
+          label={closingLabel}
+          value={money(closingValue)}
+          sub={`${closing.length} ${closing.length === 1 ? "ask" : "asks"} · ${money(
+            closingWeighted
+          )} weighted`}
+        />
         <StatCard
           label="Committed"
           value={money(committedValue)}
           sub={`${committed.length} in stewardship`}
-        />
-        <StatCard
-          label="Overdue next steps"
-          value={overdueMoves}
-          sub={overdueMoves > 0 ? "needs a move" : "all current"}
-          muted={overdueMoves === 0}
         />
       </div>
 

@@ -126,14 +126,22 @@ this screen.
 3. **1C.c** Constituent 360 v1 (lead block + email timeline + next move).
 4. **Phase 2** Today's Moves (deterministic queue), then the NBA agent.
 
-## Decisions required before 1C.b (Gmail)
+## Decisions (resolved)
 
-1. **Mailboxes in scope** — Remi only (matches current single-account auth), or
-   add Shannon / a shared address (needs additional OAuth per mailbox).
-2. **Label scope** — sync all mail and rely on verified-address matching, or
-   restrict to/exclude specific Gmail labels (e.g. exclude a "Personal" label).
-3. **History window** — how far back to backfill on first sync (e.g. 12 / 24
-   months / all), then incremental forward.
-4. **Privacy default** — log matched threads visible by default (operator hides
-   sensitive ones), vs. private-by-default (operator reveals). Recommended:
-   visible by default, with one-click hide + the hard exclusions above.
+1. **Mailboxes**: **Remi only** (`remi@ambitionangels.org`) for v1 — reuses the
+   existing single-account OAuth; no new auth work beyond adding the
+   `gmail.readonly` scope to the refresh token.
+2. **Label scope**: **all mail, address-matched** — every message is considered,
+   but only those whose counterparty is a constituent's verified email get
+   logged. No label include/exclude list in v1.
+3. **History window**: **all available history** on first backfill, then
+   incremental forward via a stored cursor. (First sync is the slow one; window
+   it in batches like `hs_sync_jobs`.)
+4. **Privacy default**: **visible by default** on the profile, with one-click
+   **hide** (`is_private`), plus the hard exclusions (staff-to-staff, unknown
+   counterparty).
+
+### Prerequisite (ops, Remi)
+Re-grant the Google refresh token with the **`gmail.readonly`** scope added
+(current token is `gmail.send` + calendar only). Until then the sync code is in
+place but returns nothing. No other secret changes.

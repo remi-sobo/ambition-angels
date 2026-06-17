@@ -9,6 +9,7 @@ import Link from "next/link";
 import DataTable, { type Column, type BulkAction } from "../../../_components/DataTable";
 import { money } from "../../../finance/_components/charts";
 import { FLAG_LABELS, FLAG_HELP, type RetentionFlag } from "@/lib/fundraising/retention";
+import { BAND_LABEL, type EngagementBand } from "@/lib/fundraising/engagement";
 
 export type DonorRow = {
   id: string;
@@ -21,6 +22,8 @@ export type DonorRow = {
   recurring: boolean;
   doNotContact: boolean;
   flags: RetentionFlag[];
+  engagement: number;
+  band: EngagementBand;
 };
 
 const FLAG_STYLES: Record<RetentionFlag, string> = {
@@ -28,6 +31,13 @@ const FLAG_STYLES: Record<RetentionFlag, string> = {
   sybunt: "bg-tile text-ink-2 border-[1.5px] border-outline",
   cadence_lapsed: "bg-expense-bg text-expense",
   second_gift_watch: "bg-blue-500/15 text-blue-400",
+};
+
+const BAND_STYLES: Record<EngagementBand, string> = {
+  strong: "bg-revenue/15 text-revenue",
+  steady: "bg-blue-500/15 text-blue-400",
+  at_risk: "bg-[#F4E8D0] text-[#A56A1B]",
+  none: "bg-tile text-ink-3 border-[1.5px] border-outline",
 };
 
 const fmtDate = (iso: string) =>
@@ -95,6 +105,20 @@ export default function DonorsTable({ rows }: { rows: DonorRow[] }) {
       header: "Latest Gift",
       value: (r) => r.last,
       render: (r) => <span className="text-ink-2 text-xs whitespace-nowrap">{fmtDate(r.last)}</span>,
+    },
+    {
+      key: "engagement",
+      header: "Engagement",
+      align: "right",
+      value: (r) => r.engagement,
+      render: (r) => (
+        <span
+          title={`Engagement ${r.engagement}/100 · ${BAND_LABEL[r.band]}`}
+          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full [font-variant-numeric:tabular-nums] ${BAND_STYLES[r.band]}`}
+        >
+          {r.engagement}
+        </span>
+      ),
     },
     {
       key: "profile",

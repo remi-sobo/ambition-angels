@@ -8,6 +8,7 @@ import StatCard from "../../_components/StatCard";
 import PageHeader from "../../_components/PageHeader";
 import { constituentName } from "@/lib/fundraising/display";
 import { analyzeDonor, retentionRate, FLAG_LABELS, FLAG_HELP, type RetentionFlag } from "@/lib/fundraising/retention";
+import { scoreDonor } from "@/lib/fundraising/engagement";
 import { todayISO } from "../../ops/_types/ops";
 
 // Donors v1 (Ring 2): constituent list with giving rollups, fed by the
@@ -183,18 +184,23 @@ export default async function DonorsPage() {
   const RETENTION_BUCKETS: RetentionFlag[] = ["lybunt", "cadence_lapsed", "second_gift_watch", "sybunt"];
 
   // Plain, serializable rows for the shared DataTable (a client component).
-  const donorRows: DonorRow[] = donors.map(({ c, r }) => ({
-    id: c.id,
-    name: constituentName(c),
-    email: c.emails[0] ?? null,
-    total: r.total,
-    count: r.count,
-    first: r.first,
-    last: r.last,
-    recurring: r.recurring,
-    doNotContact: c.do_not_contact,
-    flags: flagsByDonor.get(c.id) ?? [],
-  }));
+  const donorRows: DonorRow[] = donors.map(({ c, r }) => {
+    const eng = scoreDonor(r.dates, r.total, r.recurring, today);
+    return {
+      id: c.id,
+      name: constituentName(c),
+      email: c.emails[0] ?? null,
+      total: r.total,
+      count: r.count,
+      first: r.first,
+      last: r.last,
+      recurring: r.recurring,
+      doNotContact: c.do_not_contact,
+      flags: flagsByDonor.get(c.id) ?? [],
+      engagement: eng.score,
+      band: eng.band,
+    };
+  });
 
   return (
     <div className="min-h-screen bg-ink">

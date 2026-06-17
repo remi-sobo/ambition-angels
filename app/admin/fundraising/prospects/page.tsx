@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import PageHeader from "../../_components/PageHeader";
@@ -52,24 +53,36 @@ async function fetchAll<T>(
   return { rows: out, error: false };
 }
 
-export default async function FundraisingProspectsPage() {
+export default async function FundraisingProspectsPage({
+  searchParams,
+}: {
+  searchParams?: { show?: string };
+}) {
   const supabase = createServerSupabase();
 
-  const [{ rows: contacts, error: contactsErr }, { rows: scores }] = await Promise.all([
+  const [{ rows: contacts, error: contactsErr }, { rows: scores }, { rows: disqualified }] = await Promise.all([
     fetchAll<ContactSlim>(supabase, "hs_contacts", SELECT_COLS),
     fetchAll<{ hubspot_contact_id: string; score_total: number | null }>(
       supabase,
       "fr_prospect_scores",
       "hubspot_contact_id, score_total"
     ),
+    fetchAll<{ hubspot_id: string }>(supabase, "fr_prospect_disqualified", "hubspot_id"),
   ]);
 
   const scoreMap = new Map(scores.map((s) => [s.hubspot_contact_id, s.score_total]));
+  const disqualifiedSet = new Set(disqualified.map((d) => d.hubspot_id));
+  const disqualifiedView = searchParams?.show === "disqualified";
 
-  const rows: ProspectRow[] = contacts.map((c) => ({
+  const allRows: ProspectRow[] = contacts.map((c) => ({
     ...c,
     score_total: scoreMap.get(c.hubspot_id) ?? null,
   }));
+  // Disqualified prospects drop off the working list (reversible); the
+  // ?show=disqualified view lists only those, for requalifying.
+  const rows = allRows.filter((r) =>
+    disqualifiedView ? disqualifiedSet.has(r.hubspot_id) : !disqualifiedSet.has(r.hubspot_id)
+  );
 
   const lifecycleOptions = Array.from(
     new Set(contacts.map((c) => c.lifecycle_stage).filter((v): v is string => !!v))
@@ -83,10 +96,28 @@ export default async function FundraisingProspectsPage() {
   return (
     <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8">
       <PageHeader
-        title="Prospects"
+        title={disqualifiedView ? "Prospects · Disqualified" : "Prospects"}
         subtitle={
-          `${rows.length} contact${rows.length === 1 ? "" : "s"} from the HubSpot mirror` +
-          (scoredCount > 0 ? ` · ${scoredCount} scored` : "")
+          `${rows.length} contact${rows.length === 1 ? "" : "s"}` +
+          (disqualifiedView ? " disqualified" : " from the HubSpot mirror") +
+          (!disqualifiedView && scoredCount > 0 ? ` · ${scoredCount} scored` : "")
+        }
+        actions={
+          disqualifiedView ? (
+            <Link
+              href="/admin/fundraising/prospects"
+              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+            >
+              ← Active prospects
+            </Link>
+          ) : disqualifiedSet.size > 0 ? (
+            <Link
+              href="/admin/fundraising/prospects?show=disqualified"
+              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+            >
+              Disqualified ({disqualifiedSet.size})
+            </Link>
+          ) : undefined
         }
       />
 
@@ -96,7 +127,12 @@ export default async function FundraisingProspectsPage() {
         </div>
       )}
 
-      <ProspectsTable rows={rows} lifecycleOptions={lifecycleOptions} ownerOptions={ownerOptions} />
+      <ProspectsTable
+        rows={rows}
+        lifecycleOptions={lifecycleOptions}
+        ownerOptions={ownerOptions}
+        disqualifiedView={disqualifiedView}
+      />
     </div>
   );
 }

@@ -29,6 +29,7 @@ type Constituent = {
   emails: string[];
   do_not_contact: boolean;
   source: string;
+  archived_at: string | null;
 };
 
 type Gift = {
@@ -80,7 +81,7 @@ async function fetchActivePlans(supabase: ReturnType<typeof createServerSupabase
 const chunk = <T,>(arr: T[], n: number): T[][] =>
   Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, (i + 1) * n));
 
-type SegmentKey = "all" | "individual" | "organization" | "major" | "lapsed";
+type SegmentKey = "all" | "individual" | "organization" | "major" | "lapsed" | "archived";
 
 export default async function DonorsPage({
   searchParams,
@@ -175,7 +176,7 @@ export default async function DonorsPage({
     if (ids.length === 0) continue;
     const { data, error } = await supabase
       .from("constituents")
-      .select("id, type, first_name, last_name, org_name, emails, do_not_contact, source")
+      .select("id, type, first_name, last_name, org_name, emails, do_not_contact, source, archived_at")
       .in("id", ids);
     if (error) {
       constituentFetchFailed = true;
@@ -216,6 +217,8 @@ export default async function DonorsPage({
 
   const donors = constituents
     .filter((c) => (displayRollups ?? rollupsAll).has(c.id))
+    // Archived donors are hidden everywhere except the Archived segment.
+    .filter((c) => (segment === "archived" ? !!c.archived_at : !c.archived_at))
     .filter(matchesSegment)
     .map((c) => {
       const lifetime = rollupsAll.get(c.id)!;
@@ -258,6 +261,7 @@ export default async function DonorsPage({
     { value: "organization", label: "Organizations" },
     { value: "major", label: "Major ($10k+)" },
     { value: "lapsed", label: "Lapsed" },
+    { value: "archived", label: "Archived" },
   ];
   const segmentLabel = segmentOptions.find((s) => s.value === segment)?.label ?? "All";
 

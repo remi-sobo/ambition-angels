@@ -12,6 +12,7 @@ import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentC
 import { HouseholdControls } from "../_components/HouseholdControls";
 import { AddSoftCredit, SoftCreditChip, SC_TYPE_LABEL } from "../_components/SoftCreditControls";
 import EmailActions from "../_components/EmailActions";
+import ConstituentDangerZone from "../_components/ConstituentDangerZone";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
 export const dynamic = "force-dynamic";
@@ -252,6 +253,9 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         {c.do_not_contact && (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense">Do not contact</span>
         )}
+        {c.archived_at && (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-warm/20 text-ink-2">Archived</span>
+        )}
         {engagement.band !== "none" && (
           <span
             title={`Engagement ${engagement.score}/100`}
@@ -378,6 +382,12 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
               </div>
             ))}
             {c.notes && <p className="text-xs text-ink-2 border-t border-outline pt-3">{c.notes}</p>}
+            <ConstituentDangerZone
+              id={c.id}
+              name={name}
+              archived={!!c.archived_at}
+              hasGifts={allDates.length > 0}
+            />
           </section>
 
           <section className="lg:col-span-8 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">

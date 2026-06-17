@@ -5,6 +5,7 @@ import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "../../ops/_types/ops";
+import GmailSyncButton from "../_components/GmailSyncButton";
 
 // Today's Fundraising Moves (Phase 2) — the operator home screen. Answers "who
 // needs me today," assembled deterministically from the spine (opportunities +
@@ -127,12 +128,15 @@ export default async function TodaysMovesPage() {
         title="Today's Moves"
         subtitle="Who needs you today — across asks, acknowledgments, and recent gifts"
         actions={
-          <Link
-            href="/admin/fundraising"
-            className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
-          >
-            Major Gifts →
-          </Link>
+          <div className="flex items-center gap-3">
+            <GmailSyncButton />
+            <Link
+              href="/admin/fundraising"
+              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+            >
+              Major Gifts →
+            </Link>
+          </div>
         }
       />
 

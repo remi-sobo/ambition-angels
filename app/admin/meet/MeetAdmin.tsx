@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Blackout, Booking, MeetingType } from "@/lib/database.types";
 import type { OpsTask } from "@/app/admin/ops/_types/ops";
 import ConnectionsBacklog from "./ConnectionsBacklog";
+import NewConnectionForm from "./NewConnectionForm";
 
 type BookingWithType = Booking & { meeting_type: MeetingType };
 
@@ -77,7 +78,10 @@ export default function MeetAdmin({ initial }: { initial: InitialData }) {
       </nav>
 
       {tab === "connections" && (
-        <ConnectionsBacklog connections={initial.connections} />
+        <div className="space-y-6">
+          <NewConnectionForm />
+          <ConnectionsBacklog connections={initial.connections} />
+        </div>
       )}
       {tab === "bookings" && (
         <BookingsTab

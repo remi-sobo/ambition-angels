@@ -1,4 +1,4 @@
-create table quiz_submissions (
+create table if not exists quiz_submissions (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz default now(),
   email text,

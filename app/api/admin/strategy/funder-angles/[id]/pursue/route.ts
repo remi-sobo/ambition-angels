@@ -23,50 +23,30 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!isUuid(params.id)) return NextResponse.json({ error: "Bad id" }, { status: 400 });
 
   const supabase = createServerSupabase();
-  const { data: fa } = await supabase
-    .from("funder_angles")
-    .select("id, constituent_id, opportunity_id, angle:strategy_angles ( name )")
-    .eq("id", params.id)
-    .maybeSingle();
-  if (!fa) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Already pursued — return the existing opportunity.
-  if (fa.opportunity_id) {
-    return NextResponse.json({ opportunity_id: fa.opportunity_id, already: true });
-  }
-
-  const angleName = (fa.angle as { name?: string } | null)?.name ?? null;
-  const { data: opp, error: oppErr } = await supabase
-    .from("opportunities")
-    .insert({
-      constituent_id: fa.constituent_id,
-      name: angleName,
-      stage: "cultivate",
-      owner: (await getAdminUser()) ?? null,
-    })
-    .select("id")
-    .single();
-  if (oppErr || !opp) {
-    console.error("[pursue] create opportunity failed:", oppErr?.message);
-    return NextResponse.json({ error: "Could not create opportunity" }, { status: 500 });
-  }
-
-  const { error: upErr } = await supabase
-    .from("funder_angles")
-    .update({ opportunity_id: opp.id, stage: "pursuing", decision: "pursue" })
-    .eq("id", params.id);
-  if (upErr) {
-    console.error("[pursue] link opportunity failed:", upErr.message);
-    return NextResponse.json({ error: "Opportunity created but could not link it" }, { status: 500 });
+  // One transaction: create the opportunity + link it + move the stage. The
+  // function is idempotent (returns the existing opportunity if already
+  // pursued), so no orphan opportunity can be left behind.
+  const { data: oppId, error } = await supabase.rpc("fr_pursue_funder_angle", {
+    p_fa_id: params.id,
+    p_owner: (await getAdminUser()) ?? null,
+  });
+  if (error || !oppId) {
+    const notFound = error?.code === "no_data_found" || /not found/i.test(error?.message ?? "");
+    console.error("[pursue] failed:", error?.message);
+    return NextResponse.json(
+      { error: notFound ? "Not found" : "Could not pursue funder" },
+      { status: notFound ? 404 : 500 }
+    );
   }
 
   await audit(req, {
     action: "fundraising.funder_angle.pursue",
     entityType: "funder_angles",
     entityId: params.id,
-    after: { opportunity_id: opp.id, stage: "pursuing" },
+    after: { opportunity_id: oppId, stage: "pursuing" },
   });
-  await pushOpportunityToHubSpot(opp.id);
+  await pushOpportunityToHubSpot(oppId as string);
 
-  return NextResponse.json({ opportunity_id: opp.id });
+  return NextResponse.json({ opportunity_id: oppId });
 }

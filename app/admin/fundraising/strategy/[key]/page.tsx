@@ -55,7 +55,10 @@ export default async function AngleFunnelPage({ params }: { params: { key: strin
     constituentId: r.constituent?.id ?? null,
     name: r.constituent ? constituentName(r.constituent) : "Unknown",
     email: r.constituent?.emails?.[0] ?? null,
-    hasHubspot: typeof r.constituent?.external_ids?.["hubspot"] === "string",
+    hubspotId:
+      typeof r.constituent?.external_ids?.["hubspot"] === "string"
+        ? (r.constituent.external_ids["hubspot"] as string)
+        : null,
   }));
 
   return (

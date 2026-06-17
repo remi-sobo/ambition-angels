@@ -26,6 +26,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
   const [q, setQ] = useState("");
   const [kind, setKind] = useState<string>("all");
   const [region, setRegion] = useState<string>("all");
+  const [taskFilter, setTaskFilter] = useState<"all" | "open" | "overdue">("all");
 
   // Area chips from whatever geography we have (region preferred).
   const regions = useMemo(() => {
@@ -53,13 +54,15 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
       if (!allowed.includes(p.status)) return false;
       if (kind !== "all" && p.kind !== kind) return false;
       if (region !== "all" && (p.region || "") !== region) return false;
+      if (taskFilter === "open" && !(p.open_tasks && p.open_tasks > 0)) return false;
+      if (taskFilter === "overdue" && !(p.overdue_tasks && p.overdue_tasks > 0)) return false;
       if (needle) {
         const hay = `${p.name} ${p.city ?? ""} ${p.region ?? ""} ${p.primary_contact ?? ""} ${p.domain ?? ""}`.toLowerCase();
         if (!hay.includes(needle)) return false;
       }
       return true;
     });
-  }, [partners, tab, q, kind, region]);
+  }, [partners, tab, q, kind, region, taskFilter]);
 
   // Highest-fit first, then unscored, then alphabetical.
   const byScore = (a: Partner, b: Partner) => {
@@ -120,6 +123,17 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
             {r} <span className="opacity-60">{n}</span>
           </Chip>
         ))}
+        {(partners.some((p) => p.open_tasks) || taskFilter !== "all") && (
+          <>
+            <span className="w-px h-5 bg-outline mx-1" />
+            <Chip active={taskFilter === "open"} onClick={() => setTaskFilter(taskFilter === "open" ? "all" : "open")}>
+              Has tasks <span className="opacity-60">{partners.filter((p) => p.open_tasks).length}</span>
+            </Chip>
+            <Chip active={taskFilter === "overdue"} onClick={() => setTaskFilter(taskFilter === "overdue" ? "all" : "overdue")}>
+              Overdue <span className="opacity-60">{partners.filter((p) => p.overdue_tasks).length}</span>
+            </Chip>
+          </>
+        )}
       </div>
 
       {/* Rows */}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { sanitizeFactors, scoreFromFactors } from "@/app/admin/partners/_lib/rubric";
 
 const KINDS = ["school", "district", "nonprofit", "company", "other"] as const;
 const STATUSES = ["prospect", "outreach", "pilot", "active", "anchor", "lapsed"] as const;
@@ -37,6 +38,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       if (body[f] === null || body[f] === "") update[f] = null;
       else if (typeof body[f] === "string")
         update[f] = (body[f] as string).trim().slice(0, f === "notes" ? 2000 : 120);
+    }
+  }
+  // Rubric: store the per-dimension scores and derive the 0–100 priority
+  // from them (an explicit priority_score below can still override).
+  if ("score_factors" in body) {
+    if (body.score_factors === null) {
+      update.score_factors = null;
+      update.priority_score = null;
+    } else {
+      const factors = sanitizeFactors(body.score_factors);
+      update.score_factors = factors;
+      update.priority_score = scoreFromFactors(factors);
     }
   }
   if ("priority_score" in body) {

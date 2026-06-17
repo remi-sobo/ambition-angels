@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushOpportunityToHubSpot } from "@/lib/hubspot/sync-out";
+import { resolveConstituent } from "@/lib/fundraising/constituent-resolve";
 
 const STAGES = [
   "identify", "qualify", "cultivate", "solicit", "steward", "lost",
@@ -27,65 +28,15 @@ export async function POST(req: NextRequest) {
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
   const supabase = createServerSupabase();
-  let constituentId =
-    typeof body.constituent_id === "string" && /^[0-9a-f-]{36}$/i.test(body.constituent_id)
-      ? body.constituent_id
-      : null;
-  let warning: string | undefined;
-
-  if (!constituentId) {
-    const name = typeof body.constituent_name === "string" ? body.constituent_name.trim() : "";
-    if (!name) {
-      return NextResponse.json(
-        { error: "constituent_id or constituent_name is required" },
-        { status: 400 }
-      );
-    }
-
-    // Person match on "first last", org match on org_name.
-    const parts = name.split(/\s+/);
-    const first = parts[0] ?? "";
-    const rest = parts.slice(1).join(" ");
-    const { data: matches } = await supabase
-      .from("constituents")
-      .select("id, type, first_name, last_name, org_name")
-      .or(
-        [
-          `org_name.ilike.${name}`,
-          rest
-            ? `and(first_name.ilike.${first},last_name.ilike.${rest})`
-            : `first_name.ilike.${name}`,
-          rest ? "" : `last_name.ilike.${name}`,
-        ]
-          .filter(Boolean)
-          .join(",")
-      )
-      .limit(2);
-
-    if (matches && matches.length === 1) {
-      constituentId = matches[0].id;
-    } else if (matches && matches.length > 1) {
-      warning = `Multiple constituents match "${name}" — linked the first; verify on the donor page.`;
-      constituentId = matches[0].id;
-    } else {
-      const { data: created, error: cErr } = await supabase
-        .from("constituents")
-        .insert({
-          type: "person",
-          first_name: first || name,
-          last_name: rest || null,
-          source: "manual",
-        })
-        .select("id")
-        .single();
-      if (cErr || !created) {
-        console.error("Create constituent failed:", cErr?.message);
-        return NextResponse.json({ error: "Could not create constituent" }, { status: 500 });
-      }
-      constituentId = created.id;
-      warning = `Created a new constituent for "${name}" — add contact details on the donor page.`;
-    }
+  const resolved = await resolveConstituent(supabase, {
+    constituentId: body.constituent_id,
+    name: body.constituent_name,
+  });
+  if ("error" in resolved) {
+    return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
+  const constituentId = resolved.constituentId;
+  const warning = resolved.warning;
 
   const insert: Record<string, unknown> = { constituent_id: constituentId };
   if (typeof body.name === "string" && body.name.trim()) insert.name = body.name.trim();

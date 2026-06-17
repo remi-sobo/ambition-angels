@@ -46,3 +46,13 @@ export async function hubspotGiftDealsEnabled(): Promise<boolean> {
   const meta = await hubspotMeta();
   return meta?.sync_out === true && meta?.sync_gifts_as_deals === true;
 }
+
+/**
+ * Inbound (HubSpot → BloomOS) webhook apply is its own opt-in (`sync_in`), so
+ * an org can run outbound-only, inbound-only, or both. Off by default →
+ * webhooks are acknowledged but ignored.
+ */
+export async function hubspotReadEnabled(): Promise<boolean> {
+  const meta = await hubspotMeta();
+  return meta?.sync_in === true;
+}

@@ -4,7 +4,8 @@ import SectionHeading from "../../_components/SectionHeading";
 import { GenerateButton } from "../_components/BriefingControls";
 import PageHeader from "../../_components/PageHeader";
 import type { BriefingData } from "@/lib/briefing";
-import { gatherCrmOverdue, crmTaskHref, type CrmOverdueTask } from "@/lib/admin/crmOverdue";
+import { gatherCrmOverdue } from "@/lib/admin/crmOverdue";
+import CrmOverdueList from "./_components/CrmOverdueList";
 
 // AI-narrated weekly briefing (the original Executive Briefing). The daily
 // decision feed now lives at /admin/briefing; this weekly edition — narrated
@@ -13,31 +14,6 @@ export const dynamic = "force-dynamic";
 
 const fmtUsd = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-
-function CrmOverdueGroup({ title, rows }: { title: string; rows: CrmOverdueTask[] }) {
-  if (rows.length === 0) return null;
-  return (
-    <div className="mb-3 last:mb-0">
-      <div className="text-[11px] uppercase tracking-wider text-ink-2 mb-1">
-        {title} ({rows.length})
-      </div>
-      <ul className="space-y-1 text-sm">
-        {rows.slice(0, 12).map((t) => (
-          <li key={t.id} className="flex items-baseline gap-2">
-            <Link href={crmTaskHref(t)} className="font-semibold text-orange hover:text-orange-dark whitespace-nowrap">
-              {t.label}
-            </Link>
-            <span className="text-ink-1 truncate">{t.title}</span>
-            <span className="ml-auto text-[11px] text-expense whitespace-nowrap tabular-nums">
-              {t.daysOverdue}d overdue
-            </span>
-          </li>
-        ))}
-        {rows.length > 12 && <li className="text-[11px] text-ink-3">+{rows.length - 12} more</li>}
-      </ul>
-    </div>
-  );
-}
 
 export default async function WeeklyBriefingPage() {
   const supabase = getSupabaseAdmin();
@@ -80,8 +56,7 @@ export default async function WeeklyBriefingPage() {
           <SectionHeading as="h3" className="mb-3">
             ⏰ Overdue across CRM ({crm.total})
           </SectionHeading>
-          <CrmOverdueGroup title="Partners" rows={crm.partners} />
-          <CrmOverdueGroup title="Donors" rows={crm.donors} />
+          <CrmOverdueList partners={crm.partners} donors={crm.donors} />
         </section>
       )}
 

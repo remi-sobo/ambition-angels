@@ -28,6 +28,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Overview", icon: "overview", href: "/admin" },
       { label: "Executive Briefing", icon: "briefing", href: "/admin/briefing" },
+      { label: "How-To Guide", icon: "documents", href: "/admin/howto" },
     ],
   },
   {

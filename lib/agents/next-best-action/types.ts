@@ -37,11 +37,16 @@ export type NbaRecommendation = {
 };
 
 // What the route returns to the UI: the recommendation enriched with the
-// display fields the cards need, plus the resolved due date.
+// display fields the cards need, the resolved due date, and the persisted row
+// id (so Apply/Dismiss can record the disposition).
 export type NbaCardRecommendation = NbaRecommendation & {
+  id: string; // fr_nba_suggestions row id
   constituent_id: string | null;
   constituent_name: string;
   stage: string;
   ask_amount: number | null;
   next_step_due: string; // ISO date the Apply action writes
 };
+
+// Follow-through: how many suggested moves were applied vs. dismissed.
+export type NbaStats = { applied: number; dismissed: number };

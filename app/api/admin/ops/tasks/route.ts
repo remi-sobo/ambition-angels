@@ -74,6 +74,14 @@ export async function POST(req: NextRequest) {
   if (body.project_id !== undefined && body.project_id !== null && typeof body.project_id !== "string") {
     return NextResponse.json({ error: "project_id must be a string" }, { status: 400 });
   }
+  // Optional CRM link (partner org / constituent) — set together.
+  const linkType = body.linked_entity_type;
+  if (linkType !== undefined && linkType !== null && linkType !== "partner" && linkType !== "constituent") {
+    return NextResponse.json({ error: "linked_entity_type is invalid" }, { status: 400 });
+  }
+  if (linkType && (typeof body.linked_entity_id !== "string" || !/^[0-9a-f-]{36}$/i.test(body.linked_entity_id))) {
+    return NextResponse.json({ error: "linked_entity_id must be a uuid" }, { status: 400 });
+  }
 
   const insert = {
     title,
@@ -88,6 +96,9 @@ export async function POST(req: NextRequest) {
     due_date: (body.due_date as string | null | undefined) ?? null,
     pinned_for_today: body.pinned_for_today === true,
     pinned_for_this_week: body.pinned_for_this_week === true,
+    linked_entity_type: (linkType as "partner" | "constituent" | null | undefined) ?? null,
+    linked_entity_id: linkType ? (body.linked_entity_id as string) : null,
+    linked_label: typeof body.linked_label === "string" ? body.linked_label.slice(0, 200) : null,
   };
 
   const supabase = getSupabaseAdmin();
@@ -147,6 +158,12 @@ export async function GET(req: NextRequest) {
   const projectId = url.searchParams.get("project_id");
   if (projectId === "none") q = q.is("project_id", null);
   else if (projectId) q = q.eq("project_id", projectId);
+
+  // CRM-linked filter (partner / constituent profile task lists).
+  const linkType = url.searchParams.get("linked_entity_type");
+  if (linkType === "partner" || linkType === "constituent") q = q.eq("linked_entity_type", linkType);
+  const linkId = url.searchParams.get("linked_entity_id");
+  if (linkId && /^[0-9a-f-]{36}$/i.test(linkId)) q = q.eq("linked_entity_id", linkId);
 
   if (url.searchParams.get("pinned_for_today") === "true") {
     q = q.eq("pinned_for_today", true);

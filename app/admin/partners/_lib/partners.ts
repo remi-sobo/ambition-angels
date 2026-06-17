@@ -30,6 +30,8 @@ export type Partner = {
   // Derived (joined in the page query), not columns:
   contact_count?: number;
   primary_contact?: string | null;
+  open_tasks?: number;
+  overdue_tasks?: number;
 };
 
 export const KIND_LABELS: Record<string, string> = {

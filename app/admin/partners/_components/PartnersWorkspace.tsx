@@ -221,6 +221,17 @@ function PartnerRow({ partner: p }: { partner: Partner }) {
             {p.contact_count} contact{p.contact_count === 1 ? "" : "s"}
           </span>
         )}
+        {typeof p.open_tasks === "number" && p.open_tasks > 0 && (
+          <span
+            title={p.overdue_tasks ? `${p.overdue_tasks} overdue` : "open tasks"}
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+              p.overdue_tasks ? "bg-expense-bg text-expense" : "bg-orange/15 text-orange"
+            }`}
+          >
+            {p.open_tasks} task{p.open_tasks === 1 ? "" : "s"}
+            {p.overdue_tasks ? ` · ${p.overdue_tasks} overdue` : ""}
+          </span>
+        )}
         {p.mou_status === "signed" && (
           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
             mouExpired ? "bg-expense-bg text-expense" : "bg-revenue-bg text-revenue"

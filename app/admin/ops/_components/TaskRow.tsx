@@ -171,6 +171,20 @@ export default function TaskRow({
             #{projectName}
           </Link>
         )}
+        {task.linked_entity_type && task.linked_entity_id && (
+          <Link
+            href={
+              task.linked_entity_type === "partner"
+                ? `/admin/partners/${task.linked_entity_id}`
+                : `/admin/fundraising/donors/${task.linked_entity_id}`
+            }
+            className="inline-flex items-center gap-1 text-[11px] text-ink-2 hover:text-orange bg-tile border border-outline rounded-full px-2 py-0.5 truncate max-w-[180px] transition-colors"
+            title={`${task.linked_entity_type === "partner" ? "Partner" : "Donor"}: ${task.linked_label ?? ""}`}
+          >
+            <span className="text-ink-3">{task.linked_entity_type === "partner" ? "◆" : "♥"}</span>
+            {task.linked_label ?? (task.linked_entity_type === "partner" ? "Partner" : "Donor")}
+          </Link>
+        )}
         {isBlocked && (
           <span className="text-[10px] uppercase tracking-wider text-expense font-semibold">
             blocked

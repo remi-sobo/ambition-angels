@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../finance/_components/charts";
+import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { todayISO } from "../../ops/_types/ops";
 import { NewGrantForm } from "./_components/GrantControls";
@@ -61,8 +62,8 @@ export default async function GrantsPage() {
 
   if (grantsRes.error) {
     return (
-      <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Grants</h1>
+      <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1400px]">
+        <PageHeader title="Grants" />
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The grants tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_grants.sql</code> via Actions → Apply DB migration,
@@ -94,31 +95,28 @@ export default async function GrantsPage() {
   const closedCount = (byStage.get("declined")?.length ?? 0) + (byStage.get("closed")?.length ?? 0);
 
   return (
-    <div className="min-h-screen bg-ink">
-      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center justify-between gap-3">
-        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Grants</span>
-        <span className="text-xs text-ink-2">{grants.length} total{closedCount > 0 ? ` · ${closedCount} declined/closed` : ""}</span>
-      </div>
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1400px] space-y-6">
+      <PageHeader
+        title="Grants"
+        subtitle={`${grants.length} total${closedCount > 0 ? ` · ${closedCount} declined/closed` : ""}`}
+        actions={<NewGrantForm />}
+      />
 
-      <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1 min-w-0">
-            <StatCard label="Open Pipeline" value={money(openPipeline)} sub="prospect → submitted" />
-            <StatCard label="Awarded" value={money(awardedTotal)} sub="awarded + active grants" />
-            <StatCard
-              label="Open Deadlines"
-              value={requirements.length}
-              delta={overdue.length > 0 ? { text: `${overdue.length} overdue`, direction: "down" } : undefined}
-            />
-            <StatCard
-              label="Next Deadline"
-              value={requirements[0] ? fmtDate(requirements[0].due_date) : "—"}
-              sub={requirements[0] ? `${KIND_LABELS[requirements[0].kind]} · ${requirements[0].grants?.name ?? ""}` : "nothing scheduled"}
-            />
-          </div>
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard label="Open Pipeline" value={money(openPipeline)} sub="prospect → submitted" />
+          <StatCard label="Awarded" value={money(awardedTotal)} sub="awarded + active grants" />
+          <StatCard
+            label="Open Deadlines"
+            value={requirements.length}
+            delta={overdue.length > 0 ? { text: `${overdue.length} overdue`, direction: "down" } : undefined}
+          />
+          <StatCard
+            label="Next Deadline"
+            value={requirements[0] ? fmtDate(requirements[0].due_date) : "—"}
+            sub={requirements[0] ? `${KIND_LABELS[requirements[0].kind]} · ${requirements[0].grants?.name ?? ""}` : "nothing scheduled"}
+          />
         </div>
-
-        <NewGrantForm />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* ── Pipeline ── */}

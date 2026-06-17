@@ -4,6 +4,57 @@ Status: revised draft for review. Incorporates the consultant review and the dis
 Intended repo path: `specs/fundraising-v2.md`
 Supersedes: the first draft of this spec.
 
+## Reconciliation update (2026-06-17, as-built)
+
+A working session moved ahead of this spec and changed two of the locked
+decisions. This section is the source of truth where it conflicts with the
+original text below; the conflicting paragraphs are annotated inline.
+
+What has already shipped against real AA data (database-side, idempotent):
+- **HubSpot → spine import already run.** `closedwon` deals were imported as
+  **gifts** (198 gifts / ~$3.48M), foundation/government deals as **grants**
+  (6 / ~$8.8k), and constituents reconciled/created via `external_ids` (107
+  donors). Missing people/orgs were created, existing ones linked — not
+  duplicated. This is a first pass of what the spec called Phase 1A.
+- **Opportunities re-staged.** All 507 opportunities were re-mapped from the
+  raw HubSpot dealstage into the 5-stage moves funnel
+  (identify/qualify/cultivate/solicit/steward + lost), replacing the original
+  importer's coarse won/open/lost buckets, with stage-based **probability** and
+  **expected_close** backfilled. See the stage map in
+  `lib/hubspot/stage-map.ts` (single source for SQL + sync).
+- **Phase 0A is effectively complete.** The RLS migrations
+  (`mark_hs_staging_readonly`, `assert_fundraising_org_id`) are applied and the
+  service-role → user-session swap is in place across the fundraising pages
+  (only `settings/page.tsx` keeps service-role, by design). Remaining 0A gate:
+  the manual authenticated preview smoke test. **Next unstarted gate is 0B.**
+
+Decisions changed in session (these override the "locked decisions" below):
+- **HubSpot is NOT frozen. Ongoing one-way sync stays on.** HubSpot →
+  BloomOS continues to run; it remains the inbound source for deals/pipeline
+  and (deduped) gifts. BloomOS is where work happens. A full freeze/cutover is
+  deferred and optional, not the near-term plan. (Reverses locked decision #1
+  and the "live sync job is retired" line in Architecture.)
+- **HubSpot stays the gift source; payments dedupe against it.** `closedwon`
+  deals create gifts on each sync. Stripe/Givebutter gifts are matched against
+  existing deal-gifts (same constituent + amount + gift date within ±7 days)
+  and suppressed when a deal-gift already covers them, so no donation is counted
+  twice. (Amends locked decision #3 and the Gift-and-money model.)
+
+New requirements captured from the session (folded into surfaces below):
+- **Fiscal year = calendar year (Jan–Dec).** Confirmed against the FYxx deal
+  labels vs close dates. Every time filter uses calendar year.
+- **Year lens everywhere, two date axes.** "This year / last year / all-time"
+  (+ YoY) on every fundraising surface: gifts filter on `gift_date` (money in),
+  pipeline filters on `expected_close` (what can still close this year).
+- **Pipeline separation.** Opportunities carry their HubSpot pipeline (Sales /
+  Partnership / Angel Connectors) so Major Gifts can be filtered to
+  fundraising-only and the three are not mixed.
+- **Filter model.** Three layers — Time; structural fields (stage, pipeline,
+  owner, fund, gift size, donor type); and segments split into *derived*
+  (auto: this-year donors, major $10k+, new, LYBUNT/SYBUNT lapsed, donor type)
+  vs *manual tags* (judgment calls). **AIG is a constituent tag**, not a deal
+  stage — so members and their cross-year giving are filterable as a segment.
+
 ## Context and inputs
 
 Synthesized from the working session, then sharpened against the consultant review. Correct anything wrong before approval.
@@ -21,9 +72,9 @@ Ambition Angels runs its fundraising across two systems that do not agree. Bloom
 
 ## The locked decisions
 
-1. BloomOS is the single source of truth for fundraising. HubSpot becomes a one-time importer, then is frozen and removed. No object is the system of record in both systems.
+1. ~~BloomOS is the single source of truth for fundraising. HubSpot becomes a one-time importer, then is frozen and removed.~~ **SUPERSEDED (2026-06-17): ongoing HubSpot sync stays on; see Reconciliation update.** BloomOS is where work happens, but HubSpot remains a live one-way inbound source for deals/pipeline and (deduped) gifts. Freeze/cutover is deferred and optional. The single-source-of-truth principle still holds per-object via `external_ids` reconciliation so nothing is double-entered.
 2. There is no marketing dependency on HubSpot. Per-person email history comes from Gmail, logged against each constituent inside BloomOS.
-3. Payments (Givebutter plus the existing Stripe flow) feed gifts and recurring commitments into BloomOS as the most critical inbound integration.
+3. Payments (Givebutter plus the existing Stripe flow) feed gifts and recurring commitments into BloomOS. **Amended (2026-06-17): HubSpot `closedwon` deals remain the gift source of record; Stripe/Givebutter gifts are deduped against existing deal-gifts (constituent + amount + gift date ±7 days) and suppressed when already covered, so no money is double-counted.**
 4. Real row-level security keyed on org is the floor for a second tenant, built now even though Ambition Angels is the only tenant today.
 5. Every person or organization is one constituent record. The fundraising surfaces are views over a shared set of objects, never separate identities.
 
@@ -102,7 +153,7 @@ No code. Data flow, ownership, and dependencies only.
 Ownership after cutover: BloomOS owns every fundraising object; Gmail is the upstream source for email content only; Givebutter and Stripe are upstream for money only; HubSpot owns nothing and is disconnected.
 
 Key structural moves:
-- Source-of-truth flip. The `hs_*` mirror is demoted to import staging and reconciled to `constituents` via `external_ids`. After import the live sync job is retired.
+- Source-of-truth flip. The `hs_*` mirror is reconciled to `constituents` via `external_ids`. **Amended (2026-06-17): the live sync job is NOT retired — it runs ongoing.** After each HubSpot sync refreshes `hs_*`, a re-runnable, idempotent import function (`fr_sync_hubspot_to_spine()`) propagates the delta into the spine (constituents, opportunities with granular stages + pipeline, grants, deduped gifts, interactions, AIG tags).
 - Email keystone. Gmail OAuth syncs messages, matches them conservatively to constituents by verified address, and stores them as interactions of type email with thread references. Constituent 360 renders the timeline. This is the single feature that removes the last reason to open HubSpot.
 - Real RLS. Row-level security on every fundraising table keyed on `org_id`, with membership and role as the enforced gate. The service-role bypass on per-request writes is removed or scoped. This is the line between an internal admin tool and a product another org can log into.
 - Design-system unification. One page anatomy (breadcrumb and title with primary action, a stat-card KPI strip, the main table or board or detail, optional right rail), one stat-card, one server-paginated table (saved views, column picker, CSV, bulk actions), one pipeline component, a global command palette, and the draft-then-approve affordance on every AI surface.
@@ -131,8 +182,9 @@ Keep, add, remove, adjust. Every surface is a view over the shared objects.
 Major Gifts
 - Keep: the moves Kanban, KPIs, inline new ask, stage advance and retreat, capacity dots.
 - Add: per-owner portfolio view (portfolio value, assigned count, open asks, overdue moves, last-touch distribution, top ten to contact, stage movement this month, expected revenue); coverage-versus-goal using the 3x convention plus a gift-range chart; wealth-screening CSV import populating capacity and affinity. Cards show last touch, next move, owner, and status, not just name and amount.
+- Add (2026-06-17): **year lens** (this year / last year / all-time + YoY, calendar FY) filtering pipeline by `expected_close`; **pipeline filter** (Sales / Partnership / Angel Connectors) so the board is fundraising-only by default; **forecast view** of asks closing this quarter/year (weighted by stage probability). Opportunities now carry granular stage, `pipeline`, `probability`, and `expected_close`.
 - Remove: nothing.
-- Adjust: source opportunities from `constituents` after cutover; standardize on the shared pipeline component.
+- Adjust: standardize on the shared pipeline component. (Opportunities are kept in sync from HubSpot, not sourced from a frozen import.)
 
 Prospects
 - Keep: the triage list and scoring.
@@ -149,6 +201,7 @@ Constituent profile (was prospect detail plus donor profile) becomes Constituent
 Donors
 - Keep: the rollup, retention intelligence, segment export.
 - Add: households with automatic soft-credit; the first-class dedupe and merge queue; full FEP retention; pledges shown.
+- Add (2026-06-17): **year lens** (this year / last year / all-time + YoY, calendar FY) filtering gifts by `gift_date`; **derived segments** — donor type (individual / foundation / corporate / government), major donors ($10k+), new this year, LYBUNT/SYBUNT (lapsed); **manual tags** — AIG (giving circle) and other judgment-call tags as a first-class, filterable constituent field.
 - Remove: the apply-migration empty-state once the spine is default.
 - Adjust: Donors is a view (constituents with gifts).
 - Post-cutover depth: DAF, matching, tribute, year-end statements.
@@ -180,10 +233,11 @@ Once HubSpot, Gmail, Givebutter, and Stripe all feed in, duplicates are inevitab
 ## Data model changes
 
 Add: an email and message store (or an extension of `interactions`) with thread references and direction; population of `households` and `soft_credits`; pledge and pledge-payment structures; a dedupe and merge review structure with audit trail; an org profile and boilerplate table; events tables.
+- Added (2026-06-17): `opportunities.pipeline` (Sales / Partnership / Angel) and granular `stage` + `probability` + `expected_close`; a `constituents.tags` convention with **AIG** as the canonical giving-circle tag; a re-runnable `fr_sync_hubspot_to_spine()` import function holding all hs_* → spine mapping (so SQL and the live sync agree); stage map centralized in `lib/hubspot/stage-map.ts`.
 
-Adjust: enforce `org_id` and RLS on every fundraising table; reconcile `hs_*` to `constituents` via `external_ids` during import; derive opportunity type from `constituents.type` rather than storing it separately.
+Adjust: enforce `org_id` and RLS on every fundraising table; reconcile `hs_*` to `constituents` via `external_ids` during sync; derive opportunity type from `constituents.type` rather than storing it separately. Time filters use **calendar fiscal year**.
 
-Remove or freeze: retire the live HubSpot mirror role. Keep `hs_*` as archived import staging through cutover, then disconnect the sync job.
+Remove or freeze: ~~retire the live HubSpot mirror role.~~ **SUPERSEDED (2026-06-17): the sync job stays live and ongoing.** `hs_*` remains the inbound staging the importer reads on every run.
 
 ## AI layer v2
 
@@ -219,7 +273,9 @@ This list is the definition of v2-minimum, and it is the only thing that gates t
 
 Each gate ends at a reviewable commit point. One PR at a time inside each gate.
 
-Phase 0A: Data and security foundation. RLS on all fundraising tables, `org_id` enforcement, `external_ids` reconciliation, the import-staging model, and a cross-org read test that must fail. Commit point: cross-org reads provably blocked; `hs_*` is read-only staging.
+Phase 0A: Data and security foundation. RLS on all fundraising tables, `org_id` enforcement, `external_ids` reconciliation, the import-staging model, and a cross-org read test that must fail. Commit point: cross-org reads provably blocked; `hs_*` is read-only staging. **DONE (2026-06-17): migrations applied, service-role → user-session swap landed; remaining gate is the manual authenticated preview smoke test.**
+
+Phase 0 (as-built note, 2026-06-17): the HubSpot → spine import already ran ahead of order (gifts, grants, opportunities, constituents — see Reconciliation update) and the live sync was kept on per the changed decisions. Phase 1A below is therefore largely satisfied; what remains there is the formal reconciliation report and the merge queue (1B). **Next unstarted gate: Phase 0B.**
 
 Phase 0B: Design foundation. The shared page anatomy, stat-card, server-paginated table, and pipeline component, migrated onto one surface. Commit point: one surface fully on the shared system.
 

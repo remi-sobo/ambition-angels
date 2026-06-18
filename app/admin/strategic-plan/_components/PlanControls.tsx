@@ -52,6 +52,9 @@ export type PlanInitiative = {
   status: string; // 'todo' | 'in_progress' | 'done'
 };
 
+// Phase 2 cascade: rolled-up work from ops projects attached to an initiative.
+export type InitiativeRollup = { projects: number; tasksDone: number; tasksTotal: number };
+
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
@@ -272,11 +275,13 @@ export function ObjectiveCard({
   goals,
   kpisByGoal,
   initiativesByGoal,
+  rollups = {},
 }: {
   objective: PlanObjective;
   goals: PlanGoal[];
   kpisByGoal: Record<string, PlanKpi[]>;
   initiativesByGoal: Record<string, PlanInitiative[]>;
+  rollups?: Record<string, InitiativeRollup>;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -328,6 +333,7 @@ export function ObjectiveCard({
             goal={g}
             kpis={kpisByGoal[g.id] ?? []}
             initiatives={initiativesByGoal[g.id] ?? []}
+            rollups={rollups}
           />
         ))}
         {goals.length === 0 && <p className="text-xs text-ink-3">No goals under this objective yet.</p>}
@@ -394,10 +400,12 @@ export function GoalCard({
   goal,
   kpis = [],
   initiatives,
+  rollups = {},
 }: {
   goal: PlanGoal;
   kpis?: PlanKpi[];
   initiatives: PlanInitiative[];
+  rollups?: Record<string, InitiativeRollup>;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -469,19 +477,36 @@ export function GoalCard({
         </div>
       )}
       <ul className="mt-3 space-y-1.5">
-        {initiatives.map((i) => (
-          <li key={i.id} className="flex items-center gap-2 text-sm">
-            <button
-              onClick={() => void toggleInitiative(i)}
-              className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${
-                i.status === "done" ? "bg-orange border-orange text-white" : "border-outline text-transparent hover:border-orange/60"
-              }`}
-              aria-label={i.status === "done" ? "Mark not done" : "Mark done"}
-            >✓</button>
-            <span className={i.status === "done" ? "text-ink-2 line-through" : "text-ink-1"}>{i.title}</span>
-            {i.owner && <span className="text-[10px] text-ink-2">· {i.owner}</span>}
-          </li>
-        ))}
+        {initiatives.map((i) => {
+          const r = rollups[i.id];
+          const pctTasks = r && r.tasksTotal > 0 ? Math.round((r.tasksDone / r.tasksTotal) * 100) : null;
+          return (
+            <li key={i.id} className="text-sm">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => void toggleInitiative(i)}
+                  className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${
+                    i.status === "done" ? "bg-orange border-orange text-white" : "border-outline text-transparent hover:border-orange/60"
+                  }`}
+                  aria-label={i.status === "done" ? "Mark not done" : "Mark done"}
+                >✓</button>
+                <span className={i.status === "done" ? "text-ink-2 line-through" : "text-ink-1"}>{i.title}</span>
+                {i.owner && <span className="text-[10px] text-ink-2">· {i.owner}</span>}
+              </div>
+              {r && r.projects > 0 && (
+                <div className="ml-6 mt-1 flex items-center gap-2">
+                  <div className="flex-1 max-w-[160px] h-1.5 rounded-full bg-tile overflow-hidden">
+                    <div className="h-full bg-orange/70 transition-all" style={{ width: `${pctTasks ?? 0}%` }} />
+                  </div>
+                  <span className="text-[10px] text-ink-2 tabular-nums">
+                    {r.projects} project{r.projects === 1 ? "" : "s"}
+                    {r.tasksTotal > 0 ? ` · ${r.tasksDone}/${r.tasksTotal} tasks` : " · no tasks yet"}
+                  </span>
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
       <div className="flex gap-2 mt-3">
         <input

@@ -15,6 +15,7 @@ import {
   type PlanGoal,
   type PlanKpi,
   type PlanInitiative,
+  type InitiativeRollup,
 } from "./_components/PlanControls";
 
 // Strategic plan (BloomOS Strategy, Phase 1 — specs/bloomos-strategy.md):
@@ -31,19 +32,47 @@ export default async function StrategicPlanPage() {
   const orgId = ctx.orgId;
   const supabase = getSupabaseAdmin();
 
-  const [foundationRes, objectivesRes, goalsRes, kpisRes, initiativesRes] = await Promise.all([
-    supabase.from("plan_foundation").select("*").eq("org_id", orgId).maybeSingle(),
-    supabase.from("plan_objectives").select("*").eq("org_id", orgId).order("sort_order").order("created_at"),
-    supabase.from("plan_goals").select("*").eq("org_id", orgId).order("sort_order").order("created_at").limit(200),
-    supabase.from("plan_kpis").select("*").eq("org_id", orgId).order("created_at").limit(500),
-    supabase.from("plan_initiatives").select("*").eq("org_id", orgId).order("sort_order").order("created_at").limit(1000),
-  ]);
+  const [foundationRes, objectivesRes, goalsRes, kpisRes, initiativesRes, projectsRes] =
+    await Promise.all([
+      supabase.from("plan_foundation").select("*").eq("org_id", orgId).maybeSingle(),
+      supabase.from("plan_objectives").select("*").eq("org_id", orgId).order("sort_order").order("created_at"),
+      supabase.from("plan_goals").select("*").eq("org_id", orgId).order("sort_order").order("created_at").limit(200),
+      supabase.from("plan_kpis").select("*").eq("org_id", orgId).order("created_at").limit(500),
+      supabase.from("plan_initiatives").select("*").eq("org_id", orgId).order("sort_order").order("created_at").limit(1000),
+      // Phase 2 cascade: projects attached to an initiative, for the work rollup.
+      supabase.from("ops_projects").select("id, initiative_id").eq("org_id", orgId).not("initiative_id", "is", null),
+    ]);
 
   const foundation = (foundationRes.data ?? null) as PlanFoundation;
   const objectives = (objectivesRes.data ?? []) as PlanObjective[];
   const goals = (goalsRes.data ?? []) as PlanGoal[];
   const kpis = (kpisRes.data ?? []) as PlanKpi[];
   const initiatives = (initiativesRes.data ?? []) as PlanInitiative[];
+
+  // Work rollup: task completion → project → initiative. For each attached
+  // project we tally its tasks (done / total); we sum those per initiative so
+  // attaching a project and closing its tasks visibly moves the initiative.
+  const attachedProjects = (projectsRes.data ?? []) as { id: string; initiative_id: string | null }[];
+  const initiativeOfProject = new Map(attachedProjects.map((p) => [p.id, p.initiative_id]));
+  const rollups: Record<string, InitiativeRollup> = {};
+  for (const p of attachedProjects) {
+    if (!p.initiative_id) continue;
+    (rollups[p.initiative_id] ??= { projects: 0, tasksDone: 0, tasksTotal: 0 }).projects++;
+  }
+  if (attachedProjects.length > 0) {
+    const { data: taskRows } = await supabase
+      .from("ops_tasks")
+      .select("project_id, status")
+      .in("project_id", attachedProjects.map((p) => p.id))
+      .is("archived_at", null);
+    for (const t of (taskRows ?? []) as { project_id: string | null; status: string }[]) {
+      const initId = t.project_id ? initiativeOfProject.get(t.project_id) : null;
+      if (!initId) continue;
+      const r = (rollups[initId] ??= { projects: 0, tasksDone: 0, tasksTotal: 0 });
+      r.tasksTotal++;
+      if (t.status === "done") r.tasksDone++;
+    }
+  }
 
   // Group children by parent for O(1) lookups in the tree.
   const goalsByObjective: Record<string, PlanGoal[]> = {};
@@ -108,6 +137,7 @@ export default async function StrategicPlanPage() {
               goals={goalsByObjective[o.id] ?? []}
               kpisByGoal={kpisByGoal}
               initiativesByGoal={initiativesByGoal}
+              rollups={rollups}
             />
           ))}
 
@@ -121,6 +151,7 @@ export default async function StrategicPlanPage() {
                     goal={g}
                     kpis={kpisByGoal[g.id] ?? []}
                     initiatives={initiativesByGoal[g.id] ?? []}
+                    rollups={rollups}
                   />
                 ))}
               </div>

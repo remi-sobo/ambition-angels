@@ -3,6 +3,7 @@ import {
   listMessageIds,
   getMessage,
   counterpartyEmails,
+  shannonPresent,
 } from "@/lib/google/gmail-read";
 
 // Phase 1C.b — chunked Gmail → interactions sync. One page of messages per
@@ -155,7 +156,12 @@ export async function advanceGmailJob(supabase: SupabaseClient, job: GmailJob): 
       continue;
     }
 
-    const rows = (matches as { id: string; org_id: string; emails: string[] }[]).map((c) => ({
+    const matchRows = matches as { id: string; org_id: string; emails: string[] }[];
+    // Was Shannon a raw participant on this message? Computed before the staff
+    // de-dupe (counterpartyEmails drops her) so intro handoffs are detectable.
+    const sawShannon = shannonPresent(parsed);
+
+    const rows = matchRows.map((c) => ({
       org_id: c.org_id,
       constituent_id: c.id,
       kind: "email",
@@ -169,6 +175,7 @@ export async function advanceGmailJob(supabase: SupabaseClient, job: GmailJob): 
       external_source: "gmail",
       external_id: parsed!.messageId,
       is_private: false,
+      shannon_present: sawShannon,
     }));
 
     const { error: upErr } = await supabase
@@ -178,6 +185,40 @@ export async function advanceGmailJob(supabase: SupabaseClient, job: GmailJob): 
       errors.push({ message: `upsert: ${upErr.message}`, message_id: id, occurred_at: new Date().toISOString() });
     } else {
       counts.logged += 1;
+      // Connection candidate: an outbound (from Remi) message Shannon is on,
+      // reconciled to an external constituent — the person being introduced.
+      // Upsert one PENDING row per thread; ignoreDuplicates means a thread
+      // already added/dismissed by Shannon never resurfaces. Best-effort: a
+      // candidate failure must not break the interactions sync.
+      if (sawShannon && parsed.direction === "outbound") {
+        const primary = matchRows[0];
+        const { data: inter } = await supabase
+          .from("interactions")
+          .select("id")
+          .eq("external_source", "gmail")
+          .eq("external_id", parsed.messageId)
+          .eq("constituent_id", primary.id)
+          .maybeSingle();
+        const { error: candErr } = await supabase
+          .from("connection_candidates")
+          .upsert(
+            {
+              org_id: primary.org_id,
+              thread_id: parsed.threadId,
+              interaction_id: (inter as { id: string } | null)?.id ?? null,
+              constituent_id: primary.id,
+              subject: parsed.subject,
+            },
+            { onConflict: "thread_id", ignoreDuplicates: true }
+          );
+        if (candErr) {
+          errors.push({
+            message: `candidate: ${candErr.message}`,
+            message_id: id,
+            occurred_at: new Date().toISOString(),
+          });
+        }
+      }
     }
   }
 

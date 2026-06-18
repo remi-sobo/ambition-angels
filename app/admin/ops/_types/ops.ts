@@ -49,6 +49,19 @@ export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
 export type AdminUserId = "remi" | "shannon";
 
+// The label that marks an ops_task as a "connection" — Shannon's scheduling
+// backlog in the Meetings tab. The backlog reads ops_tasks filtered to this
+// label + assigned_to='shannon'; candidates promoted from email (Phase 4) and
+// the manual "+ New connection" form (Phase 3) both stamp it. Lives on labels
+// (not category) because the task UI groups/filters by the fixed category
+// taxonomy, and 'scheduling' is a cross-cutting facet, not a department.
+export const SCHEDULING_LABEL = "scheduling";
+
+// Connections still need a concrete department category (ops_tasks.category is
+// NOT NULL and the scheduling facet rides on labels, not category). Scheduling
+// is operations work, so connections file under 'operations' on the Ops surface.
+export const SCHEDULING_TASK_CATEGORY: TaskCategory = "operations";
+
 export type OpsTask = {
   id: string;
   title: string;
@@ -69,6 +82,8 @@ export type OpsTask = {
   linked_entity_type: "partner" | "constituent" | null;
   linked_entity_id: string | null;
   linked_label: string | null;
+  // Optional /meet booking that fulfilled this task (connection backlog only).
+  booking_id: string | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;

@@ -82,6 +82,8 @@ export type OpsTask = {
   linked_entity_type: "partner" | "constituent" | null;
   linked_entity_id: string | null;
   linked_label: string | null;
+  // Optional /meet booking that fulfilled this task (connection backlog only).
+  booking_id: string | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;

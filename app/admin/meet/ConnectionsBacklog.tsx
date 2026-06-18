@@ -7,6 +7,7 @@ import {
   taskStatusBadgeClass,
   type OpsTask,
 } from "@/app/admin/ops/_types/ops";
+import MarkBooked from "./MarkBooked";
 
 const STATUS_ORDER = ["todo", "in_progress", "blocked", "done"] as const;
 
@@ -166,6 +167,7 @@ export default function ConnectionsBacklog({
                   <div className="flex-1 min-w-0">
                     <TaskRow task={t} hideProjectLink />
                   </div>
+                  {t.status !== "done" && <MarkBooked taskId={t.id} />}
                 </div>
               );
             })}

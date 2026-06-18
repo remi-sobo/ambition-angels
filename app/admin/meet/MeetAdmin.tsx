@@ -5,6 +5,7 @@ import type { Blackout, Booking, MeetingType } from "@/lib/database.types";
 import type { OpsTask } from "@/app/admin/ops/_types/ops";
 import ConnectionsBacklog from "./ConnectionsBacklog";
 import NewConnectionForm from "./NewConnectionForm";
+import CandidatesQueue, { type Candidate } from "./CandidatesQueue";
 
 type BookingWithType = Booking & { meeting_type: MeetingType };
 
@@ -15,6 +16,7 @@ type InitialData = {
   blackouts: Blackout[];
   last30Count: number;
   connections: OpsTask[];
+  candidates: Candidate[];
 };
 
 type Tab = "connections" | "bookings" | "types" | "blackouts";
@@ -52,6 +54,7 @@ export default function MeetAdmin({ initial }: { initial: InitialData }) {
           Bookings, meeting types, blackouts.
         </p>
         <div className="mt-5 flex gap-6 text-sm">
+          <Stat label="Candidates" value={initial.candidates.length} />
           <Stat label="Open connections" value={openConnections} />
           <Stat label="Upcoming" value={upcoming.length} />
           <Stat label="This week" value={upcomingThisWeek} />
@@ -79,6 +82,7 @@ export default function MeetAdmin({ initial }: { initial: InitialData }) {
 
       {tab === "connections" && (
         <div className="space-y-6">
+          <CandidatesQueue candidates={initial.candidates} />
           <NewConnectionForm />
           <ConnectionsBacklog connections={initial.connections} />
         </div>

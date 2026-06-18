@@ -1,3 +1,4 @@
+import OpsBoard, { type OpsWidget } from "./OpsBoard";
 import MyQueueWidget from "./MyQueueWidget";
 import AcksDueWidget from "./AcksDueWidget";
 import SchedulingLaneWidget from "./SchedulingLaneWidget";
@@ -10,26 +11,20 @@ import FollowThroughWidget from "./FollowThroughWidget";
 // clean (data hygiene — where the stale-data alert lives, actionable), what's
 // due (deadlines + finance ops), and what to chase (follow-through).
 //
-// These six are a strawman until Shannon marks them up; Phase 4 lets her
-// reorder and hide cards within her own view.
+// The widgets are rendered here (server-side, one data source each) and handed
+// to OpsBoard, which lets Shannon reorder and hide cards within her own view —
+// persisted per-device. The CEO cockpit doesn't use the board, so it's
+// unaffected. These six are a strawman until Shannon marks them up.
 
 export default function OpsPanel() {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <MyQueueWidget className="lg:col-span-6" />
-        <AcksDueWidget className="lg:col-span-6" />
-      </div>
+  const widgets: OpsWidget[] = [
+    { key: "queue", label: "My queue", node: <MyQueueWidget /> },
+    { key: "acks", label: "Acknowledgments due", node: <AcksDueWidget /> },
+    { key: "scheduling", label: "Scheduling lane", node: <SchedulingLaneWidget /> },
+    { key: "hygiene", label: "Data hygiene", node: <DataHygieneWidget /> },
+    { key: "deadlines", label: "Deadlines & finance ops", node: <DeadlinesFinanceWidget /> },
+    { key: "followthrough", label: "Fundraising follow-through", node: <FollowThroughWidget /> },
+  ];
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <SchedulingLaneWidget className="lg:col-span-6" />
-        <DataHygieneWidget className="lg:col-span-6" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <DeadlinesFinanceWidget className="lg:col-span-6" />
-        <FollowThroughWidget className="lg:col-span-6" />
-      </div>
-    </div>
-  );
+  return <OpsBoard widgets={widgets} />;
 }

@@ -24,6 +24,22 @@ export function isStaffEmail(email: string | null | undefined): boolean {
   return !!email && email.toLowerCase().endsWith("@" + STAFF_DOMAIN);
 }
 
+// Shannon is the scheduler Remi loops in on intro threads ("connecting you two,
+// Shannon will find us time"). Her address is staff, so counterpartyEmails
+// drops it — connection-candidate detection tests the RAW participants for her
+// before that filter. Identity matches lib/admin/auth (local-part 'shannon').
+export function isShannonAddress(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const [local, domain] = email.toLowerCase().split("@");
+  return local === "shannon" && domain === STAFF_DOMAIN;
+}
+
+// Was Shannon a participant (From/To/Cc) on this message? Tests raw addresses
+// (incl. staff), unlike counterpartyEmails which de-staffs.
+export function shannonPresent(msg: ParsedMessage): boolean {
+  return [msg.from, ...msg.to].some(isShannonAddress);
+}
+
 // Pull bare email addresses out of a raw header value
 // ("Jane Doe <jane@x.org>, bob@y.org" → ["jane@x.org", "bob@y.org"]).
 export function parseAddresses(header: string | null | undefined): string[] {

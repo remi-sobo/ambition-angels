@@ -1,28 +1,34 @@
 import RunwayCard from "./RunwayCard";
+import FiresWidget from "./FiresWidget";
+import GoalForecastWidget from "./GoalForecastWidget";
+import MovesOnlyYouWidget from "./MovesOnlyYouWidget";
+import MissionProofWidget from "./MissionProofWidget";
 import FinancialHealthWidget from "./FinancialHealthWidget";
-import PipelineWidget from "./PipelineWidget";
-import PrioritiesWidget from "./PrioritiesWidget";
 
-// CEO cockpit (Remi). Answers: are we surviving, is the money coming, what must
-// I personally do, is the mission working, what's on fire.
+// CEO cockpit (Remi). Answers, in order: are we surviving (runway), what's on
+// fire, is the money coming (goal+forecast), what must I personally do (moves
+// only you), is the mission working (mission proof), plus the finance detail.
 //
-// Phase 1 — first arrangement from widgets that already have data: runway leads,
-// then finance + pipeline, then deadlines. Phase 2 adds the curated cockpit
-// widgets (goal+forecast, moves-only-you, fires, mission proof) and demotes the
-// raw pipeline.
+// Runway is the hero, computed cash/burn at the locked 3/1.5 thresholds. The
+// forecast is committed + weighted-open vs goal — never total pipeline (the raw
+// pipeline lives on the Fundraising page). Mission leads with FO lift and a
+// dated manual figure, never a fabricated number.
 
 export default function CeoCockpit() {
   return (
     <div className="space-y-6">
       <RunwayCard />
 
+      <FiresWidget />
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <FinancialHealthWidget className="lg:col-span-7" />
-        <PipelineWidget className="lg:col-span-5" />
+        <GoalForecastWidget className="lg:col-span-5" />
+        <MovesOnlyYouWidget className="lg:col-span-7" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <PrioritiesWidget className="lg:col-span-4" />
+        <MissionProofWidget className="lg:col-span-5" />
+        <FinancialHealthWidget className="lg:col-span-7" />
       </div>
     </div>
   );

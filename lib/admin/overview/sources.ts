@@ -17,6 +17,9 @@
  */
 import { cache } from "react";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { constituentName } from "@/lib/fundraising/display";
+import { todayISO } from "@/app/admin/ops/_types/ops";
 
 // ── Fiscal-year + month helpers (shared with lib/admin/finance.ts) ───────────
 
@@ -237,3 +240,280 @@ export const getPipeline = cache(async (): Promise<PipelineData> => {
   const total = Array.from(agg.values()).reduce((s, v) => s + v.total, 0);
   return { stages, total };
 });
+
+// ── Fundraising spine helpers (user-session client, RLS, org-scoped) ──────────
+
+const OPEN_STAGES = ["identify", "qualify", "cultivate", "solicit"];
+
+const addDays = (iso: string, n: number) => {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+
+type ConstituentLite = {
+  id: string;
+  type: string;
+  first_name: string | null;
+  last_name: string | null;
+  org_name: string | null;
+} | null;
+
+const profileHref = (c: ConstituentLite) => (c ? `/admin/fundraising/donors/${c.id}` : "/admin/fundraising");
+
+// ── Goal + forecast ──────────────────────────────────────────────────────────
+
+export type ForecastData = {
+  raised: number;
+  committedSteward: number;
+  committed: number;
+  weightedOpen: number;
+  forecast: number;
+  goal: number;
+  gap: number;
+};
+
+/**
+ * Forecast = committed (gifts raised this FY + stewardship-stage asks) +
+ * weighted open (Σ ask_amount × probability across identify/qualify/cultivate/
+ * solicit, probability defaulting to 50% when blank). Closed-lost is excluded.
+ * This is deliberately NOT total pipeline — that's the vanity number the cockpit
+ * is built to avoid.
+ */
+export const getForecast = cache(async (): Promise<ForecastData> => {
+  const sb = createServerSupabase();
+  const fin = await getFinance();
+  const fy = fiscalYearBounds(fin.cfg.year, fin.cfg.startMonth);
+
+  const [giftsRes, oppsRes] = await Promise.all([
+    sb.from("gifts").select("amount").gte("gift_date", fy.start).lte("gift_date", fy.end),
+    sb.from("opportunities").select("stage, ask_amount, probability").neq("stage", "lost"),
+  ]);
+
+  const raised = (giftsRes.data ?? []).reduce((s, g) => s + Number(g.amount), 0);
+
+  let weightedOpen = 0;
+  let committedSteward = 0;
+  for (const o of oppsRes.data ?? []) {
+    const ask = Number(o.ask_amount ?? 0);
+    if (o.stage === "steward") {
+      committedSteward += ask;
+    } else if (OPEN_STAGES.includes(o.stage as string)) {
+      const p = o.probability == null ? 50 : Number(o.probability);
+      weightedOpen += ask * (p / 100);
+    }
+  }
+
+  const committed = raised + committedSteward;
+  const forecast = committed + weightedOpen;
+  const goal = fin.cfg.goal;
+  return { raised, committedSteward, committed, weightedOpen, forecast, goal, gap: goal - forecast };
+});
+
+// ── Moves only you can make ──────────────────────────────────────────────────
+
+export type MoveRow = {
+  id: string;
+  name: string;
+  stage: string;
+  askAmount: number | null;
+  owner: string | null;
+  nextStep: string | null;
+  nextStepDue: string | null;
+  reason: "missing" | "overdue";
+  href: string;
+};
+
+/**
+ * Open asks where the owner is Remi OR ask_amount ≥ $10k, AND the next step is
+ * missing or overdue. Biggest ask first — the moves only the CEO can make.
+ */
+export const getMoves = cache(async (): Promise<MoveRow[]> => {
+  const sb = createServerSupabase();
+  const today = todayISO();
+
+  const res = await sb
+    .from("opportunities")
+    .select(
+      "id, name, stage, ask_amount, owner, next_step, next_step_due, " +
+        "constituent:constituents ( id, type, first_name, last_name, org_name )",
+    )
+    .in("stage", OPEN_STAGES)
+    .or("owner.ilike.remi,ask_amount.gte.10000")
+    .order("ask_amount", { ascending: false, nullsFirst: false })
+    .limit(100);
+
+  const rows = (res.data ?? []) as unknown as Array<{
+    id: string;
+    name: string | null;
+    stage: string;
+    ask_amount: number | null;
+    owner: string | null;
+    next_step: string | null;
+    next_step_due: string | null;
+    constituent: ConstituentLite;
+  }>;
+
+  return rows
+    .map((o) => {
+      const missing = o.next_step == null;
+      const overdue = o.next_step_due != null && o.next_step_due < today;
+      if (!missing && !overdue) return null;
+      return {
+        id: o.id,
+        name: o.name ?? (o.constituent ? constituentName(o.constituent) : "Untitled ask"),
+        stage: o.stage,
+        askAmount: o.ask_amount == null ? null : Number(o.ask_amount),
+        owner: o.owner,
+        nextStep: o.next_step,
+        nextStepDue: o.next_step_due,
+        reason: missing ? ("missing" as const) : ("overdue" as const),
+        href: profileHref(o.constituent),
+      };
+    })
+    .filter((r): r is MoveRow => r !== null);
+});
+
+// ── Fires ────────────────────────────────────────────────────────────────────
+
+export type FireItem = {
+  id: string;
+  severity: "critical" | "watch";
+  title: string;
+  detail: string;
+  href: string;
+};
+
+const GRANT_KIND_SHORT: Record<string, string> = {
+  loi: "LOI",
+  application: "Application",
+  interim_report: "Interim report",
+  final_report: "Final report",
+  financial_report: "Financial report",
+  other: "Requirement",
+};
+
+/**
+ * Decisions only the CEO makes, each linking straight to the thing to act on:
+ *  - a major-gift prospect (open ask ≥ $10k) cold for 60+ days,
+ *  - a grant requirement due within 14 days,
+ *  - runway under 2 months,
+ *  - a top ask with an overdue next step.
+ * Hygiene/data items deliberately do NOT live here — those are Shannon's.
+ */
+export const getFires = cache(async (): Promise<FireItem[]> => {
+  const sb = createServerSupabase();
+  const fin = await getFinance();
+  const today = todayISO();
+  const in14 = addDays(today, 14);
+  const since60 = addDays(today, -60);
+
+  const items: FireItem[] = [];
+
+  if (fin.runwayMonths != null && fin.runwayMonths < 2) {
+    items.push({
+      id: "fire:runway",
+      severity: "critical",
+      title: "Runway under 2 months",
+      detail: `${fin.runwayMonths.toFixed(1)} months left at the current burn — raise or cut now.`,
+      href: "/admin/finance",
+    });
+  }
+
+  const [grantsRes, overdueRes, majorRes] = await Promise.all([
+    sb
+      .from("grant_requirements")
+      .select("id, grant_id, kind, label, due_date, grants(name)")
+      .in("status", ["upcoming", "in_progress"])
+      .gte("due_date", today)
+      .lte("due_date", in14)
+      .order("due_date", { ascending: true })
+      .limit(10),
+    sb
+      .from("opportunities")
+      .select("id, name, ask_amount, next_step_due, constituent:constituents ( id, type, first_name, last_name, org_name )")
+      .in("stage", OPEN_STAGES)
+      .not("next_step_due", "is", null)
+      .lt("next_step_due", today)
+      .order("ask_amount", { ascending: false, nullsFirst: false })
+      .limit(3),
+    sb
+      .from("opportunities")
+      .select("ask_amount, constituent:constituents ( id, type, first_name, last_name, org_name )")
+      .in("stage", OPEN_STAGES)
+      .gte("ask_amount", 10000)
+      .limit(100),
+  ]);
+
+  const grantRows = (grantsRes.error ? [] : grantsRes.data ?? []) as unknown as Array<{
+    id: string;
+    grant_id: string;
+    kind: string;
+    label: string | null;
+    due_date: string;
+    grants: { name: string } | null;
+  }>;
+  for (const r of grantRows) {
+    const days = Math.round((new Date(r.due_date + "T00:00:00").getTime() - new Date(today + "T00:00:00").getTime()) / 86400000);
+    items.push({
+      id: `fire:grant:${r.id}`,
+      severity: days <= 3 ? "critical" : "watch",
+      title: `${r.label || GRANT_KIND_SHORT[r.kind] || "Grant requirement"} due in ${days}d`,
+      detail: r.grants?.name ? `Grant · ${r.grants.name}` : "Grant requirement",
+      href: `/admin/fundraising/grants/${r.grant_id}`,
+    });
+  }
+
+  const overdueRows = (overdueRes.data ?? []) as unknown as Array<{
+    id: string;
+    name: string | null;
+    ask_amount: number | null;
+    next_step_due: string;
+    constituent: ConstituentLite;
+  }>;
+  for (const o of overdueRows) {
+    const who = o.name ?? (o.constituent ? constituentName(o.constituent) : "Untitled ask");
+    const amt = o.ask_amount == null ? "" : ` (${formatUsd(Number(o.ask_amount))})`;
+    items.push({
+      id: `fire:overdue:${o.id}`,
+      severity: "critical",
+      title: `Top ask overdue: ${who}${amt}`,
+      detail: `Next step was due ${o.next_step_due}.`,
+      href: profileHref(o.constituent),
+    });
+  }
+
+  // Major-gift prospects cold for 60+ days: of the open ≥$10k prospects, which
+  // have had no interaction logged in the last 60 days.
+  const majorRows = (majorRes.data ?? []) as unknown as Array<{ ask_amount: number | null; constituent: ConstituentLite }>;
+  const byId = new Map<string, ConstituentLite>();
+  for (const m of majorRows) if (m.constituent) byId.set(m.constituent.id, m.constituent);
+  const ids = Array.from(byId.keys());
+  if (ids.length > 0) {
+    const warmRes = await sb
+      .from("interactions")
+      .select("constituent_id")
+      .in("constituent_id", ids)
+      .gte("occurred_at", since60 + "T00:00:00");
+    const warm = new Set((warmRes.data ?? []).map((r) => r.constituent_id as string));
+    const cold = ids.filter((id) => !warm.has(id)).slice(0, 5);
+    for (const id of cold) {
+      const c = byId.get(id) ?? null;
+      items.push({
+        id: `fire:cold:${id}`,
+        severity: "watch",
+        title: `Major prospect cold: ${c ? constituentName(c) : "Unknown"}`,
+        detail: "No contact logged in 60+ days.",
+        href: profileHref(c),
+      });
+    }
+  }
+
+  // Criticals first, then capped — fires are a short list, not a feed.
+  return items.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "critical" ? -1 : 1)).slice(0, 8);
+});
+
+// Local USD formatter (sources stay free of the chart module's client code).
+function formatUsd(n: number): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+}

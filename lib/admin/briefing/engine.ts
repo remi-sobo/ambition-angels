@@ -14,12 +14,14 @@ import {
   majorGiftsSource,
   donorsSource,
   engagementSource,
+  strategySource,
   type FinanceInput,
   type TasksInput,
   type ComplianceInput,
   type MajorGiftsInput,
   type DonorsInput,
   type EngagementInput,
+  type StrategyInput,
   type SourceCtx,
 } from "./sources";
 import type { DataAge } from "../dataAge";
@@ -33,6 +35,8 @@ export type GatheredInputs = {
   majorGifts: MajorGiftsInput;
   donors: DonorsInput;
   engagement: EngagementInput;
+  /** Optional so existing callers/tests that predate the strategy source still typecheck. */
+  strategy?: StrategyInput;
 };
 
 /** Per-item decision state (from the bloomos_briefing_state table). */
@@ -112,6 +116,7 @@ export function buildBriefing(
     ...majorGiftsSource(gathered.majorGifts, ctx),
     ...donorsSource(gathered.donors, ctx),
     ...engagementSource(gathered.engagement, ctx),
+    ...(gathered.strategy ? strategySource(gathered.strategy, ctx) : []),
   ];
   const stale = staleItem(dataAge, now);
   if (stale) raw.push(stale);

@@ -4,6 +4,7 @@ import type { FinCategory } from "@/lib/finance/types";
 import TransactionFilters from "./_components/TransactionFilters";
 import CategoryPicker from "./_components/CategoryPicker";
 import RestrictedToggle from "./_components/RestrictedToggle";
+import AiCategorize from "./_components/AiCategorize";
 
 type SearchParams = {
   q?: string;
@@ -133,6 +134,7 @@ export default async function TransactionsPage({
               {uncategorizedCount} uncategorized →
             </Link>
           ) : null}
+          <AiCategorize uncategorizedCount={uncategorizedCount ?? 0} />
           <Link
             href="/admin/finance/upload"
             className="rounded-full bg-orange hover:bg-orange-dark text-white px-3 py-1"

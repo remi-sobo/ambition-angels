@@ -171,10 +171,11 @@ export const getPriorities = cache(async (): Promise<{ rows: PriorityRow[]; open
       .from("ops_tasks")
       .select("id, title, category, due_date")
       .neq("status", "done")
+      .is("archived_at", null)
       .not("due_date", "is", null)
       .order("due_date", { ascending: true })
       .limit(8),
-    sb.from("ops_tasks").select("id", { count: "exact", head: true }).neq("status", "done"),
+    sb.from("ops_tasks").select("id", { count: "exact", head: true }).neq("status", "done").is("archived_at", null),
     sb
       .from("grant_requirements")
       .select("id, grant_id, kind, label, due_date, grants(name)")
@@ -541,10 +542,16 @@ export const getQueueTasks = cache(async (assignee: "remi" | "shannon"): Promise
       .select("id, title, category, due_date, pinned_for_today")
       .eq("assigned_to", assignee)
       .neq("status", "done")
+      .is("archived_at", null)
       .order("pinned_for_today", { ascending: false })
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(12),
-    sb.from("ops_tasks").select("id", { count: "exact", head: true }).eq("assigned_to", assignee).neq("status", "done"),
+    sb
+      .from("ops_tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("assigned_to", assignee)
+      .neq("status", "done")
+      .is("archived_at", null),
   ]);
   const tasks = (res.data ?? []).map((t) => ({
     id: t.id as string,

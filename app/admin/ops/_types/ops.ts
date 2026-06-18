@@ -87,6 +87,8 @@ export type OpsTask = {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  /** Two-step archive: null = on the active surface, set = in the Archived view. */
+  archived_at: string | null;
 };
 
 export type OpsProject = {

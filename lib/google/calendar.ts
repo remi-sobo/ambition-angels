@@ -4,6 +4,52 @@ const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || "primary";
 
 export type BusyBlock = { start: Date; end: Date };
 
+export type UpcomingEvent = {
+  id: string;
+  title: string;
+  /** ISO start. For all-day events this is the date at local midnight. */
+  start: string;
+  allDay: boolean;
+  location: string | null;
+};
+
+/**
+ * Lists upcoming events on the host calendar within [timeMin, timeMax), already
+ * expanded (singleEvents) and ordered by start. Cancelled events are dropped.
+ * Powers the CEO cockpit's Schedule widget — because the /meet scheduler writes
+ * its bookings to this same calendar, those bookings appear here too, so this is
+ * the unified "what's on my calendar" read.
+ */
+export async function listUpcomingEvents(
+  timeMin: Date,
+  timeMax: Date,
+  maxResults = 12
+): Promise<UpcomingEvent[]> {
+  const calendar = getCalendarClient();
+  const res = await calendar.events.list({
+    calendarId: CALENDAR_ID,
+    timeMin: timeMin.toISOString(),
+    timeMax: timeMax.toISOString(),
+    singleEvents: true,
+    orderBy: "startTime",
+    maxResults,
+  });
+  return (res.data.items ?? [])
+    .filter((e) => e.status !== "cancelled")
+    .map((e, i) => {
+      const dateTime = e.start?.dateTime ?? null;
+      const date = e.start?.date ?? null;
+      return {
+        id: e.id ?? `evt-${i}`,
+        title: e.summary ?? "(busy)",
+        start: dateTime ?? (date ? `${date}T00:00:00` : ""),
+        allDay: !dateTime,
+        location: e.location ?? null,
+      };
+    })
+    .filter((e) => e.start);
+}
+
 export type CreateEventParams = {
   summary: string;
   description?: string;

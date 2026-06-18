@@ -533,18 +533,18 @@ export type QueueTask = {
   pinnedToday: boolean;
 };
 
-export const getMyQueue = cache(async (): Promise<{ tasks: QueueTask[]; total: number }> => {
+export const getQueueTasks = cache(async (assignee: "remi" | "shannon"): Promise<{ tasks: QueueTask[]; total: number }> => {
   const sb = getSupabaseAdmin();
   const [res, countRes] = await Promise.all([
     sb
       .from("ops_tasks")
       .select("id, title, category, due_date, pinned_for_today")
-      .eq("assigned_to", "shannon")
+      .eq("assigned_to", assignee)
       .neq("status", "done")
       .order("pinned_for_today", { ascending: false })
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(12),
-    sb.from("ops_tasks").select("id", { count: "exact", head: true }).eq("assigned_to", "shannon").neq("status", "done"),
+    sb.from("ops_tasks").select("id", { count: "exact", head: true }).eq("assigned_to", assignee).neq("status", "done"),
   ]);
   const tasks = (res.data ?? []).map((t) => ({
     id: t.id as string,
@@ -621,6 +621,58 @@ export const getSchedulingLane = cache(async (): Promise<BookingRow[]> => {
     type: b.meeting_types?.name ?? "Meeting",
     start: b.start_time,
   }));
+});
+
+// ── Schedule: upcoming meetings from the connected Google Calendar ────────────
+
+export type ScheduleItem = { id: string; title: string; start: string; allDay: boolean; sub: string | null };
+
+/**
+ * Upcoming events on the connected Google Calendar (GOOGLE_CALENDAR_ID) for the
+ * next two weeks. Because the /meet scheduler writes its bookings to that same
+ * calendar, this is the unified "what's on my calendar" view. If Calendar isn't
+ * configured/reachable, it degrades to the /meet bookings table so the widget
+ * still shows something honest. `source` lets the widget say which it's showing.
+ */
+export const getSchedule = cache(async (): Promise<{ items: ScheduleItem[]; source: "calendar" | "bookings" }> => {
+  const now = new Date();
+  const horizon = new Date(now.getTime() + 14 * 86400000);
+
+  try {
+    const { listUpcomingEvents } = await import("@/lib/google/calendar");
+    const events = await listUpcomingEvents(now, horizon, 12);
+    return {
+      items: events.map((e) => ({ id: e.id, title: e.title, start: e.start, allDay: e.allDay, sub: e.location })),
+      source: "calendar",
+    };
+  } catch {
+    // Calendar env missing or API error — fall back to the bookings spine.
+    const sb = getSupabaseAdmin();
+    const res = await sb
+      .from("bookings")
+      .select("id, attendee_name, start_time, meeting_types(name)")
+      .eq("status", "confirmed")
+      .gte("start_time", now.toISOString())
+      .lte("start_time", horizon.toISOString())
+      .order("start_time", { ascending: true })
+      .limit(12);
+    const rows = (res.data ?? []) as unknown as Array<{
+      id: string;
+      attendee_name: string;
+      start_time: string;
+      meeting_types: { name: string } | null;
+    }>;
+    return {
+      items: rows.map((b) => ({
+        id: b.id,
+        title: b.attendee_name,
+        start: b.start_time,
+        allDay: false,
+        sub: b.meeting_types?.name ?? "Meeting",
+      })),
+      source: "bookings",
+    };
+  }
 });
 
 // ── Data hygiene: the stale-data alert lives HERE (it's Shannon's, actionable) ─

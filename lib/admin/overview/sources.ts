@@ -20,6 +20,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "@/app/admin/ops/_types/ops";
+import { getDataAge } from "@/lib/admin/dataAge";
 
 // ── Fiscal-year + month helpers (shared with lib/admin/finance.ts) ───────────
 
@@ -517,3 +518,233 @@ export const getFires = cache(async (): Promise<FireItem[]> => {
 function formatUsd(n: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// Ops control panel (Shannon) sources
+// ════════════════════════════════════════════════════════════════════════════
+
+// ── My queue: Shannon's open tasks, prioritized ──────────────────────────────
+
+export type QueueTask = {
+  id: string;
+  title: string;
+  category: string | null;
+  due: string | null;
+  pinnedToday: boolean;
+};
+
+export const getMyQueue = cache(async (): Promise<{ tasks: QueueTask[]; total: number }> => {
+  const sb = getSupabaseAdmin();
+  const [res, countRes] = await Promise.all([
+    sb
+      .from("ops_tasks")
+      .select("id, title, category, due_date, pinned_for_today")
+      .eq("assigned_to", "shannon")
+      .neq("status", "done")
+      .order("pinned_for_today", { ascending: false })
+      .order("due_date", { ascending: true, nullsFirst: false })
+      .limit(12),
+    sb.from("ops_tasks").select("id", { count: "exact", head: true }).eq("assigned_to", "shannon").neq("status", "done"),
+  ]);
+  const tasks = (res.data ?? []).map((t) => ({
+    id: t.id as string,
+    title: t.title as string,
+    category: (t.category as string | null) ?? null,
+    due: (t.due_date as string | null) ?? null,
+    pinnedToday: Boolean(t.pinned_for_today),
+  }));
+  return { tasks, total: countRes.count ?? 0 };
+});
+
+// ── Acknowledgments due: pending thank-yous, oldest first, IRS-flagged ────────
+
+export type AckRow = {
+  id: string;
+  donor: string;
+  amount: number;
+  giftDate: string;
+  irs: boolean;
+  href: string;
+};
+
+export const getAcksDue = cache(async (): Promise<{ rows: AckRow[]; total: number; totalValue: number }> => {
+  const sb = createServerSupabase();
+  const res = await sb
+    .from("gifts")
+    .select("id, amount, gift_date, constituent:constituents ( id, type, first_name, last_name, org_name )")
+    .eq("acknowledgment_status", "pending")
+    .order("gift_date", { ascending: true })
+    .limit(50);
+
+  const rows = (res.data ?? []) as unknown as Array<{
+    id: string;
+    amount: number;
+    gift_date: string;
+    constituent: ConstituentLite;
+  }>;
+
+  const mapped: AckRow[] = rows.map((g) => ({
+    id: g.id,
+    donor: g.constituent ? constituentName(g.constituent) : "Anonymous",
+    amount: Number(g.amount),
+    giftDate: g.gift_date,
+    irs: Number(g.amount) >= 250,
+    href: g.constituent ? profileHref(g.constituent) : "/admin/fundraising/acknowledgments",
+  }));
+
+  return { rows: mapped, total: mapped.length, totalValue: mapped.reduce((s, r) => s + r.amount, 0) };
+});
+
+// ── Scheduling lane: upcoming confirmed bookings ─────────────────────────────
+
+export type BookingRow = { id: string; name: string; type: string; start: string };
+
+export const getSchedulingLane = cache(async (): Promise<BookingRow[]> => {
+  const sb = getSupabaseAdmin();
+  const nowIso = new Date().toISOString();
+  const res = await sb
+    .from("bookings")
+    .select("id, attendee_name, start_time, meeting_types(name)")
+    .eq("status", "confirmed")
+    .gte("start_time", nowIso)
+    .order("start_time", { ascending: true })
+    .limit(8);
+  const rows = (res.data ?? []) as unknown as Array<{
+    id: string;
+    attendee_name: string;
+    start_time: string;
+    meeting_types: { name: string } | null;
+  }>;
+  return rows.map((b) => ({
+    id: b.id,
+    name: b.attendee_name,
+    type: b.meeting_types?.name ?? "Meeting",
+    start: b.start_time,
+  }));
+});
+
+// ── Data hygiene: the stale-data alert lives HERE (it's Shannon's, actionable) ─
+
+export type HygieneData = {
+  sync: { source: string; label: string; severity: "fresh" | "watch" | "stale" | "untracked" }[];
+  unattributedGifts: number;
+  staleHubspot: boolean;
+};
+
+export const getDataHygiene = cache(async (): Promise<HygieneData> => {
+  const sb = createServerSupabase();
+  const [age, unattrib] = await Promise.all([
+    getDataAge(),
+    sb.from("gifts").select("id", { count: "exact", head: true }).is("constituent_id", null),
+  ]);
+  return {
+    sync: [
+      { source: "HubSpot", label: age.ageLabel === "never" ? "never synced" : `${age.ageLabel} ago`, severity: age.severity },
+      // Gmail / Stripe don't have first-class sync-status tracking yet (Phase 0
+      // gap) — shown honestly as untracked rather than faking freshness.
+      { source: "Gmail", label: "not tracked", severity: "untracked" },
+      { source: "Stripe", label: "not tracked", severity: "untracked" },
+    ],
+    unattributedGifts: unattrib.count ?? 0,
+    staleHubspot: age.severity === "stale",
+  };
+});
+
+// ── Deadlines + finance ops: grant requirements + overdue pledge installments ─
+
+export type DeadlineRow = { id: string; title: string; sub: string; due: string; href: string; overdue: boolean };
+
+export const getDeadlinesFinance = cache(async (): Promise<DeadlineRow[]> => {
+  const sb = createServerSupabase();
+  const today = todayISO();
+  const in30 = addDays(today, 30);
+
+  const [grantsRes, pledgesRes] = await Promise.all([
+    sb
+      .from("grant_requirements")
+      .select("id, grant_id, kind, label, due_date, grants(name)")
+      .in("status", ["upcoming", "in_progress"])
+      .lte("due_date", in30)
+      .order("due_date", { ascending: true })
+      .limit(12),
+    sb
+      .from("pledge_payments")
+      .select("id, pledge_id, due_date, expected_amount")
+      .eq("status", "scheduled")
+      .lt("due_date", today)
+      .order("due_date", { ascending: true })
+      .limit(12),
+  ]);
+
+  const grantRows = (grantsRes.error ? [] : grantsRes.data ?? []) as unknown as Array<{
+    id: string;
+    grant_id: string;
+    kind: string;
+    label: string | null;
+    due_date: string;
+    grants: { name: string } | null;
+  }>;
+  const pledgeRows = (pledgesRes.error ? [] : pledgesRes.data ?? []) as unknown as Array<{
+    id: string;
+    pledge_id: string;
+    due_date: string;
+    expected_amount: number;
+  }>;
+
+  const rows: DeadlineRow[] = [
+    ...grantRows.map((r) => ({
+      id: `grant-${r.id}`,
+      title: r.label || GRANT_KIND_SHORT[r.kind] || "Grant requirement",
+      sub: r.grants?.name ? `grant · ${r.grants.name}` : "grant",
+      due: r.due_date,
+      href: `/admin/fundraising/grants/${r.grant_id}`,
+      overdue: r.due_date < today,
+    })),
+    ...pledgeRows.map((p) => ({
+      id: `pledge-${p.id}`,
+      title: `Pledge installment ${formatUsd(Number(p.expected_amount))}`,
+      sub: "overdue installment",
+      due: p.due_date,
+      href: `/admin/fundraising/pledges/${p.pledge_id}`,
+      overdue: true,
+    })),
+  ]
+    .sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : 0))
+    .slice(0, 8);
+
+  return rows;
+});
+
+// ── Fundraising follow-through: overdue moves, ownerless asks, recent gifts ───
+
+export type FollowThrough = {
+  overdueMoves: number;
+  ownerlessAsks: number;
+  recentGifts: number;
+  recentGiftsValue: number;
+};
+
+export const getFollowThrough = cache(async (): Promise<FollowThrough> => {
+  const sb = createServerSupabase();
+  const today = todayISO();
+  const since14 = addDays(today, -14);
+
+  const [overdueRes, ownerlessRes, recentRes] = await Promise.all([
+    sb
+      .from("opportunities")
+      .select("id", { count: "exact", head: true })
+      .in("stage", OPEN_STAGES)
+      .not("next_step_due", "is", null)
+      .lt("next_step_due", today),
+    sb.from("opportunities").select("id", { count: "exact", head: true }).in("stage", OPEN_STAGES).is("owner", null),
+    sb.from("gifts").select("amount").gte("gift_date", since14),
+  ]);
+
+  const recent = recentRes.data ?? [];
+  return {
+    overdueMoves: overdueRes.count ?? 0,
+    ownerlessAsks: ownerlessRes.count ?? 0,
+    recentGifts: recent.length,
+    recentGiftsValue: recent.reduce((s, g) => s + Number(g.amount), 0),
+  };
+});

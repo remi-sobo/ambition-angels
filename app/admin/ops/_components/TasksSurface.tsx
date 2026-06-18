@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { AdminUser } from "@/lib/admin/auth";
 import TaskListView, { type GroupBy } from "./TaskListView";
 import TaskBoardView from "./TaskBoardView";
@@ -41,10 +42,12 @@ export default function TasksSurface({
   projectNames: Record<string, string>;
   currentUser: AdminUser | null;
 }) {
+  const router = useRouter();
   const [scope, setScope] = useState<Scope>("active");
   const [view, setView] = useState<View>("list");
   const [groupBy, setGroupBy] = useState<GroupBy>("priority");
   const [linkFilter, setLinkFilter] = useState<LinkFilter>("all");
+  const [archiving, setArchiving] = useState(false);
 
   const activeTasks = useMemo(() => tasks.filter((t) => !t.archived_at), [tasks]);
   const archivedTasks = useMemo(
@@ -60,6 +63,32 @@ export default function TasksSurface({
     if (linkFilter === "any") return activeTasks.filter((t) => !!t.linked_entity_type);
     return activeTasks.filter((t) => t.linked_entity_type === linkFilter);
   }, [activeTasks, linkFilter]);
+
+  // One-tap archive of every done-but-not-yet-archived task on the active surface.
+  const doneActive = useMemo(() => activeTasks.filter((t) => t.status === "done"), [activeTasks]);
+
+  async function archiveAllDone() {
+    if (doneActive.length === 0 || archiving) return;
+    setArchiving(true);
+    try {
+      const now = new Date().toISOString();
+      await Promise.all(
+        doneActive.map((t) =>
+          fetch(`/api/admin/ops/tasks/${t.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ archived_at: now }),
+          })
+        )
+      );
+      router.refresh();
+    } catch (e) {
+      console.error("Archive-all-done failed:", e);
+      alert("Couldn't archive some tasks. Try again.");
+    } finally {
+      setArchiving(false);
+    }
+  }
 
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
@@ -92,6 +121,16 @@ export default function TasksSurface({
 
         {scope === "active" && (
           <div className="flex items-center gap-3">
+            {doneActive.length > 0 && (
+              <button
+                type="button"
+                onClick={archiveAllDone}
+                disabled={archiving}
+                className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+              >
+                {archiving ? "Archiving…" : `Archive done (${doneActive.length})`}
+              </button>
+            )}
             <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ink-2">
               Linked
               <select

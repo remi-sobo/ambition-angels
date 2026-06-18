@@ -106,7 +106,21 @@ export default async function StrategicPlanPage() {
           </>
         }
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              href="/admin/strategic-plan/setup"
+              className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"
+            >
+              Set up
+            </Link>
+            {!isEmpty && (
+              <Link
+                href="/admin/strategic-plan/people"
+                className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"
+              >
+                People
+              </Link>
+            )}
             {!isEmpty && (
               <Link
                 href="/admin/strategic-plan/review"

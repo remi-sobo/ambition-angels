@@ -135,7 +135,7 @@ function Row({ t }: { t: CrmOverdueTask }) {
           onClick={() => patch({ status: "done" })}
           disabled={busy}
           title="Mark done"
-          className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-revenue/15 text-revenue hover:bg-revenue/25"
+          className="text-[11px] font-semibold w-6 h-6 rounded-full flex items-center justify-center bg-revenue/15 text-revenue hover:bg-revenue/25"
         >
           ✓
         </button>

@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { TASK_PRIORITIES, priorityFlagClass, type OpsTask, type TaskPriority } from "../ops/_types/ops";
+import { useTaskComplete } from "../_lib/useTaskComplete";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -84,18 +85,27 @@ export function EntityTasks({
     }
   };
 
-  const toggle = async (t: OpsTask) => {
+  const { isLeaving, complete } = useTaskComplete();
+
+  const runToggle = async (t: OpsTask, status: "todo" | "done") => {
     setBusy(true);
     try {
       await fetch(`/api/admin/ops/tasks/${t.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: t.status === "done" ? "todo" : "done" }),
+        body: JSON.stringify({ status }),
       });
       await load();
     } finally {
       setBusy(false);
     }
+  };
+
+  // Marking done plays the strike → collapse animation, then commits (the task
+  // drops into the "completed" drawer). Un-checking commits immediately.
+  const toggle = (t: OpsTask) => {
+    if (t.status === "done") void runToggle(t, "todo");
+    else complete(t.id, () => runToggle(t, "done"));
   };
 
   const openTasks = tasks.filter((t) => t.status !== "done");
@@ -151,7 +161,7 @@ export function EntityTasks({
       ) : (
         <ul className="divide-y divide-hairline">
           {openTasks.map((t) => (
-            <TaskLi key={t.id} t={t} today={today} busy={busy} onToggle={() => toggle(t)} />
+            <TaskLi key={t.id} t={t} today={today} busy={busy} leaving={isLeaving(t.id)} onToggle={() => toggle(t)} />
           ))}
           {doneTasks.length > 0 && (
             <li className="px-5 py-2">
@@ -169,24 +179,27 @@ export function EntityTasks({
   );
 }
 
-function TaskLi({ t, today, busy, onToggle }: {
-  t: OpsTask; today: string; busy: boolean; onToggle: () => void;
+function TaskLi({ t, today, busy, onToggle, leaving = false }: {
+  t: OpsTask; today: string; busy: boolean; onToggle: () => void; leaving?: boolean;
 }) {
   const done = t.status === "done";
+  // While leaving, show the row as already-done (filled + struck) so the
+  // strike-through reads before it collapses away.
+  const showDone = done || leaving;
   const overdue = !done && !!t.due_date && t.due_date < today;
   return (
-    <li className="px-5 py-3 flex items-center gap-3">
+    <li className={`px-5 py-3 flex items-center gap-3 ${leaving ? "task-leaving" : ""}`}>
       <button
         onClick={onToggle}
-        disabled={busy}
+        disabled={busy || leaving}
         aria-label={done ? "Mark not done" : "Mark done"}
         className={`w-4 h-4 rounded-full border-[1.5px] flex-shrink-0 flex items-center justify-center transition-colors ${
-          done ? "bg-revenue border-revenue" : "border-outline hover:border-orange"
+          showDone ? "bg-revenue border-revenue" : "border-outline hover:border-orange"
         }`}
       >
-        {done && <span className="block text-white text-[10px] leading-none">✓</span>}
+        {showDone && <span className="block text-white text-[10px] leading-none">✓</span>}
       </button>
-      <span className={`text-sm flex-1 min-w-0 truncate ${done ? "text-ink-3 line-through" : "text-ink-1"}`}>
+      <span className={`text-sm flex-1 min-w-0 truncate ${showDone ? "text-ink-3 line-through" : "text-ink-1"}`}>
         {t.title}
       </span>
       {!done && (

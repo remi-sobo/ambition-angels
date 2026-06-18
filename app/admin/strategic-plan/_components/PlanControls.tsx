@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { deriveHealth } from "@/lib/admin/plan/health";
 
 // ── Types (mirror the plan_* tables) ──────────────────────────────────────
 export type PlanFoundation = {
@@ -155,15 +156,6 @@ export function RefreshMetricsButton() {
       {busy ? "Refreshing…" : "↻ Refresh metrics"}
     </button>
   );
-}
-
-// Roll a set of KPI statuses up to a single health by exception (worst wins).
-// null = nothing measurable yet.
-export function deriveHealth(statuses: string[]): string | null {
-  if (statuses.some((s) => s === "behind")) return "behind";
-  if (statuses.some((s) => s === "at_risk")) return "at_risk";
-  if (statuses.some((s) => s === "on_track" || s === "done")) return "on_track";
-  return null;
 }
 
 function RollupChip({ health }: { health: string | null }) {

@@ -107,6 +107,14 @@ export default async function StrategicPlanPage() {
         }
         actions={
           <div className="flex items-center gap-2">
+            {!isEmpty && (
+              <Link
+                href="/admin/strategic-plan/review"
+                className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"
+              >
+                Monthly review
+              </Link>
+            )}
             {isEmpty ? <SeedButton /> : <RefreshMetricsButton />}
             <NewObjectiveForm />
           </div>

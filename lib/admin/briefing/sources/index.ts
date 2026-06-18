@@ -5,7 +5,7 @@
  * config module, never a hardcoded literal.
  */
 import type { BriefingItem } from "../types";
-import { FINANCE, TASKS, COMPLIANCE, MAJOR_GIFTS, DONORS, ENGAGEMENT } from "../../thresholds";
+import { FINANCE, TASKS, COMPLIANCE, MAJOR_GIFTS, DONORS, ENGAGEMENT, STRATEGY } from "../../thresholds";
 
 export type SourceCtx = {
   now: number;
@@ -266,6 +266,68 @@ export function donorsSource(input: DonorsInput, ctx: SourceCtx): BriefingItem[]
       ...stamp(ctx),
     },
   ];
+}
+
+// ── Strategy (OGSM health + monthly review) ─────────────────────────────────
+
+export type StrategyInput = {
+  /** Objectives whose rolled-up measures are behind/at_risk. */
+  objectivesOffTrack: { title: string; health: string }[];
+  /** Days until the next OGSM review (negative = overdue); null = none scheduled. */
+  reviewDueDays: number | null;
+};
+
+export function strategySource(input: StrategyInput, ctx: SourceCtx): BriefingItem[] {
+  const out: BriefingItem[] = [];
+
+  if (input.objectivesOffTrack.length > 0) {
+    const behind = input.objectivesOffTrack.filter((o) => o.health === "behind");
+    const worst = behind[0] ?? input.objectivesOffTrack[0];
+    out.push({
+      id: "strategy:objectives",
+      source: "strategy",
+      severity: "watch",
+      title: `${input.objectivesOffTrack.length} objective${input.objectivesOffTrack.length === 1 ? "" : "s"} off track`,
+      detail: `“${worst.title}” is ${worst.health === "behind" ? "behind" : "at risk"} on its measures.`,
+      metric: String(input.objectivesOffTrack.length),
+      weight: behind.length * 1_000 + input.objectivesOffTrack.length,
+      decisions: ["open", "snooze", "dismiss"],
+      deepLink: "/admin/strategic-plan",
+      ...stamp(ctx),
+    });
+  }
+
+  if (input.reviewDueDays != null) {
+    if (input.reviewDueDays < 0) {
+      out.push({
+        id: "strategy:review",
+        source: "strategy",
+        severity: "watch",
+        title: "Monthly OGSM review is overdue",
+        detail: `The plan's next-review date passed ${Math.abs(input.reviewDueDays)} day${Math.abs(input.reviewDueDays) === 1 ? "" : "s"} ago.`,
+        metric: `${Math.abs(input.reviewDueDays)}d late`,
+        weight: 100 + Math.abs(input.reviewDueDays),
+        decisions: ["open", "snooze", "dismiss"],
+        deepLink: "/admin/strategic-plan/review",
+        ...stamp(ctx),
+      });
+    } else if (input.reviewDueDays <= STRATEGY.reviewDueSoonDays) {
+      out.push({
+        id: "strategy:review",
+        source: "strategy",
+        severity: "due_soon",
+        title: "Monthly OGSM review due soon",
+        detail: `The next review is in ${input.reviewDueDays} day${input.reviewDueDays === 1 ? "" : "s"}.`,
+        metric: `${input.reviewDueDays}d`,
+        weight: STRATEGY.reviewDueSoonDays - input.reviewDueDays,
+        decisions: ["open", "snooze", "dismiss"],
+        deepLink: "/admin/strategic-plan/review",
+        ...stamp(ctx),
+      });
+    }
+  }
+
+  return out;
 }
 
 // ── Engagement (cohort attendance) ──────────────────────────────────────────

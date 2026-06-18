@@ -18,6 +18,8 @@
 import { cache } from "react";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
+import { deriveHealth, worstHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "@/app/admin/ops/_types/ops";
 import { getDataAge } from "@/lib/admin/dataAge";
@@ -68,6 +70,73 @@ export const getRecentDonations = cache(async (): Promise<DonationRow[]> => {
       name: (d.name as string | null) ?? null,
       email: (d.email as string | null) ?? null,
     }));
+});
+
+// ── Strategy rollup: four objective tiles + the OGSM review nudge (Phase 4) ──
+// Org-scoped (the plan is multi-tenant). Each objective's health rolls up from
+// its KPIs by exception, honoring a manually-set objective status too.
+
+export type StrategyObjectiveTile = {
+  id: string;
+  title: string;
+  /** not_started | on_track | at_risk | behind | done */
+  health: string;
+  /** how many of this objective's KPIs are at_risk/behind */
+  kpisOffTrack: number;
+};
+
+export type StrategyRollup = {
+  hasPlan: boolean;
+  objectives: StrategyObjectiveTile[];
+  nextReviewAt: string | null;
+  lastReviewAt: string | null;
+};
+
+export const getStrategyRollup = cache(async (): Promise<StrategyRollup> => {
+  const ctx = await getOrgContext();
+  if (!ctx) return { hasPlan: false, objectives: [], nextReviewAt: null, lastReviewAt: null };
+  const sb = getSupabaseAdmin();
+  const orgId = ctx.orgId;
+
+  const [objsRes, goalsRes, kpisRes, reviewRes] = await Promise.all([
+    sb.from("plan_objectives").select("id, title, status").eq("org_id", orgId).order("sort_order").order("created_at"),
+    sb.from("plan_goals").select("id, objective_id").eq("org_id", orgId),
+    sb.from("plan_kpis").select("goal_id, objective_id, status").eq("org_id", orgId),
+    // Resilient if plan_reviews isn't migrated yet (error → data null).
+    sb.from("plan_reviews").select("conducted_at, next_review_at").eq("org_id", orgId).order("conducted_at", { ascending: false }).limit(1),
+  ]);
+
+  const goalObjective = new Map(
+    ((goalsRes.data ?? []) as { id: string; objective_id: string | null }[]).map((g) => [g.id, g.objective_id])
+  );
+  const statusesByObjective = new Map<string, string[]>();
+  for (const k of (kpisRes.data ?? []) as { goal_id: string | null; objective_id: string | null; status: string }[]) {
+    const objId = k.objective_id ?? (k.goal_id ? goalObjective.get(k.goal_id) ?? null : null);
+    if (!objId) continue;
+    const arr = statusesByObjective.get(objId) ?? [];
+    arr.push(k.status);
+    statusesByObjective.set(objId, arr);
+  }
+
+  const objectives: StrategyObjectiveTile[] = (
+    (objsRes.data ?? []) as { id: string; title: string; status: string }[]
+  ).map((o) => {
+    const sts = statusesByObjective.get(o.id) ?? [];
+    return {
+      id: o.id,
+      title: o.title,
+      health: worstHealth(deriveHealth(sts), o.status) ?? o.status,
+      kpisOffTrack: sts.filter((s) => isOffTrack(s)).length,
+    };
+  });
+
+  const latest = ((reviewRes.data ?? [])[0] as { conducted_at: string; next_review_at: string | null } | undefined);
+  return {
+    hasPlan: objectives.length > 0,
+    objectives,
+    nextReviewAt: latest?.next_review_at ?? null,
+    lastReviewAt: latest?.conducted_at ?? null,
+  };
 });
 
 // ── Priorities: dated tasks + grant requirement deadlines ────────────────────

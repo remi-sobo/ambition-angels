@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { deriveHealth } from "@/lib/admin/plan/health";
+import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
 
 // ── Types (mirror the plan_* tables) ──────────────────────────────────────
 export type PlanFoundation = {
@@ -445,11 +446,15 @@ export function GoalCard({
   rollups?: Record<string, InitiativeRollup>;
 }) {
   const router = useRouter();
+  const { isLeaving, complete } = useTaskComplete();
   const [busy, setBusy] = useState(false);
   const [newInit, setNewInit] = useState("");
+  const [showDoneInits, setShowDoneInits] = useState(false);
 
   const done = initiatives.filter((i) => i.status === "done").length;
   const pct = initiatives.length > 0 ? Math.round((done / initiatives.length) * 100) : 0;
+  const openInits = initiatives.filter((i) => i.status !== "done");
+  const doneInits = initiatives.filter((i) => i.status === "done");
 
   const patchGoal = async (fields: Record<string, unknown>) => {
     setBusy(true);
@@ -464,12 +469,18 @@ export function GoalCard({
       if (ok) { setNewInit(""); router.refresh(); }
     } finally { setBusy(false); }
   };
-  const toggleInitiative = async (init: PlanInitiative) => {
+  const runToggleInit = async (init: PlanInitiative, status: "todo" | "done") => {
     setBusy(true);
     try {
-      await api(`/api/admin/plan/initiatives/${init.id}`, "PATCH", { status: init.status === "done" ? "todo" : "done" });
+      await api(`/api/admin/plan/initiatives/${init.id}`, "PATCH", { status });
       router.refresh();
     } finally { setBusy(false); }
+  };
+  // Checking an initiative off plays the strike → collapse animation, then it
+  // drops into the "done" drawer. Un-checking restores it immediately.
+  const toggleInitiative = (init: PlanInitiative) => {
+    if (init.status === "done") void runToggleInit(init, "todo");
+    else complete(init.id, () => runToggleInit(init, "done"));
   };
   const removeGoal = async () => {
     if (!confirm(`Delete goal “${goal.title}” and its initiatives?`)) return;
@@ -515,20 +526,22 @@ export function GoalCard({
         </div>
       )}
       <ul className="mt-3 space-y-1.5">
-        {initiatives.map((i) => {
+        {openInits.map((i) => {
           const r = rollups[i.id];
           const pctTasks = r && r.tasksTotal > 0 ? Math.round((r.tasksDone / r.tasksTotal) * 100) : null;
+          const leaving = isLeaving(i.id);
           return (
-            <li key={i.id} className="text-sm">
+            <li key={i.id} className={`text-sm ${leaving ? "task-leaving" : ""}`}>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => void toggleInitiative(i)}
-                  className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${
-                    i.status === "done" ? "bg-orange border-orange text-white" : "border-outline text-transparent hover:border-orange/60"
+                  onClick={() => toggleInitiative(i)}
+                  disabled={busy || leaving}
+                  className={`w-4 h-4 rounded-full border flex items-center justify-center text-[10px] ${
+                    leaving ? "bg-orange border-orange text-white" : "border-outline text-transparent hover:border-orange/60"
                   }`}
-                  aria-label={i.status === "done" ? "Mark not done" : "Mark done"}
+                  aria-label="Mark done"
                 >✓</button>
-                <span className={i.status === "done" ? "text-ink-2 line-through" : "text-ink-1"}>{i.title}</span>
+                <span className={leaving ? "text-ink-2 line-through" : "text-ink-1"}>{i.title}</span>
                 {i.owner && <span className="text-[10px] text-ink-2">· {i.owner}</span>}
               </div>
               {r && r.projects > 0 && (
@@ -546,6 +559,33 @@ export function GoalCard({
           );
         })}
       </ul>
+
+      {doneInits.length > 0 && (
+        <div className="mt-2">
+          <button
+            onClick={() => setShowDoneInits((v) => !v)}
+            className="text-[11px] font-semibold text-ink-3 hover:text-ink-1"
+          >
+            {showDoneInits ? "Hide" : "Show"} {doneInits.length} done
+          </button>
+          {showDoneInits && (
+            <ul className="mt-1.5 space-y-1.5">
+              {doneInits.map((i) => (
+                <li key={i.id} className="flex items-center gap-2 text-sm">
+                  <button
+                    onClick={() => toggleInitiative(i)}
+                    disabled={busy}
+                    className="w-4 h-4 rounded-full border border-orange bg-orange text-white flex items-center justify-center text-[10px]"
+                    aria-label="Mark not done"
+                  >✓</button>
+                  <span className="text-ink-2 line-through">{i.title}</span>
+                  {i.owner && <span className="text-[10px] text-ink-2">· {i.owner}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       <div className="flex gap-2 mt-3">
         <input
           className={`${inputCls} flex-1 !py-1.5 !text-xs`}

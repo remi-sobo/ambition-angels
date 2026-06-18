@@ -109,7 +109,7 @@ export default function TaskRow({
         onClick={toggleDone}
         disabled={busy}
         aria-label={isDone ? "Mark as not done" : "Mark as done"}
-        className={`shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+        className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
           isDone
             ? "bg-revenue-bg border-revenue/30 text-revenue"
             : "border-outline hover:border-orange/60"

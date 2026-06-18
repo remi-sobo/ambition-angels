@@ -560,16 +560,17 @@ export type ScheduleItem = { id: string; title: string; start: string; allDay: b
  * configured/reachable, it degrades to the /meet bookings table so the widget
  * still shows something honest. `source` lets the widget say which it's showing.
  */
-export const getSchedule = cache(async (): Promise<{ items: ScheduleItem[]; source: "calendar" | "bookings" }> => {
+export const getSchedule = cache(async (): Promise<{ items: ScheduleItem[]; source: "calendar" | "bookings"; timeZone: string }> => {
   const now = new Date();
   const horizon = new Date(now.getTime() + 14 * 86400000);
 
   try {
     const { listUpcomingEvents } = await import("@/lib/google/calendar");
-    const events = await listUpcomingEvents(now, horizon, 12);
+    const { events, timeZone } = await listUpcomingEvents(now, horizon, 12);
     return {
       items: events.map((e) => ({ id: e.id, title: e.title, start: e.start, allDay: e.allDay, sub: e.location })),
       source: "calendar",
+      timeZone,
     };
   } catch {
     // Calendar env missing or API error — fall back to the bookings spine.
@@ -597,6 +598,7 @@ export const getSchedule = cache(async (): Promise<{ items: ScheduleItem[]; sour
         sub: b.meeting_types?.name ?? "Meeting",
       })),
       source: "bookings",
+      timeZone: "America/Los_Angeles",
     };
   }
 });

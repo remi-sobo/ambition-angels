@@ -21,41 +21,53 @@ views for the toggle never double-queries a shared source. **A view is an
 ordered arrangement of widget keys** — widgets are self-contained components, not
 a monolith — so a future configurable widget board is cheap.
 
-**CEO cockpit (Remi)** — are we surviving, is the money coming, what must I do,
-is the mission working, what's on fire:
-- **Runway & cash (hero):** cash on hand, burn = trailing-3-month average
-  expense, months = cash / burn, ending-balance trend. Amber < 3 months,
-  critical < 1.5.
-- **Goal & forecast:** raised vs FY goal; forecast = committed (gifts +
-  stewardship asks) + weighted open (Σ `ask_amount × (probability ?? 50%)` over
-  identify/qualify/cultivate/solicit). Closed-lost excluded — **never total
-  pipeline.**
-- **Moves only you can make:** open asks where `owner = remi OR ask_amount ≥
-  $10k` AND next step is missing or overdue, biggest ask first.
-- **Mission proof:** hero = Future-Orientation lift, secondary =
-  second-internship completion. Program/impact data **is not queryable in
-  BloomOS** (see 05-data-impact), so these are honest, dated, **manually-entered**
-  figures (`lib/admin/overview/mission.ts`), clearly labelled — never a
-  fabricated computed number. Replace with a loader when a real pipeline lands.
-- **Fires:** major prospect cold 60+ days, grant requirement due ≤ 14 days,
-  runway < 2 months, top ask with an overdue next step — each deep-linked.
-  Hygiene/data items deliberately do **not** live here (those are Shannon's).
+Above both views, **"Needs you today"** (`BriefingStrip`) renders the briefing
+engine's top items as full, **actionable** cards (`BriefingCard`): the why-line
+plus **Open / Done / Snooze / Dismiss** with optimistic Undo, writing to
+`bloomos_briefing_state` via `/api/admin/briefing/decision`. Not just links.
 
-**Ops control panel (Shannon)** — what's on my plate, who needs a thank-you,
-what to schedule, is the data clean, what's due, what to chase:
-- My queue (her tasks), acknowledgments due (oldest first, gifts ≥ $250
-  IRS-flagged), scheduling lane (upcoming bookings), **data hygiene** (sync
-  freshness — the stale-data alert lives here as actionable work, not a CEO
-  fire — plus duplicates and unattributed gifts), deadlines + finance ops (grant
-  requirements + overdue pledge installments), and fundraising follow-through.
+**CEO cockpit (Remi)** — where do we stand on money, what's my day, who do I
+chase. Curated to Remi's brief (no "fires", no mission widget):
+- **Finance snapshot:** runway leads (cash ÷ trailing-3-month burn; amber < 3,
+  critical < 1.5), with cash on hand, monthly burn, and net-YTD beneath. The
+  full cash-flow chart stays on the Finance page.
+- **Fundraising snapshot (Goal & forecast):** raised vs FY goal; forecast =
+  committed (gifts + stewardship asks) + weighted open (Σ `ask_amount ×
+  (probability ?? 50%)` over identify/qualify/cultivate/solicit). Closed-lost
+  excluded — **never total pipeline.** _(A goal/fundraising KPI is noted for the
+  KPI pass.)_
+- **Schedule:** upcoming meetings from the connected Google Calendar (see below).
+- **My to-dos:** Remi's open tasks (`assigned_to = remi`).
+- **Partners to follow up:** open asks where `owner = remi OR ask_amount ≥ $10k`
+  AND next step is missing or overdue, biggest first.
+
+**Ops control panel (Shannon)** — her work, her calendar, the money picture, what
+to chase. Starting set per Shannon's brief (she tunes from here):
+- **My tasks** (her open tasks), **Schedule** (her calendar), **Meetings to
+  schedule** (`/meet` bookings), **Financial overview** (the same finance
+  snapshot), **Fundraising to-dos & grants** (grant requirements + overdue pledge
+  installments), **Funders to follow up** (the moves list), **Acknowledgments
+  due** (oldest first, gifts ≥ $250 IRS-flagged).
 - Shannon can **reorder and hide cards within her own view** (`OpsBoard`, "Edit
   layout" mode), persisted per-device (`bloomos.overview.ops.layout`) and
   reconciled against the current widget set on load. The CEO view is unaffected.
+- Data-hygiene/duplicates widgets exist (`DataHygieneWidget`) but are off her
+  default set — hygiene was de-prioritised; re-add via the board when wanted.
+
+**Schedule / Google Calendar:** the `/meet` scheduler already authenticates a
+Google Calendar client (`lib/google/calendar.ts`, OAuth refresh token, host
+`GOOGLE_CALENDAR_ID`). The Schedule widget adds `listUpcomingEvents()` and reads
+the next two weeks — and because `/meet` writes bookings to that same calendar,
+this is the unified schedule. It degrades to the bookings table if Calendar
+isn't configured. **Caveat:** it's one shared host calendar today; per-person
+calendars (Remi's vs Shannon's own) would need per-user Google OAuth — not yet
+built.
 
 **Data/RLS note:** fundraising-spine reads (opportunities, gifts,
 grant_requirements, pledge_payments, interactions) run under the user-session
-client (RLS, org-scoped). Finance and ops/bookings reads keep the service-role
-path those modules still use; flip them when each module's RLS conversion lands.
+client (RLS, org-scoped). Finance, ops/bookings, and calendar reads keep the
+service-role / host-account path those modules still use; flip them when each
+module's conversion lands.
 
 > The two views above are the curated v1. The broader vision below — a
 > metric-registry-driven, fully configurable widget board — is the multi-tenant

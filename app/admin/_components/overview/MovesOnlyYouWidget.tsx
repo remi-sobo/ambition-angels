@@ -6,12 +6,18 @@ import { Widget, Empty } from "./shared";
 // Moves only you can make: open asks owned by Remi or ≥ $10k whose next step is
 // missing or overdue, biggest ask first.
 
-export default async function MovesOnlyYouWidget({ className }: { className?: string }) {
+export default async function MovesOnlyYouWidget({
+  title = "Moves only you can make",
+  className,
+}: {
+  title?: string;
+  className?: string;
+}) {
   const moves = await getMoves();
   const shown = moves.slice(0, 8);
 
   return (
-    <Widget title="Moves only you can make" href="/admin/fundraising/today" hrefLabel="Today's Moves" className={className}>
+    <Widget title={title} href="/admin/fundraising/today" hrefLabel="Today's Moves" className={className}>
       {moves.length === 0 ? (
         <Empty>No high-stakes asks need you right now — every owned or $10k+ ask has a current next step.</Empty>
       ) : (

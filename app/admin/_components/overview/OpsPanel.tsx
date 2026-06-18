@@ -1,29 +1,28 @@
 import OpsBoard, { type OpsWidget } from "./OpsBoard";
 import MyQueueWidget from "./MyQueueWidget";
-import AcksDueWidget from "./AcksDueWidget";
+import ScheduleWidget from "./ScheduleWidget";
 import SchedulingLaneWidget from "./SchedulingLaneWidget";
-import DataHygieneWidget from "./DataHygieneWidget";
+import FinanceSnapshotWidget from "./FinanceSnapshotWidget";
 import DeadlinesFinanceWidget from "./DeadlinesFinanceWidget";
-import FollowThroughWidget from "./FollowThroughWidget";
+import MovesOnlyYouWidget from "./MovesOnlyYouWidget";
+import AcksDueWidget from "./AcksDueWidget";
 
-// Ops control panel (Shannon). Answers: what's on my plate (my queue), who needs
-// a thank-you (acks due), what needs scheduling (scheduling lane), is the data
-// clean (data hygiene — where the stale-data alert lives, actionable), what's
-// due (deadlines + finance ops), and what to chase (follow-through).
-//
-// The widgets are rendered here (server-side, one data source each) and handed
-// to OpsBoard, which lets Shannon reorder and hide cards within her own view —
-// persisted per-device. The CEO cockpit doesn't use the board, so it's
-// unaffected. These six are a strawman until Shannon marks them up.
+// Ops control panel (Shannon). Starting set, per Shannon's brief: her tasks,
+// meetings to schedule, a financial overview, fundraising to-dos + grants,
+// funders to follow up, and acknowledgments due — plus her live calendar.
+// These are handed to OpsBoard, which lets her reorder and hide cards within
+// her own view (persisted per-device); the CEO cockpit is unaffected. This is a
+// strawman she tunes from here.
 
 export default function OpsPanel() {
   const widgets: OpsWidget[] = [
-    { key: "queue", label: "My queue", node: <MyQueueWidget /> },
+    { key: "tasks", label: "My tasks", node: <MyQueueWidget assignee="shannon" title="My tasks" /> },
+    { key: "schedule", label: "Schedule (calendar)", node: <ScheduleWidget /> },
+    { key: "scheduling", label: "Meetings to schedule", node: <SchedulingLaneWidget /> },
+    { key: "finance", label: "Financial overview", node: <FinanceSnapshotWidget title="Financial overview" /> },
+    { key: "grants", label: "Fundraising to-dos & grants", node: <DeadlinesFinanceWidget title="Fundraising to-dos & grants" /> },
+    { key: "funders", label: "Funders to follow up", node: <MovesOnlyYouWidget title="Funders to follow up" /> },
     { key: "acks", label: "Acknowledgments due", node: <AcksDueWidget /> },
-    { key: "scheduling", label: "Scheduling lane", node: <SchedulingLaneWidget /> },
-    { key: "hygiene", label: "Data hygiene", node: <DataHygieneWidget /> },
-    { key: "deadlines", label: "Deadlines & finance ops", node: <DeadlinesFinanceWidget /> },
-    { key: "followthrough", label: "Fundraising follow-through", node: <FollowThroughWidget /> },
   ];
 
   return <OpsBoard widgets={widgets} />;

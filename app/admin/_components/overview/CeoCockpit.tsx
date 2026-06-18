@@ -1,35 +1,30 @@
-import RunwayCard from "./RunwayCard";
-import FiresWidget from "./FiresWidget";
+import FinanceSnapshotWidget from "./FinanceSnapshotWidget";
 import GoalForecastWidget from "./GoalForecastWidget";
+import ScheduleWidget from "./ScheduleWidget";
+import MyQueueWidget from "./MyQueueWidget";
 import MovesOnlyYouWidget from "./MovesOnlyYouWidget";
-import MissionProofWidget from "./MissionProofWidget";
-import FinancialHealthWidget from "./FinancialHealthWidget";
 
-// CEO cockpit (Remi). Answers, in order: are we surviving (runway), what's on
-// fire, is the money coming (goal+forecast), what must I personally do (moves
-// only you), is the mission working (mission proof), plus the finance detail.
+// CEO cockpit (Remi). Curated to what Remi asked to see: a finance snapshot and
+// a fundraising snapshot up top (where do we stand on money), then his schedule
+// and his to-dos (his day), then partners to follow up (who to chase).
 //
-// Runway is the hero, computed cash/burn at the locked 3/1.5 thresholds. The
-// forecast is committed + weighted-open vs goal — never total pipeline (the raw
-// pipeline lives on the Fundraising page). Mission leads with FO lift and a
-// dated manual figure, never a fabricated number.
+// No "fires" and no mission widget by request. A goal/fundraising KPI is noted
+// for the KPI pass.
 
 export default function CeoCockpit() {
   return (
     <div className="space-y-6">
-      <RunwayCard />
-
-      <FiresWidget />
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <GoalForecastWidget className="lg:col-span-5" />
-        <MovesOnlyYouWidget className="lg:col-span-7" />
+        <FinanceSnapshotWidget className="lg:col-span-5" />
+        <GoalForecastWidget className="lg:col-span-7" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <MissionProofWidget className="lg:col-span-5" />
-        <FinancialHealthWidget className="lg:col-span-7" />
+        <ScheduleWidget className="lg:col-span-6" />
+        <MyQueueWidget assignee="remi" title="My to-dos" className="lg:col-span-6" />
       </div>
+
+      <MovesOnlyYouWidget title="Partners to follow up" />
     </div>
   );
 }

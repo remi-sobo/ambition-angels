@@ -1,18 +1,29 @@
 import Link from "next/link";
-import { getMyQueue } from "@/lib/admin/overview/sources";
+import { getQueueTasks } from "@/lib/admin/overview/sources";
 import { todayISO } from "../../ops/_types/ops";
 import { Widget, Empty } from "./shared";
 
-// My queue — the operator's open tasks, pinned-for-today first, then soonest
-// due. (Connection backlog + email-triage candidates fold in here as those
-// sources are wired; for now this is the task plate.)
+// Open tasks for one person, pinned-for-today first, then soonest due. Used as
+// Shannon's "My queue" on the Ops panel and Remi's "My to-dos" on the cockpit.
+// (Connection backlog + email-triage candidates fold in here as those sources
+// are wired; for now this is the task plate.)
 
-export default async function MyQueueWidget({ className }: { className?: string }) {
-  const { tasks, total } = await getMyQueue();
+export default async function MyQueueWidget({
+  assignee = "shannon",
+  title = "My queue",
+  href = "/admin/ops",
+  className,
+}: {
+  assignee?: "remi" | "shannon";
+  title?: string;
+  href?: string;
+  className?: string;
+}) {
+  const { tasks, total } = await getQueueTasks(assignee);
   const today = todayISO();
 
   return (
-    <Widget title="My queue" href="/admin/ops" hrefLabel={`All tasks (${total})`} className={className}>
+    <Widget title={title} href={href} hrefLabel={`All tasks (${total})`} className={className}>
       {tasks.length === 0 ? (
         <Empty>Nothing assigned and open — clear plate.</Empty>
       ) : (
@@ -23,7 +34,7 @@ export default async function MyQueueWidget({ className }: { className?: string 
             return (
               <li key={t.id} className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <Link href="/admin/ops" className="text-sm text-ink-1 font-medium truncate block hover:text-orange transition-colors">
+                  <Link href={href} className="text-sm text-ink-1 font-medium truncate block hover:text-orange transition-colors">
                     {t.pinnedToday && <span className="text-orange mr-1" aria-label="pinned for today">★</span>}
                     {t.title}
                   </Link>

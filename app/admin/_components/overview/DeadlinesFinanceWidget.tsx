@@ -5,11 +5,17 @@ import { Widget, Empty } from "./shared";
 // Deadlines + finance ops — grant requirements coming due and overdue pledge
 // installments, soonest first.
 
-export default async function DeadlinesFinanceWidget({ className }: { className?: string }) {
+export default async function DeadlinesFinanceWidget({
+  title = "Deadlines & finance ops",
+  className,
+}: {
+  title?: string;
+  className?: string;
+}) {
   const rows = await getDeadlinesFinance();
 
   return (
-    <Widget title="Deadlines & finance ops" href="/admin/fundraising/grants" hrefLabel="Grants" className={className}>
+    <Widget title={title} href="/admin/fundraising/grants" hrefLabel="Grants" className={className}>
       {rows.length === 0 ? (
         <Empty>Nothing due in the next 30 days and no overdue installments.</Empty>
       ) : (

@@ -54,6 +54,11 @@ export const ENGAGEMENT = {
   attendanceGraceDays: 2,
 } as const;
 
+export const STRATEGY = {
+  /** A monthly OGSM review within this many days of its next date is "due soon". */
+  reviewDueSoonDays: 7,
+} as const;
+
 export const SNOOZE = {
   /** Default snooze length when an operator defers a briefing item. */
   hours: 24,

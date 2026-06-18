@@ -6,6 +6,7 @@ import {
   majorGiftsSource,
   donorsSource,
   engagementSource,
+  strategySource,
   type SourceCtx,
 } from "../lib/admin/briefing/sources";
 import { buildBriefing, rankItems, isHidden, type ItemState } from "../lib/admin/briefing/engine";
@@ -213,6 +214,27 @@ describe("engagement source", () => {
     const [it] = engagementSource({ sessions: [s("a", 5, false), s("b", 5, true), s("c", 0, false)] }, CTX);
     expect(it.severity).toBe("watch");
     expect(it.metric).toBe("1");
+  });
+});
+
+describe("strategy source", () => {
+  test("off-track objectives → watch, names the worst (behind first)", () => {
+    const [it] = strategySource(
+      { objectivesOffTrack: [{ title: "Fundraising", health: "at_risk" }, { title: "Recruitment", health: "behind" }], reviewDueDays: null },
+      CTX,
+    );
+    expect(it.id).toBe("strategy:objectives");
+    expect(it.severity).toBe("watch");
+    expect(it.detail).toContain("Recruitment"); // behind sorts ahead of at_risk
+    expect(it.metric).toBe("2");
+  });
+  test("review overdue → watch; due soon → due_soon; far off → nothing", () => {
+    expect(strategySource({ objectivesOffTrack: [], reviewDueDays: -3 }, CTX)[0].severity).toBe("watch");
+    expect(strategySource({ objectivesOffTrack: [], reviewDueDays: 4 }, CTX)[0].severity).toBe("due_soon");
+    expect(strategySource({ objectivesOffTrack: [], reviewDueDays: 30 }, CTX)).toHaveLength(0);
+  });
+  test("all healthy + no review → empty", () => {
+    expect(strategySource({ objectivesOffTrack: [], reviewDueDays: null }, CTX)).toHaveLength(0);
   });
 });
 

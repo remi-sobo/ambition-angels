@@ -24,7 +24,7 @@ export async function listUpcomingEvents(
   timeMin: Date,
   timeMax: Date,
   maxResults = 12
-): Promise<UpcomingEvent[]> {
+): Promise<{ events: UpcomingEvent[]; timeZone: string }> {
   const calendar = getCalendarClient();
   const res = await calendar.events.list({
     calendarId: CALENDAR_ID,
@@ -34,7 +34,11 @@ export async function listUpcomingEvents(
     orderBy: "startTime",
     maxResults,
   });
-  return (res.data.items ?? [])
+  // The calendar's own time zone — callers format times in it so a 3pm Pacific
+  // event doesn't render as 10pm when the server runs in UTC. Falls back to
+  // Pacific (Ambition Angels' zone) when the API doesn't return one.
+  const timeZone = res.data.timeZone || "America/Los_Angeles";
+  const events = (res.data.items ?? [])
     .filter((e) => e.status !== "cancelled")
     .map((e, i) => {
       const dateTime = e.start?.dateTime ?? null;
@@ -48,6 +52,7 @@ export async function listUpcomingEvents(
       };
     })
     .filter((e) => e.start);
+  return { events, timeZone };
 }
 
 export type CreateEventParams = {

@@ -10,6 +10,7 @@ import {
   NewObjectiveForm,
   NewGoalForm,
   SeedButton,
+  RefreshMetricsButton,
   type PlanFoundation,
   type PlanObjective,
   type PlanGoal,
@@ -87,9 +88,11 @@ export default async function StrategicPlanPage() {
   for (const i of initiatives) (initiativesByGoal[i.goal_id] ??= []).push(i);
 
   const isEmpty = objectives.length === 0 && goals.length === 0;
+  const flagged = (s: string) => s === "at_risk" || s === "behind";
   const atRisk =
-    objectives.filter((o) => o.status === "at_risk" || o.status === "behind").length +
-    goals.filter((g) => g.status === "at_risk" || g.status === "behind").length;
+    objectives.filter((o) => flagged(o.status)).length +
+    goals.filter((g) => flagged(g.status)).length +
+    kpis.filter((k) => flagged(k.status)).length;
   const doneInits = initiatives.filter((i) => i.status === "done").length;
 
   return (
@@ -104,7 +107,7 @@ export default async function StrategicPlanPage() {
         }
         actions={
           <div className="flex items-center gap-2">
-            {isEmpty && <SeedButton />}
+            {isEmpty ? <SeedButton /> : <RefreshMetricsButton />}
             <NewObjectiveForm />
           </div>
         }

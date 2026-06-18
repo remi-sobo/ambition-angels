@@ -131,6 +131,50 @@ export function SeedButton() {
   );
 }
 
+// ── Refresh auto metrics (Phase 3) ─────────────────────────────────────────
+export function RefreshMetricsButton() {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      disabled={busy}
+      title="Recompute auto KPIs (grants, corporate, donor updates, active teens) from live data"
+      onClick={async () => {
+        setBusy(true);
+        try {
+          const res = await fetch("/api/admin/plan/kpis/refresh", { method: "POST" });
+          const j = await res.json().catch(() => ({}));
+          if (!res.ok) alert(j.error ?? `HTTP ${res.status}`);
+          router.refresh();
+        } finally {
+          setBusy(false);
+        }
+      }}
+      className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors disabled:opacity-50"
+    >
+      {busy ? "Refreshing…" : "↻ Refresh metrics"}
+    </button>
+  );
+}
+
+// Roll a set of KPI statuses up to a single health by exception (worst wins).
+// null = nothing measurable yet.
+export function deriveHealth(statuses: string[]): string | null {
+  if (statuses.some((s) => s === "behind")) return "behind";
+  if (statuses.some((s) => s === "at_risk")) return "at_risk";
+  if (statuses.some((s) => s === "on_track" || s === "done")) return "on_track";
+  return null;
+}
+
+function RollupChip({ health }: { health: string | null }) {
+  if (!health) return null;
+  return (
+    <span className={`text-[10px] font-semibold rounded-full px-2 py-0.5 ${HEALTH_STYLES[health] ?? "bg-tile text-ink-2"}`}>
+      measures: {HEALTH_LABELS[health] ?? health}
+    </span>
+  );
+}
+
 // ── Foundation (mission / vision / values / behaviors) ─────────────────────
 export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) {
   const router = useRouter();
@@ -319,6 +363,7 @@ export function ObjectiveCard({
             <option key={k} value={k} className="bg-surface text-ink-1">{v}</option>
           ))}
         </select>
+        <RollupChip health={deriveHealth(goals.flatMap((g) => (kpisByGoal[g.id] ?? []).map((k) => k.status)))} />
         {objective.owner && <span className="text-[11px] text-ink-2">{objective.owner}</span>}
         <button onClick={() => void remove()} className="text-[11px] text-ink-2 hover:text-expense px-1">Delete</button>
       </div>
@@ -454,6 +499,7 @@ export function GoalCard({
             <option key={k} value={k} className="bg-surface text-ink-1">{v}</option>
           ))}
         </select>
+        {kpis.length > 0 && <RollupChip health={deriveHealth(kpis.map((k) => k.status))} />}
         {goal.owner && <span className="text-[11px] text-ink-2">{goal.owner}</span>}
         {goal.target_date && <span className="text-[11px] text-ink-2 tabular-nums">by {goal.target_date}</span>}
         <button onClick={() => void removeGoal()} className="text-[11px] text-ink-2 hover:text-expense px-1">Delete</button>

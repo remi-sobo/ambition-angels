@@ -1,0 +1,178 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * BloomOS Strategy, Phase 3 — the auto-metric registry (specs/bloomos-strategy.md).
+ *
+ * Maps a plan_kpis.metric_key to a function that computes the KPI's current
+ * value for an org from real BloomOS data. This is what keeps the strategy
+ * alive: fundraising and program KPIs read true numbers with nobody typing
+ * them. No AI, no per-page-load work — plain org-scoped counts and sums, run on
+ * the monthly/weekly refresh (the button on the plan page + the weekly cron).
+ *
+ * Only the metrics a system can actually know live here. The rest
+ * (fos_baseline, discovery_interviews_done, processes_documented,
+ * filings_on_time, …) stay source='manual' and are entered at the review.
+ */
+
+const YEAR = new Date().getUTCFullYear();
+const yearStartTs = `${YEAR}-01-01T00:00:00Z`;
+
+const sumField = <T,>(rows: T[] | null, field: keyof T): number =>
+  (rows ?? []).reduce((s, r) => s + Number((r[field] as unknown as number) ?? 0), 0);
+
+export type PlanMetricFn = (supabase: SupabaseClient, orgId: string) => Promise<number | null>;
+
+export const PLAN_METRICS: Record<string, PlanMetricFn> = {
+  // Grant dollars secured this year — grants that reached an awarded/active/
+  // closed stage. Mirrors lib/kpis.ts `grants_awarded_ytd`.
+  dollars_raised_grants_ytd: async (s, org) => {
+    const { data } = await s
+      .from("grants")
+      .select("amount_awarded")
+      .eq("org_id", org)
+      .in("stage", ["awarded", "active", "closed"])
+      .gte("updated_at", yearStartTs)
+      .limit(2000);
+    return sumField(data as { amount_awarded: number | null }[] | null, "amount_awarded");
+  },
+
+  // Grant applications submitted this year — any grant that reached the
+  // submitted stage or beyond. No submitted_at column exists, so updated_at
+  // within the year is the proxy (same approximation lib/kpis.ts uses).
+  grants_submitted_ytd: async (s, org) => {
+    const { count } = await s
+      .from("grants")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", org)
+      .in("stage", ["submitted", "awarded", "declined", "active", "closed"])
+      .gte("updated_at", yearStartTs);
+    return count ?? 0;
+  },
+
+  // Corporate dollars secured this year — major-gift opportunities that reached
+  // stewardship (i.e. closed/secured) whose constituent is an organization.
+  // opportunities has no type column, so we resolve "corporate" through the
+  // org-type constituent. (Honest best-effort; revisit if AA wants a dedicated
+  // corporate flag.)
+  corporate_dollars_ytd: async (s, org) => {
+    const { data: orgConstituents } = await s
+      .from("constituents")
+      .select("id")
+      .eq("org_id", org)
+      .eq("type", "organization")
+      .limit(5000);
+    const ids = (orgConstituents ?? []).map((c) => (c as { id: string }).id);
+    if (ids.length === 0) return 0;
+    const { data } = await s
+      .from("opportunities")
+      .select("ask_amount")
+      .eq("org_id", org)
+      .eq("stage", "steward")
+      .in("constituent_id", ids)
+      .gte("updated_at", yearStartTs)
+      .limit(2000);
+    return sumField(data as { ask_amount: number | null }[] | null, "ask_amount");
+  },
+
+  // Donor updates sent this year — one sent email campaign = one update,
+  // regardless of recipient count. email_campaigns is the canonical source for
+  // strategic donor communications (not every row in `interactions`).
+  donor_updates_sent_ytd: async (s, org) => {
+    const { count } = await s
+      .from("email_campaigns")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", org)
+      .eq("status", "sent")
+      .gte("sent_at", yearStartTs);
+    return count ?? 0;
+  },
+
+  // Active teens — students in an engaged journey stage (excludes discover =
+  // not-yet-active prospects, plus alumni and withdrawn).
+  active_teens: async (s, org) => {
+    const { count } = await s
+      .from("students")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", org)
+      .in("stage", ["learn", "practice", "connect", "launch"]);
+    return count ?? 0;
+  },
+};
+
+/**
+ * Health for an auto KPI from its current value vs target, time-paced so a
+ * year-to-date number isn't unfairly flagged mid-year. "On pace" compares
+ * current against (target × fraction-of-year-elapsed). All auto metrics here
+ * are "up is good".
+ */
+export function kpiHealth(current: number, target: number | null): string {
+  if (target === null || target <= 0) return "not_started";
+  if (current >= target) return "on_track"; // target already met
+  const now = new Date();
+  const start = Date.UTC(now.getUTCFullYear(), 0, 1);
+  const end = Date.UTC(now.getUTCFullYear() + 1, 0, 1);
+  const frac = Math.max((now.getTime() - start) / (end - start), 0.01);
+  if (current === 0 && frac < 0.1) return "not_started";
+  const ratio = current / (target * frac);
+  if (ratio >= 0.9) return "on_track";
+  if (ratio >= 0.6) return "at_risk";
+  return "behind";
+}
+
+export type RefreshResult = { updated: number; results: { key: string; value: number }[] };
+
+/**
+ * Recompute every auto KPI for one org and write current + last_updated_at +
+ * derived status. Pass a service-role client (the caller authorizes). A null
+ * computed value (metric not wired or source missing) is skipped, leaving the
+ * prior value untouched.
+ */
+export async function refreshOrgPlanMetrics(
+  supabase: SupabaseClient,
+  orgId: string
+): Promise<RefreshResult> {
+  const { data: kpis } = await supabase
+    .from("plan_kpis")
+    .select("id, metric_key, target")
+    .eq("org_id", orgId)
+    .eq("source", "auto")
+    .not("metric_key", "is", null);
+
+  const results: { key: string; value: number }[] = [];
+  for (const k of (kpis ?? []) as { id: string; metric_key: string; target: number | null }[]) {
+    const fn = PLAN_METRICS[k.metric_key];
+    if (!fn) continue;
+    const value = await fn(supabase, orgId);
+    if (value === null) continue;
+    const { error } = await supabase
+      .from("plan_kpis")
+      .update({
+        current: value,
+        last_updated_at: new Date().toISOString(),
+        status: kpiHealth(value, k.target),
+      })
+      .eq("id", k.id)
+      .eq("org_id", orgId);
+    if (!error) results.push({ key: k.metric_key, value });
+  }
+  return { updated: results.length, results };
+}
+
+/**
+ * Refresh auto KPIs across every org that has them — for the weekly cron, which
+ * runs without a session. Service-role client required.
+ */
+export async function refreshAllPlanMetrics(supabase: SupabaseClient): Promise<number> {
+  const { data } = await supabase
+    .from("plan_kpis")
+    .select("org_id")
+    .eq("source", "auto")
+    .not("metric_key", "is", null);
+  const orgIds = Array.from(new Set(((data ?? []) as { org_id: string }[]).map((r) => r.org_id)));
+  let total = 0;
+  for (const org of orgIds) total += (await refreshOrgPlanMetrics(supabase, org)).updated;
+  return total;
+}
+
+// The metric_keys this registry can compute — handy for UI hints.
+export const AUTO_METRIC_KEYS = Object.keys(PLAN_METRICS);

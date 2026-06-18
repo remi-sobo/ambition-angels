@@ -41,10 +41,17 @@ export default function TaskRow({
   task,
   projectName,
   hideProjectLink = false,
+  leaving = false,
+  onToggleDone,
 }: {
   task: OpsTask;
   projectName?: string | null;
   hideProjectLink?: boolean;
+  /** When true, the row plays the "completing" collapse animation (the parent
+   *  owns the state + removes it after). */
+  leaving?: boolean;
+  /** Overrides the built-in done toggle so the parent can animate + commit. */
+  onToggleDone?: () => void;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -89,6 +96,8 @@ export default function TaskRow({
   const isDone = task.status === "done";
   const isBlocked = task.status === "blocked";
   const isOverdue = !!task.due_date && !isDone && task.due_date < todayISO();
+  // While leaving, show the row as done (struck through) before it collapses.
+  const showDone = isDone || leaving;
 
   function toggleDone() {
     patch({ status: isDone ? "todo" : "done" });
@@ -98,7 +107,9 @@ export default function TaskRow({
     <>
     <div
       className={`group flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${
-        isDone
+        leaving ? "task-leaving " : ""
+      }${
+        showDone
           ? "border-hairline bg-surface shadow-panel text-ink-3"
           : isBlocked
           ? "border-expense/30 bg-expense-bg hover:bg-expense-bg"
@@ -106,16 +117,16 @@ export default function TaskRow({
       }`}
     >
       <button
-        onClick={toggleDone}
-        disabled={busy}
+        onClick={onToggleDone ?? toggleDone}
+        disabled={busy || leaving}
         aria-label={isDone ? "Mark as not done" : "Mark as done"}
         className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
-          isDone
+          showDone
             ? "bg-revenue-bg border-revenue/30 text-revenue"
             : "border-outline hover:border-orange/60"
         }`}
       >
-        {isDone && (
+        {showDone && (
           <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 8l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -123,7 +134,7 @@ export default function TaskRow({
       </button>
 
       <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
-        {!isDone && (
+        {!showDone && (
           <span title={`${priorityLabel(task.priority)} priority`}>
             <PriorityFlag priority={task.priority} />
           </span>
@@ -132,7 +143,7 @@ export default function TaskRow({
           type="button"
           onClick={() => setEditOpen(true)}
           className={`text-sm text-left truncate min-w-[120px] transition-colors ${
-            isDone
+            showDone
               ? "line-through text-ink-3 hover:text-ink-2"
               : "text-ink-1 hover:text-orange"
           }`}

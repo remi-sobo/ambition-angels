@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import TaskEditModal from "@/app/admin/_components/TaskEditModal";
+import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
 import {
   formatDueLabel,
   isTaskCategory,
@@ -34,12 +35,18 @@ export default function ProjectTaskList({
   initialTasks: OpsTask[];
 }) {
   const router = useRouter();
+  const { isLeaving, complete } = useTaskComplete();
   const [, startTransition] = useTransition();
   const [tasks, setTasks] = useState(initialTasks);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showDone, setShowDone] = useState(false);
   const [editingTask, setEditingTask] = useState<OpsTask | null>(null);
+
+  // Open tasks drive the draggable list; completed ones tuck into a drawer.
+  const openTasks = tasks.filter((t) => t.status !== "done");
+  const doneTasks = tasks.filter((t) => t.status === "done");
 
   // ── Add task ───────────────────────────────────────────────────────────
   const [newTitle, setNewTitle] = useState("");
@@ -119,9 +126,11 @@ export default function ProjectTaskList({
       setHoverIndex(null);
       return;
     }
-    const next = [...tasks];
-    const [moved] = next.splice(dragIndex, 1);
-    next.splice(idx, 0, moved);
+    // Indices are into the open list; reorder it, then re-append done tasks.
+    const newOpen = [...openTasks];
+    const [moved] = newOpen.splice(dragIndex, 1);
+    newOpen.splice(idx, 0, moved);
+    const next = [...newOpen, ...doneTasks];
     setTasks(next);
     setDragIndex(null);
     setHoverIndex(null);
@@ -151,6 +160,13 @@ export default function ProjectTaskList({
       setBusy(false);
     }
   }
+
+  // Completing plays the strike → collapse animation, then commits; the task
+  // tucks into the "completed" drawer. Un-checking restores it immediately.
+  const toggleDone = (t: OpsTask) => {
+    if (t.status === "done") void patchTask(t.id, { status: "todo" });
+    else complete(t.id, () => patchTask(t.id, { status: "done" }));
+  };
 
   async function deleteTask(id: string, title: string) {
     if (!confirm(`Delete task "${title}"?`)) return;
@@ -182,90 +198,138 @@ export default function ProjectTaskList({
           No tasks yet. Add the first one below.
         </p>
       ) : (
-        <ul className="space-y-1.5 mb-5">
-          {tasks.map((t, idx) => {
-            const isDone = t.status === "done";
-            const isBlocked = t.status === "blocked";
-            const isDragOver = hoverIndex === idx && dragIndex !== null && dragIndex !== idx;
-            return (
-              <li
-                key={t.id}
-                draggable
-                onDragStart={() => onDragStart(idx)}
-                onDragOver={(e) => onDragOver(e, idx)}
-                onDrop={() => onDrop(idx)}
-                onDragEnd={onDragEnd}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
-                  isDragOver
-                    ? "border-orange/50 bg-orange/5"
-                    : isDone
-                    ? "border-hairline bg-surface shadow-panel text-ink-3"
-                    : isBlocked
-                    ? "border-expense/30 bg-expense-bg"
-                    : "border-outline bg-surface shadow-panel hover:bg-[#EFE6D4]"
-                }`}
-              >
-                <span
-                  className="cursor-grab active:cursor-grabbing text-ink-2 hover:text-ink-1 select-none px-1"
-                  title="Drag to reorder"
-                  aria-label="Drag handle"
-                >
-                  ⋮⋮
-                </span>
-                <button
-                  onClick={() => patchTask(t.id, { status: isDone ? "todo" : "done" })}
-                  disabled={busy}
-                  aria-label={isDone ? "Mark as not done" : "Mark as done"}
-                  className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center ${
-                    isDone
-                      ? "bg-revenue-bg border-revenue/30 text-revenue"
-                      : "border-outline hover:border-orange/60"
+        <>
+          <ul className="space-y-1.5 mb-3">
+            {openTasks.map((t, idx) => {
+              const isBlocked = t.status === "blocked";
+              const leaving = isLeaving(t.id);
+              const isDragOver = hoverIndex === idx && dragIndex !== null && dragIndex !== idx;
+              return (
+                <li
+                  key={t.id}
+                  draggable={!leaving}
+                  onDragStart={() => onDragStart(idx)}
+                  onDragOver={(e) => onDragOver(e, idx)}
+                  onDrop={() => onDrop(idx)}
+                  onDragEnd={onDragEnd}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                    leaving ? "task-leaving " : ""
+                  }${
+                    isDragOver
+                      ? "border-orange/50 bg-orange/5"
+                      : leaving
+                      ? "border-hairline bg-surface shadow-panel text-ink-3"
+                      : isBlocked
+                      ? "border-expense/30 bg-expense-bg"
+                      : "border-outline bg-surface shadow-panel hover:bg-[#EFE6D4]"
                   }`}
                 >
-                  {isDone && (
-                    <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 8l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingTask(t)}
-                  className={`flex-1 min-w-0 truncate text-left transition-colors ${
-                    isDone
-                      ? "line-through text-ink-3 hover:text-ink-2"
-                      : "text-ink-1 hover:text-orange"
-                  }`}
-                  title="Click to edit"
-                >
-                  {t.title}
-                </button>
-                {t.assigned_to && (
                   <span
-                    className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[9px] font-bold uppercase"
-                    title={`Assigned to ${t.assigned_to}`}
+                    className="cursor-grab active:cursor-grabbing text-ink-2 hover:text-ink-1 select-none px-1"
+                    title="Drag to reorder"
+                    aria-label="Drag handle"
                   >
-                    {t.assigned_to.charAt(0)}
+                    ⋮⋮
                   </span>
-                )}
-                {t.due_date && (
-                  <span className="text-[11px] text-ink-2 font-mono">
-                    {formatDueLabel(t.due_date)}
-                  </span>
-                )}
-                <button
-                  onClick={() => deleteTask(t.id, t.title)}
-                  disabled={busy}
-                  aria-label="Delete task"
-                  className="text-ink-3 hover:text-expense text-xs px-1"
-                  title="Delete task"
-                >
-                  ✕
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+                  <button
+                    onClick={() => toggleDone(t)}
+                    disabled={busy || leaving}
+                    aria-label="Mark as done"
+                    className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center ${
+                      leaving
+                        ? "bg-revenue-bg border-revenue/30 text-revenue"
+                        : "border-outline hover:border-orange/60"
+                    }`}
+                  >
+                    {leaving && (
+                      <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 8l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingTask(t)}
+                    className={`flex-1 min-w-0 truncate text-left transition-colors ${
+                      leaving ? "line-through text-ink-3" : "text-ink-1 hover:text-orange"
+                    }`}
+                    title="Click to edit"
+                  >
+                    {t.title}
+                  </button>
+                  {t.assigned_to && (
+                    <span
+                      className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[9px] font-bold uppercase"
+                      title={`Assigned to ${t.assigned_to}`}
+                    >
+                      {t.assigned_to.charAt(0)}
+                    </span>
+                  )}
+                  {t.due_date && (
+                    <span className="text-[11px] text-ink-2 font-mono">
+                      {formatDueLabel(t.due_date)}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => deleteTask(t.id, t.title)}
+                    disabled={busy}
+                    aria-label="Delete task"
+                    className="text-ink-3 hover:text-expense text-xs px-1"
+                    title="Delete task"
+                  >
+                    ✕
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+
+          {doneTasks.length > 0 && (
+            <div className="mb-5">
+              <button
+                onClick={() => setShowDone((v) => !v)}
+                className="text-[11px] font-semibold text-ink-3 hover:text-ink-1"
+              >
+                {showDone ? "Hide" : "Show"} {doneTasks.length} completed
+              </button>
+              {showDone && (
+                <ul className="space-y-1.5 mt-2">
+                  {doneTasks.map((t) => (
+                    <li key={t.id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-hairline bg-surface shadow-panel text-sm text-ink-3">
+                      <button
+                        onClick={() => toggleDone(t)}
+                        disabled={busy}
+                        aria-label="Mark as not done"
+                        className="shrink-0 w-5 h-5 rounded-full border border-revenue/30 bg-revenue-bg text-revenue flex items-center justify-center"
+                      >
+                        <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 8l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingTask(t)}
+                        className="flex-1 min-w-0 truncate text-left line-through hover:text-ink-2"
+                        title="Click to edit"
+                      >
+                        {t.title}
+                      </button>
+                      <button
+                        onClick={() => deleteTask(t.id, t.title)}
+                        disabled={busy}
+                        aria-label="Delete task"
+                        className="text-ink-3 hover:text-expense text-xs px-1"
+                        title="Delete task"
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       <form onSubmit={addTask} className="flex items-center gap-2">

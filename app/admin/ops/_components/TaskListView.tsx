@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminUser } from "@/lib/admin/auth";
+import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
 import TaskRow, { PriorityFlag } from "./TaskRow";
 import {
   TASK_CATEGORIES,
@@ -45,6 +46,7 @@ export default function TaskListView({
   currentUser: AdminUser | null;
 }) {
   const router = useRouter();
+  const { isLeaving, complete } = useTaskComplete();
   const [, startTransition] = useTransition();
 
   // Server is the source of truth; reset local order whenever a refresh
@@ -56,6 +58,12 @@ export default function TaskListView({
   const [dragId, setDragId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  // When grouping by Status, Done is its own (chosen) group — leave it. For
+  // every other grouping, completed top-level tasks tuck into a drawer so the
+  // active list stays clean, and completing one collapses it away there.
+  const useDoneDrawer = groupBy !== "status";
 
   const childrenByParent = useMemo(() => {
     const map = new Map<string, OpsTask[]>();
@@ -70,6 +78,8 @@ export default function TaskListView({
   }, [local]);
 
   const topLevel = useMemo(() => local.filter((t) => !t.parent_id), [local]);
+  const activeTop = useMemo(() => topLevel.filter((t) => t.status !== "done"), [topLevel]);
+  const doneTop = useMemo(() => topLevel.filter((t) => t.status === "done"), [topLevel]);
 
   function groupKey(t: OpsTask): string {
     switch (groupBy) {
@@ -87,8 +97,9 @@ export default function TaskListView({
   // Build ordered groups. Keys follow each dimension's canonical order;
   // unknown/extra keys (e.g. projects) fall to the end alphabetically.
   const groups = useMemo(() => {
+    const source = useDoneDrawer ? activeTop : topLevel;
     const byKey = new Map<string, OpsTask[]>();
-    for (const t of topLevel) {
+    for (const t of source) {
       const k = groupKey(t);
       const arr = byKey.get(k) ?? [];
       arr.push(t);
@@ -110,7 +121,7 @@ export default function TaskListView({
     return order
       .filter((k) => (byKey.get(k)?.length ?? 0) > 0)
       .map((k) => ({ key: k, items: byKey.get(k) ?? [] }));
-  }, [topLevel, groupBy, projectNames]);
+  }, [topLevel, activeTop, useDoneDrawer, groupBy, projectNames]);
 
   // ── Reorder (within a group only) ──────────────────────────────────────
   async function persist(nextTop: OpsTask[]) {
@@ -163,6 +174,28 @@ export default function TaskListView({
     setLocal(rebuilt);
     persist(nextTop);
   }
+
+  // ── Complete (with the collapse animation, drawer mode) ─────────────────
+  async function patchStatus(t: OpsTask, status: "todo" | "done") {
+    setBusy(true);
+    try {
+      await fetch(`/api/admin/ops/tasks/${t.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      startTransition(() => router.refresh());
+    } catch (e) {
+      console.error("Task complete failed:", e);
+      alert("Couldn't save change.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  const onCompleteTask = (t: OpsTask) => {
+    if (t.status === "done") void patchStatus(t, "todo");
+    else complete(t.id, () => patchStatus(t, "done"));
+  };
 
   // ── Inline quick-add ────────────────────────────────────────────────────
   const [newTitle, setNewTitle] = useState("");
@@ -241,7 +274,7 @@ export default function TaskListView({
                       }}
                       className={`flex items-center gap-1 rounded-lg ${
                         isDragOver ? "ring-2 ring-orange/40" : ""
-                      }`}
+                      } ${useDoneDrawer && isLeaving(t.id) ? "task-leaving" : ""}`}
                     >
                       <span
                         className="cursor-grab active:cursor-grabbing text-ink-3 hover:text-ink-1 select-none px-1 shrink-0"
@@ -271,7 +304,12 @@ export default function TaskListView({
                         <span className="shrink-0 w-5" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <TaskRow task={t} projectName={projectName(t)} />
+                        <TaskRow
+                          task={t}
+                          projectName={projectName(t)}
+                          leaving={useDoneDrawer && isLeaving(t.id)}
+                          onToggleDone={useDoneDrawer ? () => onCompleteTask(t) : undefined}
+                        />
                       </div>
                     </div>
                     {kids.length > 0 && !isOpen && (
@@ -296,6 +334,30 @@ export default function TaskListView({
             </div>
           </div>
         ))
+      )}
+
+      {useDoneDrawer && doneTop.length > 0 && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowCompleted((v) => !v)}
+            className="text-[11px] font-semibold text-ink-3 hover:text-ink-1"
+          >
+            {showCompleted ? "Hide" : "Show"} {doneTop.length} completed
+          </button>
+          {showCompleted && (
+            <div className="space-y-1.5 mt-2">
+              {doneTop.map((t) => (
+                <TaskRow
+                  key={t.id}
+                  task={t}
+                  projectName={projectName(t)}
+                  onToggleDone={() => onCompleteTask(t)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       <form onSubmit={addTask} className="flex items-center gap-2 pt-1">

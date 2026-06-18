@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 // always know where you are.
 const LINKS: Array<{ href: string; label: string }> = [
   { href: "/admin/finance", label: "Dashboard" },
+  { href: "/admin/finance/forecast", label: "Forecast" },
   { href: "/admin/finance/model", label: "Model" },
   { href: "/admin/finance/upload", label: "Upload" },
   { href: "/admin/finance/transactions", label: "Transactions" },

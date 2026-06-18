@@ -104,6 +104,13 @@ export type OpsProject = {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  /**
+   * The strategic initiative this project serves (BloomOS Strategy, Phase 2).
+   * Nullable: keep-the-lights-on work stays unattached and rolls up nowhere.
+   * This is the ONLY strategic link — `category` is a loose ops tag, not a
+   * rollup path.
+   */
+  initiative_id: string | null;
 };
 
 export function categoryLabel(c: string): string {

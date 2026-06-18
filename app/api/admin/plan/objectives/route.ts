@@ -3,14 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
-const isISODate = (v: unknown): v is string =>
-  typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
-const isUuid = (v: unknown): v is string =>
-  typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
-
 export async function POST(req: NextRequest) {
-  // Service-role client bypasses RLS, so org_id is set from session here (not a
-  // column default) and is the tenant boundary — see bloomos_strategy_phase1b.
   const ctx = await getOrgContext();
   if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,25 +13,25 @@ export async function POST(req: NextRequest) {
   if (!title) return NextResponse.json({ error: "Title is required" }, { status: 400 });
 
   const insert: Record<string, unknown> = { title, org_id: ctx.orgId };
-  if (typeof body?.description === "string" && body.description.trim())
-    insert.description = body.description.trim().slice(0, 2000);
-  if (isISODate(body?.target_date)) insert.target_date = body!.target_date;
+  if (typeof body?.three_year_statement === "string" && body.three_year_statement.trim())
+    insert.three_year_statement = body.three_year_statement.trim().slice(0, 2000);
   if (typeof body?.owner === "string" && body.owner.trim())
     insert.owner = body.owner.trim().slice(0, 60);
-  if (isUuid(body?.objective_id)) insert.objective_id = body!.objective_id;
+  if (typeof body?.sort_order === "number" && Number.isFinite(body.sort_order))
+    insert.sort_order = Math.trunc(body.sort_order);
 
   const { data, error } = await getSupabaseAdmin()
-    .from("plan_goals")
+    .from("plan_objectives")
     .insert(insert)
     .select("id")
     .single();
   if (error || !data) {
-    console.error("Create goal failed:", error?.message);
+    console.error("Create objective failed:", error?.message);
     return NextResponse.json({ error: "Create failed" }, { status: 500 });
   }
   await audit(req, {
-    action: "governance.goal.create",
-    entityType: "plan_goal",
+    action: "governance.objective.create",
+    entityType: "plan_objective",
     entityId: data.id,
     after: insert,
   });

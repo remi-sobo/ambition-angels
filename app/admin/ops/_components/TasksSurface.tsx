@@ -26,10 +26,11 @@ const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
 ];
 
 /**
- * One Tasks surface. Defaults to the Active scope — open tasks only (anything
- * not done) — with the List / Board switch, grouping, and CRM filter. Completed
- * tasks are treated as archived: they drop off the active surface and live in
- * the Archived scope, where they can be reviewed and reopened (uncheck a row).
+ * One Tasks surface. Defaults to the Active scope — everything not archived
+ * (open tasks and done-but-not-yet-archived) — with the List / Board switch,
+ * grouping, and CRM filter. Archiving is a separate, explicit step (the row
+ * menu's "Archive"): archived tasks drop off the active surface into the
+ * Archived scope, where they can be reviewed, reopened, or unarchived.
  */
 export default function TasksSurface({
   tasks,
@@ -45,20 +46,20 @@ export default function TasksSurface({
   const [groupBy, setGroupBy] = useState<GroupBy>("priority");
   const [linkFilter, setLinkFilter] = useState<LinkFilter>("all");
 
-  const openTasks = useMemo(() => tasks.filter((t) => t.status !== "done"), [tasks]);
+  const activeTasks = useMemo(() => tasks.filter((t) => !t.archived_at), [tasks]);
   const archivedTasks = useMemo(
     () =>
       tasks
-        .filter((t) => t.status === "done")
-        .sort((a, b) => (b.completed_at ?? b.updated_at).localeCompare(a.completed_at ?? a.updated_at)),
+        .filter((t) => !!t.archived_at)
+        .sort((a, b) => (b.archived_at ?? "").localeCompare(a.archived_at ?? "")),
     [tasks]
   );
 
   const visibleTasks = useMemo(() => {
-    if (linkFilter === "all") return openTasks;
-    if (linkFilter === "any") return openTasks.filter((t) => !!t.linked_entity_type);
-    return openTasks.filter((t) => t.linked_entity_type === linkFilter);
-  }, [openTasks, linkFilter]);
+    if (linkFilter === "all") return activeTasks;
+    if (linkFilter === "any") return activeTasks.filter((t) => !!t.linked_entity_type);
+    return activeTasks.filter((t) => t.linked_entity_type === linkFilter);
+  }, [activeTasks, linkFilter]);
 
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
@@ -83,8 +84,8 @@ export default function TasksSurface({
 
           <span className="text-[11px] text-ink-3">
             {scope === "active" ? visibleTasks.length : archivedTasks.length}
-            {scope === "active" && linkFilter !== "all" && openTasks.length !== visibleTasks.length
-              ? ` / ${openTasks.length}`
+            {scope === "active" && linkFilter !== "all" && activeTasks.length !== visibleTasks.length
+              ? ` / ${activeTasks.length}`
               : ""}
           </span>
         </div>
@@ -142,7 +143,7 @@ export default function TasksSurface({
 
       {scope === "archived" ? (
         archivedTasks.length === 0 ? (
-          <p className="text-sm text-ink-2 italic">No archived tasks yet — completed tasks land here, newest first.</p>
+          <p className="text-sm text-ink-2 italic">No archived tasks yet — use a task&apos;s ⋯ menu → Archive to file it here.</p>
         ) : (
           <div className="space-y-1.5">
             {archivedTasks.map((t) => (

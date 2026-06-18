@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendOperatorEmailTo, getOperatorEmails, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
 import { snapshotKpis } from "@/lib/kpis";
+import { refreshAllPlanMetrics } from "@/lib/admin/plan/metrics";
 import { generateBriefing } from "@/lib/briefing";
 import {
   gatherCrmOverdue, groupOverdue, assigneeFromEmail, crmTaskHref, type CrmOverdue,
@@ -123,6 +124,12 @@ export async function GET(req: NextRequest) {
 
   // Weekly KPI snapshot — powers the scorecard's 4-week trends.
   await snapshotKpis(supabase);
+
+  // Refresh the strategy auto-KPIs (Phase 3) so the plan reads live numbers
+  // without anyone typing them. Best-effort — never block the digest on it.
+  await refreshAllPlanMetrics(supabase).catch((e) =>
+    console.error("refreshAllPlanMetrics failed:", e)
+  );
 
   // AI narration (Ring 4): generate + store the Monday edition; prepend the
   // narrative when the model is available, degrade silently when not.

@@ -157,6 +157,12 @@ export async function PATCH(
     }
     updates.due_date = body.due_date;
   }
+  if ("archived_at" in body) {
+    if (body.archived_at !== null && typeof body.archived_at !== "string") {
+      return NextResponse.json({ error: "archived_at must be an ISO timestamp or null" }, { status: 400 });
+    }
+    updates.archived_at = body.archived_at;
+  }
   if ("pinned_for_today" in body) updates.pinned_for_today = body.pinned_for_today === true;
   if ("pinned_for_this_week" in body) updates.pinned_for_this_week = body.pinned_for_this_week === true;
   if ("display_order" in body) {

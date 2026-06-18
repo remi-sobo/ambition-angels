@@ -43,17 +43,19 @@ export default async function OpsLandingPage() {
   const activeProjects = (activeProjectsRes.data as OpsProject[] | null) ?? [];
 
   // Pin/due-derived slices for the preserved Today / This Week sections.
-  const dueToday = allTasks.filter((t) => t.due_date === today && t.status !== "done");
+  // Archived tasks never appear on these active surfaces.
+  const dueToday = allTasks.filter((t) => t.due_date === today && t.status !== "done" && !t.archived_at);
   const dueTodayIds = new Set(dueToday.map((t) => t.id));
   const pinnedToday = allTasks.filter(
     (t) =>
       t.pinned_for_today &&
       t.status !== "done" &&
+      !t.archived_at &&
       !dueTodayIds.has(t.id) &&
       t.due_date !== today
   );
   const pinnedWeek = allTasks
-    .filter((t) => t.pinned_for_this_week && t.status !== "done")
+    .filter((t) => t.pinned_for_this_week && t.status !== "done" && !t.archived_at)
     .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""));
 
   // Project name lookup for task rows / pills. Cover every project a task
@@ -83,7 +85,7 @@ export default async function OpsLandingPage() {
     TASK_CATEGORIES.map((c) => [c, 0])
   ) as Record<TaskCategory, number>;
   for (const t of allTasks) {
-    if (t.status === "done") continue;
+    if (t.status === "done" || t.archived_at) continue;
     if ((TASK_CATEGORIES as readonly string[]).includes(t.category)) {
       categoryCounts[t.category]++;
     }

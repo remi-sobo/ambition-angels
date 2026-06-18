@@ -237,6 +237,10 @@ export default function TaskRow({
               }
               label={isBlocked ? "Unblock" : "Mark blocked"}
             />
+            <ActionItem
+              onClick={() => patch({ archived_at: task.archived_at ? null : new Date().toISOString() })}
+              label={task.archived_at ? "Unarchive" : "Archive"}
+            />
             <div className="border-t border-outline my-1" />
             <ActionItem onClick={deleteTask} label="Delete" danger />
           </div>

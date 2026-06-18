@@ -180,11 +180,11 @@ function TaskLi({ t, today, busy, onToggle }: {
         onClick={onToggle}
         disabled={busy}
         aria-label={done ? "Mark not done" : "Mark done"}
-        className={`w-4 h-4 rounded-[5px] border-[1.5px] flex-shrink-0 transition-colors ${
+        className={`w-4 h-4 rounded-full border-[1.5px] flex-shrink-0 flex items-center justify-center transition-colors ${
           done ? "bg-revenue border-revenue" : "border-outline hover:border-orange"
         }`}
       >
-        {done && <span className="block text-white text-[10px] leading-none -mt-px">✓</span>}
+        {done && <span className="block text-white text-[10px] leading-none">✓</span>}
       </button>
       <span className={`text-sm flex-1 min-w-0 truncate ${done ? "text-ink-3 line-through" : "text-ink-1"}`}>
         {t.title}

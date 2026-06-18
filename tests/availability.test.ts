@@ -20,8 +20,6 @@ import { getFreeBusy } from "../lib/google/calendar";
 import { getSupabaseAdmin } from "../lib/supabase/admin";
 import type { MeetingType } from "../lib/database.types";
 
-const HOUR = 60 * 60 * 1000;
-
 // ── Pure helpers ─────────────────────────────────────────────────────────
 
 describe("isoWeekdayInTz", () => {

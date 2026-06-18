@@ -136,6 +136,18 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
         )}
       </div>
 
+      {/* Cross-tab pointer: a newly-added partner defaults to Prospect, which
+          the Pipeline tab hides — so it can look "lost". Surface it. */}
+      {tab !== "prospects" && tabCounts.prospects > 0 && (
+        <button
+          onClick={() => setTab("prospects")}
+          className="block w-full text-left text-xs text-ink-2 bg-tile border-[1.5px] border-outline rounded-lg px-4 py-2 hover:border-orange/40 hover:text-ink-1 transition-colors"
+        >
+          {tabCounts.prospects} prospect{tabCounts.prospects === 1 ? "" : "s"} {tabCounts.prospects === 1 ? "isn't" : "aren't"} shown on this tab —{" "}
+          <span className="font-semibold text-orange">view Prospects →</span>
+        </button>
+      )}
+
       {/* Rows */}
       {filtered.length === 0 ? (
         <p className="text-sm text-ink-2 py-6">No partners match these filters.</p>

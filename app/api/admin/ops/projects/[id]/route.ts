@@ -112,6 +112,14 @@ export async function PATCH(
     }
     updates.due_date = body.due_date;
   }
+  if ("initiative_id" in body) {
+    // null detaches; a UUID attaches to a strategic initiative (Phase 2). The
+    // FK + RLS on plan_initiatives reject a cross-org/unknown id at write time.
+    if (body.initiative_id !== null && !/^[0-9a-f-]{36}$/i.test(String(body.initiative_id))) {
+      return NextResponse.json({ error: "initiative_id must be a UUID or null" }, { status: 400 });
+    }
+    updates.initiative_id = body.initiative_id;
+  }
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ project: current });

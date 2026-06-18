@@ -18,7 +18,15 @@ import {
  * Delete button at the bottom uses window.confirm() per the spec's "no
  * fancy modal" guidance for v1.
  */
-export default function ProjectHeader({ project }: { project: OpsProject }) {
+export type InitiativeOption = { id: string; label: string };
+
+export default function ProjectHeader({
+  project,
+  initiatives = [],
+}: {
+  project: OpsProject;
+  initiatives?: InitiativeOption[];
+}) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [titleEditing, setTitleEditing] = useState(false);
@@ -166,6 +174,27 @@ export default function ProjectHeader({ project }: { project: OpsProject }) {
             disabled={busy}
             className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-sm text-ink-1 focus:outline-none focus:border-orange/50"
           />
+        </FieldGroup>
+
+        <FieldGroup label="Initiative">
+          {initiatives.length === 0 ? (
+            <div className="text-xs text-ink-2 py-1.5">No initiatives yet</div>
+          ) : (
+            <select
+              value={project.initiative_id ?? ""}
+              onChange={(e) => patch({ initiative_id: e.target.value || null })}
+              disabled={busy}
+              title="Attach this project to a strategic initiative so its task progress rolls up"
+              className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-sm text-ink-1 focus:outline-none focus:border-orange/50"
+            >
+              <option value="">Not linked</option>
+              {initiatives.map((i) => (
+                <option key={i.id} value={i.id} className="bg-ink text-ink-1">
+                  {i.label}
+                </option>
+              ))}
+            </select>
+          )}
         </FieldGroup>
 
         <FieldGroup label="Created">

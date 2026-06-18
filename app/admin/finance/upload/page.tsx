@@ -1,318 +1,55 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
-import type { BankFormat, ImportPreview } from "@/lib/finance/types";
+import PageHeader from "../../_components/PageHeader";
+import { getFinanceSnapshot } from "@/lib/admin/finance";
+import ReconcileCard from "../_components/ReconcileCard";
+import UploadClient from "./_components/UploadClient";
 
-type CommitResult = {
-  ok: true;
-  inserted: number;
-  duplicates_skipped: number;
-  categorized: number;
-  period_start: string | null;
-  period_end: string | null;
-};
+// The Import hub — the one place to bring everything in: bank transactions,
+// the budget, and pledges — plus "set current balance" so the cash figure stays
+// reconciled to the real bank.
+export const dynamic = "force-dynamic";
 
-const FORMATS: { value: BankFormat; label: string }[] = [
-  { value: "wells-fargo", label: "Wells Fargo" },
-  { value: "chase", label: "Chase" },
-  { value: "mercury", label: "Mercury" },
-  { value: "quickbooks", label: "QuickBooks" },
-  { value: "generic", label: "Generic (date / description / amount headers)" },
-];
-
-function fmtMoney(n: number): string {
-  return n.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  });
-}
-
-export default function FinanceUploadPage() {
-  const [file, setFile] = useState<File | null>(null);
-  const [format, setFormat] = useState<BankFormat>("wells-fargo");
-  const [preview, setPreview] = useState<ImportPreview | null>(null);
-  const [busy, setBusy] = useState<"idle" | "previewing" | "committing">("idle");
-  const [error, setError] = useState<string | null>(null);
-  // When the API returns a 400 with sample lines from the file, we surface
-  // them here so the user can self-diagnose (wrong format, header row, etc).
-  const [errorSample, setErrorSample] = useState<string[] | null>(null);
-  const [errorHint, setErrorHint] = useState<string | null>(null);
-  const [result, setResult] = useState<CommitResult | null>(null);
-
-  async function doPreview() {
-    if (!file) return;
-    setBusy("previewing");
-    setError(null);
-    setErrorSample(null);
-    setErrorHint(null);
-    setPreview(null);
-    setResult(null);
-
-    const fd = new FormData();
-    fd.set("file", file);
-    fd.set("format", format);
-    fd.set("mode", "preview");
-
-    const r = await fetch("/api/admin/finance/import", { method: "POST", body: fd });
-    const json = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      setError(json.error ?? `Upload failed (${r.status})`);
-      if (Array.isArray(json.sample)) setErrorSample(json.sample);
-      if (typeof json.hint === "string") setErrorHint(json.hint);
-    } else {
-      setPreview(json.preview as ImportPreview);
-    }
-    setBusy("idle");
-  }
-
-  async function doCommit() {
-    if (!file || !preview) return;
-    setBusy("committing");
-    setError(null);
-
-    const fd = new FormData();
-    fd.set("file", file);
-    fd.set("format", format);
-    fd.set("mode", "commit");
-
-    const r = await fetch("/api/admin/finance/import", { method: "POST", body: fd });
-    const json = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      setError(json.error ?? `Commit failed (${r.status})`);
-    } else {
-      setResult(json as CommitResult);
-      setPreview(null);
-      setFile(null);
-    }
-    setBusy("idle");
-  }
+export default async function FinanceUploadPage() {
+  const snap = await getFinanceSnapshot();
 
   return (
-    <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8">
-      <header className="mb-8">
-        <div className="flex items-baseline justify-between gap-4 mb-2 flex-wrap">
-          <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
-            Import bank CSV
-          </h1>
-          <Link
-            href="/admin/finance"
-            className="text-xs text-ink-2 hover:text-ink-1"
-          >
-            ← Back to Finance
-          </Link>
-        </div>
-        <p className="text-sm text-ink-2 max-w-2xl">
-          Pick a CSV exported from your bank and click <span className="text-ink-1">Upload</span>.
-          We parse it, dedupe against existing transactions, and show a preview
-          — nothing is written until you click <span className="text-ink-1">Commit</span>.
-          Wells Fargo
-          is the default; generic mode works for any CSV with date /
-          description / amount columns.
-        </p>
-      </header>
+    <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+      <PageHeader
+        eyebrow="Import hub"
+        title="Upload"
+        subtitle="Bring everything in here — bank transactions, budget, and pledges — then set your current balance so cash matches the bank."
+      />
 
-      {/* Form */}
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-6 mb-6">
-        <div className="grid sm:grid-cols-[1fr_auto] gap-4 items-end">
-          <div className="flex-1">
-            <label className="block text-xs uppercase tracking-wide text-ink-2 mb-2">
-              Bank format
-            </label>
-            <select
-              value={format}
-              onChange={(e) => setFormat(e.target.value as BankFormat)}
-              className="w-full bg-ink border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1"
-            >
-              {FORMATS.map((f) => (
-                <option key={f.value} value={f.value}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs uppercase tracking-wide text-ink-2 mb-2">
-              CSV file
-            </label>
-            <input
-              type="file"
-              accept=".csv,text/csv"
-              onChange={(e) => {
-                setFile(e.target.files?.[0] ?? null);
-                setPreview(null);
-                setError(null);
-                setResult(null);
-              }}
-              className="block text-sm text-ink-1 file:mr-3 file:rounded-lg file:border-0 file:bg-orange file:text-white file:px-3 file:py-2 file:text-xs file:font-medium file:cursor-pointer hover:file:bg-orange-dark"
-            />
-          </div>
-        </div>
+      {/* Set current balance / reconcile */}
+      <ReconcileCard computedCash={snap.cashOnHand} anchorDate={snap.cfg.startDate} reconciledAt={snap.cfg.reconciledAt} />
 
-        <div className="mt-5 flex items-center gap-3 flex-wrap">
-          <button
-            type="button"
-            disabled={!file || busy !== "idle"}
-            onClick={doPreview}
-            className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {busy === "previewing" ? "Reading…" : "Upload"}
-          </button>
-          <span className="text-[11px] text-ink-2">
-            Reads the file, dedupes against existing transactions, shows a
-            preview. You confirm before anything is saved.
-          </span>
-          {file && (
-            <span className="text-xs text-ink-2 ml-auto">
-              {file.name} · {(file.size / 1024).toFixed(1)} KB
-            </span>
-          )}
-        </div>
+      {/* Other import flows */}
+      <section className="grid sm:grid-cols-2 gap-3">
+        <HubLink
+          href="/admin/finance/budget/import"
+          title="Import budget →"
+          desc="Bring in your annual budget from a QuickBooks export."
+        />
+        <HubLink
+          href="/admin/finance/revenue"
+          title="Pledges & grants →"
+          desc="Log committed, projected, and received revenue (or sync from HubSpot)."
+        />
       </section>
 
-      {/* Error */}
-      {error && (
-        <div className="mb-6 rounded-card border border-expense/30 bg-expense-bg p-4 text-sm text-expense">
-          <div className="font-medium mb-1">{error}</div>
-          {errorHint && (
-            <div className="text-xs text-expense mb-3">{errorHint}</div>
-          )}
-          {errorSample && errorSample.length > 0 && (
-            <details className="mt-2" open>
-              <summary className="text-xs uppercase tracking-wider text-expense cursor-pointer hover:text-expense">
-                First {errorSample.length} lines we saw in the file
-              </summary>
-              <pre className="mt-2 text-[11px] font-mono text-ink-1 bg-surface rounded p-3 overflow-x-auto">
-                {errorSample.join("\n")}
-              </pre>
-            </details>
-          )}
-        </div>
-      )}
-
-      {/* Commit result */}
-      {result && (
-        <div className="mb-6 rounded-card border border-revenue/30 bg-revenue-bg p-4 text-sm text-revenue">
-          Imported <b>{result.inserted}</b> transactions
-          {result.duplicates_skipped > 0 && <> · skipped <b>{result.duplicates_skipped}</b> duplicates</>}
-          {result.categorized > 0 && <> · auto-categorized <b>{result.categorized}</b></>}
-          {result.period_start && result.period_end && (
-            <> · period <b>{result.period_start}</b> → <b>{result.period_end}</b></>
-          )}
-          .{" "}
-          <Link href="/admin/finance/transactions" className="underline">
-            Review →
-          </Link>
-        </div>
-      )}
-
-      {/* Preview */}
-      {preview && (
-        <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-6">
-          {preview.file_already_imported && (
-            <div className="mb-4 rounded-card border border-[#D9BE86] bg-[#F4E8D0] p-3 text-xs text-amber-100">
-              This file&apos;s hash matches a prior import. Committing will be
-              refused — re-upload only after rotating the file or trimming
-              its date range.
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <Stat label="Rows in file" value={preview.row_count.toString()} />
-            <Stat label="New" value={preview.new_count.toString()} accent />
-            <Stat label="Duplicates" value={preview.duplicate_count.toString()} />
-            <Stat label="Auto-categorized" value={preview.categorized_count.toString()} />
-            <Stat label="Inflow total" value={fmtMoney(preview.inflow_total)} accent />
-            <Stat label="Outflow total" value={fmtMoney(preview.outflow_total)} />
-            <Stat label="Period start" value={preview.period_start ?? "—"} />
-            <Stat label="Period end" value={preview.period_end ?? "—"} />
-          </div>
-
-          <div className="overflow-x-auto mb-6">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-ink-2 uppercase tracking-wide">
-                  <th className="text-left px-2 py-2">Date</th>
-                  <th className="text-left px-2 py-2">Description</th>
-                  <th className="text-right px-2 py-2">Amount</th>
-                  <th className="text-left px-2 py-2">Category</th>
-                  <th className="text-left px-2 py-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {preview.rows.map((r) => (
-                  <tr
-                    key={r.dedup_hash}
-                    className={`border-t border-hairline ${r.is_duplicate ? "opacity-40" : ""}`}
-                  >
-                    <td className="px-2 py-2 font-mono text-ink-1">{r.txn_date}</td>
-                    <td className="px-2 py-2 text-ink-1 max-w-md truncate">
-                      {r.description}
-                    </td>
-                    <td
-                      className={`px-2 py-2 text-right font-mono ${
-                        r.amount >= 0 ? "text-revenue" : "text-ink-1"
-                      }`}
-                    >
-                      {fmtMoney(r.amount)}
-                    </td>
-                    <td className="px-2 py-2 text-ink-2">
-                      {r.category_id ?? <span className="text-[#A56A1B]">uncategorized</span>}
-                    </td>
-                    <td className="px-2 py-2">
-                      {r.is_duplicate ? (
-                        <span className="text-ink-2">duplicate</span>
-                      ) : (
-                        <span className="text-revenue">new</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {preview.row_count > preview.rows.length && (
-              <p className="mt-2 text-xs text-ink-2">
-                Showing first {preview.rows.length} of {preview.row_count} rows.
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 pt-4 border-t border-hairline">
-            <button
-              type="button"
-              disabled={busy !== "idle" || preview.new_count === 0 || preview.file_already_imported}
-              onClick={doCommit}
-              className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {busy === "committing"
-                ? "Importing…"
-                : `Commit ${preview.new_count} transaction${preview.new_count === 1 ? "" : "s"}`}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setPreview(null);
-                setError(null);
-              }}
-              className="px-4 py-2 rounded-lg text-ink-1 hover:text-ink-1 text-sm"
-            >
-              Cancel
-            </button>
-          </div>
-        </section>
-      )}
+      <UploadClient />
     </div>
   );
 }
 
-function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function HubLink({ href, title, desc }: { href: string; title: string; desc: string }) {
   return (
-    <div>
-      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}</div>
-      <div className={`text-lg font-medium ${accent ? "text-orange" : "text-ink-1"}`}>
-        {value}
-      </div>
-    </div>
+    <Link
+      href={href}
+      className="block rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-4 hover:border-orange/40 transition-colors"
+    >
+      <div className="text-sm font-semibold text-ink-1">{title}</div>
+      <div className="text-xs text-ink-2 mt-0.5">{desc}</div>
+    </Link>
   );
 }

@@ -21,103 +21,22 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "@/app/admin/ops/_types/ops";
 import { getDataAge } from "@/lib/admin/dataAge";
+import {
+  getFinanceSnapshot,
+  fiscalYearBounds,
+  type FinanceSnapshot,
+  type MonthBucket as FinMonthBucket,
+} from "@/lib/admin/finance";
 
-// ── Fiscal-year + month helpers (shared with lib/admin/finance.ts) ───────────
+// ── Finance: delegates to the canonical snapshot (lib/admin/finance.ts) so the
+// CEO cockpit, the Finance dashboard, and the briefing engine all read cash,
+// burn, runway, and the monthly series from one place — they can't drift. ─────
 
-const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+export type MonthBucket = FinMonthBucket;
+export type FinanceData = FinanceSnapshot;
 
-const fiscalYearBounds = (year: number, startMonth: number) => {
-  if (startMonth === 1) return { start: `${year}-01-01`, end: `${year}-12-31` };
-  const sm = String(startMonth).padStart(2, "0");
-  const lastDay = new Date(year, startMonth - 1, 0).getDate();
-  const em = String(startMonth - 1).padStart(2, "0");
-  return { start: `${year - 1}-${sm}-01`, end: `${year}-${em}-${lastDay}` };
-};
-
-const monthLabel = (yyyymm: string) => MONTH_ABBR[Number(yyyymm.slice(5, 7)) - 1] ?? "";
-
-function monthsBetween(start: string, end: string): string[] {
-  const out: string[] = [];
-  const cur = new Date(Date.UTC(Number(start.slice(0, 4)), Number(start.slice(5, 7)) - 1, 1));
-  const e = new Date(end + "T00:00:00Z");
-  while (cur <= e) {
-    out.push(`${cur.getUTCFullYear()}-${String(cur.getUTCMonth() + 1).padStart(2, "0")}`);
-    cur.setUTCMonth(cur.getUTCMonth() + 1);
-  }
-  return out;
-}
-
-// ── Finance ──────────────────────────────────────────────────────────────────
-
-export type MonthBucket = { label: string; revenue: number; expense: number; ending: number };
-
-export type FinanceData = {
-  cfg: { year: number; startMonth: number; goal: number; startBal: number; startDate: string | null };
-  revenueYTD: number;
-  expenseYTD: number;
-  cashOnHand: number;
-  /** Trailing 3-active-month average monthly expense. */
-  burn3mo: number;
-  /** cashOnHand / burn3mo; null when there is no burn to divide by. */
-  runwayMonths: number | null;
-  monthBuckets: MonthBucket[];
-};
-
-/**
- * Cash, burn, runway and the monthly revenue/expense/ending series — the spine
- * for the runway hero, the finance chart and the runway "fire". Runway = cash
- * on hand / trailing-3-month average burn, matching lib/admin/finance.ts.
- */
-export const getFinance = cache(async (): Promise<FinanceData> => {
-  const sb = getSupabaseAdmin();
-  const now = new Date();
-
-  const cfgRes = await sb
-    .from("fin_config")
-    .select("current_year, fiscal_year_start_month, fundraising_goal, cash_starting_balance, cash_starting_date")
-    .eq("id", 1)
-    .maybeSingle();
-  const cfg = {
-    year: typeof cfgRes.data?.current_year === "number" ? cfgRes.data.current_year : now.getFullYear(),
-    startMonth: typeof cfgRes.data?.fiscal_year_start_month === "number" ? cfgRes.data.fiscal_year_start_month : 1,
-    goal: Number(cfgRes.data?.fundraising_goal ?? 0),
-    startBal: Number(cfgRes.data?.cash_starting_balance ?? 0),
-    startDate: (cfgRes.data?.cash_starting_date as string | null) ?? null,
-  };
-  const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
-
-  const [txnsRes, cashRes] = await Promise.all([
-    sb.from("fin_transactions").select("txn_date, amount").gte("txn_date", fy.start).lte("txn_date", fy.end),
-    cfg.startDate
-      ? sb.from("fin_transactions").select("amount").gt("txn_date", cfg.startDate)
-      : Promise.resolve({ data: [] as Array<{ amount: number }>, error: null }),
-  ]);
-
-  const txns = (txnsRes.data ?? []).map((t) => ({ txn_date: t.txn_date as string, amount: Number(t.amount) }));
-  const revenueYTD = txns.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
-  const expenseYTD = txns.filter((t) => t.amount < 0).reduce((s, t) => s - t.amount, 0);
-  const cashOnHand = cfg.startBal + (cashRes.data ?? []).reduce((s, r) => s + Number(r.amount), 0);
-
-  const monthMap = new Map<string, { revenue: number; expense: number }>();
-  monthsBetween(fy.start, fy.end).forEach((m) => monthMap.set(m, { revenue: 0, expense: 0 }));
-  for (const t of txns) {
-    const b = monthMap.get(t.txn_date.slice(0, 7));
-    if (!b) continue;
-    if (t.amount > 0) b.revenue += t.amount;
-    else b.expense -= t.amount;
-  }
-  let running = cfg.startBal;
-  const monthBuckets: MonthBucket[] = Array.from(monthMap.entries()).map(([m, b]) => {
-    running += b.revenue - b.expense;
-    return { label: monthLabel(m), revenue: b.revenue, expense: b.expense, ending: running };
-  });
-  const active = monthBuckets.filter((b) => b.revenue > 0 || b.expense > 0);
-  const last3 = active.slice(-3);
-  const burn3mo = last3.reduce((s, b) => s + b.expense, 0) / Math.max(last3.length, 1);
-  const runwayMonths = burn3mo > 0 ? cashOnHand / burn3mo : null;
-
-  return { cfg, revenueYTD, expenseYTD, cashOnHand, burn3mo, runwayMonths, monthBuckets };
-});
+/** Cash, burn, runway and the monthly revenue/expense/ending series. */
+export const getFinance = getFinanceSnapshot;
 
 // ── Recent donations (legacy Stripe feed) ────────────────────────────────────
 

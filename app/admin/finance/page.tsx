@@ -11,87 +11,26 @@ import {
   Sparkline,
   money,
   type DonutSeg,
-  type MonthBucket,
 } from "./_components/charts";
 import PageHeader from "../_components/PageHeader";
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-function fiscalYearBounds(year: number, startMonth: number): { start: string; end: string } {
-  // startMonth is 1..12. If startMonth=1 (calendar year), the FY is
-  // YYYY-01-01 .. YYYY-12-31. For non-calendar fiscal years (e.g. start=7),
-  // FY runs Jul of (year-1) .. Jun of year, matching how most US nonprofits
-  // think about FY YYYY (the year it ENDS).
-  if (startMonth === 1) {
-    return { start: `${year}-01-01`, end: `${year}-12-31` };
-  }
-  const sy = year - 1;
-  const sm = String(startMonth).padStart(2, "0");
-  const em = String(startMonth - 1).padStart(2, "0");
-  return { start: `${sy}-${sm}-01`, end: `${year}-${em}-${endOfMonthDay(year, startMonth - 1)}` };
-}
-
-function endOfMonthDay(y: number, m: number): string {
-  // Last day of month m (1..12) in year y.
-  const d = new Date(y, m, 0).getDate();
-  return String(d).padStart(2, "0");
-}
-
-function monthKey(iso: string): string {
-  return iso.slice(0, 7); // YYYY-MM
-}
-
-function monthLabel(yyyymm: string): string {
-  const m = Number(yyyymm.slice(5, 7));
-  return [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ][m - 1] ?? yyyymm.slice(5, 7);
-}
-
-function monthsBetween(start: string, end: string): string[] {
-  // Inclusive list of YYYY-MM strings.
-  const out: string[] = [];
-  const s = new Date(start + "T00:00:00Z");
-  const e = new Date(end + "T00:00:00Z");
-  const cur = new Date(Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), 1));
-  while (cur <= e) {
-    const y = cur.getUTCFullYear();
-    const m = String(cur.getUTCMonth() + 1).padStart(2, "0");
-    out.push(`${y}-${m}`);
-    cur.setUTCMonth(cur.getUTCMonth() + 1);
-  }
-  return out;
-}
+import { getFinanceSnapshot, fiscalYearBounds } from "@/lib/admin/finance";
+import ReconcileCard from "./_components/ReconcileCard";
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default async function FinanceDashboardPage() {
   const supabase = getSupabaseAdmin();
 
-  const { data: cfgRow } = await supabase
-    .from("fin_config")
-    .select(
-      "current_year, fiscal_year_start_month, fundraising_goal, contingency_unlock_threshold, cash_starting_balance, cash_starting_date"
-    )
-    .eq("id", 1)
-    .maybeSingle();
-  const cfg = {
-    year: typeof cfgRow?.current_year === "number" ? cfgRow.current_year : new Date().getFullYear(),
-    startMonth:
-      typeof cfgRow?.fiscal_year_start_month === "number" ? cfgRow.fiscal_year_start_month : 1,
-    goal: Number(cfgRow?.fundraising_goal ?? 0),
-    unlock: Number(cfgRow?.contingency_unlock_threshold ?? 1),
-    startBal: Number(cfgRow?.cash_starting_balance ?? 0),
-    startDate: cfgRow?.cash_starting_date ?? null,
-  };
+  // Canonical numbers (cash, runway, burn, monthly series, YTD) come from the
+  // shared snapshot, so the dashboard, the CEO cockpit, and the briefing engine
+  // never disagree. The dashboard layers per-category detail on top.
+  const snap = await getFinanceSnapshot();
+  const cfg = snap.cfg;
   const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
-  // Pull everything we need in parallel.
   const [
     catsRes,
     txnsRes,
-    txnsAllRes,
     budgetRes,
     pledgesRes,
     uncatRes,
@@ -103,20 +42,12 @@ export default async function FinanceDashboardPage() {
       .select("id, group_name, display_name, kind, functional_class, sort_order, enabled")
       .eq("enabled", true)
       .order("sort_order"),
-    // Fiscal-year transactions — used for YTD math, monthly buckets, donut.
+    // Fiscal-year transactions with category — for YTD-by-category, donuts, budget.
     supabase
       .from("fin_transactions")
       .select("txn_date, amount, category_id, restricted")
       .gte("txn_date", fy.start)
       .lte("txn_date", fy.end),
-    // All transactions after the starting balance anchor — used to compute
-    // current cash on hand.
-    cfg.startDate
-      ? supabase
-          .from("fin_transactions")
-          .select("amount")
-          .gt("txn_date", cfg.startDate)
-      : Promise.resolve({ data: [], error: null }),
     supabase
       .from("fin_budget")
       .select("category_id, base_amount, contingency_t1, contingency_t2, activated_contingency")
@@ -149,55 +80,10 @@ export default async function FinanceDashboardPage() {
     }>;
   txns.forEach((t) => (t.amount = Number(t.amount)));
 
-  // ── Cash on hand ────────────────────────────────────────────────────────
-  // cash = starting_balance + sum(amount > starting_date)
-  const txnsSinceStart =
-    (txnsAllRes.data ?? []) as Array<{ amount: number }>;
-  const sinceStartNet = txnsSinceStart.reduce((s, r) => s + Number(r.amount), 0);
-  const cashOnHand = cfg.startBal + sinceStartNet;
-
-  // ── Monthly buckets across the fiscal year ─────────────────────────────
-  const months = monthsBetween(fy.start, fy.end);
-  const monthMap = new Map<string, { revenue: number; expense: number }>();
-  months.forEach((m) => monthMap.set(m, { revenue: 0, expense: 0 }));
-  for (const t of txns) {
-    const k = monthKey(t.txn_date);
-    const b = monthMap.get(k);
-    if (!b) continue;
-    if (t.amount > 0) b.revenue += t.amount;
-    else b.expense += -t.amount;
-  }
-  // Running ending balance — start at cfg.startBal and add net per month
-  // (only if start_date is null or precedes the FY). If we have no anchor,
-  // ending balance starts at 0 and walks up/down.
-  let running = cfg.startBal;
-  const monthBuckets: MonthBucket[] = months.map((m) => {
-    const b = monthMap.get(m)!;
-    running += b.revenue - b.expense;
-    return {
-      label: monthLabel(m),
-      revenue: b.revenue,
-      expense: b.expense,
-      ending: running,
-    };
-  });
-
-  // ── YTD totals ─────────────────────────────────────────────────────────
-  const revenueYTD = txns.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
-  const expenseYTD = txns.filter((t) => t.amount < 0).reduce((s, t) => s + -t.amount, 0);
-  const netYTD = revenueYTD - expenseYTD;
-
-  // ── 3-mo burn + sparkline ──────────────────────────────────────────────
-  // Use last 3 *completed* months by spend; if FY just started we fall back
-  // to whatever's there. Burn is positive.
+  // Canonical cash / runway / monthly series / YTD — one source of truth
+  // (lib/admin/finance.ts), shared with the cockpit and the briefing.
+  const { cashOnHand, burn3mo, runwayMonths, monthBuckets, expenseYTD, netYTD } = snap;
   const monthlyBurn = monthBuckets.map((b) => b.expense);
-  const completed = monthBuckets.filter((b) => b.expense > 0 || b.revenue > 0);
-  const recentBurnSlice = completed.slice(-3).map((b) => b.expense);
-  const burn3mo =
-    recentBurnSlice.length > 0
-      ? recentBurnSlice.reduce((s, x) => s + x, 0) / recentBurnSlice.length
-      : 0;
-  const runwayMonths = burn3mo > 0 ? cashOnHand / burn3mo : null;
 
   // ── Functional split donut (expenses by program / admin / fundraising) ──
   const functionalTotals = { program: 0, admin: 0, fundraising: 0, uncategorized: 0 };
@@ -344,11 +230,6 @@ export default async function FinanceDashboardPage() {
   const goalPct = cfg.goal > 0 ? raisedHard / cfg.goal : 0;
   const budgetPct = totalBudget > 0 ? expenseYTD / totalBudget : 0;
 
-  // Friendly month-over-month for the cash hero card. Last completed month
-  // net = (revenue - expense) of that month.
-  const lastCompleted = [...monthBuckets].reverse().find((b) => b.expense > 0 || b.revenue > 0);
-  const lastMoNet = lastCompleted ? lastCompleted.revenue - lastCompleted.expense : 0;
-
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
@@ -360,20 +241,12 @@ export default async function FinanceDashboardPage() {
         subtitle="Live picture of cash, burn, fundraising, and budget. Numbers update as transactions are imported, categorized, and pledges are received."
       />
 
+      {/* Cash anchor + reconcile — the trusted current-balance number, with a
+          one-tap "set current balance" and a freshness indicator. */}
+      <ReconcileCard computedCash={cashOnHand} anchorDate={cfg.startDate} reconciledAt={cfg.reconciledAt} />
+
       {/* Hero KPIs */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Hero
-          label="Cash on hand"
-          value={money(cashOnHand)}
-          sub={
-            cfg.startDate
-              ? `since ${cfg.startDate}`
-              : "set a starting balance in Config"
-          }
-          delta={lastMoNet}
-          deltaLabel="last month"
-          accent="orange"
-        />
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Hero
           label="Runway"
           value={

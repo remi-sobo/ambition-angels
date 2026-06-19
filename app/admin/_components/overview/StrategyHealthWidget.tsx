@@ -21,6 +21,20 @@ const HEALTH_LABEL: Record<string, string> = {
   not_started: "Not started",
 };
 
+const BAR: Record<string, string> = {
+  behind: "bg-expense",
+  at_risk: "bg-[#C8881B]",
+  on_track: "bg-revenue",
+  done: "bg-revenue",
+  not_started: "bg-gray-mid",
+};
+
+const fmtVal = (v: number, unit: string | null): string => {
+  if (unit === "$") return Math.abs(v) >= 1000 ? `$${Math.round(v / 1000)}k` : `$${v.toLocaleString()}`;
+  if (unit === "%") return `${Math.round(v)}%`;
+  return v.toLocaleString();
+};
+
 function reviewLine(nextReviewAt: string | null, lastReviewAt: string | null): { text: string; tone: string } {
   if (!nextReviewAt && !lastReviewAt) return { text: "No OGSM review logged yet", tone: "text-ink-2" };
   if (!nextReviewAt) return { text: "Next review not scheduled", tone: "text-ink-2" };
@@ -32,7 +46,7 @@ function reviewLine(nextReviewAt: string | null, lastReviewAt: string | null): {
 }
 
 export default async function StrategyHealthWidget({ className }: { className?: string }) {
-  const { hasPlan, objectives, nextReviewAt, lastReviewAt } = await getStrategyRollup();
+  const { hasPlan, objectives, headlineKpis, nextReviewAt, lastReviewAt } = await getStrategyRollup();
   const review = reviewLine(nextReviewAt, lastReviewAt);
 
   return (
@@ -57,6 +71,30 @@ export default async function StrategyHealthWidget({ className }: { className?: 
               </li>
             ))}
           </ul>
+          {headlineKpis.length > 0 && (
+            <div className="mt-4 border-t border-outline pt-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Key measures</span>
+                <Link href="/admin/strategic-plan/scorecard" className="text-[11px] font-semibold text-orange hover:text-orange-mid">
+                  Scorecard →
+                </Link>
+              </div>
+              <ul className="space-y-2">
+                {headlineKpis.map((k) => (
+                  <li key={k.id} className="flex items-center gap-2.5">
+                    <span className="text-xs text-ink-1 truncate min-w-0 flex-1">{k.title}</span>
+                    <div className="w-16 h-1.5 rounded-full bg-tile overflow-hidden flex-shrink-0">
+                      <div className={`h-full ${BAR[k.status] ?? "bg-gray-mid"}`} style={{ width: `${k.pct}%` }} />
+                    </div>
+                    <span className="text-[11px] text-ink-2 tabular-nums flex-shrink-0 w-20 text-right">
+                      {fmtVal(k.current, k.unit)}<span className="text-ink-3"> / {fmtVal(k.target, k.unit)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-outline pt-3">
             <span className={`text-xs ${review.tone}`}>{review.text}</span>
             <Link href="/admin/strategic-plan/review" className="text-xs font-semibold text-orange hover:text-orange-mid whitespace-nowrap">

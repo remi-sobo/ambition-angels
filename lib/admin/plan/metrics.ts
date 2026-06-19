@@ -153,7 +153,16 @@ export async function refreshOrgPlanMetrics(
       })
       .eq("id", k.id)
       .eq("org_id", orgId);
-    if (!error) results.push({ key: k.metric_key, value });
+    if (!error) {
+      results.push({ key: k.metric_key, value });
+      // Record a daily snapshot so the scorecard can draw the trend.
+      await supabase
+        .from("plan_kpi_snapshots")
+        .upsert(
+          { org_id: orgId, kpi_id: k.id, captured_on: new Date().toISOString().slice(0, 10), value },
+          { onConflict: "kpi_id,captured_on" }
+        );
+    }
   }
   return { updated: results.length, results };
 }

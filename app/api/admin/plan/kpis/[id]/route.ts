@@ -62,6 +62,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     console.error("Update KPI failed:", error.message);
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
+  // Snapshot a manual value change so the scorecard trend keeps building.
+  if (typeof update.current === "number") {
+    await supabase.from("plan_kpi_snapshots").upsert(
+      { org_id: ctx.orgId, kpi_id: params.id, captured_on: new Date().toISOString().slice(0, 10), value: update.current },
+      { onConflict: "kpi_id,captured_on" }
+    );
+  }
   await audit(req, {
     action: "governance.kpi.update",
     entityType: "plan_kpi",

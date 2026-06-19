@@ -85,23 +85,36 @@ export type StrategyObjectiveTile = {
   kpisOffTrack: number;
 };
 
+export type StrategyHeadlineKpi = {
+  id: string;
+  title: string;
+  unit: string | null;
+  target: number;
+  current: number;
+  status: string;
+  owner: string | null;
+  pct: number;
+};
+
 export type StrategyRollup = {
   hasPlan: boolean;
   objectives: StrategyObjectiveTile[];
+  /** A handful of target-bearing KPIs for the home summary — off-track first. */
+  headlineKpis: StrategyHeadlineKpi[];
   nextReviewAt: string | null;
   lastReviewAt: string | null;
 };
 
 export const getStrategyRollup = cache(async (): Promise<StrategyRollup> => {
   const ctx = await getOrgContext();
-  if (!ctx) return { hasPlan: false, objectives: [], nextReviewAt: null, lastReviewAt: null };
+  if (!ctx) return { hasPlan: false, objectives: [], headlineKpis: [], nextReviewAt: null, lastReviewAt: null };
   const sb = getSupabaseAdmin();
   const orgId = ctx.orgId;
 
   const [objsRes, goalsRes, kpisRes, reviewRes] = await Promise.all([
     sb.from("plan_objectives").select("id, title, status").eq("org_id", orgId).order("sort_order").order("created_at"),
     sb.from("plan_goals").select("id, objective_id").eq("org_id", orgId),
-    sb.from("plan_kpis").select("goal_id, objective_id, status").eq("org_id", orgId),
+    sb.from("plan_kpis").select("id, goal_id, objective_id, status, title, unit, target, current, owner").eq("org_id", orgId),
     // Resilient if plan_reviews isn't migrated yet (error → data null).
     sb.from("plan_reviews").select("conducted_at, next_review_at").eq("org_id", orgId).order("conducted_at", { ascending: false }).limit(1),
   ]);
@@ -109,14 +122,45 @@ export const getStrategyRollup = cache(async (): Promise<StrategyRollup> => {
   const goalObjective = new Map(
     ((goalsRes.data ?? []) as { id: string; objective_id: string | null }[]).map((g) => [g.id, g.objective_id])
   );
+  type KpiRow = {
+    id: string; goal_id: string | null; objective_id: string | null; status: string;
+    title: string; unit: string | null; target: number | null; current: number | null; owner: string | null;
+  };
+  const kpiRows = (kpisRes.data ?? []) as KpiRow[];
   const statusesByObjective = new Map<string, string[]>();
-  for (const k of (kpisRes.data ?? []) as { goal_id: string | null; objective_id: string | null; status: string }[]) {
+  for (const k of kpiRows) {
     const objId = k.objective_id ?? (k.goal_id ? goalObjective.get(k.goal_id) ?? null : null);
     if (!objId) continue;
     const arr = statusesByObjective.get(objId) ?? [];
     arr.push(k.status);
     statusesByObjective.set(objId, arr);
   }
+
+  // Headline KPIs: those with a real target, off-track first, then lowest % to
+  // target — the "what needs attention / where do we stand" summary.
+  const headlineKpis: StrategyHeadlineKpi[] = kpiRows
+    .filter((k) => k.target != null && Number(k.target) > 0)
+    .map((k) => {
+      const target = Number(k.target);
+      const current = k.current == null ? 0 : Number(k.current);
+      return {
+        id: k.id,
+        title: k.title,
+        unit: k.unit,
+        target,
+        current,
+        status: k.status,
+        owner: k.owner,
+        pct: Math.max(0, Math.min(100, Math.round((current / target) * 100))),
+      };
+    })
+    .sort((a, b) => {
+      const ao = isOffTrack(a.status) ? 0 : 1;
+      const bo = isOffTrack(b.status) ? 0 : 1;
+      if (ao !== bo) return ao - bo;
+      return a.pct - b.pct;
+    })
+    .slice(0, 5);
 
   const objectives: StrategyObjectiveTile[] = (
     (objsRes.data ?? []) as { id: string; title: string; status: string }[]
@@ -134,6 +178,7 @@ export const getStrategyRollup = cache(async (): Promise<StrategyRollup> => {
   return {
     hasPlan: objectives.length > 0,
     objectives,
+    headlineKpis,
     nextReviewAt: latest?.next_review_at ?? null,
     lastReviewAt: latest?.conducted_at ?? null,
   };

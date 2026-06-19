@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendOperatorEmail, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
+import { refreshAllPlanMetrics } from "@/lib/admin/plan/metrics";
 
 /**
  * Daily deadline reminders (the "never lives in someone's head" promise):
@@ -32,6 +33,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const supabase = getSupabaseAdmin();
+
+  // Refresh the strategy auto-KPIs daily (+ snapshot) so the scorecard's
+  // numbers and trend sparklines stay fresh on the home screen. Best-effort —
+  // never block the reminders on it.
+  await refreshAllPlanMetrics(supabase).catch((e) =>
+    console.error("daily plan-metric refresh failed:", e)
+  );
+
   const today = plusDays(0);
   const targets = [plusDays(14), plusDays(7), plusDays(1)];
 

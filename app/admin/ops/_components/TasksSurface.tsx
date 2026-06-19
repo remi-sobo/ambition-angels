@@ -11,6 +11,14 @@ import type { OpsTask } from "../_types/ops";
 type View = "list" | "board";
 type Scope = "active" | "archived";
 type LinkFilter = "all" | "any" | "partner" | "constituent";
+type AssigneeFilter = "all" | "remi" | "shannon" | "unassigned";
+
+const ASSIGNEE_OPTIONS: { value: AssigneeFilter; label: string }[] = [
+  { value: "all", label: "Everyone" },
+  { value: "remi", label: "Remi" },
+  { value: "shannon", label: "Shannon" },
+  { value: "unassigned", label: "Unassigned" },
+];
 
 const LINK_OPTIONS: { value: LinkFilter; label: string }[] = [
   { value: "all", label: "All tasks" },
@@ -47,6 +55,7 @@ export default function TasksSurface({
   const [view, setView] = useState<View>("list");
   const [groupBy, setGroupBy] = useState<GroupBy>("priority");
   const [linkFilter, setLinkFilter] = useState<LinkFilter>("all");
+  const [assignee, setAssignee] = useState<AssigneeFilter>("all");
   const [archiving, setArchiving] = useState(false);
 
   const activeTasks = useMemo(() => tasks.filter((t) => !t.archived_at), [tasks]);
@@ -59,10 +68,13 @@ export default function TasksSurface({
   );
 
   const visibleTasks = useMemo(() => {
-    if (linkFilter === "all") return activeTasks;
-    if (linkFilter === "any") return activeTasks.filter((t) => !!t.linked_entity_type);
-    return activeTasks.filter((t) => t.linked_entity_type === linkFilter);
-  }, [activeTasks, linkFilter]);
+    let list = activeTasks;
+    if (linkFilter === "any") list = list.filter((t) => !!t.linked_entity_type);
+    else if (linkFilter !== "all") list = list.filter((t) => t.linked_entity_type === linkFilter);
+    if (assignee === "unassigned") list = list.filter((t) => !t.assigned_to);
+    else if (assignee !== "all") list = list.filter((t) => t.assigned_to === assignee);
+    return list;
+  }, [activeTasks, linkFilter, assignee]);
 
   // One-tap archive of every done-but-not-yet-archived task on the active surface.
   const doneActive = useMemo(() => activeTasks.filter((t) => t.status === "done"), [activeTasks]);
@@ -113,7 +125,7 @@ export default function TasksSurface({
 
           <span className="text-[11px] text-ink-3">
             {scope === "active" ? visibleTasks.length : archivedTasks.length}
-            {scope === "active" && linkFilter !== "all" && activeTasks.length !== visibleTasks.length
+            {scope === "active" && activeTasks.length !== visibleTasks.length
               ? ` / ${activeTasks.length}`
               : ""}
           </span>
@@ -131,6 +143,20 @@ export default function TasksSurface({
                 {archiving ? "Archiving…" : `Archive done (${doneActive.length})`}
               </button>
             )}
+            <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ink-2">
+              Assignee
+              <select
+                value={assignee}
+                onChange={(e) => setAssignee(e.target.value as AssigneeFilter)}
+                className="bg-tile border-[1.5px] border-outline rounded-lg px-2.5 py-1.5 text-xs text-ink-1 normal-case tracking-normal focus:outline-none focus:border-orange/50"
+              >
+                {ASSIGNEE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ink-2">
               Linked
               <select

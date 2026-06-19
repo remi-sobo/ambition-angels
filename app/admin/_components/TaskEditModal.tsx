@@ -44,7 +44,11 @@ export default function TaskEditModal({
   const [category, setCategory] = useState<TaskCategory>(task.category);
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [priority, setPriority] = useState<TaskPriority>(task.priority);
-  const [labels, setLabels] = useState((task.labels ?? []).join(", "));
+  // `sys:`-prefixed labels are internal (e.g. the ingest dedupe key) — keep
+  // them out of the editable field but preserve them on save.
+  const [labels, setLabels] = useState(
+    (task.labels ?? []).filter((l) => !l.startsWith("sys:")).join(", ")
+  );
   const [assignee, setAssignee] = useState<"remi" | "shannon" | "">(
     task.assigned_to ?? ""
   );
@@ -122,10 +126,10 @@ export default function TaskEditModal({
           category,
           status,
           priority,
-          labels: labels
-            .split(",")
-            .map((l) => l.trim())
-            .filter(Boolean),
+          labels: [
+            ...labels.split(",").map((l) => l.trim()).filter(Boolean),
+            ...(task.labels ?? []).filter((l) => l.startsWith("sys:")),
+          ],
           assigned_to: assignee || null,
           due_date: dueDate || null,
           project_id: projectId || null,

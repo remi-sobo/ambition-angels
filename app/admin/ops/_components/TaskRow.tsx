@@ -156,7 +156,7 @@ export default function TaskRow({
         >
           {categoryLabel(task.category)}
         </span>
-        {(task.labels ?? []).map((label) => (
+        {(task.labels ?? []).filter((l) => !l.startsWith("sys:")).map((label) => (
           <span
             key={label}
             className="inline-block px-1.5 py-0.5 rounded text-[10px] tracking-wide font-medium border bg-tile text-ink-2 border-outline"

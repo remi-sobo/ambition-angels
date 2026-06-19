@@ -12,7 +12,7 @@
  * Scope is set to "/admin/" at registration time (see AdminPWA.tsx).
  */
 
-const CACHE = "aa-admin-v4";
+const CACHE = "aa-admin-v5";
 const CORE = ["/admin"];
 
 self.addEventListener("install", (event) => {

@@ -107,6 +107,14 @@ export default async function StrategicPlanPage() {
         }
         actions={
           <div className="flex items-center gap-2 flex-wrap">
+            {!isEmpty && (
+              <Link
+                href="/admin/strategic-plan/scorecard"
+                className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors"
+              >
+                KPI Scorecard
+              </Link>
+            )}
             <Link
               href="/admin/strategic-plan/setup"
               className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"

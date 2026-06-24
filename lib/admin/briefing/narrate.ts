@@ -18,6 +18,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { Briefing } from "./engine";
 import type { Pulse } from "./pulse";
+import type { FollowupLite } from "./sources";
+import { FOLLOWUPS } from "../thresholds";
+
+type FollowupsSummary = { open: number; overdue: number };
+
+function summarizeFollowups(followups: FollowupLite[], now: number): FollowupsSummary {
+  const slaMs = FOLLOWUPS.slaHours * 3_600_000;
+  const open = followups.filter((f) => f.status !== "done");
+  const overdue = open.filter((f) => Date.parse(f.created_at) + slaMs < now);
+  return { open: open.length, overdue: overdue.length };
+}
 
 export const BRIEFING_MODEL = "claude-sonnet-4-6";
 const MAX_OUTPUT_TOKENS = 700;
@@ -42,7 +53,7 @@ const usd = (n: number) =>
 
 /** The compact, rounded fact sheet the model narrates — and the basis of the
  *  cache key. Rounding keeps the hash from churning on sub-dollar drift. */
-function factSheet(briefing: Briefing, pulse: Pulse, today: string) {
+function factSheet(briefing: Briefing, pulse: Pulse, followups: FollowupsSummary, today: string) {
   const counts = { critical: 0, watch: 0, due_soon: 0 };
   for (const it of briefing.items) counts[it.severity]++;
   return {
@@ -56,6 +67,7 @@ function factSheet(briefing: Briefing, pulse: Pulse, today: string) {
       goal: Math.round(pulse.goal),
       pctToGoal: pulse.pctToGoal == null ? null : Math.round(pulse.pctToGoal),
     },
+    followups,
     counts,
     total: briefing.items.length,
     topItems: briefing.top.map((it) => ({
@@ -112,6 +124,13 @@ function renderFactsForModel(fs: FactSheet): string {
       p.goal > 0 ? ` of a ${usd(p.goal)} goal (${p.pctToGoal}%)` : " (no goal set)"
     }`
   );
+  if (fs.followups.open > 0) {
+    lines.push(
+      `- Email follow-ups owed: ${fs.followups.open} open${
+        fs.followups.overdue > 0 ? `, ${fs.followups.overdue} past the ${FOLLOWUPS.slaHours}h reply window` : ""
+      } (people in HubSpot waiting on a reply)`
+    );
+  }
   lines.push("");
   if (fs.topItems.length === 0) {
     lines.push("ITEMS NEEDING A DECISION TODAY: none. The board is clear.");
@@ -220,11 +239,12 @@ function rowToNarrative(
 export async function generateNarrativeNow(
   briefing: Briefing,
   pulse: Pulse,
+  followups: FollowupLite[],
   now: number = Date.now(),
   sb: SupabaseClient = getSupabaseAdmin()
 ): Promise<Narrative> {
   const today = isoDate(now);
-  const fs = factSheet(briefing, pulse, today);
+  const fs = factSheet(briefing, pulse, summarizeFollowups(followups, now), today);
   let ai: Awaited<ReturnType<typeof callModel>> = null;
   try {
     ai = await callModel(fs);
@@ -261,6 +281,7 @@ export async function generateNarrativeNow(
 export async function getNarrative(
   briefing: Briefing,
   pulse: Pulse,
+  followups: FollowupLite[],
   now: number = Date.now()
 ): Promise<Narrative> {
   const sb = getSupabaseAdmin();
@@ -275,7 +296,7 @@ export async function getNarrative(
   } catch (e) {
     console.error("[briefing] narrative read failed:", e);
   }
-  return generateNarrativeNow(briefing, pulse, now, sb);
+  return generateNarrativeNow(briefing, pulse, followups, now, sb);
 }
 
 /** Cron entry point: gather the spine and force a fresh morning narrative so the
@@ -283,8 +304,8 @@ export async function getNarrative(
 export async function prewarmNarrative(now: number = Date.now()): Promise<void> {
   try {
     const { gatherBriefingView } = await import("./gather");
-    const { briefing, pulse } = await gatherBriefingView(now);
-    await generateNarrativeNow(briefing, pulse, now);
+    const { briefing, pulse, followups } = await gatherBriefingView(now);
+    await generateNarrativeNow(briefing, pulse, followups, now);
   } catch (e) {
     console.error("[briefing] narrative pre-warm failed:", e);
   }

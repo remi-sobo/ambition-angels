@@ -22,6 +22,7 @@ import type {
   OpportunityLite,
   PendingGiftLite,
   SessionLite,
+  FollowupLite,
 } from "./sources";
 
 export async function gatherInputs(): Promise<{
@@ -46,6 +47,7 @@ export async function gatherInputs(): Promise<{
     planGoalsRes,
     planKpisRes,
     reviewsRes,
+    followupsRes,
   ] =
     await Promise.all([
       getDataAge(),
@@ -84,6 +86,16 @@ export async function gatherInputs(): Promise<{
       sb.from("plan_goals").select("id, objective_id"),
       sb.from("plan_kpis").select("goal_id, objective_id, status"),
       sb.from("plan_reviews").select("next_review_at").order("conducted_at", { ascending: false }).limit(1),
+      // Email follow-ups (Cowork/Gmail): open tasks labelled "follow-up", oldest
+      // first. Resilient if the label/pipeline isn't active yet (data → []).
+      sb
+        .from("ops_tasks")
+        .select("id, title, description, created_at, due_date, status")
+        .contains("labels", ["follow-up"])
+        .neq("status", "done")
+        .is("archived_at", null)
+        .order("created_at", { ascending: true })
+        .limit(50),
     ]);
 
   const attended = new Set((attendanceRes.data ?? []).map((a) => a.session_id as string));
@@ -146,6 +158,7 @@ export async function gatherInputs(): Promise<{
     },
     engagement: { sessions },
     strategy: { objectivesOffTrack, reviewDueDays },
+    followups: { followups: (followupsRes.data ?? []) as FollowupLite[] },
   };
 
   const states = new Map<string, ItemState>();
@@ -164,9 +177,9 @@ export async function gatherBriefing(now: number = Date.now()): Promise<Briefing
  *  pre-warm so both see identical numbers. */
 export async function gatherBriefingView(
   now: number = Date.now()
-): Promise<{ briefing: Briefing; pulse: Pulse }> {
+): Promise<{ briefing: Briefing; pulse: Pulse; followups: FollowupLite[] }> {
   const { inputs, states, dataAge, finance } = await gatherInputs();
   const briefing = buildBriefing(inputs, dataAge, states, now);
   const pulse = buildPulse(finance, inputs.majorGifts.opportunities);
-  return { briefing, pulse };
+  return { briefing, pulse, followups: inputs.followups?.followups ?? [] };
 }

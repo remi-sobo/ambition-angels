@@ -1,16 +1,14 @@
 /**
- * POST /api/admin/fundraising/prospects/disqualify — drop one or more prospects
- * off the working Prospects list (or re-qualify them). The list is a read-only
- * HubSpot mirror keyed by hubspot_id, so this writes to a suppression set
- * (fr_prospect_disqualified) the list filters against; it never touches the
- * mirror and is fully reversible.
+ * POST /api/admin/fundraising/prospects/disqualify — drop prospects off the
+ * working bench (or requalify them). Flips fr_prospects.status between
+ * 'disqualified' and 'active'; the Prospects list shows only active rows. Fully
+ * reversible. Never touches the HubSpot mirror.
  *
- * Body: { hubspot_ids: string[] (or hubspot_id: string), disqualified: boolean,
- *         reason?: string }
+ * Body: { prospect_ids: string[] (or prospect_id: string), disqualified: boolean }
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { isAuthed } from "@/lib/admin/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -19,40 +17,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as
-    | { hubspot_ids?: unknown; hubspot_id?: unknown; disqualified?: unknown; reason?: unknown }
+    | { prospect_ids?: unknown; prospect_id?: unknown; disqualified?: unknown }
     | null;
 
-  const list = Array.isArray(body?.hubspot_ids)
-    ? body!.hubspot_ids
-    : typeof body?.hubspot_id === "string"
-    ? [body!.hubspot_id]
+  const list = Array.isArray(body?.prospect_ids)
+    ? body!.prospect_ids
+    : typeof body?.prospect_id === "string"
+    ? [body!.prospect_id]
     : [];
   const ids = list.filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 500);
-  if (ids.length === 0) return NextResponse.json({ error: "No hubspot ids" }, { status: 400 });
+  if (ids.length === 0) return NextResponse.json({ error: "No prospect ids" }, { status: 400 });
   if (typeof body?.disqualified !== "boolean") {
     return NextResponse.json({ error: "disqualified (boolean) required" }, { status: 400 });
   }
 
   const supabase = createServerSupabase();
-
-  if (!body.disqualified) {
-    const { error } = await supabase.from("fr_prospect_disqualified").delete().in("hubspot_id", ids);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true, requalified: ids.length });
-  }
-
-  const ctx = await getOrgContext();
-  const by = await getAdminUser();
-  const reason = typeof body.reason === "string" ? body.reason.slice(0, 300) : null;
-  const rows = ids.map((hubspot_id) => ({
-    hubspot_id,
-    org_id: ctx?.orgId ?? null,
-    reason,
-    disqualified_by: by,
-  }));
   const { error } = await supabase
-    .from("fr_prospect_disqualified")
-    .upsert(rows, { onConflict: "hubspot_id" });
+    .from("fr_prospects")
+    .update({ status: body.disqualified ? "disqualified" : "active", updated_at: new Date().toISOString() })
+    .in("id", ids);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, disqualified: ids.length });
+
+  return NextResponse.json({ ok: true, [body.disqualified ? "disqualified" : "requalified"]: ids.length });
 }

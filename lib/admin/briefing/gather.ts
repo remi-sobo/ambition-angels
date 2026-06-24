@@ -15,6 +15,7 @@ import {
   type Briefing,
 } from "./engine";
 import { buildPulse, type Pulse } from "./pulse";
+import { getFundraisingPriorities, type FundraisingMove } from "./fundraising";
 import type { FinanceSnapshot } from "../finance";
 import type {
   TaskLite,
@@ -175,11 +176,15 @@ export async function gatherBriefing(now: number = Date.now()): Promise<Briefing
 /** The page view: the ranked briefing plus the deterministic pulse strip,
  *  from a single spine gather. Shared by the page render and the narrative
  *  pre-warm so both see identical numbers. */
-export async function gatherBriefingView(
-  now: number = Date.now()
-): Promise<{ briefing: Briefing; pulse: Pulse; followups: FollowupLite[] }> {
+export async function gatherBriefingView(now: number = Date.now()): Promise<{
+  briefing: Briefing;
+  pulse: Pulse;
+  followups: FollowupLite[];
+  fundraising: FundraisingMove[];
+}> {
   const { inputs, states, dataAge, finance } = await gatherInputs();
   const briefing = buildBriefing(inputs, dataAge, states, now);
   const pulse = buildPulse(finance, inputs.majorGifts.opportunities);
-  return { briefing, pulse, followups: inputs.followups?.followups ?? [] };
+  const fundraising = await getFundraisingPriorities(getSupabaseAdmin(), now).catch(() => []);
+  return { briefing, pulse, followups: inputs.followups?.followups ?? [], fundraising };
 }

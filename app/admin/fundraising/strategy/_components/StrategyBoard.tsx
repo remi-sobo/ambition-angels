@@ -324,7 +324,7 @@ function FunderCard({ funder }: { funder: FunderRow }) {
             ))}
           {funder.opportunityId ? (
             <Link href="/admin/fundraising" className="font-semibold text-revenue hover:text-orange transition-colors">
-              Opportunity created ✓ · Major Gifts
+              Opportunity created ✓ · Pipeline
             </Link>
           ) : canPursue ? (
             <button

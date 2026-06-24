@@ -11,7 +11,7 @@ export default async function PipelineWidget({ className }: { className?: string
   const { stages, total } = await getPipeline();
 
   return (
-    <Widget title="Fundraising Pipeline" href="/admin/fundraising" hrefLabel="Major Gifts" className={className}>
+    <Widget title="Fundraising Pipeline" href="/admin/fundraising" hrefLabel="Pipeline" className={className}>
       {stages.length === 0 ? (
         <Empty>No deals synced yet. Run a HubSpot sync from the sidebar to populate the pipeline.</Empty>
       ) : (

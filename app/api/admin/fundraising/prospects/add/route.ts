@@ -8,6 +8,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { linkProspectToAngle } from "@/lib/fundraising/link-prospect-angle";
+
+const isUuid = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
 
 export const dynamic = "force-dynamic";
 
@@ -50,5 +53,14 @@ export async function POST(req: NextRequest) {
     console.error("[prospects/add] insert failed:", error?.message);
     return NextResponse.json({ error: "Could not add prospect" }, { status: 500 });
   }
+
+  // Optionally attach the new prospect to a strategy angle (used by AI discovery
+  // so accepted candidates land on the angle board too). Best-effort.
+  if (isUuid(body.angle_id)) {
+    await linkProspectToAngle(supabase, data.id as string, body.angle_id, await getAdminUser()).catch((e) =>
+      console.error("[prospects/add] angle link failed:", e)
+    );
+  }
+
   return NextResponse.json({ ok: true, id: data.id });
 }

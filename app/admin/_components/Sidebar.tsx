@@ -27,6 +27,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Command Center",
     items: [
       { label: "Overview", icon: "overview", href: "/admin" },
+      { label: "Strategy", icon: "strategy", href: "/admin/strategic-plan" },
       { label: "Executive Briefing", icon: "briefing", href: "/admin/briefing" },
       { label: "How-To Guide", icon: "documents", href: "/admin/howto" },
     ],
@@ -94,8 +95,6 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Board", icon: "board", href: "/admin/board" },
       { label: "Compliance", icon: "compliance", href: "/admin/compliance" },
-      { label: "KPIs", icon: "kpis", href: "/admin/kpis" },
-      { label: "Strategic Plan", icon: "strategy", href: "/admin/strategic-plan" },
     ],
   },
 ];

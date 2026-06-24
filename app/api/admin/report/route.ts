@@ -99,8 +99,11 @@ export async function POST(req: NextRequest) {
     const { data: created, error: projErr } = await sb
       .from("ops_projects")
       .insert({
+        // 'product' is valid for tasks but NOT for ops_projects (its category
+        // check is fundraising/admin/board/recruitment/program/finance/
+        // compliance/other) — use 'other' so the project actually gets created.
         title: UPGRADES_PROJECT,
-        category: "product",
+        category: "other",
         description: "Issues, confusions, and ideas captured from inside BloomOS via the Report button.",
         assigned_to: "remi",
         created_by: reporter,

@@ -1,57 +1,23 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import PageHeader from "../../_components/PageHeader";
 import ProspectsTable, { type ProspectRow } from "./_components/ProspectsTable";
 
-// Prospects list (design-system §4.4) — a view over the HubSpot mirror
-// (read-only staging) joined to internal scores. Reads run under the user
-// session (RLS). Filtering, search, sort, pagination, column picker, CSV,
-// bulk actions, and saved views all live in the shared DataTable, client-side;
-// the server just loads the dataset once.
+// Prospects — the curated bench (fr_prospects), not the raw HubSpot mirror. Rows
+// come from the bench; HubSpot-sourced ones are enriched with live mirror fields
+// (lifecycle, owner, last activity) and their score, joined by hubspot_contact_id.
 export const dynamic = "force-dynamic";
 
-type ContactSlim = {
-  hubspot_id: string;
+type BenchRow = {
+  id: string;
+  hubspot_contact_id: string | null;
+  type: string;
+  source: string;
+  name: string;
   email: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  company: string | null;
-  lifecycle_stage: string | null;
-  owner_id: string | null;
-  last_activity_at: string | null;
+  org_name: string | null;
+  status: string;
 };
-
-const SELECT_COLS =
-  "hubspot_id, email, first_name, last_name, company, lifecycle_stage, owner_id, last_activity_at";
-
-// Page through a table fully — Supabase caps a single response at 1000 rows,
-// and the client table needs the whole set to filter/sort/paginate accurately.
-async function fetchAll<T>(
-  supabase: SupabaseClient,
-  table: string,
-  columns: string,
-  maxPages = 20
-): Promise<{ rows: T[]; error: boolean }> {
-  const out: T[] = [];
-  const PAGE = 1000;
-  for (let p = 0; p < maxPages; p++) {
-    const { data, error } = await supabase
-      .from(table)
-      .select(columns)
-      .range(p * PAGE, p * PAGE + PAGE - 1);
-    if (error) {
-      console.error(`[/admin/fundraising/prospects] ${table} query failed:`, {
-        code: error.code,
-        message: error.message,
-      });
-      return { rows: out, error: true };
-    }
-    out.push(...((data ?? []) as T[]));
-    if (!data || data.length < PAGE) break;
-  }
-  return { rows: out, error: false };
-}
 
 export default async function FundraisingProspectsPage({
   searchParams,
@@ -59,44 +25,64 @@ export default async function FundraisingProspectsPage({
   searchParams?: { show?: string };
 }) {
   const supabase = createServerSupabase();
+  const disqualifiedView = searchParams?.show === "disqualified";
+  const status = disqualifiedView ? "disqualified" : "active";
 
-  const [{ rows: contacts, error: contactsErr }, { rows: scores }, { rows: disqualified }, { rows: promoted }] =
+  const { data: benchData, error: benchErr } = await supabase
+    .from("fr_prospects")
+    .select("id, hubspot_contact_id, type, source, name, email, org_name, status")
+    .eq("status", status)
+    .limit(5000);
+  const bench = (benchData ?? []) as BenchRow[];
+
+  // Enrich HubSpot-sourced prospects from the live mirror + their score.
+  const hubspotIds = bench.map((b) => b.hubspot_contact_id).filter((id): id is string => !!id);
+  const [{ data: contacts }, { data: scores }, { count: disqualifiedCount }, { count: promotedCount }] =
     await Promise.all([
-      fetchAll<ContactSlim>(supabase, "hs_contacts", SELECT_COLS),
-      fetchAll<{ hubspot_contact_id: string; score_total: number | null }>(
-        supabase,
-        "fr_prospect_scores",
-        "hubspot_contact_id, score_total"
-      ),
-      fetchAll<{ hubspot_id: string }>(supabase, "fr_prospect_disqualified", "hubspot_id"),
-      fetchAll<{ hubspot_id: string }>(supabase, "fr_prospect_promoted", "hubspot_id"),
+      hubspotIds.length
+        ? supabase
+            .from("hs_contacts")
+            .select("hubspot_id, lifecycle_stage, owner_id, last_activity_at")
+            .in("hubspot_id", hubspotIds)
+        : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
+      hubspotIds.length
+        ? supabase.from("fr_prospect_scores").select("hubspot_contact_id, score_total").in("hubspot_contact_id", hubspotIds)
+        : Promise.resolve({ data: [] as Array<{ hubspot_contact_id: string; score_total: number | null }> }),
+      supabase.from("fr_prospects").select("id", { count: "exact", head: true }).eq("status", "disqualified"),
+      supabase.from("fr_prospects").select("id", { count: "exact", head: true }).eq("status", "promoted"),
     ]);
 
-  const scoreMap = new Map(scores.map((s) => [s.hubspot_contact_id, s.score_total]));
-  const disqualifiedSet = new Set(disqualified.map((d) => d.hubspot_id));
-  const promotedSet = new Set(promoted.map((d) => d.hubspot_id));
-  const disqualifiedView = searchParams?.show === "disqualified";
-
-  const allRows: ProspectRow[] = contacts.map((c) => ({
-    ...c,
-    score_total: scoreMap.get(c.hubspot_id) ?? null,
-  }));
-  // Disqualified prospects drop off the working list (reversible); promoted ones
-  // have moved into the pipeline and drop off too. The ?show=disqualified view
-  // lists only the disqualified, for requalifying.
-  const rows = allRows.filter((r) =>
-    disqualifiedView
-      ? disqualifiedSet.has(r.hubspot_id)
-      : !disqualifiedSet.has(r.hubspot_id) && !promotedSet.has(r.hubspot_id)
+  const hsMap = new Map(
+    (contacts ?? []).map((c) => [
+      c.hubspot_id as string,
+      c as { lifecycle_stage: string | null; owner_id: string | null; last_activity_at: string | null },
+    ])
   );
+  const scoreMap = new Map((scores ?? []).map((s) => [s.hubspot_contact_id, s.score_total]));
+
+  const rows: ProspectRow[] = bench.map((b) => {
+    const hs = b.hubspot_contact_id ? hsMap.get(b.hubspot_contact_id) : undefined;
+    return {
+      id: b.id,
+      hubspot_id: b.hubspot_contact_id,
+      source: b.source,
+      type: b.type,
+      first_name: null,
+      last_name: null,
+      name: b.name,
+      email: b.email,
+      company: b.org_name,
+      lifecycle_stage: hs?.lifecycle_stage ?? null,
+      owner_id: hs?.owner_id ?? null,
+      last_activity_at: hs?.last_activity_at ?? null,
+      score_total: b.hubspot_contact_id ? scoreMap.get(b.hubspot_contact_id) ?? null : null,
+    };
+  });
 
   const lifecycleOptions = Array.from(
-    new Set(contacts.map((c) => c.lifecycle_stage).filter((v): v is string => !!v))
+    new Set(rows.map((r) => r.lifecycle_stage).filter((v): v is string => !!v))
   ).sort();
-  const ownerOptions = Array.from(
-    new Set(contacts.map((c) => c.owner_id).filter((v): v is string => !!v))
-  ).sort();
-
+  const ownerOptions = Array.from(new Set(rows.map((r) => r.owner_id).filter((v): v is string => !!v))).sort();
   const scoredCount = rows.filter((r) => r.score_total !== null).length;
 
   return (
@@ -104,10 +90,10 @@ export default async function FundraisingProspectsPage({
       <PageHeader
         title={disqualifiedView ? "Prospects · Disqualified" : "Prospects"}
         subtitle={
-          `${rows.length} contact${rows.length === 1 ? "" : "s"}` +
-          (disqualifiedView ? " disqualified" : " from the HubSpot mirror") +
+          `${rows.length} prospect${rows.length === 1 ? "" : "s"} on the bench` +
+          (disqualifiedView ? " (disqualified)" : "") +
           (!disqualifiedView && scoredCount > 0 ? ` · ${scoredCount} scored` : "") +
-          (!disqualifiedView && promotedSet.size > 0 ? ` · ${promotedSet.size} in pipeline` : "")
+          (!disqualifiedView && (promotedCount ?? 0) > 0 ? ` · ${promotedCount} in pipeline` : "")
         }
         actions={
           disqualifiedView ? (
@@ -117,20 +103,20 @@ export default async function FundraisingProspectsPage({
             >
               ← Active prospects
             </Link>
-          ) : disqualifiedSet.size > 0 ? (
+          ) : (disqualifiedCount ?? 0) > 0 ? (
             <Link
               href="/admin/fundraising/prospects?show=disqualified"
               className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
             >
-              Disqualified ({disqualifiedSet.size})
+              Disqualified ({disqualifiedCount})
             </Link>
           ) : undefined
         }
       />
 
-      {contactsErr && (
+      {benchErr && (
         <div className="mb-4 bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
-          Some prospect records failed to load — the list below may be incomplete. Reload to retry.
+          The bench failed to load — reload to retry.
         </div>
       )}
 

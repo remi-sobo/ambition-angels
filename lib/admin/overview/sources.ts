@@ -76,15 +76,6 @@ export const getRecentDonations = cache(async (): Promise<DonationRow[]> => {
 // Org-scoped (the plan is multi-tenant). Each objective's health rolls up from
 // its KPIs by exception, honoring a manually-set objective status too.
 
-export type StrategyObjectiveTile = {
-  id: string;
-  title: string;
-  /** not_started | on_track | at_risk | behind | done */
-  health: string;
-  /** how many of this objective's KPIs are at_risk/behind */
-  kpisOffTrack: number;
-};
-
 export type StrategyHeadlineKpi = {
   id: string;
   title: string;
@@ -94,6 +85,21 @@ export type StrategyHeadlineKpi = {
   status: string;
   owner: string | null;
   pct: number;
+  /** The objective this measure rolls up to (direct, or via its goal). */
+  objectiveId: string | null;
+  objectiveTitle: string | null;
+};
+
+export type StrategyObjectiveTile = {
+  id: string;
+  title: string;
+  owner: string | null;
+  /** not_started | on_track | at_risk | behind | done */
+  health: string;
+  /** how many of this objective's KPIs are at_risk/behind */
+  kpisOffTrack: number;
+  /** Up to three target-bearing measures, off-track first (for the Org grid). */
+  measures: StrategyHeadlineKpi[];
 };
 
 export type StrategyRollup = {
@@ -112,7 +118,7 @@ export const getStrategyRollup = cache(async (): Promise<StrategyRollup> => {
   const orgId = ctx.orgId;
 
   const [objsRes, goalsRes, kpisRes, reviewRes] = await Promise.all([
-    sb.from("plan_objectives").select("id, title, status").eq("org_id", orgId).order("sort_order").order("created_at"),
+    sb.from("plan_objectives").select("id, title, status, owner").eq("org_id", orgId).order("sort_order").order("created_at"),
     sb.from("plan_goals").select("id, objective_id").eq("org_id", orgId),
     sb.from("plan_kpis").select("id, goal_id, objective_id, status, title, unit, target, current, owner").eq("org_id", orgId),
     // Resilient if plan_reviews isn't migrated yet (error → data null).
@@ -122,27 +128,41 @@ export const getStrategyRollup = cache(async (): Promise<StrategyRollup> => {
   const goalObjective = new Map(
     ((goalsRes.data ?? []) as { id: string; objective_id: string | null }[]).map((g) => [g.id, g.objective_id])
   );
+  const objRows = (objsRes.data ?? []) as { id: string; title: string; status: string; owner: string | null }[];
+  const objTitleById = new Map(objRows.map((o) => [o.id, o.title]));
   type KpiRow = {
     id: string; goal_id: string | null; objective_id: string | null; status: string;
     title: string; unit: string | null; target: number | null; current: number | null; owner: string | null;
   };
   const kpiRows = (kpisRes.data ?? []) as KpiRow[];
+  const objectiveOfKpi = (k: KpiRow): string | null =>
+    k.objective_id ?? (k.goal_id ? goalObjective.get(k.goal_id) ?? null : null);
+
   const statusesByObjective = new Map<string, string[]>();
   for (const k of kpiRows) {
-    const objId = k.objective_id ?? (k.goal_id ? goalObjective.get(k.goal_id) ?? null : null);
+    const objId = objectiveOfKpi(k);
     if (!objId) continue;
     const arr = statusesByObjective.get(objId) ?? [];
     arr.push(k.status);
     statusesByObjective.set(objId, arr);
   }
 
-  // Headline KPIs: those with a real target, off-track first, then lowest % to
-  // target — the "what needs attention / where do we stand" summary.
-  const headlineKpis: StrategyHeadlineKpi[] = kpiRows
+  // Off-track first, then lowest % to target — the shared "what needs attention"
+  // ordering, used for both the global headline list and each objective's tiles.
+  const byNeed = (a: StrategyHeadlineKpi, b: StrategyHeadlineKpi) => {
+    const ao = isOffTrack(a.status) ? 0 : 1;
+    const bo = isOffTrack(b.status) ? 0 : 1;
+    if (ao !== bo) return ao - bo;
+    return a.pct - b.pct;
+  };
+
+  // Every target-bearing KPI, tagged with the objective it rolls up to.
+  const targetKpis: StrategyHeadlineKpi[] = kpiRows
     .filter((k) => k.target != null && Number(k.target) > 0)
     .map((k) => {
       const target = Number(k.target);
       const current = k.current == null ? 0 : Number(k.current);
+      const objId = objectiveOfKpi(k);
       return {
         id: k.id,
         title: k.title,
@@ -152,25 +172,30 @@ export const getStrategyRollup = cache(async (): Promise<StrategyRollup> => {
         status: k.status,
         owner: k.owner,
         pct: Math.max(0, Math.min(100, Math.round((current / target) * 100))),
+        objectiveId: objId,
+        objectiveTitle: objId ? objTitleById.get(objId) ?? null : null,
       };
-    })
-    .sort((a, b) => {
-      const ao = isOffTrack(a.status) ? 0 : 1;
-      const bo = isOffTrack(b.status) ? 0 : 1;
-      if (ao !== bo) return ao - bo;
-      return a.pct - b.pct;
-    })
-    .slice(0, 5);
+    });
 
-  const objectives: StrategyObjectiveTile[] = (
-    (objsRes.data ?? []) as { id: string; title: string; status: string }[]
-  ).map((o) => {
+  const headlineKpis = [...targetKpis].sort(byNeed).slice(0, 5);
+
+  const measuresByObjective = new Map<string, StrategyHeadlineKpi[]>();
+  for (const k of targetKpis) {
+    if (!k.objectiveId) continue;
+    const arr = measuresByObjective.get(k.objectiveId) ?? [];
+    arr.push(k);
+    measuresByObjective.set(k.objectiveId, arr);
+  }
+
+  const objectives: StrategyObjectiveTile[] = objRows.map((o) => {
     const sts = statusesByObjective.get(o.id) ?? [];
     return {
       id: o.id,
       title: o.title,
+      owner: o.owner ?? null,
       health: worstHealth(deriveHealth(sts), o.status) ?? o.status,
       kpisOffTrack: sts.filter((s) => isOffTrack(s)).length,
+      measures: [...(measuresByObjective.get(o.id) ?? [])].sort(byNeed).slice(0, 3),
     };
   });
 

@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
+import StrategyGlance from "./_components/StrategyGlance";
 import {
   FoundationPanel,
   ObjectiveCard,
@@ -142,6 +143,9 @@ export default async function StrategicPlanPage() {
           </div>
         }
       />
+
+      {/* Org-lens glance: the verdict, the exceptions, the objective grid (B1). */}
+      <StrategyGlance />
 
       <div className="grid grid-cols-4 gap-3 mb-8">
         <StatCard label="Objectives" value={objectives.length} />

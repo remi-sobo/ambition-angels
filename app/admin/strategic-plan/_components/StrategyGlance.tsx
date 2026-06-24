@@ -84,7 +84,7 @@ export default async function StrategyGlance() {
           return (
             <Link
               key={o.id}
-              href={`#objective-${o.id}`}
+              href={`/admin/strategic-plan/objective/${o.id}`}
               className={`block rounded-card-lg border-[1.5px] p-4 transition-colors hover:border-orange/40 ${TILE_ACCENT[status]}`}
             >
               <div className="flex items-start justify-between gap-2 mb-1.5">

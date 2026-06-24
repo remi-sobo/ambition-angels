@@ -123,7 +123,7 @@ const SECTIONS: Section[] = [
         ],
       },
       {
-        name: "Major Gifts",
+        name: "Pipeline",
         href: "/admin/fundraising",
         what: "The moves-management pipeline, Identification → Cultivation → Solicitation → Stewardship.",
         does: ["Track opportunities, ask amounts, and next steps", "See the AI next-best-action suggestions in context"],

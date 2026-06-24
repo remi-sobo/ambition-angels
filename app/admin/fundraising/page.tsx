@@ -136,7 +136,7 @@ export default async function MajorGiftsPage({
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1400px]">
       <PageHeader
-        title="Major Gifts"
+        title="Pipeline"
         subtitle="Moves-management pipeline · Identification → Stewardship"
         actions={
           <div className="flex items-center gap-3">

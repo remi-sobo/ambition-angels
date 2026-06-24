@@ -152,6 +152,37 @@ export default function ProspectsTable({
           .catch(() => alert("Could not access the clipboard."));
       },
     },
+    // Promote: open an Identify-stage opportunity for each and move them off the
+    // working list into the pipeline. Only offered on the active list.
+    ...(disqualifiedView
+      ? []
+      : [
+          {
+            label: "Promote to pipeline →",
+            run: (selected: ProspectRow[]) => {
+              if (
+                !confirm(
+                  `Promote ${selected.length} prospect${selected.length === 1 ? "" : "s"} into the pipeline at the Identify stage? ` +
+                    `They'll move off this list and appear in Pipeline.`
+                )
+              )
+                return;
+              void fetch("/api/admin/fundraising/prospects/promote", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ hubspot_ids: selected.map((r) => r.hubspot_id) }),
+              })
+                .then((r) => r.json())
+                .then((d: { promoted?: number }) => {
+                  if (typeof d?.promoted === "number" && d.promoted < selected.length) {
+                    alert(`Promoted ${d.promoted} of ${selected.length}. Some may already be in the pipeline.`);
+                  }
+                  router.refresh();
+                })
+                .catch(() => alert("Could not promote — try again."));
+            },
+          } as BulkAction<ProspectRow>,
+        ]),
     disqualifiedView
       ? {
           label: "Requalify",

@@ -60,28 +60,34 @@ export default async function FundraisingProspectsPage({
 }) {
   const supabase = createServerSupabase();
 
-  const [{ rows: contacts, error: contactsErr }, { rows: scores }, { rows: disqualified }] = await Promise.all([
-    fetchAll<ContactSlim>(supabase, "hs_contacts", SELECT_COLS),
-    fetchAll<{ hubspot_contact_id: string; score_total: number | null }>(
-      supabase,
-      "fr_prospect_scores",
-      "hubspot_contact_id, score_total"
-    ),
-    fetchAll<{ hubspot_id: string }>(supabase, "fr_prospect_disqualified", "hubspot_id"),
-  ]);
+  const [{ rows: contacts, error: contactsErr }, { rows: scores }, { rows: disqualified }, { rows: promoted }] =
+    await Promise.all([
+      fetchAll<ContactSlim>(supabase, "hs_contacts", SELECT_COLS),
+      fetchAll<{ hubspot_contact_id: string; score_total: number | null }>(
+        supabase,
+        "fr_prospect_scores",
+        "hubspot_contact_id, score_total"
+      ),
+      fetchAll<{ hubspot_id: string }>(supabase, "fr_prospect_disqualified", "hubspot_id"),
+      fetchAll<{ hubspot_id: string }>(supabase, "fr_prospect_promoted", "hubspot_id"),
+    ]);
 
   const scoreMap = new Map(scores.map((s) => [s.hubspot_contact_id, s.score_total]));
   const disqualifiedSet = new Set(disqualified.map((d) => d.hubspot_id));
+  const promotedSet = new Set(promoted.map((d) => d.hubspot_id));
   const disqualifiedView = searchParams?.show === "disqualified";
 
   const allRows: ProspectRow[] = contacts.map((c) => ({
     ...c,
     score_total: scoreMap.get(c.hubspot_id) ?? null,
   }));
-  // Disqualified prospects drop off the working list (reversible); the
-  // ?show=disqualified view lists only those, for requalifying.
+  // Disqualified prospects drop off the working list (reversible); promoted ones
+  // have moved into the pipeline and drop off too. The ?show=disqualified view
+  // lists only the disqualified, for requalifying.
   const rows = allRows.filter((r) =>
-    disqualifiedView ? disqualifiedSet.has(r.hubspot_id) : !disqualifiedSet.has(r.hubspot_id)
+    disqualifiedView
+      ? disqualifiedSet.has(r.hubspot_id)
+      : !disqualifiedSet.has(r.hubspot_id) && !promotedSet.has(r.hubspot_id)
   );
 
   const lifecycleOptions = Array.from(
@@ -100,7 +106,8 @@ export default async function FundraisingProspectsPage({
         subtitle={
           `${rows.length} contact${rows.length === 1 ? "" : "s"}` +
           (disqualifiedView ? " disqualified" : " from the HubSpot mirror") +
-          (!disqualifiedView && scoredCount > 0 ? ` · ${scoredCount} scored` : "")
+          (!disqualifiedView && scoredCount > 0 ? ` · ${scoredCount} scored` : "") +
+          (!disqualifiedView && promotedSet.size > 0 ? ` · ${promotedSet.size} in pipeline` : "")
         }
         actions={
           disqualifiedView ? (

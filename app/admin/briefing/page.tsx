@@ -5,6 +5,7 @@ import { getNarrative } from "@/lib/admin/briefing/narrate";
 import BriefingCard from "./_components/BriefingCard";
 import NarrativeHero from "./_components/NarrativeHero";
 import PulseStrip from "./_components/PulseStrip";
+import FundraisingPriorities from "./_components/FundraisingPriorities";
 import FollowUps from "./_components/FollowUps";
 
 // Executive Briefing v2 (spec Phase 1): an AI-narrated morning brief over a
@@ -14,7 +15,7 @@ import FollowUps from "./_components/FollowUps";
 export const dynamic = "force-dynamic";
 
 export default async function BriefingPage() {
-  const { briefing, pulse, followups } = await gatherBriefingView();
+  const { briefing, pulse, followups, fundraising } = await gatherBriefingView();
   const narrative = await getNarrative(briefing, pulse, followups);
   const today = new Date(briefing.computedAt).toLocaleDateString("en-US", {
     weekday: "long",
@@ -68,6 +69,7 @@ export default async function BriefingPage() {
       )}
 
       <div className="mt-6">
+        <FundraisingPriorities moves={fundraising} />
         <FollowUps followups={followups} />
       </div>
     </div>

@@ -103,14 +103,24 @@ export default async function FundraisingProspectsPage({
             >
               ← Active prospects
             </Link>
-          ) : (disqualifiedCount ?? 0) > 0 ? (
-            <Link
-              href="/admin/fundraising/prospects?show=disqualified"
-              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
-            >
-              Disqualified ({disqualifiedCount})
-            </Link>
-          ) : undefined
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/admin/fundraising/prospects/import"
+                className="text-xs font-semibold text-orange hover:text-orange-dark bg-orange/10 hover:bg-orange/15 border-[1.5px] border-orange/30 px-4 py-2 rounded-full transition-colors"
+              >
+                + Import from HubSpot
+              </Link>
+              {(disqualifiedCount ?? 0) > 0 && (
+                <Link
+                  href="/admin/fundraising/prospects?show=disqualified"
+                  className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+                >
+                  Disqualified ({disqualifiedCount})
+                </Link>
+              )}
+            </div>
+          )
         }
       />
 

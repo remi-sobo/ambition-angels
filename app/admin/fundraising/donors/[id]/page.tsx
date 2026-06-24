@@ -284,7 +284,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         ))}
         {hubspotId && (
           <Link
-            href={`/admin/fundraising/prospects/${hubspotId}`}
+            href={`/admin/fundraising/prospects/by-hubspot/${hubspotId}`}
             className="ml-auto text-[11px] font-semibold px-3 py-1 rounded-full bg-tile border-[1.5px] border-outline text-ink-1 hover:text-ink-1 hover:bg-[#EFE6D4] transition-colors whitespace-nowrap"
           >
             {hasBrief ? "Research brief →" : "Run research →"}

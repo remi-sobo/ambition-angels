@@ -88,16 +88,9 @@ export default function ProspectsTable({
       value: (r) => displayName(r),
       render: (r) => (
         <span className="flex items-center gap-1.5">
-          {r.hubspot_id ? (
-            <Link
-              href={`/admin/fundraising/prospects/${encodeURIComponent(r.hubspot_id)}`}
-              className="text-ink-1 font-medium hover:text-orange"
-            >
-              {displayName(r)}
-            </Link>
-          ) : (
-            <span className="text-ink-1 font-medium">{displayName(r)}</span>
-          )}
+          <Link href={`/admin/fundraising/prospects/${r.id}`} className="text-ink-1 font-medium hover:text-orange">
+            {displayName(r)}
+          </Link>
           {r.type && r.type !== "individual" && (
             <span className="text-[9px] uppercase tracking-wide text-ink-3 border border-outline rounded px-1 py-px">
               {r.type === "foundation" ? "Foundation" : r.type === "corporate" ? "Corp" : r.type}

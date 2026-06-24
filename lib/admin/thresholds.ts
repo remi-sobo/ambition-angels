@@ -59,6 +59,12 @@ export const STRATEGY = {
   reviewDueSoonDays: 7,
 } as const;
 
+export const FOLLOWUPS = {
+  /** Hours after a follow-up lands before it's "past the SLA" (the 24-hour rule
+   *  for emails from HubSpot contacts that Cowork drops on the board). */
+  slaHours: 24,
+} as const;
+
 export const SNOOZE = {
   /** Default snooze length when an operator defers a briefing item. */
   hours: 24,

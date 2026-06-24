@@ -15,6 +15,7 @@ import {
   donorsSource,
   engagementSource,
   strategySource,
+  followupsSource,
   type FinanceInput,
   type TasksInput,
   type ComplianceInput,
@@ -22,6 +23,7 @@ import {
   type DonorsInput,
   type EngagementInput,
   type StrategyInput,
+  type FollowupsInput,
   type SourceCtx,
 } from "./sources";
 import type { DataAge } from "../dataAge";
@@ -37,6 +39,8 @@ export type GatheredInputs = {
   engagement: EngagementInput;
   /** Optional so existing callers/tests that predate the strategy source still typecheck. */
   strategy?: StrategyInput;
+  /** Optional so callers/tests that predate the follow-ups source still typecheck. */
+  followups?: FollowupsInput;
 };
 
 /** Per-item decision state (from the bloomos_briefing_state table). */
@@ -117,6 +121,7 @@ export function buildBriefing(
     ...donorsSource(gathered.donors, ctx),
     ...engagementSource(gathered.engagement, ctx),
     ...(gathered.strategy ? strategySource(gathered.strategy, ctx) : []),
+    ...(gathered.followups ? followupsSource(gathered.followups, ctx) : []),
   ];
   const stale = staleItem(dataAge, now);
   if (stale) raw.push(stale);

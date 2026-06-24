@@ -5,7 +5,7 @@
  * config module, never a hardcoded literal.
  */
 import type { BriefingItem } from "../types";
-import { FINANCE, TASKS, COMPLIANCE, MAJOR_GIFTS, DONORS, ENGAGEMENT, STRATEGY } from "../../thresholds";
+import { FINANCE, TASKS, COMPLIANCE, MAJOR_GIFTS, DONORS, ENGAGEMENT, STRATEGY, FOLLOWUPS } from "../../thresholds";
 
 export type SourceCtx = {
   now: number;
@@ -328,6 +328,47 @@ export function strategySource(input: StrategyInput, ctx: SourceCtx): BriefingIt
   }
 
   return out;
+}
+
+// ── Email follow-ups (Cowork/Gmail 24h SLA) ─────────────────────────────────
+// The follow-up tasks Cowork drops on the board (label "follow-up") carry a
+// 24-hour reply SLA tied to a HubSpot contact. Here we only escalate the
+// breaches into the decision feed; the full list renders in its own always-on
+// section on the brief. SLA clock runs from when the task landed (created_at).
+
+export type FollowupLite = {
+  id: string;
+  title: string;
+  description: string | null;
+  created_at: string;
+  due_date: string | null;
+  status: string;
+};
+export type FollowupsInput = { followups: FollowupLite[] };
+
+export function followupsSource(input: FollowupsInput, ctx: SourceCtx): BriefingItem[] {
+  const slaMs = FOLLOWUPS.slaHours * 3_600_000;
+  const overdue = input.followups
+    .filter((f) => f.status !== "done" && Date.parse(f.created_at) + slaMs < ctx.now)
+    .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at)); // oldest first
+  if (overdue.length === 0) return [];
+
+  const oldest = overdue[0];
+  const hoursLate = Math.floor((ctx.now - (Date.parse(oldest.created_at) + slaMs)) / 3_600_000);
+  return [
+    {
+      id: "followups:overdue",
+      source: "followups",
+      severity: "critical",
+      title: `${overdue.length} email follow-up${overdue.length === 1 ? "" : "s"} past the ${FOLLOWUPS.slaHours}h reply window`,
+      detail: `Oldest: “${oldest.title.replace(/^Follow up:\s*/i, "")}” — ${hoursLate}h over.`,
+      metric: `${overdue.length} late`,
+      weight: 1_000 + overdue.length,
+      decisions: ["open", "snooze", "dismiss"],
+      deepLink: "/admin/briefing",
+      ...stamp(ctx),
+    },
+  ];
 }
 
 // ── Engagement (cohort attendance) ──────────────────────────────────────────

@@ -48,5 +48,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
   await pushOpportunityToHubSpot(oppId as string);
 
+  // If this funnel row is tied to a bench prospect, mark it promoted too so the
+  // bench reflects that it moved into the pipeline.
+  const { data: fa } = await supabase
+    .from("funder_angles")
+    .select("prospect_id, constituent_id")
+    .eq("id", params.id)
+    .maybeSingle();
+  if (fa?.prospect_id) {
+    await supabase
+      .from("fr_prospects")
+      .update({
+        status: "promoted",
+        opportunity_id: oppId as string,
+        constituent_id: fa.constituent_id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", fa.prospect_id as string);
+  }
+
   return NextResponse.json({ opportunity_id: oppId });
 }

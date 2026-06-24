@@ -66,6 +66,7 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
           org_name: c.org ?? undefined,
           strategy_note: `${angleName} — ${c.fit_rationale}`,
           source: "research",
+          angle_id: angleId,
         }),
       });
       if (!r.ok) throw new Error();

@@ -15,6 +15,7 @@ export type FunderRow = {
   decision: string | null;
   fitNotes: string | null;
   opportunityId: string | null;
+  prospectId: string | null;
   constituentId: string | null;
   name: string;
   email: string | null;
@@ -252,6 +253,14 @@ function FunderCard({ funder }: { funder: FunderRow }) {
             <span className="font-medium text-ink-1">{funder.name}</span>
           )}
           {funder.email && <div className="text-xs text-ink-3 truncate">{funder.email}</div>}
+          {funder.prospectId && (
+            <Link
+              href={`/admin/fundraising/prospects/${funder.prospectId}`}
+              className="text-[10px] font-semibold text-orange/80 hover:text-orange uppercase tracking-wide"
+            >
+              On the bench ↗
+            </Link>
+          )}
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {decision && (

@@ -6,6 +6,7 @@ import CompanyCard, { type HsCompany } from "./_components/CompanyCard";
 import DealsTable, { type HsDeal } from "./_components/DealsTable";
 import EngagementTimeline, { type HsEngagement } from "./_components/EngagementTimeline";
 import BriefPanel, { type ExistingBrief } from "./_components/BriefPanel";
+import ProspectAngles, { type OnAngle } from "./_components/ProspectAngles";
 
 // Prospect detail — keyed by the bench entity (fr_prospects.id), so it works for
 // HubSpot-sourced, manually-added, and AI-discovered prospects alike. HubSpot
@@ -80,6 +81,21 @@ export default async function ProspectDetailPage({ params }: { params: { id: str
   ]);
   const score = (scoreRes.data as ProspectScore | null) ?? null;
   const brief = (briefRes.data as ExistingBrief | null) ?? null;
+
+  // Strategy angles this prospect is on + all angles for the add control.
+  const [angleLinksRes, allAnglesRes] = await Promise.all([
+    supabase
+      .from("funder_angles")
+      .select("id, stage, angle:strategy_angles ( key, name )")
+      .eq("prospect_id", prospectId),
+    supabase.from("strategy_angles").select("id, key, name").order("name"),
+  ]);
+  type LinkRow = { id: string; stage: string; angle: { key: string; name: string } | { key: string; name: string }[] | null };
+  const onAngles: OnAngle[] = ((angleLinksRes.data ?? []) as unknown as LinkRow[]).map((r) => {
+    const a = Array.isArray(r.angle) ? r.angle[0] : r.angle;
+    return { id: r.id, angleKey: a?.key ?? "", angleName: a?.name ?? "Angle", stage: r.stage };
+  });
+  const allAngles = (allAnglesRes.data ?? []) as { id: string; key: string; name: string }[];
 
   // HubSpot enrichment — only when this prospect is linked to a mirror contact.
   let contact: HsContact | null = null;
@@ -171,6 +187,8 @@ export default async function ProspectDetailPage({ params }: { params: { id: str
           </div>
         )}
       </header>
+
+      <ProspectAngles prospectId={prospect.id} onAngles={onAngles} allAngles={allAngles} />
 
       <BriefPanel prospectId={prospect.id} brief={brief} />
 

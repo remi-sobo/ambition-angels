@@ -17,6 +17,7 @@ type RawFa = {
   decision: string | null;
   fit_notes: string | null;
   opportunity_id: string | null;
+  prospect_id: string | null;
   constituent: {
     id: string;
     type: string;
@@ -41,7 +42,7 @@ export default async function AngleFunnelPage({ params }: { params: { key: strin
   const { data: faData } = await supabase
     .from("funder_angles")
     .select(
-      `id, stage, decision, fit_notes, opportunity_id,
+      `id, stage, decision, fit_notes, opportunity_id, prospect_id,
        constituent:constituents ( id, type, first_name, last_name, org_name, emails, external_ids )`
     )
     .eq("angle_id", angle.id)
@@ -53,6 +54,7 @@ export default async function AngleFunnelPage({ params }: { params: { key: strin
     decision: r.decision,
     fitNotes: r.fit_notes,
     opportunityId: r.opportunity_id,
+    prospectId: r.prospect_id,
     constituentId: r.constituent?.id ?? null,
     name: r.constituent ? constituentName(r.constituent) : "Unknown",
     email: r.constituent?.emails?.[0] ?? null,

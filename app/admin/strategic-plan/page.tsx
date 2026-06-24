@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { deriveHealth, worstHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { resolveOwner, ownerValue, matchOwner, ownerRank } from "@/lib/admin/plan/owners";
+import { measureFreshness } from "@/lib/admin/plan/freshness";
 import { getUnassignedPlanMetrics } from "@/lib/admin/plan/metrics";
 import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
@@ -134,6 +135,7 @@ export default async function StrategicPlanPage({
   const areaFilter = str(searchParams?.area);
   const ownerFilter = str(searchParams?.owner);
   const statusFilter = str(searchParams?.status);
+  const reviewFilter = str(searchParams?.review);
 
   // Rolled-up health for an objective (KPI statuses worst-wins, honoring the
   // manually-set objective status) — the same rule the glance and cockpit use.
@@ -168,6 +170,10 @@ export default async function StrategicPlanPage({
     (kpisByGoal[g.id] ?? []).some((k) => matchOwner(k.owner, target)) ||
     (initiativesByGoal[g.id] ?? []).some((i) => matchOwner(i.owner, target));
 
+  // "Due for review": a goal carrying a measure gone stale past its cadence.
+  const goalHasStale = (g: PlanGoal): boolean =>
+    (kpisByGoal[g.id] ?? []).some((k) => measureFreshness(k.last_updated_at, k.cadence).stale);
+
   // Build the filtered tree for the Area / Mine lenses.
   const keptGoalsByObjective: Record<string, PlanGoal[]> = {};
   const treeObjectives = objectives.filter((o) => {
@@ -178,6 +184,7 @@ export default async function StrategicPlanPage({
       gs = gs.filter((g) => goalOwnedBy(g, o.owner, ownerTarget));
       if (!matchOwner(o.owner, ownerTarget) && gs.length === 0) return false;
     }
+    if (reviewFilter === "due" && !gs.some(goalHasStale)) return false;
     keptGoalsByObjective[o.id] = gs;
     return true;
   });
@@ -188,6 +195,7 @@ export default async function StrategicPlanPage({
     : orphanGoals.filter((g) => {
         if (statusFilter && !matchStatus(g.status, statusFilter)) return false;
         if (ownerTarget && !goalOwnedBy(g, null, ownerTarget)) return false;
+        if (reviewFilter === "due" && !goalHasStale(g)) return false;
         return true;
       });
 
@@ -264,7 +272,7 @@ export default async function StrategicPlanPage({
             yoursLens={yoursLens}
             areas={objectives.map((o) => ({ id: o.id, title: o.title }))}
             owners={ownerOptions}
-            current={{ area: areaFilter ?? "all", owner: ownerFilter ?? "all", status: statusFilter ?? "all" }}
+            current={{ area: areaFilter ?? "all", owner: ownerFilter ?? "all", status: statusFilter ?? "all", review: reviewFilter ?? "all" }}
           />
 
           {lens === "org" ? (

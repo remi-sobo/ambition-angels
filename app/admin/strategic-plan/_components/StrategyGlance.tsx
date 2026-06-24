@@ -3,6 +3,7 @@ import { getStrategyGlance } from "@/lib/admin/plan/glance";
 import { healthLabel } from "@/lib/admin/plan/health";
 import { planHealthToStatus, type Status } from "@/lib/admin/status";
 import { StatusChip } from "@/app/admin/_components/StatusChip";
+import OwnerChip from "./OwnerChip";
 import type { StrategyHeadlineKpi } from "@/lib/admin/overview/sources";
 
 // The Org-lens glance (Phase B1): a deterministic verdict line, the "Needs
@@ -68,7 +69,7 @@ export default async function StrategyGlance() {
                   <span className="text-sm text-ink-1 flex-1 min-w-0 truncate group-hover:text-orange transition-colors">
                     {e.detail}
                   </span>
-                  {e.owner && <span className="text-[11px] text-ink-2 shrink-0">{e.owner}</span>}
+                  {e.owner && <OwnerChip owner={e.owner} className="shrink-0" />}
                   <span className="text-ink-3 shrink-0" aria-hidden>→</span>
                 </Link>
               </li>
@@ -90,7 +91,7 @@ export default async function StrategyGlance() {
                 <h3 className="font-heading font-semibold text-ink-1 text-sm leading-tight min-w-0">{o.title}</h3>
                 <StatusChip status={status} className="shrink-0">{healthLabel(o.health)}</StatusChip>
               </div>
-              {o.owner && <p className="text-[11px] text-ink-2 mb-1.5">{o.owner}</p>}
+              {o.owner && <div className="mb-1.5"><OwnerChip owner={o.owner} /></div>}
               {o.kpisOffTrack > 0 && (
                 <p className="text-[11px] text-status-critical-text font-semibold mb-1.5">
                   {o.kpisOffTrack} off target

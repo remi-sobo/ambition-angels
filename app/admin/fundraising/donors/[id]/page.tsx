@@ -341,7 +341,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
               href="/admin/fundraising"
               className="ml-auto text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors"
             >
-              Major Gifts →
+              Pipeline →
             </Link>
           </section>
         )}

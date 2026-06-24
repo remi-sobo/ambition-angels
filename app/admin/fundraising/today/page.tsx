@@ -135,7 +135,7 @@ export default async function TodaysMovesPage() {
               href="/admin/fundraising"
               className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
             >
-              Major Gifts →
+              Pipeline →
             </Link>
           </div>
         }

@@ -1,15 +1,20 @@
 import Link from "next/link";
 import PageHeader from "../_components/PageHeader";
-import { gatherBriefing } from "@/lib/admin/briefing/gather";
+import { gatherBriefingView } from "@/lib/admin/briefing/gather";
+import { getNarrative } from "@/lib/admin/briefing/narrate";
 import BriefingCard from "./_components/BriefingCard";
+import NarrativeHero from "./_components/NarrativeHero";
+import PulseStrip from "./_components/PulseStrip";
 
-// Executive Briefing v1 (spec Phase 4): a deterministic, ranked, capped daily
-// decision feed. Every item is computed from a real spine record (no model
-// calls), so opening this page every morning never touches the metered agent.
+// Executive Briefing v2 (spec Phase 1): an AI-narrated morning brief over a
+// deterministic engine. The ranked decision feed and pulse strip are computed
+// from real spine records (no model calls); a cached Sonnet narrative phrases
+// those facts on top, regenerated at most once a day.
 export const dynamic = "force-dynamic";
 
 export default async function BriefingPage() {
-  const briefing = await gatherBriefing();
+  const { briefing, pulse } = await gatherBriefingView();
+  const narrative = await getNarrative(briefing, pulse);
   const today = new Date(briefing.computedAt).toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -21,7 +26,7 @@ export default async function BriefingPage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[800px]">
       <PageHeader
         title="Needs you today"
-        subtitle={`What the spine says needs a decision · ${today}`}
+        subtitle={`Your morning brief · ${today}`}
         actions={
           <Link
             href="/admin/briefing/weekly"
@@ -31,6 +36,9 @@ export default async function BriefingPage() {
           </Link>
         }
       />
+
+      <NarrativeHero narrative={narrative} />
+      <PulseStrip pulse={pulse} />
 
       {briefing.top.length === 0 ? (
         <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-10 text-center">

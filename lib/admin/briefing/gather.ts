@@ -14,6 +14,8 @@ import {
   type ItemState,
   type Briefing,
 } from "./engine";
+import { buildPulse, type Pulse } from "./pulse";
+import type { FinanceSnapshot } from "../finance";
 import type {
   TaskLite,
   ComplianceLite,
@@ -26,6 +28,7 @@ export async function gatherInputs(): Promise<{
   inputs: GatheredInputs;
   states: Map<string, ItemState>;
   dataAge: Awaited<ReturnType<typeof getDataAge>>;
+  finance: FinanceSnapshot;
 }> {
   const sb = getSupabaseAdmin();
 
@@ -148,10 +151,22 @@ export async function gatherInputs(): Promise<{
   const states = new Map<string, ItemState>();
   for (const s of statesRes.data ?? []) states.set(s.item_id, s as ItemState);
 
-  return { inputs, states, dataAge };
+  return { inputs, states, dataAge, finance };
 }
 
 export async function gatherBriefing(now: number = Date.now()): Promise<Briefing> {
   const { inputs, states, dataAge } = await gatherInputs();
   return buildBriefing(inputs, dataAge, states, now);
+}
+
+/** The page view: the ranked briefing plus the deterministic pulse strip,
+ *  from a single spine gather. Shared by the page render and the narrative
+ *  pre-warm so both see identical numbers. */
+export async function gatherBriefingView(
+  now: number = Date.now()
+): Promise<{ briefing: Briefing; pulse: Pulse }> {
+  const { inputs, states, dataAge, finance } = await gatherInputs();
+  const briefing = buildBriefing(inputs, dataAge, states, now);
+  const pulse = buildPulse(finance, inputs.majorGifts.opportunities);
+  return { briefing, pulse };
 }

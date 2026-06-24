@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendOperatorEmail, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
 import { refreshAllPlanMetrics } from "@/lib/admin/plan/metrics";
+import { prewarmNarrative } from "@/lib/admin/briefing/narrate";
 
 /**
  * Daily deadline reminders (the "never lives in someone's head" promise):
@@ -39,6 +40,13 @@ export async function GET(req: NextRequest) {
   // never block the reminders on it.
   await refreshAllPlanMetrics(supabase).catch((e) =>
     console.error("daily plan-metric refresh failed:", e)
+  );
+
+  // Pre-warm the Executive Briefing's AI narrative so the first open of the day
+  // is instant (and the morning's read reflects fresh overnight data). The cron
+  // fires ~6–7am PT. Best-effort — never blocks the reminders.
+  await prewarmNarrative().catch((e) =>
+    console.error("daily briefing narrative pre-warm failed:", e)
   );
 
   const today = plusDays(0);

@@ -49,6 +49,26 @@ export function projectStatusToStatus(s: string): Status {
   }
 }
 
+/**
+ * Plan health scale (objective / goal / KPI: not_started · on_track · at_risk ·
+ * behind · done) → the five-value status scale. on_track and done both read
+ * healthy; not_started and anything unknown read neutral. This is the single
+ * mapping the Strategy surface uses so a status color always means one thing.
+ */
+export function planHealthToStatus(health: string | null): Status {
+  switch (health) {
+    case "behind":
+      return "critical";
+    case "at_risk":
+      return "watch";
+    case "on_track":
+    case "done":
+      return "healthy";
+    default:
+      return "neutral";
+  }
+}
+
 // ── Prospect score tiers ────────────────────────────────────────────────────
 // Presentational tiers for the Prospects table score badge (replaces the raw
 // orange number). Hot prospects read healthy/green, warm read watch/amber,

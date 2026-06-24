@@ -94,7 +94,7 @@ function MenuChip({ label, emoji, onClick }: { label: string; emoji: string; onC
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 bg-ink text-cream border-[1.5px] border-outline shadow-xl rounded-full pl-3 pr-4 py-2.5 text-sm font-semibold hover:bg-[#1a1a1a] transition-colors active:scale-95"
+      className="flex items-center gap-2 bg-navy text-cream border border-white/10 shadow-xl rounded-full pl-3 pr-4 py-2.5 text-sm font-semibold hover:bg-[#32241A] transition-colors active:scale-95"
     >
       <span aria-hidden className="text-base leading-none">{emoji}</span>
       {label}

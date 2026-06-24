@@ -4,6 +4,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import PageHeader from "../../../_components/PageHeader";
 import { constituentName } from "@/lib/fundraising/display";
 import StrategyBoard, { type FunderRow } from "../_components/StrategyBoard";
+import DiscoverPanel from "../_components/DiscoverPanel";
 
 // Strategy angle drill-in (Phase 2): the funnel board for one angle. Funders
 // are grouped by stage; add via constituent search/create; move stage + record
@@ -75,6 +76,9 @@ export default async function AngleFunnelPage({ params }: { params: { key: strin
           </Link>
         }
       />
+      <div className="mb-5">
+        <DiscoverPanel angleId={angle.id} angleName={angle.name} />
+      </div>
       <StrategyBoard angleId={angle.id} funders={funders} />
     </div>
   );

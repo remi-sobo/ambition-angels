@@ -185,3 +185,65 @@ export async function refreshAllPlanMetrics(supabase: SupabaseClient): Promise<n
 
 // The metric_keys this registry can compute — handy for UI hints.
 export const AUTO_METRIC_KEYS = Object.keys(PLAN_METRICS);
+
+// ── Metrics Library (Phase C) ───────────────────────────────────────────────
+// Display metadata for the bindable metrics, so the KPI editor's "Track
+// automatically" picker and the Unassigned tray can render a label, a unit, and
+// a live preview value. Only the metrics this registry can actually refresh are
+// offered — binding to one always yields a number that stays live (never a
+// fake "auto" badge on a value nothing updates).
+
+export type PlanMetricMeta = { label: string; unit: string; hint?: string };
+
+export const PLAN_METRIC_META: Record<string, PlanMetricMeta> = {
+  dollars_raised_grants_ytd: { label: "Grant dollars raised (YTD)", unit: "$" },
+  grants_submitted_ytd: { label: "Grant applications submitted (YTD)", unit: "" },
+  corporate_dollars_ytd: { label: "Corporate dollars secured (YTD)", unit: "$" },
+  donor_updates_sent_ytd: { label: "Donor updates sent (YTD)", unit: "" },
+  active_teens: { label: "Active teens", unit: "" },
+};
+
+export type PlanMetricOption = {
+  key: string;
+  label: string;
+  unit: string;
+  /** Live value now, or null if it couldn't be computed. */
+  value: number | null;
+  /** Already attached to a plan KPI in this org. */
+  bound: boolean;
+};
+
+/** Every bindable metric with its live value and whether it's already attached. */
+export async function getPlanMetricOptions(
+  supabase: SupabaseClient,
+  orgId: string,
+): Promise<PlanMetricOption[]> {
+  const { data } = await supabase
+    .from("plan_kpis")
+    .select("metric_key")
+    .eq("org_id", orgId)
+    .not("metric_key", "is", null);
+  const bound = new Set(
+    ((data ?? []) as { metric_key: string | null }[]).map((r) => r.metric_key).filter((k): k is string => !!k),
+  );
+  return Promise.all(
+    Object.keys(PLAN_METRICS).map(async (key) => {
+      const meta = PLAN_METRIC_META[key] ?? { label: key, unit: "" };
+      let value: number | null = null;
+      try {
+        value = await PLAN_METRICS[key](supabase, orgId);
+      } catch {
+        value = null;
+      }
+      return { key, label: meta.label, unit: meta.unit, value, bound: bound.has(key) };
+    }),
+  );
+}
+
+/** Bindable metrics not yet attached to any goal — the Unassigned vital signs tray. */
+export async function getUnassignedPlanMetrics(
+  supabase: SupabaseClient,
+  orgId: string,
+): Promise<PlanMetricOption[]> {
+  return (await getPlanMetricOptions(supabase, orgId)).filter((m) => !m.bound);
+}

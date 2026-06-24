@@ -12,12 +12,17 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import DataTable, { type Column, type BulkAction } from "../../../_components/DataTable";
 import { CategoryTag, ScoreBadge } from "@/app/admin/_components/StatusChip";
+import AddProspectModal from "./AddProspectModal";
 
 export type ProspectRow = {
-  hubspot_id: string;
+  id: string;
+  hubspot_id: string | null;
+  source: string;
+  type: string;
   email: string | null;
   first_name: string | null;
   last_name: string | null;
+  name: string;
   company: string | null;
   lifecycle_stage: string | null;
   owner_id: string | null;
@@ -29,10 +34,7 @@ const selectCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/50";
 
 function displayName(r: ProspectRow): string {
-  const parts = [r.first_name, r.last_name].filter(
-    (s): s is string => typeof s === "string" && s.length > 0
-  );
-  return parts.length ? parts.join(" ") : r.email ?? "Unknown";
+  return r.name || r.email || "Unknown";
 }
 
 function fmtRelative(iso: string | null): string {
@@ -66,6 +68,7 @@ export default function ProspectsTable({
   const [lifecycle, setLifecycle] = useState("");
   const [owner, setOwner] = useState("");
   const [scored, setScored] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
   const filtered = useMemo(
     () =>
@@ -84,12 +87,25 @@ export default function ProspectsTable({
       header: "Name",
       value: (r) => displayName(r),
       render: (r) => (
-        <Link
-          href={`/admin/fundraising/prospects/${encodeURIComponent(r.hubspot_id)}`}
-          className="text-ink-1 font-medium hover:text-orange"
-        >
-          {displayName(r)}
-        </Link>
+        <span className="flex items-center gap-1.5">
+          {r.hubspot_id ? (
+            <Link
+              href={`/admin/fundraising/prospects/${encodeURIComponent(r.hubspot_id)}`}
+              className="text-ink-1 font-medium hover:text-orange"
+            >
+              {displayName(r)}
+            </Link>
+          ) : (
+            <span className="text-ink-1 font-medium">{displayName(r)}</span>
+          )}
+          {r.type && r.type !== "individual" && (
+            <span className="text-[9px] uppercase tracking-wide text-ink-3 border border-outline rounded px-1 py-px">
+              {r.type === "foundation" ? "Foundation" : r.type === "corporate" ? "Corp" : r.type}
+            </span>
+          )}
+          {r.source === "manual" && <span className="text-[9px] uppercase tracking-wide text-orange/80">added</span>}
+          {r.source === "research" && <span className="text-[9px] uppercase tracking-wide text-revenue">AI</span>}
+        </span>
       ),
     },
     {
@@ -153,7 +169,7 @@ export default function ProspectsTable({
       },
     },
     // Promote: open an Identify-stage opportunity for each and move them off the
-    // working list into the pipeline. Only offered on the active list.
+    // bench into the pipeline. Only offered on the active list.
     ...(disqualifiedView
       ? []
       : [
@@ -163,14 +179,14 @@ export default function ProspectsTable({
               if (
                 !confirm(
                   `Promote ${selected.length} prospect${selected.length === 1 ? "" : "s"} into the pipeline at the Identify stage? ` +
-                    `They'll move off this list and appear in Pipeline.`
+                    `They'll move off the bench and appear in Pipeline.`
                 )
               )
                 return;
               void fetch("/api/admin/fundraising/prospects/promote", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ hubspot_ids: selected.map((r) => r.hubspot_id) }),
+                body: JSON.stringify({ prospect_ids: selected.map((r) => r.id) }),
               })
                 .then((r) => r.json())
                 .then((d: { promoted?: number }) => {
@@ -190,18 +206,18 @@ export default function ProspectsTable({
             void fetch("/api/admin/fundraising/prospects/disqualify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ hubspot_ids: selected.map((r) => r.hubspot_id), disqualified: false }),
+              body: JSON.stringify({ prospect_ids: selected.map((r) => r.id), disqualified: false }),
             }).then(() => router.refresh());
           },
         }
       : {
           label: "Disqualify",
           run: (selected) => {
-            if (!confirm(`Remove ${selected.length} prospect(s) from the working list? You can requalify them later.`)) return;
+            if (!confirm(`Remove ${selected.length} prospect(s) from the bench? You can requalify them later.`)) return;
             void fetch("/api/admin/fundraising/prospects/disqualify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ hubspot_ids: selected.map((r) => r.hubspot_id), disqualified: true }),
+              body: JSON.stringify({ prospect_ids: selected.map((r) => r.id), disqualified: true }),
             }).then(() => router.refresh());
           },
         },
@@ -226,19 +242,29 @@ export default function ProspectsTable({
           <input type="checkbox" checked={scored} onChange={(e) => setScored(e.target.checked)} className="accent-orange" />
           Scored only
         </label>
+        {!disqualifiedView && (
+          <button
+            onClick={() => setAddOpen(true)}
+            className="ml-auto text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors"
+          >
+            + Add prospect
+          </button>
+        )}
       </div>
 
       <DataTable
         rows={filtered}
         columns={columns}
-        getRowId={(r) => r.hubspot_id}
+        getRowId={(r) => r.id}
         initialSort={{ key: "last_activity", dir: "desc" }}
         bulkActions={bulkActions}
         csvFilename="prospects.csv"
         viewsKey="prospects"
         searchPlaceholder="Search prospects by name, email, or company…"
-        emptyMessage="No prospects match these filters."
+        emptyMessage="No prospects on the bench match these filters."
       />
+
+      {addOpen && <AddProspectModal onClose={() => setAddOpen(false)} />}
     </div>
   );
 }

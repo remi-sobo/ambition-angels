@@ -14,9 +14,12 @@ Supabase project id: `kzzdtibbwsucloaoqpqa`.
 
 ## Steps
 
-1. **Load context** (Supabase `execute_sql`):
-   - Already-proposed: `select source_ref from fin_reconciliation_items where status='pending'`.
-     Do **not** re-propose these `source_ref`s.
+1. **Load context** (Supabase `execute_sql`) — this is how a fresh run "remembers"
+   what was already handled (the agent has no memory between runs; the database does):
+   - Already-handled: `select source_ref from fin_reconciliation_items` — **ANY status**
+     (pending, accepted, OR dismissed). Do **not** re-propose any of these `source_ref`s.
+     This is the key: once Shannon has accepted or **dismissed** an email, it must never
+     come back. Checking only `pending` would resurface dismissed items.
    - Existing ledger (avoid duplicates):
      `select source_name, amount, status, expected_date from fin_revenue_commitments`.
 

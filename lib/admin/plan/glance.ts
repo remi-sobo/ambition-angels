@@ -107,7 +107,7 @@ export function buildExceptions(
       chip: planHealthToStatus(o.health),
       chipLabel: healthLabel(o.health),
       owner: o.owner,
-      href: `#objective-${o.id}`,
+      href: `/admin/strategic-plan/objective/${o.id}`,
     };
   });
 

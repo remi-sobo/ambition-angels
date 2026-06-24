@@ -5,6 +5,7 @@ import { getNarrative } from "@/lib/admin/briefing/narrate";
 import BriefingCard from "./_components/BriefingCard";
 import NarrativeHero from "./_components/NarrativeHero";
 import PulseStrip from "./_components/PulseStrip";
+import FollowUps from "./_components/FollowUps";
 
 // Executive Briefing v2 (spec Phase 1): an AI-narrated morning brief over a
 // deterministic engine. The ranked decision feed and pulse strip are computed
@@ -13,8 +14,8 @@ import PulseStrip from "./_components/PulseStrip";
 export const dynamic = "force-dynamic";
 
 export default async function BriefingPage() {
-  const { briefing, pulse } = await gatherBriefingView();
-  const narrative = await getNarrative(briefing, pulse);
+  const { briefing, pulse, followups } = await gatherBriefingView();
+  const narrative = await getNarrative(briefing, pulse, followups);
   const today = new Date(briefing.computedAt).toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -65,6 +66,10 @@ export default async function BriefingPage() {
           )}
         </div>
       )}
+
+      <div className="mt-6">
+        <FollowUps followups={followups} />
+      </div>
     </div>
   );
 }

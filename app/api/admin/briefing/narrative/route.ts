@@ -14,7 +14,7 @@ export async function POST() {
   if (!(await isAuthed())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const { briefing, pulse } = await gatherBriefingView();
-  const narrative = await generateNarrativeNow(briefing, pulse);
+  const { briefing, pulse, followups } = await gatherBriefingView();
+  const narrative = await generateNarrativeNow(briefing, pulse, followups);
   return NextResponse.json({ ok: true, narrative });
 }

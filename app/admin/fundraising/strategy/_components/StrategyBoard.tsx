@@ -312,7 +312,7 @@ function FunderCard({ funder }: { funder: FunderRow }) {
           {researchEligible &&
             (funder.hubspotId ? (
               <Link
-                href={`/admin/fundraising/prospects/${encodeURIComponent(funder.hubspotId)}`}
+                href={`/admin/fundraising/prospects/by-hubspot/${encodeURIComponent(funder.hubspotId)}`}
                 className="font-semibold text-ink-2 hover:text-orange transition-colors"
               >
                 Research →

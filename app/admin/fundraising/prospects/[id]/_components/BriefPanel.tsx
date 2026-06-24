@@ -64,10 +64,10 @@ type ErrorBanner = {
 };
 
 export default function BriefPanel({
-  hubspotId,
+  prospectId,
   brief,
 }: {
-  hubspotId: string;
+  prospectId: string;
   brief: ExistingBrief | null;
 }) {
   const router = useRouter();
@@ -90,7 +90,7 @@ export default function BriefPanel({
     setGenerating(true);
     try {
       const r = await fetch(
-        `/api/admin/fundraising/research/${encodeURIComponent(hubspotId)}`,
+        `/api/admin/fundraising/research/${encodeURIComponent(prospectId)}`,
         { method: "POST" }
       );
       const body = await r.json().catch(() => ({}));

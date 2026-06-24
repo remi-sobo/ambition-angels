@@ -48,15 +48,15 @@ function parseNotes(raw: unknown): string | null {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { hubspot_id: string } }
+  { params }: { params: { id: string } }
 ) {
   if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const hubspotId = params.hubspot_id;
-  if (!hubspotId || typeof hubspotId !== "string") {
-    return NextResponse.json({ error: "Invalid hubspot_id" }, { status: 400 });
+  const prospectId = params.id;
+  if (!prospectId || typeof prospectId !== "string") {
+    return NextResponse.json({ error: "Invalid prospect id" }, { status: 400 });
   }
 
   const body = (await req.json().catch(() => null)) as RawBody | null;
@@ -83,14 +83,14 @@ export async function POST(
     .from("fr_prospect_scores")
     .upsert(
       {
-        hubspot_contact_id: hubspotId,
+        prospect_id: prospectId,
         ...scores,
         notes,
         scored_by: scoredBy,
         scored_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "hubspot_contact_id" }
+      { onConflict: "prospect_id" }
     )
     .select("*")
     .single();

@@ -302,7 +302,7 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
         )}
         {opp.hubspotId && (
           <Link
-            href={`/admin/fundraising/prospects/${opp.hubspotId}`}
+            href={`/admin/fundraising/prospects/by-hubspot/${opp.hubspotId}`}
             className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
             title="Research brief"
           >

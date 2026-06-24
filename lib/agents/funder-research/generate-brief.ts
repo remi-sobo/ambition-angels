@@ -273,3 +273,53 @@ export async function generateBriefForContact(
   const result = await runFunderResearch(context);
   return { context, result };
 }
+
+/**
+ * Brief generation keyed off a bench prospect. HubSpot-linked prospects reuse
+ * the full mirror context; manual / AI-discovered prospects get a minimal
+ * synthesized context (the agent web-searches from the name + org regardless).
+ */
+export async function generateBriefForProspect(prospect: {
+  id: string;
+  hubspot_contact_id: string | null;
+  name: string;
+  email: string | null;
+  org_name: string | null;
+  type: string;
+}): Promise<{ context: ResearchContext; result: ResearchResult }> {
+  if (prospect.hubspot_contact_id) {
+    return generateBriefForContact(prospect.hubspot_contact_id);
+  }
+
+  // No HubSpot record — synthesize a thin context from the bench row.
+  const parts = prospect.name.trim().split(/\s+/);
+  const contact: ContextContact = {
+    hubspot_id: prospect.id,
+    email: prospect.email,
+    first_name: parts[0] ?? prospect.name,
+    last_name: parts.length > 1 ? parts.slice(1).join(" ") : null,
+    phone: null,
+    company: prospect.org_name,
+    lifecycle_stage: null,
+    lead_status: null,
+    owner_id: null,
+    last_activity_at: null,
+    created_in_hubspot_at: null,
+  };
+  const prospectType: ProspectType =
+    prospect.type === "foundation" || prospect.type === "corporate" || prospect.type === "individual"
+      ? prospect.type
+      : inferProspectType(contact, null);
+
+  const context: ResearchContext = {
+    hubspot_contact_id: prospect.id,
+    contact,
+    company: null,
+    deals: [],
+    recent_engagements: [],
+    internal_connections: [],
+    prospect_type: prospectType,
+  };
+  const result = await runFunderResearch(context);
+  return { context, result };
+}

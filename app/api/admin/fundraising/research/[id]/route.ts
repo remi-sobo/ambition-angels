@@ -20,7 +20,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
-import { generateBriefForContact } from "@/lib/agents/funder-research/generate-brief";
+import { generateBriefForProspect } from "@/lib/agents/funder-research/generate-brief";
 import {
   AGENT_MODEL,
   AgentResultError,
@@ -55,7 +55,7 @@ export const maxDuration = 300;
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { hubspot_id: string } }
+  { params }: { params: { id: string } }
 ) {
   if (!await isAuthed()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -65,12 +65,24 @@ export async function POST(
     return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });
   }
 
-  const hubspotId = params.hubspot_id;
-  if (!hubspotId) {
-    return NextResponse.json({ error: "Missing hubspot_id" }, { status: 400 });
+  const prospectId = params.id;
+  if (!prospectId) {
+    return NextResponse.json({ error: "Missing prospect id" }, { status: 400 });
   }
 
   const supabase = createServerSupabase();
+  const { data: prospectRow } = await supabase
+    .from("fr_prospects")
+    .select("id, hubspot_contact_id, name, email, org_name, type")
+    .eq("id", prospectId)
+    .maybeSingle();
+  const prospect = prospectRow as
+    | { id: string; hubspot_contact_id: string | null; name: string; email: string | null; org_name: string | null; type: string }
+    | null;
+  if (!prospect) {
+    return NextResponse.json({ error: "Prospect not found" }, { status: 404 });
+  }
+  const hubspotId = prospect.hubspot_contact_id;
 
   // ── 1. Rate limit ───────────────────────────────────────────────────────
   const windowStartIso = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
@@ -137,12 +149,13 @@ export async function POST(
 
   // ── 3. Run the agent ────────────────────────────────────────────────────
   try {
-    const { result } = await generateBriefForContact(hubspotId);
+    const { result } = await generateBriefForProspect(prospect);
 
     // ── 4. Persist the brief ──────────────────────────────────────────────
     const { data: briefRow, error: briefErr } = await supabase
       .from("fr_prospect_briefs")
       .insert({
+        prospect_id: prospectId,
         hubspot_contact_id: hubspotId,
         content: result.brief,
         template_version: "v1",
@@ -167,7 +180,7 @@ export async function POST(
         hubspot_contact_id: hubspotId,
         target_id: null,
         target_type: "brief",
-        prompt_summary: `Generate research brief for hubspot_id=${hubspotId}`,
+        prompt_summary: `Generate research brief for prospect=${prospectId}`,
         model_used: result.model_used,
         tokens_input: result.tokens_input,
         tokens_output: result.tokens_output,
@@ -195,7 +208,7 @@ export async function POST(
       hubspot_contact_id: hubspotId,
       target_id: briefRow.id,
       target_type: "brief",
-      prompt_summary: `Generate research brief for hubspot_id=${hubspotId}`,
+      prompt_summary: `Generate research brief for prospect=${prospectId}`,
       model_used: result.model_used,
       tokens_input: result.tokens_input,
       tokens_output: result.tokens_output,
@@ -247,7 +260,7 @@ export async function POST(
         hubspot_contact_id: hubspotId,
         target_id: null,
         target_type: "brief",
-        prompt_summary: `Generate research brief for hubspot_id=${hubspotId}`,
+        prompt_summary: `Generate research brief for prospect=${prospectId}`,
         model_used: err.metrics.model_used,
         tokens_input: err.metrics.tokens_input,
         tokens_output: err.metrics.tokens_output,
@@ -284,7 +297,7 @@ export async function POST(
       hubspot_contact_id: hubspotId,
       target_id: null,
       target_type: "brief",
-      prompt_summary: `Generate research brief for hubspot_id=${hubspotId}`,
+      prompt_summary: `Generate research brief for prospect=${prospectId}`,
       model_used: AGENT_MODEL,
       status: "failed",
       error_message: message,

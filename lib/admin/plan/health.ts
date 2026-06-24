@@ -31,3 +31,15 @@ export function worstHealth(a: string | null, b: string | null): string | null {
 
 export const isOffTrack = (health: string | null): boolean =>
   health === "behind" || health === "at_risk";
+
+/** Human label for a health value (shared by chips, the verdict, the briefing). */
+export const HEALTH_LABEL: Record<string, string> = {
+  behind: "Behind",
+  at_risk: "At risk",
+  on_track: "On track",
+  done: "Done",
+  not_started: "Not started",
+};
+
+export const healthLabel = (health: string | null): string =>
+  health ? HEALTH_LABEL[health] ?? health : "No signal";

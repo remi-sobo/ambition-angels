@@ -344,7 +344,10 @@ export function ObjectiveCard({
   };
 
   return (
-    <section className={`border-[1.5px] border-outline rounded-card-lg p-5 bg-tile/40 ${busy ? "opacity-60" : ""}`}>
+    <section
+      id={`objective-${objective.id}`}
+      className={`scroll-mt-24 border-[1.5px] border-outline rounded-card-lg p-5 bg-tile/40 ${busy ? "opacity-60" : ""}`}
+    >
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="font-heading font-bold text-ink-1 flex-1 min-w-0 text-lg">{objective.title}</h2>
         <select

@@ -1,7 +1,17 @@
-# Spec: Strategy in the Command Center (one spine, three lenses)
+# Spec: Strategy in the Command Center (one spine, three lenses) — v2.1, UX pass + sequenced build
 
-> This makes the strategic plan the front door of BloomOS, retires "KPIs" as a standalone destination, and gives executives and team members one view of the plan they can filter to their area, their objectives, and their numbers. It builds directly on `specs/bloomos-strategy.md` (Phases 1–4, shipped): the data spine, the auto-metric registry, the work/health rollups, and the cockpit widgets already exist. This is the surface and information-architecture pass on top of them.
+> Builds on `specs/bloomos-strategy.md` (Phases 1–4, shipped): the spine, auto-metric registry, rollups, and cockpit widgets exist. This is the surface, information-architecture, and **UX/visual design** pass on top of them. v2 adds the design craft the IA-only draft was missing: a verdict line, an exception list, a warm-palette status system, trust and staleness cues, the lens-as-altitude interaction, owner identity, and progressive density. **v2.1 resequences the build order to resolve internal dependency conflicts and fixes four references** (see "Changes in v2.1").
 > Status: design only, for Remi's review. No implementation code in this document.
+
+## Changes in v2.1 (review pass)
+
+- **Status tokens already exist (recon).** `tailwind.config.ts` already ships a WCAG-verified `status.*` scale (`healthy`, `watch`, `critical`, `due`, `neutral`, each with `-text`/`-bg`), explicitly intended for chips and the briefing engine. So Phase A needs no token work; the chip component (start of B1) consumes `status.*`, and D audits the *usage* (replacing ad-hoc `bg-expense`/`#C8881B` with the scale).
+- **Minimal owner→person resolver pulled into B2.** The Mine lens needs it; only the polish (chips, filter ordering) stays in D.
+- **Phase A redirect dropped (recon).** `/admin/kpis` (the 12 computed metrics) and `/admin/strategic-plan/scorecard` (plan KPIs by owner) show *different datasets*, so redirecting one to the other would hide the computed-metric editor. Phase A instead **de-links `/admin/kpis` from the nav but keeps it reachable**; the redirect waits for the unified Measures view in Phase C.
+- **Dangling `bloomos-to-ten` reference replaced** with the real design-system source: `tailwind.config.ts` + `globals.css` `.admin-shell`.
+- **Verdict-line template grammar pinned** (see UX §"The verdict line") so it can't drift or lie.
+- **Mine-default vs. remember-last-used tiebreak** defined (see Open decisions #2).
+- **B split into B1 (the glance) and B2 (lens-as-altitude)** so the highest-leverage, lowest-risk slice ships on its own.
 
 ---
 
@@ -9,89 +19,117 @@
 
 The strategy spine works, but it's filed and split wrong, so it doesn't read like a cockpit.
 
-1. **It's buried.** `/admin/strategic-plan` is the *last* item under **Governance** — the lowest section in the sidebar (`app/admin/_components/Sidebar.tsx`, `NAV_SECTIONS`). For a nonprofit executive the plan *is* the home screen. It's sitting next to compliance filings.
+1. **It's buried.** `/admin/strategic-plan` is the last item under **Governance**, the lowest sidebar section (`Sidebar.tsx`, `NAV_SECTIONS`). For a nonprofit executive the plan is the home screen, not a neighbor of compliance filings.
+2. **KPIs are two disconnected systems and nobody knows which to trust.** `/admin/kpis` shows 12 computed metrics (the org's live vital signs, `lib/kpis.ts`). `/admin/strategic-plan` `plan_kpis` shows strategic measures tied to goals (the targets we chose). Same status scale, different nav sections, no UI link between them. A KPI with no objective above it is just a number on a wall.
+3. **No single answer to "are we winning, and who owns it?"** The cockpit's Strategy Health widget, the deep plan, the scorecard, the per-person view, and the computed metrics are five surfaces telling five partial stories.
 
-2. **KPIs are two disconnected systems and nobody knows which to trust.**
-   - `/admin/kpis` shows **12 computed metrics** from the spine (revenue YTD, donor retention, overdue moves…) — the org's *live vital signs*, defined in code at `lib/kpis.ts`.
-   - `/admin/strategic-plan` `plan_kpis` shows **strategic measures** tied to goals/objectives — the *targets we chose*.
-   - Same status scale, different nav sections, no link in the UI between them. A KPI with no objective above it is just a number on a wall — which is exactly the "not sure what the KPI is doing" feeling.
+And the deeper one v2 fixes:
 
-3. **There's no single answer to "are we winning, and who owns it?"** The CEO cockpit has a Strategy Health widget (`app/admin/_components/overview/StrategyHealthWidget.tsx`), but the deep plan, the plan scorecard (`/admin/strategic-plan/scorecard`), the per-person view (`/admin/strategic-plan/people`), and the computed metrics (`/admin/kpis`) are four separate routes telling four partial stories.
+4. **Even consolidated, the plan reads like a database, not a cockpit.** A tree of objectives, goals, KPIs, and initiatives is a CRUD structure. An executive opening it still has to assemble the verdict in their head. The surface has to do that work for them.
 
 ## Who is affected
 
-- **Remi (CEO), first.** Wants to open BloomOS and read "are we winning" at a glance, then drill into an area or his own numbers before the Monday plan and the monthly review.
-- **Shannon and future AA staff.** Want their slice: the objectives, goals, KPIs and initiatives they own, and only those.
-- **Tenant nonprofit leaders, later.** Same need at the executive altitude — the plan as a cockpit, not a CRUD tree.
+- **Remi (CEO), first.** Opens BloomOS and reads "are we winning" at a glance, then drills into an area or his own numbers before the Monday plan and the monthly review.
+- **Shannon and future AA staff.** Want their slice: the objectives, goals, KPIs, and initiatives they own, and only those.
+- **Tenant nonprofit leaders, later.** The plan as a cockpit, not a CRUD tree, at executive altitude.
 
 ## Current behavior
 
-- Strategy lives at `/admin/strategic-plan` (a Foundation → Objectives → Goals → KPIs + Initiatives tree, `app/admin/strategic-plan/page.tsx`) with four sub-routes: `setup`, `scorecard`, `people`, `review`.
-- Computed metrics live at `/admin/kpis` (`app/admin/kpis/page.tsx`), driven by the `lib/kpis.ts` registry, with per-metric target/owner settings in `kpi_settings` and weekly history in `kpi_snapshots`.
-- Both "KPIs" and "Strategic Plan" sit under the **Governance** nav section.
-- `plan_kpis.metric_key` + `source='auto'` already lets a strategic KPI bind to a computed metric, and `RefreshMetricsButton` recomputes them — but nothing in the UI lets a user *pick* a metric to bind, so the two worlds stay separate in practice.
-- Ownership everywhere is free-text (`owner` on objectives/goals/KPIs/initiatives; `assigned_to: "remi" | "shannon" | null` only on ops tasks/projects). The People page buckets by splitting the free-text owner on `/` and `,`.
+- Strategy lives at `/admin/strategic-plan` (Foundation → Objectives → Goals → KPIs + Initiatives) with sub-routes `setup`, `scorecard`, `people`, `review`.
+- Computed metrics live at `/admin/kpis` (`lib/kpis.ts` registry, `kpi_settings` targets, `kpi_snapshots` history).
+- Both "KPIs" and "Strategic Plan" sit under **Governance**.
+- `plan_kpis.metric_key` + `source='auto'` already lets a strategic KPI bind to a computed metric, but no UI lets a user pick a metric to bind, so the two worlds stay separate.
+- Ownership is free-text everywhere; the People page guesses by splitting `owner` on `/` and `,`.
 
 ## Desired behavior
 
-**One spine. One place. Three lenses. Every number has a parent and an owner.**
+**One spine. One place. Three lenses. Every measure has a parent, an owner, and a date.**
 
-- The strategic plan is promoted into the **Command Center** section of the nav and becomes the default executive surface — vision at the top, objective health below.
-- "KPIs" disappears as a standalone nav destination. The 12 computed metrics become a **Metrics Library**: a data *source* that strategic KPIs bind to, not a peer page. A KPI only ever appears *under the objective/goal it serves*.
-- Computed metrics nobody has tied to strategy yet surface in an **Unassigned vital signs** tray — a nudge to either attach a metric to a goal or stop tracking it. This is what answers "what is this KPI doing" for every number.
-- The Strategy surface offers three lenses over the same data:
-  - **Org lens** (default): vision banner + objective grid, each tile showing health, headline measures, and initiative completion. "Are we winning" at a glance.
-  - **Area lens**: filter to one objective (Program / Fundraising / Recruitment / Infrastructure) and see its goals, every measure, and every initiative with task rollup. The department deep-dive.
-  - **My lens**: "show me the objectives, goals, KPIs and initiatives I own" — the per-person accountability view, formalizing today's People page.
-- A persistent **filter bar** across all lenses: by area (objective) · by owner · by status (at-risk / behind) · by review cadence (what's due).
-- KPIs stay with Strategy, not Ops. Strategy answers *are we winning* (objectives, goals, measures/outcomes). Ops/Team answers *are we doing the work* (initiatives, projects, tasks). The **initiative** is the bridge — bottom of Strategy, top of Ops.
+- The strategic plan is promoted into the **Command Center** nav and becomes the default executive surface: a verdict, then objective health, then the exceptions.
+- "KPIs" disappears as a standalone destination. The 12 computed metrics become a **Metrics Library**, a data source that strategic KPIs bind to. A measure only ever appears under the objective or goal it serves.
+- Orphan metrics surface in an **Unassigned vital signs** tray, a gentle nudge to attach or retire each one.
+- Three lenses over the same data: **Org** (are we winning), **Area** (the department deep-dive), **Mine** (per-person accountability), with a persistent filter bar (area, owner, status, due-for-review).
+- KPIs stay with Strategy (are we winning), not Ops (are we doing the work). The **initiative** is the bridge between them.
 
 ## Scope
 
 **In:**
-
-- IA change: move Strategy into the **Command Center** nav section; remove the **KPIs** item from Governance; remove **Strategic Plan** from Governance.
-- A unified Strategy surface with the three lenses and the filter bar, replacing the four-route sprawl with one workspace (sub-routes may stay as deep-link targets, but the default experience is consolidated).
-- The **Metrics Library** fold-in: a metric picker in the KPI editor so a measure can bind to a `lib/kpis.ts` metric_key (`source='auto'`); an **Unassigned vital signs** tray listing computed metrics not bound to any goal/objective.
-- A lightweight **owner→person resolution** so "My lens" and the owner filter work reliably, without building HR machinery.
-- Retire `/admin/kpis` as a destination (redirect to the Strategy surface's measures view); consolidate `/admin/strategic-plan/scorecard` and `/admin/kpis` into one measures view.
+- IA: move Strategy into **Command Center**; remove **KPIs** and **Strategic Plan** from Governance.
+- A unified Strategy surface: the verdict line, the objective grid, the exception list, the three lenses, and the filter bar, replacing the four-route sprawl with one workspace (sub-routes may remain as deep links).
+- The full **UX and visual design** in the section below: status system, trust and staleness cues, lens-as-altitude, owner identity, progressive density, all in the cream-and-espresso admin system.
+- The **Metrics Library** fold-in: a metric picker in the KPI editor; the Unassigned vital signs tray; the consolidated Measures view.
+- Lightweight **owner→person resolution** so Mine and the owner filter work.
+- Retire `/admin/kpis` as a destination (redirect); consolidate `scorecard` + `kpis` into one Measures view.
 
 **Out:**
+- New strategy data tables. The existing spine is sufficient.
+- Moving KPIs under Team/Ops (re-orphans measures, the bug we're fixing).
+- HR machinery (review cycles, 9-box, comp) and any AI authoring of strategy.
 
-- New strategy data tables. The spine from `specs/bloomos-strategy.md` is sufficient.
-- Moving KPIs under Team/Ops (re-orphans measures from strategy — the bug we're fixing).
-- HR machinery: review cycles, 9-box, compensation. Same boundary as the parent spec.
-- Any AI authoring of strategy. The Metrics Library binds existing computed metrics; it invents nothing.
+## UX and visual design
 
-## The design
+This is the heart of v2. The surface must do the executive's reading for them.
 
-### 1. Information architecture
+### Design north star
+A nonprofit CEO opens BloomOS and knows "are we winning" in three seconds, with no clicks, then can drop to an area or their own numbers. Serve the glance first, the drill second. This is a cockpit, not a database.
 
-Current nav (`Sidebar.tsx`):
+### The verdict line (new)
+Above the grid, one synthesized sentence in plain language: e.g. "3 of 4 objectives on track. Fundraising is behind: the grants goal is $180k short with two asks closing this month." Deterministic, assembled from the rollup, no AI. Voice rules apply: specific numbers, no hedging, no filler. This is the three-second answer; the grid below is the evidence.
 
-```
-Command Center   Overview · Executive Briefing · How-To Guide
-…
-Governance       Board · Compliance · KPIs · Strategic Plan
-```
+**Template grammar (pinned, v2.1).** The line is a fixed template over the rollup, never free-form:
+- **Clause 1 — the count:** `"{onTrack} of {total} objectives on track."` where `onTrack` counts objectives whose rolled-up health is `on_track`/`done`.
+- **Clause 2 — the worst exception** (omitted when none): `"{objectiveTitle} is {status}: {worstMeasureClause}{, asksClause}."`
+  - `worstMeasureClause` = the most-behind measure under that objective, phrased by unit: money → `"the {goalTitle} goal is ${gap}k short"` (gap = `target − current`); percent → `"{goalTitle} at {current}% vs {target}%"`; count → `"{goalTitle} at {current} of {target}"`.
+  - `asksClause` (fundraising only, optional) = count of `opportunities` with `next_step_due` within the current month, e.g. `"two asks close this month"`. Omitted when zero or non-fundraising.
+- No clause is ever invented; every number traces to a rollup field. If a value is missing, the clause is dropped, not guessed.
 
-Target nav:
+### Management by exception, made visual
+When things are fine the screen looks calm; it looks hot exactly where something is wrong. Healthy objectives recede (quiet taupe, low contrast, no accent). At-risk and behind objectives advance (more weight, a warm accent, an exception badge). The eye is pulled to the problem without hunting for it. A screen that is all one color when healthy and visibly flares where it isn't.
 
-```
-Command Center   Overview · Strategy · Executive Briefing · How-To Guide
-…
-Governance       Board · Compliance
-```
+### Status system (solving RAG in a warm palette)
+Standard red/amber/green clashes with cream and espresso and fails colorblind users, which would break the locked WCAG AA/AAA targets. So status never relies on hue alone. Each status is a **dot + label + weight**:
+- **healthy** — calm neutral or muted sage, low emphasis, recedes.
+- **at-risk** — ochre, stays in the warm family, medium emphasis.
+- **behind** — a sparing brick red, high emphasis, used rarely so it means something.
+- **not-started / neutral** — hairline outline, no fill.
+Shape and text carry meaning; color reinforces. Every status chip passes contrast on cream. **The named scale already exists** in `tailwind.config.ts` as `status.*` — `status-healthy` (sage `#2F7D5B`), `status-watch` (ochre `#B5762A`), `status-critical` (brick `#B5482F`), `status-due` (clay `#C0703C`), `status-neutral` (`#6B5C4E`), each with `-text` (AA on cream) and `-bg` (pale tint) variants. B1's chips consume this scale; the only remaining work (Phase D) is replacing ad-hoc usage (`bg-expense`, hardcoded `#C8881B`, `bg-revenue`) on existing surfaces so there's one chip vocabulary.
 
-- **Strategy** becomes the second item in Command Center — the first thing leadership reaches after the daily Overview.
-- **KPIs** is removed from the nav. Its route redirects into the Strategy surface (Measures view). No "KPIs" link anywhere; measures are only seen in context.
-- **Strategic Plan** is removed from Governance (it now lives in Command Center as "Strategy"). Governance returns to what it's for: board and compliance.
+### The exception list (new)
+Directly under the verdict: a short "Needs attention" list, the at-risk and behind items plus overdue reviews, each row linking straight into its Area lens. This is where the eye lands second. A handed-to-you list beats badges scattered across tiles that force a scan. **Reuse the existing `BriefingStrip` ("Needs you today") pattern** so it reads as native BloomOS.
 
-Naming: call it **Strategy** in the nav (shorter, executive), keep "Strategic Plan" as the page title if Remi prefers the formal name.
+### Trust and staleness on every measure
+A measure shows whether you can believe it:
+- **auto** measures (live from the spine) carry a quiet "live" tick and their refresh time.
+- **manual** measures show last-updated, and go stale-styled when past their cadence ("updated 47 days ago" in ochre).
+This is what truly answers "what is this KPI doing." A number you can't date is a number you don't trust.
 
-### 2. The Strategy surface: one workspace, a lens switch
+### Every measure wears its parent and owner
+A KPI never floats. In every lens it shows the goal above it and an owner chip beside it. The Unassigned vital signs tray is the explicit home for orphans, designed as accumulating debt (a growing tray should feel like something to clean up), not an error state.
 
-Route: `/admin/strategy` (new canonical) or keep `/admin/strategic-plan` and restructure in place — build-time call, surfaced in the PR. The page opens on the **Org lens** with a lens switch (pill toggle, mirroring the Command Center's existing CEO/Ops role pill) and the filter bar beneath it.
+### Owner as identity, not text
+Resolve owners to people as initials chips; external owners (Empathy Labs, a contractor) render as visibly different labeled chips. The owner chip is the thread that makes accountability legible and powers Mine and the owner filter.
+
+### Lens-as-altitude (interaction)
+Org → Area → Mine is a zoom on one dataset, not three pages. The chrome and filter bar stay put; only the body morphs (grid ⇄ tree). It should feel like zooming in, not navigating. URL-synced so a lens and filter set are shareable and bookmarkable. The lens pill mirrors the existing CEO/Ops role pill for consistency.
+
+### Progressive density
+- **Org**: low density, glanceable. Verdict, objective grid, exception list, review nudge, unassigned tray.
+- **Area**: medium density. The full objective tree (goals, measures, initiatives) for one objective, with full CRUD parity.
+- **Mine**: that tree filtered to the viewer.
+The deep editor lives one altitude down, never at the home screen. This is the real cure for "the plan reads like a database."
+
+### Vision banner
+Mission and vision at the top, quiet, low-contrast, collapsible. The "why," present but never competing with status. Keeps culture visible without preaching.
+
+### Motion and feedback
+Subtle and restrained, matching the brand. Status changes and the verdict update live on edit; saves show a quiet "saved" tick (the existing debounced-persist path). No celebration, no confetti.
+
+### Stay inside the system
+The BloomOS admin design system is the source of truth, defined in `tailwind.config.ts` and `app/globals.css` (`.admin-shell` scope): cream workspace (`app: #F5EFE2`), espresso chrome (`#23160D`), taupe (`outline: #C7B18C`) borders and hairline dividers, and the existing chip/type conventions. The Strategy surface should look like it was always part of BloomOS.
+
+## The surface
+
+Route: keep `/admin/strategic-plan` as the canonical route and promote it in nav (smaller blast radius — see Open decisions #1), or move to `/admin/strategy` with a redirect. Opens on **Org** with the lens pill and the filter bar.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -99,88 +137,123 @@ Route: `/admin/strategy` (new canonical) or keep `/admin/strategic-plan` and res
 │  Filter:  Area ▾   Owner ▾   Status ▾   Due for review ▾      │  ← filter bar
 ├─────────────────────────────────────────────────────────────┤
 │  ▸ Vision banner (mission + vision, quiet, collapsible)      │
-│  ▸ Lens body (below)                                          │
+│  "3 of 4 on track. Fundraising is behind: grants $180k       │  ← verdict line
+│   short, 2 asks close this month."                           │
+│  NEEDS ATTENTION                                              │  ← exception list
+│   • Grants goal $180k short  · Remi   → Fundraising           │
+│   • FOS review 12 days overdue · Remi → Program              │
+├─────────────────────────────────────────────────────────────┤
+│  [ objective grid: 4 tiles, healthy ones quiet, off-target   │
+│    ones weighted with a warm accent + exception badge ]      │
+│  Unassigned vital signs (tray)                               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Org lens (default — "are we winning").**
-A grid of objective tiles (reusing the rollup behind `StrategyHealthWidget` / `getStrategyRollup`). Each tile:
-- Objective title + owner.
-- Health dot (worst-of-children, already computed in `lib/admin/plan/health.ts`).
-- 2–3 headline measures as mini progress bars (current / target).
-- Initiative completion (`tasksDone / tasksTotal` rollup already computed on the plan page).
-- "N off target" / "N at risk" exception badges.
-- Click → drops into the **Area lens** for that objective.
+**Org lens (default, "are we winning").** Verdict line, then a grid of objective tiles (reusing `getStrategyRollup` and `lib/admin/plan/health.ts`). Each tile: objective title + owner chip, status dot + label, 2–3 headline measures as mini current/target bars, initiative completion (`tasksDone/tasksTotal`), and an exception badge when off target. Click drops into Area for that objective. Below: the review nudge and the Unassigned vital signs tray.
 
-Below the grid: the **monthly review nudge** (already in `StrategyHealthWidget` via `reviewLine`) and the **Unassigned vital signs** tray (see §3).
+**Area lens (the deep-dive).** The existing `ObjectiveCard → GoalCard →` KPIs + Initiatives tree (`PlanControls.tsx`), scoped to the selected objective, full CRUD parity preserved. Measures show the auto/manual badge, last-updated, and trend.
 
-**Area lens (the department deep-dive).**
-The existing `ObjectiveCard` → `GoalCard` → KPIs + Initiatives tree (`app/admin/strategic-plan/_components/PlanControls.tsx`), scoped to the selected objective (or all, when no area filter is set). This is essentially today's `/admin/strategic-plan` body, now reachable as a lens and filterable. Measures here show the auto/manual badge and last-updated time; auto ones are bound to the Metrics Library.
+**Mine lens (per-person).** The same tree filtered to items the viewer owns, owner filter defaulted to the logged-in user. Formalizes today's People page.
 
-**My lens (per-person accountability).**
-The same tree, filtered to items the viewer owns — formalizing `/admin/strategic-plan/people`. Defaults the owner filter to the logged-in user. Shows their objectives, the goals/KPIs/initiatives under them they own, with status and what's due. This is the "filter by which objectives, goals, KPIs you're associated with" the request asks for.
+## Folding KPIs in (the Metrics Library)
 
-### 3. Folding KPIs in (the Metrics Library)
+**a. Metric picker in the KPI editor.** Editing a `plan_kpi`, offer "Track automatically" → a dropdown of `lib/kpis.ts` entries (label + current live value). Selecting one sets `source='auto'` and `metric_key`; `current` then refreshes via the existing `RefreshMetricsButton` path. Manual measures keep `source='manual'`. The binding columns already exist; this is the missing glue.
 
-Two changes turn the standalone KPI page into a layer:
+**b. Unassigned vital signs tray.** On Org, list `lib/kpis.ts` metrics bound to no `plan_kpi`. Each row: label, live value, and two actions, "Attach to a goal" (opens the KPI editor pre-filled) or "Hide" (`kpi_settings.active = false`). Either a metric proves a goal, or it parks here pending a decision.
 
-**a. A metric picker in the KPI editor.** When creating/editing a `plan_kpi`, offer "Track automatically" → a dropdown of `lib/kpis.ts` registry entries (label + current live value). Selecting one sets `source='auto'` and `metric_key`; `current` is then computed and refreshed (the `RefreshMetricsButton` path already exists). Manual measures keep `source='manual'` and a hand-entered `current`. This is the only missing glue — the binding columns already exist.
+**c. Consolidate the scorecards.** `/admin/kpis` (computed) and `/admin/strategic-plan/scorecard` (plan KPIs) merge into one **Measures view** reachable from Strategy: all measures, grouped by objective or owner (toggle), each with current/target bar, sparkline (`kpi_snapshots`/`plan_kpi_snapshots`), status, and the auto/manual + staleness badge. `/admin/kpis` redirects here (Phase C).
 
-**b. Unassigned vital signs tray.** On the Org lens, list `lib/kpis.ts` metrics whose `metric_key` is bound to *no* `plan_kpi`. Each row: label, live value, and two actions — "Attach to a goal" (opens the KPI editor pre-filled) or "Hide" (writes `kpi_settings.active = false`). This keeps the 12 vital signs visible and useful while pushing every one toward a strategic home. It is the answer to "what is the KPI doing": either it proves a goal, or it's parked here pending a decision.
+## Owner → person resolution
 
-**c. Consolidate the two scorecards.** `/admin/kpis` (computed) and `/admin/strategic-plan/scorecard` (plan KPIs by owner) merge into one **Measures view** reachable from the Strategy surface — all measures, grouped by objective or by owner (toggle), each with the current/target bar, the sparkline from `kpi_snapshots`/`plan_kpi_snapshots`, RAG status, and the auto/manual badge. `/admin/kpis` redirects here.
+- A small resolver maps an `owner` string to an `AdminUserId` (`remi`/`shannon`) on a confident name match, leaving external owners as free-text labels.
+- Mine filters to items whose resolved owner = the logged-in user. The owner filter lists resolved people first, then distinct labels.
+- No new table for AA; the resolver is a pure function over existing `owner` strings plus the `AdminUserId` set. Real people-tables are a later, tenant concern.
 
-### 4. Owner → person resolution (so "Mine" and the owner filter work)
+## Information architecture
 
-Today owner is free-text and the People page guesses by splitting on `/` and `,`. To make "My lens" and the owner filter reliable without HR machinery:
+```
+Current:  Command Center  Overview · Executive Briefing · How-To Guide
+          Governance       Board · Compliance · KPIs · Strategic Plan
 
-- Add a small resolver: map an `owner` string to an `AdminUserId` (`remi` / `shannon`) when it contains that person's name, leaving external owners (Empathy Labs, contractor) as unresolved free-text labels.
-- "My lens" filters to items whose resolved owner = the logged-in user. The owner filter dropdown lists resolved people first, then the distinct free-text labels.
-- No new table required for AA; the resolver is a pure function over the existing `owner` strings plus the `AdminUserId` set. (If tenants later need real people, that's a separate table, out of scope here.)
+Target:   Command Center  Overview · Strategy · Executive Briefing · How-To Guide
+          Governance       Board · Compliance
+```
 
-### 5. What the Command Center Overview keeps
-
-The Overview home (`CeoCockpit` / `OpsPanel`) keeps its `StrategyHealthWidget` as the *glance* — four objective tiles + key measures + review nudge — now with "Strategy" one click away in the same nav section instead of buried in Governance. No change to the widget itself beyond pointing its links at the new Strategy route.
+Strategy becomes the second Command Center item. KPIs leaves the nav (route redirects into Strategy). Governance returns to board and compliance. Nav label "Strategy"; keep "Strategic Plan" as the page H1 if the formal name is wanted.
 
 ## Component & route plan (for the build phase)
 
-- **Reuse:** `getStrategyRollup` and the health/work rollups (`lib/admin/plan/health.ts`, `lib/admin/overview/sources.ts`); `ObjectiveCard` / `GoalCard` / KPI + initiative rendering (`PlanControls.tsx`); the `lib/kpis.ts` registry and `computeKpis`; the snapshot/sparkline rendering from the existing scorecards.
-- **New:** a `StrategyWorkspace` client shell (lens pill + filter bar + URL-synced state), an Org-lens objective grid, the Metrics Library picker in the KPI editor, the Unassigned vital signs tray, and an `owner→person` resolver util.
-- **Nav:** edit `NAV_SECTIONS` in `Sidebar.tsx` (move Strategy up, drop KPIs and Strategic Plan from Governance); the `IconName` union already has `strategy` and `kpis`.
-- **Redirects:** `/admin/kpis` → Strategy Measures view; keep `/admin/strategic-plan/*` working (or 301 to the new route) so existing links/bookmarks survive.
+- **Reuse:** `getStrategyRollup`, health/work rollups (`lib/admin/plan/health.ts`, `lib/admin/overview/sources.ts`); `ObjectiveCard`/`GoalCard`/KPI + initiative rendering (`PlanControls.tsx`); `lib/kpis.ts` + `computeKpis`; the existing snapshot/sparkline rendering; the `BriefingStrip` pattern for the exception list.
+- **New:** a `StrategyWorkspace` client shell (lens pill + filter bar + URL-synced state); the verdict line and "Needs attention" list (deterministic from the rollup); the Org-lens objective grid; the Metrics Library picker; the Unassigned tray; the `owner→person` resolver; the warm-palette status chip set.
+- **Nav:** edit `NAV_SECTIONS` in `Sidebar.tsx`; the `IconName` union already has `strategy` and `kpis`.
+- **Redirects:** `/admin/kpis` stays reachable but de-linked from nav in Phase A; redirect to the unified Measures view in Phase C; keep `/admin/strategic-plan/*` resolving throughout.
 
-## Staged build order
+## Staged build order (resequenced, v2.1)
 
-Each phase ships useful on its own and is low-risk in isolation.
-
-- **Phase A — Promote & reframe (nav only, ~1 PR).** Move Strategy into Command Center; remove KPIs and Strategic Plan from Governance; redirect `/admin/kpis` into the strategy surface; repoint `StrategyHealthWidget` links. No data changes. Commit point: leadership reaches the plan from the top of the nav; there's no orphan "KPIs" page.
-- **Phase B — The lens shell.** Build `StrategyWorkspace` with the Org / Area / Mine pill and the filter bar (URL-synced). Org lens = objective grid from the existing rollup; Area lens = the existing tree scoped/filtered; My lens = owner-filtered tree. Commit point: one workspace, three lenses, filterable by area/owner/status.
-- **Phase C — Metrics Library fold-in.** Metric picker in the KPI editor (bind to `metric_key`), the consolidated Measures view, and the Unassigned vital signs tray. Commit point: every computed metric is either bound to a goal or visible in the tray; the two scorecards are one.
-- **Phase D — Owner resolution polish.** The `owner→person` resolver, "My lens" defaulting to the logged-in user, the owner filter listing resolved people. Commit point: each person opens Strategy and sees their slice without configuration.
+- **Phase A — Promote & reframe (nav only, ~1 PR).** Move Strategy into the Command Center section, second item after Overview. Remove KPIs and Strategic Plan from Governance. `/admin/kpis` stays reachable (still linked from the How-To guide and direct URL) but leaves the nav; its redirect waits for the Measures view in Phase C. No token work needed — the `status.*` scale already exists. No data changes, no component rewrites. Commit point: leadership reaches the plan from the top of the nav; Governance is back to board + compliance; the confusing standalone KPIs item is gone from the nav.
+- **Phase B1 — The glance (highest leverage, low risk).** The status-chip component (built first, on the Phase A tokens); the deterministic verdict line and "Needs attention" exception list; the Org objective grid — all on the Strategy route, read-only over `getStrategyRollup`. No lens machinery yet. Commit point: opening Strategy reads "are we winning" in three seconds.
+- **Phase B2 — Lens-as-altitude.** The `StrategyWorkspace` shell: Org/Area/Mine lens pill + filter bar, URL-synced. Area = the existing tree scoped/filtered with full CRUD parity. Mine = owner-filtered, using a **minimal `owner→person` resolver** (pulled forward from D). Commit point: one workspace, three lenses, shareable URLs.
+- **Phase C — Metrics Library fold-in.** Metric picker in the KPI editor; the consolidated Measures view; the Unassigned vital signs tray; trust/staleness badges on every measure. Re-point `/admin/kpis` from the interim scorecard to the unified Measures view. Commit point: every computed metric is bound to a goal or sitting in the tray; the two scorecards are one.
+- **Phase D — Polish.** Owner-resolution polish (initials chips, external-owner labels, filter ordering); the status-system **audit** (grayscale test, contrast-check on cream across all surfaces); staleness styling everywhere. Commit point: each person opens Strategy and sees their slice, and status reads correctly without relying on color.
 
 ## Definition of done
 
-- Strategy is in the Command Center nav; there is no standalone "KPIs" item and no "Strategic Plan" under Governance.
-- Opening Strategy shows the vision, the objective grid with live health, and (for Remi) the at-risk items and the review nudge — without drilling.
-- Switching to Area shows one objective's full tree; switching to Mine shows only what the viewer owns.
-- Every `lib/kpis.ts` metric is either bound to a `plan_kpi` (shown under its goal) or listed in the Unassigned vital signs tray.
+- Strategy is in Command Center; no standalone KPIs, no Strategic Plan under Governance.
+- Opening Strategy shows the vision, the verdict line, the objective grid with live health, and the "Needs attention" list, without drilling.
+- The verdict and exceptions are deterministic and match the rollup.
+- Status reads correctly in grayscale (color is reinforcement, not the only signal); chips pass contrast on cream.
+- Switching to Area shows one objective's full tree with full CRUD; Mine shows only what the viewer owns.
+- Every `lib/kpis.ts` metric is bound to a `plan_kpi` (under its goal) or listed in the Unassigned tray, with auto/manual and staleness visible.
 - The two scorecards are one Measures view; `/admin/kpis` redirects to it.
-- A team member opens Strategy → Mine and sees their objectives, goals, KPIs, and initiatives, filtered by their ownership, with no setup.
+- A staff member opens Strategy → Mine and sees their slice with no setup.
 
 ## Failure modes to watch for
 
-- **The lens switch becomes three half-built pages.** Mitigation: all three lenses render the *same* spine data; only the filter and the top-level layout (grid vs tree) change. Build the data path once.
-- **KPIs feel hidden now instead of confusing.** Mitigation: the Unassigned tray and the in-context measures keep every number visible — KPIs move from a wrong room to the right room, they don't vanish. Watch that the tray stays small (a large tray means strategy and metrics have drifted apart again).
-- **Owner resolution mislabels external owners.** Mitigation: only resolve to a person on a confident name match; leave everything else as a free-text label rather than guessing. "Mine" under-includes rather than wrongly claims.
-- **Broken bookmarks.** Mitigation: keep `/admin/strategic-plan/*` and `/admin/kpis` resolving (redirect or alias), don't hard-delete routes.
-- **Over-consolidation hides the deep editor.** Mitigation: the Area lens must keep full CRUD parity with today's `/admin/strategic-plan` tree — promotion must not cost editing power.
+- **The lens switch becomes three half-built pages.** Mitigation: all three render the same spine data; only the filter and top-level layout (grid vs tree) change. Build the data path once.
+- **KPIs feel hidden instead of confusing.** Mitigation: the Unassigned tray and in-context measures keep every number visible. Watch the tray stays small; a large tray means strategy and metrics drifted apart again.
+- **Status by color alone.** Mitigation: dot + label + weight, tested in grayscale, contrast-checked on cream.
+- **The verdict line lies or hedges.** Mitigation: it's a deterministic template (grammar pinned above) over the rollup, never free-form; it states the worst true thing plainly and drops any clause whose data is missing.
+- **Owner resolution mislabels external owners.** Mitigation: resolve to a person only on a confident match; otherwise a free-text label. Mine under-includes rather than wrongly claims.
+- **Broken bookmarks.** Mitigation: keep `/admin/strategic-plan/*` and `/admin/kpis` resolving (redirect/alias), no hard deletes.
+- **Over-consolidation hides the deep editor.** Mitigation: Area must keep full CRUD parity with today's tree. Promotion must not cost editing power.
 
 ## Open decisions for Remi
 
-1. **Route name.** New `/admin/strategy` (cleaner, matches the nav label) vs. restructure in place at `/admin/strategic-plan`. Recommendation: new `/admin/strategy`, redirect the old route.
-2. **Default lens.** Org lens for everyone, vs. My lens for non-CEO staff (Shannon lands on her slice). Recommendation: Org lens default, remember last-used per device.
-3. **Nav label.** "Strategy" (short, executive) vs. "Strategic Plan" (formal). Recommendation: "Strategy" in the nav, "Strategic Plan" as the page H1 if you want the formal name somewhere.
-4. **Unassigned tray placement.** Org lens only (exec decision surface) vs. also in the Measures view. Recommendation: Org lens only, to keep the Measures view about tracking, not triage.
+1. **Route name.** Keep `/admin/strategic-plan` and promote in nav (smaller blast radius, no redirects of the main route) vs. new `/admin/strategy` with a redirect. Recommendation (v2.1): **keep `/admin/strategic-plan`** for Phases A–B; revisit a rename only if the formal route name matters, since B builds the new workspace there anyway.
+2. **Default lens.** Org for admins (shared reality on a small team), **Mine for non-admin staff** so they land on their slice. **Tiebreak (v2.1):** the role-based default applies on first visit only; once a user manually switches lenses, remember last-used per device and let it win on return.
+3. **Nav label.** "Strategy" in the nav, "Strategic Plan" as the H1 if you want the formal name somewhere. Recommendation: yes to both.
+4. **Unassigned tray placement.** Org lens only (exec triage) vs. also in Measures. Recommendation: Org only, so Measures stays about tracking, not triage.
+5. **Verdict line.** In or out for Phase B1. Recommendation: **in.** It's the single highest-leverage UX element and it's cheap (a deterministic template over data you already roll up).
+
+## Phase A kickoff prompt (paste-ready, recon then one small PR)
+
+```
+Read-and-report first, then one small PR. No migrations (this phase is nav and
+routing only).
+
+Context: spec at specs/bloomos-strategy-command-center.md. We're promoting
+Strategy into the Command Center and retiring the standalone KPIs page. Phase A
+is the nav-and-redirect slice only, the lowest-risk piece.
+
+Step 1, report before changing anything, then stop:
+- Show the current NAV_SECTIONS in app/admin/_components/Sidebar.tsx exactly as
+  written.
+- Show where /admin/kpis renders and everything that links to it.
+- Show the links inside app/admin/_components/overview/StrategyHealthWidget.tsx.
+- Confirm the canonical route stays /admin/strategic-plan (v2.1 decision). List
+  every internal link that points at /admin/kpis and would need repointing.
+- List the exact file diffs you propose for Phase A.
+
+Step 2, only after I confirm:
+- Move Strategy into the Command Center section, second item after Overview.
+- Remove KPIs and Strategic Plan from Governance.
+- Leave /admin/kpis reachable (de-linked from nav only); its redirect waits for
+  the Measures view in Phase C. Keep /admin/strategic-plan/* resolving.
+- No token work (the status.* scale already exists), no data changes, no
+  component rewrites, no lens work (that's Phase B).
+
+Rules: one PR, small radius, reversible. Stop after the Step 1 report.
+```
 
 ---
 

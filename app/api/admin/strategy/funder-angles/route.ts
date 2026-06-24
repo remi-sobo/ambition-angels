@@ -12,6 +12,7 @@ import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { resolveConstituent } from "@/lib/fundraising/constituent-resolve";
 import { promoteHsContact } from "@/lib/fundraising/promote-hs-contact";
+import { linkProspectToAngle } from "@/lib/fundraising/link-prospect-angle";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,14 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createServerSupabase();
+
+  // Bench prospect → angle (the unified path): ensure a constituent + link.
+  if (isUuid(body.prospect_id)) {
+    const r = await linkProspectToAngle(supabase, body.prospect_id, body.angle_id, (await getAdminUser()) ?? null);
+    if ("error" in r) return NextResponse.json({ error: r.error }, { status: r.status });
+    if ("skipped" in r) return NextResponse.json({ error: "Already on this angle." }, { status: 409 });
+    return NextResponse.json({ id: r.id });
+  }
 
   // A mirror-only prospect joins by hubspot_id (promote to the spine first);
   // otherwise resolve a picked constituent or a free-text name.

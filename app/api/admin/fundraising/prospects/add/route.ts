@@ -12,6 +12,7 @@ import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 export const dynamic = "force-dynamic";
 
 const TYPES = ["individual", "foundation", "corporate", "unknown"] as const;
+const SOURCES = ["manual", "research"] as const;
 
 export async function POST(req: NextRequest) {
   if (!(await isAuthed())) {
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest) {
   if (!name) return NextResponse.json({ error: "name is required" }, { status: 400 });
 
   const type = TYPES.includes(body.type as (typeof TYPES)[number]) ? (body.type as string) : "individual";
+  const source = SOURCES.includes(body.source as (typeof SOURCES)[number]) ? (body.source as string) : "manual";
   const email = typeof body.email === "string" && body.email.trim() ? body.email.trim() : null;
   const org_name = typeof body.org_name === "string" && body.org_name.trim() ? body.org_name.trim() : null;
   const strategy_note =
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
     .from("fr_prospects")
     .insert({
       type,
-      source: "manual",
+      source,
       name: name.slice(0, 200),
       email,
       org_name,

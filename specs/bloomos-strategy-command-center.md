@@ -13,6 +13,20 @@
 - **Mine-default vs. remember-last-used tiebreak** defined (see Open decisions #2).
 - **B split into B1 (the glance) and B2 (lens-as-altitude)** so the highest-leverage, lowest-risk slice ships on its own.
 
+## Changes in v2.2 (Phase C build — two-registry reconciliation)
+
+Building C surfaced that the codebase has **two** metric registries, not one, and they serve different jobs:
+
+- **Strategic auto-measures** — `lib/admin/plan/metrics.ts` (`PLAN_METRICS`, 5 metrics: grant $ raised, grants submitted, corporate $, donor updates sent, active teens). These are what a `plan_kpi` actually binds to and what `refreshOrgPlanMetrics` recomputes. The real, refreshable binding target.
+- **Governance vital signs** — `lib/kpis.ts` (`computeKpis`, the 12 on `/admin/kpis`: board giving, COI coverage, donor retention, pending acks, overdue moves, compliance overdue, pipeline…). Largely compliance/hygiene, not strategic objectives, and **not** in the refreshable set.
+
+The v2/v2.1 plan assumed the 12 were the bindable set. They're not — binding a governance KPI to a goal would show an "auto" badge on a value nothing updates. Reconciled decisions (confirmed with Remi):
+
+- **The Metrics Library (picker + Unassigned tray) binds to the strategic 5** (`PLAN_METRICS`), so "auto" always means genuinely live.
+- **`/admin/kpis` stays a Governance dashboard** — the 12 vital signs are kept, not folded or redirected (they're already out of the nav from Phase A). No redirect.
+- The **Unassigned tray** therefore lists the strategic auto-metrics not yet attached to a goal; it offers **Attach** only (no Hide — `kpi_settings.active` belongs to the governance 12).
+- No migrations / no API changes were needed: `plan_kpis` POST/PATCH already accept `metric_key` + `source`, and the scorecard already renders bound auto measures with freshness.
+
 ---
 
 ## Problem statement

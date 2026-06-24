@@ -3,10 +3,12 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { deriveHealth, worstHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { resolveOwner, ownerValue, matchOwner, ownerRank } from "@/lib/admin/plan/owners";
+import { getUnassignedPlanMetrics } from "@/lib/admin/plan/metrics";
 import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
 import StrategyGlance from "./_components/StrategyGlance";
 import StrategyControls, { type LensKey } from "./_components/StrategyControls";
+import UnassignedMetrics from "./_components/UnassignedMetrics";
 import {
   FoundationPanel,
   ObjectiveCard,
@@ -189,6 +191,16 @@ export default async function StrategicPlanPage({
         return true;
       });
 
+  // Unassigned vital signs (Org lens only): live metrics not yet bound to a goal,
+  // plus the goal list the tray attaches them to.
+  const unassignedMetrics = lens === "org" && !isEmpty ? await getUnassignedPlanMetrics(supabase, orgId) : [];
+  const objTitleById = new Map(objectives.map((o) => [o.id, o.title]));
+  const goalOptions = goals.map((g) => ({
+    id: g.id,
+    title: g.title,
+    objectiveTitle: g.objective_id ? objTitleById.get(g.objective_id) ?? null : null,
+  }));
+
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
       <PageHeader
@@ -257,8 +269,9 @@ export default async function StrategicPlanPage({
 
           {lens === "org" ? (
             <>
-              {/* Org lens: the verdict, exceptions, objective grid (B1), then the counts and the why. */}
+              {/* Org lens: the verdict, exceptions, objective grid (B1), the unassigned tray, the counts, the why. */}
               <StrategyGlance />
+              <UnassignedMetrics metrics={unassignedMetrics} goals={goalOptions} />
               <div className="grid grid-cols-4 gap-3 mb-8">
                 <StatCard label="Objectives" value={objectives.length} />
                 <StatCard label="Goals" value={goals.length} />

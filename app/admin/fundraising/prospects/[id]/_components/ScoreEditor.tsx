@@ -91,10 +91,10 @@ function cap(s: string | null): string {
 }
 
 export default function ScoreEditor({
-  hubspotId,
+  prospectId,
   initial,
 }: {
-  hubspotId: string;
+  prospectId: string;
   initial: ProspectScore | null;
 }) {
   const router = useRouter();
@@ -142,7 +142,7 @@ export default function ScoreEditor({
     setSaving(true);
     try {
       const res = await fetch(
-        `/api/admin/prospects/${encodeURIComponent(hubspotId)}/score`,
+        `/api/admin/prospects/${encodeURIComponent(prospectId)}/score`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

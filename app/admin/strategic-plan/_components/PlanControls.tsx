@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { deriveHealth } from "@/lib/admin/plan/health";
+import { measureFreshness } from "@/lib/admin/plan/freshness";
 import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
 
 // ── Types (mirror the plan_* tables) ──────────────────────────────────────
@@ -44,7 +45,12 @@ export type PlanKpi = {
   source: string; // 'auto' | 'manual'
   metric_key: string | null;
   status: string;
+  cadence: string | null;
+  last_updated_at: string | null;
 };
+
+// A bindable auto-metric option (from /api/admin/plan/kpis/metrics).
+export type MetricOption = { key: string; label: string; unit: string; value: number | null; bound: boolean };
 
 export type PlanInitiative = {
   id: string;
@@ -628,9 +634,19 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
     finally { setBusy(false); }
   };
 
+  // Trust cue: a measure you can't date is one you don't trust. Auto measures
+  // refresh from the spine; manual ones go stale-styled past their cadence.
+  const fresh = measureFreshness(kpi.last_updated_at, kpi.cadence);
+
   return (
     <div className={`flex items-center gap-2 text-xs bg-tile/60 rounded-lg px-3 py-1.5 ${busy ? "opacity-60" : ""}`}>
       <span className="text-ink-1 flex-1 min-w-0 truncate">{kpi.title}</span>
+      <span
+        className={`hidden sm:inline text-[9px] tabular-nums ${fresh.stale ? "text-status-watch-text font-semibold" : "text-ink-3"}`}
+        title={kpi.source === "auto" ? "Refreshed from the spine" : "Last manual update"}
+      >
+        {fresh.text}
+      </span>
       {kpi.source === "auto" ? (
         <span className="text-[9px] uppercase tracking-wide text-revenue bg-revenue-bg rounded px-1 py-0.5" title={kpi.metric_key ?? "auto"}>auto</span>
       ) : (
@@ -672,25 +688,59 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
 }
 
 // ── New KPI (attached to a goal) ───────────────────────────────────────────
+// Two modes: a manual measure (typed value, updated at the review) or an
+// automatic one bound to a registry metric (source='auto'), which then refreshes
+// from the spine. Only metrics the registry can actually compute are offered, so
+// "auto" never lands on a value nothing updates.
 function NewKpiForm({ goalId }: { goalId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"manual" | "auto">("manual");
   const [title, setTitle] = useState("");
   const [unit, setUnit] = useState("");
   const [target, setTarget] = useState("");
+  const [metricKey, setMetricKey] = useState("");
+  const [metrics, setMetrics] = useState<MetricOption[] | null>(null);
+
+  // Load the bindable metrics once, when the form first opens.
+  useEffect(() => {
+    if (!open || metrics) return;
+    void fetch("/api/admin/plan/kpis/metrics")
+      .then((r) => (r.ok ? r.json() : { metrics: [] }))
+      .then((j) => setMetrics(j.metrics ?? []))
+      .catch(() => setMetrics([]));
+  }, [open, metrics]);
+
+  const chosen = metrics?.find((m) => m.key === metricKey) ?? null;
+
+  const reset = () => {
+    setTitle(""); setUnit(""); setTarget(""); setMetricKey(""); setMode("manual"); setOpen(false);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
-      const ok = await api("/api/admin/plan/kpis", "POST", {
-        goal_id: goalId,
-        title,
-        unit: unit || undefined,
-        target: target.trim() === "" ? undefined : Number(target),
-      });
-      if (ok) { setTitle(""); setUnit(""); setTarget(""); setOpen(false); router.refresh(); }
+      const body =
+        mode === "auto" && chosen
+          ? {
+              goal_id: goalId,
+              title: title.trim() || chosen.label,
+              unit: chosen.unit || undefined,
+              target: target.trim() === "" ? undefined : Number(target),
+              source: "auto",
+              metric_key: chosen.key,
+              current: chosen.value ?? undefined,
+            }
+          : {
+              goal_id: goalId,
+              title,
+              unit: unit || undefined,
+              target: target.trim() === "" ? undefined : Number(target),
+            };
+      const ok = await api("/api/admin/plan/kpis", "POST", body);
+      if (ok) { reset(); router.refresh(); }
     } finally { setBusy(false); }
   };
 
@@ -698,12 +748,54 @@ function NewKpiForm({ goalId }: { goalId: string }) {
     return <button onClick={() => setOpen(true)} className="text-[11px] text-ink-2 hover:text-orange mt-2">+ Add measure</button>;
   }
   return (
-    <form onSubmit={submit} className="flex flex-wrap items-end gap-2 mt-2 bg-tile/40 rounded-lg p-2">
-      <input className={`${inputCls} flex-1 min-w-[180px] !py-1 !text-xs`} placeholder="Measure (e.g. Grants submitted)" value={title} required autoFocus onChange={(e) => setTitle(e.target.value)} />
-      <input className={`${inputCls} w-16 !py-1 !text-xs`} placeholder="unit" value={unit} onChange={(e) => setUnit(e.target.value)} />
-      <input className={`${inputCls} w-20 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
-      <button type="submit" disabled={busy} className="text-[11px] bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-lg disabled:opacity-50">Add</button>
-      <button type="button" onClick={() => setOpen(false)} className="text-[11px] text-ink-2 px-1">Cancel</button>
+    <form onSubmit={submit} className="mt-2 bg-tile/40 rounded-lg p-2 space-y-2">
+      <div className="inline-flex p-0.5 bg-tile border border-outline rounded-full text-[10px] font-semibold">
+        {(["manual", "auto"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            className={`px-2.5 py-0.5 rounded-full transition-colors ${mode === m ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1"}`}
+          >
+            {m === "manual" ? "Manual" : "Track automatically"}
+          </button>
+        ))}
+      </div>
+
+      {mode === "auto" ? (
+        <div className="flex flex-wrap items-end gap-2">
+          <select
+            className={`${inputCls} flex-1 min-w-[200px] !py-1 !text-xs`}
+            value={metricKey}
+            required
+            onChange={(e) => {
+              const m = metrics?.find((x) => x.key === e.target.value);
+              setMetricKey(e.target.value);
+              if (m && !title) setTitle(m.label);
+            }}
+          >
+            <option value="" disabled>{metrics ? "Choose a live metric…" : "Loading metrics…"}</option>
+            {(metrics ?? []).map((m) => (
+              <option key={m.key} value={m.key} disabled={m.bound}>
+                {m.label}
+                {m.value != null ? ` — ${fmtVal(m.value, m.unit)}` : ""}
+                {m.bound ? " · in use" : ""}
+              </option>
+            ))}
+          </select>
+          <input className={`${inputCls} w-24 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
+          <button type="submit" disabled={busy || !chosen} className="text-[11px] bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-lg disabled:opacity-50">Add</button>
+          <button type="button" onClick={reset} className="text-[11px] text-ink-2 px-1">Cancel</button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-end gap-2">
+          <input className={`${inputCls} flex-1 min-w-[180px] !py-1 !text-xs`} placeholder="Measure (e.g. Processes documented)" value={title} required autoFocus onChange={(e) => setTitle(e.target.value)} />
+          <input className={`${inputCls} w-16 !py-1 !text-xs`} placeholder="unit" value={unit} onChange={(e) => setUnit(e.target.value)} />
+          <input className={`${inputCls} w-20 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
+          <button type="submit" disabled={busy} className="text-[11px] bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-lg disabled:opacity-50">Add</button>
+          <button type="button" onClick={reset} className="text-[11px] text-ink-2 px-1">Cancel</button>
+        </div>
+      )}
     </form>
   );
 }

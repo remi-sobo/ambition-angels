@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +27,8 @@ function inferType(email: string | null, company: string | null, name: string): 
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await getOrgContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = (await req.json().catch(() => null)) as { hubspot_ids?: unknown } | null;
   const ids = Array.isArray(body?.hubspot_ids)
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
       const email = (c.email as string | null) ?? null;
       const company = (c.company as string | null) ?? null;
       return {
+        org_id: ctx.orgId,
         hubspot_contact_id: c.hubspot_id as string,
         source: "hubspot",
         status: "active",

@@ -1,5 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 
 // Resolver for legacy/cross-surface links that reference a HubSpot contact id
 // (donor page, strategy board, pipeline board). Maps the contact to its bench
@@ -10,6 +11,8 @@ export const dynamic = "force-dynamic";
 export default async function ResolveByHubspot({ params }: { params: { hubspot_id: string } }) {
   const hubspotId = params.hubspot_id;
   const supabase = createServerSupabase();
+  const ctx = await getOrgContext();
+  if (!ctx) notFound();
 
   const { data: existing } = await supabase
     .from("fr_prospects")
@@ -35,6 +38,7 @@ export default async function ResolveByHubspot({ params }: { params: { hubspot_i
   const { data: created, error } = await supabase
     .from("fr_prospects")
     .insert({
+      org_id: ctx.orgId,
       hubspot_contact_id: hubspotId,
       source: "hubspot",
       type: "individual",

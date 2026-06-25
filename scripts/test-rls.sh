@@ -63,6 +63,44 @@ ordered=(
   create_bloomos_briefing_state.sql
   mark_hs_staging_readonly.sql
   assert_fundraising_org_id.sql
+  add_archive_and_prospect_disqualify.sql
+  add_booking_id_to_ops_tasks.sql
+  add_email_logging_to_interactions.sql
+  add_opportunities_external_ids.sql
+  add_recurring_plan_health.sql
+  add_shannon_present_to_interactions.sql
+  create_connection_candidates.sql
+  create_email_campaigns.sql
+  create_fr_hubspot_sync_function.sql
+  create_fr_nba_suggestions.sql
+  create_fr_pursue_function.sql
+  create_strategy_angles.sql
+  create_funder_angles.sql
+  create_journeys.sql
+  create_partner_contacts.sql
+  create_pledges.sql
+  dedupe_payment_gifts_against_deal_gifts.sql
+  fix_interactions_external_idx_full_unique.sql
+  link_ops_tasks_to_entities.sql
+  seed_partners_2026.sql
+  add_ops_tasks_archived_at.sql
+  add_fin_config_cash_reconciled_at.sql
+  bloomos_strategy_phase1a.sql
+  bloomos_strategy_phase1b.sql
+  bloomos_strategy_phase2.sql
+  bloomos_strategy_phase4.sql
+  bloomos_strategy_kpi_snapshots.sql
+  create_agenda_delegations_and_calendar_events.sql
+  create_profiles.sql
+  create_calendar_sync_jobs.sql
+  create_fr_prospects.sql
+  create_fin_reconciliation_items.sql
+  create_fr_prospect_promoted.sql
+  rls_reed_phase1_four_tables.sql
+  create_org_entitlements.sql
+  create_reed_schema.sql
+  create_reed_drafts.sql
+  create_reed_suggestions.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

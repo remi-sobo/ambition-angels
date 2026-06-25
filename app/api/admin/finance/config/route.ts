@@ -68,6 +68,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "cash_starting_date must be YYYY-MM-DD" }, { status: 400 });
     else update.cash_starting_date = v;
   }
+  if ("monthly_burn_baseline" in body) {
+    const v = body.monthly_burn_baseline;
+    if (v === null) update.monthly_burn_baseline = null;
+    else if (typeof v !== "number" || !Number.isFinite(v) || v < 0)
+      return NextResponse.json({ error: "monthly_burn_baseline must be a non-negative number" }, { status: 400 });
+    else update.monthly_burn_baseline = Math.round(v * 100) / 100;
+  }
+  if ("forward_horizon_months" in body) {
+    const v = body.forward_horizon_months;
+    if (v === null) update.forward_horizon_months = null;
+    else if (typeof v !== "number" || !Number.isInteger(v) || v < 1 || v > 60)
+      return NextResponse.json({ error: "forward_horizon_months must be an integer 1..60" }, { status: 400 });
+    else update.forward_horizon_months = v;
+  }
 
   if (Object.keys(update).length <= 1) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

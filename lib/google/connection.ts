@@ -71,6 +71,48 @@ export async function listActiveCalendarConnections(): Promise<GoogleCalendarCon
     }));
 }
 
+export type CalendarConnectionStatus = {
+  connected: boolean;
+  calendarId: string | null;
+  lastSyncedAt: string | null;
+  lastStatus: string | null;
+  eventCount: number;
+};
+
+/** Connection + freshness summary for one user, for the Settings card. */
+export async function getCalendarConnectionStatus(userId: string): Promise<CalendarConnectionStatus> {
+  const sb = getSupabaseAdmin();
+  const { data: conn } = await sb
+    .from("connections")
+    .select("external_id, meta, status")
+    .eq("provider", PROVIDER)
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+  const { data: job } = await sb
+    .from("calendar_sync_jobs")
+    .select("status, finished_at")
+    .eq("owner_user_id", userId)
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const { count } = await sb
+    .from("calendar_events")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_user_id", userId);
+
+  return {
+    connected: !!conn,
+    calendarId: conn
+      ? (((conn.meta as Record<string, unknown> | null)?.calendar_id as string) ?? (conn.external_id as string) ?? "primary")
+      : null,
+    lastSyncedAt: (job?.finished_at as string | null) ?? null,
+    lastStatus: (job?.status as string | null) ?? null,
+    eventCount: count ?? 0,
+  };
+}
+
 /** An authenticated Calendar v3 client for a given refresh token. */
 export function calendarClientFromRefreshToken(refreshToken: string): calendar_v3.Calendar {
   const oauth = new google.auth.OAuth2(

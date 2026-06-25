@@ -7,6 +7,7 @@ import NarrativeHero from "./_components/NarrativeHero";
 import PulseStrip from "./_components/PulseStrip";
 import FundraisingPriorities from "./_components/FundraisingPriorities";
 import FollowUps from "./_components/FollowUps";
+import TodayAgenda from "../_components/overview/TodayAgenda";
 
 // Executive Briefing v2 (spec Phase 1): an AI-narrated morning brief over a
 // deterministic engine. The ranked decision feed and pulse strip are computed
@@ -38,6 +39,11 @@ export default async function BriefingPage() {
           </Link>
         }
       />
+
+      {/* Lead with Today: the agenda sits above the verdict (spec Phase 4). */}
+      <div className="mb-6">
+        <TodayAgenda />
+      </div>
 
       <NarrativeHero narrative={narrative} />
       <PulseStrip pulse={pulse} />

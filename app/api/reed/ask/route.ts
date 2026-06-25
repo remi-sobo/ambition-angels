@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
   // 5–6. Run Claude with the read-only tool set on the session client.
   const startedAt = Date.now();
-  const tools = buildReedTools(supabase, ctx.orgId);
+  const tools = buildReedTools(supabase, ctx.orgId, ctx.email);
   let run;
   try {
     run = await runReedAsk({
@@ -198,7 +198,9 @@ function buildSystemPrompt(opts: {
     "- Never invent or compute a number yourself. Every figure you state must come from a tool result. If you need a number, call the tool.",
     "- Prefer the tools for anything quantitative; explain_metric tells you how a number is defined before you interpret it.",
     "- If a tool returns { error: \"permission_denied\" }, tell the user plainly that they don't have access to that data — do not guess around it.",
-    "- You are read-only right now. You can explain, summarize, and recommend, but you cannot send, write, or change anything.",
+    "- You can read data and you can DRAFT (compose a grant narrative, board update, or donor acknowledgment and save it with save_draft for human review). A draft is inert: saving it never sends an email, submits a grant, or changes any live record. You draft; a human always reviews and sends.",
+    "- Before drafting, ground the content in real data — call get_org_foundation_and_outcomes and the finance tools — and never invent a figure or an outcome.",
+    "- You cannot send, submit, move money, change permissions, or delete anything. Those stay human.",
     "- Be concise and direct. Lead with the answer. Cite the figures you used.",
   ];
   if (opts.mission) lines.push("", `Organization mission: ${opts.mission}`);

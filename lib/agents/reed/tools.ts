@@ -56,11 +56,19 @@ async function loadFinConfig(sb: SupabaseClient) {
   };
 }
 
+// Each draftable kind carries the write permission its data domain requires.
+const DRAFT_PERMISSION: Record<string, string> = {
+  grant_narrative: "fundraising.write",
+  acknowledgment: "fundraising.write",
+  board_update: "board.write",
+};
+
 /**
  * Build the tool registry bound to one request's session client + org. Each
- * tool closes over `sb` (RLS-scoped) and checks `orgId` permissions.
+ * tool closes over `sb` (RLS-scoped) and checks `orgId` permissions. `createdBy`
+ * stamps any drafts Reed saves.
  */
-export function buildReedTools(sb: SupabaseClient, orgId: string): ReedTool[] {
+export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: string): ReedTool[] {
   return [
     {
       name: "get_finance_snapshot",
@@ -236,6 +244,90 @@ export function buildReedTools(sb: SupabaseClient, orgId: string): ReedTool[] {
         };
         const metric = String(input.metric ?? "");
         return { metric, definition: defs[metric] ?? "Unknown metric." };
+      },
+    },
+
+    {
+      name: "get_org_foundation_and_outcomes",
+      description:
+        "The organization's mission, vision, values, and behaviors, plus its tracked KPIs (title, target, " +
+        "current value, status). Use this to GROUND any draft — a grant narrative or board update must be " +
+        "built from these real outcomes, never invented.",
+      input_schema: { type: "object", properties: {}, additionalProperties: false },
+      run: async () => {
+        if (!(await hasPermission(sb, orgId, "reports.read"))) return deny("reports.read");
+        const [foundationRes, kpiRes] = await Promise.all([
+          sb.from("plan_foundation").select("mission, vision, values, behaviors").eq("org_id", orgId).maybeSingle(),
+          sb
+            .from("plan_kpis")
+            .select("title, unit, target, current, status, cadence")
+            .eq("org_id", orgId)
+            .order("status", { ascending: true })
+            .limit(40),
+        ]);
+        const f = foundationRes.data as
+          | { mission?: string | null; vision?: string | null; values?: unknown; behaviors?: unknown }
+          | null;
+        return {
+          mission: f?.mission ?? null,
+          vision: f?.vision ?? null,
+          values: f?.values ?? [],
+          behaviors: f?.behaviors ?? [],
+          kpis: (kpiRes.data ?? []).map((k) => ({
+            title: (k as { title?: string }).title ?? null,
+            unit: (k as { unit?: string }).unit ?? null,
+            target: (k as { target?: number }).target ?? null,
+            current: (k as { current?: number }).current ?? null,
+            status: (k as { status?: string }).status ?? null,
+          })),
+        };
+      },
+    },
+
+    {
+      name: "save_draft",
+      description:
+        "Persist a draft you have composed — a grant narrative, board update, or donor acknowledgment — for " +
+        "the operator to review and send. This is INERT: it stores text for human review and NEVER sends an " +
+        "email, submits a grant, or changes any live record. You draft; a human always reviews and sends. " +
+        "Ground the body in get_org_foundation_and_outcomes / the finance tools first — do not invent figures.",
+      input_schema: {
+        type: "object",
+        properties: {
+          kind: { type: "string", enum: ["grant_narrative", "board_update", "acknowledgment"] },
+          title: { type: "string", description: "Short label for the draft." },
+          body: { type: "string", description: "The full draft text." },
+        },
+        required: ["kind", "title", "body"],
+        additionalProperties: false,
+      },
+      run: async (input) => {
+        const kind = String(input.kind ?? "");
+        const perm = DRAFT_PERMISSION[kind];
+        if (!perm) return { error: "bad_request", message: `Unknown draft kind: ${kind}.` };
+        if (!(await hasPermission(sb, orgId, perm))) return deny(perm);
+        const body = typeof input.body === "string" ? input.body : "";
+        if (!body.trim()) return { error: "bad_request", message: "Draft body is empty." };
+
+        const { data, error } = await sb
+          .from("reed_drafts")
+          .insert({
+            org_id: orgId,
+            kind,
+            title: typeof input.title === "string" ? input.title.slice(0, 200) : null,
+            body,
+            created_by: createdBy,
+            status: "drafted",
+          })
+          .select("id")
+          .single();
+        if (error) return { error: "save_failed", message: error.message };
+        return {
+          saved: true,
+          draft_id: (data as { id: string }).id,
+          status: "drafted",
+          note: "Saved as an inert draft for human review. Nothing was sent or submitted.",
+        };
       },
     },
   ];

@@ -210,7 +210,7 @@ function ReedPanel({ onClose }: { onClose: () => void }) {
               ↑
             </button>
           </div>
-          <p className="mt-2 text-center text-[11px] text-ink-3">Reed is read-only — he explains and recommends, he doesn&apos;t send or change anything.</p>
+          <p className="mt-2 text-center text-[11px] text-ink-3">Reed explains, recommends, and drafts for your review — he never sends or changes anything.</p>
         </form>
       </aside>
     </div>

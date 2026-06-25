@@ -17,6 +17,15 @@
  */
 import { cache } from "react";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { loadHubSpotPledges } from "@/lib/finance/hubspot-pledges";
+import {
+  assembleRunwayPledges,
+  computeRunway,
+  endOfMonthISO,
+  summarizePledges,
+  type Runway,
+  type RunwayPledge,
+} from "@/lib/finance/runway";
 
 const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -56,6 +65,10 @@ export type FinanceConfig = {
   startDate: string | null;
   /** ISO timestamp of the last "set current balance" reconcile; null = never. */
   reconciledAt: string | null;
+  /** Monthly burn baseline (settable). null = fall back to trailing burn. */
+  baseline: number | null;
+  /** How many months ahead the projected runway tier looks. Defaults to 3. */
+  horizon: number;
 };
 
 export type FinanceSnapshot = {
@@ -63,8 +76,16 @@ export type FinanceSnapshot = {
   cashOnHand: number;
   /** Trailing 3-active-month average monthly expense. */
   burn3mo: number;
-  /** cash / burn; null when there's no burn to divide by. */
+  /**
+   * Back-compat headline runway = the cash tier's months (D6, most
+   * conservative). null when there's no baseline/burn to divide by. Existing
+   * consumers that read a single scalar keep working; new ones read `runway`.
+   */
   runwayMonths: number | null;
+  /** Three-tier forward runway (cash / due / projected) + the inputs behind it. */
+  runway: Runway;
+  /** Unreceived, unrestricted pledges with no date — excluded but surfaced. */
+  undatedPledgeCount: number;
   monthBuckets: MonthBucket[];
   revenueYTD: number;
   expenseYTD: number;
@@ -78,7 +99,7 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
   const cfgRes = await sb
     .from("fin_config")
     .select(
-      "current_year, fiscal_year_start_month, fundraising_goal, cash_starting_balance, cash_starting_date, cash_reconciled_at"
+      "current_year, fiscal_year_start_month, fundraising_goal, cash_starting_balance, cash_starting_date, cash_reconciled_at, monthly_burn_baseline, forward_horizon_months"
     )
     .eq("id", 1)
     .maybeSingle();
@@ -89,14 +110,29 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
     startBal: Number(cfgRes.data?.cash_starting_balance ?? 0),
     startDate: (cfgRes.data?.cash_starting_date as string | null) ?? null,
     reconciledAt: (cfgRes.data?.cash_reconciled_at as string | null) ?? null,
+    baseline:
+      cfgRes.data?.monthly_burn_baseline === null || cfgRes.data?.monthly_burn_baseline === undefined
+        ? null
+        : Number(cfgRes.data.monthly_burn_baseline),
+    horizon:
+      typeof cfgRes.data?.forward_horizon_months === "number" ? cfgRes.data.forward_horizon_months : 3,
   };
   const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
-  const [txnsRes, cashRes] = await Promise.all([
+  const [txnsRes, cashRes, pledgesRes, hubspotPledges] = await Promise.all([
     sb.from("fin_transactions").select("txn_date, amount").gte("txn_date", fy.start).lte("txn_date", fy.end),
     cfg.startDate
       ? sb.from("fin_transactions").select("amount").gt("txn_date", cfg.startDate)
       : Promise.resolve({ data: [] as Array<{ amount: number }>, error: null }),
+    // Pledges feeding the due/projected tiers. Year-scoped to match the rest of
+    // the dashboard; summarizePledges does the date-window + restricted/received
+    // filtering. (A horizon that crosses into next year would miss next-year
+    // rows — acceptable for v2; revisit with Horizon.)
+    sb
+      .from("fin_revenue_commitments")
+      .select("amount, status, expected_date, restricted")
+      .eq("year", cfg.year),
+    loadHubSpotPledges(sb, cfg.year),
   ]);
 
   const txns = (txnsRes.data ?? []).map((t) => ({ txn_date: t.txn_date as string, amount: Number(t.amount) }));
@@ -121,13 +157,64 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
   const active = monthBuckets.filter((b) => b.revenue > 0 || b.expense > 0);
   const last3 = active.slice(-3);
   const burn3mo = last3.length > 0 ? last3.reduce((s, b) => s + b.expense, 0) / last3.length : 0;
-  const runwayMonths = burn3mo > 0 ? cashOnHand / burn3mo : null;
+
+  // ── Forward runway (Finance v2) ──────────────────────────────────────────
+  // Baseline replaces trailing burn when set; falls back to burn3mo otherwise.
+  const baselineSource: "config" | "trailing" =
+    cfg.baseline != null && cfg.baseline > 0 ? "config" : "trailing";
+  const effectiveBaseline = baselineSource === "config" ? (cfg.baseline as number) : burn3mo;
+
+  // Month-to-date spend = this month's expenses (D5: all expenses; an
+  // exclude-from-runway flag lands in Phase 4a).
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const mtdSpend = txns
+    .filter((t) => t.amount < 0 && t.txn_date.slice(0, 7) === thisMonth)
+    .reduce((s, t) => s - t.amount, 0);
+
+  // Source-agnostic pledge list: Bloom commitments + HubSpot deals, full value.
+  const bloomPledges: RunwayPledge[] = (pledgesRes.data ?? []).map((r) => ({
+    amount: Number(r.amount),
+    status: r.status as RunwayPledge["status"],
+    expected_date: (r.expected_date as string | null) ?? null,
+    restricted: Boolean(r.restricted),
+  }));
+  const hsPledges: RunwayPledge[] = hubspotPledges.map((d) => ({
+    amount: d.amount,
+    // loadHubSpotPledges only ever returns counted statuses (it drops "ignore").
+    status: d.status as RunwayPledge["status"],
+    expected_date: d.close_date,
+    restricted: false, // HubSpot deals carry no restriction flag in the mirror
+    externalRef: d.deal_id,
+  }));
+  // No adopted refs yet (the external_ref column + adopt flow land in Phase 4b).
+  const allPledges = assembleRunwayPledges(bloomPledges, hsPledges);
+
+  const endCurrentMonth = endOfMonthISO(now, 0);
+  const endHorizon = endOfMonthISO(now, cfg.horizon);
+  const { duePledges, projPledges, undatedUnreceivedCount } = summarizePledges(
+    allPledges,
+    endCurrentMonth,
+    endHorizon
+  );
+
+  const runway = computeRunway({
+    baseline: effectiveBaseline,
+    baselineSource,
+    bankBalance: cashOnHand,
+    mtdSpend,
+    duePledges,
+    projPledges,
+    horizonMonths: cfg.horizon,
+  });
+  const runwayMonths = runway.cash.months;
 
   return {
     cfg,
     cashOnHand,
     burn3mo,
     runwayMonths,
+    runway,
+    undatedPledgeCount: undatedUnreceivedCount,
     monthBuckets,
     revenueYTD,
     expenseYTD,

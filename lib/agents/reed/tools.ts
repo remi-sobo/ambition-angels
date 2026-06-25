@@ -1,5 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hasPermission } from "@/lib/admin/permissions";
+import { loadHubSpotPledges } from "@/lib/finance/hubspot-pledges";
+import {
+  assembleRunwayPledges,
+  computeRunway,
+  endOfMonthISO,
+  summarizePledges,
+  type RunwayPledge,
+} from "@/lib/finance/runway";
 import type { ReedTool } from "./client";
 
 /**
@@ -15,7 +23,10 @@ import type { ReedTool } from "./client";
  * construction. Those sources hardcode the service-role client, which Reed may
  * never use — hence the deliberate re-implementation on the session client.
  *
- * If you change a formula in the canonical source, change it here too.
+ * The forward-runway math is shared, not copied: both this module and the
+ * admin snapshot import computeRunway/summarizePledges from lib/finance/runway
+ * (a pure, DB-free module), so the three runway tiers can't drift between Reed
+ * and the dashboard. If you change a still-copied formula, change it here too.
  */
 
 // Copied from lib/admin/finance.ts (pure; not imported, to keep this module free
@@ -42,7 +53,7 @@ async function loadFinConfig(sb: SupabaseClient) {
   const { data } = await sb
     .from("fin_config")
     .select(
-      "current_year, fiscal_year_start_month, fundraising_goal, cash_starting_balance, cash_starting_date, cash_reconciled_at",
+      "current_year, fiscal_year_start_month, fundraising_goal, cash_starting_balance, cash_starting_date, cash_reconciled_at, monthly_burn_baseline, forward_horizon_months",
     )
     .eq("id", 1)
     .maybeSingle();
@@ -53,6 +64,11 @@ async function loadFinConfig(sb: SupabaseClient) {
     startBal: Number(data?.cash_starting_balance ?? 0),
     startDate: (data?.cash_starting_date as string | null) ?? null,
     reconciledAt: (data?.cash_reconciled_at as string | null) ?? null,
+    baseline:
+      data?.monthly_burn_baseline === null || data?.monthly_burn_baseline === undefined
+        ? null
+        : Number(data.monthly_burn_baseline),
+    horizon: typeof data?.forward_horizon_months === "number" ? data.forward_horizon_months : 3,
   };
 }
 
@@ -82,11 +98,17 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         const cfg = await loadFinConfig(sb);
         const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
-        const [txnsRes, cashRes] = await Promise.all([
+        const now = new Date();
+        const [txnsRes, cashRes, pledgesRes, hubspotPledges] = await Promise.all([
           sb.from("fin_transactions").select("txn_date, amount").gte("txn_date", fy.start).lte("txn_date", fy.end),
           cfg.startDate
             ? sb.from("fin_transactions").select("amount").gt("txn_date", cfg.startDate)
             : Promise.resolve({ data: [] as Array<{ amount: number }> }),
+          sb
+            .from("fin_revenue_commitments")
+            .select("amount, status, expected_date, restricted")
+            .eq("year", cfg.year),
+          loadHubSpotPledges(sb, cfg.year),
         ]);
 
         const txns = (txnsRes.data ?? []).map((t) => ({ txn_date: t.txn_date as string, amount: Number(t.amount) }));
@@ -106,7 +128,44 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         const active = Array.from(monthMap.values()).filter((b) => b.revenue > 0 || b.expense > 0);
         const last3 = active.slice(-3);
         const burn3mo = last3.length > 0 ? last3.reduce((s, b) => s + b.expense, 0) / last3.length : 0;
-        const runwayMonths = burn3mo > 0 ? cashOnHand / burn3mo : null;
+
+        // Forward runway — shared engine (lib/finance/runway), so these three
+        // tiers match the Finance dashboard exactly.
+        const baselineSource: "config" | "trailing" =
+          cfg.baseline != null && cfg.baseline > 0 ? "config" : "trailing";
+        const effectiveBaseline = baselineSource === "config" ? (cfg.baseline as number) : burn3mo;
+        const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        const mtdSpend = txns
+          .filter((t) => t.amount < 0 && t.txn_date.slice(0, 7) === thisMonth)
+          .reduce((s, t) => s - t.amount, 0);
+        const bloomPledges: RunwayPledge[] = (pledgesRes.data ?? []).map((r) => ({
+          amount: Number(r.amount),
+          status: r.status as RunwayPledge["status"],
+          expected_date: (r.expected_date as string | null) ?? null,
+          restricted: Boolean(r.restricted),
+        }));
+        const hsPledges: RunwayPledge[] = hubspotPledges.map((d) => ({
+          amount: d.amount,
+          status: d.status as RunwayPledge["status"], // loader drops "ignore"
+          expected_date: d.close_date,
+          restricted: false,
+          externalRef: d.deal_id,
+        }));
+        const { duePledges, projPledges } = summarizePledges(
+          assembleRunwayPledges(bloomPledges, hsPledges),
+          endOfMonthISO(now, 0),
+          endOfMonthISO(now, cfg.horizon),
+        );
+        const runway = computeRunway({
+          baseline: effectiveBaseline,
+          baselineSource,
+          bankBalance: cashOnHand,
+          mtdSpend,
+          duePledges,
+          projPledges,
+          horizonMonths: cfg.horizon,
+        });
+        const m = (v: number | null) => (v == null ? null : round2(v));
 
         return {
           fiscalYear: cfg.year,
@@ -116,10 +175,16 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
           expenseYTD: round2(expenseYTD),
           netYTD: round2(revenueYTD - expenseYTD),
           burn3moMonthly: round2(burn3mo),
-          runwayMonths: runwayMonths == null ? null : round2(runwayMonths),
+          burnBaselineMonthly: round2(effectiveBaseline),
+          burnBaselineSource: baselineSource,
+          runwayMonths: m(runway.cash.months),
+          dueRunwayMonths: m(runway.due.months),
+          projectedRunwayMonths: m(runway.projected.months),
+          forwardHorizonMonths: cfg.horizon,
           pctToGoal: cfg.goal > 0 ? round2((revenueYTD / cfg.goal) * 100) : null,
           cashReconciledAt: cfg.reconciledAt,
-          note: "revenueYTD is bank-reconciled ledger revenue; for pipeline/forecast use get_fundraising_forecast.",
+          note:
+            "runwayMonths is the cash tier (months beyond now). dueRunwayMonths/projectedRunwayMonths add unreceived pledges due by month-end / within the horizon. revenueYTD is bank-reconciled ledger revenue; for pipeline/forecast use get_fundraising_forecast.",
         };
       },
     },

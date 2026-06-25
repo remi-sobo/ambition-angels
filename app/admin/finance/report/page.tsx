@@ -91,7 +91,7 @@ export default async function FinanceReportPage() {
   const totalBudget = budgetRows.reduce((s, r) => s + r.budget, 0);
 
   // ── Deterministic headline ──
-  const runwayTxt = snap.runwayMonths === null ? "no burn signal yet" : `${snap.runwayMonths.toFixed(1)} months of runway at ${money(snap.burn3mo)}/mo`;
+  const runwayTxt = snap.runway.cash.months === null ? "no burn signal yet" : `${snap.runway.cash.months.toFixed(1)} months of cash runway at ${money(snap.runway.inputs.baseline)}/mo`;
   const goalTxt = cfg.goal > 0 ? `raised ${money(raisedHard)} of the ${money(cfg.goal)} goal (${goalPct}%)` : `raised ${money(raisedHard)}`;
   const netTxt = `net ${snap.netYTD >= 0 ? "surplus" : "deficit"} of ${money(Math.abs(snap.netYTD))} YTD`;
   const headline = `${money(snap.cashOnHand)} cash on hand — ${runwayTxt}. ${goalTxt[0].toUpperCase()}${goalTxt.slice(1)}; ${netTxt}.`;
@@ -129,7 +129,7 @@ export default async function FinanceReportPage() {
         {/* KPIs */}
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Kpi label="Cash on hand" value={money(snap.cashOnHand)} />
-          <Kpi label="Runway" value={snap.runwayMonths === null ? "—" : `${snap.runwayMonths.toFixed(1)} mo`} sub={`${money(snap.burn3mo)}/mo burn`} />
+          <Kpi label="Cash runway" value={snap.runway.cash.months === null ? "—" : `${snap.runway.cash.months.toFixed(1)} mo`} sub={`${money(snap.runway.inputs.baseline)}/mo burn`} />
           <Kpi label="Raised YTD" value={money(raisedHard)} sub={goalPct === null ? undefined : `${goalPct}% of goal`} />
           <Kpi label="Net YTD" value={`${snap.netYTD >= 0 ? "+" : "−"}${money(Math.abs(snap.netYTD))}`} />
         </section>

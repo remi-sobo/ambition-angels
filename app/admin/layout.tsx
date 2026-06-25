@@ -2,8 +2,10 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import Sidebar from "./_components/Sidebar";
 import QuickAddButton from "./_components/QuickAddButton";
+import AskReedButton from "./_components/AskReedButton";
 import AdminPWA from "./_components/AdminPWA";
 import { getAdminUser } from "@/lib/admin/auth";
+import { hasEntitlement } from "@/lib/admin/entitlements";
 
 export const metadata: Metadata = {
   title: {
@@ -44,6 +46,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const user = await getAdminUser();
   const authed = user !== null;
 
+  // Reed is gated by the `ai.reed` entitlement (Bloom Grow and up). On Bloom
+  // base the FAB simply doesn't mount — and /api/reed/* will 402 server-side
+  // (Phase 4), so hiding it here is an affordance, not the security boundary.
+  const reedEnabled = authed && (await hasEntitlement("ai.reed"));
+
   // The shell (sidebar + main column) renders on every /admin/* visit,
   // including the unauthed login screen at /admin. Earlier this layout
   // skipped the shell when unauthed — but that meant logged-in users
@@ -57,6 +64,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <AdminPWA />
       <Sidebar currentUser={user} />
       <main className="admin-main flex-1 min-w-0 overflow-y-auto">{children}</main>
+      {reedEnabled && <AskReedButton />}
       {authed && <QuickAddButton currentUser={user} />}
     </div>
   );

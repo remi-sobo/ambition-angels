@@ -7,7 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { linkProspectToAngle } from "@/lib/fundraising/link-prospect-angle";
 
 const isUuid = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
@@ -18,7 +18,8 @@ const TYPES = ["individual", "foundation", "corporate", "unknown"] as const;
 const SOURCES = ["manual", "research"] as const;
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase
     .from("fr_prospects")
     .insert({
+      org_id: ctx.orgId,
       type,
       source,
       name: name.slice(0, 200),

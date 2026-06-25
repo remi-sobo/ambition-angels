@@ -16,12 +16,18 @@ export default async function ReedPage() {
   }
 
   const supabase = createServerSupabase();
-  const [{ data: drafts }, { data: suggestions }] = await Promise.all([
+  const [{ data: drafts }, { data: approved }, { data: suggestions }] = await Promise.all([
     supabase
       .from("reed_drafts")
       .select("id, kind, title, body, status, created_at")
       .eq("status", "drafted")
       .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("reed_drafts")
+      .select("id, kind, title, body, status, created_at")
+      .eq("status", "approved")
+      .order("updated_at", { ascending: false })
       .limit(50),
     supabase
       .from("reed_suggestions")
@@ -31,5 +37,5 @@ export default async function ReedPage() {
       .limit(50),
   ]);
 
-  return <ReedInbox drafts={drafts ?? []} suggestions={suggestions ?? []} />;
+  return <ReedInbox drafts={drafts ?? []} approved={approved ?? []} suggestions={suggestions ?? []} />;
 }

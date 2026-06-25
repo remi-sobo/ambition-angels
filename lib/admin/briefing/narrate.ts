@@ -30,6 +30,34 @@ function summarizeFollowups(followups: FollowupLite[], now: number): FollowupsSu
   return { open: open.length, overdue: overdue.length };
 }
 
+// Deterministic calendar summary for the narrative's strategy-vs-time cross-
+// reference. Counts only — the model never sees raw events and can't invent
+// purposes. Reads via the service client (cron has no session); single-tenant
+// today, so all cached calendar_events are the CEO's.
+type AgendaSummary = { today: number; next7d: number; externalNext7d: number };
+
+async function agendaSummary(sb: SupabaseClient, now: number): Promise<AgendaSummary> {
+  const nowIso = new Date(now).toISOString();
+  const in24hIso = new Date(now + 86_400_000).toISOString();
+  const in7dIso = new Date(now + 7 * 86_400_000).toISOString();
+  try {
+    const { data } = await sb
+      .from("calendar_events")
+      .select("start_time, is_external, status")
+      .gte("start_time", nowIso)
+      .lt("start_time", in7dIso)
+      .neq("status", "cancelled");
+    const rows = data ?? [];
+    return {
+      today: rows.filter((r) => (r.start_time as string) < in24hIso).length,
+      next7d: rows.length,
+      externalNext7d: rows.filter((r) => r.is_external).length,
+    };
+  } catch {
+    return { today: 0, next7d: 0, externalNext7d: 0 };
+  }
+}
+
 export const BRIEFING_MODEL = "claude-sonnet-4-6";
 const MAX_OUTPUT_TOKENS = 700;
 
@@ -53,7 +81,7 @@ const usd = (n: number) =>
 
 /** The compact, rounded fact sheet the model narrates — and the basis of the
  *  cache key. Rounding keeps the hash from churning on sub-dollar drift. */
-function factSheet(briefing: Briefing, pulse: Pulse, followups: FollowupsSummary, today: string) {
+function factSheet(briefing: Briefing, pulse: Pulse, followups: FollowupsSummary, agenda: AgendaSummary, today: string) {
   const counts = { critical: 0, watch: 0, due_soon: 0 };
   for (const it of briefing.items) counts[it.severity]++;
   return {
@@ -68,6 +96,7 @@ function factSheet(briefing: Briefing, pulse: Pulse, followups: FollowupsSummary
       pctToGoal: pulse.pctToGoal == null ? null : Math.round(pulse.pctToGoal),
     },
     followups,
+    agenda,
     counts,
     total: briefing.items.length,
     topItems: briefing.top.map((it) => ({
@@ -91,6 +120,9 @@ HARD RULES:
 - If there are no items needing a decision, say plainly that the morning is clear and name one healthy signal from the pulse.
 - The narrative is 2–4 sentences, at most 110 words. Lead with the single most important thing.
 - "focus" is one imperative sentence: the one thing to do first today, drawn from the top item. If nothing needs action, set focus to a short steady-state note.
+
+CONNECTING TIME TO STRATEGY:
+- You are given the CEO's calendar load (meetings on the calendar this week, how many with external attendees, how many today). When it sharpens the read, cross-reference it against the pulse — e.g., if fundraising is behind goal while few or no external meetings are on the calendar this week, name that gap plainly. Use ONLY the provided counts; never guess what a meeting is about or who is attending.
 
 Call submit_briefing exactly once.`;
 
@@ -131,6 +163,12 @@ function renderFactsForModel(fs: FactSheet): string {
       } (people in HubSpot waiting on a reply)`
     );
   }
+  lines.push("");
+  lines.push("CALENDAR (the CEO's schedule, for cross-referencing time against strategy):");
+  lines.push(
+    `- ${fs.agenda.next7d} meeting${fs.agenda.next7d === 1 ? "" : "s"} on the calendar over the next 7 days` +
+      ` (${fs.agenda.externalNext7d} with external attendees), ${fs.agenda.today} today.`
+  );
   lines.push("");
   if (fs.topItems.length === 0) {
     lines.push("ITEMS NEEDING A DECISION TODAY: none. The board is clear.");
@@ -244,7 +282,7 @@ export async function generateNarrativeNow(
   sb: SupabaseClient = getSupabaseAdmin()
 ): Promise<Narrative> {
   const today = isoDate(now);
-  const fs = factSheet(briefing, pulse, summarizeFollowups(followups, now), today);
+  const fs = factSheet(briefing, pulse, summarizeFollowups(followups, now), await agendaSummary(sb, now), today);
   let ai: Awaited<ReturnType<typeof callModel>> = null;
   try {
     ai = await callModel(fs);

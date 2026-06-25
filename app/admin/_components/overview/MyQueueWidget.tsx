@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getQueueTasks } from "@/lib/admin/overview/sources";
 import { todayISO } from "../../ops/_types/ops";
+import { PriorityFlag } from "../../ops/_components/TaskRow";
 import { Widget, Empty } from "./shared";
 
 // Open tasks for one person, pinned-for-today first, then soonest due. Used as
@@ -34,9 +35,14 @@ export default async function MyQueueWidget({
             return (
               <li key={t.id} className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <Link href={href} className="text-sm text-ink-1 font-medium truncate block hover:text-orange transition-colors">
-                    {t.pinnedToday && <span className="text-orange mr-1" aria-label="pinned for today">★</span>}
-                    {t.title}
+                  <Link href={href} className="text-sm text-ink-1 font-medium truncate flex items-center gap-1 hover:text-orange transition-colors">
+                    {t.pinnedToday && <span className="text-orange" aria-label="pinned for today">★</span>}
+                    {t.priority === "urgent" && (
+                      <span aria-label="urgent">
+                        <PriorityFlag priority="urgent" />
+                      </span>
+                    )}
+                    <span className="truncate">{t.title}</span>
                   </Link>
                   {t.category && <div className="text-[11px] text-ink-2 capitalize">{t.category}</div>}
                 </div>

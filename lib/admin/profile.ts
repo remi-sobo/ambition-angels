@@ -22,6 +22,25 @@ export function firstName(name: string): string {
 }
 
 /**
+ * Display names for a set of user ids (agenda owner chips, two-lane labels).
+ * Reads through the session client — RLS returns only co-members' profiles.
+ */
+export async function getDisplayNames(userIds: string[]): Promise<Record<string, string>> {
+  if (!userIds.length) return {};
+  const supabase = createServerSupabase();
+  const { data } = await supabase
+    .from("profiles")
+    .select("user_id, display_name")
+    .in("user_id", userIds);
+  const out: Record<string, string> = {};
+  for (const r of data ?? []) {
+    const name = (r.display_name as string | null)?.trim();
+    if (name) out[r.user_id as string] = name;
+  }
+  return out;
+}
+
+/**
  * The signed-in user's display name: profiles.display_name if set, else a
  * capitalized email local-part. Null when unauthenticated/unprovisioned.
  * Reads through the session client, so RLS applies.

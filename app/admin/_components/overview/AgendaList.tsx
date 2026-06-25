@@ -17,6 +17,8 @@ export type AgendaItemView = {
   source: "google" | "booking";
 };
 
+export type AgendaLane = { userId: string; label: string };
+
 const STALE_MIN = 20; // synced longer ago than this → ochre
 
 function makeFmt(tz: string) {
@@ -48,46 +50,79 @@ export default function AgendaList({
   syncedAt,
   names,
   multiOwner,
+  lanes,
 }: {
   items: AgendaItemView[];
   timeZone: string;
   syncedAt: string | null;
   names: Record<string, string>;
   multiOwner: boolean;
+  /** When set, render one column per calendar (ops two-lane view). */
+  lanes?: AgendaLane[];
 }) {
   const router = useRouter();
   const [view, setView] = useState<"day" | "week">("day");
   const [refreshing, setRefreshing] = useState(false);
   const fmt = useMemo(() => makeFmt(timeZone), [timeZone]);
 
-  const { groups, todayKey } = useMemo(() => {
+  const keys = useMemo(() => {
     const todayKey = fmt.ymd(new Date());
-    const weekEndKey = fmt.ymd(new Date(Date.now() + 7 * 86400000));
+    return {
+      todayKey,
+      tomorrowKey: fmt.ymd(new Date(Date.now() + 86400000)),
+      weekEndKey: fmt.ymd(new Date(Date.now() + 7 * 86400000)),
+    };
+  }, [fmt]);
+
+  const labelFor = (key: string) =>
+    key === keys.todayKey ? "Today" : key === keys.tomorrowKey ? "Tomorrow" : fmt.dayLabel(key);
+
+  // Group a subset of items into [dayKey, items][], filtered to the active view.
+  const groupOf = (subset: AgendaItemView[]) => {
     const dayKeyOf = (e: AgendaItemView) => (e.allDay ? e.start.slice(0, 10) : fmt.ymd(new Date(e.start)));
     const map = new Map<string, AgendaItemView[]>();
-    for (const e of items) {
+    for (const e of subset) {
       const key = dayKeyOf(e);
-      if (key < todayKey) continue; // only today onward
-      if (view === "day" && key !== todayKey) continue;
-      if (view === "week" && key > weekEndKey) continue;
+      if (key < keys.todayKey) continue;
+      if (view === "day" && key !== keys.todayKey) continue;
+      if (view === "week" && key > keys.weekEndKey) continue;
       (map.get(key) ?? map.set(key, []).get(key)!).push(e);
     }
-    return { groups: Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)), todayKey };
-  }, [items, view, fmt]);
-
-  const tomorrowKey = fmt.ymd(new Date(Date.now() + 86400000));
-  const labelFor = (key: string) =>
-    key === todayKey ? "Today" : key === tomorrowKey ? "Tomorrow" : fmt.dayLabel(key);
-
-  const sync = async () => {
-    setRefreshing(true);
-    try {
-      await fetch("/api/admin/agenda/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
-      router.refresh();
-    } finally {
-      setRefreshing(false);
-    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   };
+
+  const renderGroups = (groups: [string, AgendaItemView[]][], showChips: boolean) =>
+    groups.length === 0 ? (
+      <p className="text-sm text-ink-3 py-2">{view === "day" ? "Nothing today." : "Nothing this week."}</p>
+    ) : (
+      <ul className="space-y-1.5">
+        {groups.map(([key, dayItems]) => (
+          <li key={key}>
+            <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mt-3 first:mt-0 mb-1">
+              {labelFor(key)}
+            </div>
+            <ul className="space-y-1.5">
+              {dayItems.map((e) => (
+                <li key={e.id} className="flex items-baseline gap-3">
+                  <span className="text-[11px] text-ink-2 [font-variant-numeric:tabular-nums] w-16 flex-shrink-0">
+                    {fmt.time(e.start, e.allDay)}
+                  </span>
+                  <span className="text-sm text-ink-1 font-medium truncate min-w-0">{e.title}</span>
+                  {e.isExternal && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange flex-shrink-0 self-center" title="External attendee" />
+                  )}
+                  {showChips && e.ownerUserId && (
+                    <span className="text-[10px] font-semibold text-ink-3 bg-tile border border-outline rounded-full px-1.5 py-0.5 flex-shrink-0 ml-auto">
+                      {(names[e.ownerUserId] ?? "?").slice(0, 2)}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+    );
 
   const freshness = relative(syncedAt);
 
@@ -107,44 +142,36 @@ export default function AgendaList({
         ))}
       </div>
 
-      {groups.length === 0 ? (
-        <p className="text-sm text-ink-3 py-2">
-          {view === "day" ? "Nothing on the calendar today." : "Nothing on the calendar this week."}
-        </p>
-      ) : (
-        <ul className="space-y-1.5">
-          {groups.map(([key, dayItems]) => (
-            <li key={key}>
-              <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mt-3 first:mt-0 mb-1">
-                {labelFor(key)}
+      {lanes && lanes.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-2">
+          {lanes.map((lane) => (
+            <div key={lane.userId} className="min-w-0">
+              <div className="text-xs font-heading font-semibold text-ink-1 pb-1.5 mb-1 border-b border-outline">
+                {lane.label}
               </div>
-              <ul className="space-y-1.5">
-                {dayItems.map((e) => (
-                  <li key={e.id} className="flex items-baseline gap-3">
-                    <span className="text-[11px] text-ink-2 [font-variant-numeric:tabular-nums] w-16 flex-shrink-0">
-                      {fmt.time(e.start, e.allDay)}
-                    </span>
-                    <span className="text-sm text-ink-1 font-medium truncate min-w-0">{e.title}</span>
-                    {e.isExternal && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange flex-shrink-0 self-center" title="External attendee" />
-                    )}
-                    {multiOwner && e.ownerUserId && (
-                      <span className="text-[10px] font-semibold text-ink-3 bg-tile border border-outline rounded-full px-1.5 py-0.5 flex-shrink-0 ml-auto">
-                        {(names[e.ownerUserId] ?? "?").slice(0, 2)}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </li>
+              {renderGroups(
+                groupOf(items.filter((i) => i.ownerUserId === lane.userId)),
+                false
+              )}
+            </div>
           ))}
-        </ul>
+        </div>
+      ) : (
+        renderGroups(groupOf(items), multiOwner)
       )}
 
       <div className="mt-4 flex items-center justify-between">
         <span className={`text-[11px] ${freshness.stale ? "text-orange" : "text-ink-3"}`}>{freshness.text}</span>
         <button
-          onClick={sync}
+          onClick={async () => {
+            setRefreshing(true);
+            try {
+              await fetch("/api/admin/agenda/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+              router.refresh();
+            } finally {
+              setRefreshing(false);
+            }
+          }}
           disabled={refreshing}
           className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 disabled:opacity-50"
         >

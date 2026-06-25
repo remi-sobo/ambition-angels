@@ -35,6 +35,26 @@ export type Agenda = {
 // tz-aware (timestamptz) and formatted with this zone at render.
 const ORG_TZ = "America/Los_Angeles";
 
+/**
+ * The calendars a viewer can see, self first: their own user id plus any owner
+ * who has delegated to them (agenda_delegations grantor where viewer is grantee).
+ * Used to define the columns of the two-lane ops view. Reads via the session
+ * client; RLS lets a grantee read the delegation rows they're party to.
+ */
+export async function getVisibleOwners(): Promise<string[]> {
+  const sb = createServerSupabase();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return [];
+  const { data } = await sb
+    .from("agenda_delegations")
+    .select("grantor_user_id")
+    .eq("grantee_user_id", user.id);
+  const grantors = (data ?? []).map((r) => r.grantor_user_id as string).filter((g) => g !== user.id);
+  return [user.id, ...grantors];
+}
+
 export async function getAgenda(range: { start: Date; end: Date }): Promise<Agenda> {
   const sb = createServerSupabase();
 

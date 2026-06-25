@@ -1,6 +1,6 @@
 import OpsBoard, { type OpsWidget } from "./OpsBoard";
 import MyQueueWidget from "./MyQueueWidget";
-import ScheduleWidget from "./ScheduleWidget";
+import TodayAgenda from "./TodayAgenda";
 import SchedulingLaneWidget from "./SchedulingLaneWidget";
 import FinanceSnapshotWidget from "./FinanceSnapshotWidget";
 import DeadlinesFinanceWidget from "./DeadlinesFinanceWidget";
@@ -17,7 +17,7 @@ import AcksDueWidget from "./AcksDueWidget";
 export default function OpsPanel() {
   const widgets: OpsWidget[] = [
     { key: "tasks", label: "My tasks", node: <MyQueueWidget assignee="shannon" title="My tasks" /> },
-    { key: "schedule", label: "Schedule (calendar)", node: <ScheduleWidget /> },
+    { key: "schedule", label: "Agenda (two-lane)", node: <TodayAgenda mode="lanes" /> },
     { key: "scheduling", label: "Meetings to schedule", node: <SchedulingLaneWidget /> },
     { key: "finance", label: "Financial overview", node: <FinanceSnapshotWidget title="Financial overview" /> },
     { key: "grants", label: "Fundraising to-dos & grants", node: <DeadlinesFinanceWidget title="Fundraising to-dos & grants" /> },

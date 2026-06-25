@@ -72,8 +72,14 @@ $$;
 -- ── Seed: AA (tenant one) at Bloom Flourish — Appendix B ─────────────────────
 -- Data, not code. ai.reed + coaching = the Bloom Flourish bundle. AA's uuid here
 -- is a one-time tenant-one bootstrap (like the Phase 1 backfills), not a default.
-insert into public.org_entitlements (org_id, feature_key, enabled, source) values
-  ('17c75da8-082d-4c8f-b00b-a4100fb2eb22', 'ai.reed',  true, 'seed:bloom_flourish'),
-  ('17c75da8-082d-4c8f-b00b-a4100fb2eb22', 'coaching', true, 'seed:bloom_flourish')
+-- AA resolved by slug (no hardcoded org uuid), mirroring the agenda-delegations
+-- seed. In production 'ambition-angels' is org 17c75da8…; against a fresh DB
+-- (or the RLS leak test) it resolves to whatever id that org carries, and is a
+-- no-op if the org isn't present.
+insert into public.org_entitlements (org_id, feature_key, enabled, source)
+select o.id, v.feature_key, true, 'seed:bloom_flourish'
+from public.orgs o
+cross join (values ('ai.reed'), ('coaching')) v(feature_key)
+where o.slug = 'ambition-angels'
 on conflict (org_id, feature_key)
   do update set enabled = excluded.enabled, source = excluded.source, updated_at = now();

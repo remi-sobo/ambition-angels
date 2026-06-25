@@ -13,6 +13,18 @@ create table if not exists auth.users (
   email text unique
 );
 
+-- Two production users referenced by hard-coded id in data-seed migrations
+-- (create_profiles backfills their display names; create_agenda_delegations
+-- seeds a delegation between them). Seed just the ids so those FKs resolve
+-- when the migrations apply. Emails are left null on purpose: the leak test
+-- provisions its own remi@/shannon@ principals under distinct synthetic uuids,
+-- and a matching email here would collide on the unique constraint and skip
+-- the leak test's owner/staff insert.
+insert into auth.users (id) values
+  ('aa39cd02-b813-4e75-aa36-52adadf5d2fe'),
+  ('7312ba86-5203-4cf6-81d8-d8fbd3e2ec89')
+on conflict do nothing;
+
 -- Supabase resolves auth.uid() from the JWT; here we read a session GUC the
 -- test driver sets per simulated user (set request.jwt.claim.sub = '<uuid>').
 create or replace function auth.uid() returns uuid

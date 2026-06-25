@@ -13,6 +13,7 @@ import { HouseholdControls } from "../_components/HouseholdControls";
 import { AddSoftCredit, SoftCreditChip, SC_TYPE_LABEL } from "../_components/SoftCreditControls";
 import EmailActions from "../_components/EmailActions";
 import { EntityTasks } from "../../../_components/EntityTasks";
+import { RailEntity } from "../../../_components/rail/RailEntityContext";
 import ConstituentDangerZone from "../_components/ConstituentDangerZone";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
@@ -536,6 +537,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
           </section>
         </div>
 
+        <RailEntity type="constituent" id={c.id} label={name} />
         <EntityTasks entityType="constituent" entityId={c.id} entityLabel={name} defaultCategory="fundraising" />
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">

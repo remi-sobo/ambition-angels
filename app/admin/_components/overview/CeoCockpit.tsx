@@ -1,7 +1,7 @@
 import FinanceSnapshotWidget from "./FinanceSnapshotWidget";
 import GoalForecastWidget from "./GoalForecastWidget";
 import StrategyHealthWidget from "./StrategyHealthWidget";
-import ScheduleWidget from "./ScheduleWidget";
+import TodayAgenda from "./TodayAgenda";
 import MyQueueWidget from "./MyQueueWidget";
 import MovesOnlyYouWidget from "./MovesOnlyYouWidget";
 
@@ -22,7 +22,7 @@ export default function CeoCockpit() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <StrategyHealthWidget className="lg:col-span-6" />
-        <ScheduleWidget className="lg:col-span-6" />
+        <TodayAgenda className="lg:col-span-6" />
       </div>
 
       <MyQueueWidget assignee="remi" title="My to-dos" />

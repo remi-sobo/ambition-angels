@@ -16,11 +16,14 @@ export default function RailShell({
   defaultOpen,
   children,
   footer,
+  collapsedLauncher,
 }: {
   defaultOpen: boolean;
   children: ReactNode;
   /** Pinned to the bottom of the rail, below the scrolling shelves (capture). */
   footer?: ReactNode;
+  /** Shown only while collapsed — the minimal always-on Reed launcher. */
+  collapsedLauncher?: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -58,16 +61,20 @@ export default function RailShell({
         </div>
       </aside>
 
-      {/* Reopen handle: an edge tab shown only when collapsed. Vertically
-          centered so it never collides with the bottom-right quick-add. */}
+      {/* When collapsed: an edge tab to reopen the rail (vertically centered, so
+          it never collides with the Reed launcher), plus the always-on Reed
+          launcher itself. */}
       {!open && (
-        <button
-          onClick={() => set(true)}
-          aria-label="Open rail"
-          className="hidden xl:flex fixed right-0 top-1/2 -translate-y-1/2 z-30 items-center justify-center w-6 h-16 rounded-l-card bg-surface border border-r-0 border-hairline shadow-panel text-ink-3 hover:text-ink-1 hover:bg-tile transition-colors"
-        >
-          <Chevron dir="left" />
-        </button>
+        <>
+          <button
+            onClick={() => set(true)}
+            aria-label="Open rail"
+            className="hidden xl:flex fixed right-0 top-1/2 -translate-y-1/2 z-30 items-center justify-center w-6 h-16 rounded-l-card bg-surface border border-r-0 border-hairline shadow-panel text-ink-3 hover:text-ink-1 hover:bg-tile transition-colors"
+          >
+            <Chevron dir="left" />
+          </button>
+          {collapsedLauncher}
+        </>
       )}
     </>
   );

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentEntity } from "./RailEntityContext";
+import { useReed } from "./reed/ReedProvider";
 
 /**
  * Capture — the fast lane. No AI, instant, always saves, auto-linked to whatever
@@ -12,11 +13,11 @@ import { useCurrentEntity } from "./RailEntityContext";
  */
 type Failure = { key: string; title: string };
 
-export default function CaptureBox() {
+export default function CaptureBox({ onReport }: { onReport: () => void }) {
   const router = useRouter();
   const entity = useCurrentEntity();
+  const { summon } = useReed();
   const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [failures, setFailures] = useState<Failure[]>([]);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,9 +53,7 @@ export default function CaptureBox() {
   async function commit(title: string) {
     const t = title.trim();
     if (!t) return;
-    setBusy(true);
     const ok = await save(t);
-    setBusy(false);
     if (ok) {
       flashSaved();
       router.refresh(); // pick the new task up in shelves / linked entity lists
@@ -134,17 +133,28 @@ export default function CaptureBox() {
           aria-label="Capture a task"
           className="flex-1 min-w-0 bg-transparent outline-none text-[13px] text-ink-1 placeholder-ink-3"
         />
-        {text.trim() && (
-          <button
-            type="submit"
-            disabled={busy}
-            aria-label="Save task"
-            className="flex-shrink-0 text-orange hover:text-orange-dark disabled:opacity-50 transition-colors"
-          >
-            <SendIcon />
-          </button>
-        )}
+        {/* Always-show escalation (open decision #4): a question or multi-step
+            ask goes to Reed; the typed text rides along as the draft and is left
+            in place so nothing is lost if Reed is dismissed. */}
+        <button
+          type="button"
+          onClick={() => summon(text.trim())}
+          aria-label="Ask Reed"
+          className="flex-shrink-0 inline-flex items-center gap-1 text-[12px] font-medium text-orange hover:text-orange-dark transition-colors"
+        >
+          <Sparkle /> Ask Reed
+        </button>
       </form>
+
+      <div className="mt-1.5 px-0.5">
+        <button
+          type="button"
+          onClick={onReport}
+          className="text-[11px] text-ink-3 hover:text-ink-2 transition-colors"
+        >
+          Report an issue
+        </button>
+      </div>
     </div>
   );
 }
@@ -158,11 +168,10 @@ function PlusIcon() {
   );
 }
 
-function SendIcon() {
+function Sparkle() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <line x1="12" y1="19" x2="12" y2="5" />
-      <polyline points="5 12 12 5 19 12" />
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6L12 2z" />
     </svg>
   );
 }

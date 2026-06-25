@@ -6,10 +6,11 @@ import ReportModal from "./ReportModal";
 import type { AdminUser } from "@/lib/admin/auth";
 
 /**
- * Floating + button. Lives in the admin layout so it's on every admin route.
- * Tapping it opens a small menu: Add task (the QuickAddModal) or Report an issue
- * (the ReportModal). The button is only mounted when the user is authed (the
- * layout gates that), so we never render the modals for logged-out visitors.
+ * Floating + button — now mobile-only (`xl:hidden`). On xl+ the persistent right
+ * rail carries both of its jobs: quick-add lives in the rail's capture box and
+ * "Report an issue" in the capture dock / Reed panel. Below the rail's xl
+ * breakpoint there's no rail, so this stays to preserve quick-add + report on
+ * phones / the installed PWA. Mounted only when authed (the layout gates that).
  */
 export default function QuickAddButton({
   currentUser,
@@ -41,14 +42,14 @@ export default function QuickAddButton({
         <button
           aria-label="Close menu"
           onClick={() => setMenuOpen(false)}
-          className="fixed inset-0 z-40 cursor-default"
+          className="fixed inset-0 z-40 cursor-default xl:hidden"
         />
       )}
 
       {/* The two action chips, anchored just above the FAB. */}
       {menuOpen && (
         <div
-          className="fixed z-40 flex flex-col items-end gap-2"
+          className="fixed z-40 flex flex-col items-end gap-2 xl:hidden"
           style={{ right: fabOffset.right, bottom: "calc(max(1.5rem, env(safe-area-inset-bottom) + 1rem) + 4.25rem)" }}
         >
           <MenuChip
@@ -74,7 +75,7 @@ export default function QuickAddButton({
         onClick={() => setMenuOpen((o) => !o)}
         aria-label="Quick actions"
         aria-expanded={menuOpen}
-        className={`fixed z-40 w-14 h-14 rounded-full bg-orange hover:bg-orange-dark text-white shadow-2xl shadow-orange/30 flex items-center justify-center text-3xl font-light transition-transform active:scale-95 ${
+        className={`fixed z-40 xl:hidden w-14 h-14 rounded-full bg-orange hover:bg-orange-dark text-white shadow-2xl shadow-orange/30 flex items-center justify-center text-3xl font-light transition-transform active:scale-95 ${
           menuOpen ? "rotate-45" : ""
         }`}
         style={fabOffset}

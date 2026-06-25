@@ -2,7 +2,9 @@ import { cookies } from "next/headers";
 import RailShell from "./RailShell";
 import AgendaShelf from "./AgendaShelf";
 import NeedsYouShelf from "./NeedsYouShelf";
-import CaptureBox from "./CaptureBox";
+import CaptureDock from "./CaptureDock";
+import { ReedProvider } from "./reed/ReedProvider";
+import CollapsedReedLauncher from "./reed/CollapsedReedLauncher";
 
 /**
  * The persistent BloomOS right rail: a collapsible shell hosting the Agenda
@@ -14,9 +16,17 @@ export default function Rail() {
   const defaultOpen = pref !== "closed"; // default-open unless the user collapsed it
 
   return (
-    <RailShell defaultOpen={defaultOpen} footer={<CaptureBox />}>
-      <AgendaShelf />
-      <NeedsYouShelf />
-    </RailShell>
+    // Reed isn't wired in this repo yet — `ready={false}` keeps the slot present
+    // but inert (panel shows its warming-up state). The Reed build flips this.
+    <ReedProvider ready={false}>
+      <RailShell
+        defaultOpen={defaultOpen}
+        footer={<CaptureDock />}
+        collapsedLauncher={<CollapsedReedLauncher />}
+      >
+        <AgendaShelf />
+        <NeedsYouShelf />
+      </RailShell>
+    </ReedProvider>
   );
 }

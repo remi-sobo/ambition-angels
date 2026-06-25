@@ -1,6 +1,8 @@
 import { getOrgContext } from "@/lib/admin/auth";
+import { getMyDisplayName } from "@/lib/admin/profile";
+import { getCalendarConnectionStatus, type CalendarConnectionStatus } from "@/lib/google/connection";
 import PageHeader from "../_components/PageHeader";
-import { ChangePasswordForm, SignOutAllButton } from "./_components/AccountControls";
+import { DisplayNameForm, ConnectCalendarControls, ChangePasswordForm, SignOutAllButton } from "./_components/AccountControls";
 
 // BloomOS account settings. Centerpiece is a password change that requires the
 // current password; plus account info and session controls an admin expects.
@@ -28,6 +30,15 @@ function Card({ title, description, children }: { title: string; description?: s
 export default async function SettingsPage() {
   const ctx = await getOrgContext();
   if (!ctx) return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;
+  const displayName = (await getMyDisplayName()) ?? "";
+
+  // Calendar status reads via service-role; degrade gracefully if unconfigured.
+  let calendarStatus: CalendarConnectionStatus | null = null;
+  try {
+    calendarStatus = await getCalendarConnectionStatus(ctx.userId);
+  } catch {
+    calendarStatus = null;
+  }
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[760px]">
@@ -41,6 +52,23 @@ export default async function SettingsPage() {
             <dt className="text-ink-2">Role</dt>
             <dd className="text-ink-1">{ROLE_LABEL[ctx.role] ?? ctx.role}</dd>
           </dl>
+        </Card>
+
+        <Card title="Your name" description="How BloomOS addresses you — shown in the greeting and on agenda owner chips.">
+          <DisplayNameForm initialName={displayName} />
+        </Card>
+
+        <Card
+          title="Google Calendar"
+          description="Connect your calendar so BloomOS can show your day. Read-only — BloomOS never changes your events."
+        >
+          {calendarStatus ? (
+            <ConnectCalendarControls status={calendarStatus} />
+          ) : (
+            <p className="text-xs text-ink-2">
+              Calendar status is unavailable right now (the server isn&apos;t fully configured). Try again shortly.
+            </p>
+          )}
         </Card>
 
         <Card

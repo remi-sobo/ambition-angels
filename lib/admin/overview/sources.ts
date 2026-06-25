@@ -21,7 +21,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { deriveHealth, worstHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { constituentName } from "@/lib/fundraising/display";
-import { todayISO } from "@/app/admin/ops/_types/ops";
+import { todayISO, priorityRank, type TaskPriority } from "@/app/admin/ops/_types/ops";
 import { getDataAge } from "@/lib/admin/dataAge";
 import {
   getFinanceSnapshot,
@@ -590,20 +590,60 @@ export type QueueTask = {
   category: string | null;
   due: string | null;
   pinnedToday: boolean;
+  priority: TaskPriority;
 };
+
+type QueueRow = QueueTask & { updatedAt: string };
+
+/**
+ * Tiered urgency bucket for the queue (lower = higher in the list). The cockpit
+ * leads with what's due, then what's urgent, so an undated `urgent` task beats
+ * dated busywork instead of sinking to a "No date" row:
+ *   0 overdue · 1 due today (or pinned for today) · 2 urgent · 3 everything else
+ */
+function queueTier(t: QueueRow, today: string): number {
+  if (t.due != null && t.due < today) return 0;
+  if (t.due === today || t.pinnedToday) return 1;
+  if (t.priority === "urgent") return 2;
+  return 3;
+}
+
+/**
+ * Full queue comparator: tier first, then the within-tier rule —
+ *  - tier 0 (overdue): oldest due first
+ *  - everything else: soonest due (nulls last) → priorityRank → updated_at
+ */
+function compareQueue(a: QueueRow, b: QueueRow, today: string): number {
+  const ta = queueTier(a, today);
+  const tb = queueTier(b, today);
+  if (ta !== tb) return ta - tb;
+
+  // Overdue: oldest first (ascending due date — both are non-null here).
+  if (ta === 0) return a.due! < b.due! ? -1 : a.due! > b.due! ? 1 : 0;
+
+  // Soonest due, nulls last.
+  if (a.due !== b.due) {
+    if (a.due == null) return 1;
+    if (b.due == null) return -1;
+    return a.due < b.due ? -1 : 1;
+  }
+  const pr = priorityRank(a.priority) - priorityRank(b.priority);
+  if (pr !== 0) return pr;
+  return a.updatedAt < b.updatedAt ? -1 : a.updatedAt > b.updatedAt ? 1 : 0;
+}
 
 export const getQueueTasks = cache(async (assignee: "remi" | "shannon"): Promise<{ tasks: QueueTask[]; total: number }> => {
   const sb = getSupabaseAdmin();
   const [res, countRes] = await Promise.all([
     sb
       .from("ops_tasks")
-      .select("id, title, category, due_date, pinned_for_today")
+      .select("id, title, category, due_date, pinned_for_today, priority, updated_at")
       .eq("assigned_to", assignee)
       .neq("status", "done")
       .is("archived_at", null)
-      .order("pinned_for_today", { ascending: false })
-      .order("due_date", { ascending: true, nullsFirst: false })
-      .limit(12),
+      // Fetch a wider window than we display: the JS comparator can promote an
+      // undated urgent task above dated rows, so slicing must happen post-sort.
+      .limit(40),
     sb
       .from("ops_tasks")
       .select("id", { count: "exact", head: true })
@@ -611,12 +651,24 @@ export const getQueueTasks = cache(async (assignee: "remi" | "shannon"): Promise
       .neq("status", "done")
       .is("archived_at", null),
   ]);
-  const tasks = (res.data ?? []).map((t) => ({
+  const today = todayISO();
+  const rows: QueueRow[] = (res.data ?? []).map((t) => ({
     id: t.id as string,
     title: t.title as string,
     category: (t.category as string | null) ?? null,
     due: (t.due_date as string | null) ?? null,
     pinnedToday: Boolean(t.pinned_for_today),
+    priority: (t.priority as TaskPriority) ?? "medium",
+    updatedAt: (t.updated_at as string | null) ?? "",
+  }));
+  rows.sort((a, b) => compareQueue(a, b, today));
+  const tasks: QueueTask[] = rows.slice(0, 12).map((t) => ({
+    id: t.id,
+    title: t.title,
+    category: t.category,
+    due: t.due,
+    pinnedToday: t.pinnedToday,
+    priority: t.priority,
   }));
   return { tasks, total: countRes.count ?? 0 };
 });

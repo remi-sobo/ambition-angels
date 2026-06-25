@@ -10,14 +10,17 @@ import { useState, type ReactNode } from "react";
  *
  * Desktop-first (xl+): below the breakpoint the rail is hidden to avoid crowding
  * sidebar + body + rail on a laptop. The collapsed Reed launcher / mobile entry
- * lands with Phase 3 (Reed). The capture-and-ask dock lands with Phase 2.
+ * lands with Phase 3 (Reed). The capture dock is pinned via `footer`.
  */
 export default function RailShell({
   defaultOpen,
   children,
+  footer,
 }: {
   defaultOpen: boolean;
   children: ReactNode;
+  /** Pinned to the bottom of the rail, below the scrolling shelves (capture). */
+  footer?: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -50,7 +53,8 @@ export default function RailShell({
               <Chevron dir="right" />
             </button>
           </header>
-          <div className="flex-1 overflow-y-auto">{children}</div>
+          <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
+          {footer && <div className="flex-shrink-0">{footer}</div>}
         </div>
       </aside>
 

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Sidebar from "./_components/Sidebar";
 import QuickAddButton from "./_components/QuickAddButton";
 import Rail from "./_components/rail/Rail";
+import { RailEntityProvider } from "./_components/rail/RailEntityContext";
 import AdminPWA from "./_components/AdminPWA";
 import { getAdminUser } from "@/lib/admin/auth";
 
@@ -57,8 +58,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
       <AdminPWA />
       <Sidebar currentUser={user} />
-      <main className="admin-main flex-1 min-w-0 overflow-y-auto">{children}</main>
-      {authed && <Rail />}
+      <RailEntityProvider>
+        <main className="admin-main flex-1 min-w-0 overflow-y-auto">{children}</main>
+        {authed && <Rail />}
+      </RailEntityProvider>
       {authed && <QuickAddButton currentUser={user} />}
     </div>
   );

@@ -1,6 +1,8 @@
--- BloomOS / Reed — Phase 1: RLS safety on the four formerly-RLS-off tables.
+-- BloomOS / Reed — Phase 1: RLS safety on the formerly-RLS-off tables.
 --
 --   fr_prospects, fr_nba_suggestions, gmail_sync_jobs, fin_reconciliation_items
+--   (+ fr_prospect_disqualified, fr_prospect_promoted — found via the security
+--    advisor; see section 5 & 6 for the lighter fix applied to those two)
 --
 -- Each table gets RLS enabled AND has_permission policies in the SAME migration:
 -- enabling RLS without a policy locks every role out and looks like an outage
@@ -108,3 +110,41 @@ create policy "members write fin_reconciliation_items" on public.fin_reconciliat
   for all to authenticated
   using ( (select private.has_permission(org_id, 'finance.write')) )
   with check ( (select private.has_permission(org_id, 'finance.write')) );
+
+-- ── 5 & 6. fr_prospect_disqualified, fr_prospect_promoted (fundraising) ──────
+-- Found via the Supabase security advisor after applying Phases 2/4: two more
+-- prospect-lifecycle tables (a suppression set and its promoted sibling) that
+-- are RLS-off and PostgREST-exposed — missed by the original enable_rls_per_domain
+-- sweep and by the spec's "four." Both already carry org_id (nullable, no default)
+-- and neither is written by any app code (the disqualify/promote routes update
+-- fr_prospects.status; no insert path sets these). So this is the lighter fix:
+-- backfill org_id, enable RLS, add fundraising policies — the same idiom as
+-- enable_rls_per_domain.sql. org_id is left NULLABLE (not forced NOT NULL): with
+-- no traceable writer, a NOT NULL constraint could break an unknown path, and
+-- RLS already closes the exposure (the actual vulnerability). Tighten to NOT NULL
+-- in a later pass once a writer is confirmed.
+update public.fr_prospect_disqualified
+  set org_id = '17c75da8-082d-4c8f-b00b-a4100fb2eb22' where org_id is null;
+alter table public.fr_prospect_disqualified enable row level security;
+drop policy if exists "members read fr_prospect_disqualified" on public.fr_prospect_disqualified;
+create policy "members read fr_prospect_disqualified" on public.fr_prospect_disqualified
+  for select to authenticated
+  using ( (select private.has_permission(org_id, 'fundraising.read')) );
+drop policy if exists "members write fr_prospect_disqualified" on public.fr_prospect_disqualified;
+create policy "members write fr_prospect_disqualified" on public.fr_prospect_disqualified
+  for all to authenticated
+  using ( (select private.has_permission(org_id, 'fundraising.write')) )
+  with check ( (select private.has_permission(org_id, 'fundraising.write')) );
+
+update public.fr_prospect_promoted
+  set org_id = '17c75da8-082d-4c8f-b00b-a4100fb2eb22' where org_id is null;
+alter table public.fr_prospect_promoted enable row level security;
+drop policy if exists "members read fr_prospect_promoted" on public.fr_prospect_promoted;
+create policy "members read fr_prospect_promoted" on public.fr_prospect_promoted
+  for select to authenticated
+  using ( (select private.has_permission(org_id, 'fundraising.read')) );
+drop policy if exists "members write fr_prospect_promoted" on public.fr_prospect_promoted;
+create policy "members write fr_prospect_promoted" on public.fr_prospect_promoted
+  for all to authenticated
+  using ( (select private.has_permission(org_id, 'fundraising.write')) )
+  with check ( (select private.has_permission(org_id, 'fundraising.write')) );

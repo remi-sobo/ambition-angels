@@ -4,7 +4,10 @@
 // client component — the server renders in UTC. suppressHydrationWarning
 // covers the rare mismatch when the page is server-rendered near a daypart
 // boundary in a different zone.
-export default function Greeting({ org }: { org: string }) {
+//
+// `name` is the signed-in person's first name (resolved server-side from their
+// profile); `org` is used in the subtitle. We greet the person, not the org.
+export default function Greeting({ name, org }: { name: string; org: string }) {
   const now = new Date();
   const h = now.getHours();
   const part = h < 12 ? "morning" : h < 18 ? "afternoon" : "evening";
@@ -23,10 +26,10 @@ export default function Greeting({ org }: { org: string }) {
         className="font-heading font-bold text-ink-1 text-2xl sm:text-3xl tracking-tight"
         suppressHydrationWarning
       >
-        Good {part}, {org}.
+        Good {part}, {name}.
       </h1>
       <p className="text-ink-2 text-sm mt-1">
-        Here&apos;s what&apos;s happening across your mission today.
+        Here&apos;s what&apos;s happening across {org} today.
       </p>
     </div>
   );

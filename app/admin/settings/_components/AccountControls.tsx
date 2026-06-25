@@ -6,6 +6,66 @@ import { useRouter } from "next/navigation";
 const inputCls =
   "w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
+export function DisplayNameForm({ initialName }: { initialName: string }) {
+  const router = useRouter();
+  const [name, setName] = useState(initialName);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const dirty = name.trim() !== initialName.trim();
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setDone(false);
+    const trimmed = name.trim();
+    if (!trimmed) { setError("Enter a name."); return; }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/account/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ displayName: trimmed }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(j.error ?? `HTTP ${res.status}`); return; }
+      setDone(true);
+      // Refresh server components so the greeting picks up the new name.
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-3 max-w-sm">
+      <label className="block text-xs text-ink-2">
+        Display name
+        <input
+          type="text"
+          className={`${inputCls} mt-1`}
+          value={name}
+          maxLength={80}
+          autoComplete="name"
+          placeholder="How BloomOS should address you"
+          onChange={(e) => { setName(e.target.value); setDone(false); }}
+          required
+        />
+      </label>
+      {error && <p className="text-xs text-expense">{error}</p>}
+      {done && !error && <p className="text-xs text-revenue">Saved.</p>}
+      <button
+        type="submit"
+        disabled={busy || !dirty}
+        className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-5 py-2.5 rounded-full transition-colors disabled:opacity-50"
+      >
+        {busy ? "Saving…" : "Save name"}
+      </button>
+    </form>
+  );
+}
+
 export function ChangePasswordForm() {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");

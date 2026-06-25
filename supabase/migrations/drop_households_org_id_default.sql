@@ -1,0 +1,21 @@
+-- Phase 5 — drop the hardcoded org_id default on households.
+--
+-- households.org_id was given a hardcoded AA default by
+-- add_org_id_to_tenant_tables.sql (alter column org_id set default <AA org>),
+-- so any insert that omits org_id silently lands in AA — the "org_id default
+-- trap." POST /api/admin/households now sets org_id explicitly from session
+-- context (getOrgContext().orgId), so the default is no longer load-bearing.
+--
+-- ORDER MATTERS: apply this ONLY after the hardened POST route is deployed.
+-- If this runs first, any create that still relied on the default hits a
+-- NOT NULL violation and household creation breaks for everyone.
+--
+-- Column stays NOT NULL — that's the point: a missing org_id should now fail
+-- loudly rather than route to AA. constituents keeps its default (out of
+-- scope here; those records are still created via other paths).
+--
+-- Apply manually in the Supabase dashboard (SQL editor). Reversible:
+--   alter table public.households
+--     alter column org_id set default '17c75da8-...';  -- AA org_id
+
+alter table public.households alter column org_id drop default;

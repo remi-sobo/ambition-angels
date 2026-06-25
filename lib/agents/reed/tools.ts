@@ -330,5 +330,58 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         };
       },
     },
+
+    {
+      name: "propose_next_best_action",
+      description:
+        "Propose the single next best action in a module (program, fundraising, finance, ops, board, or " +
+        "compliance) — what the operator should do next, and why. This is INERT: it records a recommendation " +
+        "for a human to accept or dismiss; it never performs the action. Ground the rationale in tool data. " +
+        "Prefer ONE high-value action over a long list.",
+      input_schema: {
+        type: "object",
+        properties: {
+          domain: { type: "string", enum: ["program", "fundraising", "finance", "ops", "board", "compliance"] },
+          title: { type: "string", description: "The recommended action, imperative and specific." },
+          rationale: { type: "string", description: "Why now — grounded in real figures/records." },
+          priority: { type: "string", enum: ["high", "medium", "low"] },
+          target_type: { type: "string", description: "Optional: the kind of record this concerns (e.g. 'grant', 'opportunity')." },
+          target_id: { type: "string", description: "Optional: the record's id." },
+        },
+        required: ["domain", "title", "rationale"],
+        additionalProperties: false,
+      },
+      run: async (input) => {
+        const domain = String(input.domain ?? "");
+        const DOMAINS = ["program", "fundraising", "finance", "ops", "board", "compliance"];
+        if (!DOMAINS.includes(domain)) return { error: "bad_request", message: `Unknown domain: ${domain}.` };
+        if (!(await hasPermission(sb, orgId, `${domain}.write`))) return deny(`${domain}.write`);
+        const title = typeof input.title === "string" ? input.title.trim() : "";
+        if (!title) return { error: "bad_request", message: "title is required." };
+
+        const { data, error } = await sb
+          .from("reed_suggestions")
+          .insert({
+            org_id: orgId,
+            domain,
+            title: title.slice(0, 300),
+            rationale: typeof input.rationale === "string" ? input.rationale.slice(0, 2000) : null,
+            priority: ["high", "medium", "low"].includes(String(input.priority)) ? String(input.priority) : "medium",
+            target_type: typeof input.target_type === "string" ? input.target_type.slice(0, 60) : null,
+            target_id: typeof input.target_id === "string" ? input.target_id.slice(0, 200) : null,
+            created_by: createdBy,
+            status: "suggested",
+          })
+          .select("id")
+          .single();
+        if (error) return { error: "save_failed", message: error.message };
+        return {
+          proposed: true,
+          suggestion_id: (data as { id: string }).id,
+          status: "suggested",
+          note: "Recorded as an inert suggestion. A human accepts or dismisses it; nothing was executed.",
+        };
+      },
+    },
   ];
 }

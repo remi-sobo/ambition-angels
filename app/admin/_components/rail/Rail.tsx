@@ -3,30 +3,27 @@ import RailShell from "./RailShell";
 import AgendaShelf from "./AgendaShelf";
 import NeedsYouShelf from "./NeedsYouShelf";
 import CaptureDock from "./CaptureDock";
-import { ReedProvider } from "./reed/ReedProvider";
-import CollapsedReedLauncher from "./reed/CollapsedReedLauncher";
+import CollapsedReedLauncher from "./CollapsedReedLauncher";
 
 /**
  * The persistent BloomOS right rail: a collapsible shell hosting the Agenda
  * shelf (bound live to the agenda service), the Needs-you shelf, and the pinned
- * capture dock. Reed (Phase 3) mounts beneath capture.
+ * capture dock. On xl+ the rail also carries Reed — capture escalates to the
+ * real Reed drawer, and a collapsed-state launcher summons it — so the "Ask
+ * Reed" FAB stays mobile-only.
  */
-export default function Rail() {
+export default function Rail({ reedEnabled }: { reedEnabled: boolean }) {
   const pref = cookies().get("bloomos_rail")?.value;
   const defaultOpen = pref !== "closed"; // default-open unless the user collapsed it
 
   return (
-    // Reed isn't wired in this repo yet — `ready={false}` keeps the slot present
-    // but inert (panel shows its warming-up state). The Reed build flips this.
-    <ReedProvider ready={false}>
-      <RailShell
-        defaultOpen={defaultOpen}
-        footer={<CaptureDock />}
-        collapsedLauncher={<CollapsedReedLauncher />}
-      >
-        <AgendaShelf />
-        <NeedsYouShelf />
-      </RailShell>
-    </ReedProvider>
+    <RailShell
+      defaultOpen={defaultOpen}
+      footer={<CaptureDock reedEnabled={reedEnabled} />}
+      collapsedLauncher={<CollapsedReedLauncher />}
+    >
+      <AgendaShelf />
+      <NeedsYouShelf />
+    </RailShell>
   );
 }

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentEntity } from "./RailEntityContext";
-import { useReed } from "./reed/ReedProvider";
+import { useReedLauncher } from "../reed/ReedLauncherProvider";
 
 /**
  * Capture — the fast lane. No AI, instant, always saves, auto-linked to whatever
@@ -13,10 +13,16 @@ import { useReed } from "./reed/ReedProvider";
  */
 type Failure = { key: string; title: string };
 
-export default function CaptureBox({ onReport }: { onReport: () => void }) {
+export default function CaptureBox({
+  reedEnabled,
+  onReport,
+}: {
+  reedEnabled: boolean;
+  onReport: () => void;
+}) {
   const router = useRouter();
   const entity = useCurrentEntity();
-  const { summon } = useReed();
+  const { open: openReed } = useReedLauncher();
   const [text, setText] = useState("");
   const [saved, setSaved] = useState(false);
   const [failures, setFailures] = useState<Failure[]>([]);
@@ -133,17 +139,26 @@ export default function CaptureBox({ onReport }: { onReport: () => void }) {
           aria-label="Capture a task"
           className="flex-1 min-w-0 bg-transparent outline-none text-[13px] text-ink-1 placeholder-ink-3"
         />
-        {/* Always-show escalation (open decision #4): a question or multi-step
-            ask goes to Reed; the typed text rides along as the draft and is left
-            in place so nothing is lost if Reed is dismissed. */}
-        <button
-          type="button"
-          onClick={() => summon(text.trim())}
-          aria-label="Ask Reed"
-          className="flex-shrink-0 inline-flex items-center gap-1 text-[12px] font-medium text-orange hover:text-orange-dark transition-colors"
-        >
-          <Sparkle /> Ask Reed
-        </button>
+        {/* Escalation: a question or multi-step ask goes to the real Reed drawer.
+            The typed text rides along as the draft (prefilled in Reed's ask bar)
+            and the current entity as context_ref; the text stays in capture so
+            nothing is lost if Reed is dismissed. Shown only when entitled. */}
+        {reedEnabled && (
+          <button
+            type="button"
+            onClick={() =>
+              openReed({
+                draft: text.trim(),
+                surface: "rail",
+                contextRef: entity ? { type: entity.type, id: entity.id, label: entity.label } : null,
+              })
+            }
+            aria-label="Ask Reed"
+            className="flex-shrink-0 inline-flex items-center gap-1 text-[12px] font-medium text-orange hover:text-orange-dark transition-colors"
+          >
+            <Sparkle /> Ask Reed
+          </button>
+        )}
       </form>
 
       <div className="mt-1.5 px-0.5">

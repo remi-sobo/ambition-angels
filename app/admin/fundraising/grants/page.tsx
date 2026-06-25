@@ -3,10 +3,10 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import PageHeader from "../../_components/PageHeader";
-import Pipeline from "../../_components/Pipeline";
 import { todayISO } from "../../ops/_types/ops";
 import { NewGrantForm } from "./_components/GrantControls";
-import { STAGES, STAGE_LABELS } from "./_lib/stages";
+import GrantsBoard, { BOARD_STAGES, type GrantCard } from "./_components/GrantsBoard";
+import { STAGES } from "./_lib/stages";
 
 // Grants pipeline + requirements calendar (Ring 2,
 // modules/03-fundraising.md "Grants"). Pipeline columns mirror the spec
@@ -41,9 +41,6 @@ const KIND_LABELS: Record<string, string> = {
 
 const fmtDate = (iso: string) =>
   new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-
-// Pipeline order for display; declined/closed collapse into a footer row.
-const BOARD_STAGES = ["prospect", "qualified", "loi", "proposal", "submitted", "awarded", "active"] as const;
 
 export default async function GrantsPage() {
   const supabase = createServerSupabase();
@@ -85,6 +82,22 @@ export default async function GrantsPage() {
   const byStage = new Map<string, Grant[]>(STAGES.map((s) => [s, []]));
   for (const g of grants) byStage.get(g.stage)?.push(g);
 
+  // Serializable card data for the client board.
+  const toCard = (g: Grant): GrantCard => ({
+    id: g.id,
+    name: g.name,
+    stage: g.stage,
+    amount_requested: g.amount_requested,
+    amount_awarded: g.amount_awarded,
+    funderName: g.funder?.org_name ?? null,
+  });
+  const boardGrants = grants
+    .filter((g) => (BOARD_STAGES as readonly string[]).includes(g.stage))
+    .map(toCard);
+  const closedGrants = grants
+    .filter((g) => g.stage === "declined" || g.stage === "closed")
+    .map(toCard);
+
   const grantValue = (g: Grant) => g.amount_awarded ?? g.amount_requested ?? 0;
   const openPipeline = grants
     .filter((g) => ["prospect", "qualified", "loi", "proposal", "submitted"].includes(g.stage))
@@ -122,52 +135,9 @@ export default async function GrantsPage() {
         <NewGrantForm />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* ── Pipeline (shared component) ── */}
+          {/* ── Pipeline (shared drag-and-drop board) ── */}
           <div className="lg:col-span-8">
-            <Pipeline<Grant>
-              title="Pipeline"
-              columns={BOARD_STAGES.map((stage) => ({
-                key: stage,
-                label: STAGE_LABELS[stage],
-                items: byStage.get(stage) ?? [],
-              }))}
-              getCardKey={(g) => g.id}
-              columnSummary={(items) =>
-                `${items.length} · ${money(items.reduce((s, g) => s + grantValue(g), 0))}`
-              }
-              renderCard={(g) => (
-                <Link
-                  href={`/admin/fundraising/grants/${g.id}`}
-                  className="block bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline rounded-lg px-2.5 py-2 transition-colors"
-                >
-                  <div className="text-xs font-medium text-ink-1 truncate">{g.name}</div>
-                  <div className="text-[11px] text-ink-2 truncate">{g.funder?.org_name ?? "—"}</div>
-                  <div className="text-[11px] text-orange font-semibold [font-variant-numeric:tabular-nums]">
-                    {grantValue(g) > 0 ? money(grantValue(g)) : ""}
-                  </div>
-                </Link>
-              )}
-              footer={
-                closedCount > 0 ? (
-                  <>
-                    <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-2">
-                      Declined / Closed
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {[...(byStage.get("declined") ?? []), ...(byStage.get("closed") ?? [])].map((g) => (
-                        <Link
-                          key={g.id}
-                          href={`/admin/fundraising/grants/${g.id}`}
-                          className="text-xs text-ink-3 hover:text-ink-1 bg-tile border-[1.5px] border-outline rounded-full px-2.5 py-1 transition-colors"
-                        >
-                          {g.name} · {STAGE_LABELS[g.stage]}
-                        </Link>
-                      ))}
-                    </div>
-                  </>
-                ) : undefined
-              }
-            />
+            <GrantsBoard grants={boardGrants} closed={closedGrants} />
           </div>
 
           {/* ── Requirements calendar ── */}

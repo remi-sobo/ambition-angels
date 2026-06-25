@@ -34,6 +34,10 @@ as $$
 $$;
 revoke all on function public.has_permission(uuid, text) from public;
 grant execute on function public.has_permission(uuid, text) to authenticated;
+-- Supabase default privileges also auto-grant EXECUTE to anon on new public
+-- functions; revoke it. This is the permission oracle for signed-in users only
+-- (anon has no auth.uid(), so it would only ever get false).
+revoke execute on function public.has_permission(uuid, text) from anon;
 
 -- ── reed_activity_log ───────────────────────────────────────────────────────
 create table if not exists public.reed_activity_log (

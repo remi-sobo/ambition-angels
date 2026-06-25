@@ -100,7 +100,11 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
 
         const now = new Date();
         const [txnsRes, cashRes, pledgesRes, hubspotPledges] = await Promise.all([
-          sb.from("fin_transactions").select("txn_date, amount").gte("txn_date", fy.start).lte("txn_date", fy.end),
+          sb
+            .from("fin_transactions")
+            .select("txn_date, amount, exclude_from_runway")
+            .gte("txn_date", fy.start)
+            .lte("txn_date", fy.end),
           cfg.startDate
             ? sb.from("fin_transactions").select("amount").gt("txn_date", cfg.startDate)
             : Promise.resolve({ data: [] as Array<{ amount: number }> }),
@@ -111,23 +115,31 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
           loadHubSpotPledges(sb, cfg.year),
         ]);
 
-        const txns = (txnsRes.data ?? []).map((t) => ({ txn_date: t.txn_date as string, amount: Number(t.amount) }));
+        const txns = (txnsRes.data ?? []).map((t) => ({
+          txn_date: t.txn_date as string,
+          amount: Number(t.amount),
+          excluded: Boolean(t.exclude_from_runway),
+        }));
         const revenueYTD = txns.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
         const expenseYTD = txns.filter((t) => t.amount < 0).reduce((s, t) => s - t.amount, 0);
         const cashOnHand = cfg.startBal + (cashRes.data ?? []).reduce((s, r) => s + Number(r.amount), 0);
 
-        // Monthly buckets → trailing 3-active-month burn (locked definition).
-        const monthMap = new Map<string, { revenue: number; expense: number }>();
+        // Monthly buckets → trailing 3-active-month burn, netting out
+        // exclude-from-runway one-offs (matches lib/admin/finance.ts).
+        const monthMap = new Map<string, { revenue: number; expense: number; excludedExpense: number }>();
         for (const t of txns) {
           const key = t.txn_date.slice(0, 7);
-          const b = monthMap.get(key) ?? { revenue: 0, expense: 0 };
+          const b = monthMap.get(key) ?? { revenue: 0, expense: 0, excludedExpense: 0 };
           if (t.amount > 0) b.revenue += t.amount;
-          else b.expense -= t.amount;
+          else {
+            b.expense -= t.amount;
+            if (t.excluded) b.excludedExpense -= t.amount;
+          }
           monthMap.set(key, b);
         }
         const active = Array.from(monthMap.values()).filter((b) => b.revenue > 0 || b.expense > 0);
         const last3 = active.slice(-3);
-        const burn3mo = last3.length > 0 ? last3.reduce((s, b) => s + b.expense, 0) / last3.length : 0;
+        const burn3mo = last3.length > 0 ? last3.reduce((s, b) => s + b.expense - b.excludedExpense, 0) / last3.length : 0;
 
         // Forward runway — shared engine (lib/finance/runway), so these three
         // tiers match the Finance dashboard exactly.
@@ -136,7 +148,7 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         const effectiveBaseline = baselineSource === "config" ? (cfg.baseline as number) : burn3mo;
         const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
         const mtdSpend = txns
-          .filter((t) => t.amount < 0 && t.txn_date.slice(0, 7) === thisMonth)
+          .filter((t) => t.amount < 0 && !t.excluded && t.txn_date.slice(0, 7) === thisMonth)
           .reduce((s, t) => s - t.amount, 0);
         const bloomPledges: RunwayPledge[] = (pledgesRes.data ?? []).map((r) => ({
           amount: Number(r.amount),

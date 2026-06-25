@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getAdminUser } from "@/lib/admin/auth";
 import { money } from "../../../finance/_components/charts";
-import { todayISO } from "../../../ops/_types/ops";
+import { todayISO, type OpsProject, type OpsTask } from "../../../ops/_types/ops";
+import ProjectTaskList from "../../../ops/projects/[id]/_components/ProjectTaskList";
+import ProjectActivityLog from "../../../ops/projects/[id]/_components/ProjectActivityLog";
 import {
   StageSelect,
   RequirementActions,
@@ -58,6 +61,46 @@ export default async function GrantDetailPage({ params }: { params: { id: string
     status: string; submitted_at: string | null; notes: string | null;
   }>;
   const today = todayISO();
+
+  // The grant's workspace project. Phase 2 creates this on grant creation;
+  // self-heal here covers grants made before Phase 2 (or whose project insert
+  // failed) by creating it on first load. The insert is idempotent against the
+  // unique partial index on grant_id — if a concurrent load wins the race, we
+  // re-read the winner rather than surfacing the unique violation.
+  let project = (
+    await supabase.from("ops_projects").select("*").eq("grant_id", g.id).maybeSingle()
+  ).data as OpsProject | null;
+  if (!project) {
+    const operator = (await getAdminUser()) ?? "remi";
+    const created = await supabase
+      .from("ops_projects")
+      .insert({
+        grant_id: g.id,
+        org_id: g.org_id,
+        title: g.name,
+        category: "fundraising",
+        created_by: operator,
+        status: "active",
+      })
+      .select("*")
+      .maybeSingle();
+    project =
+      (created.data as OpsProject | null) ??
+      ((
+        await supabase.from("ops_projects").select("*").eq("grant_id", g.id).maybeSingle()
+      ).data as OpsProject | null);
+  }
+
+  const tasks = project
+    ? (((
+        await supabase
+          .from("ops_tasks")
+          .select("*")
+          .eq("project_id", project.id)
+          .order("display_order", { ascending: true, nullsFirst: false })
+          .order("created_at", { ascending: true })
+      ).data as OpsTask[] | null) ?? [])
+    : [];
 
   const facts: Array<[string, string]> = [
     ["Funder", g.funder?.org_name ?? "—"],
@@ -150,6 +193,27 @@ export default async function GrantDetailPage({ params }: { params: { id: string
             <AddRequirementForm grantId={g.id} />
           </section>
         </div>
+
+        {project ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-7">
+              <ProjectTaskList
+                projectId={project.id}
+                projectCategory={project.category}
+                projectAssignedTo={project.assigned_to}
+                initialTasks={tasks}
+              />
+            </div>
+            <div className="lg:col-span-5">
+              <ProjectActivityLog project={project} tasks={tasks} />
+            </div>
+          </div>
+        ) : (
+          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 text-sm text-ink-2">
+            This grant&apos;s workspace project couldn&apos;t be loaded. Reload the
+            page to retry — it will be created automatically.
+          </section>
+        )}
       </div>
     </div>
   );

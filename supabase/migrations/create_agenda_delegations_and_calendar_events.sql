@@ -89,10 +89,10 @@ create table if not exists calendar_events (
 );
 
 -- Upsert key for the Google sync (spec §6): one row per (owner, google event).
--- Partial so booking-sourced rows (no google_event_id) are not constrained here.
+-- Non-partial so PostgREST ON CONFLICT can target it; NULLs stay distinct, so
+-- booking-sourced rows (null google_event_id) remain unconstrained.
 create unique index if not exists calendar_events_owner_gevent_uniq
-  on calendar_events (owner_user_id, google_event_id)
-  where google_event_id is not null;
+  on calendar_events (owner_user_id, google_event_id);
 
 -- Agenda range scan: a viewer's owners over a time window.
 create index if not exists calendar_events_owner_time_idx

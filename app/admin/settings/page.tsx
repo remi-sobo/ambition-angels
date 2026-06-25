@@ -1,7 +1,8 @@
 import { getOrgContext } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
+import { getCalendarConnectionStatus, type CalendarConnectionStatus } from "@/lib/google/connection";
 import PageHeader from "../_components/PageHeader";
-import { DisplayNameForm, ChangePasswordForm, SignOutAllButton } from "./_components/AccountControls";
+import { DisplayNameForm, ConnectCalendarControls, ChangePasswordForm, SignOutAllButton } from "./_components/AccountControls";
 
 // BloomOS account settings. Centerpiece is a password change that requires the
 // current password; plus account info and session controls an admin expects.
@@ -31,6 +32,14 @@ export default async function SettingsPage() {
   if (!ctx) return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;
   const displayName = (await getMyDisplayName()) ?? "";
 
+  // Calendar status reads via service-role; degrade gracefully if unconfigured.
+  let calendarStatus: CalendarConnectionStatus | null = null;
+  try {
+    calendarStatus = await getCalendarConnectionStatus(ctx.userId);
+  } catch {
+    calendarStatus = null;
+  }
+
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[760px]">
       <PageHeader title="Settings" subtitle="Your BloomOS account and security" />
@@ -47,6 +56,19 @@ export default async function SettingsPage() {
 
         <Card title="Your name" description="How BloomOS addresses you — shown in the greeting and on agenda owner chips.">
           <DisplayNameForm initialName={displayName} />
+        </Card>
+
+        <Card
+          title="Google Calendar"
+          description="Connect your calendar so BloomOS can show your day. Read-only — BloomOS never changes your events."
+        >
+          {calendarStatus ? (
+            <ConnectCalendarControls status={calendarStatus} />
+          ) : (
+            <p className="text-xs text-ink-2">
+              Calendar status is unavailable right now (the server isn&apos;t fully configured). Try again shortly.
+            </p>
+          )}
         </Card>
 
         <Card

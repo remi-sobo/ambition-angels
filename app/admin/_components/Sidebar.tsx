@@ -29,7 +29,6 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Overview", icon: "overview", href: "/admin" },
       { label: "Strategy", icon: "strategy", href: "/admin/strategic-plan" },
       { label: "Executive Briefing", icon: "briefing", href: "/admin/briefing" },
-      { label: "How-To Guide", icon: "documents", href: "/admin/howto" },
     ],
   },
   {
@@ -591,6 +590,21 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
           </div>
 
           <div className="px-5 py-4 border-t border-white/10 space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <Link
+              href="/admin/howto"
+              className={[
+                "flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs font-medium transition-colors",
+                active === "/admin/howto"
+                  ? "bg-orange text-[#FFF6EC]"
+                  : "text-cream/60 hover:text-cream hover:bg-white/5",
+              ].join(" ")}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0" aria-hidden>
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </svg>
+              <span>How-To Guide</span>
+            </Link>
             <Link
               href="/admin/settings"
               className={[

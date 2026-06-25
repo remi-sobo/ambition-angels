@@ -2,15 +2,11 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../finance/_components/charts";
 import PageHeader from "../_components/PageHeader";
-import Pipeline from "../_components/Pipeline";
 import SectionSummary from "../_components/SectionSummary";
 import StatCard from "../_components/StatCard";
-import { NewOpportunityForm, OpportunityCard } from "./_components/PipelineBoard";
-import {
-  PIPELINE_STAGES,
-  STAGE_LABELS,
-  type OpportunityRow,
-} from "./_components/pipeline-stages";
+import { NewOpportunityForm } from "./_components/PipelineBoard";
+import OpportunitiesBoard from "./_components/OpportunitiesBoard";
+import { type OpportunityRow } from "./_components/pipeline-stages";
 import FilterTabs from "./_components/FilterTabs";
 import { HUBSPOT_PIPELINES, FUNDRAISING_PIPELINE_ID } from "@/lib/hubspot/stage-map";
 
@@ -193,36 +189,7 @@ export default async function MajorGiftsPage({
         />
       </div>
 
-      <Pipeline<OpportunityRow>
-        columns={PIPELINE_STAGES.map((stage) => ({
-          key: stage,
-          label: STAGE_LABELS[stage],
-          items: opps.filter((o) => o.stage === stage),
-        }))}
-        getCardKey={(o) => o.id}
-        columnSummary={(items) =>
-          `${items.length} · ${money(items.reduce((s, o) => s + (o.askAmount ?? 0), 0))}`
-        }
-        renderCard={(o) => <OpportunityCard opp={o} />}
-        maxVisible={12}
-        emptyHint="Empty"
-        footer={
-          opps.some((o) => o.stage === "lost") ? (
-            <details>
-              <summary className="text-xs text-ink-2 cursor-pointer hover:text-ink-1">
-                Lost ({opps.filter((o) => o.stage === "lost").length})
-              </summary>
-              <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-3">
-                {opps
-                  .filter((o) => o.stage === "lost")
-                  .map((o) => (
-                    <OpportunityCard key={o.id} opp={o} />
-                  ))}
-              </div>
-            </details>
-          ) : undefined
-        }
-      />
+      <OpportunitiesBoard opps={opps} />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getAdminUser } from "@/lib/admin/auth";
+import { ensureGrantProject } from "@/lib/fundraising/grants";
 import { money } from "../../../finance/_components/charts";
 import { todayISO, type OpsProject, type OpsTask } from "../../../ops/_types/ops";
 import ProjectTaskList from "../../../ops/projects/[id]/_components/ProjectTaskList";
@@ -11,6 +12,7 @@ import {
   RequirementActions,
   AddRequirementForm,
 } from "../_components/GrantControls";
+import GrantSeedTasks from "../_components/GrantSeedTasks";
 import { STAGE_LABELS } from "../_lib/stages";
 import PageHeader from "../../../_components/PageHeader";
 
@@ -71,24 +73,11 @@ export default async function GrantDetailPage({ params }: { params: { id: string
     await supabase.from("ops_projects").select("*").eq("grant_id", g.id).maybeSingle()
   ).data as OpsProject | null;
   if (!project) {
-    const operator = (await getAdminUser()) ?? "remi";
-    const created = await supabase
-      .from("ops_projects")
-      .insert({
-        grant_id: g.id,
-        org_id: g.org_id,
-        title: g.name,
-        category: "fundraising",
-        created_by: operator,
-        status: "active",
-      })
-      .select("*")
-      .maybeSingle();
-    project =
-      (created.data as OpsProject | null) ??
-      ((
-        await supabase.from("ops_projects").select("*").eq("grant_id", g.id).maybeSingle()
-      ).data as OpsProject | null);
+    project = (await ensureGrantProject(
+      supabase,
+      g,
+      (await getAdminUser()) ?? "remi"
+    )) as OpsProject | null;
   }
 
   const tasks = project
@@ -196,7 +185,8 @@ export default async function GrantDetailPage({ params }: { params: { id: string
 
         {project ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-7">
+            <div className="lg:col-span-7 space-y-4">
+              {tasks.length === 0 && <GrantSeedTasks grantId={g.id} />}
               <ProjectTaskList
                 projectId={project.id}
                 projectCategory={project.category}

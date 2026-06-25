@@ -4,8 +4,11 @@ import Sidebar from "./_components/Sidebar";
 import QuickAddButton from "./_components/QuickAddButton";
 import Rail from "./_components/rail/Rail";
 import { RailEntityProvider } from "./_components/rail/RailEntityContext";
+import AskReedButton from "./_components/AskReedButton";
+import { ReedLauncherProvider } from "./_components/reed/ReedLauncherProvider";
 import AdminPWA from "./_components/AdminPWA";
 import { getAdminUser } from "@/lib/admin/auth";
+import { hasEntitlement } from "@/lib/admin/entitlements";
 
 export const metadata: Metadata = {
   title: {
@@ -46,6 +49,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const user = await getAdminUser();
   const authed = user !== null;
 
+  // Reed is gated by the `ai.reed` entitlement (Bloom Grow and up). On Bloom
+  // base the FAB simply doesn't mount — and /api/reed/* will 402 server-side
+  // (Phase 4), so hiding it here is an affordance, not the security boundary.
+  const reedEnabled = authed && (await hasEntitlement("ai.reed"));
+
   // The shell (sidebar + main column) renders on every /admin/* visit,
   // including the unauthed login screen at /admin. Earlier this layout
   // skipped the shell when unauthed — but that meant logged-in users
@@ -58,10 +66,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
       <AdminPWA />
       <Sidebar currentUser={user} />
-      <RailEntityProvider>
-        <main className="admin-main flex-1 min-w-0 overflow-y-auto">{children}</main>
-        {authed && <Rail />}
-      </RailEntityProvider>
+      {/* One Reed launcher shared by the rail (desktop capture-to-Reed) and the
+          FAB (mobile), so there's a single Reed drawer regardless of entry. */}
+      <ReedLauncherProvider enabled={reedEnabled}>
+        <RailEntityProvider>
+          <main className="admin-main flex-1 min-w-0 overflow-y-auto">{children}</main>
+          {authed && <Rail reedEnabled={reedEnabled} />}
+        </RailEntityProvider>
+        {reedEnabled && <AskReedButton />}
+      </ReedLauncherProvider>
       {authed && <QuickAddButton currentUser={user} />}
     </div>
   );

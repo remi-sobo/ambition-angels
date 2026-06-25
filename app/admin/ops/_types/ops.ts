@@ -111,6 +111,13 @@ export type OpsProject = {
    * rollup path.
    */
   initiative_id: string | null;
+  /**
+   * The grant this project assembles (Grant workspace). Nullable: ordinary
+   * projects aren't grant-backed. One grant maps to at most one project
+   * (unique partial index on grant_id). The top-level Projects list hides
+   * grant-backed projects by default.
+   */
+  grant_id: string | null;
 };
 
 export function categoryLabel(c: string): string {

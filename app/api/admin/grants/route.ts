@@ -92,6 +92,27 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Every grant gets its own project — the place to assemble the grant (LOI,
+  // budget, narrative, review, submit, report) as real ops_tasks. Best-effort:
+  // if this fails the grant still exists, so we surface a warning rather than a
+  // 500, and the grant page self-heals by creating the missing project on first
+  // load (Phase 3). org_id is taken explicitly from the grant row, never the
+  // column default, so this stays correct once a second tenant exists; RLS
+  // governs the insert via the same authenticated client as the grant insert.
+  const { error: projErr } = await supabase.from("ops_projects").insert({
+    grant_id: data.id,
+    org_id: data.org_id,
+    title: data.name,
+    category: "fundraising",
+    created_by: user ?? "remi",
+    status: "active",
+  });
+  if (projErr) {
+    console.error("[grants] linked-project insert failed:", projErr.message);
+    const msg = "its project couldn't be created — open the grant page, which will retry on load";
+    warning = warning ? `${warning} Also, ${msg}.` : `Grant created, but ${msg}.`;
+  }
+
   // Same award behavior as the PATCH stage-advance path.
   if (stage === "awarded") {
     await autoPlotFinalReport(supabase, data.id, data.period_end);

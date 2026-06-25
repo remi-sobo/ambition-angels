@@ -44,9 +44,19 @@ export default function NarrativeHero({ narrative }: { narrative: Narrative }) {
       />
       <div className="relative">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <span className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange">
-            Morning Brief
-          </span>
+          {/* Reed signs what Reed wrote. The deterministic fallback (Claude
+              unavailable / no key) is not Reed's voice, so it keeps the plain
+              eyebrow rather than borrowing his name. */}
+          {narrative.source === "ai" ? (
+            <span className="flex items-center gap-1.5 text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange">
+              <ReedMark className="w-3.5 h-3.5" />
+              Reed
+            </span>
+          ) : (
+            <span className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange">
+              Morning Brief
+            </span>
+          )}
           <div className="flex items-center gap-3 text-[11px] text-ink-3">
             {narrative.generatedAt && <span>as of {timeLabel(narrative.generatedAt)}</span>}
             <button
@@ -84,5 +94,14 @@ export default function NarrativeHero({ narrative }: { narrative: Narrative }) {
         )}
       </div>
     </div>
+  );
+}
+
+/** Reed's mark — a four-point sparkle, matching the Ask Reed surfaces. */
+function ReedMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
+      <path d="M12 2c.4 4.6 2.4 6.6 7 7-4.6.4-6.6 2.4-7 7-.4-4.6-2.4-6.6-7-7 4.6-.4 6.6-2.4 7-7z" />
+    </svg>
   );
 }

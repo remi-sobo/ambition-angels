@@ -7,7 +7,7 @@ export default async function ConfigPage() {
   const { data } = await supabase
     .from("fin_config")
     .select(
-      "current_year, fiscal_year_start_month, fundraising_goal, contingency_unlock_threshold, cash_starting_balance, cash_starting_date"
+      "current_year, fiscal_year_start_month, fundraising_goal, contingency_unlock_threshold, cash_starting_balance, cash_starting_date, monthly_burn_baseline, forward_horizon_months"
     )
     .eq("id", 1)
     .maybeSingle();
@@ -29,6 +29,14 @@ export default async function ConfigPage() {
         ? null
         : Number(data.cash_starting_balance),
     cash_starting_date: data?.cash_starting_date ?? null,
+    monthly_burn_baseline:
+      data?.monthly_burn_baseline === null || data?.monthly_burn_baseline === undefined
+        ? null
+        : Number(data.monthly_burn_baseline),
+    forward_horizon_months:
+      data?.forward_horizon_months === null || data?.forward_horizon_months === undefined
+        ? null
+        : Number(data.forward_horizon_months),
   };
 
   return (

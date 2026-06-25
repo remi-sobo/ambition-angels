@@ -168,6 +168,13 @@ function ReedPanel({ onClose }: { onClose: () => void }) {
                   </button>
                 ))}
               </div>
+              <Link
+                href="/admin/reed"
+                onClick={onClose}
+                className="mt-4 inline-flex items-center gap-1 text-[12px] font-semibold text-orange-mid hover:text-orange transition-colors"
+              >
+                Review Reed&apos;s drafts &amp; suggestions →
+              </Link>
             </>
           ) : (
             <div className="flex flex-col gap-3">

@@ -120,7 +120,11 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
   const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
   const [txnsRes, cashRes, pledgesRes, hubspotPledges] = await Promise.all([
-    sb.from("fin_transactions").select("txn_date, amount").gte("txn_date", fy.start).lte("txn_date", fy.end),
+    sb
+      .from("fin_transactions")
+      .select("txn_date, amount, exclude_from_runway")
+      .gte("txn_date", fy.start)
+      .lte("txn_date", fy.end),
     cfg.startDate
       ? sb.from("fin_transactions").select("amount").gt("txn_date", cfg.startDate)
       : Promise.resolve({ data: [] as Array<{ amount: number }>, error: null }),
@@ -135,28 +139,42 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
     loadHubSpotPledges(sb, cfg.year),
   ]);
 
-  const txns = (txnsRes.data ?? []).map((t) => ({ txn_date: t.txn_date as string, amount: Number(t.amount) }));
+  const txns = (txnsRes.data ?? []).map((t) => ({
+    txn_date: t.txn_date as string,
+    amount: Number(t.amount),
+    excluded: Boolean(t.exclude_from_runway),
+  }));
   const revenueYTD = txns.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
   const expenseYTD = txns.filter((t) => t.amount < 0).reduce((s, t) => s - t.amount, 0);
   const cashOnHand = cfg.startBal + (cashRes.data ?? []).reduce((s, r) => s + Number(r.amount), 0);
 
-  const monthMap = new Map<string, { revenue: number; expense: number }>();
-  monthsBetween(fy.start, fy.end).forEach((m) => monthMap.set(m, { revenue: 0, expense: 0 }));
+  // expense = every dollar out (drives the chart + YTD). excludedExpense =
+  // the slice flagged exclude-from-runway, netted out of burn only.
+  const monthMap = new Map<string, { revenue: number; expense: number; excludedExpense: number }>();
+  monthsBetween(fy.start, fy.end).forEach((m) => monthMap.set(m, { revenue: 0, expense: 0, excludedExpense: 0 }));
   for (const t of txns) {
     const b = monthMap.get(t.txn_date.slice(0, 7));
     if (!b) continue;
     if (t.amount > 0) b.revenue += t.amount;
-    else b.expense -= t.amount;
+    else {
+      b.expense -= t.amount;
+      if (t.excluded) b.excludedExpense -= t.amount;
+    }
   }
   let running = cfg.startBal;
-  const monthBuckets: MonthBucket[] = Array.from(monthMap.entries()).map(([m, b]) => {
+  const monthEntries = Array.from(monthMap.entries());
+  const monthBuckets: MonthBucket[] = monthEntries.map(([m, b]) => {
     running += b.revenue - b.expense;
     return { label: monthLabel(m), revenue: b.revenue, expense: b.expense, ending: running };
   });
 
-  const active = monthBuckets.filter((b) => b.revenue > 0 || b.expense > 0);
-  const last3 = active.slice(-3);
-  const burn3mo = last3.length > 0 ? last3.reduce((s, b) => s + b.expense, 0) / last3.length : 0;
+  // Burn = trailing 3-active-month average of runway-relevant expense (flagged
+  // one-offs netted out). Active-month selection is unchanged (rev or exp > 0).
+  const activeBurn = monthEntries
+    .filter(([, b]) => b.revenue > 0 || b.expense > 0)
+    .map(([, b]) => b.expense - b.excludedExpense);
+  const last3 = activeBurn.slice(-3);
+  const burn3mo = last3.length > 0 ? last3.reduce((s, e) => s + e, 0) / last3.length : 0;
 
   // ── Forward runway (Finance v2) ──────────────────────────────────────────
   // Baseline replaces trailing burn when set; falls back to burn3mo otherwise.
@@ -168,7 +186,7 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
   // exclude-from-runway flag lands in Phase 4a).
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const mtdSpend = txns
-    .filter((t) => t.amount < 0 && t.txn_date.slice(0, 7) === thisMonth)
+    .filter((t) => t.amount < 0 && !t.excluded && t.txn_date.slice(0, 7) === thisMonth)
     .reduce((s, t) => s - t.amount, 0);
 
   // Source-agnostic pledge list: Bloom commitments + HubSpot deals, full value.

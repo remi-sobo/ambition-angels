@@ -35,6 +35,7 @@ export default function StageBoard<T>({
   footer,
   minColWidth = 130,
   minBoardWidth = 900,
+  maxVisible,
   emptyHint,
 }: {
   /** Optional board heading rendered in the card header. */
@@ -56,6 +57,8 @@ export default function StageBoard<T>({
   footer?: ReactNode;
   minColWidth?: number;
   minBoardWidth?: number;
+  /** Cap visible cards per column; the rest collapse behind "Show N more". */
+  maxVisible?: number;
   /** Shown inside a column with no items. */
   emptyHint?: ReactNode;
 }) {
@@ -78,6 +81,24 @@ export default function StageBoard<T>({
     const key = columnOf(item);
     if (byColumn[key]) byColumn[key].push(item);
   }
+
+  const draggableCard = (item: T) => (
+    <div
+      key={getItemId(item)}
+      draggable
+      onDragStart={() => setDragId(getItemId(item))}
+      onDragEnd={() => {
+        setDragId(null);
+        setHoverCol(null);
+      }}
+      onClick={onCardClick ? () => onCardClick(item) : undefined}
+      className={`cursor-grab active:cursor-grabbing ${
+        dragId === getItemId(item) ? "opacity-50" : ""
+      }`}
+    >
+      {renderCard(item)}
+    </div>
+  );
 
   async function handleDrop(toKey: string) {
     const id = dragId;
@@ -140,24 +161,20 @@ export default function StageBoard<T>({
                     emptyHint != null ? (
                       <div className="text-[11px] text-ink-3 px-0.5">{emptyHint}</div>
                     ) : null
+                  ) : maxVisible != null && colItems.length > maxVisible ? (
+                    <>
+                      {colItems.slice(0, maxVisible).map(draggableCard)}
+                      <details>
+                        <summary className="text-xs text-ink-2 cursor-pointer hover:text-ink-1 px-1 py-1">
+                          Show {colItems.length - maxVisible} more
+                        </summary>
+                        <div className="space-y-2 mt-2">
+                          {colItems.slice(maxVisible).map(draggableCard)}
+                        </div>
+                      </details>
+                    </>
                   ) : (
-                    colItems.map((item) => (
-                      <div
-                        key={getItemId(item)}
-                        draggable
-                        onDragStart={() => setDragId(getItemId(item))}
-                        onDragEnd={() => {
-                          setDragId(null);
-                          setHoverCol(null);
-                        }}
-                        onClick={() => onCardClick?.(item)}
-                        className={`cursor-grab active:cursor-grabbing ${
-                          dragId === getItemId(item) ? "opacity-50" : ""
-                        }`}
-                      >
-                        {renderCard(item)}
-                      </div>
-                    ))
+                    colItems.map(draggableCard)
                   )}
                 </div>
               </div>

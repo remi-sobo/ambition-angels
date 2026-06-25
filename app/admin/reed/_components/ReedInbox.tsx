@@ -26,14 +26,22 @@ const PRIORITY_STYLE: Record<string, string> = {
   low: "bg-white/5 text-ink-3 border-white/10",
 };
 
-export default function ReedInbox({ drafts, suggestions }: { drafts: Draft[]; suggestions: Suggestion[] }) {
+export default function ReedInbox({
+  drafts,
+  approved,
+  suggestions,
+}: {
+  drafts: Draft[];
+  approved: Draft[];
+  suggestions: Suggestion[];
+}) {
   return (
     <div className="px-4 lg:px-8 py-6 max-w-3xl">
       <header className="mb-6">
         <h1 className="font-heading font-bold text-cream text-2xl">Reed</h1>
         <p className="text-sm text-ink-3 mt-1">
-          Review what Reed drafted and proposed. Approving a draft marks it ready for you to send — Reed never
-          sends or executes anything itself.
+          Review what Reed drafted and proposed. Approving a draft moves it to your ready-to-send queue — you
+          send or use it from there. Reed never sends or executes anything itself.
         </p>
       </header>
 
@@ -51,6 +59,19 @@ export default function ReedInbox({ drafts, suggestions }: { drafts: Draft[]; su
           </div>
         )}
       </section>
+
+      {approved.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-3">
+            Approved — ready to send / use
+          </h2>
+          <div className="flex flex-col gap-3">
+            {approved.map((d) => (
+              <ApprovedCard key={d.id} draft={d} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-3">
@@ -117,6 +138,65 @@ function DraftCard({ draft }: { draft: Draft }) {
           className="text-xs font-semibold text-ink-2 hover:text-ink-1 px-3 py-1.5 rounded-full border border-white/10 disabled:opacity-50"
         >
           Discard
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ApprovedCard({ draft }: { draft: Draft }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(draft.body);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
+
+  async function discard() {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/reed/drafts/${draft.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "discard" }),
+      });
+      if (res.ok) router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-card border-[1.5px] border-orange/25 bg-orange-light/[0.06] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-ink-3">
+            {KIND_LABEL[draft.kind] ?? draft.kind}
+          </span>
+          <h3 className="font-heading font-semibold text-ink-1 text-sm mt-0.5">{draft.title ?? "Untitled draft"}</h3>
+        </div>
+      </div>
+      <p className="mt-3 text-[13px] text-ink-2 leading-relaxed whitespace-pre-wrap">{draft.body}</p>
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          onClick={copy}
+          className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full"
+        >
+          {copied ? "Copied ✓" : "Copy text"}
+        </button>
+        <button
+          onClick={discard}
+          disabled={busy}
+          className="text-xs font-semibold text-ink-2 hover:text-ink-1 px-3 py-1.5 rounded-full border border-white/10 disabled:opacity-50"
+        >
+          Remove
         </button>
       </div>
     </div>

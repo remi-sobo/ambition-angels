@@ -25,12 +25,14 @@ export default function ProjectListControls({
   assignee,
   q,
   currentUser,
+  showGrants,
 }: {
   status: string;
   category: string;
   assignee: string;
   q: string;
   currentUser: "remi" | "shannon" | null;
+  showGrants: boolean;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -47,6 +49,7 @@ export default function ProjectListControls({
     if (category) current.category = category;
     if (assignee) current.assignee = assignee;
     if (q) current.q = q;
+    if (showGrants) current.grants = "show";
     const merged = { ...current, ...updates };
     for (const [k, v] of Object.entries(merged)) {
       if (v !== null && v !== "") params.set(k, v);
@@ -109,6 +112,17 @@ export default function ProjectListControls({
           <option value="shannon">Shannon</option>
           <option value="unassigned">Unassigned</option>
         </select>
+        <label className="flex items-center gap-2 text-ink-2 cursor-pointer select-none whitespace-nowrap">
+          <input
+            type="checkbox"
+            checked={showGrants}
+            onChange={(e) =>
+              pushParams({ grants: e.target.checked ? "show" : null, page: null })
+            }
+            className="accent-orange w-4 h-4"
+          />
+          Show grant projects
+        </label>
         <button
           onClick={() => setOpen(true)}
           className="ml-auto bg-orange hover:bg-orange-dark text-white text-sm font-semibold px-4 py-2 rounded-lg whitespace-nowrap"

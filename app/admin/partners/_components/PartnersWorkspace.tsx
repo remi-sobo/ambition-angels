@@ -14,6 +14,7 @@ import {
 } from "../_lib/status";
 import { KIND_LABELS, type Partner } from "../_lib/partners";
 import { scoreBand, SCORE_BAND_STYLE } from "../_lib/rubric";
+import PartnersBoard from "./PartnersBoard";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "pipeline", label: "Pipeline" },
@@ -22,6 +23,7 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 export default function PartnersWorkspace({ partners }: { partners: Partner[] }) {
+  const [view, setView] = useState<"list" | "board">("list");
   const [tab, setTab] = useState<TabKey>("pipeline");
   const [q, setQ] = useState("");
   const [kind, setKind] = useState<string>("all");
@@ -64,6 +66,23 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
     });
   }, [partners, tab, q, kind, region, taskFilter]);
 
+  // Board view spans every status as a column, so it ignores the tab's status
+  // restriction but honours the search / type / area / task filters.
+  const boardItems = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return partners.filter((p) => {
+      if (kind !== "all" && p.kind !== kind) return false;
+      if (region !== "all" && (p.region || "") !== region) return false;
+      if (taskFilter === "open" && !(p.open_tasks && p.open_tasks > 0)) return false;
+      if (taskFilter === "overdue" && !(p.overdue_tasks && p.overdue_tasks > 0)) return false;
+      if (needle) {
+        const hay = `${p.name} ${p.city ?? ""} ${p.region ?? ""} ${p.primary_contact ?? ""} ${p.domain ?? ""}`.toLowerCase();
+        if (!hay.includes(needle)) return false;
+      }
+      return true;
+    });
+  }, [partners, q, kind, region, taskFilter]);
+
   // Highest-fit first, then unscored, then alphabetical.
   const byScore = (a: Partner, b: Partner) => {
     const sa = a.priority_score ?? -1, sb = b.priority_score ?? -1;
@@ -84,22 +103,41 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
 
   return (
     <div className="space-y-5">
-      {/* Tabs */}
-      <div className="inline-flex items-center gap-1 bg-tile border-[1.5px] border-outline rounded-full p-1">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors ${
-              tab === t.key ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1"
-            }`}
-          >
-            {t.label}
-            <span className={`ml-1.5 ${tab === t.key ? "text-white/80" : "text-ink-3"}`}>
-              {tabCounts[t.key]}
-            </span>
-          </button>
-        ))}
+      {/* Tabs (list only) + view toggle */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div
+          className={`inline-flex items-center gap-1 bg-tile border-[1.5px] border-outline rounded-full p-1 ${
+            view === "board" ? "invisible" : ""
+          }`}
+        >
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors ${
+                tab === t.key ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1"
+              }`}
+            >
+              {t.label}
+              <span className={`ml-1.5 ${tab === t.key ? "text-white/80" : "text-ink-3"}`}>
+                {tabCounts[t.key]}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="inline-flex items-center gap-1 bg-tile border-[1.5px] border-outline rounded-full p-1">
+          {(["list", "board"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-full capitalize transition-colors ${
+                view === v ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1"
+              }`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Filter bar */}
@@ -138,7 +176,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
 
       {/* Cross-tab pointer: a newly-added partner defaults to Prospect, which
           the Pipeline tab hides — so it can look "lost". Surface it. */}
-      {tab !== "prospects" && tabCounts.prospects > 0 && (
+      {view === "list" && tab !== "prospects" && tabCounts.prospects > 0 && (
         <button
           onClick={() => setTab("prospects")}
           className="block w-full text-left text-xs text-ink-2 bg-tile border-[1.5px] border-outline rounded-lg px-4 py-2 hover:border-orange/40 hover:text-ink-1 transition-colors"
@@ -149,7 +187,9 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
       )}
 
       {/* Rows */}
-      {filtered.length === 0 ? (
+      {view === "board" ? (
+        <PartnersBoard partners={boardItems} />
+      ) : filtered.length === 0 ? (
         <p className="text-sm text-ink-2 py-6">No partners match these filters.</p>
       ) : (
         <div className="space-y-6">

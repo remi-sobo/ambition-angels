@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { PIPELINE_STAGES, type OpportunityRow } from "./pipeline-stages";
+import { type OpportunityRow } from "./pipeline-stages";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -198,7 +198,6 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
     }
   };
 
-  const stageIdx = PIPELINE_STAGES.indexOf(opp.stage as (typeof PIPELINE_STAGES)[number]);
   const overdue =
     !!opp.nextStepDue &&
     opp.stage !== "steward" &&
@@ -216,6 +215,8 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
           {opp.constituentId ? (
             <Link
               href={`/admin/fundraising/donors/${opp.constituentId}`}
+              draggable={false}
+              onClick={(e) => e.stopPropagation()}
               className="font-semibold text-ink-1 hover:text-orange transition-colors truncate block"
             >
               {opp.label}
@@ -255,26 +256,7 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
       )}
 
       <div className="flex items-center gap-1 mt-3">
-        {opp.stage !== "lost" ? (
-          <>
-            <button
-              onClick={() => patch({ stage: PIPELINE_STAGES[stageIdx - 1] })}
-              disabled={busy || stageIdx <= 0}
-              title="Move back"
-              className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 disabled:opacity-30"
-            >
-              ◀
-            </button>
-            <button
-              onClick={() => patch({ stage: PIPELINE_STAGES[stageIdx + 1] })}
-              disabled={busy || stageIdx < 0 || stageIdx >= PIPELINE_STAGES.length - 1}
-              title="Advance stage"
-              className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 disabled:opacity-30"
-            >
-              ▶
-            </button>
-          </>
-        ) : (
+        {opp.stage === "lost" && (
           <button
             onClick={() => patch({ stage: "identify" })}
             disabled={busy}
@@ -303,6 +285,8 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
         {opp.hubspotId && (
           <Link
             href={`/admin/fundraising/prospects/by-hubspot/${opp.hubspotId}`}
+            draggable={false}
+            onClick={(e) => e.stopPropagation()}
             className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
             title="Research brief"
           >

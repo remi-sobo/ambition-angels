@@ -28,6 +28,7 @@ type SearchParams = {
   sort?: string;
   dir?: string;
   page?: string;
+  grants?: string;
 };
 
 const VALID_SORT = ["title", "due_date", "last_touched_at"] as const;
@@ -48,7 +49,11 @@ function parseParams(sp: SearchParams) {
     : "last_touched_at";
   const dir: "asc" | "desc" = sp.dir === "asc" ? "asc" : "desc";
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
-  return { status, category, assignee, q, sort, dir, page };
+  // Grant-backed projects are hidden by default so a pipeline full of
+  // prospect-stage grants doesn't bury the Projects view. "grants=show" reveals
+  // them.
+  const showGrants = sp.grants === "show";
+  return { status, category, assignee, q, sort, dir, page, showGrants };
 }
 
 function readCurrentUser(): "remi" | "shannon" | null {
@@ -61,13 +66,15 @@ export default async function ProjectsListPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const { status, category, assignee, q, sort, dir, page } = parseParams(searchParams);
+  const { status, category, assignee, q, sort, dir, page, showGrants } =
+    parseParams(searchParams);
   const currentUser = readCurrentUser();
   const resolvedAssignee = assignee === "me" ? currentUser : assignee;
 
   const supabase = getSupabaseAdmin();
 
   let baseQuery = supabase.from("ops_projects").select("*", { count: "exact" });
+  if (!showGrants) baseQuery = baseQuery.is("grant_id", null);
   if (status) baseQuery = baseQuery.eq("status", status);
   if (category) baseQuery = baseQuery.eq("category", category);
   if (resolvedAssignee === "unassigned") {
@@ -116,6 +123,7 @@ export default async function ProjectsListPage({
     if (category) params.set("category", category);
     if (assignee) params.set("assignee", assignee);
     if (q) params.set("q", q);
+    if (showGrants) params.set("grants", "show");
     params.set("sort", nextSort);
     params.set("dir", nextDir);
     return `/admin/ops/projects?${params.toString()}`;
@@ -127,6 +135,7 @@ export default async function ProjectsListPage({
     if (category) params.set("category", category);
     if (assignee) params.set("assignee", assignee);
     if (q) params.set("q", q);
+    if (showGrants) params.set("grants", "show");
     if (sort !== "last_touched_at") params.set("sort", sort);
     if (dir !== "desc") params.set("dir", dir);
     if (p > 1) params.set("page", String(p));
@@ -166,6 +175,7 @@ export default async function ProjectsListPage({
         assignee={assignee}
         q={q}
         currentUser={currentUser}
+        showGrants={showGrants}
       />
 
       {projects.length === 0 ? (

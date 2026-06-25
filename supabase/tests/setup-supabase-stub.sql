@@ -13,17 +13,17 @@ create table if not exists auth.users (
   email text unique
 );
 
--- Production user uuids referenced by data-seeding migrations (e.g.
--- create_agenda_delegations_and_calendar_events seeds the remi->shannon grant).
--- Seeded here so those migrations' FKs resolve against the scratch DB. NOTE:
--- placeholder emails on purpose — these must NOT collide with the leak-test
--- principals (remi@/shannon@ambitionangels.org), which the driver inserts with
--- its own uuids (…0001/…0002) and relies on the bootstrap trigger to provision.
--- The migrations only need these uuids to EXIST (FK targets), not their emails.
-insert into auth.users (id, email) values
-  ('aa39cd02-b813-4e75-aa36-52adadf5d2fe', 'seed-grantor@leak-test.invalid'),
-  ('7312ba86-5203-4cf6-81d8-d8fbd3e2ec89', 'seed-grantee@leak-test.invalid')
-on conflict (id) do nothing;
+-- Two production users referenced by hard-coded id in data-seed migrations
+-- (create_profiles backfills their display names; create_agenda_delegations
+-- seeds a delegation between them). Seed just the ids so those FKs resolve
+-- when the migrations apply. Emails are left null on purpose: the leak test
+-- provisions its own remi@/shannon@ principals under distinct synthetic uuids,
+-- and a matching email here would collide on the unique constraint and skip
+-- the leak test's owner/staff insert.
+insert into auth.users (id) values
+  ('aa39cd02-b813-4e75-aa36-52adadf5d2fe'),
+  ('7312ba86-5203-4cf6-81d8-d8fbd3e2ec89')
+on conflict do nothing;
 
 -- Supabase resolves auth.uid() from the JWT; here we read a session GUC the
 -- test driver sets per simulated user (set request.jwt.claim.sub = '<uuid>').

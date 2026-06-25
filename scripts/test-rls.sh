@@ -25,15 +25,18 @@ echo "── Applying migrations"
 # Dependency order. New migrations must be appended here as they land.
 ordered=(
   create_bloomos_core.sql
+  create_profiles.sql
   create_donations.sql
   create_quiz_submissions.sql
   create_partner_waitlist.sql
   create_meet_schema.sql
   create_fin_schema.sql
+  add_fin_config_cash_reconciled_at.sql
   create_fr_agent_schema.sql
   create_hs_mirror_and_fr_scores.sql
   create_hs_sync_jobs.sql
   create_ops_projects_and_tasks.sql
+  add_booking_id_to_ops_tasks.sql
   create_ygb_schema.sql
   create_demoday_notes.sql
   create_demoday_signups.sql
@@ -44,55 +47,54 @@ ordered=(
   create_membership_bootstrap.sql
   add_org_id_to_tenant_tables.sql
   enable_rls_per_domain.sql
+  add_ops_tasks_archived_at.sql
   create_connections_and_webhook_events.sql
+  create_agenda_delegations_and_calendar_events.sql
+  create_calendar_sync_jobs.sql
   create_fundraising_core.sql
+  add_email_logging_to_interactions.sql
+  add_shannon_present_to_interactions.sql
+  add_recurring_plan_health.sql
   create_grants.sql
   create_opportunities.sql
+  add_opportunities_external_ids.sql
+  add_archive_and_prospect_disqualify.sql
+  create_pledges.sql
+  create_journeys.sql
+  link_ops_tasks_to_entities.sql
+  create_fr_pursue_function.sql
+  create_fr_nba_suggestions.sql
+  create_fr_hubspot_sync_function.sql
   fix_audit_partition_rls.sql
   import_hubspot_to_constituents.sql
+  fix_interactions_external_idx_full_unique.sql
+  dedupe_payment_gifts_against_deal_gifts.sql
   create_segments.sql
+  create_email_campaigns.sql
+  create_connection_candidates.sql
   create_compliance.sql
   create_board.sql
   create_kpis_and_plan.sql
+  bloomos_strategy_phase1a.sql
+  bloomos_strategy_phase1b.sql
+  bloomos_strategy_phase2.sql
+  bloomos_strategy_phase4.sql
+  bloomos_strategy_kpi_snapshots.sql
+  create_strategy_angles.sql
+  create_funder_angles.sql
   create_briefings.sql
   create_partners.sql
+  create_partner_contacts.sql
+  seed_partners_2026.sql
   upgrade_ops_tasks_priority_subtasks_labels.sql
   create_students.sql
   create_cohorts_attendance.sql
   create_applications.sql
   create_bloomos_briefing_state.sql
   mark_hs_staging_readonly.sql
+  drop_households_org_id_default.sql
   assert_fundraising_org_id.sql
-  add_archive_and_prospect_disqualify.sql
-  add_booking_id_to_ops_tasks.sql
-  add_email_logging_to_interactions.sql
-  add_opportunities_external_ids.sql
-  add_recurring_plan_health.sql
-  add_shannon_present_to_interactions.sql
-  create_connection_candidates.sql
-  create_email_campaigns.sql
-  create_fr_hubspot_sync_function.sql
-  create_fr_nba_suggestions.sql
-  create_fr_pursue_function.sql
-  create_strategy_angles.sql
-  create_funder_angles.sql
-  create_journeys.sql
-  create_partner_contacts.sql
-  create_pledges.sql
-  dedupe_payment_gifts_against_deal_gifts.sql
-  fix_interactions_external_idx_full_unique.sql
-  link_ops_tasks_to_entities.sql
-  seed_partners_2026.sql
-  add_ops_tasks_archived_at.sql
-  add_fin_config_cash_reconciled_at.sql
-  bloomos_strategy_phase1a.sql
-  bloomos_strategy_phase1b.sql
-  bloomos_strategy_phase2.sql
-  bloomos_strategy_phase4.sql
-  bloomos_strategy_kpi_snapshots.sql
-  create_agenda_delegations_and_calendar_events.sql
-  create_profiles.sql
-  create_calendar_sync_jobs.sql
+  add_grant_id_to_ops_projects.sql
   create_fr_prospects.sql
   create_fin_reconciliation_items.sql
   create_fr_prospect_promoted.sql

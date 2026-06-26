@@ -57,6 +57,8 @@ export type NarrativeKpi = {
   unit: string | null;
   target: number | null;
   current: number | null;
+  /** Where the measure started — powers start → now → target (B2-2). */
+  baseline: number | null;
   status: Status;
   metricKey: string | null;
   owner: string | null;
@@ -104,9 +106,9 @@ export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
   const sb = getSupabaseAdmin();
   const [foundationRes, objectivesRes, goalsRes, kpisRes, initiativesRes] = await Promise.all([
     sb.from("plan_foundation").select("mission, vision, proof_points").eq("org_id", ORG(orgId)).maybeSingle(),
-    sb.from("plan_objectives").select("id, title, three_year_statement, owner, status").eq("org_id", ORG(orgId)).order("sort_order").order("created_at"),
-    sb.from("plan_goals").select("id, objective_id, title, description, owner, status").eq("org_id", ORG(orgId)).order("sort_order").order("created_at"),
-    sb.from("plan_kpis").select("id, goal_id, objective_id, title, unit, target, current, status, metric_key, owner").eq("org_id", ORG(orgId)).order("created_at"),
+    sb.from("plan_objectives").select("id, title, three_year_statement, owner, status, status_override").eq("org_id", ORG(orgId)).order("sort_order").order("created_at"),
+    sb.from("plan_goals").select("id, objective_id, title, description, owner, status, status_override").eq("org_id", ORG(orgId)).order("sort_order").order("created_at"),
+    sb.from("plan_kpis").select("id, goal_id, objective_id, title, unit, target, current, baseline, status, metric_key, owner").eq("org_id", ORG(orgId)).order("created_at"),
     sb.from("plan_initiatives").select("id, goal_id, title, owner, status").eq("org_id", ORG(orgId)).order("sort_order").order("created_at"),
   ]);
 
@@ -120,6 +122,7 @@ export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
     unit: (k.unit as string | null) ?? null,
     target: k.target == null ? null : Number(k.target),
     current: k.current == null ? null : Number(k.current),
+    baseline: k.baseline == null ? null : Number(k.baseline),
     status: planHealthToStatus(k.status as string | null),
     metricKey: (k.metric_key as string | null) ?? null,
     owner: (k.owner as string | null) ?? null,
@@ -163,11 +166,15 @@ export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
     }
   }
 
-  // Roll a set of raw KPI statuses up to a display Status. With measures, the
+  // Effective status: a human OVERRIDE wins when set (B2-1); otherwise the
   // worst leaf wins (deriveHealth); with no measures at all, fall back to the
   // stored health so an initiative-only goal isn't wrongly blanked to neutral.
-  const rollup = (raw: string[], stored: string | null): Status =>
-    raw.length ? planHealthToStatus(deriveHealth(raw) ?? "not_started") : planHealthToStatus(stored);
+  const rollup = (raw: string[], stored: string | null, override: string | null): Status =>
+    override
+      ? planHealthToStatus(override)
+      : raw.length
+        ? planHealthToStatus(deriveHealth(raw) ?? "not_started")
+        : planHealthToStatus(stored);
 
   const goalsByObjective = new Map<string, NarrativeGoal[]>();
   for (const g of goals) {
@@ -177,7 +184,7 @@ export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
       id: g.id as string,
       title: g.title as string,
       description: (g.description as string | null) ?? null,
-      status: rollup(rawByGoal.get(g.id as string) ?? [], g.status as string | null),
+      status: rollup(rawByGoal.get(g.id as string) ?? [], g.status as string | null, (g.status_override as string | null) ?? null),
       owner: (g.owner as string | null) ?? null,
       initiatives: initiativesByGoal.get(g.id as string) ?? [],
       kpis: kpisByGoal.get(g.id as string) ?? [],
@@ -198,7 +205,7 @@ export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
       title: o.title as string,
       statement: (o.three_year_statement as string | null) ?? null,
       owner: (o.owner as string | null) ?? null,
-      status: rollup(raw, o.status as string | null),
+      status: rollup(raw, o.status as string | null, (o.status_override as string | null) ?? null),
       goals: goalsHere,
       objectiveKpis: kpisByObjectiveDirect.get(o.id as string) ?? [],
     };
@@ -272,7 +279,7 @@ export async function getRaiseMovement(orgId: string): Promise<MoneySummary> {
     computeWeightedPipeline(sb, orgId),
     sb.from("fin_budget").select("category_id, base_amount, contingency_t1, contingency_t2").eq("org_id", ORG(orgId)).eq("year", fin.cfg.year),
     sb.from("fin_categories").select("id, group_name, display_name, kind, enabled").eq("org_id", ORG(orgId)),
-    sb.from("fin_config").select("contingency_unlock_threshold").eq("org_id", ORG(orgId)).maybeSingle(),
+    sb.from("fin_config").select("contingency_unlock_threshold, runway_target_months").eq("org_id", ORG(orgId)).maybeSingle(),
   ]);
 
   const targetOf = (key: string): number | null => {
@@ -317,7 +324,9 @@ export async function getRaiseMovement(orgId: string): Promise<MoneySummary> {
   // of burn), held separate from the annual floor. Burn = the settable baseline,
   // falling back to trailing 3-month burn; target = the finance watch line.
   const monthlyBurn = fin.cfg.baseline ?? fin.burn3mo;
-  const runwayTargetMonths = FINANCE.runwayWatchMonths;
+  // Editable in finance config (B2-4); falls back to the central watch line.
+  const cfgTarget = cfgRes.data?.runway_target_months;
+  const runwayTargetMonths = cfgTarget == null ? FINANCE.runwayWatchMonths : Number(cfgTarget);
   const runwayBridge = Math.max(0, runwayTargetMonths * monthlyBurn - fin.cashOnHand);
 
   // Staged tiers unlock once the raise clears threshold × floor (fin_config).

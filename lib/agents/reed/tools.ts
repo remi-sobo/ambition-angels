@@ -61,7 +61,38 @@ const DRAFT_PERMISSION: Record<string, string> = {
   grant_narrative: "fundraising.write",
   acknowledgment: "fundraising.write",
   board_update: "board.write",
+  strategy_review: "org.manage",
 };
+
+type PlanRow = Record<string, unknown>;
+type Plan = {
+  objectives: PlanRow[];
+  goals: PlanRow[];
+  initiatives: PlanRow[];
+  kpis: PlanRow[];
+  review: PlanRow | null;
+};
+
+// Load the OGSM tree (session client, RLS-scoped). Shared by the strategy tools.
+async function loadPlan(sb: SupabaseClient, orgId: string): Promise<Plan> {
+  const [obj, goal, init, kpi, rev] = await Promise.all([
+    sb.from("plan_objectives").select("id, title, three_year_statement, owner, status, sort_order").eq("org_id", orgId).order("sort_order"),
+    sb.from("plan_goals").select("id, objective_id, title, target_date, owner, status, sort_order").eq("org_id", orgId).order("sort_order"),
+    sb.from("plan_initiatives").select("id, goal_id, title, owner, status, sort_order").eq("org_id", orgId).order("sort_order"),
+    sb.from("plan_kpis").select("id, goal_id, objective_id, title, unit, target, current, owner, cadence, source, metric_key, status").eq("org_id", orgId),
+    sb.from("plan_reviews").select("conducted_at, next_review_at").eq("org_id", orgId).order("conducted_at", { ascending: false }).limit(1),
+  ]);
+  return {
+    objectives: obj.data ?? [],
+    goals: goal.data ?? [],
+    initiatives: init.data ?? [],
+    kpis: kpi.data ?? [],
+    review: (rev.data ?? [])[0] ?? null,
+  };
+}
+
+const S = (r: PlanRow, k: string): string => (typeof r[k] === "string" ? (r[k] as string) : "");
+const missing = (r: PlanRow, k: string): boolean => r[k] == null || r[k] === "";
 
 /**
  * Build the tool registry bound to one request's session client + org. Each
@@ -294,7 +325,7 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
       input_schema: {
         type: "object",
         properties: {
-          kind: { type: "string", enum: ["grant_narrative", "board_update", "acknowledgment"] },
+          kind: { type: "string", enum: ["grant_narrative", "board_update", "acknowledgment", "strategy_review"] },
           title: { type: "string", description: "Short label for the draft." },
           body: { type: "string", description: "The full draft text." },
         },
@@ -381,6 +412,106 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
           status: "suggested",
           note: "Recorded as an inert suggestion. A human accepts or dismisses it; nothing was executed.",
         };
+      },
+    },
+
+    {
+      name: "get_strategy_plan",
+      description:
+        "The full OGSM plan: the org's mission/vision, then objectives → goals → initiatives, with each " +
+        "goal's KPIs (unit, target, current, owner, cadence, status). Use to review or discuss strategy.",
+      input_schema: { type: "object", properties: {}, additionalProperties: false },
+      run: async () => {
+        if (!(await hasPermission(sb, orgId, "reports.read"))) return deny("reports.read");
+        const [foundationRes, plan] = await Promise.all([
+          sb.from("plan_foundation").select("mission, vision").eq("org_id", orgId).maybeSingle(),
+          loadPlan(sb, orgId),
+        ]);
+        const f = foundationRes.data as { mission?: string | null; vision?: string | null } | null;
+        const kpisByGoal = (gid: string) => plan.kpis.filter((k) => S(k, "goal_id") === gid);
+        const initsByGoal = (gid: string) => plan.initiatives.filter((i) => S(i, "goal_id") === gid);
+        const goalsByObj = (oid: string) => plan.goals.filter((g) => S(g, "objective_id") === oid);
+        return {
+          mission: f?.mission ?? null,
+          vision: f?.vision ?? null,
+          lastReviewAt: plan.review ? plan.review["conducted_at"] ?? null : null,
+          nextReviewAt: plan.review ? plan.review["next_review_at"] ?? null : null,
+          objectives: plan.objectives.map((o) => ({
+            title: S(o, "title"),
+            three_year_statement: o["three_year_statement"] ?? null,
+            owner: o["owner"] ?? null,
+            status: o["status"] ?? null,
+            goals: goalsByObj(S(o, "id")).map((g) => ({
+              title: S(g, "title"),
+              target_date: g["target_date"] ?? null,
+              owner: g["owner"] ?? null,
+              status: g["status"] ?? null,
+              initiatives: initsByGoal(S(g, "id")).map((i) => ({ title: S(i, "title"), owner: i["owner"] ?? null, status: i["status"] ?? null })),
+              kpis: kpisByGoal(S(g, "id")).map((k) => ({
+                title: S(k, "title"),
+                unit: k["unit"] ?? null,
+                target: k["target"] ?? null,
+                current: k["current"] ?? null,
+                owner: k["owner"] ?? null,
+                cadence: k["cadence"] ?? null,
+                status: k["status"] ?? null,
+              })),
+            })),
+          })),
+        };
+      },
+    },
+
+    {
+      name: "get_strategy_coherence",
+      description:
+        "Deterministic structural findings on the OGSM plan — orphaned objectives/goals, goals with no " +
+        "KPI or initiative, dangling initiatives, KPIs missing target/owner/source/cadence, goals missing " +
+        "target_date/owner, KPI↔objective mismatches, objective count, and overdue review. These are " +
+        "computed from the real rows (not guesses) — call this FIRST and lead your review with them.",
+      input_schema: { type: "object", properties: {}, additionalProperties: false },
+      run: async () => {
+        if (!(await hasPermission(sb, orgId, "reports.read"))) return deny("reports.read");
+        const plan = await loadPlan(sb, orgId);
+        const goalIds = new Set(plan.goals.map((g) => S(g, "id")));
+        const objById = new Map(plan.objectives.map((o) => [S(o, "id"), o]));
+        const goalById = new Map(plan.goals.map((g) => [S(g, "id"), g]));
+        const goalsForObj = (oid: string) => plan.goals.filter((g) => S(g, "objective_id") === oid);
+        const kpisForGoal = (gid: string) => plan.kpis.filter((k) => S(k, "goal_id") === gid);
+        const initsForGoal = (gid: string) => plan.initiatives.filter((i) => S(i, "goal_id") === gid);
+
+        const today = new Date().toISOString().slice(0, 10);
+        const KPI_REQUIRED = ["target", "unit", "owner", "cadence"] as const;
+
+        const findings = {
+          objective_count: plan.objectives.length,
+          objective_count_flag:
+            plan.objectives.length === 0 ? "none" : plan.objectives.length > 5 ? "too_many" : plan.objectives.length < 3 ? "few" : "ok",
+          objectives_without_goal: plan.objectives.filter((o) => goalsForObj(S(o, "id")).length === 0).map((o) => S(o, "title")),
+          goals_without_kpi: plan.goals.filter((g) => kpisForGoal(S(g, "id")).length === 0).map((g) => S(g, "title")),
+          goals_without_initiative: plan.goals.filter((g) => initsForGoal(S(g, "id")).length === 0).map((g) => S(g, "title")),
+          goals_missing_target_date: plan.goals.filter((g) => missing(g, "target_date")).map((g) => S(g, "title")),
+          goals_missing_owner: plan.goals.filter((g) => missing(g, "owner")).map((g) => S(g, "title")),
+          initiatives_dangling: plan.initiatives.filter((i) => !goalIds.has(S(i, "goal_id"))).map((i) => S(i, "title")),
+          kpis_missing_fields: plan.kpis
+            .map((k) => {
+              const gaps = KPI_REQUIRED.filter((field) => missing(k, field));
+              if (missing(k, "source") && missing(k, "metric_key")) gaps.push("source" as (typeof KPI_REQUIRED)[number]);
+              return gaps.length ? { kpi: S(k, "title"), missing: gaps } : null;
+            })
+            .filter(Boolean),
+          kpis_objective_mismatch: plan.kpis
+            .filter((k) => {
+              const oid = S(k, "objective_id");
+              const g = goalById.get(S(k, "goal_id"));
+              return oid && g && S(g, "objective_id") && oid !== S(g, "objective_id");
+            })
+            .map((k) => S(k, "title")),
+          review_overdue: plan.review && plan.review["next_review_at"] ? String(plan.review["next_review_at"]) < today : null,
+          next_review_at: plan.review ? plan.review["next_review_at"] ?? null : null,
+        };
+        void objById;
+        return findings;
       },
     },
   ];

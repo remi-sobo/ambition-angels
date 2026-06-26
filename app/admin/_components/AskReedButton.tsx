@@ -32,6 +32,24 @@ type ChatMessage = { role: "user" | "assistant"; text: string };
 
 export default function AskReedButton() {
   const [open, setOpen] = useState(false);
+  // Surface + optional seed prompt for this opening. Any page can launch Reed
+  // pre-aimed by dispatching `window.dispatchEvent(new CustomEvent("reed:open",
+  // { detail: { surface, message } }))` — e.g. the strategy page's "Review with
+  // Reed" button.
+  const [opener, setOpener] = useState<{ surface: string; seedPrompt?: string }>({ surface: "fab" });
+
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const detail = ((e as CustomEvent).detail ?? {}) as { surface?: unknown; message?: unknown };
+      setOpener({
+        surface: typeof detail.surface === "string" ? detail.surface : "fab",
+        seedPrompt: typeof detail.message === "string" ? detail.message : undefined,
+      });
+      setOpen(true);
+    };
+    window.addEventListener("reed:open", onOpen);
+    return () => window.removeEventListener("reed:open", onOpen);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -50,7 +68,10 @@ export default function AskReedButton() {
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpener({ surface: "fab" });
+          setOpen(true);
+        }}
         aria-label="Ask Reed"
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -60,22 +81,32 @@ export default function AskReedButton() {
         <ReedMark className="w-6 h-6 text-orange-mid" />
       </button>
 
-      {open && <ReedPanel onClose={() => setOpen(false)} />}
+      {open && <ReedPanel surface={opener.surface} seedPrompt={opener.seedPrompt} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function ReedPanel({ onClose }: { onClose: () => void }) {
+function ReedPanel({ onClose, surface, seedPrompt }: { onClose: () => void; surface: string; seedPrompt?: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [threadId, setThreadId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const seeded = useRef(false);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
+
+  // Auto-send a seed prompt (e.g. opened from a record with "Review with Reed").
+  useEffect(() => {
+    if (seedPrompt && !seeded.current) {
+      seeded.current = true;
+      void send(seedPrompt);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -88,7 +119,7 @@ function ReedPanel({ onClose }: { onClose: () => void }) {
       const res = await fetch("/api/reed/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed, surface: "fab", thread_id: threadId }),
+        body: JSON.stringify({ message: trimmed, surface, thread_id: threadId }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         text?: string;

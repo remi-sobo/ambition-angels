@@ -18,6 +18,7 @@ const KIND_LABEL: Record<string, string> = {
   grant_narrative: "Grant narrative",
   board_update: "Board update",
   acknowledgment: "Acknowledgment",
+  strategy_review: "Strategy review",
 };
 
 const PRIORITY_STYLE: Record<string, string> = {

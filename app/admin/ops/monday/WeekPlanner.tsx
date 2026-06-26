@@ -51,21 +51,70 @@ function eventTime(ev: PlannerEvent): string {
   });
 }
 
+export type ScheduledBlock = { start: string; end: string };
+
 export default function WeekPlanner({
   days,
   unscheduled,
   projectNames,
+  scheduled,
 }: {
   days: PlannerDay[];
   unscheduled: OpsTask[];
   /** project_id → title, for the inline project chip. */
   projectNames: Record<string, string>;
+  /** task id → its calendar block window (for tasks scheduled into a time slot). */
+  scheduled: Record<string, ScheduledBlock>;
 }) {
   const projectName = (t: OpsTask) =>
     t.project_id ? projectNames[t.project_id] ?? null : null;
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [scheduling, setScheduling] = useState<string | null>(null); // task id with open form
+
+  async function scheduleBlock(
+    taskId: string,
+    dayISO: string,
+    startMinute: number,
+    durationMinute: number
+  ) {
+    setBusyId(taskId);
+    try {
+      const r = await fetch("/api/admin/agenda/blocks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task_id: taskId, day: dayISO, start_minute: startMinute, duration_minute: durationMinute }),
+      });
+      if (!r.ok) {
+        const msg = r.status === 409 ? "Connect a Google Calendar first." : `HTTP ${r.status}`;
+        throw new Error(msg);
+      }
+      setScheduling(null);
+      startTransition(() => router.refresh());
+    } catch (e) {
+      console.error("Schedule block failed:", e);
+      alert(e instanceof Error ? e.message : "Couldn't schedule. Try again.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function unscheduleBlock(taskId: string) {
+    setBusyId(taskId);
+    try {
+      const r = await fetch(`/api/admin/agenda/blocks?task_id=${encodeURIComponent(taskId)}`, {
+        method: "DELETE",
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      startTransition(() => router.refresh());
+    } catch (e) {
+      console.error("Unschedule block failed:", e);
+      alert("Couldn't unschedule. Try again.");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function runPatches(
     patches: Array<{ id: string; body: Record<string, unknown> }>
@@ -225,6 +274,17 @@ export default function WeekPlanner({
                       onClick={() => patch(t.id, { status: "done" })}
                     />
                     <TaskMeta task={t} projectName={projectName(t)} />
+                    <ScheduleCell
+                      block={scheduled[t.id] ?? null}
+                      isOpen={scheduling === t.id}
+                      busy={busyId === t.id}
+                      onOpen={() => setScheduling(t.id)}
+                      onClose={() => setScheduling(null)}
+                      onSchedule={(startMinute, dur) =>
+                        scheduleBlock(t.id, day.iso, startMinute, dur)
+                      }
+                      onUnschedule={() => unscheduleBlock(t.id)}
+                    />
                     <DayPicker
                       value={day.iso}
                       options={dayOptions}
@@ -342,6 +402,110 @@ function DayPicker({
         </option>
       ))}
     </select>
+  );
+}
+
+function fmtBlockTime(block: ScheduledBlock): string {
+  const opts: Intl.DateTimeFormatOptions = {
+    timeZone: ORG_TZ,
+    hour: "numeric",
+    minute: "2-digit",
+  };
+  const start = new Date(block.start).toLocaleTimeString("en-US", opts);
+  const end = new Date(block.end).toLocaleTimeString("en-US", opts);
+  return `${start}–${end}`;
+}
+
+function ScheduleCell({
+  block,
+  isOpen,
+  busy,
+  onOpen,
+  onClose,
+  onSchedule,
+  onUnschedule,
+}: {
+  block: ScheduledBlock | null;
+  isOpen: boolean;
+  busy: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  onSchedule: (startMinute: number, durationMinute: number) => void;
+  onUnschedule: () => void;
+}) {
+  const [time, setTime] = useState("09:00");
+  const [dur, setDur] = useState(30);
+
+  if (block) {
+    return (
+      <span className="shrink-0 inline-flex items-center gap-1">
+        <span className="text-[10px] font-mono text-orange whitespace-nowrap" title="On your calendar">
+          {fmtBlockTime(block)}
+        </span>
+        <button
+          onClick={onUnschedule}
+          disabled={busy}
+          aria-label="Remove from calendar"
+          title="Remove from calendar"
+          className="w-5 h-5 rounded text-ink-3 hover:text-expense hover:bg-[#EFE6D4] disabled:opacity-40 text-xs"
+        >
+          ⊘
+        </button>
+      </span>
+    );
+  }
+
+  if (!isOpen) {
+    return (
+      <button
+        onClick={onOpen}
+        disabled={busy}
+        className="shrink-0 text-[11px] text-ink-2 hover:text-orange border border-outline rounded px-1.5 py-0.5 hover:bg-[#EFE6D4] disabled:opacity-40"
+        title="Schedule a time block"
+      >
+        + time
+      </button>
+    );
+  }
+
+  return (
+    <span className="shrink-0 inline-flex items-center gap-1">
+      <input
+        type="time"
+        value={time}
+        onChange={(e) => setTime(e.target.value)}
+        className="text-[11px] rounded border border-outline bg-tile text-ink-1 px-1 py-0.5"
+        aria-label="Start time"
+      />
+      <select
+        value={dur}
+        onChange={(e) => setDur(Number(e.target.value))}
+        className="text-[11px] rounded border border-outline bg-tile text-ink-1 px-1 py-0.5"
+        aria-label="Duration"
+      >
+        <option value={30}>30m</option>
+        <option value={60}>1h</option>
+        <option value={90}>1.5h</option>
+      </select>
+      <button
+        onClick={() => {
+          const [h, m] = time.split(":").map(Number);
+          if (Number.isFinite(h) && Number.isFinite(m)) onSchedule(h * 60 + m, dur);
+        }}
+        disabled={busy}
+        className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-orange/15 text-orange border border-orange/30 hover:bg-orange/25 disabled:opacity-40"
+      >
+        Add
+      </button>
+      <button
+        onClick={onClose}
+        disabled={busy}
+        aria-label="Cancel"
+        className="w-5 h-5 rounded text-ink-3 hover:text-ink-1 hover:bg-[#EFE6D4] disabled:opacity-40"
+      >
+        ×
+      </button>
+    </span>
   );
 }
 

@@ -71,6 +71,34 @@ export async function listActiveCalendarConnections(): Promise<GoogleCalendarCon
     }));
 }
 
+/** One user's active Google Calendar connection, decrypted — for per-user writes. */
+export async function getActiveCalendarConnection(
+  userId: string
+): Promise<GoogleCalendarConnection | null> {
+  const sb = getSupabaseAdmin();
+  const { data, error } = await sb
+    .from("connections")
+    .select("id, org_id, user_id, external_id, refresh_token_enc, status, meta")
+    .eq("provider", PROVIDER)
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`loading google_calendar connection failed: ${error.message}`);
+  if (!data || !data.user_id || !data.refresh_token_enc) return null;
+  return {
+    id: data.id as string,
+    orgId: data.org_id as string,
+    userId: data.user_id as string,
+    refreshToken: decryptSecret(fromBytea(data.refresh_token_enc)),
+    calendarId:
+      ((data.meta as Record<string, unknown> | null)?.calendar_id as string) ??
+      (data.external_id as string) ??
+      "primary",
+    status: data.status as string,
+  };
+}
+
 export type CalendarConnectionStatus = {
   connected: boolean;
   calendarId: string | null;

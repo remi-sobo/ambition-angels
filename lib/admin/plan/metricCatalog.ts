@@ -43,4 +43,28 @@ export const AUTO_METRIC_CATALOG: MetricCatalogEntry[] = [
     unit: "teens",
     description: "Students in an engaged journey stage.",
   },
+  {
+    key: "dollars_raised_fy26",
+    label: "Raised toward the committed floor",
+    unit: "$",
+    description: "Sums all gifts received this fiscal year (Finance).",
+  },
+  {
+    key: "weighted_pipeline_fy26",
+    label: "Weighted pipeline (FY26)",
+    unit: "$",
+    description: "Open pipeline asks × probability; excludes steward, lost, won (CRM).",
+  },
+  {
+    key: "corporate_raised",
+    label: "Corporate raised",
+    unit: "$",
+    description: "Gifts this fiscal year from organization-type donors (Finance / CRM).",
+  },
+  {
+    key: "cash_runway_months",
+    label: "Cash runway (months)",
+    unit: "months",
+    description: "Cash on hand ÷ monthly burn, from the finance snapshot.",
+  },
 ];

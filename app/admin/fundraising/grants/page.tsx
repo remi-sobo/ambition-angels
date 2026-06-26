@@ -5,8 +5,8 @@ import StatCard from "../../_components/StatCard";
 import PageHeader from "../../_components/PageHeader";
 import { todayISO } from "../../ops/_types/ops";
 import { NewGrantForm } from "./_components/GrantControls";
-import GrantsBoard, { BOARD_STAGES, type GrantCard } from "./_components/GrantsBoard";
-import { STAGES } from "./_lib/stages";
+import GrantsBoard, { type GrantCard } from "./_components/GrantsBoard";
+import { STAGES, BOARD_STAGES } from "./_lib/stages";
 
 // Grants pipeline + requirements calendar (Ring 2,
 // modules/03-fundraising.md "Grants"). Pipeline columns mirror the spec

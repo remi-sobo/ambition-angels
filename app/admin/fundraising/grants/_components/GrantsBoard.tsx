@@ -4,20 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import StageBoard from "@/app/admin/_components/StageBoard";
 import { money } from "@/app/admin/finance/_components/charts";
-import { STAGE_LABELS } from "../_lib/stages";
-
-// Pipeline columns, in order. Declined/closed are terminal and collapse into
-// the footer rather than getting drag columns (decline from the detail page's
-// stage dropdown, which still offers every stage).
-export const BOARD_STAGES = [
-  "prospect",
-  "qualified",
-  "loi",
-  "proposal",
-  "submitted",
-  "awarded",
-  "active",
-] as const;
+import { STAGE_LABELS, BOARD_STAGES } from "../_lib/stages";
 
 export type GrantCard = {
   id: string;

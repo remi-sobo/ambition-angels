@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import ReedReviewButton from "./_components/ReedReviewButton";
 import { deriveHealth, worstHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { resolveOwner, ownerValue, matchOwner, ownerRank } from "@/lib/admin/plan/owners";
 import { measureFreshness } from "@/lib/admin/plan/freshness";
@@ -251,6 +252,7 @@ export default async function StrategicPlanPage({
                 Monthly review
               </Link>
             )}
+            {!isEmpty && <ReedReviewButton />}
             {isEmpty ? <SeedButton /> : <RefreshMetricsButton />}
             <NewObjectiveForm />
           </div>

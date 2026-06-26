@@ -46,6 +46,11 @@ export async function POST(req: NextRequest) {
   }>;
   const stats = buildStats(kind as Kind, rows);
 
+  const checklist =
+    body?.checklist && typeof body.checklist === "object" && !Array.isArray(body.checklist)
+      ? (body.checklist as Record<string, unknown>)
+      : {};
+
   const nowISO = new Date().toISOString();
   const row = {
     org_id: ctx.orgId,
@@ -54,6 +59,7 @@ export async function POST(req: NextRequest) {
     week_of: weekOf,
     status: "completed",
     stats,
+    checklist,
     notes: typeof body?.notes === "string" ? body.notes : null,
     completed_at: nowISO,
     updated_at: nowISO,

@@ -8,6 +8,7 @@ import {
   formatDueLabel,
   type OpsTask,
 } from "../_types/ops";
+import type { OpenBlock } from "@/lib/admin/ops/open-blocks";
 
 /**
  * Monday Plan, the day-by-day board (BloomOS weekly rhythm, Phase 2).
@@ -38,6 +39,7 @@ export type PlannerDay = {
   isToday: boolean;
   events: PlannerEvent[];
   tasks: OpsTask[]; // pre-sorted by day_order
+  openBlocks: OpenBlock[]; // computed free gaps in working hours
 };
 
 const ORG_TZ = "America/Los_Angeles";
@@ -51,6 +53,20 @@ function eventTime(ev: PlannerEvent): string {
   });
 }
 
+// Open blocks are minutes-from-local-midnight, so format off a throwaway date —
+// no timezone needed, it's just clock arithmetic.
+function fmtMinuteLabel(min: number): string {
+  const d = new Date(2000, 0, 1, Math.floor(min / 60), min % 60);
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+function durLabel(mins: number): string {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m}m`;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
 export type ScheduledBlock = { start: string; end: string };
 
 export default function WeekPlanner({
@@ -58,6 +74,7 @@ export default function WeekPlanner({
   unscheduled,
   projectNames,
   scheduled,
+  conflicts,
 }: {
   days: PlannerDay[];
   unscheduled: OpsTask[];
@@ -65,6 +82,8 @@ export default function WeekPlanner({
   projectNames: Record<string, string>;
   /** task id → its calendar block window (for tasks scheduled into a time slot). */
   scheduled: Record<string, ScheduledBlock>;
+  /** task id → true when its block overlaps a real meeting. */
+  conflicts: Record<string, boolean>;
 }) {
   const projectName = (t: OpsTask) =>
     t.project_id ? projectNames[t.project_id] ?? null : null;
@@ -247,7 +266,25 @@ export default function WeekPlanner({
               </div>
             )}
 
-            {day.tasks.length === 0 && day.events.length === 0 ? (
+            {day.openBlocks.length > 0 && (
+              <div className="mb-3 space-y-1">
+                {day.openBlocks.map((ob, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 text-[11px] text-revenue/90 pl-1"
+                    title="Open time in working hours — fill it with a task's “+ time”"
+                  >
+                    <span className="font-mono text-revenue/70 w-16 shrink-0">
+                      {fmtMinuteLabel(ob.startMinute)}
+                    </span>
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-revenue/50" aria-hidden />
+                    <span className="italic">open · {durLabel(ob.endMinute - ob.startMinute)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {day.tasks.length === 0 && day.events.length === 0 && day.openBlocks.length === 0 ? (
               <p className="text-xs text-ink-3 italic">Nothing planned.</p>
             ) : (
               <div className="space-y-1.5">
@@ -276,6 +313,7 @@ export default function WeekPlanner({
                     <TaskMeta task={t} projectName={projectName(t)} />
                     <ScheduleCell
                       block={scheduled[t.id] ?? null}
+                      conflict={!!conflicts[t.id]}
                       isOpen={scheduling === t.id}
                       busy={busyId === t.id}
                       onOpen={() => setScheduling(t.id)}
@@ -418,6 +456,7 @@ function fmtBlockTime(block: ScheduledBlock): string {
 
 function ScheduleCell({
   block,
+  conflict,
   isOpen,
   busy,
   onOpen,
@@ -426,6 +465,7 @@ function ScheduleCell({
   onUnschedule,
 }: {
   block: ScheduledBlock | null;
+  conflict?: boolean;
   isOpen: boolean;
   busy: boolean;
   onOpen: () => void;
@@ -439,7 +479,11 @@ function ScheduleCell({
   if (block) {
     return (
       <span className="shrink-0 inline-flex items-center gap-1">
-        <span className="text-[10px] font-mono text-orange whitespace-nowrap" title="On your calendar">
+        <span
+          className={`text-[10px] font-mono whitespace-nowrap ${conflict ? "text-expense" : "text-orange"}`}
+          title={conflict ? "Overlaps a meeting — move the block" : "On your calendar"}
+        >
+          {conflict && "⚠ "}
           {fmtBlockTime(block)}
         </span>
         <button

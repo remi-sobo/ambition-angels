@@ -110,6 +110,7 @@ ordered=(
   create_reed_suggestions.sql
   add_strategy_review_draft_kind.sql
   create_reed_plan_proposals.sql
+  add_applied_id_to_reed_plan_proposals.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

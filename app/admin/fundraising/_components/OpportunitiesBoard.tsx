@@ -9,12 +9,16 @@ import { PIPELINE_STAGES, STAGE_LABELS, type OpportunityRow } from "./pipeline-s
  * Major Gifts pipeline as a drag-and-drop board. Built on the shared
  * <StageBoard>: drag an ask to another stage column to advance it (PATCH
  * /api/admin/opportunities/:id). The rich per-card actions (edit, lost,
- * reopen, brief) stay on OpportunityCard; only the old ◀/▶ stage buttons are
- * gone, replaced by drag. Lost asks collapse into the footer.
+ * brief) stay on OpportunityCard; only the old ◀/▶ stage buttons are gone,
+ * replaced by drag.
+ *
+ * Lost / closed-lost asks are kept off the board entirely (they stay in the
+ * DB for reporting, but a moves-management board is forward-looking — it
+ * shows live work, not deals we've already lost). Marking an open ask "Lost"
+ * makes it drop off on the next refresh.
  */
 export default function OpportunitiesBoard({ opps }: { opps: OpportunityRow[] }) {
   const open = opps.filter((o) => o.stage !== "lost");
-  const lost = opps.filter((o) => o.stage === "lost");
 
   async function onMove(id: string, toStage: string) {
     const r = await fetch(`/api/admin/opportunities/${id}`, {
@@ -41,20 +45,6 @@ export default function OpportunitiesBoard({ opps }: { opps: OpportunityRow[] })
       maxVisible={12}
       emptyHint="Empty"
       renderCard={(o) => <OpportunityCard opp={o} />}
-      footer={
-        lost.length > 0 ? (
-          <details>
-            <summary className="text-xs text-ink-2 cursor-pointer hover:text-ink-1">
-              Lost ({lost.length})
-            </summary>
-            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-3">
-              {lost.map((o) => (
-                <OpportunityCard key={o.id} opp={o} />
-              ))}
-            </div>
-          </details>
-        ) : undefined
-      }
     />
   );
 }

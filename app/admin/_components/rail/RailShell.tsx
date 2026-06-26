@@ -37,27 +37,33 @@ export default function RailShell({
       <aside
         aria-label="Capture and ask"
         className={[
-          // Elevated warm panel: a brighter surface than the cream workspace,
-          // with a crisp taupe edge + soft left shadow so it reads as its own
-          // plane instead of melting into the body.
-          "hidden xl:flex flex-col shrink-0 sticky top-0 h-screen bg-surface",
+          // The cockpit: a warm espresso plane against the cream workspace, with
+          // a soft left shadow so it reads as its own surface. Dot-texture inside.
+          "hidden xl:flex flex-col shrink-0 sticky top-0 h-screen bg-[#1F1811] text-[#EFE3D1]",
           "overflow-hidden transition-[width] duration-300 ease-out motion-reduce:transition-none",
           open
-            ? "w-[336px] border-l border-outline shadow-[-8px_0_24px_rgba(60,40,20,0.07)]"
+            ? "w-[336px] border-l border-black/30 shadow-[-10px_0_30px_rgba(20,12,4,0.28)]"
             : "w-0",
         ].join(" ")}
       >
         {/* Fixed-width inner column so content doesn't reflow as width animates. */}
-        <div className="w-[336px] h-full flex flex-col">
-          <header className="h-12 flex items-center justify-between px-5 border-b border-outline flex-shrink-0">
-            <span className="flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-ink-3">
+        <div
+          className="w-[336px] h-full flex flex-col"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, rgba(255,255,255,0.045) 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
+          }}
+        >
+          <header className="h-12 flex items-center justify-between px-5 border-b border-white/[0.07] flex-shrink-0">
+            <span className="flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93]">
               <span className="w-[3px] h-3 rounded-full bg-orange" aria-hidden />
               Today
             </span>
             <button
               onClick={() => set(false)}
               aria-label="Collapse rail"
-              className="text-ink-3 hover:text-ink-1 transition-colors p-1 -mr-1"
+              className="text-[#8d7c63] hover:text-[#EFE3D1] transition-colors p-1 -mr-1"
             >
               <Chevron dir="right" />
             </button>

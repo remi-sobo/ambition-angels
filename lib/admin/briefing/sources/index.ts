@@ -5,7 +5,7 @@
  * config module, never a hardcoded literal.
  */
 import type { BriefingItem } from "../types";
-import { FINANCE, TASKS, COMPLIANCE, MAJOR_GIFTS, DONORS, ENGAGEMENT, STRATEGY, FOLLOWUPS } from "../../thresholds";
+import { FINANCE, TASKS, COMPLIANCE, MAJOR_GIFTS, DONORS, ENGAGEMENT, STRATEGY, FOLLOWUPS, MEETINGS } from "../../thresholds";
 
 export type SourceCtx = {
   now: number;
@@ -366,6 +366,31 @@ export function followupsSource(input: FollowupsInput, ctx: SourceCtx): Briefing
       weight: 1_000 + overdue.length,
       decisions: ["open", "snooze", "dismiss"],
       deepLink: "/admin/briefing",
+      ...stamp(ctx),
+    },
+  ];
+}
+
+// ── Meetings (follow-up coverage) ───────────────────────────────────────────
+// Deterministic: a past meeting with no follow-up task and no "none needed"
+// verdict is a gap. The count is the verdict line — it never hallucinates.
+
+export type MeetingsInput = { gapCount: number; total: number; windowDays: number };
+
+export function meetingsSource(input: MeetingsInput, ctx: SourceCtx): BriefingItem[] {
+  if (input.gapCount < MEETINGS.gapWatchCount) return [];
+  const severity = input.gapCount >= MEETINGS.gapCriticalCount ? "critical" : "watch";
+  return [
+    {
+      id: "meetings:coverage",
+      source: "meetings",
+      severity,
+      title: `${input.gapCount} meeting${input.gapCount === 1 ? "" : "s"} with no follow-up`,
+      detail: `${input.gapCount} of ${input.total} meeting${input.total === 1 ? "" : "s"} in the last ${input.windowDays} days ${input.gapCount === 1 ? "has" : "have"} no follow-up task and aren't marked as needing none.`,
+      metric: String(input.gapCount),
+      weight: input.gapCount,
+      decisions: ["open", "snooze", "dismiss"],
+      deepLink: "/admin/meetings",
       ...stamp(ctx),
     },
   ];

@@ -376,7 +376,11 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
   const navPanel = (
     <>
       <div className="px-5 py-5 border-b border-white/10">
-        <div className="flex items-center gap-2.5">
+        <Link
+          href="/admin"
+          aria-label="BloomOS — go to Overview"
+          className="flex items-center gap-2.5 group rounded-lg -m-1 p-1 hover:bg-white/[0.05] transition-colors"
+        >
           {/* Plain <img> (not next/image): the admin PWA service worker is
               cache-first under /admin/, and the raw static asset is far more
               reliable there than the /_next/image optimizer round-trip. */}
@@ -388,10 +392,10 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
             height={32}
             className="rounded-lg shrink-0"
           />
-          <div className="font-display font-black text-2xl normal-case tracking-tight text-cream leading-none">
+          <div className="font-display font-black text-2xl normal-case tracking-tight text-cream leading-none group-hover:text-white transition-colors">
             Bloom<span className="text-orange">OS</span>
           </div>
-        </div>
+        </Link>
         <div className="text-[11px] tracking-wide text-cream/50 mt-1.5">
           Operating System for Ambition Angels
         </div>

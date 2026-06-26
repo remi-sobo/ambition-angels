@@ -1,6 +1,6 @@
 # BloomOS Global Search — Spec
 
-> Status: Phase 1 (navigator) and Phase 2 (360° profile) shipped. Phases 3–4 below remain proposals.
+> Status: Phases 1–3 shipped; Phase 4 mostly shipped (recent searches + scope prefixes done; "Ask Reed" handoff deferred).
 > A single search bar at the top of the left sidebar that lets you type a name,
 > org, deal, task, or page and either jump straight to it (command-palette mode)
 > or pull up a **360° profile** that gathers everything BloomOS knows about that
@@ -305,19 +305,24 @@ are enforced by RLS, not by the search layer.
 
 ## 7. Visual design (BloomOS tokens)
 
-Overlay matches the dark admin shell, not the public site:
+> **Correction (as built):** the BloomOS admin is a **cream workspace**, not a
+> dark shell. In `/admin`, `globals.css` remaps `--c-ink` to cream (#F5EFE2), so
+> `bg-ink` is the light surface and `text-cream` is *light* (used only by the
+> dark navy sidebar). The overlay was first built with dark tokens and rendered
+> cream-on-cream (invisible titles); it now uses the cream-workspace ramp like
+> `QuickAddModal`. **Only the `SearchTrigger` lives on the dark navy sidebar and
+> keeps light-on-dark classes.**
 
-- Surface: `bg-[#1F1811]` / `bg-ink`, text `text-cream` / `text-ink-1`
-  (`#FBE6D2`), borders `border-white/10`.
-- Active row: `bg-orange` accent or `bg-white/[0.06]` hover, with the same
-  left-border orange tick the sidebar uses for the active nav item.
-- Group headers: `text-[10px] uppercase tracking-[0.14em] text-[#bfae93]`
-  (identical to `NAV_SECTIONS` labels — visual continuity with the sidebar).
-- Type icons via **lucide-react** (already a dependency): `Building2` (org),
-  `User` (person), `HandCoins`/`Banknote` (gift/grant), `CheckSquare` (task),
-  `Calendar` (meeting), `GraduationCap` (student), `ArrowRight` (page).
-- The `⌘K` hint chip and `esc` use the muted `text-[#8d7c63]` treatment.
-- Radii `rounded-card`, shadow consistent with `QuickAddModal`.
+The overlay (and the 360 card) use the admin's semantic ramp:
+
+- Surface: `bg-ink` (cream), recessed tiles `bg-tile`, borders `border-outline`.
+- Text: `text-ink-1` (primary), `text-ink-2` (secondary), `text-ink-3`
+  (tertiary / uppercase group labels). Never `text-cream` inside the overlay.
+- Active row: `bg-orange-light`; hover `bg-tile`. Active icon chip
+  `bg-orange/20 text-orange-mid`.
+- Type icons are inline SVG (matching the Sidebar's icon convention) — **not**
+  lucide-react (it's pinned to an odd `^1.17.0` and unused elsewhere in admin).
+- Radii `rounded-card`, shadow/backdrop consistent with `QuickAddModal`.
 
 ---
 
@@ -363,14 +368,23 @@ sketch, both deliberate:
   (`⇥` still works as an explicit expander). Scoped to constituents; prospects
   and other kinds navigate directly.
 
-**Phase 3 — Fuzzy + notes.**
-`pg_trgm` typo tolerance, `tsvector` full-text over Tier-2 (interactions, briefs,
-meeting notes). "Search history & notes" toggle.
+**Phase 3 — Fuzzy + notes. ✅ Shipped.**
+- `pg_trgm` typo tolerance via the `bloomos_search_people(q, lim)` RPC
+  (`supabase/migrations/bloomos_global_search_phase3.sql`, applied to the live
+  project). Merged with — not replacing — the substring matches and deduped, so
+  short prefixes pg_trgm's 0.3 threshold misses are still caught by `ilike`.
+- "Notes & history" toggle (footer). When on, `/api/admin/search?...&notes=1`
+  also matches `interactions.notes` (55k+ rows, trigram-indexed) and surfaces
+  the constituent each note is about. Implemented for interactions (the
+  highest-value source); briefs / meeting-record notes are a future add.
+- Trigram GIN indexes on the searched name/notes columns.
 
-**Phase 4 — Polish.**
-Recent searches (localStorage), "jump back to" recently-viewed entities when the
-field is empty, per-scope filters (`people:`, `deal:`, `task:` prefixes), and an
-optional "Ask Reed about {entity}" handoff into the existing Reed agent.
+**Phase 4 — Polish. ◑ Mostly shipped.**
+- ✅ Recent searches (localStorage) shown when the box is empty; recorded on open.
+- ✅ Scope prefixes (`people:`, `deal:`, `task:`, `meeting:`, `page:`, …) filter
+  results to one group (`parseScope` in `types.ts`).
+- ⏳ "Ask Reed about {entity}" handoff — deferred; needs the Reed launcher
+  context wired into the 360 card (its own change).
 
 ---
 

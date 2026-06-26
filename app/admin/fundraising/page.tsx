@@ -66,7 +66,9 @@ export default async function MajorGiftsPage({
     id: o.id,
     label: o.name ?? constituentName(o.constituent),
     constituentId: o.constituent?.id ?? null,
-    constituentName: constituentName(o.constituent),
+    // Empty (not "Unknown") when a deal has no linked contact/company, so the
+    // card shows just the deal name instead of a phantom "Unknown" subtitle.
+    constituentName: o.constituent ? constituentName(o.constituent) : "",
     hubspotId:
       typeof o.constituent?.external_ids?.["hubspot"] === "string"
         ? (o.constituent.external_ids["hubspot"] as string)

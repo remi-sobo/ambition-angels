@@ -1,6 +1,16 @@
-// KPI scorecard card (server-rendered). Anatomy from the research: headline
-// value vs target, % progress, paced RAG status, a trend sparkline, freshness,
-// and the goal → objective cascade. Read-only — editing lives on the plan.
+"use client";
+
+// KPI scorecard card. Anatomy: headline value vs target, % progress, paced RAG
+// status, trend sparkline, freshness, the goal → objective cascade — plus
+// provenance (where the number comes from) and inline editing of the current
+// value for manual measures. Editing PATCHes /api/admin/plan/kpis/[id], which
+// stamps last_updated_at and snapshots the value, then we refresh — so the same
+// edit shows on the Strategic Plan front page and the Strategy Narrative (all
+// read plan_kpis live). One source, three surfaces.
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { kpiProvenance } from "@/lib/admin/plan/provenance";
 
 export type ScorecardKpi = {
   id: string;
@@ -27,11 +37,11 @@ const HEALTH: Record<string, { label: string; bar: string; pill: string }> = {
 
 function fmtVal(v: number | null, unit: string | null): string {
   if (v === null || v === undefined) return "—";
-  if (unit === "$") {
+  if (unit === "$" || unit === "usd") {
     if (Math.abs(v) >= 1000) return `$${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k`;
     return `$${v.toLocaleString()}`;
   }
-  if (unit === "%") return `${Math.round(v)}%`;
+  if (unit === "%" || unit === "percent") return `${Math.round(v)}%`;
   return v.toLocaleString();
 }
 
@@ -64,36 +74,93 @@ function Sparkline({ values }: { values: number[] }) {
 }
 
 export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
+  const router = useRouter();
+  const prov = kpiProvenance(kpi.source, kpi.metricKey);
   const h = HEALTH[kpi.status] ?? HEALTH.not_started;
   const pct =
     kpi.target && kpi.target > 0 && kpi.current !== null
       ? Math.max(0, Math.min(100, Math.round((kpi.current / kpi.target) * 100)))
       : null;
-  // Growth since the first recorded point.
-  const delta =
-    kpi.history.length >= 2 ? kpi.history[kpi.history.length - 1] - kpi.history[0] : null;
+  const delta = kpi.history.length >= 2 ? kpi.history[kpi.history.length - 1] - kpi.history[0] : null;
+
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(kpi.current?.toString() ?? "");
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    const n = val.trim() === "" ? null : Number(val);
+    if (n !== null && !Number.isFinite(n)) {
+      alert("Enter a number");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/plan/kpis/${kpi.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ current: n }),
+      });
+      if (!res.ok) {
+        alert("Could not save");
+        return;
+      }
+      setEditing(false);
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
-    <div className="bg-surface border-[1.5px] border-outline rounded-card p-4 flex flex-col gap-2.5">
+    <div className={`bg-surface border-[1.5px] border-outline rounded-card p-4 flex flex-col gap-2.5 ${busy ? "opacity-60" : ""}`}>
       <div className="flex items-start gap-2">
         <span className="text-sm font-heading font-semibold text-ink-1 leading-snug flex-1 min-w-0">{kpi.title}</span>
         <span
           className={`text-[9px] uppercase tracking-wide rounded px-1 py-0.5 shrink-0 ${
-            kpi.source === "auto" ? "text-revenue bg-revenue-bg" : "text-ink-3 bg-tile"
+            prov.editable ? "text-ink-3 bg-tile" : "text-revenue bg-revenue-bg"
           }`}
-          title={kpi.source === "auto" ? `Auto · ${kpi.metricKey ?? ""}` : "Entered manually"}
         >
-          {kpi.source}
+          {prov.label}
         </span>
       </div>
 
       <div className="flex items-end justify-between gap-2">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-bold text-ink-1 tabular-nums leading-none">{fmtVal(kpi.current, kpi.unit)}</span>
-          {kpi.target !== null && (
-            <span className="text-xs text-ink-3 tabular-nums">/ {fmtVal(kpi.target, kpi.unit)}</span>
-          )}
-        </div>
+        {editing ? (
+          <span className="flex items-center gap-1">
+            <input
+              autoFocus
+              inputMode="decimal"
+              className="w-24 rounded-md border border-outline bg-app px-2 py-1 text-lg font-bold tabular-nums text-ink-1 focus:outline-none focus:border-orange"
+              value={val}
+              onChange={(e) => setVal(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void save();
+                if (e.key === "Escape") setEditing(false);
+              }}
+            />
+            <button onClick={() => void save()} className="text-revenue text-lg leading-none" aria-label="Save">✓</button>
+            <button onClick={() => setEditing(false)} className="text-ink-3 text-lg leading-none" aria-label="Cancel">✕</button>
+          </span>
+        ) : (
+          <div className="flex items-baseline gap-1.5">
+            {prov.editable ? (
+              <button
+                onClick={() => {
+                  setVal(kpi.current?.toString() ?? "");
+                  setEditing(true);
+                }}
+                className="group flex items-baseline gap-1 text-2xl font-bold text-ink-1 tabular-nums leading-none hover:text-orange transition-colors"
+                title="Click to update this measure"
+              >
+                {fmtVal(kpi.current, kpi.unit)}
+                <span className="text-[11px] text-ink-3 group-hover:text-orange">✎</span>
+              </button>
+            ) : (
+              <span className="text-2xl font-bold text-ink-1 tabular-nums leading-none">{fmtVal(kpi.current, kpi.unit)}</span>
+            )}
+            {kpi.target !== null && <span className="text-xs text-ink-3 tabular-nums">/ {fmtVal(kpi.target, kpi.unit)}</span>}
+          </div>
+        )}
         <Sparkline values={kpi.history} />
       </div>
 
@@ -118,8 +185,17 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
         <span className="text-[10px] text-ink-3 ml-auto">{freshness(kpi.lastUpdatedAt)}</span>
       </div>
 
+      {/* Provenance — where this number comes from. */}
+      <div className="text-[10px] text-ink-3 leading-snug border-t border-hairline pt-2 flex items-start gap-1">
+        <span aria-hidden>{prov.editable ? "✎" : "⟳"}</span>
+        <span className="min-w-0">{prov.detail}</span>
+      </div>
+
       {(kpi.goalTitle || kpi.objectiveTitle) && (
-        <div className="text-[10px] text-ink-3 truncate border-t border-hairline pt-2" title={`${kpi.goalTitle ?? ""}${kpi.objectiveTitle ? ` · ${kpi.objectiveTitle}` : ""}`}>
+        <div
+          className="text-[10px] text-ink-3 truncate"
+          title={`${kpi.goalTitle ?? ""}${kpi.objectiveTitle ? ` · ${kpi.objectiveTitle}` : ""}`}
+        >
           ↳ {kpi.goalTitle ?? "—"}{kpi.objectiveTitle ? ` · ${kpi.objectiveTitle}` : ""}
         </div>
       )}

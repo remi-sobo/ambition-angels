@@ -1,6 +1,6 @@
 # BloomOS Global Search — Spec
 
-> Status: proposal / spec. No code shipped yet.
+> Status: Phase 1 (navigator) and Phase 2 (360° profile) shipped. Phases 3–4 below remain proposals.
 > A single search bar at the top of the left sidebar that lets you type a name,
 > org, deal, task, or page and either jump straight to it (command-palette mode)
 > or pull up a **360° profile** that gathers everything BloomOS knows about that
@@ -349,10 +349,19 @@ component. `/api/admin/search` covering Tier-1 entities + static Pages/Actions.
 Keyboard nav, grouped results, navigate on `↵`. This alone replaces "where's the
 page for X" and "find this donor."
 
-**Phase 2 — 360 Entity Profile (aggregator).**
-`bloomos_constituent_profile` RPC + `/api/admin/search/profile` + Mode B render
-inside the overlay. The Koshland use case. Reuse existing widgets where possible
-(`EntityTasks.tsx`, `Pipeline.tsx`, `StatCard.tsx`).
+**Phase 2 — 360 Entity Profile (aggregator). ✅ Shipped.**
+`/api/admin/search/profile?id=` + Mode B render inside the overlay
+(`EntityProfile.tsx`). The Koshland use case. Two deviations from the original
+sketch, both deliberate:
+- Implemented as a **route-layer fan-out** (parallel Supabase queries, two
+  waves) rather than a `bloomos_constituent_profile` Postgres RPC — same
+  payload shape, ships without a migration. If profile latency ever matters,
+  collapsing the fan-out into an RPC is a drop-in swap behind the same endpoint.
+- People/orgs **open the profile by default** (Enter / click); `⌘↵` / `⌘`-click
+  skips straight to the full donor page. This makes the headline "see
+  everything" view the primary action for a person, not a secondary `⇥` gesture
+  (`⇥` still works as an explicit expander). Scoped to constituents; prospects
+  and other kinds navigate directly.
 
 **Phase 3 — Fuzzy + notes.**
 `pg_trgm` typo tolerance, `tsvector` full-text over Tier-2 (interactions, briefs,

@@ -8,6 +8,8 @@ import { deriveHealth, worstHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { resolveOwner, ownerValue, matchOwner, ownerRank } from "@/lib/admin/plan/owners";
 import { measureFreshness } from "@/lib/admin/plan/freshness";
 import { getUnassignedPlanMetrics } from "@/lib/admin/plan/metrics";
+import { getReadiness } from "@/lib/admin/strategy/readiness";
+import ReadinessPanel from "./_components/ReadinessPanel";
 import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
 import StrategyGlance from "./_components/StrategyGlance";
@@ -205,6 +207,8 @@ export default async function StrategicPlanPage({
   // Unassigned vital signs (Org lens only): live metrics not yet bound to a goal,
   // plus the goal list the tray attaches them to.
   const unassignedMetrics = lens === "org" && !isEmpty ? await getUnassignedPlanMetrics(supabase, orgId) : [];
+  // Funder readiness: graded against the same movements the Narrative renders.
+  const readiness = lens === "org" && !isEmpty ? await getReadiness(orgId) : null;
   const objTitleById = new Map(objectives.map((o) => [o.id, o.title]));
   const goalOptions = goals.map((g) => ({
     id: g.id,
@@ -292,6 +296,7 @@ export default async function StrategicPlanPage({
           {lens === "org" ? (
             <>
               {/* Org lens: the verdict, exceptions, objective grid (B1), the unassigned tray, the counts, the why. */}
+              {readiness && <ReadinessPanel data={readiness} />}
               <StrategyGlance />
               <UnassignedMetrics metrics={unassignedMetrics} goals={goalOptions} />
               <div className="grid grid-cols-4 gap-3 mb-8">

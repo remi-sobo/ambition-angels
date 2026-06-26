@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import type { AgendaItem } from "@/lib/agenda/service";
 
 const STALE_MIN = 20; // synced longer ago than this → ochre tick
+const MIN_OFFSET = -7; // matches AgendaShelf's fetch window
+const MAX_OFFSET = 7;
 
 function makeFmt(tz: string) {
   const ymd = (d: Date) =>
@@ -15,6 +17,21 @@ function makeFmt(tz: string) {
       ? "All day"
       : new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit" }).format(new Date(iso));
   return { ymd, time };
+}
+
+/** Shift a YYYY-MM-DD key by whole days (UTC-based, no DST drift). */
+function addDaysKey(key: string, n: number): string {
+  const [y, m, d] = key.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + n);
+  return dt.toISOString().slice(0, 10);
+}
+
+function dayLabel(offset: number, key: string): string {
+  if (offset === 0) return "Today";
+  if (offset === 1) return "Tomorrow";
+  if (offset === -1) return "Yesterday";
+  return new Date(key + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
 function relative(iso: string | null): { text: string; stale: boolean } {
@@ -28,7 +45,7 @@ function relative(iso: string | null): { text: string; stale: boolean } {
   return { text: `synced ${Math.round(hrs / 24)}d ago`, stale };
 }
 
-/** Compact agenda for the rail: up next (emphasized), then the rest of today. */
+/** Compact agenda for the rail: navigate day by day; today emphasizes "up next". */
 export default function RailAgenda({
   items,
   timeZone,
@@ -40,17 +57,30 @@ export default function RailAgenda({
 }) {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const [offset, setOffset] = useState(0);
   const fmt = useMemo(() => makeFmt(timeZone), [timeZone]);
 
-  const { upNext, rest, hadToday } = useMemo(() => {
-    const todayKey = fmt.ymd(new Date());
-    const now = Date.now();
+  const todayKey = fmt.ymd(new Date());
+  const selectedKey = addDaysKey(todayKey, offset);
+  const isToday = offset === 0;
+
+  const { tile, list, empty } = useMemo(() => {
     const dayKeyOf = (e: AgendaItem) => (e.allDay ? e.start.slice(0, 10) : fmt.ymd(new Date(e.start)));
-    const todays = items.filter((e) => dayKeyOf(e) === todayKey);
-    const ended = (e: AgendaItem) => !e.allDay && new Date(e.end ?? e.start).getTime() < now;
-    const upcoming = todays.filter((e) => !ended(e));
-    return { upNext: upcoming[0] ?? null, rest: upcoming.slice(1, 4), hadToday: todays.length > 0 };
-  }, [items, fmt]);
+    const dayItems = items
+      .filter((e) => dayKeyOf(e) === selectedKey)
+      .sort((a, b) => a.start.localeCompare(b.start));
+
+    if (isToday) {
+      // Today: emphasize the next upcoming event; show what's still ahead.
+      const now = Date.now();
+      const ended = (e: AgendaItem) => !e.allDay && new Date(e.end ?? e.start).getTime() < now;
+      const ahead = dayItems.filter((e) => !ended(e));
+      const t = ahead[0] ?? null;
+      return { tile: t, list: ahead.slice(t ? 1 : 0, 4), empty: dayItems.length === 0 };
+    }
+    // Other days: a plain chronological list of everything that day.
+    return { tile: null as AgendaItem | null, list: dayItems.slice(0, 8), empty: dayItems.length === 0 };
+  }, [items, selectedKey, isToday, fmt]);
 
   const freshness = relative(syncedAt);
 
@@ -81,60 +111,95 @@ export default function RailAgenda({
         </button>
       </div>
 
-      {upNext ? (
-        <>
-          {/* Up next — the one emphasized card: a warm recessed tile against the
-              brighter rail surface, with the terracotta accent bar. */}
-          <div className="relative bg-tile rounded-card border border-hairline overflow-hidden">
-            <span className="absolute left-0 top-0 bottom-0 w-1 bg-orange" aria-hidden />
-            <div className="pl-4 pr-3 py-3">
-              <div className="flex items-baseline gap-2.5">
-                <span className="text-[13px] font-medium text-ink-1 [font-variant-numeric:tabular-nums] flex-shrink-0">
-                  {fmt.time(upNext.start, upNext.allDay)}
-                </span>
-                <span className="text-[13px] font-semibold text-ink-1 truncate min-w-0">{upNext.title}</span>
-              </div>
-              {upNext.isExternal && (
-                <span className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-ink-2 bg-tile border border-outline rounded-full px-2 py-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange" aria-hidden />
-                  External
-                </span>
-              )}
-            </div>
-          </div>
+      {/* Day-by-day navigator */}
+      <div className="flex items-center justify-between mb-2.5">
+        <button
+          onClick={() => setOffset((o) => Math.max(MIN_OFFSET, o - 1))}
+          disabled={offset <= MIN_OFFSET}
+          aria-label="Previous day"
+          className="w-6 h-6 rounded-md flex items-center justify-center text-ink-3 hover:text-ink-1 hover:bg-tile disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+        >
+          <Chevron dir="left" />
+        </button>
+        <button
+          onClick={() => setOffset(0)}
+          className={`text-[12px] font-medium transition-colors ${isToday ? "text-ink-1" : "text-orange hover:text-orange-dark"}`}
+          title={isToday ? undefined : "Back to today"}
+        >
+          {dayLabel(offset, selectedKey)}
+        </button>
+        <button
+          onClick={() => setOffset((o) => Math.min(MAX_OFFSET, o + 1))}
+          disabled={offset >= MAX_OFFSET}
+          aria-label="Next day"
+          className="w-6 h-6 rounded-md flex items-center justify-center text-ink-3 hover:text-ink-1 hover:bg-tile disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+        >
+          <Chevron dir="right" />
+        </button>
+      </div>
 
-          {rest.length > 0 && (
-            <ul className="mt-2.5 space-y-2">
-              {rest.map((e) => (
-                <li key={e.id} className="flex items-baseline gap-3 px-1">
-                  <span className="text-[12px] text-ink-2 [font-variant-numeric:tabular-nums] w-14 flex-shrink-0">
-                    {fmt.time(e.start, e.allDay)}
-                  </span>
-                  <span className="text-[13px] text-ink-2 truncate min-w-0">{e.title}</span>
-                  {e.isExternal && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange flex-shrink-0 self-center" title="External attendee" />
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      ) : (
+      {tile && (
+        <div className="relative bg-tile rounded-card border border-hairline overflow-hidden">
+          <span className="absolute left-0 top-0 bottom-0 w-1 bg-orange" aria-hidden />
+          <div className="pl-4 pr-3 py-3">
+            <div className="flex items-baseline gap-2.5">
+              <span className="text-[13px] font-medium text-ink-1 [font-variant-numeric:tabular-nums] flex-shrink-0">
+                {fmt.time(tile.start, tile.allDay)}
+              </span>
+              <span className="text-[13px] font-semibold text-ink-1 truncate min-w-0">{tile.title}</span>
+            </div>
+            {tile.isExternal && (
+              <span className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-ink-2 bg-tile border border-outline rounded-full px-2 py-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange" aria-hidden />
+                External
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {list.length > 0 && (
+        <ul className={`${tile ? "mt-2.5" : ""} space-y-2`}>
+          {list.map((e) => (
+            <li key={e.id} className="flex items-baseline gap-3 px-1">
+              <span className="text-[12px] text-ink-2 [font-variant-numeric:tabular-nums] w-14 flex-shrink-0">
+                {fmt.time(e.start, e.allDay)}
+              </span>
+              <span className="text-[13px] text-ink-2 truncate min-w-0">{e.title}</span>
+              {e.isExternal && (
+                <span className="w-1.5 h-1.5 rounded-full bg-orange flex-shrink-0 self-center" title="External attendee" />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!tile && list.length === 0 && (
         <p className="text-[13px] text-ink-3 py-1">
-          {hadToday
-            ? "That’s a wrap for today."
-            : syncedAt
+          {empty && isToday
+            ? syncedAt
               ? "Nothing scheduled today."
-              : "Connect your calendar to see today."}
+              : "Connect your calendar to see today."
+            : isToday
+              ? "That’s a wrap for today."
+              : "Nothing scheduled."}
         </p>
       )}
 
       <Link
-        href="/meet"
+        href="/admin/ops/monday"
         className="mt-3 inline-block text-[13px] font-medium text-orange hover:text-orange-dark transition-colors"
       >
-        This week
+        Plan the week →
       </Link>
     </section>
+  );
+}
+
+function Chevron({ dir }: { dir: "left" | "right" }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <polyline points={dir === "right" ? "9 18 15 12 9 6" : "15 18 9 12 15 6"} />
+    </svg>
   );
 }

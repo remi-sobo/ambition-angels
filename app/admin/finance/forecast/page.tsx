@@ -1,11 +1,12 @@
 import { getFinanceSnapshot } from "@/lib/admin/finance";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { loadRevenueSchedule } from "@/lib/finance/schedule";
 import PageHeader from "../../_components/PageHeader";
 import ForecastBoard, { type SeedLever } from "./_components/ForecastBoard";
 
 // Forecast / scenario planning. Starts from the canonical cash + burn and lets
 // the CEO stack levers (a hire, a grant landing, a campaign) to see when cash
-// runs out under each scenario. Seeded with real future-dated commitments so it
+// runs out under each scenario. Seeded from the canonical revenue schedule so it
 // opens informed. No new tables — the scenario lives client-side.
 export const dynamic = "force-dynamic";
 
@@ -14,28 +15,22 @@ export default async function FinanceForecastPage() {
   const sb = getSupabaseAdmin();
   const today = new Date().toISOString().slice(0, 10);
 
-  // Seed income levers from secured/projected commitments expected in the
-  // future. Projected gifts are weighted by probability (a verbal maybe at 50%
-  // shouldn't show as guaranteed cash); secured come in at full value.
-  const { data } = await sb
-    .from("fin_revenue_commitments")
-    .select("source_name, source_type, amount, status, expected_date, probability")
-    .in("status", ["secured", "projected"])
-    .gte("expected_date", today)
-    .order("expected_date", { ascending: true })
-    .limit(30);
-
-  const seeds: SeedLever[] = (data ?? [])
-    .map((r) => {
-      const weighted = r.status === "projected" ? (r.probability == null ? 1 : Number(r.probability)) : 1;
-      return {
-        label: (r.source_name as string) || (r.source_type as string) || "Expected gift",
-        amount: Math.round(Number(r.amount) * weighted),
-        date: r.expected_date as string,
-        status: r.status as string,
-      };
-    })
-    .filter((s) => s.amount > 0 && !!s.date);
+  // Seed income levers from the revenue schedule — every dated future inflow
+  // (pledges, awarded grants, weighted pipeline, manual). Committed lands at
+  // full value; projected pipeline is already probability-weighted in the view,
+  // so a 50%-likely ask seeds at half, not as guaranteed cash.
+  const schedule = await loadRevenueSchedule(sb);
+  const seeds: SeedLever[] = schedule
+    .filter((r) => r.due_date >= today)
+    .map((r) => ({
+      label: r.label || "Expected inflow",
+      amount: Math.round(r.confidence === "committed" ? r.gross_amount : r.weighted_amount),
+      date: r.due_date,
+      status: r.confidence === "committed" ? "secured" : "projected",
+    }))
+    .filter((s) => s.amount > 0 && !!s.date)
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+    .slice(0, 30);
 
   return (
     <div className="max-w-5xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">

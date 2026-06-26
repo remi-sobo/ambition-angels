@@ -16,6 +16,7 @@ export type Pledge = {
   restricted: boolean;
   restricted_to: string | null;
   notes: string | null;
+  external_ref: string | null;
 };
 
 type Props = {
@@ -60,6 +61,39 @@ export default function PledgesEditor({
   const [restrictedTo, setRestrictedTo] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [adoptingId, setAdoptingId] = useState<string | null>(null);
+  const [adoptError, setAdoptError] = useState<string | null>(null);
+
+  // Adopt a HubSpot deal into an editable Bloom pledge. Carries external_ref =
+  // deal_id so the assembler hides the HubSpot original (no double-count); the
+  // new row is then a normal editable pledge.
+  async function adopt(deal: HubSpotPledge) {
+    setAdoptingId(deal.deal_id);
+    setAdoptError(null);
+    const r = await fetch("/api/admin/finance/revenue", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        year,
+        source_type: "other",
+        source_name: deal.company_name || deal.contact_name || deal.name,
+        amount: deal.amount,
+        status: deal.status,
+        expected_date: deal.close_date,
+        probability: deal.status === "projected" ? deal.probability : null,
+        restricted: false,
+        external_ref: deal.deal_id,
+      }),
+    });
+    const j = await r.json().catch(() => ({}));
+    setAdoptingId(null);
+    if (!r.ok) {
+      setAdoptError(j.error ?? "Failed to adopt deal");
+      return;
+    }
+    setPledges((p) => [j.pledge, ...p]); // hides the HubSpot row via external_ref
+    router.refresh();
+  }
 
   async function create() {
     setBusy(true);
@@ -120,11 +154,19 @@ export default function PledgesEditor({
   const projected = pledges.filter((p) => p.status === "projected");
   const received = pledges.filter((p) => p.status === "received");
 
+  // Deals already adopted into Bloom (by external_ref) are hidden from the
+  // HubSpot section and dropped from its sums — they now count from the Bloom
+  // side, so showing them here would double-count.
+  const adoptedRefs = new Set(
+    pledges.map((p) => p.external_ref).filter((r): r is string => !!r)
+  );
+  const visibleHubspot = hubspotPledges.filter((p) => !adoptedRefs.has(p.deal_id));
+
   // HubSpot buckets, computed once and used in both the summary cards and
   // the rendered "From HubSpot" section.
-  const hsReceived = hubspotPledges.filter((p) => p.status === "received");
-  const hsSecured = hubspotPledges.filter((p) => p.status === "secured");
-  const hsProjected = hubspotPledges.filter((p) => p.status === "projected");
+  const hsReceived = visibleHubspot.filter((p) => p.status === "received");
+  const hsSecured = visibleHubspot.filter((p) => p.status === "secured");
+  const hsProjected = visibleHubspot.filter((p) => p.status === "projected");
 
   const securedTotal =
     secured.reduce((s, p) => s + Number(p.amount), 0) +
@@ -315,20 +357,21 @@ export default function PledgesEditor({
       {/* HubSpot — read-only pipeline, refreshed by the "Sync HubSpot"
           button in the sidebar. Counted in the summary cards + goal
           progress above. */}
-      {hubspotPledges.length > 0 && (
+      {visibleHubspot.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-baseline justify-between flex-wrap gap-2">
             <h2 className="text-[10px] uppercase tracking-widest text-orange/80 font-medium">
               From HubSpot pipeline
             </h2>
             <div className="text-[11px] text-ink-2">
-              {hubspotPledges.length} deal{hubspotPledges.length === 1 ? "" : "s"} ·
-              {" "}refresh via &ldquo;Sync HubSpot&rdquo; in the sidebar
+              {visibleHubspot.length} deal{visibleHubspot.length === 1 ? "" : "s"} ·
+              {" "}&ldquo;Adopt &amp; edit&rdquo; to fix a date or amount · refresh via &ldquo;Sync HubSpot&rdquo;
             </div>
           </div>
-          <HubSpotSection title="HubSpot · Received" rows={hsReceived} />
-          <HubSpotSection title="HubSpot · Secured" rows={hsSecured} />
-          <HubSpotSection title="HubSpot · Projected pipeline" rows={hsProjected} showProbability />
+          {adoptError && <p className="text-xs text-expense">{adoptError}</p>}
+          <HubSpotSection title="HubSpot · Received" rows={hsReceived} onAdopt={adopt} adoptingId={adoptingId} />
+          <HubSpotSection title="HubSpot · Secured" rows={hsSecured} onAdopt={adopt} adoptingId={adoptingId} />
+          <HubSpotSection title="HubSpot · Projected pipeline" rows={hsProjected} showProbability onAdopt={adopt} adoptingId={adoptingId} />
         </div>
       )}
     </div>
@@ -339,10 +382,14 @@ function HubSpotSection({
   title,
   rows,
   showProbability,
+  onAdopt,
+  adoptingId,
 }: {
   title: string;
   rows: HubSpotPledge[];
   showProbability?: boolean;
+  onAdopt: (deal: HubSpotPledge) => void;
+  adoptingId: string | null;
 }) {
   if (rows.length === 0) return null;
   return (
@@ -366,6 +413,7 @@ function HubSpotSection({
               <th className="text-right px-3 py-2 w-24">Weighted</th>
             )}
             <th className="text-left px-3 py-2 w-32">Close date</th>
+            <th className="w-28"></th>
           </tr>
         </thead>
         <tbody>
@@ -394,6 +442,17 @@ function HubSpotSection({
               )}
               <td className="px-3 py-2 text-ink-2 font-mono">
                 {d.close_date ?? "—"}
+              </td>
+              <td className="px-3 py-2 text-right">
+                <button
+                  type="button"
+                  onClick={() => onAdopt(d)}
+                  disabled={adoptingId === d.deal_id}
+                  className="text-[11px] px-2 py-0.5 rounded border border-orange/50 text-orange hover:bg-orange/10 disabled:opacity-50"
+                  title="Create an editable Bloom pledge from this deal"
+                >
+                  {adoptingId === d.deal_id ? "Adopting…" : "Adopt & edit"}
+                </button>
               </td>
             </tr>
           ))}

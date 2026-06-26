@@ -24,7 +24,7 @@ export default function PulseStrip({ pulse }: { pulse: Pulse }) {
       <StatCard
         label="Runway"
         value={runwayValue}
-        sub={pulse.runwayMonths == null ? "set a burn baseline" : "at current burn"}
+        sub={pulse.runwayMonths == null ? "set a burn baseline" : "months beyond now"}
         delta={runwayDelta(pulse.runwayMonths)}
         muted={pulse.runwayMonths == null}
       />

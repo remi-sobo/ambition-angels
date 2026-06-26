@@ -4,6 +4,7 @@ import type { FinCategory } from "@/lib/finance/types";
 import TransactionFilters from "./_components/TransactionFilters";
 import CategoryPicker from "./_components/CategoryPicker";
 import RestrictedToggle from "./_components/RestrictedToggle";
+import ExcludeFromRunwayToggle from "./_components/ExcludeFromRunwayToggle";
 import AiCategorize from "./_components/AiCategorize";
 
 type SearchParams = {
@@ -43,6 +44,7 @@ type TxnRow = {
   category_id: string | null;
   restricted: boolean;
   restricted_to: string | null;
+  exclude_from_runway: boolean;
   source_file: string | null;
   notes: string | null;
 };
@@ -77,7 +79,7 @@ export default async function TransactionsPage({
   let qb = supabase
     .from("fin_transactions")
     .select(
-      "id, txn_date, description, amount, category_id, restricted, restricted_to, source_file, notes",
+      "id, txn_date, description, amount, category_id, restricted, restricted_to, exclude_from_runway, source_file, notes",
       { count: "exact" }
     );
 
@@ -205,10 +207,18 @@ export default async function TransactionsPage({
                       )}
                     </td>
                     <td className="px-3 py-2 align-top">
-                      <RestrictedToggle
-                        transactionId={r.id}
-                        initial={r.restricted}
-                      />
+                      <div className="flex flex-col items-start gap-1">
+                        <RestrictedToggle
+                          transactionId={r.id}
+                          initial={r.restricted}
+                        />
+                        {r.amount < 0 && (
+                          <ExcludeFromRunwayToggle
+                            transactionId={r.id}
+                            initial={r.exclude_from_runway}
+                          />
+                        )}
+                      </div>
                       {r.restricted && r.restricted_to && (
                         <div className="text-[10px] text-orange/80 mt-1">
                           → {r.restricted_to}

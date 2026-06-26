@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
-import { hasEntitlement } from "@/lib/admin/entitlements";
 import ReedReviewButton from "./_components/ReedReviewButton";
 import { deriveHealth, worstHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { resolveOwner, ownerValue, matchOwner, ownerRank } from "@/lib/admin/plan/owners";
@@ -122,7 +121,6 @@ export default async function StrategicPlanPage({
   for (const i of initiatives) (initiativesByGoal[i.goal_id] ??= []).push(i);
 
   const isEmpty = objectives.length === 0 && goals.length === 0;
-  const reedEnabled = await hasEntitlement("ai.reed");
   const flagged = (s: string) => s === "at_risk" || s === "behind";
   const atRisk =
     objectives.filter((o) => flagged(o.status)).length +
@@ -254,7 +252,7 @@ export default async function StrategicPlanPage({
                 Monthly review
               </Link>
             )}
-            {!isEmpty && reedEnabled && <ReedReviewButton />}
+            {!isEmpty && <ReedReviewButton />}
             {isEmpty ? <SeedButton /> : <RefreshMetricsButton />}
             <NewObjectiveForm />
           </div>

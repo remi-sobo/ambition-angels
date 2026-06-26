@@ -232,6 +232,14 @@ export default async function StrategicPlanPage({
                 KPI Scorecard
               </Link>
             )}
+            {!isEmpty && (
+              <Link
+                href="/admin/strategic-plan/narrative"
+                className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"
+              >
+                Narrative
+              </Link>
+            )}
             <Link
               href="/admin/strategic-plan/setup"
               className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"

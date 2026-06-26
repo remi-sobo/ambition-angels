@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import type { AdminUser } from "@/lib/admin/auth";
+import SearchTrigger from "./search/SearchTrigger";
 
 // ── BloomOS IA (docs/bloomos/06-design-system.md §1) ────────────────────────
 // Seven sections mapped over the pages that exist today. Items without a
@@ -400,6 +401,12 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
           Operating System for Ambition Angels
         </div>
       </div>
+
+      {currentUser && (
+        <div className="px-3 pt-3 -mb-1">
+          <SearchTrigger />
+        </div>
+      )}
 
       <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
         {NAV_SECTIONS.map((section) => (

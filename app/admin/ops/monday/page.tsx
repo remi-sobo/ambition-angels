@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { resolveUserHandle } from "@/lib/admin/ops/identity";
 import TaskRowWithActions, {
   type TaskRowAction,
 } from "../_components/TaskRowWithActions";
@@ -35,11 +35,6 @@ function daysSince(iso: string): number {
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
-function readCurrentUser(): AdminUserId | null {
-  const c = cookies().get("admin_user")?.value;
-  return c === "remi" || c === "shannon" ? c : null;
-}
-
 function otherUser(u: AdminUserId | null): AdminUserId | null {
   if (u === "remi") return "shannon";
   if (u === "shannon") return "remi";
@@ -51,7 +46,7 @@ function cap(s: string): string {
 }
 
 export default async function MondayPlanPage() {
-  const currentUser = readCurrentUser() ?? "remi";
+  const currentUser = (await resolveUserHandle())?.handle ?? "remi";
   const otherPerson = otherUser(currentUser);
   const supabase = getSupabaseAdmin();
 

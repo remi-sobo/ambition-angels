@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { loadHubSpotPledges } from "@/lib/finance/hubspot-pledges";
+import { loadRevenueSchedule } from "@/lib/finance/schedule";
 import PledgesEditor, { type Pledge } from "./_components/PledgesEditor";
+import RevenueSchedule from "./_components/RevenueSchedule";
 
 type SearchParams = { year?: string };
 
@@ -23,7 +25,7 @@ export default async function RevenuePage({
     Number.isFinite(requested) && requested >= 2000 && requested <= 2100 ? requested : configYear;
   const goal = Number(cfg?.fundraising_goal ?? 0);
 
-  const [pledgesRes, hubspotPledges] = await Promise.all([
+  const [pledgesRes, hubspotPledges, scheduleRows] = await Promise.all([
     supabase
       .from("fin_revenue_commitments")
       .select(
@@ -33,7 +35,12 @@ export default async function RevenuePage({
       .order("status", { ascending: true })
       .order("amount", { ascending: false }),
     loadHubSpotPledges(supabase, year),
+    // The canonical schedule for the read-only "feeds runway" panel. Scoped to
+    // the requested year so it tracks the year picker.
+    loadRevenueSchedule(supabase),
   ]);
+
+  const scheduleForYear = scheduleRows.filter((r) => r.due_date.slice(0, 4) === String(year));
 
   const pledges = (pledgesRes.data ?? []).map((p) => ({
     ...p,
@@ -78,6 +85,10 @@ export default async function RevenuePage({
           ))}
         </div>
       </header>
+
+      <div className="mb-8">
+        <RevenueSchedule rows={scheduleForYear} />
+      </div>
 
       <PledgesEditor
         year={year}

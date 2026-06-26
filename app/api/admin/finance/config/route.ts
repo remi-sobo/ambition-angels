@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
@@ -99,5 +100,10 @@ export async function POST(req: NextRequest) {
     entityType: "fin_config",
     after: update,
   });
+  // Every surface that reads the snapshot (config-derived burn baseline, goal,
+  // anchor) needs to drop its cached render so the new numbers show at once.
+  for (const path of ["/admin", "/admin/finance", "/admin/finance/config", "/admin/finance/close"]) {
+    revalidatePath(path);
+  }
   return NextResponse.json({ ok: true, config: data });
 }

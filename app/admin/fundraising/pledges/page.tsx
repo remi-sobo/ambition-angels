@@ -5,7 +5,7 @@ import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "../../ops/_types/ops";
-import { NewPledgeForm } from "./_components/PledgeControls";
+import { NewPledgeForm, ConvertOpportunityForm, type WonOpportunity } from "./_components/PledgeControls";
 
 // Epic F — pledges list: outstanding balances, overdue installments, status.
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ type DbPayment = { pledge_id: string; expected_amount: number; status: string; d
 
 export default async function PledgesPage() {
   const supabase = createServerSupabase();
-  const [pledgesRes, paymentsRes, campaignsRes, fundsRes] = await Promise.all([
+  const [pledgesRes, paymentsRes, campaignsRes, fundsRes, wonRes] = await Promise.all([
     supabase
       .from("pledges")
       .select("id, total_amount, installment_count, frequency, status, start_date, constituent:constituents ( type, first_name, last_name, org_name )")
@@ -32,6 +32,15 @@ export default async function PledgesPage() {
     supabase.from("pledge_payments").select("pledge_id, expected_amount, status, due_date").limit(10000),
     supabase.from("campaigns").select("id, name").order("name"),
     supabase.from("funds").select("id, name").order("name"),
+    // Won asks (steward stage) with a real amount + donor — convertible into a
+    // dated pledge schedule that feeds runway.
+    supabase
+      .from("opportunities")
+      .select("id, name, ask_amount, constituent:constituents ( id, type, first_name, last_name, org_name )")
+      .eq("stage", "steward")
+      .gt("ask_amount", 0)
+      .order("ask_amount", { ascending: false })
+      .limit(50),
   ]);
 
   if (pledgesRes.error) {
@@ -72,6 +81,28 @@ export default async function PledgesPage() {
   const outstanding = activeRows.reduce((s, r) => s + r.balance, 0);
   const overdueCount = rows.reduce((s, r) => s + r.overdue, 0);
 
+  // Committed inflow still scheduled (scheduled + overdue installments) — the
+  // slice of these pledges that lands in v_revenue_schedule and feeds runway.
+  const scheduledInflow = payments
+    .filter((p) => p.status === "scheduled")
+    .reduce((s, p) => s + Number(p.expected_amount), 0);
+
+  const wonOpps: WonOpportunity[] = (
+    (wonRes.data ?? []) as unknown as Array<{
+      id: string;
+      name: string | null;
+      ask_amount: number;
+      constituent: { id: string; type: string; first_name: string | null; last_name: string | null; org_name: string | null } | null;
+    }>
+  )
+    .filter((o) => o.constituent)
+    .map((o) => ({
+      id: o.id,
+      label: o.name || (o.constituent ? constituentName(o.constituent) : "Won ask"),
+      askAmount: Number(o.ask_amount),
+      constituentId: o.constituent!.id,
+    }));
+
   return (
     <div className="min-h-screen bg-ink">
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
@@ -81,12 +112,21 @@ export default async function PledgesPage() {
         />
 
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 flex-1 min-w-[18rem]">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1 min-w-[18rem]">
             <StatCard label="Outstanding" value={money(outstanding)} sub="balance on active pledges" />
             <StatCard label="Active pledges" value={activeRows.length} />
             <StatCard label="Overdue installments" value={overdueCount} sub={overdueCount > 0 ? "past due" : "all current"} muted={overdueCount === 0} />
+            <StatCard label="Scheduled inflow" value={money(scheduledInflow)} sub="feeds runway via the revenue schedule" />
           </div>
-          <NewPledgeForm campaigns={campaigns} funds={funds} />
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
+              <ConvertOpportunityForm opportunities={wonOpps} />
+              <NewPledgeForm campaigns={campaigns} funds={funds} />
+            </div>
+            <Link href="/admin/finance/revenue" className="text-[11px] text-ink-3 hover:text-orange transition-colors">
+              See the full revenue schedule →
+            </Link>
+          </div>
         </div>
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">

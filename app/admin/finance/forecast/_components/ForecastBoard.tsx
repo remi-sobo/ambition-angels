@@ -67,10 +67,13 @@ function runway(cash: number[], startCash: number): { months: number | null; lab
 export default function ForecastBoard({
   cashOnHand,
   monthlyBurn,
+  burnSource,
   seeds,
 }: {
   cashOnHand: number;
   monthlyBurn: number;
+  /** Where the burn came from — the config baseline, or the trailing 3-mo fallback. */
+  burnSource: "config" | "trailing";
   seeds: SeedLever[];
 }) {
   const seedLevers = useMemo<Lever[]>(
@@ -138,7 +141,7 @@ export default function ForecastBoard({
       {/* Headline */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Stat label="Cash on hand" value={money(cashOnHand)} />
-        <Stat label="Monthly burn" value={money(monthlyBurn)} sub="trailing 3-month avg" tone="expense" />
+        <Stat label="Monthly burn" value={money(monthlyBurn)} sub={burnSource === "config" ? "burn baseline (set in Config)" : "trailing 3-month avg"} tone="expense" />
         <RunwayStat baseLabel={baseRunway.label} scenLabel={scenRunway.label} better={(scenRunway.months ?? 999) > (baseRunway.months ?? 999)} worse={(scenRunway.months ?? 999) < (baseRunway.months ?? 999)} />
       </section>
 

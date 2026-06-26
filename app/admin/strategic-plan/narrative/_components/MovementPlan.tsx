@@ -1,0 +1,104 @@
+import { StatusChip } from "../../../_components/StatusChip";
+import type { PlanMovement, NarrativeObjective } from "@/lib/admin/strategy/narrative";
+import { MeasureRow, MovementHeader, STATUS_LABEL, INITIATIVE_STATUS, DOT_BG } from "./shared";
+
+/**
+ * Movement 1 — The Plan. The OGSM tree straight from plan_*: the frame
+ * (mission / vision), then the four objectives, each with its 2026 statement,
+ * owner, status, and nested goals → strategies (initiatives) + measures (KPIs).
+ */
+
+function ObjectiveBlock({ objective, index }: { objective: NarrativeObjective; index: number }) {
+  return (
+    <section className="mb-12">
+      <div className="flex items-start gap-4 mb-4">
+        <div className="font-display text-5xl leading-none text-orange/30 tabular-nums shrink-0 w-16">
+          {String(index + 1).padStart(2, "0")}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <h3 className="font-display text-2xl text-ink-1">{objective.title}</h3>
+            <StatusChip status={objective.status}>{STATUS_LABEL[objective.status]}</StatusChip>
+            {objective.owner && (
+              <span className="text-[11px] uppercase tracking-[0.12em] text-ink-3">{objective.owner}</span>
+            )}
+          </div>
+          {objective.statement && <p className="text-sm text-ink-2 leading-relaxed">{objective.statement}</p>}
+        </div>
+      </div>
+
+      {/* KPIs attached directly to the objective (e.g. the WALL numbers). */}
+      {objective.objectiveKpis.length > 0 && (
+        <div className="ml-0 sm:ml-20 mb-4 rounded-card bg-tile px-4 py-2">
+          {objective.objectiveKpis.map((k) => (
+            <MeasureRow key={k.id} kpi={k} />
+          ))}
+        </div>
+      )}
+
+      <div className="ml-0 sm:ml-20 space-y-3">
+        {objective.goals.map((goal) => (
+          <div key={goal.id} className="rounded-card-lg border border-hairline bg-surface p-5">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h4 className="font-heading font-semibold text-base text-ink-1">{goal.title}</h4>
+              <StatusChip status={goal.status}>{STATUS_LABEL[goal.status]}</StatusChip>
+            </div>
+            {goal.description && <p className="text-[13px] text-ink-2 leading-relaxed mb-3">{goal.description}</p>}
+
+            <div className="grid sm:grid-cols-2 gap-x-8 gap-y-4">
+              {goal.initiatives.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-1.5">
+                    Strategies
+                  </div>
+                  <ul className="space-y-1">
+                    {goal.initiatives.map((i) => (
+                      <li key={i.id} className="flex items-start gap-2 text-[13px] text-ink-1">
+                        <span
+                          aria-hidden
+                          className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${DOT_BG[INITIATIVE_STATUS[i.status] ?? "neutral"]}`}
+                        />
+                        <span>{i.title}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {goal.kpis.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-1.5">
+                    Measures
+                  </div>
+                  <div>
+                    {goal.kpis.map((k) => (
+                      <MeasureRow key={k.id} kpi={k} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export default function MovementPlan({ plan }: { plan: PlanMovement }) {
+  const empty = plan.objectives.length === 0;
+  const frame = plan.foundation && (plan.foundation.mission || plan.foundation.vision) ? plan.foundation : null;
+
+  return (
+    <div>
+      <MovementHeader n={1} title="The Plan" lead={frame?.mission ?? undefined} />
+      {frame?.vision && <p className="max-w-[680px] text-sm text-ink-2 leading-relaxed -mt-4 mb-12">{frame.vision}</p>}
+
+      {empty ? (
+        <p className="text-sm text-ink-2">No plan to narrate yet — build the OGSM in the Strategic Plan first.</p>
+      ) : (
+        plan.objectives.map((o, i) => <ObjectiveBlock key={o.id} objective={o} index={i} />)
+      )}
+    </div>
+  );
+}

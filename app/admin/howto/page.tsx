@@ -304,6 +304,13 @@ const SECTIONS: Section[] = [
   },
 ];
 
+// Render in the sidebar's order so the guide mirrors the nav exactly
+// (Sidebar.tsx: Command Center → Operations → Fundraising → Program → Finance →
+// Data → Governance). The ToC and the sections both read from this.
+const ORDERED_SECTIONS = ["command-center", "operations", "fundraising", "program", "finance", "data", "governance"]
+  .map((id) => SECTIONS.find((s) => s.id === id))
+  .filter((s): s is Section => Boolean(s));
+
 // Cross-cutting things that apply everywhere.
 const GLOBALS: { title: string; body: string }[] = [
   {
@@ -361,7 +368,7 @@ export default function HowToPage() {
         <a href="#start-here" className="text-xs font-semibold text-ink-2 hover:text-orange bg-tile border-[1.5px] border-outline rounded-full px-3 py-1.5 transition-colors">
           Start here
         </a>
-        {SECTIONS.map((s) => (
+        {ORDERED_SECTIONS.map((s) => (
           <a
             key={s.id}
             href={`#${s.id}`}
@@ -391,7 +398,7 @@ export default function HowToPage() {
 
       {/* Sections */}
       <div className="space-y-10">
-        {SECTIONS.map((section) => (
+        {ORDERED_SECTIONS.map((section) => (
           <section key={section.id} id={section.id} className="scroll-mt-20">
             <SectionHeading className="mb-1">{section.label}</SectionHeading>
             <p className="text-sm text-ink-2 mb-4">{section.blurb}</p>

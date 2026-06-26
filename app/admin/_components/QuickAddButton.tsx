@@ -42,14 +42,14 @@ export default function QuickAddButton({
         <button
           aria-label="Close menu"
           onClick={() => setMenuOpen(false)}
-          className="fixed inset-0 z-40 cursor-default xl:hidden"
+          className="fixed inset-0 z-40 cursor-default hidden lg:block xl:hidden"
         />
       )}
 
       {/* The two action chips, anchored just above the FAB. */}
       {menuOpen && (
         <div
-          className="fixed z-40 flex flex-col items-end gap-2 xl:hidden"
+          className="fixed z-40 hidden lg:flex flex-col items-end gap-2 xl:hidden"
           style={{ right: fabOffset.right, bottom: "calc(max(1.5rem, env(safe-area-inset-bottom) + 1rem) + 4.25rem)" }}
         >
           <MenuChip
@@ -75,7 +75,7 @@ export default function QuickAddButton({
         onClick={() => setMenuOpen((o) => !o)}
         aria-label="Quick actions"
         aria-expanded={menuOpen}
-        className={`fixed z-40 xl:hidden w-14 h-14 rounded-full bg-orange hover:bg-orange-dark text-white shadow-2xl shadow-orange/30 flex items-center justify-center text-3xl font-light transition-transform active:scale-95 ${
+        className={`fixed z-40 hidden lg:flex xl:hidden w-14 h-14 rounded-full bg-orange hover:bg-orange-dark text-white shadow-2xl shadow-orange/30 items-center justify-center text-3xl font-light transition-transform active:scale-95 ${
           menuOpen ? "rotate-45" : ""
         }`}
         style={fabOffset}

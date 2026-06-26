@@ -25,7 +25,7 @@ export default function AskReedButton() {
       onClick={() => open({ surface: "fab" })}
       aria-label="Ask Reed"
       aria-haspopup="dialog"
-      className="fixed z-40 xl:hidden w-14 h-14 rounded-full bg-navy hover:bg-[#19305f] text-white shadow-2xl shadow-navy/30 flex items-center justify-center transition-transform active:scale-95"
+      className="fixed z-40 hidden lg:flex xl:hidden w-14 h-14 rounded-full bg-navy hover:bg-[#19305f] text-white shadow-2xl shadow-navy/30 items-center justify-center transition-transform active:scale-95"
       style={fabOffset}
     >
       <ReedMark className="w-6 h-6 text-orange-mid" />

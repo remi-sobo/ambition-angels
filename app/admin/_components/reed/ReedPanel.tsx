@@ -51,11 +51,39 @@ export default function ReedPanel({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [threadId, setThreadId] = useState<string | null>(null);
+  // Tracks the iOS visual viewport so the full-screen mobile sheet shrinks to
+  // sit above the on-screen keyboard (and follows it as it opens/closes)
+  // instead of the ask bar getting buried under it.
+  const [viewport, setViewport] = useState<{ top: number; height: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
+
+  // Lock background scroll while open so the workspace doesn't bounce behind
+  // the sheet on iOS.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  // Follow the visual viewport (keyboard show/hide, address-bar collapse).
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setViewport({ top: vv.offsetTop, height: vv.height });
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -93,13 +121,19 @@ export default function ReedPanel({
   const empty = messages.length === 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label="Reed">
+    <div
+      className="fixed inset-x-0 z-50 flex justify-end"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Reed"
+      style={{ top: viewport?.top ?? 0, height: viewport ? `${viewport.height}px` : "100dvh" }}
+    >
       <button aria-label="Close Reed" onClick={onClose} className="absolute inset-0 bg-ink/50 cursor-default" />
 
-      <aside className="relative z-10 flex h-full w-full max-w-sm flex-col bg-navy text-cream shadow-2xl">
+      <aside className="relative z-10 flex h-full w-full flex-col bg-navy text-cream shadow-2xl sm:max-w-sm">
         {/* header — faint dot texture for warmth on the dark surface */}
         <div
-          className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4"
+          className="flex items-center justify-between gap-3 border-b border-white/10 px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))]"
           style={{
             backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)",
             backgroundSize: "22px 22px",
@@ -183,7 +217,7 @@ export default function ReedPanel({
             e.preventDefault();
             send(input);
           }}
-          className="border-t border-white/10 px-5 py-4"
+          className="border-t border-white/10 px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
         >
           <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 focus-within:border-orange/40">
             <ReedMark className="w-4 h-4 text-cream/40 shrink-0" />

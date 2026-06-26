@@ -13,7 +13,9 @@ import {
   laDateOf,
   todayInTZ,
   dayStartInstant,
+  weekdayIndex,
 } from "@/lib/admin/ops/week";
+import { computeOpenBlocks, type OpenBlock, type Interval } from "@/lib/admin/ops/open-blocks";
 import { getAgenda } from "@/lib/agenda/service";
 import WeekPlanner, {
   type PlannerDay,
@@ -150,6 +152,39 @@ export default async function MondayPlanPage() {
     }
   }
 
+  // Open blocks (free gaps in working hours) + block↔meeting conflicts per day.
+  const openBlocksByDay = new Map<string, OpenBlock[]>();
+  const conflicts: Record<string, boolean> = {};
+  for (const dayISO of weekDayList) {
+    const dow = weekdayIndex(dayISO);
+    if (dow < 1 || dow > 5) continue; // working week only
+    const dayMidnightMs = new Date(dayStartInstant(dayISO)).getTime();
+    const dayEvents = (eventsByDay.get(dayISO) ?? []).filter((ev) => !ev.allDay && ev.end);
+    const busy: Interval[] = dayEvents.map((ev) => ({
+      start: new Date(ev.start).getTime(),
+      end: new Date(ev.end as string).getTime(),
+    }));
+    // Existing task blocks on this day are busy too; any overlapping a real
+    // meeting gets flagged so the user can move it rather than double-book.
+    for (const t of pinnedThisWeek) {
+      if (t.planned_day !== dayISO) continue;
+      const b = scheduled[t.id];
+      if (!b) continue;
+      const bs = new Date(b.start).getTime();
+      const be = new Date(b.end).getTime();
+      busy.push({ start: bs, end: be });
+      for (const ev of dayEvents) {
+        const es = new Date(ev.start).getTime();
+        const ee = new Date(ev.end as string).getTime();
+        if (bs < ee && es < be) {
+          conflicts[t.id] = true;
+          break;
+        }
+      }
+    }
+    openBlocksByDay.set(dayISO, computeOpenBlocks(dayMidnightMs, busy));
+  }
+
   // Split this-week tasks into per-day buckets and a not-yet-scheduled tray.
   const tasksByDay = new Map<string, OpsTask[]>();
   const unscheduled: OpsTask[] = [];
@@ -182,6 +217,7 @@ export default async function MondayPlanPage() {
     isToday: iso === todayISO,
     events: eventsByDay.get(iso) ?? [],
     tasks: tasksByDay.get(iso) ?? [],
+    openBlocks: openBlocksByDay.get(iso) ?? [],
   }));
 
   // Maps don't serialize across the server/client boundary — hand over a plain object.
@@ -279,6 +315,7 @@ export default async function MondayPlanPage() {
       unscheduled={unscheduled}
       projectNames={projectNamesObj}
       scheduled={scheduled}
+      conflicts={conflicts}
     />
   );
 

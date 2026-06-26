@@ -220,20 +220,30 @@ const SECTIONS: Section[] = [
           "Group by priority, status, department, or project",
           "“Linked” filter narrows to CRM work — All / CRM-linked / Partners / Donors",
           "Quick-add, subtasks, priorities, labels, and pins",
+          "Plan a task into a week and onto a day (Monday Plan), or schedule it into a calendar block — the task carries that planning everywhere it shows",
           "Each task can carry a chip linking back to the partner or donor it's about",
         ],
       },
       {
         name: "Monday Plan",
         href: "/admin/ops/monday",
-        what: "The weekly planning view — pin what matters for the week ahead.",
-        does: ["Set the week's focus", "Pin tasks for the week"],
+        what: "Plan the week day by day against your real calendar — place tasks onto specific days, reorder them, and drop one into an open time block to put it on your Google Calendar.",
+        does: [
+          "Walk the week Monday → Sunday with your agenda shown alongside each day",
+          "Place a task on a day, reorder within a day, or “Push to next week” — which actually moves it to next week",
+          "Schedule a task into a time block and BloomOS writes a tagged Google Calendar event; editing the block in BloomOS updates Google",
+          "“From last week” surfaces anything planned for an earlier week that still isn't done",
+        ],
       },
       {
         name: "Friday Review",
         href: "/admin/ops/friday",
-        what: "The weekly review — what got done and what carries over.",
-        does: ["Review completed work", "Close out or roll forward"],
+        what: "The weekly review, walked day by day — what was planned each day, what shipped, and what rolls forward.",
+        does: [
+          "See each day's planned work split into done vs. still-open",
+          "Mark done, or push unfinished work to next week",
+          "“Also completed this week” catches wins that weren't on the plan",
+        ],
       },
       {
         name: "Projects",
@@ -243,8 +253,19 @@ const SECTIONS: Section[] = [
       },
       {
         name: "Meetings",
+        href: "/admin/meetings",
+        what: "Your real meetings — synced from your calendar and matched to the donor or partner each one concerns — with notes, transcripts, and follow-ups that actually get done.",
+        does: [
+          "Past and upcoming meetings, each matched to a donor/partner; the meeting lands on their timeline",
+          "Paste a transcript and Reed drafts a summary plus one to three suggested follow-ups — accept one and it becomes a real task linked to the donor",
+          "A deterministic “N meetings with no follow-up” coverage line keeps anything from slipping; clear it by adding a follow-up or marking it not needed",
+          "“Sync from calendar” pulls your past external meetings in and matches the attendees",
+        ],
+      },
+      {
+        name: "Booking page",
         href: "/admin/meet",
-        what: "The meeting scheduler — meeting types, availability, and bookings.",
+        what: "Your outbound scheduler — bookable meeting types, availability, and incoming bookings (the Calendly-style page). It lives here now that Meetings is your record of real meetings.",
         does: ["Offer bookable meeting types", "Manage availability and incoming bookings"],
       },
       { name: "Team", soon: true, what: "Team roster and roles. Coming soon." },
@@ -291,12 +312,20 @@ const GLOBALS: { title: string; body: string }[] = [
     body: "Each operator (Remi, Shannon) signs in from the login panel. The left sidebar is the table of contents for the whole system; items marked “Soon” are planned but not built yet.",
   },
   {
+    title: "Your rail — the daily cockpit",
+    body: "The right rail rides along on every page. It shows today's agenda with day-by-day arrows (and rolls forward to your next meeting when today is done), what Needs you — overdue, due today, and your next donor touch — a “This week” load ribbon, and a Capture box for instant tasks, with “Ask Reed” for anything bigger.",
+  },
+  {
     title: "The data spine & HubSpot sync",
     body: "Fundraising views read a synced mirror of HubSpot (the “spine”). Use “Sync HubSpot” in the sidebar to pull the latest — it advances in chunks. The colored dot below it shows data freshness: green (fresh), amber (watch), red (stale), so you always know how current the numbers are.",
   },
   {
     title: "Email logging",
     body: "“Sync email” on Today's Moves pulls your Gmail threads with donors into each donor's timeline (verified-address matching only; staff-to-staff mail is skipped).",
+  },
+  {
+    title: "Your calendar, two ways",
+    body: "BloomOS mirrors your Google Calendar so your agenda is always current. Schedule a task into a time block and it writes a tagged event back to Google; move or delete that event in Google and it flows back — the task follows the new time, or unschedules itself, but never disappears.",
   },
   {
     title: "Tasks connect everything",
@@ -307,8 +336,8 @@ const GLOBALS: { title: string; body: string }[] = [
     body: "Every Monday morning BloomOS emails each operator a personalized digest: last week's giving, what's due, and your own overdue CRM tasks (plus anything unassigned). The same overdue list is on the Weekly Briefing page, where you can reschedule or complete items inline.",
   },
   {
-    title: "AI, used carefully",
-    body: "Where AI helps (next-best-action, prospect briefs, the weekly narrative) it's grounded strictly in your real data, drafts for your approval, and never auto-applies. Deterministic logic runs first; the model only narrates on top.",
+    title: "Meet Reed — AI, used carefully",
+    body: "Reed is the BloomOS AI. Where it helps — drafting meeting follow-ups, ranking fundraising next-moves, writing prospect briefs and the weekly narrative, reviewing the strategic plan — it's grounded strictly in your real data, drafts for your approval, and never auto-applies. Deterministic logic runs first; Reed only proposes on top. (Reed is our product AI, not a third-party meeting notetaker.)",
   },
   {
     title: "Audit trail",

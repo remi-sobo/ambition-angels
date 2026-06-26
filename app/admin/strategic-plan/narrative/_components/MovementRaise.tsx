@@ -22,7 +22,11 @@ function runwayStatus(months: number | null, cash: number): Status {
 const titleCase = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 
 export default function MovementRaise({ money }: { money: MoneySummary }) {
-  const { floor, ceiling, secured, weightedPipeline, gap, realistic, cashOnHand, runwayMonths, allocation } = money;
+  const {
+    floor, ceiling, secured, weightedPipeline, gap, realistic, residual,
+    cashOnHand, runwayMonths, monthlyBurn, runwayTargetMonths, runwayBridge,
+    sources, allocation, stagedUnlockAt,
+  } = money;
 
   const securedPct = floor && floor > 0 ? Math.min(100, Math.round((secured / floor) * 100)) : null;
   const realisticPct = floor && floor > 0 ? Math.min(100, Math.round((realistic / floor) * 100)) : null;
@@ -78,19 +82,44 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
         </div>
       )}
 
-      {/* The honest number: net-new still needed even after a realistic close. */}
-      {floor != null && realistic < floor && (
-        <div className="mb-8 rounded-card-lg border border-orange/30 bg-orange-light px-5 py-4">
-          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-orange-dark mb-1">
-            The honest number
+      {/* The bridge to the floor — every dollar from secured to the floor, in one
+          place, with the residual named honestly as coverage still to develop. */}
+      {floor != null && (
+        <div className="mb-8 rounded-card-lg border border-hairline bg-surface p-5">
+          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-3">
+            The bridge to the floor
           </div>
-          <div className="font-display text-3xl sm:text-4xl leading-none tabular-nums text-ink-1">
-            {formatUsd(floor - realistic)}
+          <div className="space-y-2 text-sm">
+            <div className="flex items-baseline justify-between">
+              <span className="text-ink-2">Secured to date</span>
+              <span className="tabular-nums text-ink-1">{formatUsd(secured)}</span>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-ink-2">+ Weighted pipeline (open asks × probability)</span>
+              <span className="tabular-nums text-ink-1">{formatUsd(weightedPipeline)}</span>
+            </div>
+            <div className="flex items-baseline justify-between pt-2 border-t border-hairline">
+              <span className="text-ink-1 font-semibold">= Realistic close</span>
+              <span className="tabular-nums text-ink-1 font-semibold">{formatUsd(realistic)}</span>
+            </div>
+            {residual != null && residual > 0 && (
+              <div className="flex items-baseline justify-between">
+                <span className="text-orange-dark">+ Named coverage still to develop</span>
+                <span className="tabular-nums text-orange-dark font-semibold">{formatUsd(residual)}</span>
+              </div>
+            )}
+            <div className="flex items-baseline justify-between pt-2 border-t border-hairline">
+              <span className="text-ink-1 font-semibold">= Committed floor</span>
+              <span className="tabular-nums text-ink-1 font-semibold">{formatUsd(floor)}</span>
+            </div>
           </div>
-          <div className="mt-1.5 text-[13px] text-ink-2">
-            of net-new money to clear the floor on a realistic close — over and above secured and the
-            weighted pipeline.
-          </div>
+          {residual != null && residual > 0 && (
+            <div className="mt-3 text-[12px] text-ink-3">
+              The <strong className="text-orange-dark">{formatUsd(residual)}</strong> residual is the honest
+              number: net-new money to clear the floor beyond secured and the weighted pipeline. It closes by
+              naming prospects against the doors in Movement 3 — shown here, not hidden.
+            </div>
+          )}
         </div>
       )}
 
@@ -108,11 +137,51 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
         />
       </div>
 
+      {/* Near-term runway bridge — the urgent ask, separate from the annual floor. */}
+      {runwayBridge > 0 && (
+        <div className="mb-8 rounded-card-lg border border-status-critical/30 bg-status-critical-bg px-5 py-4">
+          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-status-critical-text mb-1">
+            Near-term runway bridge
+          </div>
+          <div className="font-display text-3xl sm:text-4xl leading-none tabular-nums text-ink-1">
+            {formatUsd(runwayBridge)}
+          </div>
+          <div className="mt-1.5 text-[13px] text-ink-2">
+            to restore a {runwayTargetMonths}-month cushion at {formatUsd(monthlyBurn)}/mo burn — today there is{" "}
+            {formatUsd(cashOnHand)} on hand
+            {runwayMonths != null && <> ({runwayMonths % 1 === 0 ? runwayMonths : runwayMonths.toFixed(1)} months)</>}. This is
+            the urgent ask, distinct from the annual floor below.
+          </div>
+        </div>
+      )}
+
       {/* Stage to the ceiling. */}
       {ceiling != null && floor != null && ceiling > floor && (
         <div className="mb-8 rounded-card border border-hairline bg-tile px-5 py-3 text-sm text-ink-2">
           Stage to the ceiling: <strong className="text-ink-1">{formatUsd(ceiling)}</strong> everything-on, unlocking{" "}
-          <strong className="text-ink-1">{formatUsd(ceiling - floor)}</strong> of staged tiers as money lands.
+          <strong className="text-ink-1">{formatUsd(ceiling - floor)}</strong> of staged tiers
+          {stagedUnlockAt != null ? <> once the raise clears <strong className="text-ink-1">{formatUsd(stagedUnlockAt)}</strong></> : " as money lands"}.
+        </div>
+      )}
+
+      {/* How the floor is RAISED FROM — channel targets summing to the floor. */}
+      {sources.length > 0 && (
+        <div className="mb-8 rounded-card-lg border border-hairline bg-surface p-5">
+          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-3">
+            How the committed floor is sourced
+          </div>
+          <div className="space-y-1">
+            {sources.map((s) => (
+              <div key={s.label} className="flex items-baseline justify-between gap-3 py-1.5 border-b border-hairline last:border-0">
+                <span className="text-sm text-ink-1">{s.label}</span>
+                <span className="text-sm font-heading font-semibold tabular-nums text-ink-1">{formatUsd(s.amount)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 pt-2 border-t border-hairline flex items-baseline justify-between text-sm">
+            <span className="text-ink-2">Total across channels</span>
+            <span className="tabular-nums text-ink-1 font-semibold">{formatUsd(sources.reduce((s, x) => s + x.amount, 0))}</span>
+          </div>
         </div>
       )}
 
@@ -123,17 +192,40 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
             Where the committed floor goes
           </div>
           <div className="space-y-2.5">
-            {bars.map((a) => (
-              <div key={a.group}>
-                <div className="flex items-baseline justify-between text-sm mb-1">
-                  <span className="text-ink-1">{titleCase(a.group)}</span>
-                  <span className="tabular-nums text-ink-2">{formatUsd(a.base)}</span>
+            {bars.map((a) => {
+              // Show the largest lines so a featured number (the $400K platform
+              // build) is visible; fold the long tail into one "+ N more" row.
+              const top = a.lines.slice(0, 3);
+              const rest = a.lines.slice(3);
+              const restSum = rest.reduce((s, l) => s + l.amount, 0);
+              return (
+                <div key={a.group}>
+                  <div className="flex items-baseline justify-between text-sm mb-1">
+                    <span className="text-ink-1">{titleCase(a.group)}</span>
+                    <span className="tabular-nums text-ink-2">{formatUsd(a.base)}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-tile overflow-hidden">
+                    <div className="h-full bg-orange/70" style={{ width: `${Math.round((a.base / maxBase) * 100)}%` }} />
+                  </div>
+                  {a.lines.length > 1 && (
+                    <div className="mt-1 ml-0.5 space-y-0.5">
+                      {top.map((l) => (
+                        <div key={l.label} className="flex items-baseline justify-between text-[12px] text-ink-3">
+                          <span className="truncate pr-3">{l.label}</span>
+                          <span className="tabular-nums shrink-0">{formatUsd(l.amount)}</span>
+                        </div>
+                      ))}
+                      {rest.length > 0 && (
+                        <div className="flex items-baseline justify-between text-[12px] text-ink-3/80">
+                          <span>+ {rest.length} more</span>
+                          <span className="tabular-nums shrink-0">{formatUsd(restSum)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="h-2 rounded-full bg-tile overflow-hidden">
-                  <div className="h-full bg-orange/70" style={{ width: `${Math.round((a.base / maxBase) * 100)}%` }} />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           {staged > 0 && (
             <div className="mt-4 pt-3 border-t border-hairline text-[12px] text-ink-3">

@@ -26,6 +26,8 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
 import { planHealthToStatus, type Status } from "@/lib/admin/status";
+import { deriveHealth } from "@/lib/admin/plan/health";
+import { FINANCE } from "@/lib/admin/thresholds";
 import { computeSecuredFy, computeWeightedPipeline } from "@/lib/admin/strategy/money";
 
 const ORG = (orgId: string) => orgId;
@@ -40,6 +42,12 @@ const METRIC = {
   corporate: "corporate_raised",
   aigMultiyear: "aig_multiyear_commitments",
 } as const;
+
+// KPIs whose metric_key carries this prefix are the floor's source decomposition
+// (foundations / corporate / individual). They power the "How the floor is
+// sourced" block in Movement 2 and are deliberately excluded from the Movement 1
+// measure lists, so a $510K source target never renders as a "Not started" KPI.
+const FLOOR_SOURCE_PREFIX = "floor_source_";
 
 // ── Shared row shapes (a thin slice of plan_* — see PlanControls.tsx) ────────
 
@@ -121,20 +129,42 @@ export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
     initiativesByGoal.set(i.goal_id as string, arr);
   }
 
+  // Raw plan-health strings (behind / at_risk / on_track / not_started) kept
+  // alongside the display KPIs so objective/goal status can be ROLLED UP from
+  // the measures (worst-leaf-wins) instead of trusting a hand-set headline — a
+  // green objective can no longer sit on top of a Behind KPI.
   const kpisByGoal = new Map<string, NarrativeKpi[]>();
   const kpisByObjectiveDirect = new Map<string, NarrativeKpi[]>();
+  const rawByGoal = new Map<string, string[]>();
+  const rawByObjectiveDirect = new Map<string, string[]>();
   for (const k of kpis) {
+    // Source-decomposition KPIs are sourcing targets, not progress measures:
+    // keep them out of the plan tree and the roll-up entirely.
+    if ((k.metric_key as string | null)?.startsWith(FLOOR_SOURCE_PREFIX)) continue;
     const kpi = toKpi(k);
+    const raw = (k.status as string | null) ?? "not_started";
     if (k.goal_id) {
       const arr = kpisByGoal.get(k.goal_id as string) ?? [];
       arr.push(kpi);
       kpisByGoal.set(k.goal_id as string, arr);
+      const rarr = rawByGoal.get(k.goal_id as string) ?? [];
+      rarr.push(raw);
+      rawByGoal.set(k.goal_id as string, rarr);
     } else if (k.objective_id) {
       const arr = kpisByObjectiveDirect.get(k.objective_id as string) ?? [];
       arr.push(kpi);
       kpisByObjectiveDirect.set(k.objective_id as string, arr);
+      const rarr = rawByObjectiveDirect.get(k.objective_id as string) ?? [];
+      rarr.push(raw);
+      rawByObjectiveDirect.set(k.objective_id as string, rarr);
     }
   }
+
+  // Roll a set of raw KPI statuses up to a display Status. With measures, the
+  // worst leaf wins (deriveHealth); with no measures at all, fall back to the
+  // stored health so an initiative-only goal isn't wrongly blanked to neutral.
+  const rollup = (raw: string[], stored: string | null): Status =>
+    raw.length ? planHealthToStatus(deriveHealth(raw) ?? "not_started") : planHealthToStatus(stored);
 
   const goalsByObjective = new Map<string, NarrativeGoal[]>();
   for (const g of goals) {
@@ -144,7 +174,7 @@ export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
       id: g.id as string,
       title: g.title as string,
       description: (g.description as string | null) ?? null,
-      status: planHealthToStatus(g.status as string | null),
+      status: rollup(rawByGoal.get(g.id as string) ?? [], g.status as string | null),
       owner: (g.owner as string | null) ?? null,
       initiatives: initiativesByGoal.get(g.id as string) ?? [],
       kpis: kpisByGoal.get(g.id as string) ?? [],
@@ -152,15 +182,24 @@ export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
     goalsByObjective.set(g.objective_id as string, arr);
   }
 
-  const objectives: NarrativeObjective[] = (objectivesRes.data ?? []).map((o) => ({
-    id: o.id as string,
-    title: o.title as string,
-    statement: (o.three_year_statement as string | null) ?? null,
-    owner: (o.owner as string | null) ?? null,
-    status: planHealthToStatus(o.status as string | null),
-    goals: goalsByObjective.get(o.id as string) ?? [],
-    objectiveKpis: kpisByObjectiveDirect.get(o.id as string) ?? [],
-  }));
+  const objectives: NarrativeObjective[] = (objectivesRes.data ?? []).map((o) => {
+    const goalsHere = goalsByObjective.get(o.id as string) ?? [];
+    // Objective health rolls up every measure beneath it: its goals' KPIs plus
+    // any KPI attached straight to the objective.
+    const raw = [
+      ...goalsHere.flatMap((g) => rawByGoal.get(g.id) ?? []),
+      ...(rawByObjectiveDirect.get(o.id as string) ?? []),
+    ];
+    return {
+      id: o.id as string,
+      title: o.title as string,
+      statement: (o.three_year_statement as string | null) ?? null,
+      owner: (o.owner as string | null) ?? null,
+      status: rollup(raw, o.status as string | null),
+      goals: goalsHere,
+      objectiveKpis: kpisByObjectiveDirect.get(o.id as string) ?? [],
+    };
+  });
 
   const foundation = foundationRes.data
     ? { mission: (foundationRes.data.mission as string | null) ?? null, vision: (foundationRes.data.vision as string | null) ?? null }
@@ -171,7 +210,12 @@ export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
 
 // ── Movement 2: What We Need to Raise ────────────────────────────────────────
 
-export type AllocationGroup = { group: string; base: number; stagedT1: number; stagedT2: number };
+/** A budget line inside an allocation group (fin_categories.display_name + base). */
+export type AllocationLine = { label: string; amount: number };
+export type AllocationGroup = { group: string; base: number; stagedT1: number; stagedT2: number; lines: AllocationLine[] };
+
+/** A funding source: a channel target the committed floor is raised against. */
+export type FundingSource = { label: string; amount: number };
 
 export type MoneySummary = {
   /** Targets from the OGSM (plan_kpis); null when the metric_key is unseeded. */
@@ -183,11 +227,21 @@ export type MoneySummary = {
   /** Derived. gap is null when there is no floor target to subtract from. */
   gap: number | null; // max(0, floor − secured)
   realistic: number; // secured + weightedPipeline (each dollar counted once)
+  /** Net-new still to source after a realistic close — the residual coverage to develop. */
+  residual: number | null; // max(0, floor − realistic)
   cashOnHand: number;
   runwayMonths: number | null;
-  /** Where the committed floor + staged tiers go (fin_budget by category group). */
+  /** Near-term bridge: dollars to restore a healthy runway, distinct from the annual floor. */
+  monthlyBurn: number;
+  runwayTargetMonths: number;
+  runwayBridge: number; // max(0, target months × burn − cash on hand)
+  /** Where the floor is RAISED FROM — channel targets summing to the floor. */
+  sources: FundingSource[];
+  /** Where the committed floor + staged tiers GO (fin_budget by category group, with line detail). */
   allocation: AllocationGroup[];
   allocationFloorTotal: number; // Σ base across groups (the committed floor)
+  /** The raised figure at/above which the staged tiers unlock (threshold × floor). */
+  stagedUnlockAt: number | null;
 };
 
 export async function getRaiseMovement(orgId: string): Promise<MoneySummary> {
@@ -196,12 +250,14 @@ export async function getRaiseMovement(orgId: string): Promise<MoneySummary> {
 
   // Actuals from the shared money module — the same functions the scorecard's
   // auto-metrics refresh from, so the narrative and the scorecard can't drift.
-  const [targetsRes, secured, weightedPipeline, budgetRes, catsRes] = await Promise.all([
+  const [targetsRes, sourcesRes, secured, weightedPipeline, budgetRes, catsRes, cfgRes] = await Promise.all([
     sb.from("plan_kpis").select("metric_key, target").eq("org_id", ORG(orgId)).in("metric_key", [METRIC.floor, METRIC.ceiling]),
+    sb.from("plan_kpis").select("title, target, metric_key").eq("org_id", ORG(orgId)).like("metric_key", `${FLOOR_SOURCE_PREFIX}%`),
     computeSecuredFy(sb, orgId),
     computeWeightedPipeline(sb, orgId),
     sb.from("fin_budget").select("category_id, base_amount, contingency_t1, contingency_t2").eq("org_id", ORG(orgId)).eq("year", fin.cfg.year),
-    sb.from("fin_categories").select("id, group_name, kind, enabled").eq("org_id", ORG(orgId)),
+    sb.from("fin_categories").select("id, group_name, display_name, kind, enabled").eq("org_id", ORG(orgId)),
+    sb.from("fin_config").select("contingency_unlock_threshold").eq("org_id", ORG(orgId)).maybeSingle(),
   ]);
 
   const targetOf = (key: string): number | null => {
@@ -211,35 +267,66 @@ export async function getRaiseMovement(orgId: string): Promise<MoneySummary> {
   const floor = targetOf(METRIC.floor);
   const ceiling = targetOf(METRIC.ceiling);
 
+  // Where the floor is RAISED FROM — channel targets that sum to the floor.
+  const sources: FundingSource[] = (sourcesRes.data ?? [])
+    .map((r) => ({ label: r.title as string, amount: Number(r.target ?? 0) }))
+    .filter((s) => s.amount > 0)
+    .sort((a, b) => b.amount - a.amount);
+
   // Allocation: budget lines grouped by category group, expense categories only.
-  const groupOfCat = new Map<string, string>();
+  // Each group keeps its line detail (display_name + base) so a featured number
+  // like the $400K platform build shows as a line, not buried in a group total.
+  const catMeta = new Map<string, { group: string; label: string }>();
   for (const c of catsRes.data ?? []) {
-    if (c.kind === "expense" && c.enabled !== false) groupOfCat.set(c.id as string, c.group_name as string);
+    if (c.kind === "expense" && c.enabled !== false)
+      catMeta.set(c.id as string, { group: c.group_name as string, label: (c.display_name as string) ?? (c.group_name as string) });
   }
   const allocMap = new Map<string, AllocationGroup>();
   for (const b of budgetRes.data ?? []) {
-    const group = groupOfCat.get(b.category_id as string);
-    if (!group) continue;
-    const row = allocMap.get(group) ?? { group, base: 0, stagedT1: 0, stagedT2: 0 };
-    row.base += Number(b.base_amount ?? 0);
+    const meta = catMeta.get(b.category_id as string);
+    if (!meta) continue;
+    const row = allocMap.get(meta.group) ?? { group: meta.group, base: 0, stagedT1: 0, stagedT2: 0, lines: [] };
+    const base = Number(b.base_amount ?? 0);
+    row.base += base;
     row.stagedT1 += Number(b.contingency_t1 ?? 0);
     row.stagedT2 += Number(b.contingency_t2 ?? 0);
-    allocMap.set(group, row);
+    if (base > 0) row.lines.push({ label: meta.label, amount: base });
+    allocMap.set(meta.group, row);
   }
-  const allocation = Array.from(allocMap.values()).sort((a, b) => b.base - a.base);
+  const allocation = Array.from(allocMap.values())
+    .map((g) => ({ ...g, lines: g.lines.sort((a, b) => b.amount - a.amount) }))
+    .sort((a, b) => b.base - a.base);
   const allocationFloorTotal = allocation.reduce((s, a) => s + a.base, 0);
 
+  // Near-term runway bridge: dollars to restore a healthy cushion (target months
+  // of burn), held separate from the annual floor. Burn = the settable baseline,
+  // falling back to trailing 3-month burn; target = the finance watch line.
+  const monthlyBurn = fin.cfg.baseline ?? fin.burn3mo;
+  const runwayTargetMonths = FINANCE.runwayWatchMonths;
+  const runwayBridge = Math.max(0, runwayTargetMonths * monthlyBurn - fin.cashOnHand);
+
+  // Staged tiers unlock once the raise clears threshold × floor (fin_config).
+  const unlockThreshold = cfgRes.data?.contingency_unlock_threshold == null ? null : Number(cfgRes.data.contingency_unlock_threshold);
+  const stagedUnlockAt = floor != null && unlockThreshold != null ? Math.round(floor * unlockThreshold) : null;
+
+  const realistic = secured + weightedPipeline;
   return {
     floor,
     ceiling,
     secured,
     weightedPipeline,
     gap: floor == null ? null : Math.max(0, floor - secured),
-    realistic: secured + weightedPipeline,
+    realistic,
+    residual: floor == null ? null : Math.max(0, floor - realistic),
     cashOnHand: fin.cashOnHand,
     runwayMonths: fin.runwayMonths,
+    monthlyBurn,
+    runwayTargetMonths,
+    runwayBridge,
+    sources,
     allocation,
     allocationFloorTotal,
+    stagedUnlockAt,
   };
 }
 

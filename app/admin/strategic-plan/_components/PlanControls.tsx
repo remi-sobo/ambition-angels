@@ -12,6 +12,8 @@ export type PlanFoundation = {
   vision: string | null;
   values: string[];
   behaviors: string[];
+  /** Funder-facing proof points shown in the Narrative's proof strip. */
+  proof_points: { value: string; label: string }[] | null;
 } | null;
 
 export type PlanObjective = {
@@ -183,12 +185,22 @@ export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) 
   const [vision, setVision] = useState(foundation?.vision ?? "");
   const [values, setValues] = useState((foundation?.values ?? []).join(", "));
   const [behaviors, setBehaviors] = useState((foundation?.behaviors ?? []).join(", "));
+  // Proof points edit as one "value | label" per line (e.g. "3,500+ | teens reached").
+  const [proof, setProof] = useState((foundation?.proof_points ?? []).map((p) => `${p.value} | ${p.label}`).join("\n"));
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
-      const ok = await api("/api/admin/plan/foundation", "PUT", { mission, vision, values, behaviors });
+      const proof_points = proof
+        .split("\n")
+        .map((line) => {
+          const i = line.indexOf("|");
+          if (i === -1) return { value: line.trim(), label: "" };
+          return { value: line.slice(0, i).trim(), label: line.slice(i + 1).trim() };
+        })
+        .filter((p) => p.value);
+      const ok = await api("/api/admin/plan/foundation", "PUT", { mission, vision, values, behaviors, proof_points });
       if (ok) {
         setEditing(false);
         router.refresh();
@@ -212,6 +224,9 @@ export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) 
         </label>
         <label className="block text-xs text-ink-2">Behaviors (comma-separated)
           <input className={`${inputCls} w-full mt-1`} value={behaviors} onChange={(e) => setBehaviors(e.target.value)} />
+        </label>
+        <label className="block text-xs text-ink-2">Proof points — one per line, <span className="text-ink-3">value | label</span> (shown in the funder Narrative)
+          <textarea className={`${inputCls} w-full mt-1 font-mono text-[12px]`} rows={4} placeholder={"3,500+ | teens reached\n87% | Title I schools"} value={proof} onChange={(e) => setProof(e.target.value)} />
         </label>
         <div className="flex gap-2">
           <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full disabled:opacity-50">
@@ -258,6 +273,18 @@ export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) 
               </div>
             )}
           </div>
+          {(foundation!.proof_points ?? []).length > 0 && (
+            <div>
+              <span className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Proof points <span className="normal-case text-ink-3 font-normal">· shown in the funder Narrative</span></span>
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {foundation!.proof_points!.map((p) => (
+                  <span key={`${p.value}-${p.label}`} className="text-[11px] bg-tile text-ink-1 rounded-full px-2 py-0.5">
+                    <strong>{p.value}</strong> {p.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </section>
@@ -615,6 +642,10 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(kpi.current?.toString() ?? "");
+  // The target is a human-set goal, so it's editable on every KPI — including
+  // auto ones (the system computes the actual, not the target you're aiming at).
+  const [editingTarget, setEditingTarget] = useState(false);
+  const [tval, setTval] = useState(kpi.target?.toString() ?? "");
 
   const patch = async (fields: Record<string, unknown>) => {
     setBusy(true);
@@ -626,6 +657,12 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
     if (n !== null && !Number.isFinite(n)) { alert("Enter a number"); return; }
     setEditing(false);
     await patch({ current: n });
+  };
+  const saveTarget = async () => {
+    const n = tval.trim() === "" ? null : Number(tval);
+    if (n !== null && !Number.isFinite(n)) { alert("Enter a number"); return; }
+    setEditingTarget(false);
+    await patch({ target: n });
   };
   const remove = async () => {
     if (!confirm(`Delete KPI “${kpi.title}”?`)) return;
@@ -664,14 +701,37 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
           <button onClick={() => void saveVal()} className="text-revenue">✓</button>
         </span>
       ) : (
-        <button
-          onClick={() => kpi.source === "manual" && setEditing(true)}
-          className={`tabular-nums ${kpi.source === "manual" ? "text-ink-1 hover:text-orange" : "text-ink-2 cursor-default"}`}
-          title={kpi.source === "manual" ? "Click to update" : "Computed automatically (Phase 3)"}
-        >
-          {fmtVal(kpi.current, kpi.unit)}
-          {kpi.target !== null && <span className="text-ink-3"> / {fmtVal(kpi.target, kpi.unit)}</span>}
-        </button>
+        <span className="tabular-nums flex items-center">
+          <button
+            onClick={() => kpi.source === "manual" && setEditing(true)}
+            className={kpi.source === "manual" ? "text-ink-1 hover:text-orange" : "text-ink-2 cursor-default"}
+            title={kpi.source === "manual" ? "Click to update the value" : "Value computed automatically"}
+          >
+            {fmtVal(kpi.current, kpi.unit)}
+          </button>
+          {editingTarget ? (
+            <span className="flex items-center gap-1 ml-1">
+              <span className="text-ink-3">/</span>
+              <input
+                autoFocus
+                className={`${inputCls} !py-0.5 !px-1.5 !text-xs w-20`}
+                value={tval}
+                placeholder="target"
+                onChange={(e) => setTval(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") void saveTarget(); if (e.key === "Escape") setEditingTarget(false); }}
+              />
+              <button onClick={() => void saveTarget()} className="text-revenue">✓</button>
+            </span>
+          ) : (
+            <button
+              onClick={() => setEditingTarget(true)}
+              className="text-ink-3 hover:text-orange ml-1"
+              title="Click to set the target"
+            >
+              / {kpi.target !== null ? fmtVal(kpi.target, kpi.unit) : "—"}
+            </button>
+          )}
+        </span>
       )}
       <select
         value={kpi.status}

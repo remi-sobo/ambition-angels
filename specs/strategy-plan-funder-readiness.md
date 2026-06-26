@@ -142,9 +142,20 @@ This spec turns that review into buildable work. Every finding below is tagged w
 - AA-specific content (that's Build 1).
 - The public site, the metered research agent, finance recording mechanics.
 
+## Principle #0 — everything editable at its source
+
+No funder-facing value lives hardcoded in a component. Anything Remi might want to change — proof points, channel targets, the runway target, door copy, status — is stored in a table and editable from the strategy/finance admin, with the Narrative reading it live. Every upgrade below is held to this: if it adds a value, it adds the place to edit it.
+
+## Phase 1 — executed (2026-06-26): the Build-1 additions are now editable at source
+
+- **Proof points** moved out of the component into `plan_foundation.proof_points` (jsonb, additive migration `strategy_proof_points.sql`). Edited in the Foundation panel on `/admin/strategic-plan` (one `value | label` per line); read live by Movement 1, with the headline stats as a fallback only until an org sets its own.
+- **KPI targets** (including the floor-by-source amounts: Individual $510K / Foundations $507,782 / Corporate $100K) are now inline-editable in `KpiRow` — the target is a human goal, editable on every KPI including auto ones (the system computes the actual, you set the target). The API already accepted `target`; this adds the control.
+- **Still code-config, flagged for a later phase:** the runway *target* months (6) lives in `lib/admin/thresholds` (`FINANCE.runwayWatchMonths`). Surfacing a thresholds editor (or moving it to `fin_config`) is B2-4's runway-bridge work.
+
 ## The five upgrades
 
 ### B2-1 — Computed status roll-up (fixes F3 class)
+*Build 1 already ships the roll-up in the Narrative read layer; B2-1 makes it the platform default in `PlanControls`/scorecard and adds the reasoned-override model.*
 Today objective/goal `status` is a free dropdown that can contradict its KPIs (the Narrative even reads the manual value). Make the **roll-up the default**: objective status = worst-leaf of its goals' KPIs via `deriveHealth`; goals = worst-leaf of their KPIs. Allow a manual override only with a stored reason (`status_override`, `status_override_reason`), and render the override visibly as an override. The Narrative and `PlanControls` both read the computed value. *Touches:* `lib/admin/plan/health`, `plan_objectives`/`plan_goals` (add override columns), `narrative.ts`, `PlanControls.tsx`.
 
 ### B2-2 — Baselines & the "no naked target" rule (fixes F11/F10 class)

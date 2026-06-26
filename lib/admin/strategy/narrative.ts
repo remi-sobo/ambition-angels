@@ -90,8 +90,11 @@ export type NarrativeObjective = {
   objectiveKpis: NarrativeKpi[];
 };
 
+/** A proof point shown before the plan — editable on plan_foundation. */
+export type ProofPoint = { value: string; label: string };
+
 export type PlanMovement = {
-  foundation: { mission: string | null; vision: string | null } | null;
+  foundation: { mission: string | null; vision: string | null; proofPoints: ProofPoint[] } | null;
   objectives: NarrativeObjective[];
 };
 
@@ -100,7 +103,7 @@ export type PlanMovement = {
 export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
   const sb = getSupabaseAdmin();
   const [foundationRes, objectivesRes, goalsRes, kpisRes, initiativesRes] = await Promise.all([
-    sb.from("plan_foundation").select("mission, vision").eq("org_id", ORG(orgId)).maybeSingle(),
+    sb.from("plan_foundation").select("mission, vision, proof_points").eq("org_id", ORG(orgId)).maybeSingle(),
     sb.from("plan_objectives").select("id, title, three_year_statement, owner, status").eq("org_id", ORG(orgId)).order("sort_order").order("created_at"),
     sb.from("plan_goals").select("id, objective_id, title, description, owner, status").eq("org_id", ORG(orgId)).order("sort_order").order("created_at"),
     sb.from("plan_kpis").select("id, goal_id, objective_id, title, unit, target, current, status, metric_key, owner").eq("org_id", ORG(orgId)).order("created_at"),
@@ -201,8 +204,20 @@ export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
     };
   });
 
+  // Proof points are stored as a jsonb array of { value, label }; coerce
+  // defensively so a malformed row never breaks the render.
+  const rawProof = foundationRes.data?.proof_points;
+  const proofPoints: ProofPoint[] = Array.isArray(rawProof)
+    ? rawProof
+        .map((p) => ({ value: String((p as ProofPoint)?.value ?? "").trim(), label: String((p as ProofPoint)?.label ?? "").trim() }))
+        .filter((p) => p.value)
+    : [];
   const foundation = foundationRes.data
-    ? { mission: (foundationRes.data.mission as string | null) ?? null, vision: (foundationRes.data.vision as string | null) ?? null }
+    ? {
+        mission: (foundationRes.data.mission as string | null) ?? null,
+        vision: (foundationRes.data.vision as string | null) ?? null,
+        proofPoints,
+      }
     : null;
 
   return { foundation, objectives };

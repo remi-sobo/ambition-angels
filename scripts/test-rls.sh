@@ -116,6 +116,7 @@ ordered=(
   add_strategy_review_draft_kind.sql
   create_reed_plan_proposals.sql
   add_applied_id_to_reed_plan_proposals.sql
+  pin_function_search_path.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

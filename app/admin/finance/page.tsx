@@ -336,7 +336,11 @@ export default async function FinanceDashboardPage() {
 
       {/* Secondary metrics */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Mini label="Monthly burn (3-mo)" value={money(burn3mo)} />
+        <Mini
+          label={ri.baselineSource === "config" ? "Monthly burn (baseline)" : "Monthly burn (3-mo)"}
+          value={money(ri.baseline)}
+          sub={ri.baselineSource === "config" ? `vs ${money(burn3mo)} trailing 3-mo` : undefined}
+        />
         <Mini
           label="Net YTD"
           value={`${netYTD >= 0 ? "+" : "−"}${money(Math.abs(netYTD))}`}
@@ -613,11 +617,13 @@ function Mini({
   value,
   tone,
   href,
+  sub,
 }: {
   label: string;
   value: string;
   tone?: "good" | "warn";
   href?: string;
+  sub?: string;
 }) {
   const valueClass =
     tone === "warn"
@@ -629,6 +635,7 @@ function Mini({
     <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-3 hover:bg-[#EFE6D4] transition-colors">
       <div className="text-[10px] uppercase tracking-widest text-ink-2 mb-1">{label}</div>
       <div className={`text-lg font-medium ${valueClass}`}>{value}</div>
+      {sub && <div className="text-[10px] text-ink-2 mt-0.5">{sub}</div>}
     </div>
   );
   if (href) return <Link href={href}>{inner}</Link>;

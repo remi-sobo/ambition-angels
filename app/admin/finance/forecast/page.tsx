@@ -44,7 +44,12 @@ export default async function FinanceForecastPage() {
         title="Forecast"
         subtitle="Project cash forward and stack what-ifs — a hire, a grant landing, a slip — to see when you run out under each scenario."
       />
-      <ForecastBoard cashOnHand={snap.cashOnHand} monthlyBurn={snap.burn3mo} seeds={seeds} />
+      <ForecastBoard
+        cashOnHand={snap.cashOnHand}
+        monthlyBurn={snap.runway.inputs.baseline}
+        burnSource={snap.runway.inputs.baselineSource}
+        seeds={seeds}
+      />
     </div>
   );
 }

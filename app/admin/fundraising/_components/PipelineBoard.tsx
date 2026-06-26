@@ -224,7 +224,7 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
           ) : (
             <span className="font-semibold text-ink-1 truncate block">{opp.label}</span>
           )}
-          {opp.label !== opp.constituentName && (
+          {opp.constituentName && opp.label !== opp.constituentName && (
             <span className="text-[11px] text-ink-2 truncate block">{opp.constituentName}</span>
           )}
         </div>

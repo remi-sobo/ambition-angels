@@ -358,6 +358,25 @@
   padding-top: calc(3.5rem + env(safe-area-inset-top));
 }
 
+/* Phones carry a floating bottom tab bar (MobileTabBar, lg:hidden); reserve
+   room so the last bit of content isn't hidden behind it. Bar is ~3.5rem tall
+   plus its own safe-area pad and the dock margin. */
+@media (max-width: 1023px) {
+  .admin-main {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Action sheet rise (MobileTabBar combined FAB). */
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 @media (min-width: 1024px) {
   .admin-main {
     /* Clear the iOS status bar in PWA standalone, plus a little breathing

@@ -5,6 +5,7 @@ import QuickAddButton from "./_components/QuickAddButton";
 import Rail from "./_components/rail/Rail";
 import { RailEntityProvider } from "./_components/rail/RailEntityContext";
 import AskReedButton from "./_components/AskReedButton";
+import MobileTabBar from "./_components/MobileTabBar";
 import { ReedLauncherProvider } from "./_components/reed/ReedLauncherProvider";
 import AdminPWA from "./_components/AdminPWA";
 import { getAdminUser } from "@/lib/admin/auth";
@@ -73,7 +74,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <main className="admin-main flex-1 min-w-0 overflow-y-auto">{children}</main>
           {authed && <Rail reedEnabled={reedEnabled} />}
         </RailEntityProvider>
+        {/* lg–xl tablets: the rail only mounts at xl, so the standalone FABs
+            still carry Reed + quick-add there. Phones get the unified tab bar
+            below instead (so the two FABs don't collide on small screens). */}
         {reedEnabled && <AskReedButton />}
+        {authed && <MobileTabBar currentUser={user} reedEnabled={reedEnabled} />}
       </ReedLauncherProvider>
       {authed && <QuickAddButton currentUser={user} />}
     </div>

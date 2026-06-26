@@ -183,6 +183,16 @@ export async function PATCH(
       updates.planned_day = null;
       updates.day_order = null;
     }
+    // A FORWARD move is a deliberate push (Monday carryover / Friday rollover) —
+    // the only signal that flags rollover furniture. Pulling a task into an
+    // earlier/current week, or first-time planning from unplanned, is not a roll.
+    if (
+      typeof body.planned_week === "string" &&
+      typeof current.planned_week === "string" &&
+      body.planned_week > current.planned_week
+    ) {
+      updates.roll_count = (current.roll_count ?? 0) + 1;
+    }
   } else if ("pinned_for_this_week" in body) {
     const nextPin = body.pinned_for_this_week === true;
     if (nextPin !== current.pinned_for_this_week) {

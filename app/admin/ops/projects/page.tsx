@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { resolveUserHandle } from "@/lib/admin/ops/identity";
 import ProjectListControls from "../_components/ProjectListControls";
 import {
   categoryBadgeClass,
@@ -56,11 +56,6 @@ function parseParams(sp: SearchParams) {
   return { status, category, assignee, q, sort, dir, page, showGrants };
 }
 
-function readCurrentUser(): "remi" | "shannon" | null {
-  const c = cookies().get("admin_user")?.value;
-  return c === "remi" || c === "shannon" ? c : null;
-}
-
 export default async function ProjectsListPage({
   searchParams,
 }: {
@@ -68,7 +63,7 @@ export default async function ProjectsListPage({
 }) {
   const { status, category, assignee, q, sort, dir, page, showGrants } =
     parseParams(searchParams);
-  const currentUser = readCurrentUser();
+  const currentUser = (await resolveUserHandle())?.handle ?? null;
   const resolvedAssignee = assignee === "me" ? currentUser : assignee;
 
   const supabase = getSupabaseAdmin();

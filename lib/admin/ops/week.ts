@@ -53,6 +53,12 @@ export function lastMonday(): string {
   return addDays(thisMonday(), -7);
 }
 
+/** Day-of-week for a YYYY-MM-DD date in LA: 0=Sun … 6=Sat. UTC-based, no DST drift. */
+export function weekdayIndex(dateISO: string = todayInTZ()): number {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
 /** "Month D, YYYY" header for a Monday date string. */
 export function formatWeekHeader(mondayISO: string): string {
   return new Date(mondayISO + "T00:00:00").toLocaleDateString("en-US", {

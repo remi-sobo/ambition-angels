@@ -1,13 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hasPermission } from "@/lib/admin/permissions";
-import { loadHubSpotPledges } from "@/lib/finance/hubspot-pledges";
 import {
-  assembleRunwayPledges,
   computeRunway,
   endOfMonthISO,
   summarizePledges,
-  type RunwayPledge,
 } from "@/lib/finance/runway";
+import { loadRevenueSchedule, scheduleToRunwayPledges } from "@/lib/finance/schedule";
 import type { ReedTool } from "./client";
 
 /**
@@ -130,7 +128,7 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
         const now = new Date();
-        const [txnsRes, cashRes, pledgesRes, hubspotPledges] = await Promise.all([
+        const [txnsRes, cashRes, scheduleRows] = await Promise.all([
           sb
             .from("fin_transactions")
             .select("txn_date, amount, exclude_from_runway")
@@ -139,11 +137,7 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
           cfg.startDate
             ? sb.from("fin_transactions").select("amount").gt("txn_date", cfg.startDate)
             : Promise.resolve({ data: [] as Array<{ amount: number }> }),
-          sb
-            .from("fin_revenue_commitments")
-            .select("amount, status, expected_date, restricted, external_ref")
-            .eq("year", cfg.year),
-          loadHubSpotPledges(sb, cfg.year),
+          loadRevenueSchedule(sb),
         ]);
 
         const txns = (txnsRes.data ?? []).map((t) => ({
@@ -181,25 +175,11 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         const mtdSpend = txns
           .filter((t) => t.amount < 0 && !t.excluded && t.txn_date.slice(0, 7) === thisMonth)
           .reduce((s, t) => s - t.amount, 0);
-        const bloomPledges: RunwayPledge[] = (pledgesRes.data ?? []).map((r) => ({
-          amount: Number(r.amount),
-          status: r.status as RunwayPledge["status"],
-          expected_date: (r.expected_date as string | null) ?? null,
-          restricted: Boolean(r.restricted),
-          externalRef: (r.external_ref as string | null) ?? null,
-        }));
-        const hsPledges: RunwayPledge[] = hubspotPledges.map((d) => ({
-          amount: d.amount,
-          status: d.status as RunwayPledge["status"], // loader drops "ignore"
-          expected_date: d.close_date,
-          restricted: false,
-          externalRef: d.deal_id,
-        }));
-        const adoptedRefs = new Set(
-          bloomPledges.map((p) => p.externalRef).filter((r): r is string => !!r),
-        );
+        // Runway pledge list from the canonical schedule: committed at full
+        // value, open pipeline weighted, restricted carved out by summarize.
+        // Matches lib/admin/finance.ts — Reed never reads hs_deals.
         const { duePledges, projPledges } = summarizePledges(
-          assembleRunwayPledges(bloomPledges, hsPledges, adoptedRefs),
+          scheduleToRunwayPledges(scheduleRows),
           endOfMonthISO(now, 0),
           endOfMonthISO(now, cfg.horizon),
         );

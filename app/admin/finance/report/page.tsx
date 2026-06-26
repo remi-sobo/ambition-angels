@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
 import type { FinCategory } from "@/lib/finance/types";
-import { loadHubSpotPledges } from "@/lib/finance/hubspot-pledges";
+import { loadRevenueSchedule, loadReceivedTotal, scheduleTotals } from "@/lib/finance/schedule";
 import { CashFlowChart, Donut, money, type DonutSeg } from "../_components/charts";
 import PrintButton from "./_components/PrintButton";
 
@@ -25,12 +25,12 @@ export default async function FinanceReportPage() {
   const cfg = snap.cfg;
   const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
-  const [catsRes, txnsRes, budgetRes, pledgesRes, hubspotPledges] = await Promise.all([
+  const [catsRes, txnsRes, budgetRes, scheduleRows, receivedYTD] = await Promise.all([
     supabase.from("fin_categories").select("id, group_name, display_name, kind, functional_class, sort_order, enabled").eq("enabled", true).order("sort_order"),
     supabase.from("fin_transactions").select("amount, category_id").gte("txn_date", fy.start).lte("txn_date", fy.end),
     supabase.from("fin_budget").select("category_id, base_amount, activated_contingency").eq("year", cfg.year),
-    supabase.from("fin_revenue_commitments").select("amount, status, probability").eq("year", cfg.year),
-    loadHubSpotPledges(supabase, cfg.year),
+    loadRevenueSchedule(supabase),
+    loadReceivedTotal(supabase, fy.start, fy.end),
   ]);
 
   const categories = (catsRes.data ?? []) as FinCategory[];
@@ -56,14 +56,13 @@ export default async function FinanceReportPage() {
     { label: "Uncategorized", value: fn.uncategorized, color: "#B5762A" },
   ].filter((s) => s.value > 0.0001);
 
-  // ── Fundraising (manual pledges + HubSpot) ──
-  const pledges = (pledgesRes.data ?? []) as Array<{ amount: number; status: string; probability: number | null }>;
-  const sum = (rows: { amount: number }[]) => rows.reduce((s, r) => s + Number(r.amount), 0);
-  const received = sum(pledges.filter((p) => p.status === "received")) + sum(hubspotPledges.filter((p) => p.status === "received"));
-  const secured = sum(pledges.filter((p) => p.status === "secured")) + sum(hubspotPledges.filter((p) => p.status === "secured"));
-  const projectedWeighted =
-    pledges.filter((p) => p.status === "projected").reduce((s, p) => s + Number(p.amount) * (p.probability ?? 1), 0) +
-    hubspotPledges.filter((p) => p.status === "projected").reduce((s, p) => s + p.amount * p.probability, 0);
+  // ── Fundraising (from the canonical revenue schedule + actual gifts) ──
+  // Received = real money landed (gifts this fiscal year). Secured = committed
+  // schedule; projected = weighted pipeline. No hs_deals.
+  const totals = scheduleTotals(scheduleRows);
+  const received = receivedYTD;
+  const secured = totals.committed;
+  const projectedWeighted = totals.projectedWeighted;
   const raisedHard = received + secured;
   const goalPct = cfg.goal > 0 ? Math.round((raisedHard / cfg.goal) * 100) : null;
 

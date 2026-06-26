@@ -2,7 +2,6 @@ import Link from "next/link";
 import SectionHeading from "../_components/SectionHeading";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { FinCategory } from "@/lib/finance/types";
-import { loadHubSpotPledges } from "@/lib/finance/hubspot-pledges";
 import {
   CashFlowChart,
   CircleGauge,
@@ -17,7 +16,8 @@ import { getFinanceSnapshot, fiscalYearBounds } from "@/lib/admin/finance";
 import { endOfMonthISO } from "@/lib/finance/runway";
 import {
   loadRevenueSchedule,
-  rollupSchedule,
+  loadReceivedTotal,
+  scheduleTotals,
   scheduleToRunwayPledges,
 } from "@/lib/finance/schedule";
 import ReconcileCard from "./_components/ReconcileCard";
@@ -48,8 +48,8 @@ export default async function FinanceDashboardPage() {
     pledgesRes,
     uncatRes,
     recentRes,
-    hubspotPledges,
     scheduleRows,
+    receivedYTD,
   ] = await Promise.all([
     supabase
       .from("fin_categories")
@@ -80,14 +80,14 @@ export default async function FinanceDashboardPage() {
       .order("txn_date", { ascending: false })
       .order("id", { ascending: false })
       .limit(10),
-    loadHubSpotPledges(supabase, cfg.year),
     loadRevenueSchedule(supabase),
+    loadReceivedTotal(supabase, fy.start, fy.end),
   ]);
 
-  // Canonical, de-duped projected pipeline + restricted carve-out from the
-  // revenue schedule (opportunities, not raw hs_deals). The runway tiers and
-  // the pipeline figure read this so they agree with the snapshot's runway.
-  const schedRollup = rollupSchedule(scheduleRows);
+  // Canonical inflows from the revenue schedule (opportunities + grants +
+  // pledges + manual — never raw hs_deals). The runway tiers and the headline
+  // figures read this so they agree with the snapshot's runway.
+  const schedTotals = scheduleTotals(scheduleRows);
 
   const categories = (catsRes.data ?? []) as FinCategory[];
   const catById = new Map(categories.map((c) => [c.id, c]));
@@ -132,12 +132,6 @@ export default async function FinanceDashboardPage() {
     restricted: boolean;
     external_ref: string | null;
   }>;
-  // HubSpot deals adopted into Bloom (by external_ref) count from the Bloom
-  // side now — drop them from the HubSpot sums + runway list to avoid double-count.
-  const adoptedRefs = new Set(
-    pledges.map((p) => p.external_ref).filter((r): r is string => !!r)
-  );
-  const visibleHubspot = hubspotPledges.filter((p) => !adoptedRefs.has(p.deal_id));
   const sourceTotals = new Map<string, number>();
   for (const p of pledges) {
     if (p.status !== "received") continue;
@@ -181,28 +175,16 @@ export default async function FinanceDashboardPage() {
     }))
     .sort((a, b) => b.value - a.value);
 
-  // ── Pledges summary ────────────────────────────────────────────────────
-  // Manual pledges (fin_revenue_commitments) PLUS HubSpot deals that map
-  // to a counted bucket. The HubSpot Sync button in the sidebar refreshes
-  // the underlying hs_deals table; this just sums what's there.
-  const securedTotal =
-    pledges
-      .filter((p) => p.status === "secured")
-      .reduce((s, p) => s + Number(p.amount), 0) +
-    visibleHubspot
-      .filter((p) => p.status ==="secured")
-      .reduce((s, p) => s + p.amount, 0);
-  const receivedTotal =
-    pledges
-      .filter((p) => p.status === "received")
-      .reduce((s, p) => s + Number(p.amount), 0) +
-    visibleHubspot
-      .filter((p) => p.status ==="received")
-      .reduce((s, p) => s + p.amount, 0);
+  // ── Fundraising summary (from the canonical schedule + actual gifts) ─────
+  // Received = real money landed (gifts this fiscal year). Secured = committed
+  // schedule (pledges + awarded grants + manual secured, full value, restricted
+  // included — restricted money still counts toward the goal). No hs_deals.
+  const securedTotal = schedTotals.committed;
+  const receivedTotal = receivedYTD;
   // Projected pipeline is the schedule's probability-weighted open pipeline
   // (sourced from opportunities). This is the same number the runway tiers use,
   // so the headline pipeline figure and the runway can't disagree.
-  const projectedWeighted = schedRollup.projectedWeighted;
+  const projectedWeighted = schedTotals.projectedWeighted;
   const raisedHard = receivedTotal + securedTotal;
 
   // ── Budget vs actual (grouped) ──────────────────────────────────────────

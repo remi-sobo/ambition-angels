@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
-import { loadHubSpotPledges } from "@/lib/finance/hubspot-pledges";
-import { assembleRunwayPledges, endOfMonthISO, type RunwayPledge } from "@/lib/finance/runway";
+import { endOfMonthISO } from "@/lib/finance/runway";
+import { loadRevenueSchedule, scheduleToRunwayPledges } from "@/lib/finance/schedule";
 import CloseWizard from "./_components/CloseWizard";
 
 // The Friday close. A guided, sequenced sweep that gets cash, transactions,
@@ -17,40 +17,18 @@ export default async function FinanceClosePage() {
   const snap = await getFinanceSnapshot();
   const cfg = snap.cfg;
 
-  const [lastImportRes, lastSyncRes, uncatRes, pledgesRes, hubspotPledges] = await Promise.all([
+  const [lastImportRes, lastSyncRes, uncatRes, scheduleRows] = await Promise.all([
     supabase.from("fin_imports").select("uploaded_at").order("uploaded_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("hs_deals").select("synced_at").order("synced_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("fin_transactions").select("id", { count: "exact", head: true }).is("category_id", null),
-    supabase
-      .from("fin_revenue_commitments")
-      .select("amount, status, expected_date, restricted, external_ref")
-      .eq("year", cfg.year),
-    loadHubSpotPledges(supabase, cfg.year),
+    loadRevenueSchedule(supabase),
   ]);
 
-  // Unreceived pledges (deduped against adopted deals) for the review tiers.
-  const bloom: RunwayPledge[] = (pledgesRes.data ?? [])
-    .filter((r) => r.status !== "received")
-    .map((r) => ({
-      amount: Number(r.amount),
-      status: r.status as RunwayPledge["status"],
-      expected_date: (r.expected_date as string | null) ?? null,
-      restricted: Boolean(r.restricted),
-      externalRef: (r.external_ref as string | null) ?? null,
-    }));
-  const adoptedRefs = new Set(
-    (pledgesRes.data ?? []).map((r) => r.external_ref as string | null).filter((r): r is string => !!r)
-  );
-  const hs: RunwayPledge[] = hubspotPledges
-    .filter((d) => d.status !== "received")
-    .map((d) => ({
-      amount: d.amount,
-      status: d.status as RunwayPledge["status"],
-      expected_date: d.close_date,
-      restricted: false,
-      externalRef: d.deal_id,
-    }));
-  const runwayPledges = assembleRunwayPledges(bloom, hs, adoptedRefs);
+  // Review tiers read the canonical schedule: committed at full value, open
+  // pipeline weighted, restricted carved out by summarizePledges. (The hs_deals
+  // sync timestamp above is still surfaced as freshness; the runway no longer
+  // reads hs_deals for its numbers.)
+  const runwayPledges = scheduleToRunwayPledges(scheduleRows);
 
   const now = new Date();
   const horizonEnds = {

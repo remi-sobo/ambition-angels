@@ -18,6 +18,7 @@ export type BriefingSource =
   | "engagement"
   | "strategy"
   | "followups"
+  | "meetings"
   | "sync";
 
 export type Decision = "open" | "mark_done" | "snooze" | "dismiss";

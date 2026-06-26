@@ -16,6 +16,8 @@ import {
 } from "./engine";
 import { buildPulse, type Pulse } from "./pulse";
 import { getFundraisingPriorities, type FundraisingMove } from "./fundraising";
+import { getOrgContext } from "@/lib/admin/auth";
+import { meetingFollowUpGaps } from "@/lib/meetings/coverage";
 import type { FinanceSnapshot } from "../finance";
 import type {
   TaskLite,
@@ -161,6 +163,20 @@ export async function gatherInputs(): Promise<{
     strategy: { objectivesOffTrack, reviewDueDays },
     followups: { followups: (followupsRes.data ?? []) as FollowupLite[] },
   };
+
+  // Meeting follow-up coverage (deterministic). Org-scoped; resilient if there's
+  // no session (narrative pre-warm / cron) or no meetings yet → source skipped.
+  const ctx = await getOrgContext().catch(() => null);
+  if (ctx) {
+    const coverage = await meetingFollowUpGaps(sb, ctx.orgId, new Date()).catch(() => null);
+    if (coverage) {
+      inputs.meetings = {
+        gapCount: coverage.gapCount,
+        total: coverage.total,
+        windowDays: coverage.windowDays,
+      };
+    }
+  }
 
   const states = new Map<string, ItemState>();
   for (const s of statesRes.data ?? []) states.set(s.item_id, s as ItemState);

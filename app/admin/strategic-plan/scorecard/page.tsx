@@ -90,8 +90,10 @@ export default async function ScorecardPage() {
         title="KPI Scorecard"
         subtitle={
           <>
-            Every measure, by who owns it — progress to target, pacing, and growth · edit on the{" "}
-            <Link href="/admin/strategic-plan" className="text-orange hover:underline">plan</Link>
+            Every measure, by who owns it — progress, pacing, and where each number comes from. Click a
+            manual value to update it; the change flows to the{" "}
+            <Link href="/admin/strategic-plan" className="text-orange hover:underline">plan</Link> and the{" "}
+            <Link href="/admin/strategic-plan/narrative" className="text-orange hover:underline">narrative</Link>.
           </>
         }
         actions={<RefreshMetricsButton />}

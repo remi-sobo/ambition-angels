@@ -42,10 +42,10 @@ export const DEALSTAGE_TO_MOVES: Record<string, MovesStage> = {
   // Solicitation
   "3448504042": "solicit", // Meeting Complete/Ready for Ask
   "68574502": "solicit", // Ask Made
-  "59189578": "solicit", // Pledged
   "1063539272": "solicit", // Proposed
   "1064297317": "solicit", // Pending MOU Approval
   // Stewardship
+  "59189578": "steward", // Pledged — donor has committed; ask succeeded
   "3448542950": "steward", // AIG Member
   closedwon: "steward",
   "117779888": "steward", // Partnership Established

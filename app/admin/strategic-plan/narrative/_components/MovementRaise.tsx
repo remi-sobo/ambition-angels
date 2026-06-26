@@ -78,6 +78,22 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
         </div>
       )}
 
+      {/* The honest number: net-new still needed even after a realistic close. */}
+      {floor != null && realistic < floor && (
+        <div className="mb-8 rounded-card-lg border border-orange/30 bg-orange-light px-5 py-4">
+          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-orange-dark mb-1">
+            The honest number
+          </div>
+          <div className="font-display text-3xl sm:text-4xl leading-none tabular-nums text-ink-1">
+            {formatUsd(floor - realistic)}
+          </div>
+          <div className="mt-1.5 text-[13px] text-ink-2">
+            of net-new money to clear the floor on a realistic close — over and above secured and the
+            weighted pipeline.
+          </div>
+        </div>
+      )}
+
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         <StatBig label="Committed floor" value={formatUsd(floor)} sub="the necessary plan" accent />
         <StatBig label="Secured to date" value={formatUsd(secured)} sub="raised this fiscal year" />

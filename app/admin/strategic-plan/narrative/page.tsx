@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { getOrgContext } from "@/lib/admin/auth";
-import { getPlanMovement, getRaiseMovement } from "@/lib/admin/strategy/narrative";
+import { getPlanMovement, getRaiseMovement, getHowMovement } from "@/lib/admin/strategy/narrative";
 import MovementPlan from "./_components/MovementPlan";
 import MovementRaise from "./_components/MovementRaise";
+import MovementHow from "./_components/MovementHow";
 
 /**
  * Strategy Narrative — the login-gated, presentation-grade view Remi pulls up
@@ -21,7 +22,7 @@ function MovementNav({ active }: { active: number }) {
   const items = [
     { n: 1, label: "The Plan", live: true },
     { n: 2, label: "What We Raise", live: true },
-    { n: 3, label: "How We Raise It", live: false },
+    { n: 3, label: "How We Raise It", live: true },
   ];
   return (
     <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-ink-3 mb-8 flex-wrap">
@@ -58,7 +59,11 @@ export default async function StrategyNarrativePage() {
     return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;
   }
 
-  const [plan, money] = await Promise.all([getPlanMovement(ctx.orgId), getRaiseMovement(ctx.orgId)]);
+  const [plan, money, how] = await Promise.all([
+    getPlanMovement(ctx.orgId),
+    getRaiseMovement(ctx.orgId),
+    getHowMovement(ctx.orgId),
+  ]);
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-10 max-w-[920px]">
@@ -74,9 +79,15 @@ export default async function StrategyNarrativePage() {
         <MovementRaise money={money} />
       </section>
 
+      <hr className="my-14 border-hairline" />
+
+      <section id="movement-3" className="scroll-mt-6">
+        <MovementHow how={how} />
+      </section>
+
       <div className="mt-16 pt-6 border-t border-hairline text-sm text-ink-3">
-        Next: <span className="text-ink-2">Movement 3 — How We Raise It</span> (the funding doors, the
-        live pipeline, channel progress), then presenter mode. Coming in the next phases.
+        Next: <span className="text-ink-2">presenter mode</span> — full-screen, large type, keyboard
+        navigation between movements. Coming in the next phase.
       </div>
     </div>
   );

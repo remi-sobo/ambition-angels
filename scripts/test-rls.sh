@@ -99,6 +99,7 @@ ordered=(
   finance_v2_exclude_from_runway.sql
   finance_v2_close_stamp.sql
   finance_v2_pledge_external_ref.sql
+  add_planned_day_to_ops_tasks.sql
   create_fr_prospects.sql
   create_fin_reconciliation_items.sql
   create_fr_prospect_promoted.sql
@@ -108,6 +109,7 @@ ordered=(
   create_reed_drafts.sql
   create_reed_suggestions.sql
   add_strategy_review_draft_kind.sql
+  create_reed_plan_proposals.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

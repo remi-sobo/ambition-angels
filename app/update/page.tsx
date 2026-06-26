@@ -24,7 +24,7 @@ const stats = [
   { number: "1,000+", label: "Active since public launch June 2025" },
   { number: "74%", label: "Start a second internship" },
   { number: "+14%", label: "Future Orientation Score" },
-  { number: "36+", label: "Partners" },
+  { number: "20", label: "Partners running it now (50 more in the pipeline)" },
   { number: "87%", label: "From Title I schools" },
 ];
 
@@ -47,7 +47,7 @@ const tiers = [
     amount: "$50,000",
     name: "Student Access Partner",
     description:
-      "Funds the Ambition Fund — our philanthropy-powered track for high-need teens without an existing support system.",
+      "Funds the Ambition Fund, the partner-directed reward pot for the highest-need teens, the ones whose partners serve them without an existing support system.",
     highlight: false,
   },
   {
@@ -80,8 +80,8 @@ const model = [
     num: "02",
     title: "Conversations",
     sub: "The adult layer",
-    desc: "When a teen completes lessons, their trusted adult receives a customized conversation guide — specific questions, specific context, tied to exactly what their teen just experienced. Think dinner table conversation cards, built around your kid's actual career interests. Research shows career conversations with a trusted adult by age 15 are one of the strongest predictors of adult employment outcomes.",
-    status: "In beta now",
+    desc: "When a teen completes lessons, their trusted adult receives a customized conversation guide with specific questions and specific context, tied to exactly what their teen just experienced. Think dinner table conversation cards, built around your kid's actual career interests. Research shows career conversations with a trusted adult by age 15 are one of the strongest predictors of adult employment outcomes.",
+    status: "Built, rolling out to parents",
   },
   {
     num: "03",
@@ -96,7 +96,7 @@ const priorities = [
   {
     num: "01",
     title: "Adult Platform",
-    desc: "Parent and mentor dashboard, customized conversation guides, adult engagement tools. The infrastructure that makes the trusted adult layer real and scalable. Close to beta.",
+    desc: "The parent and mentor dashboard is built and in use: customized conversation guides, learning insights, and adult engagement tools. The infrastructure that makes the trusted adult layer real is here and rolling out to parents now.",
   },
   {
     num: "02",
@@ -110,17 +110,17 @@ const priorities = [
   },
   {
     num: "04",
-    title: "Partner Integration Toolkit",
-    desc: "So any youth-serving org can bring Ambition Angels in without needing us in the room every time.",
+    title: "Web School Platform",
+    desc: "The web-based platform that lets a partner run Ambition twice a week in a classroom without us in the room. In active build now with our tech team. This is our top build priority for 2026.",
   },
 ];
 
 const goals = [
-  "2,000 teens actively engaging, with a clear path to 5,000",
+  "1,000 teens in deep, twice-a-week use through our partners, with the adults who guide them",
   "Adults consistently using the platform to guide teens through career conversations",
   "Ambition Coaches model designed, piloted, and ready to grow",
   "Expanded partner network across juvenile detention, mentoring orgs, and school partners",
-  "Continued growth in Future Orientation Score across our student population",
+  "Future Orientation Score trending up across our students, our directional read on whether they believe their future is worth working toward",
 ];
 
 const skills = [
@@ -230,7 +230,10 @@ export default function UpdatePage() {
                 They don&apos;t just learn about careers. They try them.
               </h2>
               <p style={{ fontSize:15, color:"#4B5563", lineHeight:1.75, marginBottom:16 }}>
-                On the Ambition App, students complete 30-day simulated internships across business, tech, health, creative fields, and more. 15 minutes a day. Real tasks. Real skills. Real rewards. By the end of 30 days, they know what a career actually feels like.
+                On the Ambition App, students complete 30-day simulated internships across business, tech, health, creative fields, and more. 15 minutes a day. Real tasks. Real skills. Partners decide how to recognize and reward their own students, often without money, and we keep a focused reward pot for the highest-need teens their partners serve. By the end of 30 days, they know what a career actually feels like.
+              </p>
+              <p style={{ fontSize:15, color:"#4B5563", lineHeight:1.75, marginBottom:0 }}>
+                The rhythm is four internships a year, one a quarter. That means four real careers a teen has tried on by year&apos;s end.
               </p>
             </div>
             {/* Phone mockup */}
@@ -240,7 +243,7 @@ export default function UpdatePage() {
           </div>
         </section>
 
-        {/* Quote — after app section */}
+        {/* Quote after app section */}
         <blockquote style={{ borderLeft:`4px solid ${orange}`, background:cream, borderRadius:"0 12px 12px 0", padding:"24px 28px", marginBottom:56 }}>
           <p style={{ fontSize:18, fontStyle:"italic", color:navy, fontWeight:500, lineHeight:1.6, marginBottom:10 }}>
             &ldquo;The wealth management track changed how I think about money. I taught my mom what I learned and I am starting to think I might have a future here.&rdquo;
@@ -290,7 +293,7 @@ export default function UpdatePage() {
             Three layers of the same program.
           </h2>
           <p style={{ fontSize:15, color:"#4B5563", lineHeight:1.75, marginBottom:28, maxWidth:620 }}>
-            This is not just an app. This is a system. Think of it as a funnel — breadth at the top, depth at the bottom. Every layer is a win.
+            This is not just an app. This is a system. Think of it as a funnel: breadth at the top, depth at the bottom. Every layer is a win.
           </p>
 
           {/* Three cards */}
@@ -344,7 +347,7 @@ export default function UpdatePage() {
             <div style={{ background:navy, borderRadius:16, padding:"28px 24px" }}>
               <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", color:orange, marginBottom:10 }}>Through organizations</div>
               <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, marginBottom:14 }}>
-                We partner with nonprofits, schools, and youth-serving programs. When an org brings us in, teens pick their in-person guide — a mentor, a program leader, someone they already trust. That person becomes the adult in the conversation layer. We equip them. They do the talking.
+                We partner with nonprofits, schools, and youth-serving programs. When an org brings us in, teens pick their in-person guide, a mentor, a program leader, someone they already trust. That person becomes the adult in the conversation layer. We equip them. They do the talking.
               </p>
               <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", lineHeight:1.7, marginBottom:14 }}>
                 Partners include Friends of the Children, EOYDC, Live in Peace, and Pivotal.
@@ -358,13 +361,13 @@ export default function UpdatePage() {
               <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", color:orange, marginBottom:10 }}>For the adults in their corner</div>
               <div style={{ fontSize:13, fontWeight:600, color:navy, letterSpacing:"0.03em", marginBottom:14 }}>Parents. Coaches. Mentors.</div>
               <p style={{ fontSize:14, color:"#4B5563", lineHeight:1.7, marginBottom:14 }}>
-                The adults who already have a relationship with a teen are our best-placed partners. We give them the tools — career conversation prompts, learning insights, and real-time visibility into what their teen is exploring — to turn that relationship into real career direction.
+                The adults who already have a relationship with a teen are our best-placed partners. We give them the tools (career conversation prompts, learning insights, and real-time visibility into what their teen is exploring) to turn that relationship into real career direction.
               </p>
               <p style={{ fontSize:14, color:"#4B5563", lineHeight:1.7, marginBottom:14 }}>
                 Same app. A completely different experience built for the adult who shows up.
               </p>
               <p style={{ fontSize:14, color:"#4B5563", lineHeight:1.7, marginBottom:0 }}>
-                Parents who find us through social media, coaches who want to bring meaning to practice, mentors looking for something real to work through together — we built this for them.
+                Parents who find us through social media, coaches who want to bring meaning to practice, mentors looking for something real to work through together. We built this for them.
               </p>
             </div>
           </div>
@@ -446,7 +449,7 @@ export default function UpdatePage() {
             Join the next chapter.
           </h2>
           <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:28, maxWidth:640 }}>
-            You are not funding an idea. You are funding a proven program at an inflection point. The app works. The data is real. The partners are ready. The need has never been greater. We are raising $1.2M in 2026 to fund this build-out.
+            You are not funding an idea. You are funding a proven program at an inflection point. The app works. The data is real. The partners are ready. The need has never been greater. We are raising $1.12M in 2026 to fund the platform build and the program that runs on it.
           </p>
 
           {/* Tier cards */}

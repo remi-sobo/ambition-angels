@@ -39,7 +39,7 @@ export default async function ObjectiveDetailPage({ params }: { params: { id: st
 
   const { data: objectiveData } = await sb
     .from("plan_objectives")
-    .select("id, title, owner, status, three_year_statement, sort_order")
+    .select("id, title, owner, status, status_override, status_override_reason, three_year_statement, sort_order")
     .eq("id", params.id)
     .eq("org_id", orgId)
     .maybeSingle();
@@ -48,7 +48,7 @@ export default async function ObjectiveDetailPage({ params }: { params: { id: st
 
   const { data: goalsData } = await sb
     .from("plan_goals")
-    .select("id, objective_id, title, description, target_date, owner, status, sort_order")
+    .select("id, objective_id, title, description, target_date, owner, status, status_override, status_override_reason, sort_order")
     .eq("org_id", orgId)
     .eq("objective_id", params.id)
     .order("sort_order")
@@ -59,7 +59,7 @@ export default async function ObjectiveDetailPage({ params }: { params: { id: st
 
   const { data: kpisData } = await sb
     .from("plan_kpis")
-    .select("id, goal_id, objective_id, title, unit, target, current, owner, source, metric_key, status, cadence, last_updated_at")
+    .select("id, goal_id, objective_id, title, unit, target, current, baseline, baseline_date, owner, source, metric_key, status, cadence, last_updated_at")
     .eq("org_id", orgId)
     .limit(500);
   const kpis = ((kpisData ?? []) as PlanKpi[]).filter(

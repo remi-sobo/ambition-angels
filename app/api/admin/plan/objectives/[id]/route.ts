@@ -21,6 +21,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const update: Record<string, unknown> = {};
   if (STATUSES.includes(body.status as (typeof STATUSES)[number])) update.status = body.status;
+  // Reasoned status override (B2-1): null clears it (back to computed roll-up).
+  if ("status_override" in body) {
+    if (body.status_override === null || body.status_override === "") {
+      update.status_override = null;
+      update.status_override_reason = null;
+    } else if (STATUSES.includes(body.status_override as (typeof STATUSES)[number])) {
+      update.status_override = body.status_override;
+      update.status_override_reason =
+        typeof body.status_override_reason === "string" ? body.status_override_reason.trim().slice(0, 300) : null;
+    }
+  }
   if (typeof body.title === "string" && body.title.trim())
     update.title = body.title.trim().slice(0, 300);
   if ("three_year_statement" in body)

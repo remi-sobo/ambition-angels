@@ -63,11 +63,15 @@ export function formatValue(unit: string | null, value: number | null): string {
 /** A measure (KPI) line: title, current / target, status chip. */
 export function MeasureRow({ kpi }: { kpi: NarrativeKpi }) {
   const hasTarget = kpi.target != null;
+  // Show where it started when a baseline is set: from X → now / target. Tells
+  // a momentum story instead of a bare number against a goal.
+  const hasBaseline = kpi.baseline != null && kpi.baseline !== kpi.current;
   return (
     <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-hairline last:border-0">
       <span className="text-sm text-ink-1">{kpi.title}</span>
       <span className="flex items-center gap-2 shrink-0">
         <span className="text-sm font-heading font-semibold tabular-nums text-ink-1">
+          {hasBaseline && <span className="text-ink-3 font-normal">{formatValue(kpi.unit, kpi.baseline)} → </span>}
           {formatValue(kpi.unit, kpi.current)}
           {hasTarget && <span className="text-ink-3 font-normal"> / {formatValue(kpi.unit, kpi.target)}</span>}
         </span>

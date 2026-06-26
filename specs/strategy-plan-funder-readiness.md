@@ -156,7 +156,14 @@ No funder-facing value lives hardcoded in a component. Anything Remi might want 
 
 - **B2-3 (internal vs funder-facing), shipped structurally.** `getHowMovement` — the funder read — now selects ONLY funder-safe columns (`id, key, name, hook, ask`). Internal strategy (`approach`, future `internal_notes`) is never fetched, so it cannot leak no matter what a component renders. The internal strategy board keeps its own direct read.
 - **B2-5 (Funder-Readiness Linter), shipped.** `lib/admin/strategy/readiness.ts` grades the plan against the same three movements the funder sees (so it can't disagree with the surface). **Blockers:** floor set; floor decomposes into channel sources that sum to the floor; no internal language in funder copy; doors have mapped prospects. **Advisories:** residual still to source; runway vs the watch line; measures with no current value; ownerless objectives/goals; undated goals. Rendered as a `ReadinessPanel` on `/admin/strategic-plan` (score + checklist, each with a Fix → link) and a blocker banner on the Narrative prep page before Present.
-- **Remaining:** B2-1 (reasoned status override + make roll-up the platform default in `PlanControls`/scorecard), B2-2 (baseline columns + start→now→target), B2-4 (single money-bridge/sources table + editable runway target), and a hard presenter-mode gate.
+## Phase 3 — executed (2026-06-26): override, baselines, editable runway, presenter gate
+
+- **B2-1 (status override + roll-up default).** Migration adds `status_override` + `status_override_reason` to `plan_objectives`/`plan_goals`. Objective/goal status is now **computed from the measures by default** (narrative read + the strategy plan page's `objectiveHealth`/`goalHealth` + exception count); a human can override only with a reason, shown as an "override" chip. The `PlanControls` cards now render a computed chip + an Auto/override dropdown that prompts for the reason.
+- **B2-2 (baselines).** Migration adds `baseline` + `baseline_date` to `plan_kpis`. The KPI API accepts both; `KpiRow` edits the baseline inline (`start → now / target`) and `NewKpiForm` takes a start value; the narrative `MeasureRow` shows `baseline → current / target` when a baseline is set.
+- **B2-4 (editable runway target).** Migration adds `fin_config.runway_target_months`; the finance Config editor exposes it; `getRaiseMovement` and the linter read it (fallback to the central watch line). The money-bridge/sources stay modeled as channel-target KPIs (editable, Principle #0) rather than a separate table — a deliberate choice over churning Phase-1 work.
+- **Presenter hard gate (B2-5).** Presenter mode now stops on open blockers: a full-screen gate lists them with "Fix in the plan" / "Present anyway" / Exit, and keyboard nav is disabled until acknowledged.
+
+**Build 2 is complete.** Remaining ideas for later: extend the override/roll-up to the cockpit/briefing surfaces, and a baseline advisory in the linter.
 
 ## The five upgrades
 

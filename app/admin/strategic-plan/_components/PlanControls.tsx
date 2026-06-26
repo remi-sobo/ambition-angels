@@ -22,6 +22,8 @@ export type PlanObjective = {
   three_year_statement: string | null;
   owner: string | null;
   status: string;
+  status_override: string | null;
+  status_override_reason: string | null;
   sort_order: number;
 };
 
@@ -33,6 +35,8 @@ export type PlanGoal = {
   target_date: string | null;
   owner: string | null;
   status: string;
+  status_override: string | null;
+  status_override_reason: string | null;
 };
 
 export type PlanKpi = {
@@ -43,6 +47,8 @@ export type PlanKpi = {
   unit: string | null;
   target: number | null;
   current: number | null;
+  baseline: number | null;
+  baseline_date: string | null;
   owner: string | null;
   source: string; // 'auto' | 'manual'
   metric_key: string | null;
@@ -78,13 +84,6 @@ const HEALTH_STYLES: Record<string, string> = {
 };
 const HEALTH_LABELS: Record<string, string> = {
   not_started: "Not started",
-  on_track: "On track",
-  at_risk: "At risk",
-  behind: "Behind",
-  done: "Done",
-};
-// Goals keep the four-value health scale they shipped with.
-const GOAL_LABELS: Record<string, string> = {
   on_track: "On track",
   at_risk: "At risk",
   behind: "Behind",
@@ -167,11 +166,54 @@ export function RefreshMetricsButton() {
   );
 }
 
-function RollupChip({ health }: { health: string | null }) {
-  if (!health) return null;
+// Status for an objective/goal: computed from its measures by default; a human
+// can override, but only with a reason, and the override renders as one (B2-1).
+// The chip shows the effective status; the dropdown sets/clears the override.
+function StatusOverride({
+  entity, id, override, reason, computed, stored,
+}: {
+  entity: "objectives" | "goals";
+  id: string;
+  override: string | null;
+  reason: string | null;
+  computed: string | null;
+  stored: string;
+}) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const effective = override ?? computed ?? stored ?? "not_started";
+  const set = async (val: string) => {
+    let body: Record<string, unknown>;
+    if (!val) body = { status_override: null };
+    else {
+      const r = window.prompt("Why override the computed status? (a funder-grade plan shows the reason)", reason ?? "");
+      if (r === null) return; // cancelled
+      body = { status_override: val, status_override_reason: r.trim() };
+    }
+    setBusy(true);
+    try { await api(`/api/admin/plan/${entity}/${id}`, "PATCH", body); router.refresh(); }
+    finally { setBusy(false); }
+  };
   return (
-    <span className={`text-[10px] font-semibold rounded-full px-2 py-0.5 ${HEALTH_STYLES[health] ?? "bg-tile text-ink-2"}`}>
-      measures: {HEALTH_LABELS[health] ?? health}
+    <span className={`flex items-center gap-1 ${busy ? "opacity-60" : ""}`}>
+      <span
+        className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${HEALTH_STYLES[effective] ?? "bg-tile text-ink-2"}`}
+        title={override ? `Manual override${reason ? `: ${reason}` : ""}` : "Computed from measures"}
+      >
+        {HEALTH_LABELS[effective] ?? effective}
+      </span>
+      <select
+        value={override ?? ""}
+        onChange={(e) => void set(e.target.value)}
+        title="Override the computed status"
+        className="text-[10px] font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer bg-tile text-ink-2"
+      >
+        <option value="">Auto</option>
+        {Object.entries(HEALTH_LABELS).map(([k, v]) => (
+          <option key={k} value={k} className="bg-surface text-ink-1">{v}</option>
+        ))}
+      </select>
+      {override && <span className="text-[9px] uppercase tracking-wide text-status-watch-text" title={reason ?? ""}>override</span>}
     </span>
   );
 }
@@ -356,15 +398,6 @@ export function ObjectiveCard({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
-  const patch = async (fields: Record<string, unknown>) => {
-    setBusy(true);
-    try {
-      await api(`/api/admin/plan/objectives/${objective.id}`, "PATCH", fields);
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  };
   const remove = async () => {
     if (!confirm(`Delete objective “${objective.title}”? Its goals are kept but unlinked.`)) return;
     setBusy(true);
@@ -383,16 +416,14 @@ export function ObjectiveCard({
     >
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="font-heading font-bold text-ink-1 flex-1 min-w-0 text-lg">{objective.title}</h2>
-        <select
-          value={objective.status}
-          onChange={(e) => void patch({ status: e.target.value })}
-          className={`text-[11px] font-semibold rounded-full px-2 py-1 border-0 cursor-pointer ${HEALTH_STYLES[objective.status] ?? "bg-tile text-ink-2"}`}
-        >
-          {Object.entries(HEALTH_LABELS).map(([k, v]) => (
-            <option key={k} value={k} className="bg-surface text-ink-1">{v}</option>
-          ))}
-        </select>
-        <RollupChip health={deriveHealth(goals.flatMap((g) => (kpisByGoal[g.id] ?? []).map((k) => k.status)))} />
+        <StatusOverride
+          entity="objectives"
+          id={objective.id}
+          override={objective.status_override}
+          reason={objective.status_override_reason}
+          computed={deriveHealth(goals.flatMap((g) => (kpisByGoal[g.id] ?? []).map((k) => k.status)))}
+          stored={objective.status}
+        />
         {objective.owner && <span className="text-[11px] text-ink-2">{objective.owner}</span>}
         <button onClick={() => void remove()} className="text-[11px] text-ink-2 hover:text-expense px-1">Delete</button>
       </div>
@@ -492,11 +523,6 @@ export function GoalCard({
   const openInits = initiatives.filter((i) => i.status !== "done");
   const doneInits = initiatives.filter((i) => i.status === "done");
 
-  const patchGoal = async (fields: Record<string, unknown>) => {
-    setBusy(true);
-    try { await api(`/api/admin/plan/goals/${goal.id}`, "PATCH", fields); router.refresh(); }
-    finally { setBusy(false); }
-  };
   const addInitiative = async () => {
     if (!newInit.trim()) return;
     setBusy(true);
@@ -529,16 +555,14 @@ export function GoalCard({
     <section className={`bg-surface border-[1.5px] border-outline rounded-card p-5 ${busy ? "opacity-60" : ""}`}>
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="font-heading font-semibold text-ink-1 flex-1 min-w-0">{goal.title}</h3>
-        <select
-          value={goal.status}
-          onChange={(e) => void patchGoal({ status: e.target.value })}
-          className={`text-[11px] font-semibold rounded-full px-2 py-1 border-0 cursor-pointer ${HEALTH_STYLES[goal.status] ?? "bg-tile text-ink-2"}`}
-        >
-          {Object.entries(GOAL_LABELS).map(([k, v]) => (
-            <option key={k} value={k} className="bg-surface text-ink-1">{v}</option>
-          ))}
-        </select>
-        {kpis.length > 0 && <RollupChip health={deriveHealth(kpis.map((k) => k.status))} />}
+        <StatusOverride
+          entity="goals"
+          id={goal.id}
+          override={goal.status_override}
+          reason={goal.status_override_reason}
+          computed={deriveHealth(kpis.map((k) => k.status))}
+          stored={goal.status}
+        />
         {goal.owner && <span className="text-[11px] text-ink-2">{goal.owner}</span>}
         {goal.target_date && <span className="text-[11px] text-ink-2 tabular-nums">by {goal.target_date}</span>}
         <button onClick={() => void removeGoal()} className="text-[11px] text-ink-2 hover:text-expense px-1">Delete</button>
@@ -646,6 +670,10 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
   // auto ones (the system computes the actual, not the target you're aiming at).
   const [editingTarget, setEditingTarget] = useState(false);
   const [tval, setTval] = useState(kpi.target?.toString() ?? "");
+  // The baseline (where the measure started) — editable on every KPI so the
+  // surface can show start → now → target instead of a bare number (B2-2).
+  const [editingBaseline, setEditingBaseline] = useState(false);
+  const [bval, setBval] = useState(kpi.baseline?.toString() ?? "");
 
   const patch = async (fields: Record<string, unknown>) => {
     setBusy(true);
@@ -663,6 +691,12 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
     if (n !== null && !Number.isFinite(n)) { alert("Enter a number"); return; }
     setEditingTarget(false);
     await patch({ target: n });
+  };
+  const saveBaseline = async () => {
+    const n = bval.trim() === "" ? null : Number(bval);
+    if (n !== null && !Number.isFinite(n)) { alert("Enter a number"); return; }
+    setEditingBaseline(false);
+    await patch({ baseline: n });
   };
   const remove = async () => {
     if (!confirm(`Delete KPI “${kpi.title}”?`)) return;
@@ -702,6 +736,28 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
         </span>
       ) : (
         <span className="tabular-nums flex items-center">
+          {editingBaseline ? (
+            <span className="flex items-center gap-1 mr-1">
+              <input
+                autoFocus
+                className={`${inputCls} !py-0.5 !px-1.5 !text-xs w-16`}
+                value={bval}
+                placeholder="start"
+                onChange={(e) => setBval(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") void saveBaseline(); if (e.key === "Escape") setEditingBaseline(false); }}
+              />
+              <button onClick={() => void saveBaseline()} className="text-revenue">✓</button>
+              <span className="text-ink-3">→</span>
+            </span>
+          ) : (
+            <button
+              onClick={() => setEditingBaseline(true)}
+              className="text-ink-3 hover:text-orange mr-1"
+              title="Click to set the baseline (where this measure started)"
+            >
+              {kpi.baseline !== null ? `${fmtVal(kpi.baseline, kpi.unit)} →` : "+start"}
+            </button>
+          )}
           <button
             onClick={() => kpi.source === "manual" && setEditing(true)}
             className={kpi.source === "manual" ? "text-ink-1 hover:text-orange" : "text-ink-2 cursor-default"}
@@ -760,6 +816,7 @@ function NewKpiForm({ goalId }: { goalId: string }) {
   const [title, setTitle] = useState("");
   const [unit, setUnit] = useState("");
   const [target, setTarget] = useState("");
+  const [baseline, setBaseline] = useState("");
   const [metricKey, setMetricKey] = useState("");
   const [metrics, setMetrics] = useState<MetricOption[] | null>(null);
 
@@ -775,7 +832,7 @@ function NewKpiForm({ goalId }: { goalId: string }) {
   const chosen = metrics?.find((m) => m.key === metricKey) ?? null;
 
   const reset = () => {
-    setTitle(""); setUnit(""); setTarget(""); setMetricKey(""); setMode("manual"); setOpen(false);
+    setTitle(""); setUnit(""); setTarget(""); setBaseline(""); setMetricKey(""); setMode("manual"); setOpen(false);
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -798,6 +855,7 @@ function NewKpiForm({ goalId }: { goalId: string }) {
               title,
               unit: unit || undefined,
               target: target.trim() === "" ? undefined : Number(target),
+              baseline: baseline.trim() === "" ? undefined : Number(baseline),
             };
       const ok = await api("/api/admin/plan/kpis", "POST", body);
       if (ok) { reset(); router.refresh(); }
@@ -851,6 +909,7 @@ function NewKpiForm({ goalId }: { goalId: string }) {
         <div className="flex flex-wrap items-end gap-2">
           <input className={`${inputCls} flex-1 min-w-[180px] !py-1 !text-xs`} placeholder="Measure (e.g. Processes documented)" value={title} required autoFocus onChange={(e) => setTitle(e.target.value)} />
           <input className={`${inputCls} w-16 !py-1 !text-xs`} placeholder="unit" value={unit} onChange={(e) => setUnit(e.target.value)} />
+          <input className={`${inputCls} w-20 !py-1 !text-xs`} placeholder="start" value={baseline} onChange={(e) => setBaseline(e.target.value)} />
           <input className={`${inputCls} w-20 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
           <button type="submit" disabled={busy} className="text-[11px] bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-lg disabled:opacity-50">Add</button>
           <button type="button" onClick={reset} className="text-[11px] text-ink-2 px-1">Cancel</button>

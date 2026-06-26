@@ -3,6 +3,7 @@ import { getMyDisplayName } from "@/lib/admin/profile";
 import { getCalendarConnectionStatus, type CalendarConnectionStatus } from "@/lib/google/connection";
 import PageHeader from "../_components/PageHeader";
 import { DisplayNameForm, ConnectCalendarControls, ChangePasswordForm, SignOutAllButton } from "./_components/AccountControls";
+import HubspotSyncPanel from "./_components/HubspotSyncPanel";
 
 // BloomOS account settings. Centerpiece is a password change that requires the
 // current password; plus account info and session controls an admin expects.
@@ -69,6 +70,13 @@ export default async function SettingsPage() {
               Calendar status is unavailable right now (the server isn&apos;t fully configured). Try again shortly.
             </p>
           )}
+        </Card>
+
+        <Card
+          title="HubSpot sync"
+          description="Refresh the fundraising spine from HubSpot, and see how current the data is. Runs on demand."
+        >
+          <HubspotSyncPanel />
         </Card>
 
         <Card

@@ -104,6 +104,7 @@ ordered=(
   create_meeting_suggested_tasks.sql
   add_meeting_record_id_to_ops_tasks.sql
   add_external_ids_to_partner_interactions.sql
+  add_calendar_event_id_to_ops_tasks.sql
   create_fr_prospects.sql
   create_fin_reconciliation_items.sql
   create_fr_prospect_promoted.sql

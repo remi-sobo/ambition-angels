@@ -13,6 +13,7 @@ import { RubricEditor } from "./_components/RubricEditor";
 import { MergeControl } from "./_components/MergeControl";
 import { type ScoreFactors } from "../_lib/rubric";
 import { EntityTasks } from "../../_components/EntityTasks";
+import { RailEntity } from "../../_components/rail/RailEntityContext";
 
 // Partner org profile + contacts directory + activity timeline (Ring 3).
 export const dynamic = "force-dynamic";
@@ -155,6 +156,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
 
           {/* Contacts + Activity */}
           <div className="lg:col-span-8 space-y-4">
+            <RailEntity type="partner" id={p.id} label={p.name} />
             <EntityTasks entityType="partner" entityId={p.id} entityLabel={p.name} defaultCategory="program" />
 
             <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5">

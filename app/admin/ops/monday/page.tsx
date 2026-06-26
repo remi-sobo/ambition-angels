@@ -12,7 +12,21 @@ import {
   type OpsProject,
   type OpsTask,
 } from "../_types/ops";
-import { thisMonday, formatWeekHeader } from "@/lib/admin/ops/week";
+import {
+  thisMonday,
+  nextMonday,
+  formatWeekHeader,
+  weekDays,
+  formatDayLabel,
+  laDateOf,
+  todayInTZ,
+  dayStartInstant,
+} from "@/lib/admin/ops/week";
+import { getAgenda } from "@/lib/agenda/service";
+import WeekPlanner, {
+  type PlannerDay,
+  type PlannerEvent,
+} from "./WeekPlanner";
 
 export const dynamic = "force-dynamic";
 
@@ -156,25 +170,78 @@ export default async function MondayPlanPage() {
     }
   }
 
-  // Group pinned-this-week by due date (with an "Anytime this week" bucket).
-  const anytime = pinnedThisWeek.filter((t) => !t.due_date);
-  const byDay = new Map<string, OpsTask[]>();
-  for (const t of pinnedThisWeek) {
-    if (!t.due_date) continue;
-    const list = byDay.get(t.due_date) ?? [];
-    list.push(t);
-    byDay.set(t.due_date, list);
+  // ── Day board: this week's tasks placed on days, with the real agenda ──────
+  const weekDayList = weekDays(mondayISO); // 7 ISO days, Mon → Sun
+  const todayISO = todayInTZ();
+
+  // Agenda for the week (read-only context). Session client + RLS; degrade to
+  // an empty calendar if the read fails so the planner still works.
+  const eventsByDay = new Map<string, PlannerEvent[]>();
+  try {
+    const agenda = await getAgenda({
+      start: new Date(dayStartInstant(mondayISO)),
+      end: new Date(dayStartInstant(nextMonday())),
+    });
+    for (const it of agenda.items) {
+      const dayISO = laDateOf(it.start);
+      const list = eventsByDay.get(dayISO) ?? [];
+      list.push({
+        id: it.id,
+        title: it.title,
+        start: it.start,
+        end: it.end,
+        allDay: it.allDay,
+        isExternal: it.isExternal,
+        location: it.location,
+      });
+      eventsByDay.set(dayISO, list);
+    }
+  } catch (e) {
+    console.error("[monday] agenda read failed:", e);
   }
-  const days = Array.from(byDay.keys()).sort();
+
+  // Split this-week tasks into per-day buckets and a not-yet-scheduled tray.
+  const tasksByDay = new Map<string, OpsTask[]>();
+  const unscheduled: OpsTask[] = [];
+  for (const t of pinnedThisWeek) {
+    if (t.planned_day && weekDayList.includes(t.planned_day)) {
+      const list = tasksByDay.get(t.planned_day) ?? [];
+      list.push(t);
+      tasksByDay.set(t.planned_day, list);
+    } else {
+      unscheduled.push(t);
+    }
+  }
+  // Order within a day: day_order asc (nulls last), then due date, then created.
+  const byDayOrder = (a: OpsTask, b: OpsTask) => {
+    const ao = a.day_order;
+    const bo = b.day_order;
+    if (ao != null && bo != null && ao !== bo) return ao - bo;
+    if (ao != null && bo == null) return -1;
+    if (ao == null && bo != null) return 1;
+    const ad = a.due_date ?? "9999-12-31";
+    const bd = b.due_date ?? "9999-12-31";
+    if (ad !== bd) return ad < bd ? -1 : 1;
+    return a.created_at < b.created_at ? -1 : 1;
+  };
+  tasksByDay.forEach((list) => list.sort(byDayOrder));
+
+  const plannerDays: PlannerDay[] = weekDayList.map((iso) => ({
+    iso,
+    label: formatDayLabel(iso),
+    isToday: iso === todayISO,
+    events: eventsByDay.get(iso) ?? [],
+    tasks: tasksByDay.get(iso) ?? [],
+  }));
+
+  // Maps don't serialize across the server/client boundary — hand over a plain object.
+  const projectNamesObj: Record<string, string> = Object.fromEntries(projectNames);
 
   // ── Action definitions reused inline ──────────────────────────────────────
   const slippedActions: TaskRowAction[] = [
     { label: "Carry to this week", variant: "primary", patch: { pinned_for_this_week: true } },
     { label: "Mark done", variant: "default", patch: { status: "done" } },
     { label: "Drop", variant: "ghost", patch: { pinned_for_this_week: false } },
-  ];
-  const pinnedThisWeekActions: TaskRowAction[] = [
-    { label: "Unpin", variant: "ghost", patch: { pinned_for_this_week: false } },
   ];
   const candidateActions: TaskRowAction[] = [
     { label: "Pin for this week", variant: "primary", patch: { pinned_for_this_week: true } },
@@ -227,63 +294,12 @@ export default async function MondayPlanPage() {
         </section>
       )}
 
-      {/* ── Section 2: This week's commitment ──────────────────────────── */}
-      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
-          This Week
-        </h2>
-        {pinnedThisWeek.length === 0 ? (
-          <p className="text-sm text-ink-2">
-            Nothing pinned for this week yet. Use the section below to add
-            commitments.
-          </p>
-        ) : (
-          <div className="space-y-5">
-            {anytime.length > 0 && (
-              <div>
-                <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
-                  Anytime this week
-                </h3>
-                <div className="space-y-1.5">
-                  {anytime.map((t) => (
-                    <TaskRowWithActions
-                      key={t.id}
-                      task={t}
-                      projectName={t.project_id ? projectNames.get(t.project_id) : null}
-                      actions={pinnedThisWeekActions}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-            {days.map((day) => {
-              const d = new Date(day + "T00:00:00");
-              const label = d.toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "short",
-                day: "numeric",
-              });
-              return (
-                <div key={day}>
-                  <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
-                    {label}
-                  </h3>
-                  <div className="space-y-1.5">
-                    {(byDay.get(day) ?? []).map((t) => (
-                      <TaskRowWithActions
-                        key={t.id}
-                        task={t}
-                        projectName={t.project_id ? projectNames.get(t.project_id) : null}
-                        actions={pinnedThisWeekActions}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      {/* ── Section 2: This week, by day ───────────────────────────────── */}
+      <WeekPlanner
+        days={plannerDays}
+        unscheduled={unscheduled}
+        projectNames={projectNamesObj}
+      />
 
       {/* ── Section 3: Candidates ──────────────────────────────────────── */}
       <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">

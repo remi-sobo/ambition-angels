@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
-import { thisMonday } from "@/lib/admin/ops/week";
+import { thisMonday, mondayOf } from "@/lib/admin/ops/week";
 import {
   isTaskCategory,
   isTaskStatus,
@@ -176,11 +176,58 @@ export async function PATCH(
       return NextResponse.json({ error: "planned_week must be YYYY-MM-DD or null" }, { status: 400 });
     }
     updates.planned_week = body.planned_week;
+    // Moving to a different week invalidates the day placement (e.g. Friday's
+    // "Push to next week"): the old day belongs to the old week.
+    if (!("planned_day" in body) && body.planned_week !== current.planned_week) {
+      updates.planned_day = null;
+      updates.day_order = null;
+    }
   } else if ("pinned_for_this_week" in body) {
     const nextPin = body.pinned_for_this_week === true;
     if (nextPin !== current.pinned_for_this_week) {
       updates.planned_week = nextPin ? thisMonday() : null;
     }
+  }
+  // planned_day places a task on a specific day within its week. Setting it
+  // commits the task to that day's week (planned_week + pin); clearing it drops
+  // the per-day order too. A new placement appends to the bottom of the day.
+  if ("planned_day" in body) {
+    if (body.planned_day !== null && !isISODate(body.planned_day)) {
+      return NextResponse.json({ error: "planned_day must be YYYY-MM-DD or null" }, { status: 400 });
+    }
+    updates.planned_day = body.planned_day;
+    if (body.planned_day === null) {
+      updates.day_order = null;
+    } else {
+      updates.planned_week = mondayOf(body.planned_day);
+      updates.pinned_for_this_week = true;
+      if (!("day_order" in body)) {
+        const { data: siblings } = await supabase
+          .from("ops_tasks")
+          .select("day_order")
+          .eq("planned_day", body.planned_day)
+          .neq("id", params.id);
+        const maxOrder = (siblings ?? []).reduce(
+          (m, r) => {
+            const o = (r as { day_order: number | null }).day_order;
+            return o != null && o > m ? o : m;
+          },
+          -1
+        );
+        updates.day_order = maxOrder + 1;
+      }
+    }
+  }
+  if ("day_order" in body) {
+    if (body.day_order !== null && typeof body.day_order !== "number") {
+      return NextResponse.json({ error: "day_order must be a number or null" }, { status: 400 });
+    }
+    updates.day_order = body.day_order;
+  }
+  // A task with no week can't sit on a day — keep the day axis consistent.
+  if (updates.planned_week === null) {
+    updates.planned_day = null;
+    updates.day_order = null;
   }
   if ("display_order" in body) {
     if (body.display_order !== null && typeof body.display_order !== "number") {

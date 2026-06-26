@@ -16,8 +16,10 @@ export type SearchKind =
   | "action";
 
 // Display buckets. DB hits map to the first five; client-side page matches
-// land in "pages". Group order here IS the render order in the overlay.
-export type SearchGroup = "people" | "deals" | "tasks" | "program" | "meetings" | "pages";
+// land in "pages". "recent" is synthetic (Phase 4 empty-state), never produced
+// by search — so it's excluded from GROUP_ORDER. Group order here IS the render
+// order in the overlay.
+export type SearchGroup = "people" | "deals" | "tasks" | "program" | "meetings" | "pages" | "recent";
 
 export const GROUP_ORDER: SearchGroup[] = [
   "people",
@@ -35,7 +37,31 @@ export const GROUP_LABEL: Record<SearchGroup, string> = {
   program: "Program & Partners",
   meetings: "Meetings",
   pages: "Pages & Actions",
+  recent: "Recent",
 };
+
+// Phase 4: scope prefixes ("people: koshland", "task: loi") filter results to
+// one group. Maps a typed prefix → the group it constrains to.
+export const SCOPE_PREFIXES: Record<string, SearchGroup> = {
+  people: "people", person: "people", org: "people", orgs: "people",
+  donor: "people", donors: "people", prospect: "people",
+  deal: "deals", deals: "deals", grant: "deals", grants: "deals",
+  task: "tasks", tasks: "tasks", project: "tasks", projects: "tasks",
+  program: "program", student: "program", students: "program",
+  cohort: "program", partner: "program", partners: "program",
+  meeting: "meetings", meetings: "meetings",
+  page: "pages", pages: "pages",
+};
+
+/** Split a leading "scope:" prefix off the query, if one is recognized. */
+export function parseScope(raw: string): { term: string; scope: SearchGroup | null } {
+  const m = raw.match(/^([a-zA-Z]+):\s*(.*)$/);
+  if (m) {
+    const scope = SCOPE_PREFIXES[m[1].toLowerCase()];
+    if (scope) return { term: m[2].trim(), scope };
+  }
+  return { term: raw.trim(), scope: null };
+}
 
 export type SearchHit = {
   kind: SearchKind;

@@ -69,14 +69,17 @@ type PartnerRow = { id: string; name: string; kind: string; status: string };
 type StudentRow = { id: string; first_name: string | null; last_name: string | null; school: string | null; stage: string };
 type CohortRow = { id: string; name: string; term: string | null; status: string };
 type BookingRow = { id: string; attendee_name: string | null; attendee_email: string | null; start_time: string | null };
+type FuzzyRow = { id: string; kind: "constituent" | "prospect"; name: string | null; org_name: string | null; email: string | null; sim: number };
 
 export async function GET(req: NextRequest) {
   if (!(await isAuthed())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const url = new URL(req.url);
   // Strip characters that would break the PostgREST or() filter grammar.
-  const q = (new URL(req.url).searchParams.get("q") ?? "").replace(/[(),*%]/g, " ").trim();
+  const q = (url.searchParams.get("q") ?? "").replace(/[(),*%]/g, " ").trim();
+  const includeNotes = url.searchParams.get("notes") === "1";
   if (q.length < 2) return NextResponse.json({ results: [] });
 
   const supabase = createServerSupabase();
@@ -263,13 +266,73 @@ export async function GET(req: NextRequest) {
       ),
   ];
 
-  const settled = await Promise.allSettled(tasks);
-  const results: SearchHit[] = [];
-  for (const r of settled) {
-    if (r.status === "fulfilled") results.push(...r.value);
-    else console.error("[admin/search] sub-query failed:", r.reason?.message ?? r.reason);
+  // Phase 3: typo-tolerant people via the pg_trgm RPC. Merged with (not
+  // replacing) the substring matches above — trigram's similarity threshold
+  // misses short prefixes that ilike catches, so the dedup keeps the best of
+  // both. Degrades silently to substring-only if the function isn't present.
+  tasks.push(
+    supabase.rpc("bloomos_search_people", { q, lim: LIMIT }).then(({ data }) =>
+      ((data ?? []) as FuzzyRow[]).map((r) => {
+        const fuzz = Math.round(40 + Math.min(1, Math.max(0, r.sim)) * 60) + KIND_WEIGHT[r.kind];
+        if (r.kind === "prospect") {
+          const sub = ["Prospect", r.org_name].filter(Boolean).join(" · ");
+          const h = mk("prospect", "people", r.id, r.name || "Unknown", `/admin/fundraising/prospects/${r.id}`, sub);
+          h.score = fuzz;
+          return h;
+        }
+        const h = mk("constituent", "people", r.id, r.name || "Unnamed", `/admin/fundraising/donors/${r.id}`, r.email ?? r.org_name ?? undefined);
+        h.score = fuzz;
+        return h;
+      })
+    )
+  );
+
+  // Phase 3: notes & history search (opt-in). Interactions is the goldmine
+  // (55k+ rows) — match the note text and surface the constituent it's about.
+  if (includeNotes) {
+    tasks.push(
+      supabase
+        .from("interactions")
+        .select("constituents(id, type, first_name, last_name, org_name)")
+        .ilike("notes", like)
+        .order("occurred_at", { ascending: false })
+        .limit(20)
+        .then(({ data }) => {
+          const seen = new Set<string>();
+          const hits: SearchHit[] = [];
+          // PostgREST types the embed as an array; a to-one FK returns a single
+          // object at runtime, so normalize either shape.
+          const rows = (data ?? []) as unknown as Array<{ constituents: ConstituentRow | ConstituentRow[] | null }>;
+          for (const row of rows) {
+            const c = Array.isArray(row.constituents) ? row.constituents[0] : row.constituents;
+            if (!c || seen.has(c.id)) continue;
+            seen.add(c.id);
+            const h = mk("constituent", "people", c.id, constituentName(c), `/admin/fundraising/donors/${c.id}`, "Mentioned in notes");
+            h.score = 50 + KIND_WEIGHT.constituent;
+            hits.push(h);
+            if (hits.length >= 5) break;
+          }
+          return hits;
+        })
+    );
   }
 
-  results.sort((a, b) => b.score - a.score);
+  const settled = await Promise.allSettled(tasks);
+  // Dedup by entity (a person can match by name AND fuzzy AND a note) keeping
+  // the strongest signal; pages key off href since they have no id.
+  const merged = new Map<string, SearchHit>();
+  for (const r of settled) {
+    if (r.status !== "fulfilled") {
+      console.error("[admin/search] sub-query failed:", r.reason?.message ?? r.reason);
+      continue;
+    }
+    for (const hit of r.value) {
+      const key = `${hit.kind}:${hit.id ?? hit.href}`;
+      const prev = merged.get(key);
+      if (!prev || hit.score > prev.score) merged.set(key, hit);
+    }
+  }
+
+  const results = Array.from(merged.values()).sort((a, b) => b.score - a.score);
   return NextResponse.json({ results });
 }

@@ -7,11 +7,14 @@ import {
   GROUP_LABEL,
   GROUP_ORDER,
   matchPages,
+  parseScope,
   type ProfilePayload,
   type SearchGroup,
   type SearchHit,
   type SearchKind,
 } from "./types";
+
+const RECENTS_KEY = "bloomos:recent-search";
 
 /**
  * BloomOS global search overlay (Phase 1 — "navigator").
@@ -32,13 +35,43 @@ export default function GlobalSearch() {
   const [dbHits, setDbHits] = useState<SearchHit[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Phase 3: opt-in deep search across notes & interaction history.
+  const [includeNotes, setIncludeNotes] = useState(false);
   // Mode B (360° profile). profileId set = profile open; null = palette.
   const [profileId, setProfileId] = useState<string | null>(null);
   const [profile, setProfile] = useState<ProfilePayload | null>(null);
+  // Phase 4: recently-opened results (localStorage), shown when the box is empty.
+  const [recents, setRecents] = useState<SearchHit[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const profileAbortRef = useRef<AbortController | null>(null);
+
+  // Scope prefix ("task: loi") + the bare term that actually gets searched.
+  const { term, scope } = useMemo(() => parseScope(query), [query]);
+
+  // Load recents once on mount.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(RECENTS_KEY);
+      if (raw) setRecents(JSON.parse(raw) as SearchHit[]);
+    } catch {
+      /* ignore malformed / unavailable storage */
+    }
+  }, []);
+
+  const pushRecent = useCallback((hit: SearchHit) => {
+    setRecents((prev) => {
+      const id = hit.id ?? hit.href;
+      const next = [hit, ...prev.filter((h) => (h.id ?? h.href) !== id || h.kind !== hit.kind)].slice(0, 6);
+      try {
+        localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
 
   const closeProfile = useCallback(() => {
     setProfileId(null);
@@ -121,7 +154,6 @@ export default function GlobalSearch() {
   // ── Debounced, abortable DB fetch ──────────────────────────────────────
   useEffect(() => {
     if (!open) return;
-    const term = query.trim();
     if (term.length < 2) {
       setDbHits([]);
       setLoading(false);
@@ -132,7 +164,9 @@ export default function GlobalSearch() {
     abortRef.current?.abort();
     abortRef.current = ctrl;
     const t = setTimeout(() => {
-      fetch(`/api/admin/search?q=${encodeURIComponent(term)}`, { signal: ctrl.signal })
+      fetch(`/api/admin/search?q=${encodeURIComponent(term)}${includeNotes ? "&notes=1" : ""}`, {
+        signal: ctrl.signal,
+      })
         .then((r) => (r.ok ? r.json() : { results: [] }))
         .then((data) => setDbHits((data?.results ?? []) as SearchHit[]))
         .catch((err) => {
@@ -146,31 +180,38 @@ export default function GlobalSearch() {
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [query, open]);
+  }, [term, open, includeNotes]);
 
   // ── Group + flatten ────────────────────────────────────────────────────
   const groups = useMemo(() => {
-    const all = [...dbHits, ...matchPages(query)];
+    // Empty box → recently-opened results (Phase 4).
+    if (term.length < 1) {
+      return recents.length ? [{ group: "recent" as SearchGroup, items: recents }] : [];
+    }
+    const all = [...dbHits, ...matchPages(term)];
     const byGroup = new Map<SearchGroup, SearchHit[]>();
     for (const hit of all) {
       const list = byGroup.get(hit.group) ?? [];
       list.push(hit);
       byGroup.set(hit.group, list);
     }
-    return GROUP_ORDER.flatMap((g) => {
+    let ordered = GROUP_ORDER.flatMap((g) => {
       const items = byGroup.get(g);
       if (!items || items.length === 0) return [];
       items.sort((a, b) => b.score - a.score);
       return [{ group: g, items }];
     });
-  }, [dbHits, query]);
+    // Scope prefix narrows to a single group.
+    if (scope) ordered = ordered.filter((g) => g.group === scope);
+    return ordered;
+  }, [dbHits, term, scope, recents]);
 
   // Flat list mirrors visual order — the index space for ↑/↓ and ↵.
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [flat.length, query]);
+  }, [flat.length, term]);
 
   // Keep the highlighted row in view.
   useEffect(() => {
@@ -193,6 +234,7 @@ export default function GlobalSearch() {
   const go = useCallback(
     (hit: SearchHit | undefined, newTab: boolean) => {
       if (!hit) return;
+      pushRecent(hit); // Phase 4: remember what was opened.
       // People/orgs open the 360° profile by default — that's the headline use
       // case. ⌘-click / ⌘↵ skips it and jumps straight to the full page.
       if (hit.kind === "constituent" && hit.id && !newTab) {
@@ -201,7 +243,7 @@ export default function GlobalSearch() {
       }
       navigate(hit.href, newTab);
     },
-    [navigate, openProfile]
+    [navigate, openProfile, pushRecent]
   );
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -237,8 +279,8 @@ export default function GlobalSearch() {
 
   if (!open) return null;
 
-  const term = query.trim();
   const showEmpty = term.length >= 2 && !loading && flat.length === 0;
+  const showHint = term.length < 2 && groups.length === 0;
 
   return (
     <div
@@ -248,7 +290,7 @@ export default function GlobalSearch() {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl rounded-card border-[1.5px] border-white/10 bg-ink shadow-2xl overflow-hidden flex flex-col max-h-[70vh]"
+        className="w-full max-w-xl rounded-card border-[1.5px] border-outline bg-ink shadow-2xl overflow-hidden flex flex-col max-h-[70vh]"
         role="dialog"
         aria-modal="true"
         aria-label="Search BloomOS"
@@ -259,24 +301,24 @@ export default function GlobalSearch() {
             <EntityProfile data={profile} onBack={closeProfile} onOpen={navigate} />
           ) : (
             <div className="flex-1 flex flex-col">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-outline">
                 <button
                   onClick={closeProfile}
                   aria-label="Back to search"
-                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-[#bfae93] hover:text-cream hover:bg-white/[0.06] transition-colors"
+                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-ink-3 hover:text-ink-1 hover:bg-tile transition-colors"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden>
                     <path d="M15 18l-6-6 6-6" />
                   </svg>
                 </button>
-                <span className="text-sm text-[#8d7c63]">Loading profile…</span>
+                <span className="text-sm text-ink-2">Loading profile…</span>
               </div>
             </div>
           )
         ) : (
           <>
         {/* Search field */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-outline">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -284,7 +326,7 @@ export default function GlobalSearch() {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="w-5 h-5 shrink-0 text-[#8d7c63]"
+            className="w-5 h-5 shrink-0 text-ink-2"
             aria-hidden
           >
             <circle cx="11" cy="11" r="7" />
@@ -296,7 +338,7 @@ export default function GlobalSearch() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search people, deals, tasks, pages…"
-            className="flex-1 bg-transparent text-cream placeholder-[#8d7c63] text-base focus:outline-none"
+            className="flex-1 bg-transparent text-ink-1 placeholder-ink-3 text-base focus:outline-none"
             role="combobox"
             aria-expanded
             aria-controls="gs-listbox"
@@ -304,30 +346,34 @@ export default function GlobalSearch() {
             autoComplete="off"
             spellCheck={false}
           />
-          <kbd className="shrink-0 text-[10px] font-medium text-[#8d7c63] border border-white/10 rounded px-1.5 py-0.5">
+          <kbd className="shrink-0 text-[10px] font-medium text-ink-2 border border-outline rounded px-1.5 py-0.5">
             esc
           </kbd>
         </div>
 
         {/* Results */}
         <div id="gs-listbox" role="listbox" className="flex-1 overflow-y-auto py-2">
-          {term.length < 2 && (
-            <p className="px-4 py-6 text-sm text-[#8d7c63] text-center">
+          {showHint && (
+            <p className="px-4 py-6 text-sm text-ink-2 text-center">
               Type a name, organization, deal, task, or page to jump to it.
+              <br />
+              <span className="text-ink-3 text-[12px]">
+                Tip: prefix with <code>people:</code>, <code>deal:</code>, or <code>task:</code> to filter.
+              </span>
             </p>
           )}
           {loading && flat.length === 0 && term.length >= 2 && (
-            <p className="px-4 py-6 text-sm text-[#8d7c63] text-center">Searching…</p>
+            <p className="px-4 py-6 text-sm text-ink-2 text-center">Searching…</p>
           )}
           {showEmpty && (
-            <p className="px-4 py-6 text-sm text-[#8d7c63] text-center">
+            <p className="px-4 py-6 text-sm text-ink-2 text-center">
               No matches for “{term}”.
             </p>
           )}
 
           {groups.map((g) => (
             <div key={g.group} className="mb-1.5 last:mb-0">
-              <div className="px-4 pt-2 pb-1 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93]">
+              <div className="px-4 pt-2 pb-1 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-ink-3">
                 {GROUP_LABEL[g.group]}
               </div>
               {g.items.map((hit) => {
@@ -343,26 +389,26 @@ export default function GlobalSearch() {
                     onClick={(e) => go(hit, e.metaKey || e.ctrlKey)}
                     className={[
                       "w-full text-left flex items-center gap-3 px-4 py-2 transition-colors",
-                      active ? "bg-white/[0.07]" : "hover:bg-white/[0.04]",
+                      active ? "bg-orange-light" : "hover:bg-tile",
                     ].join(" ")}
                   >
                     <span
                       className={[
                         "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center",
-                        active ? "bg-orange/20 text-orange-mid" : "bg-white/[0.06] text-[#bfae93]",
+                        active ? "bg-orange/20 text-orange-mid" : "bg-tile text-ink-3",
                       ].join(" ")}
                       aria-hidden
                     >
                       <KindIcon kind={hit.kind} />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[13px] text-cream truncate">{hit.title}</span>
+                      <span className="block text-[13px] text-ink-1 truncate">{hit.title}</span>
                       {hit.subtitle && (
-                        <span className="block text-[11px] text-[#8d7c63] truncate">{hit.subtitle}</span>
+                        <span className="block text-[11px] text-ink-2 truncate">{hit.subtitle}</span>
                       )}
                     </span>
                     {hit.badge && (
-                      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-[#bfae93] border border-white/10 rounded-full px-1.5 py-px">
+                      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-ink-3 border border-outline rounded-full px-1.5 py-px">
                         {hit.badge}
                       </span>
                     )}
@@ -374,7 +420,7 @@ export default function GlobalSearch() {
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className={`shrink-0 w-3.5 h-3.5 ${active ? "text-orange-mid" : "text-[#8d7c63]"}`}
+                        className={`shrink-0 w-3.5 h-3.5 ${active ? "text-orange-mid" : "text-ink-2"}`}
                         aria-hidden
                       >
                         <path d="M9 6l6 6-6 6" />
@@ -388,7 +434,7 @@ export default function GlobalSearch() {
         </div>
 
         {/* Footer hints (context-aware: people/orgs open the profile) */}
-        <div className="flex items-center gap-4 px-4 py-2 border-t border-white/10 text-[10px] text-[#8d7c63]">
+        <div className="flex items-center gap-4 px-4 py-2 border-t border-outline text-[10px] text-ink-2">
           <Hint k="↑↓" label="navigate" />
           {activeHit?.kind === "constituent" ? (
             <>
@@ -401,7 +447,24 @@ export default function GlobalSearch() {
               <Hint k="⌘↵" label="new tab" />
             </>
           )}
-          <span className="ml-auto">BloomOS search</span>
+          <button
+            type="button"
+            onClick={() => setIncludeNotes((v) => !v)}
+            aria-pressed={includeNotes}
+            title="Also search interaction notes & history"
+            className={[
+              "ml-auto flex items-center gap-1.5 rounded-full px-2 py-0.5 border transition-colors",
+              includeNotes
+                ? "border-orange/40 text-orange bg-orange-light"
+                : "border-outline text-ink-2 hover:text-ink-1",
+            ].join(" ")}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${includeNotes ? "bg-orange" : "bg-ink-3"}`}
+              aria-hidden
+            />
+            Notes &amp; history
+          </button>
         </div>
           </>
         )}
@@ -413,7 +476,7 @@ export default function GlobalSearch() {
 function Hint({ k, label }: { k: string; label: string }) {
   return (
     <span className="flex items-center gap-1.5">
-      <kbd className="text-[10px] border border-white/10 rounded px-1 py-px text-[#bfae93]">{k}</kbd>
+      <kbd className="text-[10px] border border-outline rounded px-1 py-px text-ink-3">{k}</kbd>
       {label}
     </span>
   );

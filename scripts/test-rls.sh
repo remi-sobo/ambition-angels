@@ -116,7 +116,6 @@ ordered=(
   add_strategy_review_draft_kind.sql
   create_reed_plan_proposals.sql
   add_applied_id_to_reed_plan_proposals.sql
-  pin_function_search_path.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"
@@ -130,8 +129,13 @@ echo "   create_audit_log.sql (pg_cron step tolerated outside Supabase)"
 psql "$DATABASE_URL" -q -f "$mig/create_audit_log.sql" 2>&1 | grep -v "^$" | tail -2 || true
 
 # Catch migrations that exist on disk but aren't in the ordered list.
+# Exclusions (applied/checked elsewhere, not in the ordered run):
+#   create_audit_log.sql        — applied separately above (needs pg_cron).
+#   pin_function_search_path.sql — only ALTERs functions (e.g.
+#     hubspot_bench_candidates) created outside this RLS-tested migration
+#     subset, so it can't apply here and is irrelevant to the leak matrix.
 missing=$(ls "$mig"/*.sql | xargs -n1 basename |
-  grep -v -F -x -f <(printf '%s\n' "${ordered[@]}" create_audit_log.sql) || true)
+  grep -v -F -x -f <(printf '%s\n' "${ordered[@]}" create_audit_log.sql pin_function_search_path.sql) || true)
 if [ -n "$missing" ]; then
   echo "ERROR: migrations missing from the ordered list in $0:" >&2
   echo "$missing" >&2

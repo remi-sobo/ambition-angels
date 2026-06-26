@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import RailShell from "./RailShell";
 import AgendaShelf from "./AgendaShelf";
 import NeedsYouShelf from "./NeedsYouShelf";
+import WeekPulse from "./WeekPulse";
 import CaptureDock from "./CaptureDock";
 import CollapsedReedLauncher from "./CollapsedReedLauncher";
 
@@ -24,6 +25,7 @@ export default function Rail({ reedEnabled }: { reedEnabled: boolean }) {
     >
       <AgendaShelf />
       <NeedsYouShelf />
+      <WeekPulse />
     </RailShell>
   );
 }

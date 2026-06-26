@@ -23,8 +23,18 @@ const SOURCE_CHIP: Record<string, string> = {
 const monthLabel = (iso: string) =>
   new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", year: "numeric" });
 
-export default function RevenueSchedule({ rows }: { rows: RevenueScheduleRow[] }) {
-  if (rows.length === 0) {
+export default function RevenueSchedule({
+  rows,
+  goal = 0,
+  received = 0,
+}: {
+  rows: RevenueScheduleRow[];
+  /** Fundraising goal for the year — drives the progress bar. */
+  goal?: number;
+  /** Actual money landed this year (gifts) — the hard floor of goal progress. */
+  received?: number;
+}) {
+  if (rows.length === 0 && received === 0) {
     return (
       <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
         <SectionTitle />
@@ -47,28 +57,49 @@ export default function RevenueSchedule({ rows }: { rows: RevenueScheduleRow[] }
     else projected += r.weighted_amount;
   }
 
+  // Goal progress: received + secured is the hard money; weighted pipeline is
+  // the softer layer behind it.
+  const hard = received + committed + restricted;
+  const goalPct = goal > 0 ? (hard / goal) * 100 : 0;
+  const goalPctWithProj = goal > 0 ? ((hard + projected) / goal) * 100 : 0;
+
   return (
     <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
       <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
         <SectionTitle />
         <div className="flex items-center gap-4 text-xs">
           <span className="text-ink-2">
-            Committed <span className="font-mono text-revenue">{money(committed)}</span>
+            Received <span className="font-mono text-revenue">{money(received)}</span>
+          </span>
+          <span className="text-ink-2">
+            Committed <span className="font-mono text-revenue">{money(committed + restricted)}</span>
           </span>
           <span className="text-ink-2">
             Projected <span className="font-mono text-ink-1">{money(projected)}</span>
           </span>
-          {restricted > 0 && (
-            <span className="text-ink-2">
-              Restricted <span className="font-mono text-[#A56A1B]">{money(restricted)}</span>
-            </span>
-          )}
         </div>
       </div>
       <p className="text-xs text-ink-2 mb-4">
         The dated inflows that feed runway — committed at full value, pipeline weighted by
         probability. Restricted money is flagged and excluded from general-operating runway.
       </p>
+
+      {goal > 0 && (
+        <div className="mb-5">
+          <div className="relative h-6 rounded-full bg-tile overflow-hidden">
+            <div className="absolute inset-y-0 left-0 bg-orange/25" style={{ width: `${Math.min(100, goalPctWithProj)}%` }} />
+            <div className="absolute inset-y-0 left-0 bg-orange" style={{ width: `${Math.min(100, goalPct)}%` }} />
+            <div className="absolute inset-0 flex items-center justify-between px-3 text-[10px] text-ink-1 font-medium">
+              <span>{goalPct.toFixed(0)}% hard</span>
+              <span className="text-ink-2">{goalPctWithProj.toFixed(0)}% w/ weighted pipeline</span>
+            </div>
+          </div>
+          <div className="mt-1.5 text-[11px] text-ink-2">
+            {money(hard)} received + committed toward {money(goal)} goal
+            {restricted > 0 && <> · {money(restricted)} of it restricted</>}
+          </div>
+        </div>
+      )}
 
       <ul className="divide-y divide-hairline">
         {sorted.map((r) => (

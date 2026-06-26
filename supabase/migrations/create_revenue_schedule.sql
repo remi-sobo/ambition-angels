@@ -197,3 +197,8 @@ with (security_invoker = true) as
 
 comment on view public.v_revenue_schedule is
   'Canonical dated schedule of expected inflows (pledges, grants, weighted pipeline, manual). security_invoker — RLS of the underlying tables applies. Read by finance runway, the revenue/pledges pages, and Horizon. Never read hs_deals for finance numbers; pipeline comes from opportunities.';
+
+-- security_invoker means the querying role still needs SELECT on the view
+-- itself; grant it to authenticated so RLS-scoped readers (e.g. the Reed agent)
+-- can read it. Underlying-table RLS still governs which rows they see.
+grant select on public.v_revenue_schedule to authenticated;

@@ -103,6 +103,52 @@ export type ScheduleRollup = {
   needsScheduleCount: number;
 };
 
+export type ScheduleTotals = {
+  /** All committed inflows at full value (incl. restricted — counts toward the goal). */
+  committed: number;
+  /** All projected inflows, probability-weighted (incl. restricted). */
+  projectedWeighted: number;
+};
+
+/**
+ * Goal-facing totals: committed and weighted-projected across the whole
+ * schedule, restricted included — restricted money still counts toward the
+ * fundraising goal even though runway excludes it from operating cash. Use this
+ * for "secured / projected toward goal" displays; use rollupSchedule for the
+ * runway's restricted carve-out.
+ */
+export function scheduleTotals(rows: RevenueScheduleRow[]): ScheduleTotals {
+  let committed = 0;
+  let projectedWeighted = 0;
+  for (const r of rows) {
+    if (r.confidence === "committed") committed += r.gross_amount;
+    else projectedWeighted += r.weighted_amount;
+  }
+  return { committed, projectedWeighted };
+}
+
+/**
+ * Actual money landed in a window — the "received" end of the schedule. Sums
+ * gifts (the canonical received-money ledger), matching how the fundraising
+ * cockpit counts what's raised. Degrades to 0 on error.
+ */
+export async function loadReceivedTotal(
+  client: SupabaseClient,
+  startISO: string,
+  endISO: string
+): Promise<number> {
+  const { data, error } = await client
+    .from("gifts")
+    .select("amount")
+    .gte("gift_date", startISO)
+    .lte("gift_date", endISO);
+  if (error) {
+    console.error("[finance] received-gifts load failed:", error.message);
+    return 0;
+  }
+  return (data ?? []).reduce((s, g) => s + Number(g.amount ?? 0), 0);
+}
+
 /** One pass producing the headline rollups the finance surfaces show. */
 export function rollupSchedule(rows: RevenueScheduleRow[]): ScheduleRollup {
   let committed = 0;

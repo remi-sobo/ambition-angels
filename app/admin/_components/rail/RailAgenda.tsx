@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { AgendaItem } from "@/lib/agenda/service";
 
-const STALE_MIN = 20; // synced longer ago than this → ochre tick
+const STALE_MIN = 20; // synced longer ago than this → ochre tick + refresh nudge
 const MIN_OFFSET = -7; // matches AgendaShelf's fetch window
 const MAX_OFFSET = 7;
 
@@ -35,6 +35,12 @@ function dayLabel(offset: number, key: string): { big: string; sub: string } {
   return { big: short, sub: full };
 }
 
+// "Tomorrow" / "Fri, Jun 27" hint for a day key relative to today.
+function hintFor(key: string, todayKey: string): string {
+  if (key === addDaysKey(todayKey, 1)) return "Tomorrow";
+  return new Date(key + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
 function relative(iso: string | null): { text: string; stale: boolean } {
   if (!iso) return { text: "not synced yet", stale: true };
   const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
@@ -46,7 +52,8 @@ function relative(iso: string | null): { text: string; stale: boolean } {
   return { text: `synced ${Math.round(hrs / 24)}d ago`, stale };
 }
 
-/** The cockpit agenda: navigate day by day, a glowing "up next" on today. */
+/** The cockpit agenda: navigate day by day; the glowing hero rolls forward so
+ *  there's always something to look at, even when today is done. */
 export default function RailAgenda({
   items,
   timeZone,
@@ -66,22 +73,36 @@ export default function RailAgenda({
   const isToday = offset === 0;
   const label = dayLabel(offset, selectedKey);
 
-  const { hero, list, empty } = useMemo(() => {
+  const { hero, heroHint, list, count } = useMemo(() => {
     const dayKeyOf = (e: AgendaItem) => (e.allDay ? e.start.slice(0, 10) : fmt.ymd(new Date(e.start)));
-    const dayItems = items
-      .filter((e) => dayKeyOf(e) === selectedKey)
-      .sort((a, b) => a.start.localeCompare(b.start));
+    const onDay = (k: string) =>
+      items.filter((e) => dayKeyOf(e) === k).sort((a, b) => a.start.localeCompare(b.start));
+    const dayItems = onDay(selectedKey);
 
     if (isToday) {
       const now = Date.now();
       const ended = (e: AgendaItem) => !e.allDay && new Date(e.end ?? e.start).getTime() < now;
       const ahead = dayItems.filter((e) => !ended(e));
-      const h = ahead[0] ?? null;
-      return { hero: h, list: ahead.slice(h ? 1 : 0, 4), empty: dayItems.length === 0 };
+      if (ahead.length > 0) {
+        return { hero: ahead[0], heroHint: null as string | null, list: ahead.slice(1, 4), count: dayItems.length, empty: false };
+      }
+      // Today is done → roll the hero forward to the next event on any day.
+      const next =
+        items
+          .filter((e) => new Date(e.start).getTime() >= now || (e.allDay && dayKeyOf(e) > todayKey))
+          .sort((a, b) => a.start.localeCompare(b.start))[0] ?? null;
+      if (next) {
+        const nk = dayKeyOf(next);
+        const sameDay = onDay(nk);
+        const idx = sameDay.findIndex((e) => e.id === next.id);
+        return { hero: next, heroHint: hintFor(nk, todayKey), list: sameDay.slice(idx + 1, idx + 4), count: 0, empty: dayItems.length === 0 };
+      }
+      return { hero: null as AgendaItem | null, heroHint: null as string | null, list: [] as AgendaItem[], count: 0, empty: dayItems.length === 0 };
     }
-    return { hero: null as AgendaItem | null, list: dayItems.slice(0, 6), empty: dayItems.length === 0 };
-  }, [items, selectedKey, isToday, fmt]);
+    return { hero: null as AgendaItem | null, heroHint: null as string | null, list: dayItems.slice(0, 6), count: dayItems.length, empty: dayItems.length === 0 };
+  }, [items, selectedKey, isToday, fmt, todayKey]);
 
+  const countLabel = count === 0 ? "Clear" : `${count} event${count === 1 ? "" : "s"}`;
   const freshness = relative(syncedAt);
 
   async function refresh() {
@@ -105,13 +126,18 @@ export default function RailAgenda({
           onClick={refresh}
           disabled={refreshing}
           title="Refresh calendar"
-          className={`text-[11px] ${freshness.stale ? "text-orange-mid" : "text-[#8d7c63]"} hover:text-[#D8C9B3] disabled:opacity-50 transition-colors`}
+          className={`inline-flex items-center gap-1.5 text-[11px] disabled:opacity-50 transition-colors ${
+            freshness.stale
+              ? "text-orange-mid hover:text-orange font-medium"
+              : "text-[#8d7c63] hover:text-[#D8C9B3]"
+          }`}
         >
           {refreshing ? "syncing…" : freshness.text}
+          {freshness.stale && !refreshing && <RefreshGlyph />}
         </button>
       </div>
 
-      {/* Editorial day header: big display name, full date beneath, arrows flanking. */}
+      {/* Editorial day header: big display name, full date + count, arrows flanking. */}
       <div className="flex items-center justify-between gap-2 mb-5">
         <button
           onClick={() => setOffset((o) => Math.max(MIN_OFFSET, o - 1))}
@@ -125,7 +151,10 @@ export default function RailAgenda({
           <div className="font-display font-black text-[26px] leading-none text-[#F5EAD8] tracking-tight">
             {label.big}
           </div>
-          <div className="text-[11px] text-[#9c8b70] mt-1 group-hover:text-[#bfae93] transition-colors">{label.sub}</div>
+          <div className="text-[11px] text-[#9c8b70] mt-1 group-hover:text-[#bfae93] transition-colors">
+            {label.sub}
+            <span className="text-[#8d7c63]"> · {countLabel}</span>
+          </div>
         </button>
         <button
           onClick={() => setOffset((o) => Math.min(MAX_OFFSET, o + 1))}
@@ -139,7 +168,10 @@ export default function RailAgenda({
 
       {hero && (
         <>
-          <p className="text-[10px] font-heading font-bold uppercase tracking-[0.16em] text-orange-mid mb-2">Up next</p>
+          <p className="text-[10px] font-heading font-bold uppercase tracking-[0.16em] text-orange-mid mb-2">
+            Up next
+            {heroHint && <span className="text-[#9c8b70] font-semibold"> · {heroHint}</span>}
+          </p>
           <div
             className="relative rounded-card border border-[rgba(232,80,10,0.35)] overflow-hidden p-4"
             style={{ backgroundImage: "linear-gradient(135deg, rgba(232,80,10,0.22), rgba(232,80,10,0.05))" }}
@@ -186,13 +218,7 @@ export default function RailAgenda({
 
       {!hero && list.length === 0 && (
         <p className="text-[13px] text-[#8d7c63] py-1">
-          {empty && isToday
-            ? syncedAt
-              ? "Nothing scheduled today."
-              : "Connect your calendar to see today."
-            : isToday
-              ? "That’s a wrap for today."
-              : "Nothing scheduled."}
+          {syncedAt ? "Nothing on the calendar." : "Connect your calendar to see your agenda."}
         </p>
       )}
 
@@ -210,6 +236,15 @@ function Chevron({ dir }: { dir: "left" | "right" }) {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <polyline points={dir === "right" ? "9 18 15 12 9 6" : "15 18 9 12 15 6"} />
+    </svg>
+  );
+}
+
+function RefreshGlyph() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+      <polyline points="21 3 21 9 15 9" />
     </svg>
   );
 }

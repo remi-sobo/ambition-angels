@@ -12,6 +12,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getFinanceSnapshot, fiscalYearBounds } from "@/lib/admin/finance";
+import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 export const MONEY_OPEN_STAGES = ["identify", "qualify", "cultivate", "solicit"] as const;
 
@@ -45,7 +46,8 @@ export async function computeWeightedPipeline(sb: SupabaseClient, orgId: string)
     .from("opportunities")
     .select("ask_amount, probability")
     .eq("org_id", orgId)
-    .in("stage", MONEY_OPEN_STAGES as unknown as string[]);
+    .in("stage", MONEY_OPEN_STAGES as unknown as string[])
+    .or(EXCLUDE_PARTNERSHIP_OPPS);
   return (data ?? []).reduce((s, o) => {
     const r = o as { ask_amount: number | null; probability: number | null };
     const p = r.probability == null ? 50 : Number(r.probability);

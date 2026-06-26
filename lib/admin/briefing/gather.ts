@@ -5,6 +5,7 @@
  */
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { getDataAge } from "../dataAge";
 import { getFinanceSnapshot } from "../finance";
 import { deriveHealth, isOffTrack } from "../plan/health";
@@ -72,6 +73,7 @@ export async function gatherInputs(): Promise<{
         .from("opportunities")
         .select("id, name, ask_amount, next_step, next_step_due, stage")
         .not("stage", "ilike", "%closed%")
+        .or(EXCLUDE_PARTNERSHIP_OPPS)
         .limit(300),
       sb
         .from("gifts")

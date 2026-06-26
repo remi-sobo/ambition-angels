@@ -29,6 +29,7 @@ import { planHealthToStatus, type Status } from "@/lib/admin/status";
 import { deriveHealth } from "@/lib/admin/plan/health";
 import { FINANCE } from "@/lib/admin/thresholds";
 import { computeSecuredFy, computeWeightedPipeline } from "@/lib/admin/strategy/money";
+import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 const ORG = (orgId: string) => orgId;
 
@@ -386,7 +387,7 @@ export async function getHowMovement(orgId: string): Promise<HowMovement> {
   const [anglesRes, funderRes, oppsRes, channelRes] = await Promise.all([
     sb.from("strategy_angles").select("id, key, name, hook, ask").eq("org_id", ORG(orgId)).order("sort_order"),
     sb.from("funder_angles").select("angle_id").eq("org_id", ORG(orgId)),
-    sb.from("opportunities").select("stage, ask_amount").eq("org_id", ORG(orgId)).neq("stage", "lost"),
+    sb.from("opportunities").select("stage, ask_amount").eq("org_id", ORG(orgId)).neq("stage", "lost").or(EXCLUDE_PARTNERSHIP_OPPS),
     sb.from("plan_kpis").select("metric_key, title, target, current, unit, status").eq("org_id", ORG(orgId)).in("metric_key", [METRIC.corporate, METRIC.aigMultiyear]),
   ]);
 

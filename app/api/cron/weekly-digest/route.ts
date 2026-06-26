@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendOperatorEmailTo, getOperatorEmails, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
 import { snapshotKpis } from "@/lib/kpis";
 import { refreshAllPlanMetrics } from "@/lib/admin/plan/metrics";
+import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { generateBriefing } from "@/lib/briefing";
 import {
   gatherCrmOverdue, groupOverdue, assigneeFromEmail, crmTaskHref, type CrmOverdue,
@@ -77,7 +78,8 @@ export async function GET(req: NextRequest) {
         .select("id", { count: "exact", head: true })
         .lt("next_step_due", today)
         .not("next_step_due", "is", null)
-        .not("stage", "in", "(steward,lost)"),
+        .not("stage", "in", "(steward,lost)")
+        .or(EXCLUDE_PARTNERSHIP_OPPS),
     ]);
 
   const crmOverdue = await gatherCrmOverdue(today);

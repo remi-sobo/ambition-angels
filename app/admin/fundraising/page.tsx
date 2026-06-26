@@ -8,7 +8,7 @@ import { NewOpportunityForm } from "./_components/PipelineBoard";
 import OpportunitiesBoard from "./_components/OpportunitiesBoard";
 import { type OpportunityRow } from "./_components/pipeline-stages";
 import FilterTabs from "./_components/FilterTabs";
-import { HUBSPOT_PIPELINES, FUNDRAISING_PIPELINE_ID } from "@/lib/hubspot/stage-map";
+import { HUBSPOT_PIPELINES, FUNDRAISING_PIPELINE_ID, EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 // Major Gifts — the moves-management pipeline (modules/03-fundraising.md
 // "Major Gifts"). /admin/fundraising is the pipeline home; the HubSpot
@@ -58,6 +58,8 @@ export default async function MajorGiftsPage({
        capacity_rating, owner, next_step, next_step_due,
        constituent:constituents ( id, type, first_name, last_name, org_name, external_ids )`
     )
+    // Fundraising is money-only: the partnership pipeline now lives in /admin/partners.
+    .or(EXCLUDE_PARTNERSHIP_OPPS)
     .order("next_step_due", { ascending: true, nullsFirst: false })
     .order("updated_at", { ascending: false })
     .limit(1000);
@@ -98,7 +100,6 @@ export default async function MajorGiftsPage({
   const pipelineOptions = [
     { value: "all", label: "All pipelines" },
     { value: "default", label: HUBSPOT_PIPELINES["default"] },
-    { value: "59855776", label: HUBSPOT_PIPELINES["59855776"] },
     { value: "727459407", label: HUBSPOT_PIPELINES["727459407"] },
   ];
   const yearOptions = [

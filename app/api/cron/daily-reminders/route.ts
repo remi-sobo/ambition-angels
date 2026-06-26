@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendOperatorEmail, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
 import { refreshAllPlanMetrics } from "@/lib/admin/plan/metrics";
 import { prewarmNarrative } from "@/lib/admin/briefing/narrate";
+import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 /**
  * Daily deadline reminders (the "never lives in someone's head" promise):
@@ -72,6 +73,7 @@ export async function GET(req: NextRequest) {
       .lte("next_step_due", today)
       .not("next_step_due", "is", null)
       .not("stage", "in", "(steward,lost)")
+      .or(EXCLUDE_PARTNERSHIP_OPPS)
       .order("next_step_due")
       .limit(10),
     supabase

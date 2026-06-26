@@ -85,7 +85,13 @@ INSERT INTO plan_initiatives (org_id, goal_id, title, description, owner, status
  ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa400002-0000-4000-8000-000000000002','Build the board into fundraising and oversight',NULL,'Shannon','todo',0),
  ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa400002-0000-4000-8000-000000000002','Keep compliance filings and rhythms on schedule',NULL,'Shannon','in_progress',1);
 
--- 5. KPIs (measures). source = manual; wire metric_key to live data later. ----
+-- 5. KPIs (measures). Most are source=manual (entered at the review). The four
+--    money measures are source=auto: dollars_raised_fy26, weighted_pipeline_fy26,
+--    corporate_raised, cash_runway_months are computed live by the auto-metric
+--    registry (lib/admin/plan/metrics.ts -> lib/admin/strategy/money.ts) on the
+--    "Refresh metrics" button + weekly cron. Their seeded current/status here are
+--    just placeholders until the first refresh.
+
 INSERT INTO plan_kpis (org_id, goal_id, objective_id, title, unit, target, current, owner, cadence, source, status, metric_key) VALUES
  -- Objective 1: program
  ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa100001-0000-4000-8000-000000000001','eb4497d2-132b-430b-8d6b-4aeb4d5b7b0d','Web-based school platform shipped','boolean',1,0,'Demetric','monthly','manual','not_started','web_platform_shipped'),
@@ -95,12 +101,12 @@ INSERT INTO plan_kpis (org_id, goal_id, objective_id, title, unit, target, curre
  ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa100002-0000-4000-8000-000000000002','eb4497d2-132b-430b-8d6b-4aeb4d5b7b0d','Future Orientation Score lift, directional','percent',14,14,'Remi','quarterly','manual','on_track','fos_lift'),
  ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa100003-0000-4000-8000-000000000003','eb4497d2-132b-430b-8d6b-4aeb4d5b7b0d','Teens through Ambition Coach','count',50,NULL,'Remi','quarterly','manual','not_started','coach_teens'),
  -- Objective 2: fundraising
- ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa200001-0000-4000-8000-000000000001','dc83025c-b5e6-4871-8f4b-b921a588f1ea','Raised toward the committed floor','usd',1117782,196310,'Remi','weekly','manual','behind','dollars_raised_fy26'),
+ ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa200001-0000-4000-8000-000000000001','dc83025c-b5e6-4871-8f4b-b921a588f1ea','Raised toward the committed floor','usd',1117782,196310,'Remi','weekly','auto','behind','dollars_raised_fy26'),
  ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa200001-0000-4000-8000-000000000001','dc83025c-b5e6-4871-8f4b-b921a588f1ea','Approved ceiling, stretch','usd',1367782,196310,'Remi','monthly','manual','behind','dollars_ceiling_fy26'),
- ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa200001-0000-4000-8000-000000000001','dc83025c-b5e6-4871-8f4b-b921a588f1ea','Cash runway, months','months',6,2.3,'Shannon','monthly','manual','behind','cash_runway_months'),
- ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa200002-0000-4000-8000-000000000002','dc83025c-b5e6-4871-8f4b-b921a588f1ea','Corporate raised','usd',100000,0,'Remi','monthly','manual','not_started','corporate_raised'),
+ ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa200001-0000-4000-8000-000000000001','dc83025c-b5e6-4871-8f4b-b921a588f1ea','Cash runway, months','months',6,2.3,'Shannon','monthly','auto','behind','cash_runway_months'),
+ ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa200002-0000-4000-8000-000000000002','dc83025c-b5e6-4871-8f4b-b921a588f1ea','Corporate raised','usd',100000,0,'Remi','monthly','auto','not_started','corporate_raised'),
  ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa200002-0000-4000-8000-000000000002','dc83025c-b5e6-4871-8f4b-b921a588f1ea','AIG multi-year commitments logged','count',10,0,'Remi','monthly','manual','not_started','aig_multiyear_commitments'),
- ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa200003-0000-4000-8000-000000000003','dc83025c-b5e6-4871-8f4b-b921a588f1ea','Weighted pipeline closing in FY26','usd',650000,405500,'Remi','weekly','manual','behind','weighted_pipeline_fy26'),
+ ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa200003-0000-4000-8000-000000000003','dc83025c-b5e6-4871-8f4b-b921a588f1ea','Weighted pipeline closing in FY26','usd',650000,405500,'Remi','weekly','auto','behind','weighted_pipeline_fy26'),
  -- Objective 3: recruitment
  ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa300001-0000-4000-8000-000000000001','bdbc837b-26c6-4414-9f3d-28b2436834b3','Teens active twice a week','count',1000,NULL,'Remi','weekly','manual','not_started','active_teens_2x_week'),
  ('17c75da8-082d-4c8f-b00b-a4100fb2eb22','aa300001-0000-4000-8000-000000000001','bdbc837b-26c6-4414-9f3d-28b2436834b3','Partners running twice a week','count',20,NULL,'Remi','monthly','manual','not_started','partners_2x_week'),

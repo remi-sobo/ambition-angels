@@ -24,15 +24,11 @@
  *     which counts steward at full value.
  */
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getFinanceSnapshot, fiscalYearBounds } from "@/lib/admin/finance";
+import { getFinanceSnapshot } from "@/lib/admin/finance";
 import { planHealthToStatus, type Status } from "@/lib/admin/status";
+import { computeSecuredFy, computeWeightedPipeline } from "@/lib/admin/strategy/money";
 
 const ORG = (orgId: string) => orgId;
-
-// Open pipeline stages that carry a probability-weighted ask. A whitelist, so
-// steward / lost / won (and any future stage) are excluded unless added here —
-// the "one dollar, one state" guard.
-const OPEN_STAGES = ["identify", "qualify", "cultivate", "solicit"] as const;
 
 // Metric keys the Raise + How movements read targets from. These are seeded by
 // supabase/migrations/2026_ogsm_reseed.MANUAL.sql; reads degrade to null when a
@@ -197,12 +193,13 @@ export type MoneySummary = {
 export async function getRaiseMovement(orgId: string): Promise<MoneySummary> {
   const sb = getSupabaseAdmin();
   const fin = await getFinanceSnapshot();
-  const fy = fiscalYearBounds(fin.cfg.year, fin.cfg.startMonth);
 
-  const [targetsRes, giftsRes, oppsRes, budgetRes, catsRes] = await Promise.all([
+  // Actuals from the shared money module — the same functions the scorecard's
+  // auto-metrics refresh from, so the narrative and the scorecard can't drift.
+  const [targetsRes, secured, weightedPipeline, budgetRes, catsRes] = await Promise.all([
     sb.from("plan_kpis").select("metric_key, target").eq("org_id", ORG(orgId)).in("metric_key", [METRIC.floor, METRIC.ceiling]),
-    sb.from("gifts").select("amount").eq("org_id", ORG(orgId)).gte("gift_date", fy.start).lte("gift_date", fy.end),
-    sb.from("opportunities").select("stage, ask_amount, probability").eq("org_id", ORG(orgId)).in("stage", OPEN_STAGES as unknown as string[]),
+    computeSecuredFy(sb, orgId),
+    computeWeightedPipeline(sb, orgId),
     sb.from("fin_budget").select("category_id, base_amount, contingency_t1, contingency_t2").eq("org_id", ORG(orgId)).eq("year", fin.cfg.year),
     sb.from("fin_categories").select("id, group_name, kind, enabled").eq("org_id", ORG(orgId)),
   ]);
@@ -213,15 +210,6 @@ export async function getRaiseMovement(orgId: string): Promise<MoneySummary> {
   };
   const floor = targetOf(METRIC.floor);
   const ceiling = targetOf(METRIC.ceiling);
-
-  const secured = (giftsRes.data ?? []).reduce((s, g) => s + Number(g.amount ?? 0), 0);
-
-  // One dollar, one state: only OPEN_STAGES contribute, each weighted once.
-  const weightedPipeline = (oppsRes.data ?? []).reduce((s, o) => {
-    const ask = Number(o.ask_amount ?? 0);
-    const p = o.probability == null ? 50 : Number(o.probability);
-    return s + ask * (p / 100);
-  }, 0);
 
   // Allocation: budget lines grouped by category group, expense categories only.
   const groupOfCat = new Map<string, string>();

@@ -1,4 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { FINANCE } from "@/lib/admin/thresholds";
+import {
+  computeSecuredFy,
+  computeWeightedPipeline,
+  computeCorporateRaisedFy,
+  computeRunwayMonths,
+} from "@/lib/admin/strategy/money";
 
 /**
  * BloomOS Strategy, Phase 3 — the auto-metric registry (specs/bloomos-strategy.md).
@@ -97,6 +104,30 @@ export const PLAN_METRICS: Record<string, PlanMetricFn> = {
       .in("stage", ["learn", "practice", "connect", "launch"]);
     return count ?? 0;
   },
+
+  // ── Money metrics (2026 OGSM) — computed from the shared money module, the
+  // same functions the Strategy Narrative reads, so the scorecard and the
+  // narrative never disagree. One dollar, one state.
+  // Raised toward the committed floor — Σ gifts received this fiscal year.
+  dollars_raised_fy26: (s, org) => computeSecuredFy(s, org),
+  // Weighted pipeline — Σ open-stage ask × probability (excludes steward/lost/won).
+  weighted_pipeline_fy26: (s, org) => computeWeightedPipeline(s, org),
+  // Corporate raised — Σ gifts this fiscal year from organization-type donors.
+  corporate_raised: (s, org) => computeCorporateRaisedFy(s, org),
+  // Cash runway — cash on hand ÷ monthly burn, from the canonical finance snapshot.
+  cash_runway_months: () => computeRunwayMonths(),
+};
+
+/**
+ * Per-metric health overrides. Most auto metrics are YTD-accumulating ("up is
+ * good", paced by fraction-of-year — see kpiHealth). A few are point-in-time
+ * levels where pacing makes no sense; they read their status from the central
+ * thresholds instead. Falls back to kpiHealth when a key isn't listed here.
+ */
+export const PLAN_METRIC_HEALTH: Record<string, (value: number, target: number | null) => string> = {
+  // Runway is a level, not a YTD accumulation: read the finance cutoffs directly.
+  cash_runway_months: (v) =>
+    v <= FINANCE.runwayCriticalMonths ? "behind" : v <= FINANCE.runwayWatchMonths ? "at_risk" : "on_track",
 };
 
 /**
@@ -149,7 +180,7 @@ export async function refreshOrgPlanMetrics(
       .update({
         current: value,
         last_updated_at: new Date().toISOString(),
-        status: kpiHealth(value, k.target),
+        status: (PLAN_METRIC_HEALTH[k.metric_key] ?? kpiHealth)(value, k.target),
       })
       .eq("id", k.id)
       .eq("org_id", orgId);
@@ -201,6 +232,10 @@ export const PLAN_METRIC_META: Record<string, PlanMetricMeta> = {
   corporate_dollars_ytd: { label: "Corporate dollars secured (YTD)", unit: "$" },
   donor_updates_sent_ytd: { label: "Donor updates sent (YTD)", unit: "" },
   active_teens: { label: "Active teens", unit: "" },
+  dollars_raised_fy26: { label: "Raised toward the committed floor", unit: "$" },
+  weighted_pipeline_fy26: { label: "Weighted pipeline (FY26)", unit: "$" },
+  corporate_raised: { label: "Corporate raised", unit: "$" },
+  cash_runway_months: { label: "Cash runway (months)", unit: "months" },
 };
 
 export type PlanMetricOption = {

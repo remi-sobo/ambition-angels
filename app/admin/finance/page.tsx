@@ -56,7 +56,7 @@ export default async function FinanceDashboardPage() {
       .eq("year", cfg.year),
     supabase
       .from("fin_revenue_commitments")
-      .select("source_type, amount, status, probability, expected_date, restricted")
+      .select("source_type, amount, status, probability, expected_date, restricted, external_ref")
       .eq("year", cfg.year),
     supabase
       .from("fin_transactions")
@@ -112,7 +112,14 @@ export default async function FinanceDashboardPage() {
     probability: number | null;
     expected_date: string | null;
     restricted: boolean;
+    external_ref: string | null;
   }>;
+  // HubSpot deals adopted into Bloom (by external_ref) count from the Bloom
+  // side now — drop them from the HubSpot sums + runway list to avoid double-count.
+  const adoptedRefs = new Set(
+    pledges.map((p) => p.external_ref).filter((r): r is string => !!r)
+  );
+  const visibleHubspot = hubspotPledges.filter((p) => !adoptedRefs.has(p.deal_id));
   const sourceTotals = new Map<string, number>();
   for (const p of pledges) {
     if (p.status !== "received") continue;
@@ -164,22 +171,22 @@ export default async function FinanceDashboardPage() {
     pledges
       .filter((p) => p.status === "secured")
       .reduce((s, p) => s + Number(p.amount), 0) +
-    hubspotPledges
-      .filter((p) => p.status === "secured")
+    visibleHubspot
+      .filter((p) => p.status ==="secured")
       .reduce((s, p) => s + p.amount, 0);
   const receivedTotal =
     pledges
       .filter((p) => p.status === "received")
       .reduce((s, p) => s + Number(p.amount), 0) +
-    hubspotPledges
-      .filter((p) => p.status === "received")
+    visibleHubspot
+      .filter((p) => p.status ==="received")
       .reduce((s, p) => s + p.amount, 0);
   const projectedWeighted =
     pledges
       .filter((p) => p.status === "projected")
       .reduce((s, p) => s + Number(p.amount) * (p.probability ?? 1), 0) +
-    hubspotPledges
-      .filter((p) => p.status === "projected")
+    visibleHubspot
+      .filter((p) => p.status ==="projected")
       .reduce((s, p) => s + p.amount * p.probability, 0);
   const raisedHard = receivedTotal + securedTotal;
 
@@ -247,7 +254,7 @@ export default async function FinanceDashboardPage() {
         expected_date: p.expected_date,
         restricted: Boolean(p.restricted),
       })),
-    ...hubspotPledges
+    ...visibleHubspot
       .filter((p) => p.status !== "received")
       .map((p) => ({
         amount: p.amount,

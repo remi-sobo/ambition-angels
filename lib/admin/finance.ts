@@ -134,7 +134,7 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
     // rows — acceptable for v2; revisit with Horizon.)
     sb
       .from("fin_revenue_commitments")
-      .select("amount, status, expected_date, restricted")
+      .select("amount, status, expected_date, restricted, external_ref")
       .eq("year", cfg.year),
     loadHubSpotPledges(sb, cfg.year),
   ]);
@@ -195,6 +195,7 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
     status: r.status as RunwayPledge["status"],
     expected_date: (r.expected_date as string | null) ?? null,
     restricted: Boolean(r.restricted),
+    externalRef: (r.external_ref as string | null) ?? null,
   }));
   const hsPledges: RunwayPledge[] = hubspotPledges.map((d) => ({
     amount: d.amount,
@@ -204,8 +205,11 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
     restricted: false, // HubSpot deals carry no restriction flag in the mirror
     externalRef: d.deal_id,
   }));
-  // No adopted refs yet (the external_ref column + adopt flow land in Phase 4b).
-  const allPledges = assembleRunwayPledges(bloomPledges, hsPledges);
+  // Drop any HubSpot deal already adopted into Bloom, so it counts once.
+  const adoptedRefs = new Set(
+    bloomPledges.map((p) => p.externalRef).filter((r): r is string => !!r)
+  );
+  const allPledges = assembleRunwayPledges(bloomPledges, hsPledges, adoptedRefs);
 
   const endCurrentMonth = endOfMonthISO(now, 0);
   const endHorizon = endOfMonthISO(now, cfg.horizon);

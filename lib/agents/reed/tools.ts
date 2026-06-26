@@ -110,7 +110,7 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
             : Promise.resolve({ data: [] as Array<{ amount: number }> }),
           sb
             .from("fin_revenue_commitments")
-            .select("amount, status, expected_date, restricted")
+            .select("amount, status, expected_date, restricted, external_ref")
             .eq("year", cfg.year),
           loadHubSpotPledges(sb, cfg.year),
         ]);
@@ -155,6 +155,7 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
           status: r.status as RunwayPledge["status"],
           expected_date: (r.expected_date as string | null) ?? null,
           restricted: Boolean(r.restricted),
+          externalRef: (r.external_ref as string | null) ?? null,
         }));
         const hsPledges: RunwayPledge[] = hubspotPledges.map((d) => ({
           amount: d.amount,
@@ -163,8 +164,11 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
           restricted: false,
           externalRef: d.deal_id,
         }));
+        const adoptedRefs = new Set(
+          bloomPledges.map((p) => p.externalRef).filter((r): r is string => !!r),
+        );
         const { duePledges, projPledges } = summarizePledges(
-          assembleRunwayPledges(bloomPledges, hsPledges),
+          assembleRunwayPledges(bloomPledges, hsPledges, adoptedRefs),
           endOfMonthISO(now, 0),
           endOfMonthISO(now, cfg.horizon),
         );

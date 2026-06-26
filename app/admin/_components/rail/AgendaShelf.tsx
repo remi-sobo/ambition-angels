@@ -8,7 +8,9 @@ import RailAgenda from "./RailAgenda";
  */
 export default async function AgendaShelf() {
   const now = new Date();
-  const start = new Date(now.getTime() - 12 * 3_600_000); // client trims to now onward
+  // A week back and ~a week forward so the rail's day-by-day nav has data on
+  // both sides; the client emphasizes "now onward" for today.
+  const start = new Date(now.getTime() - 7 * 86_400_000);
   const end = new Date(now.getTime() + 8 * 86_400_000);
 
   let agenda: Agenda;

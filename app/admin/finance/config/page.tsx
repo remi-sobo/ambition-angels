@@ -2,6 +2,11 @@ import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import ConfigEditor, { type FinConfig } from "./_components/ConfigEditor";
 
+// Read live every request so the form always seeds from the latest saved row
+// (the service-role read otherwise risks Next's Data Cache). Matches the rest
+// of the admin app.
+export const dynamic = "force-dynamic";
+
 export default async function ConfigPage() {
   const supabase = getSupabaseAdmin();
   const { data } = await supabase

@@ -18,6 +18,12 @@ import { endOfMonthISO, type RunwayPledge } from "@/lib/finance/runway";
 import ReconcileCard from "./_components/ReconcileCard";
 import RunwayTiers from "./_components/RunwayTiers";
 
+// Read live every request: the service-role client's reads go through the
+// global fetch Next caches by default, so without this a freshly-saved config
+// (burn baseline, goal, anchor) could be served stale from the Data Cache.
+// Matches every other live admin page.
+export const dynamic = "force-dynamic";
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default async function FinanceDashboardPage() {
@@ -336,7 +342,11 @@ export default async function FinanceDashboardPage() {
 
       {/* Secondary metrics */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Mini label="Monthly burn (3-mo)" value={money(burn3mo)} />
+        <Mini
+          label={ri.baselineSource === "config" ? "Monthly burn (baseline)" : "Monthly burn (3-mo)"}
+          value={money(ri.baseline)}
+          sub={ri.baselineSource === "config" ? `${money(burn3mo)} actual (3-mo)` : undefined}
+        />
         <Mini
           label="Net YTD"
           value={`${netYTD >= 0 ? "+" : "−"}${money(Math.abs(netYTD))}`}
@@ -613,11 +623,13 @@ function Mini({
   value,
   tone,
   href,
+  sub,
 }: {
   label: string;
   value: string;
   tone?: "good" | "warn";
   href?: string;
+  sub?: string;
 }) {
   const valueClass =
     tone === "warn"
@@ -629,6 +641,7 @@ function Mini({
     <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-3 hover:bg-[#EFE6D4] transition-colors">
       <div className="text-[10px] uppercase tracking-widest text-ink-2 mb-1">{label}</div>
       <div className={`text-lg font-medium ${valueClass}`}>{value}</div>
+      {sub && <div className="mt-0.5 text-[10px] text-ink-2">{sub}</div>}
     </div>
   );
   if (href) return <Link href={href}>{inner}</Link>;

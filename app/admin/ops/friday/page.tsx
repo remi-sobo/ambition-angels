@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { resolveUserHandle } from "@/lib/admin/ops/identity";
 import TaskRowWithActions, {
@@ -20,6 +19,14 @@ import {
   todayInTZ,
   dayStartInstant,
 } from "@/lib/admin/ops/week";
+import RhythmWizard from "../_components/RhythmWizard";
+import FridayOrient from "../_components/FridayOrient";
+import FridayClose from "../_components/FridayClose";
+import MeetingRecap, {
+  type RecapMeeting,
+  type RecapSuggestion,
+} from "../_components/MeetingRecap";
+import FridayNudges from "../_components/FridayNudges";
 
 export const dynamic = "force-dynamic";
 
@@ -40,8 +47,9 @@ function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export default async function FridayReviewPage() {
-  const currentUser = (await resolveUserHandle())?.handle ?? "remi";
+export default async function FridayClosePage() {
+  const me = await resolveUserHandle();
+  const currentUser = me?.handle ?? "remi";
   const supabase = getSupabaseAdmin();
 
   // This-week anchor (YYYY-MM-DD, LA) for planned_week; plus the matching
@@ -125,43 +133,93 @@ export default async function FridayReviewPage() {
     .filter(([, n]) => n > 0)
     .sort((a, b) => b[1] - a[1]);
 
-  // Section 2 actions: three buttons per spec (Mark done / Push / Unpin).
-  // Per spec, "Drop / Won't do" was dropped because the schema can't
-  // distinguish "done" from "dropped".
+  // Truth-the-tasks actions: done / roll deliberately / drop. Rolling clears the
+  // pin and re-stamps planned_week to next Monday (a forward move → the PATCH
+  // route increments roll_count and clears the old day). Drop archives.
+  const nowISO = new Date().toISOString();
   const stillPinnedActions: TaskRowAction[] = [
-    { label: "Mark done", variant: "primary", patch: { status: "done" } },
-    // Advance to next week: the task leaves this week and surfaces in next
-    // Monday's "This week" automatically. The pin clears (next week, not this).
+    { label: "Done", variant: "primary", patch: { status: "done" } },
     {
-      label: "Push to next week",
+      label: "Roll to next week",
       variant: "default",
       patch: { pinned_for_this_week: false, planned_week: nextMonday() },
     },
-    { label: "Unpin", variant: "ghost", patch: { pinned_for_this_week: false } },
+    { label: "Drop", variant: "ghost", patch: { archived_at: nowISO } },
   ];
 
-  return (
-    <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-      <header>
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
-          Friday Review
-        </h1>
-        <div className="mt-2 flex items-baseline gap-3 flex-wrap text-sm">
-          <span className="text-ink-2">Week of {formatWeekHeader(mondayISO)}</span>
-          <span className="text-ink-3">·</span>
-          <span className="text-ink-2">Reviewing as {cap(currentUser)}</span>
-        </div>
-        <Link href="/admin/ops" className="mt-2 inline-block text-xs text-ink-2 hover:text-ink-1">
-          ← Ops
-        </Link>
-      </header>
+  // Existing friday_close session for this week (committed state + saved note/checklist).
+  let committedAt: string | null = null;
+  let closeNotes = "";
+  let closeChecklist: Record<string, boolean> = {};
+  if (me) {
+    const { data: sess } = await supabase
+      .from("rhythm_sessions")
+      .select("completed_at, status, notes, checklist")
+      .eq("org_id", me.orgId)
+      .eq("user_id", me.userId)
+      .eq("kind", "friday_close")
+      .eq("week_of", mondayISO)
+      .maybeSingle();
+    if (sess) {
+      if (sess.status === "completed") committedAt = sess.completed_at as string | null;
+      closeNotes = typeof sess.notes === "string" ? sess.notes : "";
+      closeChecklist =
+        sess.checklist && typeof sess.checklist === "object"
+          ? (sess.checklist as Record<string, boolean>)
+          : {};
+    }
+  }
 
-      {/* ── Section 1: The week, day by day ────────────────────────────── */}
+  // Recap: this-week meetings still needing follow-up (mine), + pending suggestions.
+  const weekEndInstant = dayStartInstant(nextMonday());
+  let recapMeetings: RecapMeeting[] = [];
+  if (me) {
+    const { data: meetingRows } = await supabase
+      .from("meeting_records")
+      .select("id, title, occurred_at")
+      .eq("org_id", me.orgId)
+      .eq("owner_user_id", me.userId)
+      .eq("follow_up_status", "needs_follow_up")
+      .gte("occurred_at", weekStartInstant)
+      .lt("occurred_at", weekEndInstant)
+      .order("occurred_at", { ascending: false });
+    const ms =
+      (meetingRows as Array<{ id: string; title: string | null; occurred_at: string }> | null) ?? [];
+    if (ms.length > 0) {
+      const ids = ms.map((m) => m.id);
+      const { data: suggRows } = await supabase
+        .from("meeting_suggested_tasks")
+        .select("id, meeting_record_id, suggested_title, suggested_category")
+        .in("meeting_record_id", ids)
+        .eq("org_id", me.orgId)
+        .eq("status", "pending");
+      const byMeeting = new Map<string, RecapSuggestion[]>();
+      for (const s of (suggRows as Array<{
+        id: string;
+        meeting_record_id: string;
+        suggested_title: string;
+        suggested_category: string | null;
+      }> | null) ?? []) {
+        const list = byMeeting.get(s.meeting_record_id) ?? [];
+        list.push({ id: s.id, title: s.suggested_title, category: s.suggested_category });
+        byMeeting.set(s.meeting_record_id, list);
+      }
+      recapMeetings = ms.map((m) => ({
+        id: m.id,
+        title: m.title ?? "",
+        occurredAt: m.occurred_at,
+        suggestions: byMeeting.get(m.id) ?? [],
+      }));
+    }
+  }
+
+  // ── Step content ───────────────────────────────────────────────────────────
+  const truth = (
+    <div className="space-y-6">
+      {/* The week, day by day */}
       <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
         <header className="flex items-baseline justify-between mb-4 gap-4 flex-wrap">
-          <h2 className="text-xs uppercase tracking-wider text-ink-2">
-            The week, day by day
-          </h2>
+          <h2 className="text-xs uppercase tracking-wider text-ink-2">The week, day by day</h2>
           <div>
             <span className="font-display font-black text-revenue text-3xl leading-none">
               {shipped.length}
@@ -256,16 +314,13 @@ export default async function FridayReviewPage() {
         )}
       </section>
 
-      {/* ── Section 2: Still pinned, not done ──────────────────────────── */}
+      {/* Still open — roll forward */}
       <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
         <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
-          Still open — roll forward{" "}
-          <span className="text-ink-3">({stillPinned.length})</span>
+          Still open — truth it <span className="text-ink-3">({stillPinned.length})</span>
         </h2>
         {stillPinned.length === 0 ? (
-          <p className="text-sm text-revenue">
-            Everything pinned for this week is done. Solid week.
-          </p>
+          <p className="text-sm text-revenue">Everything pinned for this week is done. Solid week.</p>
         ) : (
           <div className="space-y-1.5">
             {stillPinned.map((t) => (
@@ -280,15 +335,11 @@ export default async function FridayReviewPage() {
         )}
       </section>
 
-      {/* ── Section 3: Slipped by category (only if non-zero) ──────────── */}
+      {/* Slipped by category (only if non-zero) */}
       {slippedRows.length > 0 && (
         <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-          <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-1">
-            Slipped categories
-          </h2>
-          <p className="text-xs text-ink-2 mb-4">
-            Visibility only — patterns in what got pushed.
-          </p>
+          <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-1">Slipped categories</h2>
+          <p className="text-xs text-ink-2 mb-4">Visibility only — patterns in what got pushed.</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {slippedRows.map(([cat, count]) => (
               <div
@@ -300,14 +351,43 @@ export default async function FridayReviewPage() {
                 >
                   {categoryLabel(cat)}
                 </span>
-                <span className="font-display font-bold text-ink-1 text-lg">
-                  {count}
-                </span>
+                <span className="font-display font-bold text-ink-1 text-lg">{count}</span>
               </div>
             ))}
           </div>
         </section>
       )}
     </div>
+  );
+
+  return (
+    <RhythmWizard
+      eyebrow="Friday · Account"
+      title="Close"
+      subtitle={
+        <>
+          <span>Week of {formatWeekHeader(mondayISO)}</span>
+          <span className="text-ink-3">·</span>
+          <span>as {cap(currentUser)}</span>
+        </>
+      }
+      steps={[
+        { key: "verdict", label: "Verdict", content: <FridayOrient /> },
+        { key: "truth", label: "Truth", content: truth },
+        { key: "recap", label: "Recap", content: <MeetingRecap meetings={recapMeetings} /> },
+        { key: "nudges", label: "Nudges", content: <FridayNudges orgId={me?.orgId ?? null} /> },
+        {
+          key: "close",
+          label: "Close",
+          content: (
+            <FridayClose
+              committedAt={committedAt}
+              initialNotes={closeNotes}
+              initialChecklist={closeChecklist}
+            />
+          ),
+        },
+      ]}
+    />
   );
 }

@@ -1,17 +1,9 @@
-import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { resolveUserHandle } from "@/lib/admin/ops/identity";
 import TaskRowWithActions, {
   type TaskRowAction,
 } from "../_components/TaskRowWithActions";
-import {
-  categoryBadgeClass,
-  categoryLabel,
-  formatRelative,
-  type AdminUserId,
-  type OpsProject,
-  type OpsTask,
-} from "../_types/ops";
+import { type OpsTask } from "../_types/ops";
 import {
   thisMonday,
   nextMonday,
@@ -29,6 +21,7 @@ import WeekPlanner, {
 } from "./WeekPlanner";
 import RhythmWizard from "../_components/RhythmWizard";
 import MondayOrient from "../_components/MondayOrient";
+import AreaWalk from "../_components/AreaWalk";
 
 export const dynamic = "force-dynamic";
 
@@ -37,19 +30,14 @@ function daysSince(iso: string): number {
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
-function otherUser(u: AdminUserId | null): AdminUserId | null {
-  if (u === "remi") return "shannon";
-  if (u === "shannon") return "remi";
-  return null;
-}
-
 function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export default async function MondayPlanPage() {
-  const currentUser = (await resolveUserHandle())?.handle ?? "remi";
-  const otherPerson = otherUser(currentUser);
+  const me = await resolveUserHandle();
+  const currentUser = me?.handle ?? "remi";
+  const orgId = me?.orgId ?? null;
   const supabase = getSupabaseAdmin();
 
   // This-week anchor as YYYY-MM-DD (LA), matched against the planned_week column.
@@ -57,18 +45,10 @@ export default async function MondayPlanPage() {
 
   // Tasks-of-mine filter: assigned to me OR unassigned.
   const mineFilter = `assigned_to.eq.${currentUser},assigned_to.is.null`;
-  // Tasks-of-other-person filter: explicitly assigned to them.
 
-  const [
-    slippedRes,
-    pinnedThisWeekRes,
-    candidatesRes,
-    neglectedProjectsRes,
-    otherPersonPinnedRes,
-  ] = await Promise.all([
-    // Section 1: planned for a past week + open + mine. Replaces the old
-    // pinned + updated_at-window heuristic: a leftover surfaces no matter when
-    // it was last edited. (planned_week IS NULL is excluded by the < compare.)
+  const [slippedRes, pinnedThisWeekRes] = await Promise.all([
+    // Carryover: planned for a past week + open + mine. A leftover surfaces no
+    // matter when it was last edited. (planned_week IS NULL is excluded by <.)
     supabase
       .from("ops_tasks")
       .select("*")
@@ -77,7 +57,7 @@ export default async function MondayPlanPage() {
       .or(mineFilter)
       .order("planned_week", { ascending: true })
       .order("due_date", { ascending: true, nullsFirst: true }),
-    // Section 2: planned for this week + open + assigned to me (or null)
+    // This week's placed work + open + mine — drives the day board.
     supabase
       .from("ops_tasks")
       .select("*")
@@ -85,60 +65,19 @@ export default async function MondayPlanPage() {
       .neq("status", "done")
       .or(mineFilter)
       .order("due_date", { ascending: true, nullsFirst: true }),
-    // Section 3a: unplanned + open + assigned to me (or null). Sort by
-    // due_date asc nulls last, then last_touched (updated_at) asc.
-    supabase
-      .from("ops_tasks")
-      .select("*")
-      .is("planned_week", null)
-      .neq("status", "done")
-      .or(mineFilter)
-      .order("due_date", { ascending: true, nullsFirst: false })
-      .order("updated_at", { ascending: true })
-      .limit(26), // 25 + 1 to detect "more"
-    // Section 3b: active projects assigned to me (or null), most neglected
-    supabase
-      .from("ops_projects")
-      .select("*")
-      .eq("status", "active")
-      .or(mineFilter)
-      .order("last_touched_at", { ascending: true })
-      .limit(10),
-    // Section 3c: other person's pinned tasks (read-only)
-    otherPerson
-      ? supabase
-          .from("ops_tasks")
-          .select("*")
-          .eq("pinned_for_this_week", true)
-          .eq("assigned_to", otherPerson)
-          .order("due_date", { ascending: true, nullsFirst: false })
-          .order("category", { ascending: true })
-          .limit(15)
-      : Promise.resolve({ data: [], error: null } as { data: OpsTask[]; error: null }),
   ]);
 
   const slippedRaw = (slippedRes.data as OpsTask[] | null) ?? [];
   const pinnedThisWeekAll = (pinnedThisWeekRes.data as OpsTask[] | null) ?? [];
-  const candidatesAll = (candidatesRes.data as OpsTask[] | null) ?? [];
-  const neglectedProjects = (neglectedProjectsRes.data as OpsProject[] | null) ?? [];
-  const otherPersonPinned =
-    (otherPersonPinnedRes.data as OpsTask[] | null) ?? [];
 
-  // Section 2 deviates slightly from spec: exclude tasks already in Section 1
-  // (last-week-slipped). Keeps the surfaces mutually exclusive so the user
-  // isn't reviewing the same task in both places. See diff summary.
+  // Keep the carryover and this-week surfaces mutually exclusive so the same
+  // task isn't reviewed in both places.
   const slippedIds = new Set(slippedRaw.map((t) => t.id));
-  const pinnedThisWeek = pinnedThisWeekAll.filter(
-    (t) => !slippedIds.has(t.id)
-  );
+  const pinnedThisWeek = pinnedThisWeekAll.filter((t) => !slippedIds.has(t.id));
 
-  const candidates = candidatesAll.slice(0, 25);
-  const hasMoreCandidates = candidatesAll.length > 25;
-
-  // Look up project names for any task that has a project_id, in a single
-  // query — avoids the N+1 trap.
+  // Project names for any displayed task with a project_id, in one query.
   const referencedProjectIds = new Set<string>();
-  for (const t of [...slippedRaw, ...pinnedThisWeek, ...candidates, ...otherPersonPinned]) {
+  for (const t of [...slippedRaw, ...pinnedThisWeek]) {
     if (t.project_id) referencedProjectIds.add(t.project_id);
   }
   const projectNames = new Map<string, string>();
@@ -151,29 +90,14 @@ export default async function MondayPlanPage() {
       projectNames.set(r.id, r.title);
     }
   }
-  for (const p of neglectedProjects) projectNames.set(p.id, p.title);
-
-  // Open-task counts for neglected projects.
-  const openCounts = new Map<string, number>();
-  if (neglectedProjects.length > 0) {
-    const ids = neglectedProjects.map((p) => p.id);
-    const { data: taskRows } = await supabase
-      .from("ops_tasks")
-      .select("project_id, status")
-      .in("project_id", ids)
-      .neq("status", "done");
-    for (const r of (taskRows as Array<{ project_id: string }> | null) ?? []) {
-      openCounts.set(r.project_id, (openCounts.get(r.project_id) ?? 0) + 1);
-    }
-  }
 
   // ── Day board: this week's tasks placed on days, with the real agenda ──────
   const weekDayList = weekDays(mondayISO); // 7 ISO days, Mon → Sun
   const todayISO = todayInTZ();
 
-  // Calendar blocks BloomOS wrote for this week's tasks (Phase 4): map them by
-  // event id so each scheduled task shows its time, and so we don't double-render
-  // the block as a context event below.
+  // Calendar blocks BloomOS wrote for this week's tasks: map them by event id so
+  // each scheduled task shows its time, and so we don't double-render the block
+  // as a context event below.
   const linkedEventIds = new Set(
     pinnedThisWeek.map((t) => t.calendar_event_id).filter((x): x is string => !!x)
   );
@@ -274,9 +198,6 @@ export default async function MondayPlanPage() {
     { label: "Push", variant: "ghost", patch: { planned_week: nextMonday() } },
     { label: "Drop", variant: "ghost", patch: { archived_at: nowISO } },
   ];
-  const candidateActions: TaskRowAction[] = [
-    { label: "Pin for this week", variant: "primary", patch: { pinned_for_this_week: true } },
-  ];
 
   // ── Step content (rendered on the server, handed to the wizard shell) ───────
   const carryover = (
@@ -333,118 +254,6 @@ export default async function MondayPlanPage() {
     </section>
   );
 
-  const areas = (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-      <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
-        Walk the areas
-      </h2>
-
-        {/* 3a: Open tasks not pinned */}
-        <details open className="group mb-4">
-          <summary className="cursor-pointer select-none flex items-baseline gap-2 mb-2">
-            <span className="text-sm font-medium text-ink-1 group-open:text-orange transition-colors">
-              Open tasks ({candidatesAll.length})
-            </span>
-            <span className="text-[11px] text-ink-2">
-              {candidates.length === 0
-                ? "nothing unpinned"
-                : "sorted by due date, then most-neglected first"}
-            </span>
-          </summary>
-          {candidates.length === 0 ? (
-            <p className="text-sm text-ink-2 mt-2 pl-2 italic">
-              No unpinned open tasks. You&apos;re already on top of it.
-            </p>
-          ) : (
-            <div className="space-y-1.5 mt-2">
-              {candidates.map((t) => (
-                <TaskRowWithActions
-                  key={t.id}
-                  task={t}
-                  projectName={t.project_id ? projectNames.get(t.project_id) : null}
-                  actions={candidateActions}
-                />
-              ))}
-              {hasMoreCandidates && (
-                <p className="text-xs text-ink-2 pl-2 pt-1">
-                  {candidatesAll.length - 25} more open tasks not shown.
-                </p>
-              )}
-            </div>
-          )}
-        </details>
-
-        {/* 3b: Neglected active projects */}
-        <details className="group mb-4">
-          <summary className="cursor-pointer select-none flex items-baseline gap-2 mb-2">
-            <span className="text-sm font-medium text-ink-1 group-open:text-orange transition-colors">
-              Active projects ({neglectedProjects.length})
-            </span>
-            <span className="text-[11px] text-ink-2">
-              sorted by neglect — least recently touched first
-            </span>
-          </summary>
-          {neglectedProjects.length === 0 ? (
-            <p className="text-sm text-ink-2 mt-2 pl-2 italic">
-              No active projects assigned to you (or unassigned).
-            </p>
-          ) : (
-            <div className="space-y-1.5 mt-2">
-              {neglectedProjects.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/admin/ops/projects/${p.id}`}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg border-[1.5px] border-outline bg-surface shadow-panel hover:bg-[#EFE6D4] transition-colors group/row"
-                >
-                  <span className="text-sm text-ink-1 group-hover/row:text-orange flex-1 truncate">
-                    {p.title}
-                  </span>
-                  <span
-                    className={`shrink-0 inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(p.category)}`}
-                  >
-                    {categoryLabel(p.category)}
-                  </span>
-                  <span className="shrink-0 text-[11px] text-ink-2 font-mono">
-                    {openCounts.get(p.id) ?? 0} open
-                  </span>
-                  <span className="shrink-0 text-[11px] text-[#A56A1B]/70 font-mono">
-                    {formatRelative(p.last_touched_at)}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </details>
-
-        {/* 3c: Other person's pinned tasks (read-only) */}
-        <details className="group">
-          <summary className="cursor-pointer select-none flex items-baseline gap-2 mb-2">
-            <span className="text-sm font-medium text-ink-1 group-open:text-orange transition-colors">
-              {otherPerson ? `${cap(otherPerson)}'s pinned tasks` : "Counterpart"}{" "}
-              ({otherPersonPinned.length})
-            </span>
-            <span className="text-[11px] text-ink-2">read-only</span>
-          </summary>
-          {otherPersonPinned.length === 0 ? (
-            <p className="text-sm text-ink-2 mt-2 pl-2 italic">
-              {otherPerson ? cap(otherPerson) : "They"} hasn&apos;t pinned anything for this week yet.
-            </p>
-          ) : (
-            <div className="space-y-1.5 mt-2">
-              {otherPersonPinned.map((t) => (
-                <TaskRowWithActions
-                  key={t.id}
-                  task={t}
-                  projectName={t.project_id ? projectNames.get(t.project_id) : null}
-                  readOnly
-                />
-              ))}
-            </div>
-          )}
-        </details>
-    </section>
-  );
-
   const days = (
     <WeekPlanner
       days={plannerDays}
@@ -468,7 +277,7 @@ export default async function MondayPlanPage() {
       steps={[
         { key: "orient", label: "Orient", content: <MondayOrient /> },
         { key: "carryover", label: "Carryover", content: carryover },
-        { key: "areas", label: "Areas", content: areas },
+        { key: "areas", label: "Areas", content: <AreaWalk orgId={orgId} handle={currentUser} /> },
         { key: "days", label: "Days", content: days },
       ]}
     />

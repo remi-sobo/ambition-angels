@@ -152,6 +152,12 @@ No funder-facing value lives hardcoded in a component. Anything Remi might want 
 - **KPI targets** (including the floor-by-source amounts: Individual $510K / Foundations $507,782 / Corporate $100K) are now inline-editable in `KpiRow` — the target is a human goal, editable on every KPI including auto ones (the system computes the actual, you set the target). The API already accepted `target`; this adds the control.
 - **Still code-config, flagged for a later phase:** the runway *target* months (6) lives in `lib/admin/thresholds` (`FINANCE.runwayWatchMonths`). Surfacing a thresholds editor (or moving it to `fin_config`) is B2-4's runway-bridge work.
 
+## Phase 2 — executed (2026-06-26): the field contract + the linter
+
+- **B2-3 (internal vs funder-facing), shipped structurally.** `getHowMovement` — the funder read — now selects ONLY funder-safe columns (`id, key, name, hook, ask`). Internal strategy (`approach`, future `internal_notes`) is never fetched, so it cannot leak no matter what a component renders. The internal strategy board keeps its own direct read.
+- **B2-5 (Funder-Readiness Linter), shipped.** `lib/admin/strategy/readiness.ts` grades the plan against the same three movements the funder sees (so it can't disagree with the surface). **Blockers:** floor set; floor decomposes into channel sources that sum to the floor; no internal language in funder copy; doors have mapped prospects. **Advisories:** residual still to source; runway vs the watch line; measures with no current value; ownerless objectives/goals; undated goals. Rendered as a `ReadinessPanel` on `/admin/strategic-plan` (score + checklist, each with a Fix → link) and a blocker banner on the Narrative prep page before Present.
+- **Remaining:** B2-1 (reasoned status override + make roll-up the platform default in `PlanControls`/scorecard), B2-2 (baseline columns + start→now→target), B2-4 (single money-bridge/sources table + editable runway target), and a hard presenter-mode gate.
+
 ## The five upgrades
 
 ### B2-1 — Computed status roll-up (fixes F3 class)

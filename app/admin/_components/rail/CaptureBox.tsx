@@ -81,7 +81,7 @@ export default function CaptureBox({
   }
 
   return (
-    <div className="relative border-t border-hairline bg-surface px-4 pt-4 pb-3.5 shadow-[0_-8px_20px_-12px_rgba(60,40,20,0.14)]">
+    <div className="relative border-t border-white/[0.07] bg-[#1A140D] px-4 pt-4 pb-3.5 shadow-[0_-10px_24px_-12px_rgba(0,0,0,0.5)]">
       {/* A whisper of terracotta separating the dock from the shelves. */}
       <span className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-orange/0 via-orange/40 to-orange/0" aria-hidden />
       {failures.length > 0 && (
@@ -115,7 +115,7 @@ export default function CaptureBox({
       {/* Context chip + saved tick. Fixed height so the dock doesn't jump. */}
       <div className="flex items-center justify-between h-5 mb-1.5">
         {entity ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-tile border border-outline px-2 py-0.5 text-[11px] text-ink-2 max-w-[80%]">
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] border border-white/[0.10] px-2 py-0.5 text-[11px] text-[#bfae93] max-w-[80%]">
             <span aria-hidden>↳</span>
             <span className="truncate">on: {entity.label}</span>
           </span>
@@ -123,7 +123,7 @@ export default function CaptureBox({
           <span />
         )}
         {saved && (
-          <span className="inline-flex items-center gap-1 text-[11px] text-status-healthy" aria-live="polite">
+          <span className="inline-flex items-center gap-1 text-[11px] text-[#7FC9A3]" aria-live="polite">
             <CheckIcon /> saved
           </span>
         )}
@@ -131,7 +131,7 @@ export default function CaptureBox({
 
       <form
         onSubmit={onSubmit}
-        className="flex items-center gap-2 rounded-xl bg-tile border border-hairline px-3 py-2.5 transition-colors focus-within:border-orange/50"
+        className="flex items-center gap-2 rounded-xl bg-white/[0.06] border border-white/[0.10] px-3 py-2.5 transition-colors focus-within:border-orange/50"
       >
         <PlusIcon />
         <input
@@ -139,7 +139,7 @@ export default function CaptureBox({
           onChange={(e) => setText(e.target.value)}
           placeholder="Capture a task…"
           aria-label="Capture a task"
-          className="flex-1 min-w-0 bg-transparent outline-none text-[13px] text-ink-1 placeholder-ink-3"
+          className="flex-1 min-w-0 bg-transparent outline-none text-[13px] text-[#EFE3D1] placeholder-[#8d7c63]"
         />
         {/* Escalation: a question or multi-step ask goes to the real Reed drawer.
             The typed text rides along as the draft (prefilled in Reed's ask bar)
@@ -167,7 +167,7 @@ export default function CaptureBox({
         <button
           type="button"
           onClick={onReport}
-          className="text-[11px] text-ink-3 hover:text-ink-2 transition-colors"
+          className="text-[11px] text-[#8d7c63] hover:text-[#bfae93] transition-colors"
         >
           Report an issue
         </button>
@@ -178,7 +178,7 @@ export default function CaptureBox({
 
 function PlusIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-ink-3 flex-shrink-0" aria-hidden>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-[#8d7c63] flex-shrink-0" aria-hidden>
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>

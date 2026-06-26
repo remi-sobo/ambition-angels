@@ -18,35 +18,35 @@ export default async function NeedsYouShelf() {
   const empty = overdue.length === 0 && today.length === 0 && !nextTouch;
 
   return (
-    <section className="px-5 py-5 border-t border-hairline">
-      <h2 className="flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-ink-3 mb-2">
+    <section className="px-5 py-5 border-t border-white/[0.07]">
+      <h2 className="flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93] mb-2">
         <span className="w-[3px] h-3 rounded-full bg-orange" aria-hidden />
         Needs you
       </h2>
 
       {empty ? (
-        <p className="text-[13px] text-ink-3 py-1">You&rsquo;re clear — nothing overdue or due today.</p>
+        <p className="text-[13px] text-[#8d7c63] py-1">You&rsquo;re clear — nothing overdue or due today.</p>
       ) : (
         <ul>
           {overdue.map((t) => (
-            <TaskRow key={t.id} task={t} dot="bg-status-critical" weightClass="text-status-critical-text" />
+            <TaskRow key={t.id} task={t} dot="bg-status-critical" weightClass="text-[#E8A08C]" />
           ))}
           {today.map((t) => (
-            <TaskRow key={t.id} task={t} dot="bg-status-due" weightClass="text-ink-2" />
+            <TaskRow key={t.id} task={t} dot="bg-status-due" weightClass="text-[#9c8b70]" />
           ))}
           {nextTouch && (
             <li>
               <Link
                 href={nextTouch.href}
-                className="group flex items-center gap-3 py-2.5 border-b border-hairline last:border-b-0 -mx-1 px-1 rounded-md hover:bg-tile transition-colors"
+                className="group flex items-center gap-3 py-2.5 border-b border-white/[0.06] last:border-b-0 -mx-1 px-1 rounded-md hover:bg-white/[0.05] transition-colors"
               >
-                <span className="w-2 h-2 rounded-full bg-status-neutral flex-shrink-0" aria-hidden />
+                <span className="w-2 h-2 rounded-full bg-[#9c8b70] flex-shrink-0" aria-hidden />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] text-ink-1 truncate">Next touch: {nextTouch.name}</span>
-                  <span className="block text-[11px] text-ink-3 truncate">{nextTouch.action}</span>
+                  <span className="block text-[13px] text-[#EFE3D1] truncate">Next touch: {nextTouch.name}</span>
+                  <span className="block text-[11px] text-[#8d7c63] truncate">{nextTouch.action}</span>
                 </span>
                 {nextTouch.weight && (
-                  <span className="text-[12px] text-ink-2 flex-shrink-0 [font-variant-numeric:tabular-nums]">
+                  <span className="text-[12px] text-[#9c8b70] flex-shrink-0 [font-variant-numeric:tabular-nums]">
                     {nextTouch.weight}
                   </span>
                 )}
@@ -72,12 +72,12 @@ function TaskRow({
     <li>
       <Link
         href={task.href}
-        className="group flex items-center gap-3 py-2.5 border-b border-hairline last:border-b-0 -mx-1 px-1 rounded-md hover:bg-tile transition-colors"
+        className="group flex items-center gap-3 py-2.5 border-b border-white/[0.06] last:border-b-0 -mx-1 px-1 rounded-md hover:bg-white/[0.05] transition-colors"
       >
         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} aria-hidden />
         <span
           className={`min-w-0 flex-1 text-[13px] truncate ${
-            task.bucket === "overdue" ? "text-ink-1 font-semibold" : "text-ink-1"
+            task.bucket === "overdue" ? "text-[#F5EAD8] font-semibold" : "text-[#D8C9B3]"
           }`}
         >
           {task.title}

@@ -518,11 +518,13 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
           lastReviewAt: plan.review ? plan.review["conducted_at"] ?? null : null,
           nextReviewAt: plan.review ? plan.review["next_review_at"] ?? null : null,
           objectives: plan.objectives.map((o) => ({
+            id: S(o, "id"),
             title: S(o, "title"),
             three_year_statement: o["three_year_statement"] ?? null,
             owner: o["owner"] ?? null,
             status: o["status"] ?? null,
             goals: goalsByObj(S(o, "id")).map((g) => ({
+              id: S(g, "id"),
               title: S(g, "title"),
               target_date: g["target_date"] ?? null,
               owner: g["owner"] ?? null,
@@ -593,6 +595,70 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         };
         void objById;
         return findings;
+      },
+    },
+
+    {
+      name: "propose_plan_element",
+      description:
+        "Propose a new OGSM element — an objective, goal, initiative, or KPI — grounded in the mission and " +
+        "real data (call get_strategy_plan / get_strategy_coherence / the finance tools first). This is " +
+        "INERT: it records a proposal the operator edits, accepts, or dismisses; it NEVER writes the plan. " +
+        "Ladder children to a real parent via parent_type + parent_id (the id from get_strategy_plan). For a " +
+        "KPI, set a target and unit but DO NOT claim a current value. Prefer a few sharp proposals over many.",
+      input_schema: {
+        type: "object",
+        properties: {
+          proposed_type: { type: "string", enum: ["objective", "goal", "initiative", "kpi"] },
+          title: { type: "string", description: "The element's title (imperative/specific)." },
+          rationale: { type: "string", description: "Why this, grounded in mission + real figures." },
+          parent_type: { type: "string", enum: ["objective", "goal"], description: "What it ladders to (goal→objective; initiative/kpi→goal)." },
+          parent_id: { type: "string", description: "The parent's id from get_strategy_plan, when laddering to an existing element." },
+          fields: {
+            type: "object",
+            description:
+              "Level-specific fields: objective → three_year_statement, owner; goal → target_date, owner; " +
+              "initiative → owner; kpi → unit, target, cadence, owner, source.",
+            additionalProperties: true,
+          },
+        },
+        required: ["proposed_type", "title", "rationale"],
+        additionalProperties: false,
+      },
+      run: async (input) => {
+        const type = String(input.proposed_type ?? "");
+        if (!["objective", "goal", "initiative", "kpi"].includes(type)) return { error: "bad_request", message: `Unknown proposed_type: ${type}.` };
+        // The plan is leadership-owned; proposing against it needs org.manage.
+        if (!(await hasPermission(sb, orgId, "org.manage"))) return deny("org.manage");
+        const title = typeof input.title === "string" ? input.title.trim() : "";
+        if (!title) return { error: "bad_request", message: "title is required." };
+
+        const fields = input.fields && typeof input.fields === "object" ? (input.fields as Record<string, unknown>) : {};
+        const parentRef =
+          typeof input.parent_type === "string"
+            ? { type: input.parent_type, id: typeof input.parent_id === "string" ? input.parent_id : null }
+            : null;
+
+        const { data, error } = await sb
+          .from("reed_plan_proposals")
+          .insert({
+            org_id: orgId,
+            proposed_type: type,
+            parent_ref: parentRef,
+            payload: { title: title.slice(0, 300), ...fields },
+            rationale: typeof input.rationale === "string" ? input.rationale.slice(0, 2000) : null,
+            created_by: createdBy,
+            status: "proposed",
+          })
+          .select("id")
+          .single();
+        if (error) return { error: "save_failed", message: error.message };
+        return {
+          proposed: true,
+          proposal_id: (data as { id: string }).id,
+          status: "proposed",
+          note: "Recorded as an inert plan proposal for the operator to edit, accept, or dismiss. The plan was not changed.",
+        };
       },
     },
   ];

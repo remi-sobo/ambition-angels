@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import ReedReviewButton from "./_components/ReedReviewButton";
+import ReedDesignButton from "./_components/ReedDesignButton";
 import { deriveHealth, worstHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { resolveOwner, ownerValue, matchOwner, ownerRank } from "@/lib/admin/plan/owners";
 import { measureFreshness } from "@/lib/admin/plan/freshness";
@@ -253,6 +254,7 @@ export default async function StrategicPlanPage({
               </Link>
             )}
             {!isEmpty && <ReedReviewButton />}
+            {!isEmpty && <ReedDesignButton />}
             {isEmpty ? <SeedButton /> : <RefreshMetricsButton />}
             <NewObjectiveForm />
           </div>

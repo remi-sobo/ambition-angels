@@ -2,7 +2,10 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import Sidebar from "./_components/Sidebar";
 import QuickAddButton from "./_components/QuickAddButton";
+import Rail from "./_components/rail/Rail";
+import { RailEntityProvider } from "./_components/rail/RailEntityContext";
 import AskReedButton from "./_components/AskReedButton";
+import { ReedLauncherProvider } from "./_components/reed/ReedLauncherProvider";
 import AdminPWA from "./_components/AdminPWA";
 import { getAdminUser } from "@/lib/admin/auth";
 import { hasEntitlement } from "@/lib/admin/entitlements";
@@ -63,8 +66,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
       <AdminPWA />
       <Sidebar currentUser={user} />
-      <main className="admin-main flex-1 min-w-0 overflow-y-auto">{children}</main>
-      {reedEnabled && <AskReedButton />}
+      {/* One Reed launcher shared by the rail (desktop capture-to-Reed) and the
+          FAB (mobile), so there's a single Reed drawer regardless of entry. */}
+      <ReedLauncherProvider enabled={reedEnabled}>
+        <RailEntityProvider>
+          <main className="admin-main flex-1 min-w-0 overflow-y-auto">{children}</main>
+          {authed && <Rail reedEnabled={reedEnabled} />}
+        </RailEntityProvider>
+        {reedEnabled && <AskReedButton />}
+      </ReedLauncherProvider>
       {authed && <QuickAddButton currentUser={user} />}
     </div>
   );

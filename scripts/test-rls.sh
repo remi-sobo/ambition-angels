@@ -94,6 +94,15 @@ ordered=(
   mark_hs_staging_readonly.sql
   drop_households_org_id_default.sql
   assert_fundraising_org_id.sql
+  add_grant_id_to_ops_projects.sql
+  create_fr_prospects.sql
+  create_fin_reconciliation_items.sql
+  create_fr_prospect_promoted.sql
+  rls_reed_phase1_four_tables.sql
+  create_org_entitlements.sql
+  create_reed_schema.sql
+  create_reed_drafts.sql
+  create_reed_suggestions.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

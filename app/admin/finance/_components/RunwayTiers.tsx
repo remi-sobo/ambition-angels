@@ -40,6 +40,7 @@ export default function RunwayTiers({
   horizonEnds,
   defaultHorizon,
   pledges,
+  restrictedInflows = 0,
 }: {
   baseline: number;
   baselineSource: "config" | "trailing";
@@ -50,8 +51,13 @@ export default function RunwayTiers({
   /** ISO date for the last day of the month N months out, keyed by N. */
   horizonEnds: Record<Horizon, string>;
   defaultHorizon: number;
-  /** Unreceived pledges (Bloom + HubSpot), full value. summarize filters the rest. */
+  /**
+   * Unreceived inflows from the revenue schedule: committed at full value,
+   * projected pipeline already probability-weighted. summarize filters the rest.
+   */
   pledges: RunwayPledge[];
+  /** Restricted inflows, excluded from every tier — shown as a carve-out note. */
+  restrictedInflows?: number;
 }) {
   const initial: Horizon = (HORIZONS as readonly number[]).includes(defaultHorizon)
     ? (defaultHorizon as Horizon)
@@ -145,6 +151,13 @@ export default function RunwayTiers({
             <span className="text-[#A56A1B]">{undated} pledge{undated === 1 ? "" : "s"} missing a date</span>{" "}
             — not counted in any tier. Add expected dates on{" "}
             <a href="/admin/finance/revenue" className="underline hover:text-ink-1">Revenue</a> to include them.
+          </p>
+        )}
+        {restrictedInflows > 0 && (
+          <p>
+            <span className="text-ink-1 font-medium">{money(restrictedInflows)} restricted</span> — excluded
+            from every tier above. Restricted money can&apos;t cover general operating, so runway never
+            counts it.
           </p>
         )}
       </div>

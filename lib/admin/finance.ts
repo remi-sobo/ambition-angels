@@ -17,15 +17,17 @@
  */
 import { cache } from "react";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { loadHubSpotPledges } from "@/lib/finance/hubspot-pledges";
 import {
-  assembleRunwayPledges,
   computeRunway,
   endOfMonthISO,
   summarizePledges,
   type Runway,
-  type RunwayPledge,
 } from "@/lib/finance/runway";
+import {
+  loadRevenueSchedule,
+  rollupSchedule,
+  scheduleToRunwayPledges,
+} from "@/lib/finance/schedule";
 
 const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -88,6 +90,12 @@ export type FinanceSnapshot = {
   runway: Runway;
   /** Unreceived, unrestricted pledges with no date — excluded but surfaced. */
   undatedPledgeCount: number;
+  /**
+   * Restricted committed + projected inflows in the schedule. Carved out of
+   * every runway tier (can't cover general operating) but surfaced so the
+   * exclusion is visible, per the locked Finance v2 rule.
+   */
+  restrictedInflows: number;
   monthBuckets: MonthBucket[];
   revenueYTD: number;
   expenseYTD: number;
@@ -122,7 +130,7 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
   };
   const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
-  const [txnsRes, cashRes, pledgesRes, hubspotPledges] = await Promise.all([
+  const [txnsRes, cashRes, scheduleRows] = await Promise.all([
     sb
       .from("fin_transactions")
       .select("txn_date, amount, exclude_from_runway")
@@ -131,15 +139,12 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
     cfg.startDate
       ? sb.from("fin_transactions").select("amount").gt("txn_date", cfg.startDate)
       : Promise.resolve({ data: [] as Array<{ amount: number }>, error: null }),
-    // Pledges feeding the due/projected tiers. Year-scoped to match the rest of
-    // the dashboard; summarizePledges does the date-window + restricted/received
-    // filtering. (A horizon that crosses into next year would miss next-year
-    // rows — acceptable for v2; revisit with Horizon.)
-    sb
-      .from("fin_revenue_commitments")
-      .select("amount, status, expected_date, restricted, external_ref")
-      .eq("year", cfg.year),
-    loadHubSpotPledges(sb, cfg.year),
+    // The canonical revenue schedule feeds the due/projected tiers: dated
+    // committed pledges/grants/manual at full value, open pipeline weighted by
+    // probability, restricted carved out by summarizePledges. This replaces the
+    // old fin_revenue_commitments + raw-hs_deals merge — finance never reads
+    // hs_deals anymore (pipeline comes from opportunities via the view).
+    loadRevenueSchedule(sb),
   ]);
 
   const txns = (txnsRes.data ?? []).map((t) => ({
@@ -192,27 +197,12 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
     .filter((t) => t.amount < 0 && !t.excluded && t.txn_date.slice(0, 7) === thisMonth)
     .reduce((s, t) => s - t.amount, 0);
 
-  // Source-agnostic pledge list: Bloom commitments + HubSpot deals, full value.
-  const bloomPledges: RunwayPledge[] = (pledgesRes.data ?? []).map((r) => ({
-    amount: Number(r.amount),
-    status: r.status as RunwayPledge["status"],
-    expected_date: (r.expected_date as string | null) ?? null,
-    restricted: Boolean(r.restricted),
-    externalRef: (r.external_ref as string | null) ?? null,
-  }));
-  const hsPledges: RunwayPledge[] = hubspotPledges.map((d) => ({
-    amount: d.amount,
-    // loadHubSpotPledges only ever returns counted statuses (it drops "ignore").
-    status: d.status as RunwayPledge["status"],
-    expected_date: d.close_date,
-    restricted: false, // HubSpot deals carry no restriction flag in the mirror
-    externalRef: d.deal_id,
-  }));
-  // Drop any HubSpot deal already adopted into Bloom, so it counts once.
-  const adoptedRefs = new Set(
-    bloomPledges.map((p) => p.externalRef).filter((r): r is string => !!r)
-  );
-  const allPledges = assembleRunwayPledges(bloomPledges, hsPledges, adoptedRefs);
+  // Source-agnostic pledge list straight from the schedule: committed at full
+  // value, projected pipeline at its probability-weighted value. The view has
+  // already de-duped (adopted HubSpot deals live as opportunities, manual
+  // mirrors are excluded), so no assemble/de-dup step is needed here.
+  const allPledges = scheduleToRunwayPledges(scheduleRows);
+  const restrictedInflows = rollupSchedule(scheduleRows).restricted;
 
   const endCurrentMonth = endOfMonthISO(now, 0);
   const endHorizon = endOfMonthISO(now, cfg.horizon);
@@ -240,6 +230,7 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
     runwayMonths,
     runway,
     undatedPledgeCount: undatedUnreceivedCount,
+    restrictedInflows,
     monthBuckets,
     revenueYTD,
     expenseYTD,

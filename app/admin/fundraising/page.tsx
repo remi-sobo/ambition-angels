@@ -110,7 +110,16 @@ export default async function MajorGiftsPage({
   // Open stages carry weighted pipeline value; steward = committed.
   const openStages = ["identify", "qualify", "cultivate", "solicit"];
   const open = opps.filter((o) => openStages.includes(o.stage));
-  const committed = opps.filter((o) => o.stage === "steward");
+
+  // Stewardship (closed-won) accumulates forever, so scope that column to the
+  // selected year by close date — "This year" shows this year's wins, not the
+  // all-time pile. Open asks are live work and always show; steward entries
+  // with no close date (AIG members, established partnerships) aren't dated
+  // wins, so they stay visible too.
+  const stewardInYear = (o: OpportunityRow) =>
+    year === "all" || !o.expectedClose || o.expectedClose.slice(0, 4) === year;
+  const boardOpps = opps.filter((o) => o.stage !== "steward" || stewardInYear(o));
+  const committed = boardOpps.filter((o) => o.stage === "steward");
   const pipelineValue = open.reduce((s, o) => s + (o.askAmount ?? 0), 0);
   const weightedValue = open.reduce(
     (s, o) => s + ((o.askAmount ?? 0) * (o.probability ?? 50)) / 100,
@@ -191,7 +200,7 @@ export default async function MajorGiftsPage({
         />
       </div>
 
-      <OpportunitiesBoard opps={opps} />
+      <OpportunitiesBoard opps={boardOpps} />
     </div>
   );
 }

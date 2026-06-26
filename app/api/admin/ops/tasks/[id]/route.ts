@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { thisMonday, mondayOf } from "@/lib/admin/ops/week";
 import {
   isTaskCategory,
@@ -19,7 +20,7 @@ function isLabelArray(v: unknown): v is string[] {
 }
 
 async function touchProject(
-  supabase: ReturnType<typeof getSupabaseAdmin>,
+  supabase: SupabaseClient,
   projectId: string | null
 ) {
   if (!projectId) return;
@@ -35,10 +36,10 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!await isAuthed()) {
+  if (!(await getOrgContext())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data, error } = await supabase
     .from("ops_tasks")
     .select("*")
@@ -62,7 +63,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!await isAuthed()) {
+  if (!(await getOrgContext())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -71,7 +72,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data: existing, error: readErr } = await supabase
     .from("ops_tasks")
     .select("*")
@@ -270,10 +271,10 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!await isAuthed()) {
+  if (!(await getOrgContext())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const supabase = getSupabaseAdmin();
+  const supabase = createServerSupabase();
   const { data: existing } = await supabase
     .from("ops_tasks")
     .select("project_id")

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { thisMonday } from "@/lib/admin/ops/week";
 import {
   isTaskCategory,
@@ -21,7 +22,7 @@ function isLabelArray(v: unknown): v is string[] {
 }
 
 async function touchProject(
-  supabase: ReturnType<typeof getSupabaseAdmin>,
+  supabase: SupabaseClient,
   projectId: string | null
 ) {
   if (!projectId) return;
@@ -37,7 +38,8 @@ async function touchProject(
 // ── POST /api/admin/ops/tasks ──────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const createdBy = await getAdminUser();
@@ -88,6 +90,8 @@ export async function POST(req: NextRequest) {
   }
 
   const insert = {
+    // Set org_id from session — never ride the AA column default (the org_id trap).
+    org_id: ctx.orgId,
     title,
     description: typeof body.description === "string" ? body.description : null,
     category: body.category,
@@ -109,7 +113,9 @@ export async function POST(req: NextRequest) {
     linked_label: typeof body.linked_label === "string" ? body.linked_label.slice(0, 200) : null,
   };
 
-  const supabase = getSupabaseAdmin();
+  // Session client → RLS enforces org membership + ops.write (no service-role
+  // bypass): a user without ops.write, or in another org, is blocked by the DB.
+  const supabase = createServerSupabase();
   const { data, error } = await supabase
     .from("ops_tasks")
     .insert(insert)
@@ -132,12 +138,14 @@ export async function POST(req: NextRequest) {
 // ── GET /api/admin/ops/tasks ───────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const url = new URL(req.url);
-  const supabase = getSupabaseAdmin();
+  // Session client → reads are RLS-scoped (ops.read, org-bound), not service-role.
+  const supabase = createServerSupabase();
   let q = supabase.from("ops_tasks").select("*", { count: "exact" });
 
   const status = url.searchParams.get("status");

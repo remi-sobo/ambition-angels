@@ -91,6 +91,12 @@ export type OpsTask = {
   planned_day: string | null;
   /** Manual order within `planned_day` (ascending; null sorts last). */
   day_order: number | null;
+  /**
+   * The calendar_events block BloomOS wrote when this task was scheduled into a
+   * time slot (Phase 4). Null = planned but not on the calendar. Set/cleared by
+   * the task→calendar write engine, never by hand.
+   */
+  calendar_event_id: string | null;
   display_order: number | null;
   // Optional CRM link — the partner org / constituent this task hangs off.
   linked_entity_type: "partner" | "constituent" | null;

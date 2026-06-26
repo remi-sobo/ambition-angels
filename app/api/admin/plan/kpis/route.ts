@@ -47,6 +47,9 @@ export async function POST(req: NextRequest) {
   if (typeof body?.metric_key === "string" && body.metric_key.trim())
     insert.metric_key = body.metric_key.trim().slice(0, 80);
   if (num(body?.target) !== undefined) insert.target = num(body?.target);
+  if (num(body?.baseline) !== undefined) insert.baseline = num(body?.baseline);
+  if (typeof body?.baseline_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.baseline_date))
+    insert.baseline_date = body.baseline_date;
   if (num(body?.current) !== undefined) {
     insert.current = num(body?.current);
     insert.last_updated_at = new Date().toISOString();

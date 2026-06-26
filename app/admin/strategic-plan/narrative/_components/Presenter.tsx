@@ -11,16 +11,32 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
-export default function Presenter({ slides, titles }: { slides: ReactNode[]; titles: string[] }) {
+export default function Presenter({
+  slides,
+  titles,
+  blockers = [],
+}: {
+  slides: ReactNode[];
+  titles: string[];
+  blockers?: string[];
+}) {
   const router = useRouter();
   const n = slides.length;
   const [i, setI] = useState(0);
+  // Funder-readiness gate (B2-5): if blockers are open, make the presenter stop
+  // and show them before the room sees the plan. Acknowledge to present anyway.
+  const [acknowledged, setAcknowledged] = useState(false);
+  const gated = blockers.length > 0 && !acknowledged;
 
   const go = useCallback((d: number) => setI((p) => Math.max(0, Math.min(n - 1, p + d))), [n]);
   const exit = useCallback(() => router.push("/admin/strategic-plan/narrative"), [router]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (gated) {
+        if (e.key === "Escape") exit();
+        return;
+      }
       if (e.key === "ArrowRight" || e.key === "PageDown") {
         e.preventDefault();
         go(1);
@@ -37,7 +53,45 @@ export default function Presenter({ slides, titles }: { slides: ReactNode[]; tit
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, exit, n]);
+  }, [go, exit, n, gated]);
+
+  if (gated) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-app overflow-y-auto flex items-center justify-center p-6">
+        <div className="max-w-[640px] w-full rounded-card-lg border-[1.5px] border-expense/30 bg-surface p-8">
+          <div className="text-[11px] uppercase tracking-[0.16em] font-semibold text-expense mb-2">Not funder-ready</div>
+          <h1 className="font-display text-3xl text-ink-1 leading-tight mb-3">
+            {blockers.length} blocker{blockers.length === 1 ? "" : "s"} before this is safe to present
+          </h1>
+          <ul className="space-y-2 mb-6">
+            {blockers.map((b) => (
+              <li key={b} className="flex items-start gap-2 text-sm text-ink-1">
+                <span className="mt-0.5 text-expense">●</span>
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push("/admin/strategic-plan")}
+              className="px-4 py-2 rounded-full text-sm font-semibold text-white bg-orange hover:bg-orange-dark"
+            >
+              Fix in the plan →
+            </button>
+            <button
+              onClick={() => setAcknowledged(true)}
+              className="px-4 py-2 rounded-full text-sm font-semibold text-ink-2 hover:text-ink-1"
+            >
+              Present anyway
+            </button>
+            <button onClick={exit} className="ml-auto px-3 py-2 rounded-full text-sm font-semibold text-ink-3 hover:text-orange" title="Exit (Esc)">
+              ✕ Exit
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[100] bg-app overflow-y-auto flex flex-col">

@@ -4,7 +4,7 @@ import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import ReedReviewButton from "./_components/ReedReviewButton";
 import ReedDesignButton from "./_components/ReedDesignButton";
 import ReedStartButton from "./_components/ReedStartButton";
-import { deriveHealth, worstHealth, isOffTrack } from "@/lib/admin/plan/health";
+import { deriveHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { resolveOwner, ownerValue, matchOwner, ownerRank } from "@/lib/admin/plan/owners";
 import { measureFreshness } from "@/lib/admin/plan/freshness";
 import { getUnassignedPlanMetrics } from "@/lib/admin/plan/metrics";
@@ -126,10 +126,10 @@ export default async function StrategicPlanPage({
 
   const isEmpty = objectives.length === 0 && goals.length === 0;
   const flagged = (s: string) => s === "at_risk" || s === "behind";
-  const atRisk =
-    objectives.filter((o) => flagged(o.status)).length +
-    goals.filter((g) => flagged(g.status)).length +
-    kpis.filter((k) => flagged(k.status)).length;
+  // Effective health honors a reasoned override, else rolls up from the measures,
+  // else falls back to the stored health (B2-1).
+  const goalHealth = (g: PlanGoal): string =>
+    g.status_override ?? deriveHealth((kpisByGoal[g.id] ?? []).map((k) => k.status)) ?? g.status;
   const doneInits = initiatives.filter((i) => i.status === "done").length;
 
   // ── Lens + filters (URL-synced, B2) ────────────────────────────────────────
@@ -142,12 +142,19 @@ export default async function StrategicPlanPage({
   const statusFilter = str(searchParams?.status);
   const reviewFilter = str(searchParams?.review);
 
-  // Rolled-up health for an objective (KPI statuses worst-wins, honoring the
-  // manually-set objective status) — the same rule the glance and cockpit use.
+  // Rolled-up health for an objective: a reasoned override wins, else the worst
+  // measure beneath it, else the stored health (B2-1).
   const objectiveHealth = (o: PlanObjective): string => {
+    if (o.status_override) return o.status_override;
     const sts = (goalsByObjective[o.id] ?? []).flatMap((g) => (kpisByGoal[g.id] ?? []).map((k) => k.status));
-    return worstHealth(deriveHealth(sts), o.status) ?? o.status;
+    return deriveHealth(sts) ?? o.status;
   };
+
+  // Exception count over EFFECTIVE health (so it matches what the cards show).
+  const atRisk =
+    objectives.filter((o) => flagged(objectiveHealth(o))).length +
+    goals.filter((g) => flagged(goalHealth(g))).length +
+    kpis.filter((k) => flagged(k.status)).length;
 
   // Owner dropdown options: every distinct resolved owner across the plan.
   const ownerOptionMap = new Map<string, string>();

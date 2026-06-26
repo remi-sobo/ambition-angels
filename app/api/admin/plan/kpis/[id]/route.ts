@@ -38,6 +38,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const v = numOrNull(body.target);
     if (v !== undefined) update.target = v;
   }
+  if ("baseline" in body) {
+    const v = numOrNull(body.baseline);
+    if (v !== undefined) update.baseline = v;
+  }
+  if ("baseline_date" in body) {
+    const v = body.baseline_date;
+    if (v === null || v === "") update.baseline_date = null;
+    else if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) update.baseline_date = v;
+  }
   if ("current" in body) {
     const v = numOrNull(body.current);
     if (v !== undefined) {

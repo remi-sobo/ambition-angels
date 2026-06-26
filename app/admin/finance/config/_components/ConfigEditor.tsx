@@ -12,6 +12,7 @@ export type FinConfig = {
   cash_starting_date: string | null;
   monthly_burn_baseline: number | null;
   forward_horizon_months: number | null;
+  runway_target_months: number | null;
 };
 
 type Props = { initial: FinConfig };
@@ -40,6 +41,9 @@ export default function ConfigEditor({ initial }: Props) {
   const [horizon, setHorizon] = useState(
     initial.forward_horizon_months === null ? "" : String(initial.forward_horizon_months)
   );
+  const [runwayTarget, setRunwayTarget] = useState(
+    initial.runway_target_months === null ? "" : String(initial.runway_target_months)
+  );
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +60,7 @@ export default function ConfigEditor({ initial }: Props) {
     body.cash_starting_date = startDate || null;
     body.monthly_burn_baseline = baseline === "" ? null : Number(baseline.replace(/,/g, ""));
     body.forward_horizon_months = horizon === "" ? null : Number(horizon);
+    body.runway_target_months = runwayTarget === "" ? null : Number(runwayTarget);
 
     const r = await fetch("/api/admin/finance/config", {
       method: "POST",
@@ -168,6 +173,15 @@ export default function ConfigEditor({ initial }: Props) {
             onChange={(e) => setHorizon(e.target.value)}
             inputMode="numeric"
             placeholder="3"
+            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
+          />
+        </Field>
+        <Field label="Runway target (months)">
+          <input
+            value={runwayTarget}
+            onChange={(e) => setRunwayTarget(e.target.value)}
+            inputMode="numeric"
+            placeholder="6"
             className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
           />
         </Field>

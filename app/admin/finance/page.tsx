@@ -84,7 +84,7 @@ export default async function FinanceDashboardPage() {
 
   // Canonical cash / runway / monthly series / YTD — one source of truth
   // (lib/admin/finance.ts), shared with the cockpit and the briefing.
-  const { cashOnHand, burn3mo, monthBuckets, expenseYTD, netYTD } = snap;
+  const { cashOnHand, monthBuckets, expenseYTD, netYTD } = snap;
 
   // ── Functional split donut (expenses by program / admin / fundraising) ──
   const functionalTotals = { program: 0, admin: 0, fundraising: 0, uncategorized: 0 };
@@ -336,7 +336,10 @@ export default async function FinanceDashboardPage() {
 
       {/* Secondary metrics */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Mini label="Monthly burn (3-mo)" value={money(burn3mo)} />
+        <Mini
+          label={ri.baselineSource === "config" ? "Monthly burn (set)" : "Monthly burn (3-mo)"}
+          value={money(ri.baseline)}
+        />
         <Mini
           label="Net YTD"
           value={`${netYTD >= 0 ? "+" : "−"}${money(Math.abs(netYTD))}`}

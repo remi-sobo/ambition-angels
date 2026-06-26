@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { AdminUser } from "@/lib/admin/auth";
 
 // ── BloomOS IA (docs/bloomos/06-design-system.md §1) ────────────────────────
@@ -328,48 +328,6 @@ function activeHref(pathname: string): string | null {
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-const fmtAgo = (iso: string): string => {
-  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-};
-
-type SyncStatus = "running" | "completed" | "failed" | "partial";
-type SyncResponse = {
-  jobId: string;
-  status: SyncStatus;
-  finished_at: string | null;
-  counts: { contacts: number; companies: number; deals: number; engagements: number };
-  errors: Array<{ step: string; message: string }>;
-};
-
-const ZERO = { contacts: 0, companies: 0, deals: 0, engagements: 0 };
-
-// ── Data-age indicator ──────────────────────────────────────────────────────
-// Mirrors lib/admin/dataAge.ts (the source of truth). The spine is refreshed
-// by a manual sync with no scheduler, so staleness must be loud, dated, and
-// color-coded — not a grey "500h ago". Colors are the status scale tuned for
-// the dark espresso sidebar (light-on-dark, AA+ verified in the Phase 0 note).
-type DataAge = {
-  lastFullSyncAt: string | null;
-  ageLabel: string;
-  ageDays: number | null;
-  severity: "fresh" | "watch" | "stale";
-  lastRunStatus: "completed" | "partial" | "failed" | "running" | null;
-};
-
-const AGE_COLOR: Record<DataAge["severity"], string> = {
-  fresh: "#7FC9A3", // green
-  watch: "#E8B45A", // amber
-  stale: "#E88A6F", // red
-};
-
-const fmtDate = (iso: string): string =>
-  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
 // Short label shown next to the hamburger on the mobile top bar.
 function activeSectionLabel(pathname: string): string {
   const href = activeHref(pathname);
@@ -387,10 +345,6 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [job, setJob] = useState<SyncResponse | null>(null);
-  const [syncError, setSyncError] = useState<string | null>(null);
-  const [dataAge, setDataAge] = useState<DataAge | null>(null);
-  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Close the mobile drawer whenever the route changes — without this,
   // tapping a link slides the next page in but leaves the drawer covering
@@ -410,76 +364,12 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
     };
   }, [drawerOpen]);
 
-  // Polling design: POST every 2s while running. Each call advances the job
-  // by one chunk AND returns the updated state. GET on mount only, to
-  // hydrate "Last synced" so it survives full reloads.
-  useEffect(() => {
-    fetch("/api/admin/hubspot/sync")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => j?.jobId && setJob(j as SyncResponse))
-      .catch(() => {});
-  }, []);
-
-  // Data age — the honest "how old is the spine" indicator. Re-fetched after a
-  // sync finishes (job dependency) so the freshness clock updates in place.
-  useEffect(() => {
-    if (!currentUser) return;
-    fetch("/api/admin/data-age")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d && setDataAge(d as DataAge))
-      .catch(() => {});
-  }, [currentUser, job?.finished_at]);
-
-  useEffect(() => {
-    if (!job || job.status !== "running") return;
-    pollRef.current = setTimeout(async () => {
-      try {
-        const r = await fetch("/api/admin/hubspot/sync", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ jobId: job.jobId }),
-        });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        setJob(await r.json());
-      } catch (e) {
-        setSyncError(e instanceof Error ? e.message : "Sync failed");
-        setJob((p) => (p ? { ...p, status: "failed" } : p));
-      }
-    }, 2000);
-    return () => {
-      if (pollRef.current) clearTimeout(pollRef.current);
-    };
-  }, [job]);
-
-  const startSync = useCallback(async () => {
-    setSyncError(null);
-    try {
-      const r = await fetch("/api/admin/hubspot/sync", { method: "POST" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      setJob(await r.json());
-    } catch (e) {
-      setSyncError(e instanceof Error ? e.message : "Sync failed");
-    }
-  }, []);
-
   const handleLogout = async () => {
     setLoggingOut(true);
     try { await fetch("/api/admin/logout", { method: "POST" }); } catch {}
     router.push("/admin");
     router.refresh();
   };
-
-  const counts = job?.counts ?? ZERO;
-  const running = job?.status === "running";
-  const partial = job?.status === "partial";
-  const finished = job?.status === "completed" || partial;
-  const syncLabel = syncError
-    ? "Sync failed — retry"
-    : running
-    ? "Syncing…"
-    : finished && job?.finished_at
-    ? `${partial ? "Synced (partial)" : "Synced"} ${fmtAgo(job.finished_at)}`
-    : "Sync HubSpot";
 
   const active = activeHref(pathname);
 
@@ -553,43 +443,6 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
 
       {currentUser && (
         <>
-          <div className="px-4 py-3 border-t border-white/10 space-y-2">
-            <button
-              onClick={startSync}
-              disabled={running}
-              title={partial ? job?.errors.map((e) => `${e.step}: ${e.message}`).join("\n") : undefined}
-              className="w-full text-left text-xs font-semibold text-cream/80 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 rounded-lg transition-colors disabled:cursor-default flex items-center gap-2"
-            >
-              <span aria-hidden className={running ? "animate-pulse" : ""}>{partial ? "⚠" : running ? "⟳" : "↻"}</span>
-              <span className="truncate">{syncLabel}</span>
-            </button>
-            {(running || finished) && (
-              <div className="text-[10px] text-cream/40 leading-relaxed font-mono">
-                C {counts.contacts} · Co {counts.companies} · D {counts.deals} · E {counts.engagements}
-              </div>
-            )}
-            {dataAge && !running && (
-              <div className="flex items-start gap-2 pt-0.5">
-                <span
-                  aria-hidden
-                  className="mt-1 w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ background: AGE_COLOR[dataAge.severity] }}
-                />
-                <div className="min-w-0 leading-tight">
-                  <div className="text-[11px] font-semibold" style={{ color: AGE_COLOR[dataAge.severity] }}>
-                    {dataAge.lastFullSyncAt ? `Data ${dataAge.ageLabel} old` : "Never fully synced"}
-                    {dataAge.lastRunStatus === "partial" && " · last run partial"}
-                  </div>
-                  <div className="text-[10px] text-cream/40">
-                    {dataAge.lastFullSyncAt
-                      ? `Last full sync ${fmtDate(dataAge.lastFullSyncAt)}`
-                      : "Run a sync to populate the spine"}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
           <div className="px-5 py-4 border-t border-white/10 space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <Link
               href="/admin/howto"
@@ -667,21 +520,6 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
         </button>
         <div className="font-display font-black uppercase tracking-tight text-cream text-base leading-none">
           {activeSectionLabel(pathname)}
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          {currentUser && (
-            <button
-              onClick={startSync}
-              disabled={running}
-              aria-label={syncLabel}
-              title={syncLabel}
-              className="w-9 h-9 flex items-center justify-center rounded-lg text-cream/80 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 transition-colors disabled:opacity-60"
-            >
-              <span aria-hidden className={running ? "animate-pulse" : ""}>
-                {partial ? "⚠" : running ? "⟳" : "↻"}
-              </span>
-            </button>
-          )}
         </div>
       </div>
 

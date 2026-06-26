@@ -12,24 +12,14 @@ import {
   type TaskCategory,
   type OpsTask,
 } from "../_types/ops";
+import {
+  thisMonday,
+  nextMonday,
+  formatWeekHeader,
+  dayStartInstant,
+} from "@/lib/admin/ops/week";
 
 export const dynamic = "force-dynamic";
-
-// ── Date math (inlined; same helpers as monday/page.tsx) ───────────────────
-function thisMonday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  const dow = d.getDay();
-  d.setDate(d.getDate() - ((dow + 6) % 7));
-  return d;
-}
-function fmtWeekHeader(monday: Date): string {
-  return monday.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 function readCurrentUser(): AdminUserId | null {
   const c = cookies().get("admin_user")?.value;
@@ -44,23 +34,25 @@ export default async function FridayReviewPage() {
   const currentUser = readCurrentUser() ?? "remi";
   const supabase = getSupabaseAdmin();
 
-  const mondayDate = thisMonday();
-  const mondayISO = mondayDate.toISOString();
+  // This-week anchor (YYYY-MM-DD, LA) for planned_week; plus the matching
+  // UTC instant for the timestamptz completed_at comparison.
+  const mondayISO = thisMonday();
+  const weekStartInstant = dayStartInstant(mondayISO);
   const mineFilter = `assigned_to.eq.${currentUser},assigned_to.is.null`;
 
   const [shippedRes, stillPinnedRes] = await Promise.all([
-    // Section 1: completed this week, mine
+    // Section 1: completed since this Monday (LA), mine
     supabase
       .from("ops_tasks")
       .select("*")
-      .gte("completed_at", mondayISO)
+      .gte("completed_at", weekStartInstant)
       .or(mineFilter)
       .order("completed_at", { ascending: false }),
-    // Section 2: still pinned + not done, mine
+    // Section 2: planned for this week + not done, mine
     supabase
       .from("ops_tasks")
       .select("*")
-      .eq("pinned_for_this_week", true)
+      .eq("planned_week", mondayISO)
       .neq("status", "done")
       .or(mineFilter)
       .order("due_date", { ascending: true, nullsFirst: true }),
@@ -114,7 +106,13 @@ export default async function FridayReviewPage() {
   // distinguish "done" from "dropped".
   const stillPinnedActions: TaskRowAction[] = [
     { label: "Mark done", variant: "primary", patch: { status: "done" } },
-    { label: "Push to next week", variant: "default", patch: { pinned_for_this_week: true } },
+    // Advance to next week: the task leaves this week and surfaces in next
+    // Monday's "This week" automatically. The pin clears (next week, not this).
+    {
+      label: "Push to next week",
+      variant: "default",
+      patch: { pinned_for_this_week: false, planned_week: nextMonday() },
+    },
     { label: "Unpin", variant: "ghost", patch: { pinned_for_this_week: false } },
   ];
 
@@ -125,7 +123,7 @@ export default async function FridayReviewPage() {
           Friday Review
         </h1>
         <div className="mt-2 flex items-baseline gap-3 flex-wrap text-sm">
-          <span className="text-ink-2">Week of {fmtWeekHeader(mondayDate)}</span>
+          <span className="text-ink-2">Week of {formatWeekHeader(mondayISO)}</span>
           <span className="text-ink-3">·</span>
           <span className="text-ink-2">Reviewing as {cap(currentUser)}</span>
         </div>

@@ -77,6 +77,12 @@ export type OpsTask = {
   due_date: string | null; // ISO date (YYYY-MM-DD)
   pinned_for_today: boolean;
   pinned_for_this_week: boolean;
+  /**
+   * The week a task belongs to (Monday anchor, YYYY-MM-DD, America/Los_Angeles).
+   * Source of truth for the Monday/Friday rhythm; kept in sync with
+   * `pinned_for_this_week` by the task write routes. Null = unplanned.
+   */
+  planned_week: string | null;
   display_order: number | null;
   // Optional CRM link — the partner org / constituent this task hangs off.
   linked_entity_type: "partner" | "constituent" | null;

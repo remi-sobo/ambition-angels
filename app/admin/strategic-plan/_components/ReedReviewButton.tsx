@@ -1,12 +1,14 @@
 "use client";
 
+import { useReedLauncher } from "@/app/admin/_components/reed/ReedLauncherProvider";
+
 /**
- * "Review with Reed" — opens the Reed panel pre-aimed at a strategy coherence
- * review (Reed-for-strategy Phase A). Dispatches the global `reed:open` event
- * that AskReedButton listens for; Reed reads the OGSM tree + finance + mission,
- * runs the deterministic coherence checks, then adds judgment. Read-only — it
- * proposes and critiques, it never edits the plan. Only mounted when ai.reed is
- * entitled (the page gates that).
+ * "Review with Reed" — opens Reed pre-aimed at a strategy coherence review
+ * (Reed-for-strategy Phase A) via the shared launcher. Reed reads the OGSM tree
+ * + finance + mission, runs the deterministic coherence checks, then adds
+ * judgment. Read-only — it critiques and (later) proposes, it never edits the
+ * plan. Self-gates on the launcher's entitlement, so it renders nothing when
+ * ai.reed is off.
  */
 const REVIEW_PROMPT =
   "Review my strategic plan. Call get_strategy_coherence first and lead with those structural " +
@@ -17,13 +19,11 @@ const REVIEW_PROMPT =
   "anything — this is a review.";
 
 export default function ReedReviewButton() {
+  const reed = useReedLauncher();
+  if (!reed.enabled) return null;
   return (
     <button
-      onClick={() =>
-        window.dispatchEvent(
-          new CustomEvent("reed:open", { detail: { surface: "strategy", message: REVIEW_PROMPT } }),
-        )
-      }
+      onClick={() => reed.open({ surface: "strategy", draft: REVIEW_PROMPT })}
       className="text-xs font-semibold text-white bg-navy hover:bg-[#19305f] px-4 py-2 rounded-full transition-colors inline-flex items-center gap-1.5"
     >
       <ReedMark className="w-3.5 h-3.5 text-orange-mid" />

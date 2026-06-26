@@ -2,6 +2,10 @@ import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import ConfigEditor, { type FinConfig } from "./_components/ConfigEditor";
 
+// Service-role reads give Next no dynamic signal, so force a fresh render —
+// otherwise the editor can load stale (build-time) config values.
+export const dynamic = "force-dynamic";
+
 export default async function ConfigPage() {
   const supabase = getSupabaseAdmin();
   const { data } = await supabase

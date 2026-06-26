@@ -18,6 +18,13 @@ import { endOfMonthISO, type RunwayPledge } from "@/lib/finance/runway";
 import ReconcileCard from "./_components/ReconcileCard";
 import RunwayTiers from "./_components/RunwayTiers";
 
+// Always render fresh. The snapshot reads Supabase via the service-role client
+// (no cookies/headers), so Next can't infer dynamic data access and would
+// otherwise statically cache this route — freezing cash, burn, and runway on
+// build-time numbers. Config edits (e.g. the burn baseline) must show up here
+// immediately, so force a dynamic render. Matches the rest of /admin.
+export const dynamic = "force-dynamic";
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default async function FinanceDashboardPage() {

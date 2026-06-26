@@ -83,6 +83,14 @@ export type OpsTask = {
    * `pinned_for_this_week` by the task write routes. Null = unplanned.
    */
   planned_week: string | null;
+  /**
+   * The specific day within `planned_week` a task is placed on (YYYY-MM-DD, LA).
+   * Null = planned for the week but not yet dropped on a day. Setting it implies
+   * the task's planned_week (the write routes keep them consistent).
+   */
+  planned_day: string | null;
+  /** Manual order within `planned_day` (ascending; null sorts last). */
+  day_order: number | null;
   display_order: number | null;
   // Optional CRM link — the partner org / constituent this task hangs off.
   linked_entity_type: "partner" | "constituent" | null;

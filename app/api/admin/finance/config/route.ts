@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
@@ -99,5 +100,11 @@ export async function POST(req: NextRequest) {
     entityType: "fin_config",
     after: update,
   });
+  // Config drives runway/burn/goal across the finance dashboard, the cockpit
+  // overview, and the config editor itself. Bust their caches so a saved change
+  // (e.g. the burn baseline) shows up on next navigation without a hard refresh.
+  revalidatePath("/admin/finance");
+  revalidatePath("/admin/finance/config");
+  revalidatePath("/admin");
   return NextResponse.json({ ok: true, config: data });
 }

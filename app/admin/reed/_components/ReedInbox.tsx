@@ -13,12 +13,28 @@ type Suggestion = {
   status: string;
   created_at: string;
 };
+type Proposal = {
+  id: string;
+  proposed_type: string;
+  parent_ref: { type?: string; id?: string | null } | null;
+  payload: Record<string, unknown> | null;
+  rationale: string | null;
+  status: string;
+  created_at: string;
+};
 
 const KIND_LABEL: Record<string, string> = {
   grant_narrative: "Grant narrative",
   board_update: "Board update",
   acknowledgment: "Acknowledgment",
   strategy_review: "Strategy review",
+};
+
+const PROPOSED_TYPE_LABEL: Record<string, string> = {
+  objective: "Objective",
+  goal: "Goal",
+  initiative: "Initiative",
+  kpi: "KPI",
 };
 
 const PRIORITY_STYLE: Record<string, string> = {
@@ -31,10 +47,12 @@ export default function ReedInbox({
   drafts,
   approved,
   suggestions,
+  proposals,
 }: {
   drafts: Draft[];
   approved: Draft[];
   suggestions: Suggestion[];
+  proposals: Proposal[];
 }) {
   return (
     <div className="px-4 lg:px-8 py-6 max-w-3xl">
@@ -88,6 +106,77 @@ export default function ReedInbox({
           </div>
         )}
       </section>
+
+      {proposals.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-1">
+            Strategy proposals
+          </h2>
+          <p className="text-[12px] text-ink-3 mb-3">
+            Reed&apos;s proposed plan elements. Accepting records the decision — it doesn&apos;t change your plan yet.
+          </p>
+          <div className="flex flex-col gap-3">
+            {proposals.map((p) => (
+              <ProposalCard key={p.id} proposal={p} />
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function ProposalCard({ proposal }: { proposal: Proposal }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const payload = proposal.payload ?? {};
+  const title = typeof payload.title === "string" ? payload.title : "(untitled)";
+  // Surface the few level fields people care about, skipping the title.
+  const detail = Object.entries(payload)
+    .filter(([k, v]) => k !== "title" && v != null && v !== "")
+    .map(([k, v]) => `${k.replace(/_/g, " ")}: ${String(v)}`)
+    .join(" · ");
+
+  async function decide(action: "accept" | "dismiss") {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/reed/proposals/${proposal.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (res.ok) router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-card border-[1.5px] border-outline bg-surface p-4">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border border-orange/30 bg-orange/10 text-orange-mid">
+          {PROPOSED_TYPE_LABEL[proposal.proposed_type] ?? proposal.proposed_type}
+        </span>
+      </div>
+      <h3 className="font-heading font-semibold text-ink-1 text-sm">{title}</h3>
+      {detail && <p className="mt-0.5 text-[12px] text-ink-3">{detail}</p>}
+      {proposal.rationale && <p className="mt-1 text-[13px] text-ink-2 leading-relaxed">{proposal.rationale}</p>}
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          onClick={() => decide("accept")}
+          disabled={busy}
+          className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full disabled:opacity-50"
+        >
+          Accept
+        </button>
+        <button
+          onClick={() => decide("dismiss")}
+          disabled={busy}
+          className="text-xs font-semibold text-ink-2 hover:text-ink-1 px-3 py-1.5 rounded-full border border-white/10 disabled:opacity-50"
+        >
+          Dismiss
+        </button>
+      </div>
     </div>
   );
 }

@@ -10,6 +10,8 @@ export type FinConfig = {
   contingency_unlock_threshold: number | null;
   cash_starting_balance: number | null;
   cash_starting_date: string | null;
+  monthly_burn_baseline: number | null;
+  forward_horizon_months: number | null;
 };
 
 type Props = { initial: FinConfig };
@@ -32,6 +34,12 @@ export default function ConfigEditor({ initial }: Props) {
     initial.cash_starting_balance === null ? "" : String(initial.cash_starting_balance)
   );
   const [startDate, setStartDate] = useState(initial.cash_starting_date ?? "");
+  const [baseline, setBaseline] = useState(
+    initial.monthly_burn_baseline === null ? "" : String(initial.monthly_burn_baseline)
+  );
+  const [horizon, setHorizon] = useState(
+    initial.forward_horizon_months === null ? "" : String(initial.forward_horizon_months)
+  );
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +54,8 @@ export default function ConfigEditor({ initial }: Props) {
     body.contingency_unlock_threshold = threshold === "" ? null : Number(threshold);
     body.cash_starting_balance = startBal === "" ? null : Number(startBal.replace(/,/g, ""));
     body.cash_starting_date = startDate || null;
+    body.monthly_burn_baseline = baseline === "" ? null : Number(baseline.replace(/,/g, ""));
+    body.forward_horizon_months = horizon === "" ? null : Number(horizon);
 
     const r = await fetch("/api/admin/finance/config", {
       method: "POST",
@@ -135,6 +145,30 @@ export default function ConfigEditor({ initial }: Props) {
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+          />
+        </Field>
+      </Section>
+
+      <Section
+        title="Runway model"
+        hint="Drives the forward runway. The burn baseline is the monthly spend the runway divides by — set it to a number you can defend (AA: $50,000, a touch above the actual average for cushion). Leave it blank to fall back to the trailing 3-month average. The horizon is how many months ahead the projected runway counts pledges that haven't landed yet."
+      >
+        <Field label="Monthly burn baseline ($)">
+          <input
+            value={baseline}
+            onChange={(e) => setBaseline(e.target.value)}
+            inputMode="decimal"
+            placeholder="50000"
+            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
+          />
+        </Field>
+        <Field label="Forward horizon (months)">
+          <input
+            value={horizon}
+            onChange={(e) => setHorizon(e.target.value)}
+            inputMode="numeric"
+            placeholder="3"
+            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
           />
         </Field>
       </Section>

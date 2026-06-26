@@ -59,6 +59,10 @@ export async function POST(req: NextRequest) {
   if (typeof body.restricted_to === "string" && body.restricted_to.trim())
     insert.restricted_to = body.restricted_to.slice(0, 200);
   if (typeof body.notes === "string") insert.notes = body.notes.slice(0, 1000);
+  // external_ref ties an adopted pledge back to its source deal (e.g. a
+  // HubSpot deal_id) so the assembler can de-dup it.
+  if (typeof body.external_ref === "string" && body.external_ref.trim())
+    insert.external_ref = body.external_ref.trim().slice(0, 200);
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -66,7 +70,14 @@ export async function POST(req: NextRequest) {
     .insert(insert)
     .select("*")
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    // Partial unique index on (year, external_ref): a deal already adopted
+    // this year. Surface a clean 409 instead of a 500.
+    if (error.code === "23505") {
+      return NextResponse.json({ error: "This deal is already adopted for this year." }, { status: 409 });
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   await audit(req, {
     action: "finance.pledge.create",
     entityType: "fin_revenue_commitments",

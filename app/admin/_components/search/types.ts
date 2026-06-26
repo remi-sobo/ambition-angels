@@ -48,6 +48,28 @@ export type SearchHit = {
   score: number;
 };
 
+// ── 360° entity profile (Phase 2) ────────────────────────────────────────────
+// The route builds these arrays; the overlay just renders them, so adding a new
+// stat or section never touches the client.
+export type ProfileStat = { label: string; value: string; tone?: "default" | "warn" };
+export type ProfileRow = { id: string; title: string; subtitle?: string; badge?: string; href: string };
+export type ProfileSection = { key: string; label: string; rows: ProfileRow[] };
+export type ProfileTimelineItem = { kind: string; when: string | null; text: string };
+
+export type ProfilePayload = {
+  entity: {
+    id: string;
+    name: string;
+    subtitle: string;
+    href: string;
+    tags: string[];
+    doNotContact: boolean;
+  };
+  stats: ProfileStat[];
+  sections: ProfileSection[];
+  timeline: ProfileTimelineItem[];
+};
+
 // ── Static page index ────────────────────────────────────────────────────────
 // The navigable surface of BloomOS, matched client-side so pages appear
 // instantly (no network round-trip) and search is never empty. Keywords cover

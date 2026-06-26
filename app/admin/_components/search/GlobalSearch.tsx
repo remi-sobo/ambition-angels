@@ -2,10 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import EntityProfile from "./EntityProfile";
 import {
   GROUP_LABEL,
   GROUP_ORDER,
   matchPages,
+  type ProfilePayload,
   type SearchGroup,
   type SearchHit,
   type SearchKind,
@@ -30,16 +32,45 @@ export default function GlobalSearch() {
   const [dbHits, setDbHits] = useState<SearchHit[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Mode B (360° profile). profileId set = profile open; null = palette.
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<ProfilePayload | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const profileAbortRef = useRef<AbortController | null>(null);
+
+  const closeProfile = useCallback(() => {
+    setProfileId(null);
+    setProfile(null);
+    profileAbortRef.current?.abort();
+    inputRef.current?.focus();
+  }, []);
 
   const close = useCallback(() => {
     setOpen(false);
     setQuery("");
     setDbHits([]);
     setActiveIndex(0);
+    setProfileId(null);
+    setProfile(null);
     abortRef.current?.abort();
+    profileAbortRef.current?.abort();
+  }, []);
+
+  // Open the 360° profile for a constituent (Mode B).
+  const openProfile = useCallback((id: string) => {
+    setProfileId(id);
+    setProfile(null);
+    const ctrl = new AbortController();
+    profileAbortRef.current?.abort();
+    profileAbortRef.current = ctrl;
+    fetch(`/api/admin/search/profile?id=${encodeURIComponent(id)}`, { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!ctrl.signal.aborted) setProfile(data as ProfilePayload | null);
+      })
+      .catch(() => {});
   }, []);
 
   // ── Global open shortcuts ──────────────────────────────────────────────
@@ -147,20 +178,41 @@ export default function GlobalSearch() {
     document.getElementById(`gs-opt-${activeIndex}`)?.scrollIntoView({ block: "nearest" });
   }, [activeIndex, open]);
 
-  const go = useCallback(
-    (hit: SearchHit | undefined, newTab: boolean) => {
-      if (!hit) return;
+  const navigate = useCallback(
+    (href: string, newTab: boolean) => {
       if (newTab) {
-        window.open(hit.href, "_blank", "noopener");
+        window.open(href, "_blank", "noopener");
         return;
       }
       close();
-      router.push(hit.href);
+      router.push(href);
     },
     [close, router]
   );
 
+  const go = useCallback(
+    (hit: SearchHit | undefined, newTab: boolean) => {
+      if (!hit) return;
+      // People/orgs open the 360° profile by default — that's the headline use
+      // case. ⌘-click / ⌘↵ skips it and jumps straight to the full page.
+      if (hit.kind === "constituent" && hit.id && !newTab) {
+        openProfile(hit.id);
+        return;
+      }
+      navigate(hit.href, newTab);
+    },
+    [navigate, openProfile]
+  );
+
   const onKeyDown = (e: React.KeyboardEvent) => {
+    // Profile (Mode B): Escape steps back to the palette; nav keys are inert.
+    if (profileId) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeProfile();
+      }
+      return;
+    }
     if (e.key === "Escape") {
       e.preventDefault();
       close();
@@ -170,11 +222,18 @@ export default function GlobalSearch() {
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveIndex((i) => (flat.length ? (i - 1 + flat.length) % flat.length : 0));
+    } else if (e.key === "Tab" && !e.shiftKey && flat[activeIndex]?.kind === "constituent") {
+      // ⇥ expands the highlighted person/org into the 360° profile.
+      e.preventDefault();
+      const hit = flat[activeIndex];
+      if (hit.id) openProfile(hit.id);
     } else if (e.key === "Enter") {
       e.preventDefault();
       go(flat[activeIndex], e.metaKey || e.ctrlKey);
     }
   };
+
+  const activeHit = flat[activeIndex];
 
   if (!open) return null;
 
@@ -195,6 +254,27 @@ export default function GlobalSearch() {
         aria-label="Search BloomOS"
         onKeyDown={onKeyDown}
       >
+        {profileId ? (
+          profile ? (
+            <EntityProfile data={profile} onBack={closeProfile} onOpen={navigate} />
+          ) : (
+            <div className="flex-1 flex flex-col">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
+                <button
+                  onClick={closeProfile}
+                  aria-label="Back to search"
+                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-[#bfae93] hover:text-cream hover:bg-white/[0.06] transition-colors"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden>
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+                <span className="text-sm text-[#8d7c63]">Loading profile…</span>
+              </div>
+            </div>
+          )
+        ) : (
+          <>
         {/* Search field */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
           <svg
@@ -286,6 +366,20 @@ export default function GlobalSearch() {
                         {hit.badge}
                       </span>
                     )}
+                    {hit.kind === "constituent" && (
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={`shrink-0 w-3.5 h-3.5 ${active ? "text-orange-mid" : "text-[#8d7c63]"}`}
+                        aria-hidden
+                      >
+                        <path d="M9 6l6 6-6 6" />
+                      </svg>
+                    )}
                   </button>
                 );
               })}
@@ -293,13 +387,24 @@ export default function GlobalSearch() {
           ))}
         </div>
 
-        {/* Footer hints */}
+        {/* Footer hints (context-aware: people/orgs open the profile) */}
         <div className="flex items-center gap-4 px-4 py-2 border-t border-white/10 text-[10px] text-[#8d7c63]">
           <Hint k="↑↓" label="navigate" />
-          <Hint k="↵" label="open" />
-          <Hint k="⌘↵" label="new tab" />
+          {activeHit?.kind === "constituent" ? (
+            <>
+              <Hint k="↵" label="profile" />
+              <Hint k="⌘↵" label="open page" />
+            </>
+          ) : (
+            <>
+              <Hint k="↵" label="open" />
+              <Hint k="⌘↵" label="new tab" />
+            </>
+          )}
           <span className="ml-auto">BloomOS search</span>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

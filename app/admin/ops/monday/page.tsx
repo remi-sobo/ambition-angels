@@ -22,6 +22,7 @@ import WeekPlanner, {
 import RhythmWizard from "../_components/RhythmWizard";
 import MondayOrient from "../_components/MondayOrient";
 import AreaWalk from "../_components/AreaWalk";
+import MondayCommit from "../_components/MondayCommit";
 
 export const dynamic = "force-dynamic";
 
@@ -186,6 +187,24 @@ export default async function MondayPlanPage() {
   // Maps don't serialize across the server/client boundary — hand over a plain object.
   const projectNamesObj: Record<string, string> = Object.fromEntries(projectNames);
 
+  // ── Commit: week-ahead summary + any existing session for this week ────────
+  const placedCount = pinnedThisWeek.filter(
+    (t) => t.planned_day && weekDayList.includes(t.planned_day)
+  ).length;
+  const scheduledCount = Object.keys(scheduled).length;
+  let committedAt: string | null = null;
+  if (me) {
+    const { data: sess } = await supabase
+      .from("rhythm_sessions")
+      .select("completed_at, status")
+      .eq("org_id", me.orgId)
+      .eq("user_id", me.userId)
+      .eq("kind", "monday_plan")
+      .eq("week_of", mondayISO)
+      .maybeSingle();
+    if (sess && sess.status === "completed") committedAt = sess.completed_at;
+  }
+
   // ── Action definitions ────────────────────────────────────────────────────
   // Carryover (empty the deck before adding): plan it in (pull to this week),
   // finish it, push it forward (a deliberate roll — increments roll_count via
@@ -279,6 +298,18 @@ export default async function MondayPlanPage() {
         { key: "carryover", label: "Carryover", content: carryover },
         { key: "areas", label: "Areas", content: <AreaWalk orgId={orgId} handle={currentUser} /> },
         { key: "days", label: "Days", content: days },
+        {
+          key: "commit",
+          label: "Commit",
+          content: (
+            <MondayCommit
+              planned={pinnedThisWeek.length}
+              placed={placedCount}
+              scheduled={scheduledCount}
+              committedAt={committedAt}
+            />
+          ),
+        },
       ]}
     />
   );

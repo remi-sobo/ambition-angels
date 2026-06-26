@@ -95,6 +95,10 @@ ordered=(
   drop_households_org_id_default.sql
   assert_fundraising_org_id.sql
   add_grant_id_to_ops_projects.sql
+  finance_v2_config_runway_inputs.sql
+  finance_v2_exclude_from_runway.sql
+  finance_v2_close_stamp.sql
+  finance_v2_pledge_external_ref.sql
   create_fr_prospects.sql
   create_fin_reconciliation_items.sql
   create_fr_prospect_promoted.sql
@@ -103,6 +107,7 @@ ordered=(
   create_reed_schema.sql
   create_reed_drafts.sql
   create_reed_suggestions.sql
+  add_strategy_review_draft_kind.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

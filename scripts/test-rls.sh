@@ -100,6 +100,10 @@ ordered=(
   finance_v2_close_stamp.sql
   finance_v2_pledge_external_ref.sql
   add_planned_day_to_ops_tasks.sql
+  create_meeting_records.sql
+  create_meeting_suggested_tasks.sql
+  add_meeting_record_id_to_ops_tasks.sql
+  add_external_ids_to_partner_interactions.sql
   create_fr_prospects.sql
   create_fin_reconciliation_items.sql
   create_fr_prospect_promoted.sql

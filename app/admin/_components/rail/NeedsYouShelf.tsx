@@ -29,10 +29,15 @@ export default async function NeedsYouShelf() {
       ) : (
         <ul>
           {overdue.map((t) => (
-            <TaskRow key={t.id} task={t} dot="bg-status-critical" weightClass="text-[#E8A08C]" />
+            <TaskRow
+              key={t.id}
+              task={t}
+              dot="bg-[#E5544A] shadow-[0_0_0_3px_rgba(229,84,74,0.16)]"
+              weightClass="text-[#EC8C76]"
+            />
           ))}
           {today.map((t) => (
-            <TaskRow key={t.id} task={t} dot="bg-status-due" weightClass="text-[#9c8b70]" />
+            <TaskRow key={t.id} task={t} dot="bg-[#E8B45A]" weightClass="text-[#C9A86A]" />
           ))}
           {nextTouch && (
             <li>

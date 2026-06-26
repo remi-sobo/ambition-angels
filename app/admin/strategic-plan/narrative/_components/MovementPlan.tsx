@@ -92,7 +92,23 @@ export default function MovementPlan({ plan }: { plan: PlanMovement }) {
   return (
     <div>
       <MovementHeader n={1} title="The Plan" lead={frame?.mission ?? undefined} />
-      {frame?.vision && <p className="max-w-[680px] text-sm text-ink-2 leading-relaxed -mt-4 mb-12">{frame.vision}</p>}
+      {frame?.vision && <p className="max-w-[680px] text-sm text-ink-2 leading-relaxed -mt-4 mb-8">{frame.vision}</p>}
+
+      {/* Proof before the ask — what's already true, so a cold funder gets
+          "why you" before the forward-looking plan. */}
+      <div className="mb-12 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { v: "3,500+", l: "teens reached" },
+          { v: "87%", l: "Title I schools" },
+          { v: "1,100+", l: "program hours" },
+          { v: "14%", l: "future-orientation lift (directional)" },
+        ].map((s) => (
+          <div key={s.l} className="rounded-card border border-hairline bg-surface p-4">
+            <div className="font-display text-2xl sm:text-3xl leading-none tabular-nums text-orange">{s.v}</div>
+            <div className="mt-1 text-[12px] text-ink-2 leading-snug">{s.l}</div>
+          </div>
+        ))}
+      </div>
 
       {empty ? (
         <p className="text-sm text-ink-2">No plan to narrate yet — build the OGSM in the Strategic Plan first.</p>

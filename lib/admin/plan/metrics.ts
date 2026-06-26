@@ -110,6 +110,10 @@ export const PLAN_METRICS: Record<string, PlanMetricFn> = {
   // narrative never disagree. One dollar, one state.
   // Raised toward the committed floor — Σ gifts received this fiscal year.
   dollars_raised_fy26: (s, org) => computeSecuredFy(s, org),
+  // Raised toward the ceiling — the SAME secured dollars, measured against the
+  // stretch target. Bound to the identical source so "raised toward floor" and
+  // "raised toward ceiling" can never disagree (they did: $198,309 vs $196,310).
+  dollars_ceiling_fy26: (s, org) => computeSecuredFy(s, org),
   // Weighted pipeline — Σ open-stage ask × probability (excludes steward/lost/won).
   weighted_pipeline_fy26: (s, org) => computeWeightedPipeline(s, org),
   // Corporate raised — Σ gifts this fiscal year from organization-type donors.
@@ -233,6 +237,7 @@ export const PLAN_METRIC_META: Record<string, PlanMetricMeta> = {
   donor_updates_sent_ytd: { label: "Donor updates sent (YTD)", unit: "" },
   active_teens: { label: "Active teens", unit: "" },
   dollars_raised_fy26: { label: "Raised toward the committed floor", unit: "$" },
+  dollars_ceiling_fy26: { label: "Raised toward the ceiling", unit: "$" },
   weighted_pipeline_fy26: { label: "Weighted pipeline (FY26)", unit: "$" },
   corporate_raised: { label: "Corporate raised", unit: "$" },
   cash_runway_months: { label: "Cash runway (months)", unit: "months" },

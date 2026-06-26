@@ -81,14 +81,20 @@ This spec turns that review into buildable work. Every finding below is tagged w
 - **F15 — hide empty doors in the funder view** (render only doors with ≥1 mapped funder, or a `draft` flag), so the funder never sees five empty frames. *File:* `MovementHow.tsx`.
 - **F16 — reconcile depth vs breadth** in copy: state the relationship between 1,000 active teens and the 4-internships rhythm (one explanatory line). Data/copy only.
 
-## Decisions required from Remi (defaults proposed)
+## Decisions — LOCKED (2026-06-26)
 
-These are strategy, not formatting; the build encodes the answer once given. Proposed defaults so the build can proceed if Remi doesn't override:
+1. **The $400K build** — it is the **tech partner** build, and it already exists as a discrete budget line (`program.tech-app`, "App creation & maintenance", $400,000) inside the PROGRAM group. No data change needed; the Narrative renders budget line-items within each group so the $400K shows.
+2. **Floor by source** (sums to $1,117,782): **Corporate $100,000 · Individual $510,000** (multi-year individual / "AIG" folded in here) **· Foundations $507,782 · Earned $0.** Individual is the largest; foundations a few thousand under it.
+3. **Runway bridge** — computed, not typed: restore the 6-month cushion = 6 × $50K burn − $113K cash = **$187,000**, shown as the urgent ask distinct from the annual floor.
+4. **Residual to the floor** — shown explicitly as **"named coverage still to develop,"** not hidden, closing by naming prospects against the Movement 3 doors.
 
-1. **Where does the $400K build sit?** *Default:* its own line inside PROGRAM, leaving "Program delivery $99K" visible.
-2. **Floor by source — the split that sums to $1,117,782.** *Default to wire as placeholders for Remi to set:* Corporate $100K (existing), Foundations (K-12 + workforce doors) $X, Individual $Y, AIG $Z, Earned $W — must total the floor.
-3. **The runway bridge number and date.** *Default:* compute the 90-day bridge from cash $113K and $50K/mo burn and present it as the urgent ask distinct from the floor.
-4. **How the ~$450K residual closes.** *Default:* show it as "named coverage to develop" in the bridge block rather than hiding it; Remi names prospects to convert it from residual to coverage.
+## Build 1 — executed (2026-06-26)
+
+**Shipped (code):** status roll-up so an objective can't show greener than its measures (F3); one reconciled "raised" number (F2, ceiling bound to live secured); the **bridge to the floor** block — secured → +weighted → residual-as-named-coverage → floor (F6); the **near-term runway bridge** callout (F7); the **how the floor is sourced** block (F5); budget **line-items** within each allocation group, surfacing the $400K platform build (F4); the staged-tier **unlock trigger** dollar figure (F9); a steward definition (F8); a **proof strip** before the plan with FOS marked directional (F12, F17).
+
+**Shipped (data, Ambition-Angels project):** ceiling raised reconciled to live secured and set to auto (F2); "AIG" renamed to "Multi-year individual commitments (3-year)" (F14); three `floor_source_*` channel-target KPIs summing to the floor (F5); internal coaching moved out of the funder-facing `ask` into `approach` across the doors (F1).
+
+**Deferred to Remi (need real-world inputs, not fabricated):** quarterly `target_date`s / sequencing (F10); manual KPI baselines where no live metric exists — e.g. current partner count, active-teen baseline (F11); board give/get owners on the raise (F13); mapping named prospects onto the doors and deciding which empty doors to hide (F15); the one-line depth-vs-breadth reconciliation copy (F16). These are the structural defaults Build 2 will enforce.
 
 ## Staged build order
 

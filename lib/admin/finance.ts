@@ -65,6 +65,8 @@ export type FinanceConfig = {
   startDate: string | null;
   /** ISO timestamp of the last "set current balance" reconcile; null = never. */
   reconciledAt: string | null;
+  /** ISO timestamp of the last completed Friday close ritual; null = never. */
+  lastReconciledAt: string | null;
   /** Monthly burn baseline (settable). null = fall back to trailing burn. */
   baseline: number | null;
   /** How many months ahead the projected runway tier looks. Defaults to 3. */
@@ -99,7 +101,7 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
   const cfgRes = await sb
     .from("fin_config")
     .select(
-      "current_year, fiscal_year_start_month, fundraising_goal, cash_starting_balance, cash_starting_date, cash_reconciled_at, monthly_burn_baseline, forward_horizon_months"
+      "current_year, fiscal_year_start_month, fundraising_goal, cash_starting_balance, cash_starting_date, cash_reconciled_at, monthly_burn_baseline, forward_horizon_months, last_reconciled_at"
     )
     .eq("id", 1)
     .maybeSingle();
@@ -110,6 +112,7 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
     startBal: Number(cfgRes.data?.cash_starting_balance ?? 0),
     startDate: (cfgRes.data?.cash_starting_date as string | null) ?? null,
     reconciledAt: (cfgRes.data?.cash_reconciled_at as string | null) ?? null,
+    lastReconciledAt: (cfgRes.data?.last_reconciled_at as string | null) ?? null,
     baseline:
       cfgRes.data?.monthly_burn_baseline === null || cfgRes.data?.monthly_burn_baseline === undefined
         ? null

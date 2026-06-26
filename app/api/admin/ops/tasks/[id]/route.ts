@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { thisMonday } from "@/lib/admin/ops/week";
 import {
   isTaskCategory,
   isTaskStatus,
@@ -165,6 +166,22 @@ export async function PATCH(
   }
   if ("pinned_for_today" in body) updates.pinned_for_today = body.pinned_for_today === true;
   if ("pinned_for_this_week" in body) updates.pinned_for_this_week = body.pinned_for_this_week === true;
+  // planned_week is the week-anchor source of truth and stays in sync with the
+  // pinned_for_this_week boolean. An explicit planned_week in the body wins —
+  // Friday's "Push to next week" sets next Monday with the pin cleared. Otherwise
+  // re-anchor only when the pin actually flips, so an unrelated edit (the edit
+  // modal re-sends the current pin value) can't wipe a planned_week set elsewhere.
+  if ("planned_week" in body) {
+    if (body.planned_week !== null && !isISODate(body.planned_week)) {
+      return NextResponse.json({ error: "planned_week must be YYYY-MM-DD or null" }, { status: 400 });
+    }
+    updates.planned_week = body.planned_week;
+  } else if ("pinned_for_this_week" in body) {
+    const nextPin = body.pinned_for_this_week === true;
+    if (nextPin !== current.pinned_for_this_week) {
+      updates.planned_week = nextPin ? thisMonday() : null;
+    }
+  }
   if ("display_order" in body) {
     if (body.display_order !== null && typeof body.display_order !== "number") {
       return NextResponse.json({ error: "display_order must be a number or null" }, { status: 400 });

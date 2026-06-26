@@ -15,6 +15,20 @@ const toList = (v: unknown): string[] | undefined => {
 const toText = (v: unknown): string | null | undefined =>
   v === null || v === "" ? null : typeof v === "string" ? v.trim().slice(0, 4000) : undefined;
 
+// proof_points: a jsonb array of { value, label }. Accept an array of objects
+// (or {value,label}-ish), trim, drop blanks, cap the count. null clears it.
+const toProofPoints = (v: unknown): { value: string; label: string }[] | null | undefined => {
+  if (v === null) return null;
+  if (!Array.isArray(v)) return undefined;
+  return v
+    .map((p) => ({
+      value: String((p as { value?: unknown })?.value ?? "").trim().slice(0, 40),
+      label: String((p as { label?: unknown })?.label ?? "").trim().slice(0, 80),
+    }))
+    .filter((p) => p.value)
+    .slice(0, 8);
+};
+
 // Upsert the single foundation row for the caller's org (unique on org_id).
 export async function PUT(req: NextRequest) {
   const ctx = await getOrgContext();
@@ -33,6 +47,8 @@ export async function PUT(req: NextRequest) {
   if (values !== undefined) row.values = values;
   const behaviors = toList(body.behaviors);
   if (behaviors !== undefined) row.behaviors = behaviors;
+  const proofPoints = toProofPoints(body.proof_points);
+  if (proofPoints !== undefined) row.proof_points = proofPoints;
 
   const supabase = getSupabaseAdmin();
   const { data: before } = await supabase

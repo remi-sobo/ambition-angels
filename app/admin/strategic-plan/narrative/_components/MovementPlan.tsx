@@ -85,9 +85,18 @@ function ObjectiveBlock({ objective, index }: { objective: NarrativeObjective; i
   );
 }
 
+// Shown only until an org sets its own proof points on the Foundation panel.
+const FALLBACK_PROOF = [
+  { value: "3,500+", label: "teens reached" },
+  { value: "87%", label: "Title I schools" },
+  { value: "1,100+", label: "program hours" },
+  { value: "14%", label: "future-orientation lift (directional)" },
+];
+
 export default function MovementPlan({ plan }: { plan: PlanMovement }) {
   const empty = plan.objectives.length === 0;
   const frame = plan.foundation && (plan.foundation.mission || plan.foundation.vision) ? plan.foundation : null;
+  const proof = plan.foundation?.proofPoints?.length ? plan.foundation.proofPoints : FALLBACK_PROOF;
 
   return (
     <div>
@@ -95,20 +104,19 @@ export default function MovementPlan({ plan }: { plan: PlanMovement }) {
       {frame?.vision && <p className="max-w-[680px] text-sm text-ink-2 leading-relaxed -mt-4 mb-8">{frame.vision}</p>}
 
       {/* Proof before the ask — what's already true, so a cold funder gets
-          "why you" before the forward-looking plan. */}
-      <div className="mb-12 grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { v: "3,500+", l: "teens reached" },
-          { v: "87%", l: "Title I schools" },
-          { v: "1,100+", l: "program hours" },
-          { v: "14%", l: "future-orientation lift (directional)" },
-        ].map((s) => (
-          <div key={s.l} className="rounded-card border border-hairline bg-surface p-4">
-            <div className="font-display text-2xl sm:text-3xl leading-none tabular-nums text-orange">{s.v}</div>
-            <div className="mt-1 text-[12px] text-ink-2 leading-snug">{s.l}</div>
-          </div>
-        ))}
-      </div>
+          "why you" before the forward-looking plan. Editable on the Foundation
+          panel (plan_foundation.proof_points); falls back to the headline stats
+          when none are set, so a fresh org still reads right. */}
+      {proof.length > 0 && (
+        <div className="mb-12 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {proof.map((s) => (
+            <div key={s.label} className="rounded-card border border-hairline bg-surface p-4">
+              <div className="font-display text-2xl sm:text-3xl leading-none tabular-nums text-orange">{s.value}</div>
+              <div className="mt-1 text-[12px] text-ink-2 leading-snug">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {empty ? (
         <p className="text-sm text-ink-2">No plan to narrate yet — build the OGSM in the Strategic Plan first.</p>

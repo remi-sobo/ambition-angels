@@ -32,6 +32,17 @@ const SECTIONS: Section[] = [
         ],
       },
       {
+        name: "Strategy",
+        href: "/admin/strategic-plan",
+        what: "The strategic plan — your OGSM objectives and goals, and the measures (KPIs) that track progress against them.",
+        does: [
+          "Reference objectives and goals; their health rolls up from the underlying measures",
+          "Track KPIs against targets — Monday snapshots build ~4-week trend lines",
+          "Reed can review the plan's coherence and propose edits (draft-then-approve)",
+          "Off-track objectives and the monthly-review nudge surface on the Executive Briefing",
+        ],
+      },
+      {
         name: "Executive Briefing",
         href: "/admin/briefing",
         what: "“Needs you today.” A ranked, capped decision feed computed from real records — no AI cost, nothing invented. Every card is a real thing to act on.",
@@ -288,18 +299,6 @@ const SECTIONS: Section[] = [
         href: "/admin/compliance",
         what: "Filings, renewals, and policy deadlines — so none of them live in someone's head.",
         does: ["Track every filing and renewal with its due date", "Upcoming items feed the weekly digest"],
-      },
-      {
-        name: "KPIs",
-        href: "/admin/kpis",
-        what: "Key metrics computed live from the data spine — set a target, watch the trend.",
-        does: ["Set targets per metric", "Monday snapshots build ~4-week trend lines"],
-      },
-      {
-        name: "Strategic Plan",
-        href: "/admin/strategic-plan",
-        what: "The strategic plan — objectives and the progress against them.",
-        does: ["Reference goals and track progress"],
       },
     ],
   },

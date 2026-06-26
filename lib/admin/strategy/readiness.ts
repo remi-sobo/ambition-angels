@@ -15,7 +15,6 @@
  * failing check always has somewhere to go fix it (`fixHref`).
  */
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { FINANCE } from "@/lib/admin/thresholds";
 import { getPlanMovement, getRaiseMovement, getHowMovement } from "@/lib/admin/strategy/narrative";
 
 export type ReadinessSeverity = "blocker" | "advisory";
@@ -132,14 +131,15 @@ export async function getReadiness(orgId: string): Promise<Readiness> {
     });
   }
 
-  // A2 — runway above the watch line, or a bridge shown (F7).
+  // A2 — runway above the target, or a bridge shown (F7). Target is editable
+  // in finance config (B2-4).
   if (money.runwayMonths != null) {
-    const healthy = money.runwayMonths >= FINANCE.runwayWatchMonths;
+    const healthy = money.runwayMonths >= money.runwayTargetMonths;
     add({
       id: "runway",
       severity: "advisory",
       ok: healthy,
-      label: `Runway at/above the ${FINANCE.runwayWatchMonths}-month line`,
+      label: `Runway at/above the ${money.runwayTargetMonths}-month target`,
       detail: healthy
         ? `${money.runwayMonths.toFixed(1)} months on hand.`
         : `${money.runwayMonths.toFixed(1)} months — a ${usd(money.runwayBridge)} bridge is shown to restore the cushion.`,

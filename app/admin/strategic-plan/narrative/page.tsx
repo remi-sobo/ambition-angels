@@ -71,13 +71,21 @@ export default async function StrategyNarrativePage({
     { title: "How We Raise It", node: <MovementHow how={how} /> },
   ];
 
+  // Funder-readiness, graded against these same movements — gates the presenter
+  // and warns on the prep view.
+  const readiness = await getReadiness(ctx.orgId);
+  const openBlockers = readiness.blockers.filter((b) => !b.ok).map((b) => b.label);
+
   // Presenter mode — full-screen slides over the same data, keyboard-driven.
   if (searchParams?.present === "1") {
-    return <Presenter slides={movements.map((m) => m.node)} titles={movements.map((m) => m.title)} />;
+    return (
+      <Presenter
+        slides={movements.map((m) => m.node)}
+        titles={movements.map((m) => m.title)}
+        blockers={openBlockers}
+      />
+    );
   }
-
-  // Prep view: warn before presenting if the plan isn't funder-ready.
-  const readiness = await getReadiness(ctx.orgId);
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-10 max-w-[920px]">

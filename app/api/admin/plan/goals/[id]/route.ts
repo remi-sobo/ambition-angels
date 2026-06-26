@@ -4,6 +4,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const STATUSES = ["on_track", "at_risk", "behind", "done"] as const;
+const OVERRIDE_STATUSES = ["not_started", "on_track", "at_risk", "behind", "done"] as const;
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 const isUuid = (v: unknown): v is string =>
@@ -22,6 +23,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const update: Record<string, unknown> = {};
   if (STATUSES.includes(body.status as (typeof STATUSES)[number])) update.status = body.status;
+  // Reasoned status override (B2-1): null clears it (back to computed roll-up).
+  if ("status_override" in body) {
+    if (body.status_override === null || body.status_override === "") {
+      update.status_override = null;
+      update.status_override_reason = null;
+    } else if (OVERRIDE_STATUSES.includes(body.status_override as (typeof OVERRIDE_STATUSES)[number])) {
+      update.status_override = body.status_override;
+      update.status_override_reason =
+        typeof body.status_override_reason === "string" ? body.status_override_reason.trim().slice(0, 300) : null;
+    }
+  }
   if (typeof body.title === "string" && body.title.trim())
     update.title = body.title.trim().slice(0, 300);
   if ("description" in body)

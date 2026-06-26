@@ -83,6 +83,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "forward_horizon_months must be an integer 1..60" }, { status: 400 });
     else update.forward_horizon_months = v;
   }
+  if ("runway_target_months" in body) {
+    const v = body.runway_target_months;
+    if (v === null) update.runway_target_months = null;
+    else if (typeof v !== "number" || !Number.isInteger(v) || v < 1 || v > 36)
+      return NextResponse.json({ error: "runway_target_months must be an integer 1..36" }, { status: 400 });
+    else update.runway_target_months = v;
+  }
 
   if (Object.keys(update).length <= 1) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

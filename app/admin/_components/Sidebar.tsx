@@ -389,7 +389,7 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
             className="rounded-lg shrink-0"
           />
           <div className="font-display font-black text-2xl normal-case tracking-tight text-cream leading-none">
-            Bloom<span className="text-[#A8B58C]">OS</span>
+            Bloom<span className="text-orange">OS</span>
           </div>
         </div>
         <div className="text-[11px] tracking-wide text-cream/50 mt-1.5">
@@ -400,7 +400,8 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
       <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
         {NAV_SECTIONS.map((section) => (
           <div key={section.label}>
-            <div className="px-3 mb-1.5 text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-cream/35">
+            <div className="px-3 mb-1.5 flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93]">
+              <span className="w-[3px] h-3 rounded-full bg-orange" aria-hidden />
               {section.label}
             </div>
             <div className="space-y-px">
@@ -410,15 +411,15 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
                     key={item.label + item.href}
                     href={item.href}
                     className={[
-                      "flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-colors",
+                      "relative flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-colors",
                       active === item.href
-                        ? "bg-orange text-[#FFF6EC] shadow-sm"
-                        : "text-cream/70 hover:text-cream hover:bg-white/10",
+                        ? "text-[#FBE6D2] bg-[linear-gradient(135deg,rgba(232,80,10,0.20),rgba(232,80,10,0.05))] shadow-[inset_0_0_0_1px_rgba(232,80,10,0.30),0_4px_14px_rgba(232,80,10,0.12)] before:content-[''] before:absolute before:left-0 before:top-[6px] before:bottom-[6px] before:w-[3px] before:rounded-full before:bg-orange"
+                        : "text-[#C9BBA5] hover:text-cream hover:bg-white/[0.05]",
                     ].join(" ")}
                   >
                     <Icon
                       name={item.icon}
-                      className={`w-4 h-4 shrink-0 ${active === item.href ? "" : "opacity-70"}`}
+                      className={`w-4 h-4 shrink-0 ${active === item.href ? "text-[#F47840]" : "opacity-70"}`}
                     />
                     <span className="truncate">{item.label}</span>
                   </Link>
@@ -442,59 +443,60 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
       </nav>
 
       {currentUser && (
-        <>
-          <div className="px-5 py-4 border-t border-white/10 space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <Link
-              href="/admin/howto"
-              className={[
-                "flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs font-medium transition-colors",
-                active === "/admin/howto"
-                  ? "bg-orange text-[#FFF6EC]"
-                  : "text-cream/60 hover:text-cream hover:bg-white/5",
-              ].join(" ")}
+        <div className="px-4 py-4 border-t border-white/[0.07] space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {/* Account block: avatar + name + role, with log out tucked to the side. */}
+          <div className="flex items-center gap-2.5">
+            <span className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-light text-orange-dark text-[12px] font-bold uppercase">
+              {currentUser.charAt(0)}
+            </span>
+            <div className="min-w-0 flex-1 leading-tight">
+              <div className="text-[13px] font-semibold text-cream truncate">{cap(currentUser)}</div>
+              <div className="text-[10px] uppercase tracking-[0.08em] text-[#8d7c63]">
+                {currentUser === "shannon" ? "Admin" : "Owner"}
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="shrink-0 text-[11px] font-medium text-[#9c8b70] hover:text-cream border border-white/[0.10] hover:bg-white/[0.06] px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0" aria-hidden>
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              </svg>
-              <span>How-To Guide</span>
-            </Link>
+              {loggingOut ? "…" : "Log out"}
+            </button>
+          </div>
+
+          {/* Quiet utility row: Settings · How-To. */}
+          <div className="flex items-center gap-2 px-1 text-[11px]">
             <Link
               href="/admin/settings"
-              className={[
-                "flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs font-semibold transition-colors",
-                active === "/admin/settings"
-                  ? "bg-orange text-[#FFF6EC]"
-                  : "text-cream/80 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10",
-              ].join(" ")}
+              className={`inline-flex items-center gap-1.5 transition-colors ${
+                active === "/admin/settings" ? "text-orange-mid font-medium" : "text-[#8d7c63] hover:text-cream"
+              }`}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 shrink-0" aria-hidden>
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
-              <span>Settings</span>
+              Settings
             </Link>
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-xs text-cream/50 truncate">
-                {`Logged in as ${cap(currentUser)}`}
-              </div>
-              <button
-                onClick={handleLogout}
-                disabled={loggingOut}
-                className="text-xs font-semibold text-cream/60 hover:text-cream bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 shrink-0"
-              >
-                {loggingOut ? "Logging out…" : "Log out"}
-              </button>
-            </div>
-            <div className="text-[10px] text-cream/25 leading-relaxed">
-              BloomOS™ · built by SOBO Consulting
-            </div>
+            <span className="text-[#5f5240]">·</span>
+            <Link
+              href="/admin/howto"
+              className={`transition-colors ${
+                active === "/admin/howto" ? "text-orange-mid font-medium" : "text-[#8d7c63] hover:text-cream"
+              }`}
+            >
+              How-To
+            </Link>
           </div>
-        </>
+
+          <div className="text-[10px] text-[#5f5240] leading-relaxed">
+            BloomOS™ · built by SOBO Consulting
+          </div>
+        </div>
       )}
 
       {!currentUser && (
-        <div className="px-5 py-4 border-t border-white/10 text-[11px] text-cream/40 leading-relaxed">
+        <div className="px-5 py-4 border-t border-white/[0.07] text-[11px] text-[#8d7c63] leading-relaxed">
           Not signed in. Use the login form in the main panel to continue.
         </div>
       )}
@@ -540,10 +542,14 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
         />
         <aside
           className={[
-            "absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-navy border-r border-white/10 flex flex-col shadow-2xl",
+            "absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-navy border-r border-black/30 flex flex-col shadow-2xl",
             "pt-[env(safe-area-inset-top)] transition-transform duration-200 ease-out will-change-transform",
             drawerOpen ? "translate-x-0" : "-translate-x-full",
           ].join(" ")}
+          style={{
+            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.045) 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
+          }}
           role="dialog"
           aria-label="BloomOS navigation"
         >
@@ -554,7 +560,13 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
       {/* ── Desktop sidebar (visible >= lg) ───────────────────────────── */}
       {/* Sticky + h-screen pins the chrome while the content column scrolls;
           the section nav scrolls internally when taller than the viewport. */}
-      <aside className="hidden lg:flex w-[248px] shrink-0 border-r border-white/10 bg-navy flex-col lg:sticky lg:top-0 lg:h-screen lg:pt-[env(safe-area-inset-top)]">
+      <aside
+        className="hidden lg:flex w-[248px] shrink-0 border-r border-black/30 bg-navy flex-col lg:sticky lg:top-0 lg:h-screen lg:pt-[env(safe-area-inset-top)]"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.045) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
         {navPanel}
       </aside>
     </>

@@ -58,8 +58,8 @@
     --c-orange-mid: 206 144 112;
     --c-ink: 245 239 226; /* cream workspace background — #F5EFE2 */
     --c-cream: 240 239 226; /* light text — used only by the dark sidebar */
-    --c-navy: 35 22 13; /* espresso sidebar / top bar — #23160D */
-    --c-navy-light: 50 36 26; /* sidebar hover / raised — #32241A */
+    --c-navy: 31 24 17; /* espresso sidebar / top bar — #1F1811 (matches the right rail) */
+    --c-navy-light: 45 33 23; /* sidebar hover / raised — #2D2117 */
 
     /* Globals' focus ring + ::selection read this hex var. */
     --orange: #c0703c;

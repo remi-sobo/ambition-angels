@@ -3,50 +3,62 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { listMeetings, type MeetingListItem, type UpcomingMeeting } from "@/lib/meetings/read";
 import { meetingFollowUpGaps } from "@/lib/meetings/coverage";
-import { FOLLOW_UP_LABEL, type FollowUpStatus, type MatchedEntity } from "@/lib/meetings/types";
+import { MatchCluster, StatusPill, SectionTitle } from "./_ui";
 import SyncMeetingsButton from "./SyncMeetingsButton";
 
 export const dynamic = "force-dynamic";
 
 const ORG_TZ = "America/Los_Angeles";
 
-function fmtDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
-    timeZone: ORG_TZ,
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+// ── date helpers (all in the org timezone) ──────────────────────────────────
+function laDayKey(iso: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: ORG_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+}
+function laTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-US", { timeZone: ORG_TZ, hour: "numeric", minute: "2-digit" });
+}
+function addDaysKey(key: string, n: number): string {
+  const [y, m, d] = key.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + n);
+  return dt.toISOString().slice(0, 10);
+}
+function dayHeading(key: string, todayKey: string): { label: string; sub: string } {
+  const long = new Date(key + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+  if (key === todayKey) return { label: "Today", sub: long };
+  if (key === addDaysKey(todayKey, 1)) return { label: "Tomorrow", sub: long };
+  return { label: long, sub: "" };
+}
+function fmtPastDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { timeZone: ORG_TZ, month: "short", day: "numeric" });
 }
 
-const STATUS_BADGE: Record<FollowUpStatus, string> = {
-  needs_follow_up: "bg-status-watch-bg text-ink-1 border-status-watch/30",
-  has_follow_up: "bg-status-healthy-bg text-ink-1 border-status-healthy/30",
-  none_needed: "bg-status-neutral-bg text-ink-2 border-outline",
-  dismissed: "bg-status-neutral-bg text-ink-2 border-outline",
-};
-
-function EntityChips({ matched }: { matched: MatchedEntity[] }) {
-  if (matched.length === 0) {
-    return <span className="text-[11px] text-ink-3 italic">unmatched</span>;
-  }
+// A past meeting: matched entity leads, status on the right. The whole row links in.
+function PastRow({ item, emphasize = false }: { item: MeetingListItem; emphasize?: boolean }) {
+  const { record, matched } = item;
   return (
-    <span className="flex flex-wrap gap-1">
-      {matched.slice(0, 3).map((e) => (
-        <span
-          key={`${e.type}:${e.id}`}
-          className="inline-flex items-center gap-1 text-[11px] text-ink-2 bg-tile border border-outline rounded-full px-2 py-0.5"
-        >
-          <span className="text-ink-3">{e.type === "partner" ? "◆" : "♥"}</span>
-          {e.name}
-        </span>
-      ))}
-      {matched.length > 3 && (
-        <span className="text-[11px] text-ink-3">+{matched.length - 3}</span>
-      )}
-    </span>
+    <Link
+      href={`/admin/meetings/${record.id}`}
+      className={`group flex items-center gap-3 px-4 py-3 rounded-card border transition-all ${
+        emphasize
+          ? "border-status-watch/40 bg-status-watch-bg/50 hover:bg-status-watch-bg shadow-panel"
+          : "border-outline bg-surface shadow-panel hover:bg-[#EFE6D4]"
+      }`}
+    >
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[14px] text-ink-1 group-hover:text-orange font-medium truncate transition-colors">
+            {record.title ?? "Untitled meeting"}
+          </span>
+        </div>
+        <div className="mt-1 flex items-center gap-3 text-ink-2">
+          <MatchCluster matched={matched} />
+          <span className="text-ink-3">·</span>
+          <span className="text-[11px] text-ink-3 font-mono shrink-0">{fmtPastDate(record.occurred_at)}</span>
+        </div>
+      </div>
+      <StatusPill status={record.follow_up_status} />
+    </Link>
   );
 }
 
@@ -58,11 +70,25 @@ export default async function MeetingsPage() {
     ? await meetingFollowUpGaps(getSupabaseAdmin(), ctx.orgId, now)
     : { gapCount: 0, total: 0, windowDays: 14 };
 
+  const needs = past.filter((m) => m.record.follow_up_status === "needs_follow_up");
+  const handled = past.filter((m) => m.record.follow_up_status !== "needs_follow_up");
+
+  // Group upcoming by day, in order.
+  const todayKey = laDayKey(now.toISOString());
+  const byDay = new Map<string, UpcomingMeeting[]>();
+  for (const m of upcoming) {
+    const k = laDayKey(m.start);
+    const arr = byDay.get(k) ?? [];
+    arr.push(m);
+    byDay.set(k, arr);
+  }
+  const days = Array.from(byDay.keys()).sort();
+
   return (
-    <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-      <header className="flex items-start justify-between gap-4 flex-wrap">
+    <div className="max-w-5xl px-4 lg:px-8 py-6 lg:py-8 space-y-8">
+      <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
+          <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-4xl sm:text-5xl leading-none">
             Meetings
           </h1>
           <p className="mt-2 text-sm text-ink-2">
@@ -72,72 +98,108 @@ export default async function MeetingsPage() {
         <SyncMeetingsButton />
       </header>
 
-      {coverage.gapCount > 0 && (
-        <div className="rounded-card border border-[#D9BE86] bg-amber-500/[0.04] p-4">
-          <p className="text-sm text-ink-1">
-            <span className="font-semibold">{coverage.gapCount}</span> of{" "}
-            {coverage.total} meeting{coverage.total === 1 ? "" : "s"} in the last{" "}
-            {coverage.windowDays} days {coverage.gapCount === 1 ? "has" : "have"} no
-            follow-up. Open one to add a follow-up or mark it as not needed.
+      {/* Coverage hero — the load-bearing signal, not a footnote. */}
+      {coverage.gapCount > 0 ? (
+        <section className="relative overflow-hidden rounded-card-lg border border-orange/30 bg-orange-light">
+          <span className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange" aria-hidden />
+          <div className="px-6 py-5 flex items-center gap-5">
+            <span className="font-display font-black text-orange text-5xl leading-none [font-variant-numeric:tabular-nums]">
+              {coverage.gapCount}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[15px] font-semibold text-ink-1">
+                {coverage.gapCount === 1 ? "meeting needs a follow-up" : "meetings need a follow-up"}
+              </p>
+              <p className="text-[13px] text-ink-2 mt-0.5">
+                of {coverage.total} in the last {coverage.windowDays} days. Open one below to add a
+                follow-up or mark it as not needed.
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : past.length > 0 ? (
+        <section className="rounded-card-lg border border-status-healthy/30 bg-status-healthy-bg px-6 py-4 flex items-center gap-3">
+          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-revenue-bg text-revenue">
+            <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M3 8l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+          <p className="text-[14px] text-ink-1 font-medium">
+            All caught up — every recent meeting has a follow-up or doesn&apos;t need one.
           </p>
-        </div>
-      )}
+        </section>
+      ) : null}
 
-      {/* Upcoming */}
-      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">Upcoming</h2>
-        {upcoming.length === 0 ? (
-          <p className="text-sm text-ink-2">No upcoming external meetings on the calendar.</p>
-        ) : (
-          <div className="space-y-1.5">
-            {upcoming.map((m: UpcomingMeeting) => (
-              <div
-                key={m.eventId}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg border border-outline bg-surface shadow-panel"
-              >
-                <span className="flex-1 min-w-0 text-sm text-ink-1 truncate">
-                  {m.title ?? "(untitled meeting)"}
-                </span>
-                <EntityChips matched={m.matched} />
-                <span className="shrink-0 text-[11px] text-ink-2 font-mono">
-                  {fmtDateTime(m.start)}
-                </span>
-              </div>
+      {/* Needs follow-up — the action list, emphasized. */}
+      {needs.length > 0 && (
+        <section>
+          <SectionTitle count={needs.length}>Needs your follow-up</SectionTitle>
+          <div className="space-y-2">
+            {needs.map((m) => (
+              <PastRow key={m.record.id} item={m} emphasize />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* Past */}
-      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">Past meetings</h2>
-        {past.length === 0 ? (
-          <p className="text-sm text-ink-2">
-            No meeting records yet. Click <span className="font-medium">Sync from calendar</span>{" "}
-            to pull past external meetings in.
-          </p>
-        ) : (
-          <div className="space-y-1.5">
-            {past.map((m: MeetingListItem) => (
-              <Link
-                key={m.record.id}
-                href={`/admin/meetings/${m.record.id}`}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg border border-outline bg-surface shadow-panel hover:bg-[#EFE6D4] transition-colors group"
-              >
-                <span className="flex-1 min-w-0 text-sm text-ink-1 group-hover:text-orange truncate">
-                  {m.record.title ?? "(untitled meeting)"}
-                </span>
-                <EntityChips matched={m.matched} />
-                <span
-                  className={`shrink-0 inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${STATUS_BADGE[m.record.follow_up_status]}`}
-                >
-                  {FOLLOW_UP_LABEL[m.record.follow_up_status]}
-                </span>
-                <span className="shrink-0 text-[11px] text-ink-2 font-mono w-32 text-right">
-                  {fmtDateTime(m.record.occurred_at)}
-                </span>
-              </Link>
+      {/* Recent meetings — already handled. */}
+      {handled.length > 0 && (
+        <section>
+          <SectionTitle count={handled.length}>Recent meetings</SectionTitle>
+          <div className="space-y-2">
+            {handled.map((m) => (
+              <PastRow key={m.record.id} item={m} />
             ))}
+          </div>
+        </section>
+      )}
+
+      {past.length === 0 && (
+        <section className="rounded-card-lg border border-dashed border-outline bg-surface px-6 py-10 text-center">
+          <p className="text-sm text-ink-2">
+            No meeting records yet. Hit <span className="font-medium text-ink-1">Sync from calendar</span> to
+            pull your past external meetings in and match them to donors and partners.
+          </p>
+        </section>
+      )}
+
+      {/* Upcoming — grouped by day, scannable. */}
+      <section>
+        <SectionTitle count={upcoming.length}>Upcoming</SectionTitle>
+        {upcoming.length === 0 ? (
+          <p className="text-sm text-ink-2 px-1">No upcoming external meetings on the calendar.</p>
+        ) : (
+          <div className="space-y-5">
+            {days.map((key) => {
+              const head = dayHeading(key, todayKey);
+              const isToday = key === todayKey;
+              return (
+                <div key={key}>
+                  <div className="flex items-baseline gap-2 mb-2 px-1">
+                    <span className={`text-[12px] font-semibold uppercase tracking-wider ${isToday ? "text-orange" : "text-ink-2"}`}>
+                      {head.label}
+                    </span>
+                    {head.sub && <span className="text-[11px] text-ink-3">· {head.sub}</span>}
+                  </div>
+                  <div className="space-y-1.5">
+                    {(byDay.get(key) ?? []).map((m) => (
+                      <div
+                        key={m.eventId}
+                        className="flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel"
+                      >
+                        <span className="text-[12px] text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-20 shrink-0">
+                          {laTime(m.start)}
+                        </span>
+                        <span className="flex-1 min-w-0 text-[14px] text-ink-1 truncate">
+                          {m.title ?? "Untitled meeting"}
+                        </span>
+                        <MatchCluster matched={m.matched} muted />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>

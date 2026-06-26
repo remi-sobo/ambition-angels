@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getMeetingDetail } from "@/lib/meetings/read";
+import { StatusPill } from "../_ui";
 import MeetingDetailClient from "./MeetingDetailClient";
 
 export const dynamic = "force-dynamic";
@@ -22,20 +23,28 @@ function fmtDateTime(iso: string): string {
 export default async function MeetingDetailPage({ params }: { params: { id: string } }) {
   const detail = await getMeetingDetail(params.id);
   if (!detail) notFound();
+  const { record } = detail;
 
   return (
     <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       <header>
         <Link
           href="/admin/meetings"
-          className="text-xs text-ink-2 hover:text-ink-1 inline-block mb-2"
+          className="text-xs text-ink-2 hover:text-ink-1 inline-flex items-center gap-1 mb-3"
         >
           ← Meetings
         </Link>
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-2xl sm:text-3xl leading-tight">
-          {detail.record.title ?? "(untitled meeting)"}
-        </h1>
-        <p className="mt-2 text-sm text-ink-2">{fmtDateTime(detail.record.occurred_at)}</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
+              {record.title ?? "Untitled meeting"}
+            </h1>
+            <p className="mt-2 text-sm text-ink-2">{fmtDateTime(record.occurred_at)}</p>
+          </div>
+          <div className="pt-1">
+            <StatusPill status={record.follow_up_status} />
+          </div>
+        </div>
       </header>
 
       <MeetingDetailClient detail={detail} />

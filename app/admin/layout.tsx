@@ -5,6 +5,7 @@ import QuickAddButton from "./_components/QuickAddButton";
 import Rail from "./_components/rail/Rail";
 import { RailEntityProvider } from "./_components/rail/RailEntityContext";
 import AskReedButton from "./_components/AskReedButton";
+import GlobalSearch from "./_components/search/GlobalSearch";
 import MobileTabBar from "./_components/MobileTabBar";
 import { ReedLauncherProvider } from "./_components/reed/ReedLauncherProvider";
 import AdminPWA from "./_components/AdminPWA";
@@ -81,6 +82,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         {authed && <MobileTabBar currentUser={user} reedEnabled={reedEnabled} />}
       </ReedLauncherProvider>
       {authed && <QuickAddButton currentUser={user} />}
+      {authed && <GlobalSearch />}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { resolveUserHandle } from "@/lib/admin/ops/identity";
 import TaskRowWithActions, {
   type TaskRowAction,
 } from "../_components/TaskRowWithActions";
@@ -8,7 +8,6 @@ import {
   TASK_CATEGORIES,
   categoryBadgeClass,
   categoryLabel,
-  type AdminUserId,
   type TaskCategory,
   type OpsTask,
 } from "../_types/ops";
@@ -37,17 +36,12 @@ function byDayOrder(a: OpsTask, b: OpsTask): number {
   return a.created_at < b.created_at ? -1 : 1;
 }
 
-function readCurrentUser(): AdminUserId | null {
-  const c = cookies().get("admin_user")?.value;
-  return c === "remi" || c === "shannon" ? c : null;
-}
-
 function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export default async function FridayReviewPage() {
-  const currentUser = readCurrentUser() ?? "remi";
+  const currentUser = (await resolveUserHandle())?.handle ?? "remi";
   const supabase = getSupabaseAdmin();
 
   // This-week anchor (YYYY-MM-DD, LA) for planned_week; plus the matching

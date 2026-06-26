@@ -1,5 +1,6 @@
 import Greeting from "./Greeting";
 import BriefingStrip from "./BriefingStrip";
+import MyWeekCard from "./overview/MyWeekCard";
 import RoleViewShell, { type ViewKey } from "./overview/RoleViewShell";
 import CeoCockpit from "./overview/CeoCockpit";
 import OpsPanel from "./overview/OpsPanel";
@@ -25,6 +26,7 @@ export default async function CommandCenter() {
     <div className="min-h-screen bg-ink">
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <Greeting name={greetingName} org="Ambition Angels" />
+        <MyWeekCard />
         <BriefingStrip />
         <RoleViewShell defaultView={defaultView} ceo={<CeoCockpit />} ops={<OpsPanel />} />
       </div>

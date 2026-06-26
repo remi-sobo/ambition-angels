@@ -8,11 +8,12 @@
 name: RLS leak test
 
 on:
+  # Runs on EVERY pull request (no path filter) so it can be a required status
+  # check without deadlocking: a path-filtered required check never reports on
+  # PRs that don't touch the filtered paths, blocking the PR forever. The job is
+  # ~35s, so running it on every PR is cheap insurance against migration-list
+  # drift (a new migration not registered in scripts/test-rls.sh fails the test).
   pull_request:
-    paths:
-      - "supabase/**"
-      - "scripts/test-rls.sh"
-      - ".github/workflows/rls-test.yml"
   push:
     branches: [main]
     paths:

@@ -223,6 +223,14 @@ export default async function MondayPlanPage() {
   // Maps don't serialize across the server/client boundary — hand over a plain object.
   const projectNamesObj: Record<string, string> = Object.fromEntries(projectNames);
 
+  // Calendar events that already have a prep task this week (prep:<event_id> label).
+  const prepEventIds = new Set<string>();
+  for (const t of pinnedThisWeekAll) {
+    for (const l of t.labels ?? []) {
+      if (typeof l === "string" && l.startsWith("prep:")) prepEventIds.add(l.slice(5));
+    }
+  }
+
   // ── Commit: week-ahead summary + any existing session for this week ────────
   const placedCount = pinnedThisWeek.filter(
     (t) => t.planned_day && weekDayList.includes(t.planned_day)
@@ -316,6 +324,7 @@ export default async function MondayPlanPage() {
       projectNames={projectNamesObj}
       scheduled={scheduled}
       conflicts={conflicts}
+      prepEventIds={Array.from(prepEventIds)}
     />
   );
 

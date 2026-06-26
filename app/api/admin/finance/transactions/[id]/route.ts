@@ -44,6 +44,12 @@ export async function PATCH(
     }
     update.restricted = body.restricted;
   }
+  if ("exclude_from_runway" in body) {
+    if (typeof body.exclude_from_runway !== "boolean") {
+      return NextResponse.json({ error: "exclude_from_runway must be boolean" }, { status: 400 });
+    }
+    update.exclude_from_runway = body.exclude_from_runway;
+  }
   if ("restricted_to" in body) {
     const v = body.restricted_to;
     if (v === null || v === "") update.restricted_to = null;

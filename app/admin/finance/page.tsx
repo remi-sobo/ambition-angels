@@ -14,7 +14,9 @@ import {
 } from "./_components/charts";
 import PageHeader from "../_components/PageHeader";
 import { getFinanceSnapshot, fiscalYearBounds } from "@/lib/admin/finance";
+import { endOfMonthISO, type RunwayPledge } from "@/lib/finance/runway";
 import ReconcileCard from "./_components/ReconcileCard";
+import RunwayTiers from "./_components/RunwayTiers";
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
@@ -54,7 +56,7 @@ export default async function FinanceDashboardPage() {
       .eq("year", cfg.year),
     supabase
       .from("fin_revenue_commitments")
-      .select("source_type, amount, status, probability")
+      .select("source_type, amount, status, probability, expected_date, restricted, external_ref")
       .eq("year", cfg.year),
     supabase
       .from("fin_transactions")
@@ -82,8 +84,7 @@ export default async function FinanceDashboardPage() {
 
   // Canonical cash / runway / monthly series / YTD — one source of truth
   // (lib/admin/finance.ts), shared with the cockpit and the briefing.
-  const { cashOnHand, burn3mo, runwayMonths, monthBuckets, expenseYTD, netYTD } = snap;
-  const monthlyBurn = monthBuckets.map((b) => b.expense);
+  const { cashOnHand, burn3mo, monthBuckets, expenseYTD, netYTD } = snap;
 
   // ── Functional split donut (expenses by program / admin / fundraising) ──
   const functionalTotals = { program: 0, admin: 0, fundraising: 0, uncategorized: 0 };
@@ -109,7 +110,16 @@ export default async function FinanceDashboardPage() {
     amount: number;
     status: string;
     probability: number | null;
+    expected_date: string | null;
+    restricted: boolean;
+    external_ref: string | null;
   }>;
+  // HubSpot deals adopted into Bloom (by external_ref) count from the Bloom
+  // side now — drop them from the HubSpot sums + runway list to avoid double-count.
+  const adoptedRefs = new Set(
+    pledges.map((p) => p.external_ref).filter((r): r is string => !!r)
+  );
+  const visibleHubspot = hubspotPledges.filter((p) => !adoptedRefs.has(p.deal_id));
   const sourceTotals = new Map<string, number>();
   for (const p of pledges) {
     if (p.status !== "received") continue;
@@ -161,22 +171,22 @@ export default async function FinanceDashboardPage() {
     pledges
       .filter((p) => p.status === "secured")
       .reduce((s, p) => s + Number(p.amount), 0) +
-    hubspotPledges
-      .filter((p) => p.status === "secured")
+    visibleHubspot
+      .filter((p) => p.status ==="secured")
       .reduce((s, p) => s + p.amount, 0);
   const receivedTotal =
     pledges
       .filter((p) => p.status === "received")
       .reduce((s, p) => s + Number(p.amount), 0) +
-    hubspotPledges
-      .filter((p) => p.status === "received")
+    visibleHubspot
+      .filter((p) => p.status ==="received")
       .reduce((s, p) => s + p.amount, 0);
   const projectedWeighted =
     pledges
       .filter((p) => p.status === "projected")
       .reduce((s, p) => s + Number(p.amount) * (p.probability ?? 1), 0) +
-    hubspotPledges
-      .filter((p) => p.status === "projected")
+    visibleHubspot
+      .filter((p) => p.status ==="projected")
       .reduce((s, p) => s + p.amount * p.probability, 0);
   const raisedHard = receivedTotal + securedTotal;
 
@@ -230,6 +240,37 @@ export default async function FinanceDashboardPage() {
   const goalPct = cfg.goal > 0 ? raisedHard / cfg.goal : 0;
   const budgetPct = totalBudget > 0 ? expenseYTD / totalBudget : 0;
 
+  // ── Forward-runway tiers ─────────────────────────────────────────────────
+  // The card recomputes the projected tier for 3/6/12-month horizons on the
+  // client, so it needs the unreceived pledges (full value) plus the resolved
+  // inputs the snapshot already computed.
+  const now = new Date();
+  const runwayPledges: RunwayPledge[] = [
+    ...pledges
+      .filter((p) => p.status !== "received")
+      .map((p) => ({
+        amount: Number(p.amount),
+        status: p.status as RunwayPledge["status"],
+        expected_date: p.expected_date,
+        restricted: Boolean(p.restricted),
+      })),
+    ...visibleHubspot
+      .filter((p) => p.status !== "received")
+      .map((p) => ({
+        amount: p.amount,
+        status: p.status as RunwayPledge["status"],
+        expected_date: p.close_date,
+        restricted: false,
+        externalRef: p.deal_id,
+      })),
+  ];
+  const horizonEnds = {
+    3: endOfMonthISO(now, 3),
+    6: endOfMonthISO(now, 6),
+    12: endOfMonthISO(now, 12),
+  } as const;
+  const ri = snap.runway.inputs;
+
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
@@ -245,22 +286,20 @@ export default async function FinanceDashboardPage() {
           one-tap "set current balance" and a freshness indicator. */}
       <ReconcileCard computedCash={cashOnHand} anchorDate={cfg.startDate} reconciledAt={cfg.reconciledAt} />
 
+      {/* Forward runway — three tiers from the shared engine. */}
+      <RunwayTiers
+        baseline={ri.baseline}
+        baselineSource={ri.baselineSource}
+        bankBalance={ri.bankBalance}
+        mtdSpend={ri.mtdSpend}
+        endCurrentMonth={endOfMonthISO(now, 0)}
+        horizonEnds={horizonEnds}
+        defaultHorizon={cfg.horizon}
+        pledges={runwayPledges}
+      />
+
       {/* Hero KPIs */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Hero
-          label="Runway"
-          value={
-            runwayMonths === null
-              ? "—"
-              : `${runwayMonths.toFixed(1)} mo`
-          }
-          sub={
-            burn3mo > 0
-              ? `at ${money(burn3mo)}/mo burn`
-              : "no burn signal yet"
-          }
-          sparkline={monthlyBurn}
-        />
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Hero
           label="Raised YTD"
           value={money(raisedHard)}

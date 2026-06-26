@@ -27,7 +27,7 @@ export default async function RevenuePage({
     supabase
       .from("fin_revenue_commitments")
       .select(
-        "id, year, source_type, source_name, amount, status, expected_date, probability, restricted, restricted_to, notes"
+        "id, year, source_type, source_name, amount, status, expected_date, probability, restricted, restricted_to, notes, external_ref"
       )
       .eq("year", year)
       .order("status", { ascending: true })

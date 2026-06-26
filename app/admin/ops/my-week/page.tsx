@@ -2,26 +2,11 @@ import Link from "next/link";
 import { loadRhythmSnapshot, rhythmModeForToday } from "@/lib/admin/ops/rhythm";
 import { buildMondayVerdict, buildFridayVerdict, type Verdict } from "@/lib/admin/ops/verdict";
 import { formatWeekHeader, formatDayLabel, todayInTZ } from "@/lib/admin/ops/week";
+import VerdictLine from "../_components/VerdictLine";
 
 export const dynamic = "force-dynamic";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-function VerdictLine({ verdict }: { verdict: Verdict }) {
-  return (
-    <p className="text-lg sm:text-xl text-ink-1 leading-snug">
-      <span className="text-ink-2">This week: </span>
-      {verdict.segments.map((seg, i) => (
-        <span key={seg.key}>
-          <span className={seg.flare ? "font-semibold text-[#A56A1B]" : "text-ink-1"}>
-            {seg.text}
-          </span>
-          {i < verdict.segments.length - 1 ? <span className="text-ink-3">, </span> : "."}
-        </span>
-      ))}
-    </p>
-  );
-}
 
 /** One of the two doors. The time-appropriate one is emphasized. */
 function Door({

@@ -27,6 +27,8 @@ import WeekPlanner, {
   type PlannerDay,
   type PlannerEvent,
 } from "./WeekPlanner";
+import RhythmWizard from "../_components/RhythmWizard";
+import MondayOrient from "../_components/MondayOrient";
 
 export const dynamic = "force-dynamic";
 
@@ -260,76 +262,82 @@ export default async function MondayPlanPage() {
   // Maps don't serialize across the server/client boundary — hand over a plain object.
   const projectNamesObj: Record<string, string> = Object.fromEntries(projectNames);
 
-  // ── Action definitions reused inline ──────────────────────────────────────
-  const slippedActions: TaskRowAction[] = [
-    { label: "Carry to this week", variant: "primary", patch: { pinned_for_this_week: true } },
-    { label: "Mark done", variant: "default", patch: { status: "done" } },
-    { label: "Drop", variant: "ghost", patch: { pinned_for_this_week: false } },
+  // ── Action definitions ────────────────────────────────────────────────────
+  // Carryover (empty the deck before adding): plan it in (pull to this week),
+  // finish it, push it forward (a deliberate roll — increments roll_count via
+  // the PATCH route), or drop it off the surface entirely (archive). nowISO is
+  // server-render time, fine for an archive stamp.
+  const nowISO = new Date().toISOString();
+  const carryoverActions: TaskRowAction[] = [
+    { label: "Plan this week", variant: "primary", patch: { pinned_for_this_week: true } },
+    { label: "Done", variant: "default", patch: { status: "done" } },
+    { label: "Push", variant: "ghost", patch: { planned_week: nextMonday() } },
+    { label: "Drop", variant: "ghost", patch: { archived_at: nowISO } },
   ];
   const candidateActions: TaskRowAction[] = [
     { label: "Pin for this week", variant: "primary", patch: { pinned_for_this_week: true } },
   ];
 
-  return (
-    <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-      <header>
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
-          Monday Plan
-        </h1>
-        <div className="mt-2 flex items-baseline gap-3 flex-wrap text-sm">
-          <span className="text-ink-2">Week of {formatWeekHeader(mondayISO)}</span>
-          <span className="text-ink-3">·</span>
-          <span className="text-ink-2">Planning as {cap(currentUser)}</span>
-        </div>
-        <Link href="/admin/ops" className="mt-2 inline-block text-xs text-ink-2 hover:text-ink-1">
-          ← Ops
-        </Link>
-      </header>
-
-      {/* ── Section 1: Slipped from last week ──────────────────────────── */}
-      {slippedRaw.length > 0 && (
-        <section className="rounded-card border border-[#D9BE86] bg-amber-500/[0.04] p-6">
-          <h2 className="text-xs uppercase tracking-wider text-[#A56A1B] mb-1">
-            From last week
-          </h2>
+  // ── Step content (rendered on the server, handed to the wizard shell) ───────
+  const carryover = (
+    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+      <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-1">
+        Clear the carryover
+      </h2>
+      {slippedRaw.length === 0 ? (
+        <p className="text-sm text-ink-2 mt-2 italic">
+          The deck&apos;s clear — nothing carried over from an earlier week.
+        </p>
+      ) : (
+        <>
           <p className="text-sm text-ink-1 mb-4">
             <span className="font-semibold text-ink-1">{slippedRaw.length}</span>{" "}
             {slippedRaw.length === 1 ? "item" : "items"} planned for an earlier
-            week aren&apos;t done. Carry over, mark done, or drop:
+            week aren&apos;t done. Empty the deck before adding — plan it in,
+            finish it, push it, or drop it.
           </p>
           <div className="space-y-1.5">
             {slippedRaw.map((t) => {
               const overdue = daysSince(t.updated_at);
+              const rolls = t.roll_count ?? 0;
               return (
                 <div key={t.id} className="space-y-1">
                   <TaskRowWithActions
                     task={t}
                     projectName={t.project_id ? projectNames.get(t.project_id) : null}
-                    actions={slippedActions}
+                    actions={carryoverActions}
                   />
-                  <div className="text-[10px] text-[#A56A1B]/70 pl-3">
-                    {overdue} day{overdue === 1 ? "" : "s"} since last touched
+                  <div className="text-[10px] pl-3 flex items-center gap-2">
+                    {rolls > 0 && (
+                      <span
+                        className={
+                          rolls >= 3
+                            ? "text-expense font-semibold"
+                            : "text-[#A56A1B]/80 font-medium"
+                        }
+                        title="Times pushed to a later week"
+                      >
+                        rolled {rolls}×
+                      </span>
+                    )}
+                    <span className="text-[#A56A1B]/70">
+                      {overdue} day{overdue === 1 ? "" : "s"} since last touched
+                    </span>
                   </div>
                 </div>
               );
             })}
           </div>
-        </section>
+        </>
       )}
+    </section>
+  );
 
-      {/* ── Section 2: This week, by day ───────────────────────────────── */}
-      <WeekPlanner
-        days={plannerDays}
-        unscheduled={unscheduled}
-        projectNames={projectNamesObj}
-        scheduled={scheduled}
-      />
-
-      {/* ── Section 3: Candidates ──────────────────────────────────────── */}
-      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
-          Candidates for this week
-        </h2>
+  const areas = (
+    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+      <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
+        Walk the areas
+      </h2>
 
         {/* 3a: Open tasks not pinned */}
         <details open className="group mb-4">
@@ -434,7 +442,35 @@ export default async function MondayPlanPage() {
             </div>
           )}
         </details>
-      </section>
-    </div>
+    </section>
+  );
+
+  const days = (
+    <WeekPlanner
+      days={plannerDays}
+      unscheduled={unscheduled}
+      projectNames={projectNamesObj}
+      scheduled={scheduled}
+    />
+  );
+
+  return (
+    <RhythmWizard
+      eyebrow="Monday · Aim"
+      title="Plan"
+      subtitle={
+        <>
+          <span>Week of {formatWeekHeader(mondayISO)}</span>
+          <span className="text-ink-3">·</span>
+          <span>as {cap(currentUser)}</span>
+        </>
+      }
+      steps={[
+        { key: "orient", label: "Orient", content: <MondayOrient /> },
+        { key: "carryover", label: "Carryover", content: carryover },
+        { key: "areas", label: "Areas", content: areas },
+        { key: "days", label: "Days", content: days },
+      ]}
+    />
   );
 }

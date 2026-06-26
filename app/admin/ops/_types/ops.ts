@@ -92,6 +92,13 @@ export type OpsTask = {
   /** Manual order within `planned_day` (ascending; null sorts last). */
   day_order: number | null;
   /**
+   * Operating Rhythm v2: how many times this task has been deliberately pushed
+   * to a later week. Incremented by the PATCH route on a forward planned_week
+   * move (Monday "push" / Friday rollover); never by a carry-in. Surfaced in the
+   * Monday carryover to weight rollover furniture for attention.
+   */
+  roll_count: number;
+  /**
    * The calendar_events block BloomOS wrote when this task was scheduled into a
    * time slot (Phase 4). Null = planned but not on the calendar. Set/cleared by
    * the task→calendar write engine, never by hand.

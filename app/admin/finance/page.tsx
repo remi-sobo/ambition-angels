@@ -14,7 +14,12 @@ import {
 } from "./_components/charts";
 import PageHeader from "../_components/PageHeader";
 import { getFinanceSnapshot, fiscalYearBounds } from "@/lib/admin/finance";
-import { endOfMonthISO, type RunwayPledge } from "@/lib/finance/runway";
+import { endOfMonthISO } from "@/lib/finance/runway";
+import {
+  loadRevenueSchedule,
+  rollupSchedule,
+  scheduleToRunwayPledges,
+} from "@/lib/finance/schedule";
 import ReconcileCard from "./_components/ReconcileCard";
 import RunwayTiers from "./_components/RunwayTiers";
 
@@ -44,6 +49,7 @@ export default async function FinanceDashboardPage() {
     uncatRes,
     recentRes,
     hubspotPledges,
+    scheduleRows,
   ] = await Promise.all([
     supabase
       .from("fin_categories")
@@ -75,7 +81,13 @@ export default async function FinanceDashboardPage() {
       .order("id", { ascending: false })
       .limit(10),
     loadHubSpotPledges(supabase, cfg.year),
+    loadRevenueSchedule(supabase),
   ]);
+
+  // Canonical, de-duped projected pipeline + restricted carve-out from the
+  // revenue schedule (opportunities, not raw hs_deals). The runway tiers and
+  // the pipeline figure read this so they agree with the snapshot's runway.
+  const schedRollup = rollupSchedule(scheduleRows);
 
   const categories = (catsRes.data ?? []) as FinCategory[];
   const catById = new Map(categories.map((c) => [c.id, c]));
@@ -187,13 +199,10 @@ export default async function FinanceDashboardPage() {
     visibleHubspot
       .filter((p) => p.status ==="received")
       .reduce((s, p) => s + p.amount, 0);
-  const projectedWeighted =
-    pledges
-      .filter((p) => p.status === "projected")
-      .reduce((s, p) => s + Number(p.amount) * (p.probability ?? 1), 0) +
-    visibleHubspot
-      .filter((p) => p.status ==="projected")
-      .reduce((s, p) => s + p.amount * p.probability, 0);
+  // Projected pipeline is the schedule's probability-weighted open pipeline
+  // (sourced from opportunities). This is the same number the runway tiers use,
+  // so the headline pipeline figure and the runway can't disagree.
+  const projectedWeighted = schedRollup.projectedWeighted;
   const raisedHard = receivedTotal + securedTotal;
 
   // ── Budget vs actual (grouped) ──────────────────────────────────────────
@@ -251,25 +260,9 @@ export default async function FinanceDashboardPage() {
   // client, so it needs the unreceived pledges (full value) plus the resolved
   // inputs the snapshot already computed.
   const now = new Date();
-  const runwayPledges: RunwayPledge[] = [
-    ...pledges
-      .filter((p) => p.status !== "received")
-      .map((p) => ({
-        amount: Number(p.amount),
-        status: p.status as RunwayPledge["status"],
-        expected_date: p.expected_date,
-        restricted: Boolean(p.restricted),
-      })),
-    ...visibleHubspot
-      .filter((p) => p.status !== "received")
-      .map((p) => ({
-        amount: p.amount,
-        status: p.status as RunwayPledge["status"],
-        expected_date: p.close_date,
-        restricted: false,
-        externalRef: p.deal_id,
-      })),
-  ];
+  // Runway tiers recompute client-side over the canonical schedule (committed at
+  // full value, projected pipeline weighted), matching the snapshot's runway.
+  const runwayPledges = scheduleToRunwayPledges(scheduleRows);
   const horizonEnds = {
     3: endOfMonthISO(now, 3),
     6: endOfMonthISO(now, 6),
@@ -302,6 +295,7 @@ export default async function FinanceDashboardPage() {
         horizonEnds={horizonEnds}
         defaultHorizon={cfg.horizon}
         pledges={runwayPledges}
+        restrictedInflows={snap.restrictedInflows}
       />
 
       {/* Hero KPIs */}

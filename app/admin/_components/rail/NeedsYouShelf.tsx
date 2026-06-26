@@ -19,7 +19,8 @@ export default async function NeedsYouShelf() {
 
   return (
     <section className="px-5 py-5 border-t border-hairline">
-      <h2 className="text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-ink-3 mb-2">
+      <h2 className="flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-ink-3 mb-2">
+        <span className="w-[3px] h-3 rounded-full bg-orange" aria-hidden />
         Needs you
       </h2>
 

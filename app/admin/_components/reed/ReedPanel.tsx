@@ -10,6 +10,10 @@ import Link from "next/link";
  * (prefills the ask bar) and context_ref (the record the user was looking at,
  * which Reed folds into its system prompt). Talks to /api/reed/ask — read-only,
  * RLS-scoped; Reed drafts and proposes but never sends or mutates.
+ *
+ * Espresso surface on purpose: Reed is the one summoned, high-emphasis lane, so
+ * it reads as a distinct dark moment against the cream workspace and the warm
+ * right rail.
  */
 
 type ReedJob = { label: string; blurb: string; href: string };
@@ -92,19 +96,25 @@ export default function ReedPanel({
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label="Reed">
       <button aria-label="Close Reed" onClick={onClose} className="absolute inset-0 bg-ink/50 cursor-default" />
 
-      <aside className="relative z-10 flex h-full w-full max-w-sm flex-col bg-ink text-ink-1 shadow-2xl">
-        {/* header */}
-        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
+      <aside className="relative z-10 flex h-full w-full max-w-sm flex-col bg-navy text-cream shadow-2xl">
+        {/* header — faint dot texture for warmth on the dark surface */}
+        <div
+          className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4"
+          style={{
+            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
+          }}
+        >
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
               <ReedMark className="w-4 h-4 text-orange-mid" />
             </span>
             <div className="leading-tight">
               <div className="font-heading font-bold text-cream">Reed</div>
-              <div className="text-[11px] text-ink-3">Your BloomOS assistant</div>
+              <div className="text-[11px] text-cream/50">Your BloomOS assistant</div>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="text-ink-3 hover:text-cream transition-colors text-xl leading-none">
+          <button onClick={onClose} aria-label="Close" className="text-cream/55 hover:text-cream transition-colors text-xl leading-none">
             ×
           </button>
         </div>
@@ -113,7 +123,7 @@ export default function ReedPanel({
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5">
           {empty ? (
             <>
-              <p className="text-sm text-ink-2 leading-relaxed">
+              <p className="text-sm text-cream/70 leading-relaxed">
                 Reed reasons across your BloomOS data — fundraising, finance, program, ops. Ask a
                 question, or jump to one of his pre-aimed jobs:
               </p>
@@ -123,13 +133,13 @@ export default function ReedPanel({
                     key={job.href}
                     href={job.href}
                     onClick={onClose}
-                    className="group rounded-card border border-white/10 bg-surface/40 px-4 py-3 transition-colors hover:border-orange/40 hover:bg-surface/70"
+                    className="group rounded-card border border-white/10 bg-white/5 px-4 py-3 transition-colors hover:border-orange/40 hover:bg-white/10"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-heading font-semibold text-cream text-sm">{job.label}</span>
-                      <span className="text-ink-3 group-hover:text-orange transition-colors">→</span>
+                      <span className="text-cream/50 group-hover:text-orange transition-colors">→</span>
                     </div>
-                    <span className="text-[12px] text-ink-3">{job.blurb}</span>
+                    <span className="text-[12px] text-cream/50">{job.blurb}</span>
                   </Link>
                 ))}
               </div>
@@ -138,7 +148,7 @@ export default function ReedPanel({
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="rounded-full border border-white/10 bg-surface/40 px-3 py-1.5 text-[12px] text-ink-2 hover:border-orange/40 hover:text-cream transition-colors"
+                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[12px] text-cream/70 hover:border-orange/40 hover:text-cream transition-colors"
                   >
                     {s}
                   </button>
@@ -158,7 +168,7 @@ export default function ReedPanel({
                 <MessageBubble key={i} message={m} />
               ))}
               {busy && (
-                <div className="flex items-center gap-2 text-[12px] text-ink-3">
+                <div className="flex items-center gap-2 text-[12px] text-cream/50">
                   <ReedMark className="w-3.5 h-3.5 animate-pulse" /> Reed is thinking…
                 </div>
               )}
@@ -175,26 +185,26 @@ export default function ReedPanel({
           }}
           className="border-t border-white/10 px-5 py-4"
         >
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-surface/40 px-4 py-2.5 focus-within:border-orange/40">
-            <ReedMark className="w-4 h-4 text-ink-3 shrink-0" />
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 focus-within:border-orange/40">
+            <ReedMark className="w-4 h-4 text-cream/40 shrink-0" />
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={busy}
               autoFocus
               placeholder="Ask Reed anything…"
-              className="flex-1 bg-transparent text-sm text-cream placeholder:text-ink-3 outline-none disabled:opacity-60"
+              className="flex-1 bg-transparent text-sm text-cream placeholder:text-cream/40 outline-none disabled:opacity-60"
             />
             <button
               type="submit"
               disabled={busy || !input.trim()}
               aria-label="Send"
-              className="text-orange-mid disabled:text-ink-3 transition-colors text-lg leading-none"
+              className="text-orange-mid disabled:text-cream/30 transition-colors text-lg leading-none"
             >
               ↑
             </button>
           </div>
-          <p className="mt-2 text-center text-[11px] text-ink-3">Reed explains, recommends, and drafts for your review — he never sends or changes anything.</p>
+          <p className="mt-2 text-center text-[11px] text-cream/50">Reed explains, recommends, and drafts for your review — he never sends or changes anything.</p>
         </form>
       </aside>
     </div>
@@ -212,7 +222,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   return (
     <div className="self-start flex gap-2 max-w-[90%]">
       <ReedMark className="w-4 h-4 text-orange-mid shrink-0 mt-1" />
-      <div className="rounded-card rounded-bl-sm bg-surface/60 px-3.5 py-2 text-sm text-ink-1 whitespace-pre-wrap">{message.text}</div>
+      <div className="rounded-card rounded-bl-sm bg-white/8 px-3.5 py-2 text-sm text-cream whitespace-pre-wrap">{message.text}</div>
     </div>
   );
 }

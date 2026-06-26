@@ -353,10 +353,14 @@ export type FunderAngle = {
   name: string;
   hook: string | null;
   ask: string | null;
-  approach: string | null;
   /** Live funnel: funders shortlisted/qualified against this angle. */
   funderCount: number;
 };
+// CONTRACT (B2-3): this funder-facing read selects ONLY funder-safe columns.
+// Internal strategy (`approach`, and any future `internal_notes`) is never
+// fetched here, so it cannot leak into the Narrative no matter what a component
+// later chooses to render. The internal strategy board reads strategy_angles
+// directly on its own surface; this one does not.
 
 export type PipelineStageBucket = { stage: string; count: number; askTotal: number };
 
@@ -371,7 +375,7 @@ export type HowMovement = {
 export async function getHowMovement(orgId: string): Promise<HowMovement> {
   const sb = getSupabaseAdmin();
   const [anglesRes, funderRes, oppsRes, channelRes] = await Promise.all([
-    sb.from("strategy_angles").select("id, key, name, hook, ask, approach").eq("org_id", ORG(orgId)).order("sort_order"),
+    sb.from("strategy_angles").select("id, key, name, hook, ask").eq("org_id", ORG(orgId)).order("sort_order"),
     sb.from("funder_angles").select("angle_id").eq("org_id", ORG(orgId)),
     sb.from("opportunities").select("stage, ask_amount").eq("org_id", ORG(orgId)).neq("stage", "lost"),
     sb.from("plan_kpis").select("metric_key, title, target, current, unit, status").eq("org_id", ORG(orgId)).in("metric_key", [METRIC.corporate, METRIC.aigMultiyear]),
@@ -389,7 +393,6 @@ export async function getHowMovement(orgId: string): Promise<HowMovement> {
     name: a.name as string,
     hook: (a.hook as string | null) ?? null,
     ask: (a.ask as string | null) ?? null,
-    approach: (a.approach as string | null) ?? null,
     funderCount: countByAngle.get(a.id as string) ?? 0,
   }));
 

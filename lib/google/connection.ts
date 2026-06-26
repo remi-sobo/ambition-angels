@@ -14,6 +14,15 @@ import { encryptSecret, decryptSecret, toByteaHex, fromBytea } from "@/lib/crypt
 
 const PROVIDER = "google_calendar";
 
+/** events.watch push-channel state, persisted in connections.meta.watch (Phase 5). */
+export type WatchState = {
+  channelId: string;
+  resourceId: string;
+  token: string;
+  /** Channel expiration, epoch ms (Google caps at ~7 days). */
+  expiration: number;
+};
+
 export type GoogleCalendarConnection = {
   id: string;
   orgId: string;
@@ -21,7 +30,42 @@ export type GoogleCalendarConnection = {
   refreshToken: string;
   calendarId: string;
   status: string;
+  /** Incremental-sync cursor (events.list nextSyncToken), null on first sync. */
+  syncToken: string | null;
+  /** Active push channel, if any. */
+  watch: WatchState | null;
 };
+
+function readSyncToken(meta: Record<string, unknown> | null): string | null {
+  const t = meta?.sync_token;
+  return typeof t === "string" && t ? t : null;
+}
+
+function readWatch(meta: Record<string, unknown> | null): WatchState | null {
+  const w = meta?.watch as Partial<WatchState> | undefined;
+  if (!w || typeof w.channelId !== "string" || typeof w.resourceId !== "string") return null;
+  return {
+    channelId: w.channelId,
+    resourceId: w.resourceId,
+    token: typeof w.token === "string" ? w.token : "",
+    expiration: typeof w.expiration === "number" ? w.expiration : 0,
+  };
+}
+
+/** Read-modify-write a connection's meta jsonb (preserves other keys). */
+export async function updateConnectionMeta(
+  connectionId: string,
+  patch: Record<string, unknown>
+): Promise<void> {
+  const sb = getSupabaseAdmin();
+  const { data } = await sb.from("connections").select("meta").eq("id", connectionId).maybeSingle();
+  const meta = { ...((data?.meta as Record<string, unknown> | null) ?? {}), ...patch };
+  const { error } = await sb
+    .from("connections")
+    .update({ meta, updated_at: new Date().toISOString() })
+    .eq("id", connectionId);
+  if (error) throw new Error(`connection meta update failed: ${error.message}`);
+}
 
 /** Store (or rotate) a user's encrypted Google Calendar refresh token. */
 export async function upsertGoogleCalendarConnection(args: {
@@ -61,14 +105,19 @@ export async function listActiveCalendarConnections(): Promise<GoogleCalendarCon
 
   return (data ?? [])
     .filter((r) => r.user_id && r.refresh_token_enc)
-    .map((r) => ({
-      id: r.id as string,
-      orgId: r.org_id as string,
-      userId: r.user_id as string,
-      refreshToken: decryptSecret(fromBytea(r.refresh_token_enc)),
-      calendarId: ((r.meta as Record<string, unknown> | null)?.calendar_id as string) ?? (r.external_id as string) ?? "primary",
-      status: r.status as string,
-    }));
+    .map((r) => {
+      const meta = r.meta as Record<string, unknown> | null;
+      return {
+        id: r.id as string,
+        orgId: r.org_id as string,
+        userId: r.user_id as string,
+        refreshToken: decryptSecret(fromBytea(r.refresh_token_enc)),
+        calendarId: (meta?.calendar_id as string) ?? (r.external_id as string) ?? "primary",
+        status: r.status as string,
+        syncToken: readSyncToken(meta),
+        watch: readWatch(meta),
+      };
+    });
 }
 
 /** One user's active Google Calendar connection, decrypted — for per-user writes. */
@@ -86,16 +135,16 @@ export async function getActiveCalendarConnection(
     .maybeSingle();
   if (error) throw new Error(`loading google_calendar connection failed: ${error.message}`);
   if (!data || !data.user_id || !data.refresh_token_enc) return null;
+  const meta = data.meta as Record<string, unknown> | null;
   return {
     id: data.id as string,
     orgId: data.org_id as string,
     userId: data.user_id as string,
     refreshToken: decryptSecret(fromBytea(data.refresh_token_enc)),
-    calendarId:
-      ((data.meta as Record<string, unknown> | null)?.calendar_id as string) ??
-      (data.external_id as string) ??
-      "primary",
+    calendarId: (meta?.calendar_id as string) ?? (data.external_id as string) ?? "primary",
     status: data.status as string,
+    syncToken: readSyncToken(meta),
+    watch: readWatch(meta),
   };
 }
 

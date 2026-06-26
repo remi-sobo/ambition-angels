@@ -3,17 +3,37 @@ import type { calendar_v3 } from "googleapis";
 import {
   listActiveCalendarConnections,
   calendarClientFromRefreshToken,
+  updateConnectionMeta,
   type GoogleCalendarConnection,
 } from "@/lib/google/connection";
+import { laDateOf, mondayOf } from "@/lib/admin/ops/week";
 
 /**
- * Service-role Google Calendar → calendar_events sync (BloomOS Agenda Phase 2).
- * Mirrors the gmail sync pattern. For each connected user it pulls events in a
- * window around today, upserts them keyed on (owner_user_id, google_event_id),
- * then deletes in-window google rows it didn't just touch — so cancellations and
- * deletions fall out of the cache. is_external is computed against the org's
- * email domain at sync time.
+ * Service-role Google Calendar → calendar_events sync (BloomOS Agenda Phase 2,
+ * incremental + two-way flow-back in Phase 5).
+ *
+ * Per connected user: pull events (incrementally via a stored syncToken when we
+ * have one, else a full window), upsert them keyed on (owner_user_id,
+ * google_event_id), and reconcile deletions. is_external is computed against the
+ * org's email domain at sync time.
+ *
+ * Two-way (Phase 5): a Google edit to a BloomOS-owned block (extendedProperties
+ * .private.bloomos_task_id) flows back to the task's planned_day; deleting the
+ * block in Google unschedules the task (clears calendar_event_id, planned_day) —
+ * it never deletes the task. BloomOS blocks are authoritative; imported google
+ * events are read-only context.
  */
+
+const TAG_KEY = "bloomos_task_id";
+
+function bloomTaskId(e: calendar_v3.Schema$Event): string | null {
+  const t = e.extendedProperties?.private?.[TAG_KEY];
+  return typeof t === "string" && t ? t : null;
+}
+
+function eventStartIso(e: calendar_v3.Schema$Event): string | null {
+  return e.start?.dateTime ?? (e.start?.date ? `${e.start.date}T00:00:00Z` : null);
+}
 
 const LOOKBACK_DAYS = 1;
 const LOOKAHEAD_DAYS = 21; // covers "today" and the current + next week views
@@ -84,16 +104,46 @@ function mapEvent(
   };
 }
 
-/** Sync one user's calendar for the window. Returns counts. */
-export async function syncUserCalendar(
-  sb: SupabaseClient,
+/** Fetch a page set: incrementally if we hold a syncToken, else a full window.
+ *  An invalid/expired token (410) transparently falls back to a full sync. */
+async function fetchEvents(
+  cal: calendar_v3.Calendar,
   conn: GoogleCalendarConnection,
   window: { start: Date; end: Date }
-): Promise<SyncCounts> {
-  const cal = calendarClientFromRefreshToken(conn.refreshToken);
-
+): Promise<{ items: calendar_v3.Schema$Event[]; nextSyncToken: string | null; usedFull: boolean }> {
   const items: calendar_v3.Schema$Event[] = [];
   let pageToken: string | undefined;
+  let nextSyncToken: string | null = null;
+
+  if (conn.syncToken) {
+    try {
+      do {
+        const res = await cal.events.list({
+          calendarId: conn.calendarId,
+          singleEvents: true,
+          showDeleted: true, // incremental deltas include cancellations
+          maxResults: PAGE_SIZE,
+          pageToken,
+          syncToken: conn.syncToken,
+        });
+        items.push(...(res.data.items ?? []));
+        pageToken = res.data.nextPageToken ?? undefined;
+        if (!pageToken) nextSyncToken = res.data.nextSyncToken ?? null;
+      } while (pageToken);
+      return { items, nextSyncToken, usedFull: false };
+    } catch (e: unknown) {
+      const status =
+        (e as { code?: number; status?: number; response?: { status?: number } }).code ??
+        (e as { status?: number }).status ??
+        (e as { response?: { status?: number } }).response?.status;
+      if (status !== 410) throw e; // only a GONE token is recoverable here
+      items.length = 0;
+      pageToken = undefined;
+      nextSyncToken = null;
+    }
+  }
+
+  // Full window sync (first run, or after a token reset).
   do {
     const res = await cal.events.list({
       calendarId: conn.calendarId,
@@ -106,16 +156,57 @@ export async function syncUserCalendar(
     });
     items.push(...(res.data.items ?? []));
     pageToken = res.data.nextPageToken ?? undefined;
+    if (!pageToken) nextSyncToken = res.data.nextSyncToken ?? null;
   } while (pageToken);
+  return { items, nextSyncToken, usedFull: true };
+}
+
+// A google event vanished (cancelled/deleted). If it was a BloomOS-owned block,
+// unschedule its task first (flow-back) — never delete the task — then drop the
+// mirror row. Plain google rows just drop.
+async function handleDeleted(
+  sb: SupabaseClient,
+  conn: GoogleCalendarConnection,
+  googleEventId: string
+): Promise<boolean> {
+  const { data: row } = await sb
+    .from("calendar_events")
+    .select("id, source")
+    .eq("owner_user_id", conn.userId)
+    .eq("google_event_id", googleEventId)
+    .maybeSingle();
+  const r = row as { id: string; source: string | null } | null;
+  if (!r) return false;
+  if (r.source === "bloomos") {
+    await sb
+      .from("ops_tasks")
+      .update({ calendar_event_id: null, planned_day: null })
+      .eq("calendar_event_id", r.id)
+      .eq("org_id", conn.orgId);
+  }
+  await sb.from("calendar_events").delete().eq("id", r.id);
+  return true;
+}
+
+/** Sync one user's calendar (incremental when possible). Returns counts. */
+export async function syncUserCalendar(
+  sb: SupabaseClient,
+  conn: GoogleCalendarConnection,
+  window: { start: Date; end: Date }
+): Promise<SyncCounts> {
+  const cal = calendarClientFromRefreshToken(conn.refreshToken);
+  const { items, nextSyncToken, usedFull } = await fetchEvents(cal, conn, window);
 
   const domain = await orgDomain(sb, conn.orgId);
   const syncedAt = new Date().toISOString();
-  const rows = items
-    .filter((e) => e.id && e.status !== "cancelled")
-    .map((e) => mapEvent(e, conn, domain, syncedAt));
 
+  const cancelled = items.filter((e) => e.id && e.status === "cancelled");
+  const active = items.filter((e) => e.id && e.status !== "cancelled" && eventStartIso(e));
+
+  // Upsert the live events.
   let upserted = 0;
-  if (rows.length) {
+  if (active.length) {
+    const rows = active.map((e) => mapEvent(e, conn, domain, syncedAt));
     const { error } = await sb
       .from("calendar_events")
       .upsert(rows, { onConflict: "owner_user_id,google_event_id" });
@@ -123,18 +214,68 @@ export async function syncUserCalendar(
     upserted = rows.length;
   }
 
-  // Anything in-window from google that we didn't touch this run is stale
-  // (deleted/cancelled in Google) — drop it so the cache matches reality.
-  const { count: deleted } = await sb
-    .from("calendar_events")
-    .delete({ count: "exact" })
-    .eq("owner_user_id", conn.userId)
-    .eq("source", "google")
-    .gte("start_time", window.start.toISOString())
-    .lte("start_time", window.end.toISOString())
-    .lt("synced_at", syncedAt);
+  // Flow-back: a BloomOS block moved/resized in Google updates the task's day.
+  for (const e of active) {
+    const taskId = bloomTaskId(e);
+    const startIso = eventStartIso(e);
+    if (!taskId || !startIso) continue;
+    const day = laDateOf(startIso);
+    await sb
+      .from("ops_tasks")
+      .update({ planned_day: day, planned_week: mondayOf(day) })
+      .eq("id", taskId)
+      .eq("org_id", conn.orgId);
+  }
 
-  return { fetched: items.length, upserted, deleted: deleted ?? 0 };
+  // Deletions reported in the delta (incremental) or implied by the window (full).
+  let deleted = 0;
+  for (const e of cancelled) {
+    if (e.id && (await handleDeleted(sb, conn, e.id))) deleted += 1;
+  }
+
+  if (usedFull) {
+    // Plain google rows in-window not touched this run are stale → drop.
+    const { count } = await sb
+      .from("calendar_events")
+      .delete({ count: "exact" })
+      .eq("owner_user_id", conn.userId)
+      .eq("source", "google")
+      .gte("start_time", window.start.toISOString())
+      .lte("start_time", window.end.toISOString())
+      .lt("synced_at", syncedAt);
+    deleted += count ?? 0;
+
+    // Reconcile BloomOS blocks deleted in Google (the stale-delete skips them).
+    // Guard against the write race: a block BloomOS just wrote (Phase 4 sets the
+    // mirror immediately) may not be in Google's list yet — only reconcile blocks
+    // untouched for a few minutes so we never unschedule a brand-new one.
+    const fetchedIds = new Set(active.map((e) => e.id as string));
+    const graceCutoff = new Date(Date.parse(syncedAt) - 5 * 60_000).toISOString();
+    const { data: bloomRows } = await sb
+      .from("calendar_events")
+      .select("google_event_id")
+      .eq("owner_user_id", conn.userId)
+      .eq("source", "bloomos")
+      .lt("synced_at", graceCutoff)
+      .gte("start_time", window.start.toISOString())
+      .lte("start_time", window.end.toISOString());
+    for (const b of (bloomRows ?? []) as Array<{ google_event_id: string | null }>) {
+      if (b.google_event_id && !fetchedIds.has(b.google_event_id)) {
+        if (await handleDeleted(sb, conn, b.google_event_id)) deleted += 1;
+      }
+    }
+  }
+
+  // Persist the incremental cursor for next run (best-effort).
+  if (nextSyncToken && nextSyncToken !== conn.syncToken) {
+    try {
+      await updateConnectionMeta(conn.id, { sync_token: nextSyncToken });
+    } catch (e) {
+      console.error(`saving syncToken for user ${conn.userId} failed:`, e);
+    }
+  }
+
+  return { fetched: items.length, upserted, deleted };
 }
 
 export type SyncResult = { userId: string; orgId: string } & (

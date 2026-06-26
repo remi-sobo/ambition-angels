@@ -8,6 +8,7 @@ import {
   formatDueLabel,
   type OpsTask,
 } from "../_types/ops";
+import type { OpenBlock } from "@/lib/admin/ops/open-blocks";
 
 /**
  * Monday Plan, the day-by-day board (BloomOS weekly rhythm, Phase 2).
@@ -38,6 +39,7 @@ export type PlannerDay = {
   isToday: boolean;
   events: PlannerEvent[];
   tasks: OpsTask[]; // pre-sorted by day_order
+  openBlocks: OpenBlock[]; // computed free gaps in working hours
 };
 
 const ORG_TZ = "America/Los_Angeles";
@@ -51,6 +53,20 @@ function eventTime(ev: PlannerEvent): string {
   });
 }
 
+// Open blocks are minutes-from-local-midnight, so format off a throwaway date —
+// no timezone needed, it's just clock arithmetic.
+function fmtMinuteLabel(min: number): string {
+  const d = new Date(2000, 0, 1, Math.floor(min / 60), min % 60);
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+function durLabel(mins: number): string {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m}m`;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
 export type ScheduledBlock = { start: string; end: string };
 
 export default function WeekPlanner({
@@ -58,6 +74,8 @@ export default function WeekPlanner({
   unscheduled,
   projectNames,
   scheduled,
+  conflicts,
+  prepEventIds,
 }: {
   days: PlannerDay[];
   unscheduled: OpsTask[];
@@ -65,7 +83,13 @@ export default function WeekPlanner({
   projectNames: Record<string, string>;
   /** task id → its calendar block window (for tasks scheduled into a time slot). */
   scheduled: Record<string, ScheduledBlock>;
+  /** task id → true when its block overlaps a real meeting. */
+  conflicts: Record<string, boolean>;
+  /** calendar_event ids that already have a prep task this week. */
+  prepEventIds: string[];
 }) {
+  const prepSet = new Set(prepEventIds);
+  const [prepBusy, setPrepBusy] = useState<string | null>(null);
   const projectName = (t: OpsTask) =>
     t.project_id ? projectNames[t.project_id] ?? null : null;
   const router = useRouter();
@@ -113,6 +137,24 @@ export default function WeekPlanner({
       alert("Couldn't unschedule. Try again.");
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function createPrep(eventId: string, title: string, dayISO: string) {
+    setPrepBusy(eventId);
+    try {
+      const r = await fetch("/api/admin/ops/prep", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_id: eventId, title, day: dayISO }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      startTransition(() => router.refresh());
+    } catch (e) {
+      console.error("Create prep failed:", e);
+      alert("Couldn't add prep task. Try again.");
+    } finally {
+      setPrepBusy(null);
     }
   }
 
@@ -226,28 +268,61 @@ export default function WeekPlanner({
 
             {day.events.length > 0 && (
               <div className="mb-3 space-y-1">
-                {day.events.map((ev) => (
+                {day.events.map((ev) => {
+                  const hasPrep = prepSet.has(ev.id);
+                  const future = !ev.allDay && new Date(ev.start).getTime() > Date.now();
+                  return (
+                    <div
+                      key={ev.id}
+                      className="flex items-center gap-2 text-[11px] text-ink-2 pl-1"
+                      title={ev.location ?? undefined}
+                    >
+                      <span className="font-mono text-ink-3 w-16 shrink-0">{eventTime(ev)}</span>
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          ev.isExternal ? "bg-orange" : "bg-gray-mid"
+                        }`}
+                        aria-hidden
+                      />
+                      <span className="truncate min-w-0">{ev.title}</span>
+                      {ev.isExternal && hasPrep && (
+                        <span className="ml-auto shrink-0 text-[10px] text-revenue">prep ✓</span>
+                      )}
+                      {ev.isExternal && !hasPrep && future && (
+                        <button
+                          onClick={() => createPrep(ev.id, ev.title, day.iso)}
+                          disabled={prepBusy === ev.id}
+                          title="Add a prep task before this meeting"
+                          className="ml-auto shrink-0 text-[10px] text-ink-3 hover:text-orange border border-outline rounded px-1 py-0.5 disabled:opacity-40"
+                        >
+                          {prepBusy === ev.id ? "…" : "+ prep"}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {day.openBlocks.length > 0 && (
+              <div className="mb-3 space-y-1">
+                {day.openBlocks.map((ob, i) => (
                   <div
-                    key={ev.id}
-                    className="flex items-center gap-2 text-[11px] text-ink-2 pl-1"
-                    title={ev.location ?? undefined}
+                    key={i}
+                    className="flex items-center gap-2 text-[11px] text-revenue/90 pl-1"
+                    title="Open time in working hours — fill it with a task's “+ time”"
                   >
-                    <span className="font-mono text-ink-3 w-16 shrink-0">
-                      {eventTime(ev)}
+                    <span className="font-mono text-revenue/70 w-16 shrink-0">
+                      {fmtMinuteLabel(ob.startMinute)}
                     </span>
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                        ev.isExternal ? "bg-orange" : "bg-gray-mid"
-                      }`}
-                      aria-hidden
-                    />
-                    <span className="truncate">{ev.title}</span>
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-revenue/50" aria-hidden />
+                    <span className="italic">open · {durLabel(ob.endMinute - ob.startMinute)}</span>
                   </div>
                 ))}
               </div>
             )}
 
-            {day.tasks.length === 0 && day.events.length === 0 ? (
+            {day.tasks.length === 0 && day.events.length === 0 && day.openBlocks.length === 0 ? (
               <p className="text-xs text-ink-3 italic">Nothing planned.</p>
             ) : (
               <div className="space-y-1.5">
@@ -276,6 +351,7 @@ export default function WeekPlanner({
                     <TaskMeta task={t} projectName={projectName(t)} />
                     <ScheduleCell
                       block={scheduled[t.id] ?? null}
+                      conflict={!!conflicts[t.id]}
                       isOpen={scheduling === t.id}
                       busy={busyId === t.id}
                       onOpen={() => setScheduling(t.id)}
@@ -418,6 +494,7 @@ function fmtBlockTime(block: ScheduledBlock): string {
 
 function ScheduleCell({
   block,
+  conflict,
   isOpen,
   busy,
   onOpen,
@@ -426,6 +503,7 @@ function ScheduleCell({
   onUnschedule,
 }: {
   block: ScheduledBlock | null;
+  conflict?: boolean;
   isOpen: boolean;
   busy: boolean;
   onOpen: () => void;
@@ -439,7 +517,11 @@ function ScheduleCell({
   if (block) {
     return (
       <span className="shrink-0 inline-flex items-center gap-1">
-        <span className="text-[10px] font-mono text-orange whitespace-nowrap" title="On your calendar">
+        <span
+          className={`text-[10px] font-mono whitespace-nowrap ${conflict ? "text-expense" : "text-orange"}`}
+          title={conflict ? "Overlaps a meeting — move the block" : "On your calendar"}
+        >
+          {conflict && "⚠ "}
           {fmtBlockTime(block)}
         </span>
         <button

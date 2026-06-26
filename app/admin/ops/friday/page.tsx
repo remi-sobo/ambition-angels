@@ -22,6 +22,11 @@ import {
 import RhythmWizard from "../_components/RhythmWizard";
 import FridayOrient from "../_components/FridayOrient";
 import FridayClose from "../_components/FridayClose";
+import MeetingRecap, {
+  type RecapMeeting,
+  type RecapSuggestion,
+} from "../_components/MeetingRecap";
+import FridayNudges from "../_components/FridayNudges";
 
 export const dynamic = "force-dynamic";
 
@@ -162,6 +167,49 @@ export default async function FridayClosePage() {
         sess.checklist && typeof sess.checklist === "object"
           ? (sess.checklist as Record<string, boolean>)
           : {};
+    }
+  }
+
+  // Recap: this-week meetings still needing follow-up (mine), + pending suggestions.
+  const weekEndInstant = dayStartInstant(nextMonday());
+  let recapMeetings: RecapMeeting[] = [];
+  if (me) {
+    const { data: meetingRows } = await supabase
+      .from("meeting_records")
+      .select("id, title, occurred_at")
+      .eq("org_id", me.orgId)
+      .eq("owner_user_id", me.userId)
+      .eq("follow_up_status", "needs_follow_up")
+      .gte("occurred_at", weekStartInstant)
+      .lt("occurred_at", weekEndInstant)
+      .order("occurred_at", { ascending: false });
+    const ms =
+      (meetingRows as Array<{ id: string; title: string | null; occurred_at: string }> | null) ?? [];
+    if (ms.length > 0) {
+      const ids = ms.map((m) => m.id);
+      const { data: suggRows } = await supabase
+        .from("meeting_suggested_tasks")
+        .select("id, meeting_record_id, suggested_title, suggested_category")
+        .in("meeting_record_id", ids)
+        .eq("org_id", me.orgId)
+        .eq("status", "pending");
+      const byMeeting = new Map<string, RecapSuggestion[]>();
+      for (const s of (suggRows as Array<{
+        id: string;
+        meeting_record_id: string;
+        suggested_title: string;
+        suggested_category: string | null;
+      }> | null) ?? []) {
+        const list = byMeeting.get(s.meeting_record_id) ?? [];
+        list.push({ id: s.id, title: s.suggested_title, category: s.suggested_category });
+        byMeeting.set(s.meeting_record_id, list);
+      }
+      recapMeetings = ms.map((m) => ({
+        id: m.id,
+        title: m.title ?? "",
+        occurredAt: m.occurred_at,
+        suggestions: byMeeting.get(m.id) ?? [],
+      }));
     }
   }
 
@@ -326,6 +374,8 @@ export default async function FridayClosePage() {
       steps={[
         { key: "verdict", label: "Verdict", content: <FridayOrient /> },
         { key: "truth", label: "Truth", content: truth },
+        { key: "recap", label: "Recap", content: <MeetingRecap meetings={recapMeetings} /> },
+        { key: "nudges", label: "Nudges", content: <FridayNudges orgId={me?.orgId ?? null} /> },
         {
           key: "close",
           label: "Close",

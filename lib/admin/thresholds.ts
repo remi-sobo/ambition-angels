@@ -65,6 +65,15 @@ export const FOLLOWUPS = {
   slaHours: 24,
 } as const;
 
+export const MEETINGS = {
+  /** Lookback window (days) for the meeting follow-up coverage check. */
+  coverageWindowDays: 14,
+  /** Uncovered-meeting count at/above which coverage is a watch. */
+  gapWatchCount: 1,
+  /** Uncovered-meeting count at/above which coverage is critical. */
+  gapCriticalCount: 5,
+} as const;
+
 export const SNOOZE = {
   /** Default snooze length when an operator defers a briefing item. */
   hours: 24,

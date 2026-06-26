@@ -158,6 +158,23 @@ export async function getReadiness(orgId: string): Promise<Readiness> {
     fixHref: PLAN_HREF,
   });
 
+  // A3b — measures carry a baseline, so the surface shows start → now → target
+  // instead of a bare number (F11 / B2-2).
+  const noBaseline = kpis.filter((k) => k.baseline == null);
+  add({
+    id: "kpis_have_baselines",
+    severity: "advisory",
+    ok: kpis.length > 0 && noBaseline.length === 0,
+    label: "Measures carry a baseline (start point)",
+    detail:
+      kpis.length === 0
+        ? "No measures yet."
+        : noBaseline.length === 0
+          ? `All ${kpis.length} measures show where they started.`
+          : `${noBaseline.length} of ${kpis.length} measures have no baseline — they read as a bare number against the goal.`,
+    fixHref: PLAN_HREF,
+  });
+
   // A4 — every objective and goal has an owner (F13).
   const ownerless = [
     ...plan.objectives.filter((o) => !o.owner).map((o) => o.title),

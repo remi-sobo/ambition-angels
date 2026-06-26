@@ -19,7 +19,7 @@ import { cache } from "react";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
-import { deriveHealth, worstHealth, isOffTrack } from "@/lib/admin/plan/health";
+import { deriveHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO, priorityRank, type TaskPriority } from "@/app/admin/ops/_types/ops";
 import { getDataAge } from "@/lib/admin/dataAge";
@@ -118,7 +118,7 @@ export const getStrategyRollup = cache(async (): Promise<StrategyRollup> => {
   const orgId = ctx.orgId;
 
   const [objsRes, goalsRes, kpisRes, reviewRes] = await Promise.all([
-    sb.from("plan_objectives").select("id, title, status, owner").eq("org_id", orgId).order("sort_order").order("created_at"),
+    sb.from("plan_objectives").select("id, title, status, status_override, owner").eq("org_id", orgId).order("sort_order").order("created_at"),
     sb.from("plan_goals").select("id, objective_id").eq("org_id", orgId),
     sb.from("plan_kpis").select("id, goal_id, objective_id, status, title, unit, target, current, owner").eq("org_id", orgId),
     // Resilient if plan_reviews isn't migrated yet (error → data null).
@@ -128,7 +128,7 @@ export const getStrategyRollup = cache(async (): Promise<StrategyRollup> => {
   const goalObjective = new Map(
     ((goalsRes.data ?? []) as { id: string; objective_id: string | null }[]).map((g) => [g.id, g.objective_id])
   );
-  const objRows = (objsRes.data ?? []) as { id: string; title: string; status: string; owner: string | null }[];
+  const objRows = (objsRes.data ?? []) as { id: string; title: string; status: string; status_override: string | null; owner: string | null }[];
   const objTitleById = new Map(objRows.map((o) => [o.id, o.title]));
   type KpiRow = {
     id: string; goal_id: string | null; objective_id: string | null; status: string;
@@ -193,7 +193,8 @@ export const getStrategyRollup = cache(async (): Promise<StrategyRollup> => {
       id: o.id,
       title: o.title,
       owner: o.owner ?? null,
-      health: worstHealth(deriveHealth(sts), o.status) ?? o.status,
+      // Effective health: a reasoned override wins, else the worst measure, else stored (B2-1).
+      health: o.status_override ?? deriveHealth(sts) ?? o.status,
       kpisOffTrack: sts.filter((s) => isOffTrack(s)).length,
       measures: [...(measuresByObjective.get(o.id) ?? [])].sort(byNeed).slice(0, 3),
     };

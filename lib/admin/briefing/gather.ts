@@ -7,7 +7,7 @@ import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getDataAge } from "../dataAge";
 import { getFinanceSnapshot } from "../finance";
-import { deriveHealth, worstHealth, isOffTrack } from "../plan/health";
+import { deriveHealth, isOffTrack } from "../plan/health";
 import {
   buildBriefing,
   type GatheredInputs,
@@ -85,7 +85,7 @@ export async function gatherInputs(): Promise<{
       sb.from("bloomos_briefing_state").select("item_id, decision, hidden_until"),
       // Strategy rollup (Phase 4): objective health + the OGSM review nudge.
       // Resilient if unseeded / plan_reviews not yet migrated (data → null).
-      sb.from("plan_objectives").select("id, title, status"),
+      sb.from("plan_objectives").select("id, title, status, status_override"),
       sb.from("plan_goals").select("id, objective_id"),
       sb.from("plan_kpis").select("goal_id, objective_id, status"),
       sb.from("plan_reviews").select("next_review_at").order("conducted_at", { ascending: false }).limit(1),
@@ -129,8 +129,9 @@ export async function gatherInputs(): Promise<{
     statusesByObjective.set(objId, arr);
   }
   const objectivesOffTrack: { title: string; health: string }[] = [];
-  for (const o of (objectivesRes.data ?? []) as { id: string; title: string; status: string }[]) {
-    const health = worstHealth(deriveHealth(statusesByObjective.get(o.id) ?? []), o.status);
+  for (const o of (objectivesRes.data ?? []) as { id: string; title: string; status: string; status_override: string | null }[]) {
+    // Effective health: a reasoned override wins, else the worst measure (B2-1).
+    const health = o.status_override ?? deriveHealth(statusesByObjective.get(o.id) ?? []);
     if (isOffTrack(health)) objectivesOffTrack.push({ title: o.title, health: health! });
   }
   const nextReviewAt = ((reviewsRes.data ?? [])[0] as { next_review_at: string | null } | undefined)

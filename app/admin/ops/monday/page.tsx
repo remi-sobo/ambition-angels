@@ -174,8 +174,26 @@ export default async function MondayPlanPage() {
   const weekDayList = weekDays(mondayISO); // 7 ISO days, Mon → Sun
   const todayISO = todayInTZ();
 
+  // Calendar blocks BloomOS wrote for this week's tasks (Phase 4): map them by
+  // event id so each scheduled task shows its time, and so we don't double-render
+  // the block as a context event below.
+  const linkedEventIds = new Set(
+    pinnedThisWeek.map((t) => t.calendar_event_id).filter((x): x is string => !!x)
+  );
+  const blockByEventId = new Map<string, { start: string; end: string }>();
+  if (linkedEventIds.size > 0) {
+    const { data: blocks } = await supabase
+      .from("calendar_events")
+      .select("id, start_time, end_time")
+      .in("id", Array.from(linkedEventIds));
+    for (const b of (blocks ?? []) as Array<{ id: string; start_time: string; end_time: string | null }>) {
+      blockByEventId.set(b.id, { start: b.start_time, end: b.end_time ?? b.start_time });
+    }
+  }
+
   // Agenda for the week (read-only context). Session client + RLS; degrade to
-  // an empty calendar if the read fails so the planner still works.
+  // an empty calendar if the read fails so the planner still works. BloomOS-owned
+  // task blocks are pulled out — they render as a time chip on their task row.
   const eventsByDay = new Map<string, PlannerEvent[]>();
   try {
     const agenda = await getAgenda({
@@ -183,6 +201,7 @@ export default async function MondayPlanPage() {
       end: new Date(dayStartInstant(nextMonday())),
     });
     for (const it of agenda.items) {
+      if (linkedEventIds.has(it.id)) continue; // it's a task's own block
       const dayISO = laDateOf(it.start);
       const list = eventsByDay.get(dayISO) ?? [];
       list.push({
@@ -198,6 +217,15 @@ export default async function MondayPlanPage() {
     }
   } catch (e) {
     console.error("[monday] agenda read failed:", e);
+  }
+
+  // task id → its block window, for the planner's schedule chips.
+  const scheduled: Record<string, { start: string; end: string }> = {};
+  for (const t of pinnedThisWeek) {
+    if (t.calendar_event_id) {
+      const b = blockByEventId.get(t.calendar_event_id);
+      if (b) scheduled[t.id] = b;
+    }
   }
 
   // Split this-week tasks into per-day buckets and a not-yet-scheduled tray.
@@ -299,6 +327,7 @@ export default async function MondayPlanPage() {
         days={plannerDays}
         unscheduled={unscheduled}
         projectNames={projectNamesObj}
+        scheduled={scheduled}
       />
 
       {/* ── Section 3: Candidates ──────────────────────────────────────── */}

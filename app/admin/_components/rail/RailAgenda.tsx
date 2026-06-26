@@ -67,7 +67,10 @@ export default function RailAgenda({
   return (
     <section className="px-5 py-5">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-ink-3">Agenda</h2>
+        <h2 className="flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-ink-3">
+          <span className="w-[3px] h-3 rounded-full bg-orange" aria-hidden />
+          Agenda
+        </h2>
         <button
           onClick={refresh}
           disabled={refreshing}
@@ -80,9 +83,10 @@ export default function RailAgenda({
 
       {upNext ? (
         <>
-          {/* Up next — the one emphasized card, clay left-accent. */}
-          <div className="relative bg-surface rounded-card border border-hairline shadow-tile overflow-hidden">
-            <span className="absolute left-0 top-0 bottom-0 w-1 bg-status-due" aria-hidden />
+          {/* Up next — the one emphasized card: a warm recessed tile against the
+              brighter rail surface, with the terracotta accent bar. */}
+          <div className="relative bg-tile rounded-card border border-hairline overflow-hidden">
+            <span className="absolute left-0 top-0 bottom-0 w-1 bg-orange" aria-hidden />
             <div className="pl-4 pr-3 py-3">
               <div className="flex items-baseline gap-2.5">
                 <span className="text-[13px] font-medium text-ink-1 [font-variant-numeric:tabular-nums] flex-shrink-0">

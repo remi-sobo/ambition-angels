@@ -37,15 +37,21 @@ export default function RailShell({
       <aside
         aria-label="Capture and ask"
         className={[
-          "hidden xl:flex flex-col shrink-0 sticky top-0 h-screen bg-app border-l border-hairline",
+          // Elevated warm panel: a brighter surface than the cream workspace,
+          // with a crisp taupe edge + soft left shadow so it reads as its own
+          // plane instead of melting into the body.
+          "hidden xl:flex flex-col shrink-0 sticky top-0 h-screen bg-surface",
           "overflow-hidden transition-[width] duration-300 ease-out motion-reduce:transition-none",
-          open ? "w-[336px]" : "w-0 border-l-0",
+          open
+            ? "w-[336px] border-l border-outline shadow-[-8px_0_24px_rgba(60,40,20,0.07)]"
+            : "w-0",
         ].join(" ")}
       >
         {/* Fixed-width inner column so content doesn't reflow as width animates. */}
         <div className="w-[336px] h-full flex flex-col">
-          <header className="h-12 flex items-center justify-between px-5 border-b border-hairline flex-shrink-0">
-            <span className="text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-ink-3">
+          <header className="h-12 flex items-center justify-between px-5 border-b border-outline flex-shrink-0">
+            <span className="flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-ink-3">
+              <span className="w-[3px] h-3 rounded-full bg-orange" aria-hidden />
               Today
             </span>
             <button

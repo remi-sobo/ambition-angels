@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getPlanMovement, getRaiseMovement, getHowMovement } from "@/lib/admin/strategy/narrative";
+import { getReadiness } from "@/lib/admin/strategy/readiness";
 import MovementPlan from "./_components/MovementPlan";
 import MovementRaise from "./_components/MovementRaise";
 import MovementHow from "./_components/MovementHow";
@@ -75,8 +76,23 @@ export default async function StrategyNarrativePage({
     return <Presenter slides={movements.map((m) => m.node)} titles={movements.map((m) => m.title)} />;
   }
 
+  // Prep view: warn before presenting if the plan isn't funder-ready.
+  const readiness = await getReadiness(ctx.orgId);
+
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-10 max-w-[920px]">
+      {readiness.blockerCount > 0 && (
+        <div className="mb-6 rounded-card border-[1.5px] border-expense/30 bg-expense-bg px-4 py-3 text-sm">
+          <span className="font-semibold text-ink-1">
+            {readiness.blockerCount} funder-readiness blocker{readiness.blockerCount === 1 ? "" : "s"} open.
+          </span>{" "}
+          <span className="text-ink-2">Clear these before presenting —</span>{" "}
+          <Link href="/admin/strategic-plan" className="font-semibold text-orange hover:underline">
+            see the checklist
+          </Link>
+          .
+        </div>
+      )}
       <MovementNav />
 
       <section id="movement-1" className="scroll-mt-6">

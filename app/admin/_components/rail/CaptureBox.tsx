@@ -81,7 +81,9 @@ export default function CaptureBox({
   }
 
   return (
-    <div className="border-t border-hairline bg-app px-4 py-3.5">
+    <div className="relative border-t border-hairline bg-surface px-4 pt-4 pb-3.5 shadow-[0_-8px_20px_-12px_rgba(60,40,20,0.14)]">
+      {/* A whisper of terracotta separating the dock from the shelves. */}
+      <span className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-orange/0 via-orange/40 to-orange/0" aria-hidden />
       {failures.length > 0 && (
         <ul className="mb-2 space-y-1.5">
           {failures.map((f) => (

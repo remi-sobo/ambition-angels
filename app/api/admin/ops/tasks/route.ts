@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { thisMonday } from "@/lib/admin/ops/week";
 import {
   isTaskCategory,
   isTaskStatus,
@@ -71,6 +72,9 @@ export async function POST(req: NextRequest) {
   if (body.due_date !== undefined && body.due_date !== null && !isISODate(body.due_date)) {
     return NextResponse.json({ error: "due_date must be YYYY-MM-DD" }, { status: 400 });
   }
+  if (body.planned_week !== undefined && body.planned_week !== null && !isISODate(body.planned_week)) {
+    return NextResponse.json({ error: "planned_week must be YYYY-MM-DD" }, { status: 400 });
+  }
   if (body.project_id !== undefined && body.project_id !== null && typeof body.project_id !== "string") {
     return NextResponse.json({ error: "project_id must be a string" }, { status: 400 });
   }
@@ -96,6 +100,10 @@ export async function POST(req: NextRequest) {
     due_date: (body.due_date as string | null | undefined) ?? null,
     pinned_for_today: body.pinned_for_today === true,
     pinned_for_this_week: body.pinned_for_this_week === true,
+    // Keep planned_week in sync with the week pin (explicit value wins).
+    planned_week:
+      (body.planned_week as string | null | undefined) ??
+      (body.pinned_for_this_week === true ? thisMonday() : null),
     linked_entity_type: (linkType as "partner" | "constituent" | null | undefined) ?? null,
     linked_entity_id: linkType ? (body.linked_entity_id as string) : null,
     linked_label: typeof body.linked_label === "string" ? body.linked_label.slice(0, 200) : null,

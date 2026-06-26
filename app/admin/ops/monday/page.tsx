@@ -12,29 +12,10 @@ import {
   type OpsProject,
   type OpsTask,
 } from "../_types/ops";
+import { thisMonday, formatWeekHeader } from "@/lib/admin/ops/week";
 
 export const dynamic = "force-dynamic";
 
-// ── Date math (inlined to avoid touching _types/ops.ts outside scope) ──────
-function thisMonday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  const dow = d.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-  d.setDate(d.getDate() - ((dow + 6) % 7));
-  return d;
-}
-function lastMonday(): Date {
-  const d = thisMonday();
-  d.setDate(d.getDate() - 7);
-  return d;
-}
-function fmtWeekHeader(monday: Date): string {
-  return monday.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 function daysSince(iso: string): number {
   const ms = Date.now() - new Date(iso).getTime();
   return Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -60,10 +41,8 @@ export default async function MondayPlanPage() {
   const otherPerson = otherUser(currentUser);
   const supabase = getSupabaseAdmin();
 
-  const mondayDate = thisMonday();
-  const lastMondayDate = lastMonday();
-  const mondayISO = mondayDate.toISOString();
-  const lastMondayISO = lastMondayDate.toISOString();
+  // This-week anchor as YYYY-MM-DD (LA), matched against the planned_week column.
+  const mondayISO = thisMonday();
 
   // Tasks-of-mine filter: assigned to me OR unassigned.
   const mineFilter = `assigned_to.eq.${currentUser},assigned_to.is.null`;
@@ -76,30 +55,31 @@ export default async function MondayPlanPage() {
     neglectedProjectsRes,
     otherPersonPinnedRes,
   ] = await Promise.all([
-    // Section 1: pinned + open + updated_at in last week
+    // Section 1: planned for a past week + open + mine. Replaces the old
+    // pinned + updated_at-window heuristic: a leftover surfaces no matter when
+    // it was last edited. (planned_week IS NULL is excluded by the < compare.)
     supabase
       .from("ops_tasks")
       .select("*")
-      .eq("pinned_for_this_week", true)
+      .lt("planned_week", mondayISO)
       .neq("status", "done")
       .or(mineFilter)
-      .gte("updated_at", lastMondayISO)
-      .lt("updated_at", mondayISO)
-      .order("updated_at", { ascending: true }),
-    // Section 2: pinned + open + assigned to me (or null)
+      .order("planned_week", { ascending: true })
+      .order("due_date", { ascending: true, nullsFirst: true }),
+    // Section 2: planned for this week + open + assigned to me (or null)
     supabase
       .from("ops_tasks")
       .select("*")
-      .eq("pinned_for_this_week", true)
+      .eq("planned_week", mondayISO)
       .neq("status", "done")
       .or(mineFilter)
       .order("due_date", { ascending: true, nullsFirst: true }),
-    // Section 3a: unpinned + open + assigned to me (or null). Sort by
+    // Section 3a: unplanned + open + assigned to me (or null). Sort by
     // due_date asc nulls last, then last_touched (updated_at) asc.
     supabase
       .from("ops_tasks")
       .select("*")
-      .eq("pinned_for_this_week", false)
+      .is("planned_week", null)
       .neq("status", "done")
       .or(mineFilter)
       .order("due_date", { ascending: true, nullsFirst: false })
@@ -207,7 +187,7 @@ export default async function MondayPlanPage() {
           Monday Plan
         </h1>
         <div className="mt-2 flex items-baseline gap-3 flex-wrap text-sm">
-          <span className="text-ink-2">Week of {fmtWeekHeader(mondayDate)}</span>
+          <span className="text-ink-2">Week of {formatWeekHeader(mondayISO)}</span>
           <span className="text-ink-3">·</span>
           <span className="text-ink-2">Planning as {cap(currentUser)}</span>
         </div>
@@ -224,8 +204,8 @@ export default async function MondayPlanPage() {
           </h2>
           <p className="text-sm text-ink-1 mb-4">
             <span className="font-semibold text-ink-1">{slippedRaw.length}</span>{" "}
-            {slippedRaw.length === 1 ? "item" : "items"} from last week didn&apos;t
-            ship. Carry over, mark done, or drop:
+            {slippedRaw.length === 1 ? "item" : "items"} planned for an earlier
+            week aren&apos;t done. Carry over, mark done, or drop:
           </p>
           <div className="space-y-1.5">
             {slippedRaw.map((t) => {

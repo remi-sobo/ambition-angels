@@ -23,7 +23,7 @@ const titleCase = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 
 export default function MovementRaise({ money }: { money: MoneySummary }) {
   const {
-    floor, ceiling, secured, weightedPipeline, gap, realistic, residual,
+    floor, ceiling, secured, weightedPipeline, realistic, residual,
     cashOnHand, runwayMonths, monthlyBurn, runwayTargetMonths, runwayBridge,
     sources, allocation, stagedUnlockAt,
   } = money;
@@ -38,14 +38,16 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
   const bars = allocation.filter((a) => a.base > 0);
   const maxBase = bars.reduce((m, a) => Math.max(m, a.base), 0) || 1;
 
-  // The lead sentence, assembled live from the numbers on screen.
+  // The lead sentence, assembled live from the numbers on screen. The gap is the
+  // ONE net-new figure used everywhere: floor − secured − weighted = residual.
   const lead = (
     <>
       The plan rebases to a committed floor of <strong>{formatUsd(floor)}</strong>. We&apos;ve secured{" "}
-      <strong>{formatUsd(secured)}</strong>; a realistic close lands near <strong>{formatUsd(realistic)}</strong>
-      {gap != null && gap > 0 ? (
+      <strong>{formatUsd(secured)}</strong>, and a realistic close on our current pipeline lands near{" "}
+      <strong>{formatUsd(realistic)}</strong>
+      {residual != null && residual > 0 ? (
         <>
-          , leaving <strong>{formatUsd(gap)}</strong> of net-new money to clear it.
+          . That leaves <strong>{formatUsd(residual)}</strong> of net-new money to find.
         </>
       ) : (
         <>.</>
@@ -104,7 +106,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
             </div>
             {residual != null && residual > 0 && (
               <div className="flex items-baseline justify-between">
-                <span className="text-orange-dark">+ Named coverage still to develop</span>
+                <span className="text-orange-dark">+ Still to source, no donor attached yet</span>
                 <span className="tabular-nums text-orange-dark font-semibold">{formatUsd(residual)}</span>
               </div>
             )}
@@ -115,9 +117,9 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
           </div>
           {residual != null && residual > 0 && (
             <div className="mt-3 text-[12px] text-ink-3">
-              The <strong className="text-orange-dark">{formatUsd(residual)}</strong> residual is the honest
-              number: net-new money to clear the floor beyond secured and the weighted pipeline. It closes by
-              naming prospects against the doors in Movement 3 — shown here, not hidden.
+              The <strong className="text-orange-dark">{formatUsd(residual)}</strong> is the honest number: net-new
+              money to clear the floor beyond what&apos;s secured and the weighted pipeline. It closes by naming
+              prospects against the doors in Movement 3, shown here, not hidden.
             </div>
           )}
         </div>
@@ -126,7 +128,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         <StatBig label="Committed floor" value={formatUsd(floor)} sub="the necessary plan" accent />
         <StatBig label="Secured to date" value={formatUsd(secured)} sub="raised this fiscal year" />
-        <StatBig label="Gap to floor" value={formatUsd(gap)} sub="net-new still to raise" />
+        <StatBig label="Net-new to floor" value={formatUsd(residual)} sub="floor − secured − weighted" />
         <StatBig label="Weighted pipeline" value={formatUsd(weightedPipeline)} sub="open asks × probability" />
         <StatBig label="Realistic close" value={formatUsd(realistic)} sub="secured + weighted" />
         <StatBig
@@ -147,7 +149,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
             {formatUsd(runwayBridge)}
           </div>
           <div className="mt-1.5 text-[13px] text-ink-2">
-            to restore a {runwayTargetMonths}-month cushion at {formatUsd(monthlyBurn)}/mo burn — today there is{" "}
+            to restore a {runwayTargetMonths}-month cushion at {formatUsd(monthlyBurn)}/mo burn. Today there is{" "}
             {formatUsd(cashOnHand)} on hand
             {runwayMonths != null && <> ({runwayMonths % 1 === 0 ? runwayMonths : runwayMonths.toFixed(1)} months)</>}. This is
             the urgent ask, distinct from the annual floor below.
@@ -229,7 +231,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
           </div>
           {staged > 0 && (
             <div className="mt-4 pt-3 border-t border-hairline text-[12px] text-ink-3">
-              Plus <strong className="text-ink-2">{formatUsd(staged)}</strong> staged, off the floor — unlocks as
+              Plus <strong className="text-ink-2">{formatUsd(staged)}</strong> staged, off the floor, unlocks as
               money lands{stagedT1 > 0 && <> (tier 1 {formatUsd(stagedT1)}</>}
               {stagedT2 > 0 && <>, tier 2 {formatUsd(stagedT2)}</>}
               {stagedT1 > 0 && <>)</>}.

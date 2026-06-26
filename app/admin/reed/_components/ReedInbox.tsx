@@ -113,7 +113,7 @@ export default function ReedInbox({
             Strategy proposals
           </h2>
           <p className="text-[12px] text-ink-3 mb-3">
-            Reed&apos;s proposed plan elements. Accepting records the decision — it doesn&apos;t change your plan yet.
+            Reed&apos;s proposed plan elements. Accepting adds the element to your plan; dismissing discards it.
           </p>
           <div className="flex flex-col gap-3">
             {proposals.map((p) => (

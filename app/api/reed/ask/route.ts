@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { requireEntitlement } from "@/lib/admin/entitlements";
+import { requireEntitlement, hasEntitlement } from "@/lib/admin/entitlements";
 import { buildReedTools } from "@/lib/agents/reed/tools";
 import { runReedAsk } from "@/lib/agents/reed/client";
 import {
@@ -91,10 +91,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Bloom Flourish coaching seam: if the org has the `coaching` entitlement,
+  // Reed may tee up a human SOBO session for the judgment-heavy 20%.
+  const coaching = await hasEntitlement("coaching");
   const system = buildSystemPrompt({
     mission: (foundation?.mission as string | null) ?? null,
     vision: (foundation?.vision as string | null) ?? null,
     contextRef,
+    coaching,
   });
 
   // 5–6. Run Claude with the read-only tool set on the session client.
@@ -187,6 +191,7 @@ function buildSystemPrompt(opts: {
   mission: string | null;
   vision: string | null;
   contextRef: Record<string, unknown> | null;
+  coaching?: boolean;
 }): string {
   const today = new Date().toISOString().slice(0, 10);
   const lines = [
@@ -205,6 +210,11 @@ function buildSystemPrompt(opts: {
     "- You cannot send, submit, move money, change permissions, or delete anything. Those stay human.",
     "- Be concise and direct. Lead with the answer. Cite the figures you used.",
   ];
+  if (opts.coaching) {
+    lines.push(
+      "- This org is on Bloom Flourish (human coaching). For a judgment-heavy call that goes beyond what software should decide — a major strategic pivot, a board conflict, a hard prioritization — you may offer to tee it up with a SOBO coaching session. Offer it sparingly, only when a human coach genuinely adds value; never force it.",
+    );
+  }
   if (opts.mission) lines.push("", `Organization mission: ${opts.mission}`);
   if (opts.vision) lines.push(`Organization vision: ${opts.vision}`);
   if (opts.contextRef) lines.push("", `The user opened you from this record: ${JSON.stringify(opts.contextRef)}.`);

@@ -17,7 +17,7 @@ type IconName =
   | "majorgifts" | "donors" | "grants" | "campaigns" | "events"
   | "finance" | "revenue" | "expenses" | "budget" | "cashflow"
   | "webanalytics" | "appanalytics" | "studentanalytics" | "surveys"
-  | "tasks" | "monday" | "friday" | "projects" | "meetings" | "team" | "documents"
+  | "week" | "tasks" | "monday" | "friday" | "projects" | "meetings" | "team" | "documents"
   | "board" | "compliance" | "kpis" | "strategy";
 
 type NavItem = { label: string; icon: IconName; href?: string; soon?: boolean };
@@ -35,6 +35,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Operations",
     items: [
+      { label: "My Week", icon: "week", href: "/admin/ops/my-week" },
       { label: "Tasks", icon: "tasks", href: "/admin/ops" },
       { label: "Monday Plan", icon: "monday", href: "/admin/ops/monday" },
       { label: "Friday Review", icon: "friday", href: "/admin/ops/friday" },
@@ -233,6 +234,13 @@ const ICON_NODES: Record<IconName, ReactNode> = {
     <>
       <rect x="6" y="5" width="12" height="16" rx="2" />
       <path d="M9.5 5a2.5 2.5 0 0 1 5 0M9.5 11h5M9.5 15h5" />
+    </>
+  ),
+  week: (
+    <>
+      <rect x="4" y="5.5" width="16" height="15" rx="2" />
+      <path d="M4 10h16M8 3.5v4M16 3.5v4" />
+      <path d="M8 14h2M14 14h2" />
     </>
   ),
   tasks: (

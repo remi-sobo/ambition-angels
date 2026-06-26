@@ -163,7 +163,12 @@ No funder-facing value lives hardcoded in a component. Anything Remi might want 
 - **B2-4 (editable runway target).** Migration adds `fin_config.runway_target_months`; the finance Config editor exposes it; `getRaiseMovement` and the linter read it (fallback to the central watch line). The money-bridge/sources stay modeled as channel-target KPIs (editable, Principle #0) rather than a separate table — a deliberate choice over churning Phase-1 work.
 - **Presenter hard gate (B2-5).** Presenter mode now stops on open blockers: a full-screen gate lists them with "Fix in the plan" / "Present anyway" / Exit, and keyboard nav is disabled until acknowledged.
 
-**Build 2 is complete.** Remaining ideas for later: extend the override/roll-up to the cockpit/briefing surfaces, and a baseline advisory in the linter.
+**Build 2 is complete.**
+
+## Phase 4 — executed (2026-06-26): override roll-up everywhere + baseline advisory
+
+- **Override/roll-up extended to the cockpit and briefing.** `lib/admin/overview/sources.ts` (the strategy cockpit tiles) and `lib/admin/briefing/gather.ts` (the daily briefing's off-track objectives) now compute objective health as `override ?? roll-up ?? stored` — the same rule as the narrative and the plan page. A reasoned override now reads consistently on every surface. (The Reed agent tool passes raw KPI data, not a rollup, so it needs no change.)
+- **Baseline advisory in the linter.** `getReadiness` now flags measures with no baseline, so the "show where it started" gap surfaces in the readiness checklist with a Fix → link.
 
 ## The five upgrades
 

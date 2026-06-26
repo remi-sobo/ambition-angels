@@ -60,6 +60,10 @@ function mapEvent(
   const isExternal = attendees.some(
     (a) => a.email && !a.email.toLowerCase().endsWith(`@${domain}`)
   );
+  // Echo prevention: an event BloomOS wrote carries bloomos_task_id. Mark it
+  // 'bloomos' so it's never re-ingested as a fresh external meeting, and so the
+  // google stale-delete (source='google' only) never removes it.
+  const isBloomOwned = !!e.extendedProperties?.private?.bloomos_task_id;
   return {
     org_id: conn.orgId,
     owner_user_id: conn.userId,
@@ -73,8 +77,8 @@ function mapEvent(
     all_day: start.allDay,
     status: e.status ?? null,
     attendees,
-    is_external: isExternal,
-    source: "google",
+    is_external: isBloomOwned ? false : isExternal,
+    source: isBloomOwned ? "bloomos" : "google",
     synced_at: syncedAt,
     updated_at: syncedAt,
   };

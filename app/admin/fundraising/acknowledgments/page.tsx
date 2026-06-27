@@ -11,6 +11,7 @@ import {
   type ReceiptGift,
 } from "@/lib/fundraising/receipt";
 import { reconcileAckQueue, type AckQueueGift } from "@/lib/fundraising/ack-tasks";
+import { ensureEscalationsForQueue } from "@/lib/fundraising/stewardship";
 import { type AckChannel } from "@/lib/fundraising/ack-channels";
 import AckComposer, { type AckTemplateLite } from "./_components/AckComposer";
 import ThankathonButton from "./_components/ThankathonButton";
@@ -37,6 +38,9 @@ export default async function AcknowledgmentsPage() {
   let pending: AckQueueGift[] = [];
   if (ctx && createdBy) {
     pending = await reconcileAckQueue(supabase, ctx.orgId, createdBy);
+    // Major gifts also get a task for their escalation owner (e.g. Remi), on top
+    // of Shannon's. Covers Stripe and pledge gifts that never run the matrix.
+    await ensureEscalationsForQueue(supabase, ctx.orgId, createdBy, pending);
   }
 
   // Gift-subject templates for the composer's per-channel picker (empty until

@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import { complianceFor, complianceBlock, type ReceiptGift } from "../lib/fundraising/receipt";
 import {
   evaluateStewardship,
+  escalationsFor,
   decideImportStatus,
   ageInDays,
   type StewardshipRule,
@@ -84,6 +85,38 @@ describe("evaluateStewardship — first match wins, by rank", () => {
 
   test("no rules → none (caller supplies its own fallback)", () => {
     expect(evaluateStewardship(facts({ amount: 500 }), []).action).toBe("none");
+  });
+});
+
+describe("escalations are orthogonal to the primary task", () => {
+  // Mirrors production: every primary rule routes to Shannon, plus a major-gift
+  // escalation to Remi ranked last.
+  const SHANNON_RULES: StewardshipRule[] = RULES.map((r) => ({ ...r, assignee: "shannon" }));
+  const ESCALATE: StewardshipRule = {
+    id: "esc", name: "major, also Remi", rank: 900,
+    conditions: { min_amount: 1000, max_age_days: 30 },
+    action: "escalate", channel: "call", template_id: null, sla_hours: 24, assignee: "remi",
+  };
+  const WITH_ESC = [...SHANNON_RULES, ESCALATE];
+
+  test("the primary task ignores escalate rules — a big gift still routes to Shannon", () => {
+    const d = evaluateStewardship(facts({ amount: 5000 }), WITH_ESC);
+    expect(d.action).toBe("create_task");
+    expect(d.assignee).toBe("shannon");
+  });
+
+  test("a major gift produces a Remi escalation on top", () => {
+    const escs = escalationsFor(facts({ amount: 5000 }), WITH_ESC);
+    expect(escs).toHaveLength(1);
+    expect(escs[0].assignee).toBe("remi");
+  });
+
+  test("a sub-major gift produces no escalation", () => {
+    expect(escalationsFor(facts({ amount: 300 }), WITH_ESC)).toHaveLength(0);
+  });
+
+  test("an old major gift (import/backfill) produces no escalation", () => {
+    expect(escalationsFor(facts({ amount: 5000, ageDays: 400 }), WITH_ESC)).toHaveLength(0);
   });
 });
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // Epic M2 — commit a mapped CSV import. Rows arrive already mapped to known
@@ -22,7 +22,8 @@ type Row = {
 };
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await getOrgContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = (await req.json().catch(() => null)) as { rows?: Row[] } | null;
   const rows = Array.isArray(body?.rows) ? body!.rows : null;
   if (!rows) return NextResponse.json({ error: "rows[] is required" }, { status: 400 });
@@ -60,7 +61,8 @@ export async function POST(req: NextRequest) {
       matched++;
     } else {
       const type = org || str(r.type) === "organization" ? "organization" : "person";
-      const insert: Record<string, unknown> = { type, source: "import" };
+      // Stamp org_id from session — never ride the AA column default (org_id trap).
+      const insert: Record<string, unknown> = { org_id: ctx.orgId, type, source: "import" };
       if (type === "organization") insert.org_name = org || `${first} ${last}`.trim();
       else { if (first) insert.first_name = first; if (last) insert.last_name = last; }
       if (email) insert.emails = [email];
@@ -82,6 +84,7 @@ export async function POST(req: NextRequest) {
       if (!isDate(r.gift_date)) { errors.push(`Row ${i + 1}: gift skipped (needs gift_date YYYY-MM-DD)`); continue; }
       const method = METHODS.includes(str(r.method) as (typeof METHODS)[number]) ? str(r.method) : "other";
       const { error: gErr } = await supabase.from("gifts").insert({
+        org_id: ctx.orgId,
         constituent_id: constituentId,
         amount: Math.round(amount * 100) / 100,
         gift_date: r.gift_date,

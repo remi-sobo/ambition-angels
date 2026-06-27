@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import {
   receiptEmailText,
@@ -14,7 +14,8 @@ import {
 // IRS compliance block is rebuilt here from the gift row, so the client
 // cannot alter or omit it.
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const user = await getAdminUser();
@@ -137,6 +138,7 @@ export async function POST(req: NextRequest) {
   // failure (the queue must not re-email this gift).
   let warning: string | undefined;
   const { error: ackErr } = await supabase.from("acknowledgments").insert({
+    org_id: ctx.orgId,
     gift_id: giftId,
     template: "receipt-v1",
     channel: "email",

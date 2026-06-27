@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushGiftToHubSpot } from "@/lib/hubspot/sync-out";
 
@@ -28,7 +28,8 @@ const money = (v: unknown): number | null =>
  * revenue). Amount + gift_date are required.
  */
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
     } else {
       const { data: created, error: cErr } = await supabase
         .from("constituents")
-        .insert({ type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
+        .insert({ org_id: ctx.orgId, type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
         .select("id")
         .single();
       if (cErr || !created) {
@@ -96,6 +97,8 @@ export async function POST(req: NextRequest) {
   }
 
   const insert: Record<string, unknown> = {
+    // Stamp org_id from session — never ride the AA column default (org_id trap).
+    org_id: ctx.orgId,
     constituent_id: constituentId,
     amount,
     gift_date: body.gift_date,

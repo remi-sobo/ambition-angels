@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // POST /api/admin/acknowledgments/mark — record that a gift was thanked
 // outside the system (handwritten letter, phone call, in person). Keeps the
 // queue honest without forcing every thank-you through email.
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const user = await getAdminUser();
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
 
   let warning: string | undefined;
   const { error: ackErr } = await supabase.from("acknowledgments").insert({
+    org_id: ctx.orgId,
     gift_id: giftId,
     template: "manual",
     channel: "other",

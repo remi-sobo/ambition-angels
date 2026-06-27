@@ -89,7 +89,13 @@ export const FUNDRAISING_PIPELINE_ID = "default";
  *  money-only. (Rows aren't deleted yet — spec Phase 4 archives them.) */
 export const PARTNERSHIP_PIPELINE_ID = "59855776";
 
-/** PostgREST `.or(...)` filter that excludes partnership-pipeline opportunities
- *  while keeping rows whose pipeline is null (legacy money deals). Use as
- *  `query.or(EXCLUDE_PARTNERSHIP_OPPS)`. */
-export const EXCLUDE_PARTNERSHIP_OPPS = `pipeline.is.null,pipeline.neq.${PARTNERSHIP_PIPELINE_ID}`;
+/** Sentinel pipeline value for partnership opps that have been consolidated into
+ *  `partners` and archived out of the active opportunities set (spec Phase 4).
+ *  Archived rows are kept (reversible) but stay excluded from fundraising. */
+export const ARCHIVED_PARTNERSHIP_PIPELINE_ID = "archived_partnership";
+
+/** PostgREST `.or(...)` filter that excludes partnership opportunities — both the
+ *  live shadow pipeline and its archived sentinel — while keeping rows whose
+ *  pipeline is null (legacy money deals). Use as `query.or(EXCLUDE_PARTNERSHIP_OPPS)`. */
+export const EXCLUDE_PARTNERSHIP_OPPS =
+  `pipeline.is.null,and(pipeline.neq.${PARTNERSHIP_PIPELINE_ID},pipeline.neq.${ARCHIVED_PARTNERSHIP_PIPELINE_ID})`;

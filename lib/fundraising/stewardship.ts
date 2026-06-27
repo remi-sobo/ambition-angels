@@ -7,7 +7,8 @@ import {
   receiptEmailHtml,
   type ReceiptGift,
 } from "@/lib/fundraising/receipt";
-import { ensureAckTaskForGift } from "@/lib/fundraising/ack-tasks";
+import { ensureAckTaskForGift, ensureEscalationTaskForGift, type AckQueueGift } from "@/lib/fundraising/ack-tasks";
+import { constituentName } from "@/lib/fundraising/display";
 
 /**
  * The stewardship matrix. When a gift lands, ordered rows in `stewardship_rules`
@@ -16,7 +17,7 @@ import { ensureAckTaskForGift } from "@/lib/fundraising/ack-tasks";
  * matrix is data, never `if amount >= 250` in a page, so each org gets its own.
  */
 
-export type StewardshipAction = "auto_email" | "create_task" | "create_task_and_draft" | "none";
+export type StewardshipAction = "auto_email" | "create_task" | "create_task_and_draft" | "none" | "escalate";
 
 export type StewardshipRule = {
   id: string;
@@ -93,9 +94,14 @@ function ruleMatches(c: Conditions, f: GiftFacts): boolean {
   return true;
 }
 
-/** Pure evaluation: first matching rule (rules must be rank-ordered) wins. */
+/**
+ * Pure evaluation of the PRIMARY task: first matching rule (rank-ordered) wins.
+ * Escalation rules are orthogonal (they add a task, never replace the primary),
+ * so they're skipped here and handled by escalationsFor().
+ */
 export function evaluateStewardship(facts: GiftFacts, rules: StewardshipRule[]): StewardshipDecision {
   for (const r of rules) {
+    if (r.action === "escalate") continue;
     if (ruleMatches(r.conditions ?? {}, facts)) {
       return {
         action: r.action,
@@ -109,6 +115,15 @@ export function evaluateStewardship(facts: GiftFacts, rules: StewardshipRule[]):
     }
   }
   return NONE;
+}
+
+/**
+ * The escalation rules that match a gift. These are additive: a major gift gets
+ * a task for its escalation owner (e.g. Remi) ON TOP OF the primary Shannon
+ * task, regardless of which primary rule matched.
+ */
+export function escalationsFor(facts: GiftFacts, rules: StewardshipRule[]): StewardshipRule[] {
+  return rules.filter((r) => r.action === "escalate" && ruleMatches(r.conditions ?? {}, facts));
 }
 
 export async function loadStewardshipRules(
@@ -288,6 +303,7 @@ export async function processGiftStewardship(
           }
         : evaluateStewardship(facts, rules);
 
+    // ── Primary task (one per gift, first-match) ──
     if (decision.action === "auto_email") {
       let tpl: { subject: string | null; body: string } | null = null;
       if (decision.templateId) {
@@ -300,10 +316,7 @@ export async function processGiftStewardship(
       }
       const ok = await autoSendReceipt(supabase, opts.orgId, gift, tpl);
       if (!ok) await setGiftStatus(supabase, opts.giftId, "not_required");
-      return decision;
-    }
-
-    if (decision.action === "create_task" || decision.action === "create_task_and_draft") {
+    } else if (decision.action === "create_task" || decision.action === "create_task_and_draft") {
       if (gift.constituent_id) {
         await ensureAckTaskForGift(supabase, {
           orgId: opts.orgId,
@@ -321,15 +334,79 @@ export async function processGiftStewardship(
         // No one to personally thank (anonymous) — don't strand it in the queue.
         await setGiftStatus(supabase, opts.giftId, "not_required");
       }
-      return decision;
+    } else {
+      // action === 'none'
+      await setGiftStatus(supabase, opts.giftId, "not_required");
     }
 
-    // action === 'none'
-    await setGiftStatus(supabase, opts.giftId, "not_required");
+    // ── Escalations (additional tasks, orthogonal to the primary) ──
+    // A major gift also gets a task for its escalation owner (e.g. Remi), on top
+    // of Shannon's primary task, whichever primary rule matched.
+    if (gift.constituent_id) {
+      const escalations = escalationsFor(facts, rules);
+      if (escalations.length) {
+        const donorName = gift.constituent ? constituentName(gift.constituent) : "this donor";
+        for (const esc of escalations) {
+          await ensureEscalationTaskForGift(supabase, {
+            orgId: opts.orgId,
+            createdBy: opts.createdBy,
+            giftId: gift.id,
+            constituentId: gift.constituent_id,
+            donorName,
+            amount: facts.amount,
+            giftDate: gift.gift_date,
+            assignee: esc.assignee ?? "remi",
+            slaHours: esc.sla_hours,
+          });
+        }
+      }
+    }
+
     return decision;
   } catch (e) {
     console.error("[stewardship] processGift threw:", e);
     return null;
+  }
+}
+
+/**
+ * Ensure major-gift escalation tasks for a batch of pending gifts (the queue
+ * reconcile path). Covers gifts that never run processGiftStewardship — Stripe
+ * (DB trigger) and pledge installments — so a big gift from any source still
+ * reaches its escalation owner. Idempotent and best-effort.
+ */
+export async function ensureEscalationsForQueue(
+  supabase: SupabaseClient,
+  orgId: string,
+  createdBy: "remi" | "shannon",
+  gifts: AckQueueGift[]
+): Promise<void> {
+  const rules = await loadStewardshipRules(supabase, orgId);
+  if (!rules.some((r) => r.action === "escalate")) return;
+  for (const g of gifts) {
+    if (!g.constituent_id) continue;
+    const facts: GiftFacts = {
+      amount: g.amount,
+      method: g.method,
+      gift_date: g.gift_date,
+      external_source: g.external_source,
+      recurring: false,
+      isFirstGift: false,
+      ageDays: ageInDays(g.gift_date),
+    };
+    for (const esc of escalationsFor(facts, rules)) {
+      await ensureEscalationTaskForGift(supabase, {
+        orgId,
+        createdBy,
+        giftId: g.id,
+        constituentId: g.constituent_id,
+        donorName: g.constituent ? constituentName(g.constituent) : "this donor",
+        amount: g.amount,
+        giftDate: g.gift_date,
+        assignee: esc.assignee ?? "remi",
+        slaHours: esc.sla_hours,
+      });
+    }
   }
 }
 

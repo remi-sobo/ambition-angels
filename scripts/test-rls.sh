@@ -124,6 +124,7 @@ ordered=(
   ack_v2_5_entity_vocab.sql
   ack_v2_6_polish.sql
   ack_v2_7_no_auto_send.sql
+  ack_v2_8_major_gift_escalation.sql
   add_roll_count_to_ops_tasks.sql
   create_revenue_schedule.sql
   create_rhythm_sessions.sql

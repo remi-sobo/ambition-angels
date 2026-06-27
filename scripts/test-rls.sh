@@ -123,11 +123,15 @@ ordered=(
   ack_v2_4_seed_aa_stewardship.sql
   ack_v2_5_entity_vocab.sql
   ack_v2_6_polish.sql
+  ack_v2_7_no_auto_send.sql
   add_roll_count_to_ops_tasks.sql
   create_revenue_schedule.sql
   create_rhythm_sessions.sql
   strategy_build2_overrides_baselines.sql
   strategy_proof_points.sql
+  consolidate_partnership_pipeline_into_partners.sql
+  archive_migrated_partnership_opportunities.sql
+  fr_sync_exclude_partnership_pipeline.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

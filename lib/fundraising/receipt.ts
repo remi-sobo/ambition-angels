@@ -66,6 +66,18 @@ export function complianceBlock(gift: ReceiptGift): string {
   return lines.join("\n");
 }
 
+/**
+ * The compliance boundary for polymorphic acknowledgments: receipt language
+ * exists ONLY for a real gift. A non-gift acknowledgment (a volunteer, a
+ * foundation/DAF grant, a milestone) passes null and gets an empty string, so a
+ * tax-deductible statement can never land on the wrong record. DAF/grant thanks
+ * therefore carry no tax-deductible language, by construction.
+ */
+export function complianceFor(gift: ReceiptGift | null | undefined): string {
+  if (!gift) return "";
+  return complianceBlock(gift);
+}
+
 /** Full receipt email body: editable personal note above the immutable
  *  compliance block. */
 export function receiptEmailText(personalNote: string, gift: ReceiptGift): string {

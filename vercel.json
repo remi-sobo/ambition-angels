@@ -17,6 +17,10 @@
       "schedule": "15 * * * *"
     },
     {
+      "path": "/api/cron/stewardship-milestones",
+      "schedule": "30 13 * * *"
+    },
+    {
       "path": "/api/cron/gmail-sync",
       "schedule": "45 * * * *"
     },

@@ -11,7 +11,9 @@ import {
   type ReceiptGift,
 } from "@/lib/fundraising/receipt";
 import { reconcileAckQueue, type AckQueueGift } from "@/lib/fundraising/ack-tasks";
+import { type AckChannel } from "@/lib/fundraising/ack-channels";
 import AckComposer, { type AckTemplateLite } from "./_components/AckComposer";
+import ThankathonButton from "./_components/ThankathonButton";
 
 // The acknowledgments queue: every gift awaiting a thank-you, oldest first.
 // In v2 each pending thank-you is also a real `ops_task` (label `sys:ack`), so
@@ -58,12 +60,21 @@ export default async function AcknowledgmentsPage() {
           ← Donors
         </Link>
         <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Acknowledgments</span>
-        <Link
-          href="/admin/fundraising/acknowledgments/templates"
-          className="ml-auto text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
-        >
-          Templates →
-        </Link>
+        <div className="ml-auto flex items-center gap-4">
+          <ThankathonButton count={pending.length} />
+          <Link
+            href="/admin/fundraising/acknowledgments/letters"
+            className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
+          >
+            Letters →
+          </Link>
+          <Link
+            href="/admin/fundraising/acknowledgments/templates"
+            className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
+          >
+            Templates →
+          </Link>
+        </div>
       </div>
 
       <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
@@ -132,6 +143,7 @@ export default async function AcknowledgmentsPage() {
                         donorEmail={email}
                         complianceBlock={complianceBlock(receiptGift)}
                         templates={templates}
+                        defaultChannel={(g.constituent?.preferred_ack_channel as AckChannel | null) ?? null}
                       />
                     </div>
                   </li>

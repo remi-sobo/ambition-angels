@@ -11,6 +11,8 @@ import { todayISO } from "../../../ops/_types/ops";
 import { GiftEntryForm, GiftRowActions } from "../_components/GiftControls";
 import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentControls";
 import LogThankYou from "../_components/LogThankYou";
+import AckChannelPref from "../_components/AckChannelPref";
+import { type AckChannel } from "@/lib/fundraising/ack-channels";
 import { HouseholdControls } from "../_components/HouseholdControls";
 import { AddSoftCredit, SoftCreditChip, SC_TYPE_LABEL } from "../_components/SoftCreditControls";
 import EmailActions from "../_components/EmailActions";
@@ -417,6 +419,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                 <span className="text-ink-1 break-words min-w-0 capitalize">{String(value)}</span>
               </div>
             ))}
+            <AckChannelPref constituentId={c.id} current={(c.preferred_ack_channel as string | null) ?? null} />
             {c.notes && <p className="text-xs text-ink-2 border-t border-outline pt-3">{c.notes}</p>}
             <ConstituentDangerZone
               id={c.id}
@@ -430,7 +433,12 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
             <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
               <h2 className="font-heading font-bold text-ink-1 text-sm">Activity</h2>
               <div className="flex items-center gap-2">
-                <LogThankYou subjectType="constituent" subjectId={c.id} subjectLabel={name} />
+                <LogThankYou
+                  subjectType="constituent"
+                  subjectId={c.id}
+                  subjectLabel={name}
+                  defaultChannel={(c.preferred_ack_channel as AckChannel | null) ?? null}
+                />
                 <LogInteractionForm constituentId={c.id} />
                 <GiftEntryForm
                   constituentId={c.id}

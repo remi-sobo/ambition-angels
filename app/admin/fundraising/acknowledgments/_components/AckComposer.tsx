@@ -24,16 +24,19 @@ export default function AckComposer({
   donorEmail,
   complianceBlock,
   templates,
+  defaultChannel,
 }: {
   giftId: string;
   donorName: string;
   donorEmail: string | null;
   complianceBlock: string;
   templates: AckTemplateLite[];
+  defaultChannel?: AckChannel | null;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [channel, setChannel] = useState<AckChannel>("email");
+  // Honor the donor's preferred channel when they have one.
+  const [channel, setChannel] = useState<AckChannel>(defaultChannel ?? "email");
   const [busy, setBusy] = useState<"" | "draft" | "send" | "log">("");
   const [error, setError] = useState("");
   const [subject, setSubject] = useState("Thank you for supporting Ambition Angels");

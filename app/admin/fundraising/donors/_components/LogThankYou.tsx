@@ -11,14 +11,16 @@ export default function LogThankYou({
   subjectType,
   subjectId,
   subjectLabel,
+  defaultChannel,
 }: {
   subjectType: "constituent" | "opportunity" | "volunteer" | "milestone";
   subjectId: string;
   subjectLabel: string;
+  defaultChannel?: AckChannel | null;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [channel, setChannel] = useState<AckChannel>("email");
+  const [channel, setChannel] = useState<AckChannel>(defaultChannel ?? "email");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");

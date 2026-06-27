@@ -99,7 +99,7 @@ export function buildAckTaskInsert(g: AckTaskGift) {
   };
 }
 
-async function openAckTaskId(supabase: SupabaseClient, giftId: string): Promise<string | null> {
+export async function openAckTaskId(supabase: SupabaseClient, giftId: string): Promise<string | null> {
   const { data } = await supabase
     .from("ops_tasks")
     .select("id")
@@ -192,6 +192,7 @@ export type AckQueueGift = {
     last_name: string | null;
     org_name: string | null;
     emails: string[];
+    preferred_ack_channel: string | null;
   } | null;
   taskId: string | null;
 };
@@ -211,7 +212,7 @@ export async function reconcileAckQueue(
   const { data: giftsRaw } = await supabase
     .from("gifts")
     .select(
-      "id, amount, gift_date, method, fair_market_value, deductible_amount, external_source, constituent_id, constituent:constituents(type, first_name, last_name, org_name, emails)"
+      "id, amount, gift_date, method, fair_market_value, deductible_amount, external_source, constituent_id, constituent:constituents(type, first_name, last_name, org_name, emails, preferred_ack_channel)"
     )
     .eq("acknowledgment_status", "pending")
     .order("gift_date", { ascending: true })

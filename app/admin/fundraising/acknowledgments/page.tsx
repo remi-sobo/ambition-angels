@@ -1,31 +1,27 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
-import { complianceBlock, type ReceiptGift } from "@/lib/fundraising/receipt";
-import AckComposer from "./_components/AckComposer";
+import {
+  complianceBlock,
+  requiresSubstantiation,
+  IRS_SUBSTANTIATION_THRESHOLD,
+  type ReceiptGift,
+} from "@/lib/fundraising/receipt";
+import { reconcileAckQueue, type AckQueueGift } from "@/lib/fundraising/ack-tasks";
+import { type AckChannel } from "@/lib/fundraising/ack-channels";
+import AckComposer, { type AckTemplateLite } from "./_components/AckComposer";
+import ThankathonButton from "./_components/ThankathonButton";
 
-// The acknowledgments queue (modules/03 §Donors 4): every gift awaiting a
-// thank-you, oldest first. The IRS clock matters — gifts ≥ $250 legally
-// require a contemporaneous written acknowledgment before the donor files.
+// The acknowledgments queue: every gift awaiting a thank-you, oldest first.
+// In v2 each pending thank-you is also a real `ops_task` (label `sys:ack`), so
+// it flows to the cockpit, the Ops queue, and the Right Rail. Loading this page
+// reconciles the queue with its tasks, so Stripe and pledge gifts get a task
+// even though their gift rows are created outside the app. The IRS clock
+// matters: gifts ≥ $250 legally require a contemporaneous written receipt.
 export const dynamic = "force-dynamic";
-
-type PendingGift = {
-  id: string;
-  amount: number;
-  gift_date: string;
-  method: string;
-  fair_market_value: number | null;
-  deductible_amount: number | null;
-  constituent: {
-    type: string;
-    first_name: string | null;
-    last_name: string | null;
-    org_name: string | null;
-    emails: string[];
-  } | null;
-};
 
 const fmtDate = (iso: string) =>
   new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -35,33 +31,26 @@ const daysSince = (iso: string) =>
 
 export default async function AcknowledgmentsPage() {
   const supabase = createServerSupabase();
-  const { data, error } = await supabase
-    .from("gifts")
-    .select(
-      "id, amount, gift_date, method, fair_market_value, deductible_amount, constituent:constituents(type, first_name, last_name, org_name, emails)"
-    )
-    .eq("acknowledgment_status", "pending")
-    .order("gift_date", { ascending: true })
-    .limit(200);
+  const ctx = await getOrgContext();
+  const createdBy = await getAdminUser();
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Acknowledgments</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
-          The fundraising tables aren&apos;t in this database yet. Apply{" "}
-          <code className="text-orange">create_fundraising_core.sql</code> via Actions → Apply DB
-          migration, then reload.
-        </div>
-      </div>
-    );
+  let pending: AckQueueGift[] = [];
+  if (ctx && createdBy) {
+    pending = await reconcileAckQueue(supabase, ctx.orgId, createdBy);
   }
 
-  const pending = ((data ?? []) as unknown as PendingGift[]).map((g) => ({
-    ...g,
-    amount: Number(g.amount),
-  }));
-  const required = pending.filter((g) => g.amount >= 250);
+  // Gift-subject templates for the composer's per-channel picker (empty until
+  // the library is seeded or the Phase 1 migration is applied).
+  const { data: tplData } = await supabase
+    .from("ack_templates")
+    .select("id, name, channel, subject, body")
+    .eq("subject_type", "gift")
+    .order("name");
+  const templates = (tplData ?? []) as AckTemplateLite[];
+
+  // IRS substantiation is derived from the gift amount via the compliance
+  // module's threshold, not a literal in this view.
+  const required = pending.filter((g) => requiresSubstantiation(g.amount));
   const oldest = pending[0];
 
   return (
@@ -71,6 +60,21 @@ export default async function AcknowledgmentsPage() {
           ← Donors
         </Link>
         <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Acknowledgments</span>
+        <div className="ml-auto flex items-center gap-4">
+          <ThankathonButton count={pending.length} />
+          <Link
+            href="/admin/fundraising/acknowledgments/letters"
+            className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
+          >
+            Letters →
+          </Link>
+          <Link
+            href="/admin/fundraising/acknowledgments/templates"
+            className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
+          >
+            Templates →
+          </Link>
+        </div>
       </div>
 
       <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
@@ -81,7 +85,7 @@ export default async function AcknowledgmentsPage() {
             sub={pending.length > 0 ? "oldest first below" : "all caught up 🎉"}
           />
           <StatCard
-            label="IRS-Required (≥ $250)"
+            label={`IRS-Required (≥ $${IRS_SUBSTANTIATION_THRESHOLD})`}
             value={required.length}
             delta={required.length > 0 ? { text: "written receipt required", direction: "down" } : undefined}
             sub={required.length === 0 ? "none outstanding" : undefined}
@@ -125,14 +129,22 @@ export default async function AcknowledgmentsPage() {
                         <div className="text-[11px] text-ink-2">
                           {fmtDate(g.gift_date)} · {daysSince(g.gift_date)}d ago
                           {email ? ` · ${email}` : " · no email on file"}
+                          {g.taskId ? " · in your queue" : null}
                         </div>
                       </div>
-                      {g.amount >= 250 && (
+                      {requiresSubstantiation(g.amount) && (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense uppercase tracking-wider">
                           Receipt required
                         </span>
                       )}
-                      <AckComposer giftId={g.id} donorEmail={email} complianceBlock={complianceBlock(receiptGift)} />
+                      <AckComposer
+                        giftId={g.id}
+                        donorName={g.constituent ? constituentName(g.constituent) : "there"}
+                        donorEmail={email}
+                        complianceBlock={complianceBlock(receiptGift)}
+                        templates={templates}
+                        defaultChannel={(g.constituent?.preferred_ack_channel as AckChannel | null) ?? null}
+                      />
                     </div>
                   </li>
                 );
@@ -142,10 +154,11 @@ export default async function AcknowledgmentsPage() {
         </section>
 
         <p className="text-xs text-ink-2 leading-relaxed max-w-2xl">
-          The receipt language (gift amount, date, the no-goods-or-services statement, and the
-          quid-pro-quo split when a fair market value is recorded) is generated from the gift
-          record and appended to every email automatically — it is never AI-written and never
-          editable. AI drafts only the personal note, and nothing sends without your review.
+          Each pending thank-you is also a task on the Ops queue and the Right Rail, linked to the
+          donor. The receipt language (gift amount, date, the no-goods-or-services statement, and the
+          quid-pro-quo split when a fair market value is recorded) is generated from the gift record
+          and appended to every email automatically. It is never AI-written and never editable. AI
+          drafts only the personal note, and nothing sends without your review.
         </p>
       </div>
     </div>

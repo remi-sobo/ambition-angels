@@ -11,6 +11,16 @@ export type ReceiptGift = {
   deductible_amount: number | null;
 };
 
+// IRS Pub 1771: a single gift of $250 or more requires a contemporaneous
+// written acknowledgment. This statutory threshold is the one source of truth
+// for "is a written receipt legally required" — views and the stewardship
+// matrix derive from it rather than hardcoding the number in a page.
+export const IRS_SUBSTANTIATION_THRESHOLD = 250;
+
+export function requiresSubstantiation(amount: number): boolean {
+  return amount >= IRS_SUBSTANTIATION_THRESHOLD;
+}
+
 const usd = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 });
 
@@ -54,6 +64,18 @@ export function complianceBlock(gift: ReceiptGift): string {
   }
   lines.push(ORG_RECEIPT_FOOTER);
   return lines.join("\n");
+}
+
+/**
+ * The compliance boundary for polymorphic acknowledgments: receipt language
+ * exists ONLY for a real gift. A non-gift acknowledgment (a volunteer, a
+ * foundation/DAF grant, a milestone) passes null and gets an empty string, so a
+ * tax-deductible statement can never land on the wrong record. DAF/grant thanks
+ * therefore carry no tax-deductible language, by construction.
+ */
+export function complianceFor(gift: ReceiptGift | null | undefined): string {
+  if (!gift) return "";
+  return complianceBlock(gift);
 }
 
 /** Full receipt email body: editable personal note above the immutable

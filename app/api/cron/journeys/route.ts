@@ -108,6 +108,7 @@ export async function GET(req: NextRequest) {
     .limit(300);
 
   const activeJourneyIds = new Set((journeys ?? []).map((j) => j.id));
+  const triggerById = new Map((journeys ?? []).map((j) => [j.id, j.trigger]));
 
   for (const e of (due ?? []) as Array<{ id: string; journey_id: string; constituent_id: string; current_step: number }>) {
     if (!activeJourneyIds.has(e.journey_id)) continue; // journey paused → hold
@@ -127,6 +128,36 @@ export async function GET(req: NextRequest) {
     if (!c || c.do_not_contact || !email) {
       await admin.from("journey_enrollments").update({ status: "cancelled" }).eq("id", e.id);
       continue;
+    }
+
+    // Double-thank guard. The acknowledgment matrix owns the immediate
+    // first-gift receipt; journeys own the nurture after it. If this donor was
+    // thanked in the last few days, skip a first_gift journey's opening step
+    // and advance straight into the later nurture, so nobody gets two
+    // "thanks for your first gift" emails in an hour.
+    if (triggerById.get(e.journey_id) === "first_gift" && e.current_step === 0) {
+      const { data: recentAck } = await admin
+        .from("gifts")
+        .select("id")
+        .eq("constituent_id", e.constituent_id)
+        .eq("acknowledgment_status", "sent")
+        .gte("acknowledged_at", new Date(Date.now() - 3 * 86_400_000).toISOString())
+        .limit(1);
+      if (recentAck && recentAck.length > 0) {
+        const nextStep = e.current_step + 1;
+        if (nextStep >= steps.length) {
+          await admin
+            .from("journey_enrollments")
+            .update({ status: "completed", current_step: nextStep, last_step_at: nowIso() })
+            .eq("id", e.id);
+        } else {
+          await admin
+            .from("journey_enrollments")
+            .update({ current_step: nextStep, last_step_at: nowIso(), next_run_at: plusDaysIso(steps[nextStep].delay_days) })
+            .eq("id", e.id);
+        }
+        continue;
+      }
     }
 
     try {

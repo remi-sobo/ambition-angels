@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import {
   receiptEmailText,
   receiptEmailHtml,
   type ReceiptGift,
 } from "@/lib/fundraising/receipt";
+import { closeAckTaskForGift } from "@/lib/fundraising/ack-tasks";
+import { constituentName } from "@/lib/fundraising/display";
 
 // POST /api/admin/acknowledgments/send — send the thank-you + receipt for
 // one gift. The caller supplies only the personal note and subject; the
 // IRS compliance block is rebuilt here from the gift row, so the client
 // cannot alter or omit it.
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const user = await getAdminUser();
@@ -132,12 +135,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Email send failed — try again" }, { status: 502 });
   }
 
+  // The thank-you is done — close the linked ack task (if any) so the gift
+  // stops showing in the cockpit / Ops queue, and capture its id for the record.
+  const ackTaskId = await closeAckTaskForGift(supabase, giftId);
+
   // Email is out and the gift is already marked sent. A failure recording
   // the content can't un-send the email — report it as a warning, never as
   // failure (the queue must not re-email this gift).
   let warning: string | undefined;
   const { error: ackErr } = await supabase.from("acknowledgments").insert({
+    org_id: ctx.orgId,
     gift_id: giftId,
+    subject_type: "gift",
+    subject_id: giftId,
+    subject_label: constituent ? constituentName(constituent) : null,
+    ops_task_id: ackTaskId,
     template: "receipt-v1",
     channel: "email",
     subject,

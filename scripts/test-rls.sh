@@ -118,6 +118,16 @@ ordered=(
   add_applied_id_to_reed_plan_proposals.sql
   fr_map_pledged_to_steward.sql
   fr_spine_include_unlinked_deals.sql
+  ack_v2_1_schema_foundation.sql
+  ack_v2_3_channels.sql
+  ack_v2_4_seed_aa_stewardship.sql
+  ack_v2_5_entity_vocab.sql
+  ack_v2_6_polish.sql
+  add_roll_count_to_ops_tasks.sql
+  create_revenue_schedule.sql
+  create_rhythm_sessions.sql
+  strategy_build2_overrides_baselines.sql
+  strategy_proof_points.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

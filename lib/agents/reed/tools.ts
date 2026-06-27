@@ -7,6 +7,7 @@ import {
 } from "@/lib/finance/runway";
 import { loadRevenueSchedule, scheduleToRunwayPledges } from "@/lib/finance/schedule";
 import type { ReedTool } from "./client";
+import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 /**
  * Reed's read-only tool set (Phase 4).
@@ -230,7 +231,7 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
 
         const [giftsRes, oppsRes] = await Promise.all([
           sb.from("gifts").select("amount").gte("gift_date", fy.start).lte("gift_date", fy.end),
-          sb.from("opportunities").select("stage, ask_amount, probability").neq("stage", "lost"),
+          sb.from("opportunities").select("stage, ask_amount, probability").neq("stage", "lost").or(EXCLUDE_PARTNERSHIP_OPPS),
         ]);
 
         const raised = (giftsRes.data ?? []).reduce((s, g) => s + Number(g.amount), 0);

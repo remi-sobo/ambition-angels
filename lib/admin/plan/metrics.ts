@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { FINANCE } from "@/lib/admin/thresholds";
+import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import {
   computeSecuredFy,
   computeWeightedPipeline,
@@ -77,6 +78,7 @@ export const PLAN_METRICS: Record<string, PlanMetricFn> = {
       .eq("stage", "steward")
       .in("constituent_id", ids)
       .gte("updated_at", yearStartTs)
+      .or(EXCLUDE_PARTNERSHIP_OPPS)
       .limit(2000);
     return sumField(data as { ask_amount: number | null }[] | null, "ask_amount");
   },

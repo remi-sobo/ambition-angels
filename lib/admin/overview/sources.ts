@@ -23,6 +23,7 @@ import { deriveHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO, priorityRank, type TaskPriority } from "@/app/admin/ops/_types/ops";
 import { getDataAge } from "@/lib/admin/dataAge";
+import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import {
   getFinanceSnapshot,
   fiscalYearBounds,
@@ -348,7 +349,7 @@ export const getForecast = cache(async (): Promise<ForecastData> => {
 
   const [giftsRes, oppsRes] = await Promise.all([
     sb.from("gifts").select("amount").gte("gift_date", fy.start).lte("gift_date", fy.end),
-    sb.from("opportunities").select("stage, ask_amount, probability").neq("stage", "lost"),
+    sb.from("opportunities").select("stage, ask_amount, probability").neq("stage", "lost").or(EXCLUDE_PARTNERSHIP_OPPS),
   ]);
 
   const raised = (giftsRes.data ?? []).reduce((s, g) => s + Number(g.amount), 0);
@@ -400,6 +401,7 @@ export const getMoves = cache(async (): Promise<MoveRow[]> => {
         "constituent:constituents ( id, type, first_name, last_name, org_name )",
     )
     .in("stage", OPEN_STAGES)
+    .or(EXCLUDE_PARTNERSHIP_OPPS)
     .or("owner.ilike.remi,ask_amount.gte.10000")
     .order("ask_amount", { ascending: false, nullsFirst: false })
     .limit(100);
@@ -494,6 +496,7 @@ export const getFires = cache(async (): Promise<FireItem[]> => {
       .from("opportunities")
       .select("id, name, ask_amount, next_step_due, constituent:constituents ( id, type, first_name, last_name, org_name )")
       .in("stage", OPEN_STAGES)
+      .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step_due", "is", null)
       .lt("next_step_due", today)
       .order("ask_amount", { ascending: false, nullsFirst: false })
@@ -502,6 +505,7 @@ export const getFires = cache(async (): Promise<FireItem[]> => {
       .from("opportunities")
       .select("ask_amount, constituent:constituents ( id, type, first_name, last_name, org_name )")
       .in("stage", OPEN_STAGES)
+      .or(EXCLUDE_PARTNERSHIP_OPPS)
       .gte("ask_amount", 10000)
       .limit(100),
   ]);
@@ -906,9 +910,10 @@ export const getFollowThrough = cache(async (): Promise<FollowThrough> => {
       .from("opportunities")
       .select("id", { count: "exact", head: true })
       .in("stage", OPEN_STAGES)
+      .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step_due", "is", null)
       .lt("next_step_due", today),
-    sb.from("opportunities").select("id", { count: "exact", head: true }).in("stage", OPEN_STAGES).is("owner", null),
+    sb.from("opportunities").select("id", { count: "exact", head: true }).in("stage", OPEN_STAGES).or(EXCLUDE_PARTNERSHIP_OPPS).is("owner", null),
     sb.from("gifts").select("amount").gte("gift_date", since14),
   ]);
 

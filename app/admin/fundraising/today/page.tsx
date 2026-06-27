@@ -7,6 +7,7 @@ import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "../../ops/_types/ops";
 import GmailSyncButton from "../_components/GmailSyncButton";
 import SuggestedMoves from "../_components/SuggestedMoves";
+import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 // Today's Fundraising Moves (Phase 2) — the operator home screen. Answers "who
 // needs me today," assembled deterministically from the spine (opportunities +
@@ -77,6 +78,7 @@ export default async function TodaysMovesPage() {
       .from("opportunities")
       .select(oppSelect)
       .in("stage", OPEN_STAGES)
+      .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step", "is", null)
       .lt("next_step_due", today)
       .order("next_step_due", { ascending: true })
@@ -86,6 +88,7 @@ export default async function TodaysMovesPage() {
       .from("opportunities")
       .select(oppSelect)
       .in("stage", OPEN_STAGES)
+      .or(EXCLUDE_PARTNERSHIP_OPPS)
       .gte("expected_close", today)
       .lte("expected_close", soon)
       .order("expected_close", { ascending: true })
@@ -95,6 +98,7 @@ export default async function TodaysMovesPage() {
       .from("opportunities")
       .select(oppSelect)
       .in("stage", OPEN_STAGES)
+      .or(EXCLUDE_PARTNERSHIP_OPPS)
       .is("owner", null)
       .order("ask_amount", { ascending: false, nullsFirst: false })
       .limit(50),

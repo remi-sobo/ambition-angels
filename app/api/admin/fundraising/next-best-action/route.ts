@@ -19,6 +19,7 @@ import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "@/app/admin/ops/_types/ops";
 import { runNextBestAction, estimateNbaCostUsd } from "@/lib/agents/next-best-action/agent";
+import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 // Shared monthly agent wallet (same cap as the research route) + a rate limit,
 // so "Suggest next moves" can't run uncapped.
@@ -195,6 +196,7 @@ export async function POST() {
        constituent:constituents ( id, type, first_name, last_name, org_name )`
     )
     .in("stage", OPEN_STAGES)
+    .or(EXCLUDE_PARTNERSHIP_OPPS)
     .limit(150);
   if (oppErr) {
     return NextResponse.json({ error: "Could not load opportunities" }, { status: 500 });

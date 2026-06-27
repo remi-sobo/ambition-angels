@@ -4,6 +4,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../../finance/_components/charts";
 import StatCard from "../../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
+import { CHANNEL_PAST } from "@/lib/fundraising/ack-channels";
 import { analyzeDonor, FLAG_LABELS, FLAG_HELP } from "@/lib/fundraising/retention";
 import { scoreDonor, BAND_LABEL, type EngagementBand } from "@/lib/fundraising/engagement";
 import { todayISO } from "../../../ops/_types/ops";
@@ -134,6 +135,24 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       scByGift.set(sc.gift_id, list);
     }
   }
+  // Acknowledgment touches on this donor's gifts — the stewardship history.
+  // Reading the real rows (not just the gift's sent flag) surfaces which
+  // channel each thank-you went out on, so acks stop being invisible here.
+  const ackEvents: Array<{ gift_id: string; channel: string; sent_at: string }> = [];
+  if (giftIds.length > 0) {
+    const { data: ackRows } = await supabase
+      .from("acknowledgments")
+      .select("gift_id, channel, sent_at")
+      .in("gift_id", giftIds)
+      .not("sent_at", "is", null)
+      .order("sent_at", { ascending: false })
+      .limit(500);
+    for (const a of (ackRows ?? []) as Array<{ gift_id: string | null; channel: string | null; sent_at: string | null }>) {
+      if (a.gift_id && a.sent_at) ackEvents.push({ gift_id: a.gift_id, channel: a.channel ?? "other", sent_at: a.sent_at });
+    }
+  }
+  const amountByGift = new Map(gifts.map((g) => [g.id, g.amount]));
+
   // Recognition received = soft credits where this donor is the credited party
   // (Epic D3). Revenue counts only hard-credit gifts; recognition adds these.
   const recognitionReceived = ((scReceivedRes.data ?? []) as Array<{ amount: number }>)
@@ -224,7 +243,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   type Activity =
     | { kind: "gift"; sort: number; gift: GiftEv }
     | { kind: "interaction"; sort: number; interaction: IntEv }
-    | { kind: "ack"; sort: number; at: string; amount: number };
+    | { kind: "ack"; sort: number; at: string; amount: number; channel: string };
   const ms = (s: string) => {
     const t = Date.parse(s);
     return Number.isNaN(t) ? 0 : t;
@@ -232,14 +251,13 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const activity: Activity[] = [
     ...gifts.map((g): Activity => ({ kind: "gift", sort: ms(g.gift_date + "T12:00:00"), gift: g })),
     ...interactions.map((i): Activity => ({ kind: "interaction", sort: ms(i.occurred_at), interaction: i })),
-    ...gifts
-      .filter((g) => g.acknowledgment_status === "sent" && g.acknowledged_at)
-      .map((g): Activity => ({
-        kind: "ack",
-        sort: ms(g.acknowledged_at as string),
-        at: g.acknowledged_at as string,
-        amount: g.amount,
-      })),
+    ...ackEvents.map((a): Activity => ({
+      kind: "ack",
+      sort: ms(a.sent_at),
+      at: a.sent_at,
+      amount: amountByGift.get(a.gift_id) ?? 0,
+      channel: a.channel,
+    })),
   ].sort((a, b) => b.sort - a.sort);
 
   return (
@@ -525,10 +543,12 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                     );
                   }
                   return (
-                    <li key={`a-${ev.at}-${ev.amount}`} className="px-5 py-3 flex items-center gap-4">
+                    <li key={`a-${ev.at}-${ev.channel}-${ev.amount}`} className="px-5 py-3 flex items-center gap-4">
                       <span className="text-xs text-ink-2 w-24 flex-shrink-0">{fmtWhen(ev.at)}</span>
                       <span className="text-[10px] uppercase tracking-wider text-revenue font-semibold w-14 flex-shrink-0">Thanked</span>
-                      <span className="text-xs text-ink-2">Thank-you sent for a {money(ev.amount)} gift</span>
+                      <span className="text-xs text-ink-2">
+                        {CHANNEL_PAST[ev.channel] ?? "Thanked"} · thank-you for a {money(ev.amount)} gift
+                      </span>
                     </li>
                   );
                 })}

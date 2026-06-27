@@ -6,7 +6,7 @@ import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import { complianceBlock, type ReceiptGift } from "@/lib/fundraising/receipt";
 import { reconcileAckQueue, type AckQueueGift } from "@/lib/fundraising/ack-tasks";
-import AckComposer from "./_components/AckComposer";
+import AckComposer, { type AckTemplateLite } from "./_components/AckComposer";
 
 // The acknowledgments queue: every gift awaiting a thank-you, oldest first.
 // In v2 each pending thank-you is also a real `ops_task` (label `sys:ack`), so
@@ -32,6 +32,15 @@ export default async function AcknowledgmentsPage() {
     pending = await reconcileAckQueue(supabase, ctx.orgId, createdBy);
   }
 
+  // Gift-subject templates for the composer's per-channel picker (empty until
+  // the library is seeded or the Phase 1 migration is applied).
+  const { data: tplData } = await supabase
+    .from("ack_templates")
+    .select("id, name, channel, subject, body")
+    .eq("subject_type", "gift")
+    .order("name");
+  const templates = (tplData ?? []) as AckTemplateLite[];
+
   const required = pending.filter((g) => g.amount >= 250);
   const oldest = pending[0];
 
@@ -42,6 +51,12 @@ export default async function AcknowledgmentsPage() {
           ← Donors
         </Link>
         <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Acknowledgments</span>
+        <Link
+          href="/admin/fundraising/acknowledgments/templates"
+          className="ml-auto text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
+        >
+          Templates →
+        </Link>
       </div>
 
       <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
@@ -104,7 +119,13 @@ export default async function AcknowledgmentsPage() {
                           Receipt required
                         </span>
                       )}
-                      <AckComposer giftId={g.id} donorEmail={email} complianceBlock={complianceBlock(receiptGift)} />
+                      <AckComposer
+                        giftId={g.id}
+                        donorName={g.constituent ? constituentName(g.constituent) : "there"}
+                        donorEmail={email}
+                        complianceBlock={complianceBlock(receiptGift)}
+                        templates={templates}
+                      />
                     </div>
                   </li>
                 );

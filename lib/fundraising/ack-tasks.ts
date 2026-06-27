@@ -22,6 +22,10 @@ import { constituentName } from "@/lib/fundraising/display";
 
 export const ACK_LABEL = "sys:ack";
 export const GIFT_LABEL_PREFIX = "sys:gift:";
+// A major-gift escalation task. Distinct from the gift label so it lives
+// independently of Shannon's receipt task: it is not deduped against it and is
+// not closed when the receipt is sent — the escalation owner closes it himself.
+export const ESCALATE_LABEL_PREFIX = "sys:escalate:";
 
 // Interim stewardship defaults until the matrix lands (Phase 4): a pending gift
 // that needs a personal thank-you becomes a 48-hour task on the ops lead.
@@ -38,6 +42,10 @@ export function isTaskableSource(src: string | null | undefined): boolean {
 
 export function giftLabel(giftId: string): string {
   return GIFT_LABEL_PREFIX + giftId;
+}
+
+export function escalateLabel(giftId: string): string {
+  return ESCALATE_LABEL_PREFIX + giftId;
 }
 
 export function parseGiftId(labels: string[] | null | undefined): string | null {
@@ -99,16 +107,20 @@ export function buildAckTaskInsert(g: AckTaskGift) {
   };
 }
 
-export async function openAckTaskId(supabase: SupabaseClient, giftId: string): Promise<string | null> {
+export async function openTaskByLabel(supabase: SupabaseClient, label: string): Promise<string | null> {
   const { data } = await supabase
     .from("ops_tasks")
     .select("id")
-    .contains("labels", [giftLabel(giftId)])
+    .contains("labels", [label])
     .neq("status", "done")
     .is("archived_at", null)
     .limit(1)
     .maybeSingle();
   return (data as { id: string } | null)?.id ?? null;
+}
+
+export async function openAckTaskId(supabase: SupabaseClient, giftId: string): Promise<string | null> {
+  return openTaskByLabel(supabase, giftLabel(giftId));
 }
 
 /**
@@ -173,6 +185,76 @@ export async function closeAckTaskForGift(
     return (data as { id: string }[] | null)?.[0]?.id ?? null;
   } catch (e) {
     console.error("[ack-tasks] close threw:", e);
+    return null;
+  }
+}
+
+type EscalationGift = {
+  orgId: string;
+  createdBy: "remi" | "shannon";
+  giftId: string;
+  constituentId: string;
+  donorName: string;
+  amount: number;
+  giftDate: string;
+  assignee: "remi" | "shannon";
+  slaHours?: number;
+};
+
+/** The ops_tasks insert for a major-gift escalation task. */
+export function buildEscalationTaskInsert(g: EscalationGift) {
+  const slaDays = Math.max(1, Math.ceil((g.slaHours ?? 24) / 24));
+  return {
+    org_id: g.orgId,
+    title: `Personally thank ${g.donorName} for their ${usd(g.amount)} major gift`,
+    description: "A gift this size is yours to acknowledge personally. A call or a handwritten note from you goes a long way.",
+    category: "fundraising" as const,
+    priority: "high" as const,
+    labels: [ACK_LABEL, escalateLabel(g.giftId)],
+    assigned_to: g.assignee,
+    created_by: g.createdBy,
+    due_date: addDays(g.giftDate, slaDays),
+    linked_entity_type: "constituent" as const,
+    linked_entity_id: g.constituentId,
+    linked_label: g.donorName,
+  };
+}
+
+/**
+ * Idempotently ensure a major gift has its own escalation task (a personal
+ * touch for the escalation owner, e.g. Remi), independent of Shannon's receipt
+ * task. Best-effort; never throws into the caller.
+ */
+export async function ensureEscalationTaskForGift(
+  supabase: SupabaseClient,
+  g: Omit<EscalationGift, "donorName"> & { donorName?: string }
+): Promise<string | null> {
+  try {
+    const existing = await openTaskByLabel(supabase, escalateLabel(g.giftId));
+    if (existing) return existing;
+
+    let donorName = g.donorName;
+    if (!donorName) {
+      const { data: c } = await supabase
+        .from("constituents")
+        .select("type, first_name, last_name, org_name")
+        .eq("id", g.constituentId)
+        .maybeSingle();
+      donorName = c ? constituentName(c as DonorRow) : "this donor";
+    }
+
+    const { data, error } = await supabase
+      .from("ops_tasks")
+      .insert(buildEscalationTaskInsert({ ...g, donorName }))
+      .select("id")
+      .single();
+    if (error) {
+      console.error("[ack-tasks] escalation ensure failed:", error.message);
+      return null;
+    }
+    return (data as { id: string }).id;
+  } catch (e) {
+    console.error("[ack-tasks] escalation ensure threw:", e);
     return null;
   }
 }

@@ -1,24 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { closeAckTaskForGift } from "@/lib/fundraising/ack-tasks";
+import { isOfflineChannel } from "@/lib/fundraising/ack-channels";
 
-// POST /api/admin/acknowledgments/mark — record that a gift was thanked
-// outside the system (handwritten letter, phone call, in person). Keeps the
-// queue honest without forcing every thank-you through email.
+// POST /api/admin/acknowledgments/mark — record that a gift was thanked on a
+// non-email channel (handwritten letter, phone call, text, in person). The
+// channel is logged on the donor timeline, so "thanked outside the system" is
+// a real, labeled touch rather than a silent status flip.
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const user = await getAdminUser();
   const body = (await req.json().catch(() => null)) as {
     gift_id?: string;
     note?: string;
+    channel?: string;
   } | null;
   const giftId = typeof body?.gift_id === "string" ? body.gift_id : "";
   if (!/^[0-9a-f-]{36}$/i.test(giftId)) {
     return NextResponse.json({ error: "gift_id is required" }, { status: 400 });
   }
+  // Real channel when the caller names one (letter/call/text/in_person); the
+  // legacy "other" stays the fallback so older clients keep working.
+  const channel = isOfflineChannel(body?.channel) ? (body!.channel as string) : "other";
 
   const supabase = createServerSupabase();
   const sentAt = new Date().toISOString();
@@ -39,11 +47,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Record that the gift was thanked offline closes its ack task too.
+  const ackTaskId = await closeAckTaskForGift(supabase, giftId);
+
   let warning: string | undefined;
   const { error: ackErr } = await supabase.from("acknowledgments").insert({
+    org_id: ctx.orgId,
     gift_id: giftId,
+    subject_type: "gift",
+    subject_id: giftId,
+    ops_task_id: ackTaskId,
     template: "manual",
-    channel: "other",
+    channel,
     body: typeof body?.note === "string" ? body.note.slice(0, 500) : null,
     sent_by: user,
     sent_at: sentAt,
@@ -57,7 +72,7 @@ export async function POST(req: NextRequest) {
     action: "fundraising.acknowledgment.mark",
     entityType: "gifts",
     entityId: giftId,
-    after: { channel: "other" },
+    after: { channel },
   });
   return NextResponse.json({ ok: true, warning });
 }

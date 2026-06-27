@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // PATCH a pledge installment: mark it paid (creates a real gift on the spine
@@ -12,7 +12,8 @@ const METHODS = ["card", "cash", "check", "ach", "in_kind", "stock", "other"] as
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await getOrgContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!isUuid(params.id)) return NextResponse.json({ error: "Bad id" }, { status: 400 });
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
@@ -61,6 +62,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { data: gift, error: gErr } = await supabase
     .from("gifts")
     .insert({
+      // Stamp org_id from session — never ride the AA column default (org_id trap).
+      org_id: ctx.orgId,
       constituent_id: pledge.constituent_id,
       amount: Number(pay.expected_amount),
       gift_date: giftDate,

@@ -4,11 +4,15 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../../../finance/_components/charts";
 import StatCard from "../../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
+import { CHANNEL_PAST } from "@/lib/fundraising/ack-channels";
 import { analyzeDonor, FLAG_LABELS, FLAG_HELP } from "@/lib/fundraising/retention";
 import { scoreDonor, BAND_LABEL, type EngagementBand } from "@/lib/fundraising/engagement";
 import { todayISO } from "../../../ops/_types/ops";
 import { GiftEntryForm, GiftRowActions } from "../_components/GiftControls";
 import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentControls";
+import LogThankYou from "../_components/LogThankYou";
+import AckChannelPref from "../_components/AckChannelPref";
+import { type AckChannel } from "@/lib/fundraising/ack-channels";
 import { HouseholdControls } from "../_components/HouseholdControls";
 import { AddSoftCredit, SoftCreditChip, SC_TYPE_LABEL } from "../_components/SoftCreditControls";
 import EmailActions from "../_components/EmailActions";
@@ -134,6 +138,37 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       scByGift.set(sc.gift_id, list);
     }
   }
+  // Acknowledgment touches — the stewardship history. Reading the real rows
+  // (not just the gift's sent flag) surfaces which channel each thank-you went
+  // out on. Two sources: thank-yous for this donor's gifts, and proactive
+  // non-gift thank-yous logged straight to the donor (gift_id null).
+  const amountByGift = new Map(gifts.map((g) => [g.id, g.amount]));
+  const ackEvents: Array<{ channel: string; sent_at: string; amount: number | null }> = [];
+  if (giftIds.length > 0) {
+    const { data: giftAcks } = await supabase
+      .from("acknowledgments")
+      .select("gift_id, channel, sent_at")
+      .in("gift_id", giftIds)
+      .not("sent_at", "is", null)
+      .order("sent_at", { ascending: false })
+      .limit(500);
+    for (const a of (giftAcks ?? []) as Array<{ gift_id: string | null; channel: string | null; sent_at: string | null }>) {
+      if (a.gift_id && a.sent_at)
+        ackEvents.push({ channel: a.channel ?? "other", sent_at: a.sent_at, amount: amountByGift.get(a.gift_id) ?? null });
+    }
+  }
+  const { data: subjectAcks } = await supabase
+    .from("acknowledgments")
+    .select("channel, sent_at")
+    .eq("subject_type", "constituent")
+    .eq("subject_id", params.id)
+    .is("gift_id", null)
+    .not("sent_at", "is", null)
+    .limit(200);
+  for (const a of (subjectAcks ?? []) as Array<{ channel: string | null; sent_at: string | null }>) {
+    if (a.sent_at) ackEvents.push({ channel: a.channel ?? "other", sent_at: a.sent_at, amount: null });
+  }
+
   // Recognition received = soft credits where this donor is the credited party
   // (Epic D3). Revenue counts only hard-credit gifts; recognition adds these.
   const recognitionReceived = ((scReceivedRes.data ?? []) as Array<{ amount: number }>)
@@ -224,7 +259,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   type Activity =
     | { kind: "gift"; sort: number; gift: GiftEv }
     | { kind: "interaction"; sort: number; interaction: IntEv }
-    | { kind: "ack"; sort: number; at: string; amount: number };
+    | { kind: "ack"; sort: number; at: string; amount: number | null; channel: string };
   const ms = (s: string) => {
     const t = Date.parse(s);
     return Number.isNaN(t) ? 0 : t;
@@ -232,14 +267,13 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const activity: Activity[] = [
     ...gifts.map((g): Activity => ({ kind: "gift", sort: ms(g.gift_date + "T12:00:00"), gift: g })),
     ...interactions.map((i): Activity => ({ kind: "interaction", sort: ms(i.occurred_at), interaction: i })),
-    ...gifts
-      .filter((g) => g.acknowledgment_status === "sent" && g.acknowledged_at)
-      .map((g): Activity => ({
-        kind: "ack",
-        sort: ms(g.acknowledged_at as string),
-        at: g.acknowledged_at as string,
-        amount: g.amount,
-      })),
+    ...ackEvents.map((a): Activity => ({
+      kind: "ack",
+      sort: ms(a.sent_at),
+      at: a.sent_at,
+      amount: a.amount,
+      channel: a.channel,
+    })),
   ].sort((a, b) => b.sort - a.sort);
 
   return (
@@ -385,6 +419,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                 <span className="text-ink-1 break-words min-w-0 capitalize">{String(value)}</span>
               </div>
             ))}
+            <AckChannelPref constituentId={c.id} current={(c.preferred_ack_channel as string | null) ?? null} />
             {c.notes && <p className="text-xs text-ink-2 border-t border-outline pt-3">{c.notes}</p>}
             <ConstituentDangerZone
               id={c.id}
@@ -398,6 +433,12 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
             <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
               <h2 className="font-heading font-bold text-ink-1 text-sm">Activity</h2>
               <div className="flex items-center gap-2">
+                <LogThankYou
+                  subjectType="constituent"
+                  subjectId={c.id}
+                  subjectLabel={name}
+                  defaultChannel={(c.preferred_ack_channel as AckChannel | null) ?? null}
+                />
                 <LogInteractionForm constituentId={c.id} />
                 <GiftEntryForm
                   constituentId={c.id}
@@ -525,10 +566,13 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                     );
                   }
                   return (
-                    <li key={`a-${ev.at}-${ev.amount}`} className="px-5 py-3 flex items-center gap-4">
+                    <li key={`a-${ev.at}-${ev.channel}-${ev.amount ?? "x"}`} className="px-5 py-3 flex items-center gap-4">
                       <span className="text-xs text-ink-2 w-24 flex-shrink-0">{fmtWhen(ev.at)}</span>
                       <span className="text-[10px] uppercase tracking-wider text-revenue font-semibold w-14 flex-shrink-0">Thanked</span>
-                      <span className="text-xs text-ink-2">Thank-you sent for a {money(ev.amount)} gift</span>
+                      <span className="text-xs text-ink-2">
+                        {CHANNEL_PAST[ev.channel] ?? "Thanked"} ·{" "}
+                        {ev.amount != null ? `thank-you for a ${money(ev.amount)} gift` : "thank-you"}
+                      </span>
                     </li>
                   );
                 })}

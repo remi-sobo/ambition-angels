@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushGiftToHubSpot } from "@/lib/hubspot/sync-out";
+import { processGiftStewardship } from "@/lib/fundraising/stewardship";
 
 // Epic A — manual / offline gift entry. The Stripe pipeline auto-ingests
 // online gifts via the donations trigger; this is the path for checks, cash,
@@ -28,7 +29,8 @@ const money = (v: unknown): number | null =>
  * revenue). Amount + gift_date are required.
  */
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -83,7 +85,7 @@ export async function POST(req: NextRequest) {
     } else {
       const { data: created, error: cErr } = await supabase
         .from("constituents")
-        .insert({ type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
+        .insert({ org_id: ctx.orgId, type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
         .select("id")
         .single();
       if (cErr || !created) {
@@ -96,6 +98,8 @@ export async function POST(req: NextRequest) {
   }
 
   const insert: Record<string, unknown> = {
+    // Stamp org_id from session — never ride the AA column default (org_id trap).
+    org_id: ctx.orgId,
     constituent_id: constituentId,
     amount,
     gift_date: body.gift_date,
@@ -128,6 +132,15 @@ export async function POST(req: NextRequest) {
 
   // Mirror to a connected HubSpot as a closed-won deal (opt-in; no-op otherwise).
   await pushGiftToHubSpot(gift.id);
+
+  // Stewardship matrix: decide whether this gift auto-sends a compliant receipt,
+  // spawns a personal-touch ack task, or is marked not-required — all driven by
+  // stewardship_rules, never a hardcoded threshold. Best-effort; never blocks
+  // the gift. With no rules seeded it falls through to 'none' (not_required).
+  const createdBy = await getAdminUser();
+  if (createdBy) {
+    await processGiftStewardship(supabase, { orgId: ctx.orgId, createdBy, giftId: gift.id });
+  }
 
   return NextResponse.json({ id: gift.id, constituent_id: constituentId, warning });
 }

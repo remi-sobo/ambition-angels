@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushGiftToHubSpot } from "@/lib/hubspot/sync-out";
+import { ensureAckTaskForGift } from "@/lib/fundraising/ack-tasks";
 
 // Epic A — manual / offline gift entry. The Stripe pipeline auto-ingests
 // online gifts via the donations trigger; this is the path for checks, cash,
@@ -131,6 +132,23 @@ export async function POST(req: NextRequest) {
 
   // Mirror to a connected HubSpot as a closed-won deal (opt-in; no-op otherwise).
   await pushGiftToHubSpot(gift.id);
+
+  // Ack-to-task bridge: a manually recorded gift is a thank-you moment, so spawn
+  // a `sys:ack` task linked to the donor (best-effort — never blocks the gift).
+  // Anonymous gifts have no one to thank, so they get no task.
+  if (constituentId) {
+    const createdBy = await getAdminUser();
+    if (createdBy) {
+      await ensureAckTaskForGift(supabase, {
+        orgId: ctx.orgId,
+        createdBy,
+        giftId: gift.id,
+        constituentId,
+        amount,
+        giftDate: body.gift_date as string,
+      });
+    }
+  }
 
   return NextResponse.json({ id: gift.id, constituent_id: constituentId, warning });
 }

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 /**
  * The code-defined metric registry (docs/bloomos/03-architecture.md §7).
@@ -42,11 +43,11 @@ export async function computeKpis(supabase: SupabaseClient): Promise<KpiValue[]>
     supabase.from("gifts").select("amount, constituent_id").gte("gift_date", yearStart()).limit(10000),
     supabase.from("gifts").select("constituent_id").gte("gift_date", yearStart()).not("constituent_id", "is", null).limit(10000),
     supabase.from("gifts").select("constituent_id").gte("gift_date", lastYearStart()).lt("gift_date", yearStart()).not("constituent_id", "is", null).limit(10000),
-    supabase.from("opportunities").select("ask_amount, probability").in("stage", ["identify", "qualify", "cultivate", "solicit"]).limit(2000),
+    supabase.from("opportunities").select("ask_amount, probability").in("stage", ["identify", "qualify", "cultivate", "solicit"]).or(EXCLUDE_PARTNERSHIP_OPPS).limit(2000),
     supabase.from("grants").select("amount_awarded").in("stage", ["awarded", "active", "closed"]).gte("updated_at", `${year}-01-01T00:00:00Z`).limit(1000),
     supabase.from("gifts").select("id", { count: "exact", head: true }).eq("acknowledgment_status", "pending"),
     supabase.from("compliance_items").select("id", { count: "exact", head: true }).in("status", ["upcoming", "in_progress"]).lt("due_date", today),
-    supabase.from("opportunities").select("id", { count: "exact", head: true }).lt("next_step_due", today).not("next_step_due", "is", null).not("stage", "in", "(steward,lost)"),
+    supabase.from("opportunities").select("id", { count: "exact", head: true }).lt("next_step_due", today).not("next_step_due", "is", null).not("stage", "in", "(steward,lost)").or(EXCLUDE_PARTNERSHIP_OPPS),
     supabase.from("board_members").select("constituent_id, coi_signed_at").eq("status", "active").limit(100),
     supabase.from("ops_tasks").select("id", { count: "exact", head: true }).neq("status", "done"),
   ]);

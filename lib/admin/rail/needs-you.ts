@@ -2,6 +2,7 @@ import "server-only";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getAdminUser } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
+import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 /**
  * Needs-you shelf data for the BloomOS right rail.
@@ -96,6 +97,7 @@ export async function getNeedsYou(): Promise<NeedsYouData> {
         "id, next_step, next_step_due, constituent:constituents ( id, type, first_name, last_name, org_name )"
       )
       .in("stage", OPEN_STAGES)
+      .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step", "is", null)
       .not("next_step_due", "is", null)
       .lte("next_step_due", today)

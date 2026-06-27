@@ -3,7 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushGiftToHubSpot } from "@/lib/hubspot/sync-out";
-import { ensureAckTaskForGift } from "@/lib/fundraising/ack-tasks";
+import { processGiftStewardship } from "@/lib/fundraising/stewardship";
 
 // Epic A — manual / offline gift entry. The Stripe pipeline auto-ingests
 // online gifts via the donations trigger; this is the path for checks, cash,
@@ -133,21 +133,13 @@ export async function POST(req: NextRequest) {
   // Mirror to a connected HubSpot as a closed-won deal (opt-in; no-op otherwise).
   await pushGiftToHubSpot(gift.id);
 
-  // Ack-to-task bridge: a manually recorded gift is a thank-you moment, so spawn
-  // a `sys:ack` task linked to the donor (best-effort — never blocks the gift).
-  // Anonymous gifts have no one to thank, so they get no task.
-  if (constituentId) {
-    const createdBy = await getAdminUser();
-    if (createdBy) {
-      await ensureAckTaskForGift(supabase, {
-        orgId: ctx.orgId,
-        createdBy,
-        giftId: gift.id,
-        constituentId,
-        amount,
-        giftDate: body.gift_date as string,
-      });
-    }
+  // Stewardship matrix: decide whether this gift auto-sends a compliant receipt,
+  // spawns a personal-touch ack task, or is marked not-required — all driven by
+  // stewardship_rules, never a hardcoded threshold. Best-effort; never blocks
+  // the gift. With no rules seeded it falls through to 'none' (not_required).
+  const createdBy = await getAdminUser();
+  if (createdBy) {
+    await processGiftStewardship(supabase, { orgId: ctx.orgId, createdBy, giftId: gift.id });
   }
 
   return NextResponse.json({ id: gift.id, constituent_id: constituentId, warning });

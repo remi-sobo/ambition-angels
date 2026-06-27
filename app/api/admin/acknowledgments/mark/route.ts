@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { closeAckTaskForGift } from "@/lib/fundraising/ack-tasks";
 
 // POST /api/admin/acknowledgments/mark — record that a gift was thanked
 // outside the system (handwritten letter, phone call, in person). Keeps the
@@ -40,10 +41,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Record that the gift was thanked offline closes its ack task too.
+  const ackTaskId = await closeAckTaskForGift(supabase, giftId);
+
   let warning: string | undefined;
   const { error: ackErr } = await supabase.from("acknowledgments").insert({
     org_id: ctx.orgId,
     gift_id: giftId,
+    subject_type: "gift",
+    subject_id: giftId,
+    ops_task_id: ackTaskId,
     template: "manual",
     channel: "other",
     body: typeof body?.note === "string" ? body.note.slice(0, 500) : null,

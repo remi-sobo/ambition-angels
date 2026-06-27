@@ -1,31 +1,20 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import { complianceBlock, type ReceiptGift } from "@/lib/fundraising/receipt";
+import { reconcileAckQueue, type AckQueueGift } from "@/lib/fundraising/ack-tasks";
 import AckComposer from "./_components/AckComposer";
 
-// The acknowledgments queue (modules/03 §Donors 4): every gift awaiting a
-// thank-you, oldest first. The IRS clock matters — gifts ≥ $250 legally
-// require a contemporaneous written acknowledgment before the donor files.
+// The acknowledgments queue: every gift awaiting a thank-you, oldest first.
+// In v2 each pending thank-you is also a real `ops_task` (label `sys:ack`), so
+// it flows to the cockpit, the Ops queue, and the Right Rail. Loading this page
+// reconciles the queue with its tasks, so Stripe and pledge gifts get a task
+// even though their gift rows are created outside the app. The IRS clock
+// matters: gifts ≥ $250 legally require a contemporaneous written receipt.
 export const dynamic = "force-dynamic";
-
-type PendingGift = {
-  id: string;
-  amount: number;
-  gift_date: string;
-  method: string;
-  fair_market_value: number | null;
-  deductible_amount: number | null;
-  constituent: {
-    type: string;
-    first_name: string | null;
-    last_name: string | null;
-    org_name: string | null;
-    emails: string[];
-  } | null;
-};
 
 const fmtDate = (iso: string) =>
   new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -35,32 +24,14 @@ const daysSince = (iso: string) =>
 
 export default async function AcknowledgmentsPage() {
   const supabase = createServerSupabase();
-  const { data, error } = await supabase
-    .from("gifts")
-    .select(
-      "id, amount, gift_date, method, fair_market_value, deductible_amount, constituent:constituents(type, first_name, last_name, org_name, emails)"
-    )
-    .eq("acknowledgment_status", "pending")
-    .order("gift_date", { ascending: true })
-    .limit(200);
+  const ctx = await getOrgContext();
+  const createdBy = await getAdminUser();
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Acknowledgments</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
-          The fundraising tables aren&apos;t in this database yet. Apply{" "}
-          <code className="text-orange">create_fundraising_core.sql</code> via Actions → Apply DB
-          migration, then reload.
-        </div>
-      </div>
-    );
+  let pending: AckQueueGift[] = [];
+  if (ctx && createdBy) {
+    pending = await reconcileAckQueue(supabase, ctx.orgId, createdBy);
   }
 
-  const pending = ((data ?? []) as unknown as PendingGift[]).map((g) => ({
-    ...g,
-    amount: Number(g.amount),
-  }));
   const required = pending.filter((g) => g.amount >= 250);
   const oldest = pending[0];
 
@@ -125,6 +96,7 @@ export default async function AcknowledgmentsPage() {
                         <div className="text-[11px] text-ink-2">
                           {fmtDate(g.gift_date)} · {daysSince(g.gift_date)}d ago
                           {email ? ` · ${email}` : " · no email on file"}
+                          {g.taskId ? " · in your queue" : null}
                         </div>
                       </div>
                       {g.amount >= 250 && (
@@ -142,10 +114,11 @@ export default async function AcknowledgmentsPage() {
         </section>
 
         <p className="text-xs text-ink-2 leading-relaxed max-w-2xl">
-          The receipt language (gift amount, date, the no-goods-or-services statement, and the
-          quid-pro-quo split when a fair market value is recorded) is generated from the gift
-          record and appended to every email automatically — it is never AI-written and never
-          editable. AI drafts only the personal note, and nothing sends without your review.
+          Each pending thank-you is also a task on the Ops queue and the Right Rail, linked to the
+          donor. The receipt language (gift amount, date, the no-goods-or-services statement, and the
+          quid-pro-quo split when a fair market value is recorded) is generated from the gift record
+          and appended to every email automatically. It is never AI-written and never editable. AI
+          drafts only the personal note, and nothing sends without your review.
         </p>
       </div>
     </div>

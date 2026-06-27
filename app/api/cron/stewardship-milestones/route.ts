@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { constituentName } from "@/lib/fundraising/display";
 import { addDays, todayInTZ } from "@/lib/admin/ops/week";
 import { ACK_LABEL } from "@/lib/fundraising/ack-tasks";
+import { IRS_SUBSTANTIATION_THRESHOLD } from "@/lib/fundraising/receipt";
 
 // Milestone detector. Runs daily (vercel.json) and turns date-based stewardship
 // moments into ops tasks: a giving anniversary (1 to 5 years after a donor's
@@ -132,6 +133,37 @@ export async function GET(req: NextRequest) {
       constituentId: id,
       key: `second_gift-${id}`,
       title: `Thank ${name} for their second gift`,
+      dueDate,
+    });
+    if (ok) created++;
+  }
+
+  // ── Impact follow-up: 15 to 30 days after a meaningful gift was thanked,
+  // create a task to share where the money went. Idempotent per gift. ──
+  const upper = new Date(Date.now() - 15 * 86_400_000).toISOString();
+  const lower = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const { data: thankedGifts } = await admin
+    .from("gifts")
+    .select("id, org_id, amount, constituent_id, constituent:constituents(type, first_name, last_name, org_name)")
+    .eq("acknowledgment_status", "sent")
+    .gte("acknowledged_at", lower)
+    .lte("acknowledged_at", upper)
+    .gte("amount", IRS_SUBSTANTIATION_THRESHOLD)
+    .not("constituent_id", "is", null)
+    .limit(2000);
+
+  for (const g of (thankedGifts ?? []) as unknown as Array<{
+    id: string;
+    org_id: string;
+    constituent_id: string;
+    constituent: Donor | null;
+  }>) {
+    const name = g.constituent ? constituentName(g.constituent) : "this donor";
+    const ok = await ensureMilestoneTask(admin, {
+      orgId: g.org_id,
+      constituentId: g.constituent_id,
+      key: `impact-${g.id}`,
+      title: `Share an impact update with ${name}`,
       dueDate,
     });
     if (ok) created++;

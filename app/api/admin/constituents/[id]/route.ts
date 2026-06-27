@@ -33,6 +33,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const tags = strArr(body.tags);
   if (tags) update.tags = tags;
   if (typeof body.do_not_contact === "boolean") update.do_not_contact = body.do_not_contact;
+  // Preferred stewardship channel: one of the ack channels, or null to clear.
+  if (body.preferred_ack_channel === null) update.preferred_ack_channel = null;
+  else if (
+    typeof body.preferred_ack_channel === "string" &&
+    ["email", "letter", "call", "text", "in_person"].includes(body.preferred_ack_channel)
+  )
+    update.preferred_ack_channel = body.preferred_ack_channel;
   // Soft archive: hide from working lists/queues while keeping all history.
   if (typeof body.archived === "boolean")
     update.archived_at = body.archived ? new Date().toISOString() : null;

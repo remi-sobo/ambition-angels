@@ -4,7 +4,12 @@ import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
-import { complianceBlock, type ReceiptGift } from "@/lib/fundraising/receipt";
+import {
+  complianceBlock,
+  requiresSubstantiation,
+  IRS_SUBSTANTIATION_THRESHOLD,
+  type ReceiptGift,
+} from "@/lib/fundraising/receipt";
 import { reconcileAckQueue, type AckQueueGift } from "@/lib/fundraising/ack-tasks";
 import AckComposer, { type AckTemplateLite } from "./_components/AckComposer";
 
@@ -41,7 +46,9 @@ export default async function AcknowledgmentsPage() {
     .order("name");
   const templates = (tplData ?? []) as AckTemplateLite[];
 
-  const required = pending.filter((g) => g.amount >= 250);
+  // IRS substantiation is derived from the gift amount via the compliance
+  // module's threshold, not a literal in this view.
+  const required = pending.filter((g) => requiresSubstantiation(g.amount));
   const oldest = pending[0];
 
   return (
@@ -67,7 +74,7 @@ export default async function AcknowledgmentsPage() {
             sub={pending.length > 0 ? "oldest first below" : "all caught up 🎉"}
           />
           <StatCard
-            label="IRS-Required (≥ $250)"
+            label={`IRS-Required (≥ $${IRS_SUBSTANTIATION_THRESHOLD})`}
             value={required.length}
             delta={required.length > 0 ? { text: "written receipt required", direction: "down" } : undefined}
             sub={required.length === 0 ? "none outstanding" : undefined}
@@ -114,7 +121,7 @@ export default async function AcknowledgmentsPage() {
                           {g.taskId ? " · in your queue" : null}
                         </div>
                       </div>
-                      {g.amount >= 250 && (
+                      {requiresSubstantiation(g.amount) && (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense uppercase tracking-wider">
                           Receipt required
                         </span>

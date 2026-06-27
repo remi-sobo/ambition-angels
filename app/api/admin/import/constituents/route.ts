@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { loadStewardshipRules, decideImportStatus, ageInDays } from "@/lib/fundraising/stewardship";
 
 // Epic M2 — commit a mapped CSV import. Rows arrive already mapped to known
 // fields (the client wizard does column mapping). Dedupe is by email in a
@@ -30,6 +31,12 @@ export async function POST(req: NextRequest) {
   if (rows.length > CAP) return NextResponse.json({ error: `Too many rows (${rows.length}); cap is ${CAP}. Split the file.` }, { status: 400 });
 
   const supabase = createServerSupabase();
+
+  // The matrix governs imported gifts too — loaded once for the whole batch.
+  // Historical (old-dated) rows age out of every rule and land 'not_required';
+  // a recent row that would need a human lands 'pending' for the queue. No
+  // bulk emails or tasks are sent from import (that would bury the queue).
+  const stewardshipRules = await loadStewardshipRules(supabase, ctx.orgId);
 
   // One pass to build an email → constituent-id map for dedupe (case-insensitive).
   const emailToId = new Map<string, string>();
@@ -83,13 +90,26 @@ export async function POST(req: NextRequest) {
     if (amount > 0) {
       if (!isDate(r.gift_date)) { errors.push(`Row ${i + 1}: gift skipped (needs gift_date YYYY-MM-DD)`); continue; }
       const method = METHODS.includes(str(r.method) as (typeof METHODS)[number]) ? str(r.method) : "other";
+      const giftAmount = Math.round(amount * 100) / 100;
+      const ackStatus = decideImportStatus(
+        {
+          amount: giftAmount,
+          method,
+          gift_date: r.gift_date,
+          external_source: "import",
+          recurring: false,
+          ageDays: ageInDays(r.gift_date),
+        },
+        stewardshipRules
+      );
       const { error: gErr } = await supabase.from("gifts").insert({
         org_id: ctx.orgId,
         constituent_id: constituentId,
-        amount: Math.round(amount * 100) / 100,
+        amount: giftAmount,
         gift_date: r.gift_date,
         method,
         external_source: "import",
+        acknowledgment_status: ackStatus,
       });
       if (gErr) errors.push(`Row ${i + 1}: gift failed (${gErr.message})`);
       else gifts++;

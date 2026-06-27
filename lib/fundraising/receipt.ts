@@ -11,6 +11,16 @@ export type ReceiptGift = {
   deductible_amount: number | null;
 };
 
+// IRS Pub 1771: a single gift of $250 or more requires a contemporaneous
+// written acknowledgment. This statutory threshold is the one source of truth
+// for "is a written receipt legally required" — views and the stewardship
+// matrix derive from it rather than hardcoding the number in a page.
+export const IRS_SUBSTANTIATION_THRESHOLD = 250;
+
+export function requiresSubstantiation(amount: number): boolean {
+  return amount >= IRS_SUBSTANTIATION_THRESHOLD;
+}
+
 const usd = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 });
 

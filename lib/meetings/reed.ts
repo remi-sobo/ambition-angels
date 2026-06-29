@@ -1,5 +1,6 @@
 import "server-only";
 import { TASK_CATEGORIES, type TaskCategory } from "@/app/admin/ops/_types/ops";
+import { buildTranscriptPrompt, type TranscriptPromptInput } from "./transcript-prompt";
 
 /**
  * Reed — the meetings agent. Parses a pasted/uploaded transcript into a short
@@ -15,7 +16,6 @@ export type ReedSuggestion = { title: string; category: TaskCategory };
 export type ReedResult = { summary: string; suggestions: ReedSuggestion[] };
 
 const MODEL = "claude-sonnet-4-6";
-const MAX_TRANSCRIPT_CHARS = 12_000;
 
 function coerceCategory(v: unknown): TaskCategory {
   return typeof v === "string" && (TASK_CATEGORIES as readonly string[]).includes(v)
@@ -23,27 +23,11 @@ function coerceCategory(v: unknown): TaskCategory {
     : "other";
 }
 
-export async function parseTranscript(input: {
-  title: string | null;
-  transcript: string;
-  attendees?: string[];
-}): Promise<ReedResult> {
+export async function parseTranscript(input: TranscriptPromptInput): Promise<ReedResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not configured");
 
-  const who = input.attendees?.length ? `\nAttendees: ${input.attendees.join(", ")}` : "";
-  const prompt = `You are Reed, the operations AI for a nonprofit CEO. Read this meeting transcript and produce:
-1. A 2–3 sentence summary of what was discussed and decided.
-2. 1 to 3 concrete follow-up tasks the operator should do, each a short imperative title.
-
-Categories must be one of: ${TASK_CATEGORIES.join(", ")}.
-
-Return ONLY minified JSON, no prose, no code fences, in exactly this shape:
-{"summary":"...","suggestions":[{"title":"...","category":"fundraising"}]}
-
-Meeting title: ${input.title ?? "(untitled)"}${who}
-Transcript:
-${input.transcript.slice(0, MAX_TRANSCRIPT_CHARS)}`;
+  const prompt = buildTranscriptPrompt(input);
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",

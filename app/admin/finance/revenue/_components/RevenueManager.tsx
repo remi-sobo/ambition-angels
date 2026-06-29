@@ -92,9 +92,10 @@ export default function RevenueManager({
   const committedTotal = committedRows.reduce((s, r) => s + r.gross_amount, 0);
   const projectedTotal = projectedRows.reduce((s, r) => s + r.weighted_amount, 0);
 
-  const receivedCommitments = commitments.filter((c) => c.status === "received");
-  const receivedCommitTotal = receivedCommitments.reduce((s, c) => s + Number(c.amount), 0);
-  const totalReceived = receivedGiftsTotal + receivedCommitTotal;
+  // Received money = the gifts ledger only (the single source of truth). A
+  // "received" manual commitment duplicates its eventual gift, so it isn't
+  // counted or listed here — record landed money as a gift.
+  const totalReceived = receivedGiftsTotal;
 
   const hard = totalReceived + committedTotal;
   const goalPct = goal > 0 ? (hard / goal) * 100 : 0;
@@ -281,7 +282,6 @@ export default function RevenueManager({
                 <select value={stat} onChange={(e) => setStat(e.target.value as Commitment["status"])} className={inputCls}>
                   <option value="secured">Secured</option>
                   <option value="projected">Projected</option>
-                  <option value="received">Received</option>
                 </select>
               </Field>
               <Field label="Probability % (projected only)">
@@ -340,9 +340,10 @@ export default function RevenueManager({
           <span className="text-xs font-mono text-revenue [font-variant-numeric:tabular-nums]">{money(totalReceived)}</span>
         </div>
         <p className="text-xs text-ink-2 mb-4">
-          Money that has landed in {year} — gifts from the ledger, plus any manual commitments marked received.
+          Money that has landed in {year} — gifts from the ledger (the canonical record of
+          received money; HubSpot closed-won and manual gifts both land here).
         </p>
-        {receivedGifts.length === 0 && receivedCommitments.length === 0 ? (
+        {receivedGifts.length === 0 ? (
           <div className="text-sm text-ink-2 py-6 text-center border border-dashed border-outline rounded-card">
             Nothing received yet this year.
           </div>
@@ -353,20 +354,6 @@ export default function RevenueManager({
                 <span className="font-mono text-xs text-ink-2">{dayLabel(g.date)}</span>
                 <span className="min-w-0 truncate text-ink-1" title={g.label}>{g.label}</span>
                 <span className="text-right font-mono text-revenue [font-variant-numeric:tabular-nums]">{money(g.amount)}</span>
-              </li>
-            ))}
-            {receivedCommitments.map((c) => (
-              <li key={`commit-${c.id}`} className="grid grid-cols-[5rem_1fr_auto_auto] items-center gap-3 py-2 text-sm">
-                <span className="font-mono text-xs text-ink-2">{c.expected_date ? dayLabel(c.expected_date) : "—"}</span>
-                <span className="min-w-0 truncate text-ink-1" title={c.source_name}>
-                  {c.source_name}
-                  <span className="ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-[#EFE6D4] text-ink-1 border-outline">Manual</span>
-                </span>
-                <span className="text-right font-mono text-revenue [font-variant-numeric:tabular-nums]">{money(Number(c.amount))}</span>
-                <span className="text-right whitespace-nowrap">
-                  <button onClick={() => startEdit(c)} className="text-[11px] text-ink-2 hover:text-orange mr-2">Edit</button>
-                  <button onClick={() => void remove(c.id)} className="text-[11px] text-ink-2 hover:text-expense">Delete</button>
-                </span>
               </li>
             ))}
           </ul>

@@ -10,6 +10,7 @@ import {
   formatDueLabel,
   priorityFlagClass,
   priorityLabel,
+  readTaskHealth,
   todayISO,
   type OpsTask,
 } from "../_types/ops";
@@ -96,6 +97,11 @@ export default function TaskRow({
   const isDone = task.status === "done";
   const isBlocked = task.status === "blocked";
   const isOverdue = !!task.due_date && !isDone && task.due_date < todayISO();
+  // Stuck-work badge: only at 'stuck' (not 'aging') so the list doesn't turn
+  // into a wall of warnings. Punt (roll_count) is a separate signal, shown
+  // elsewhere — never conflated with this. (specs/ops-stuck-work.md)
+  const { health: taskHealthState, stuckReason } = readTaskHealth(task);
+  const isStuck = taskHealthState === "stuck";
   // While leaving, show the row as done (struck through) before it collapses.
   const showDone = isDone || leaving;
 
@@ -199,6 +205,14 @@ export default function TaskRow({
         {isBlocked && (
           <span className="text-[10px] uppercase tracking-wider text-expense font-semibold">
             blocked
+          </span>
+        )}
+        {!showDone && isStuck && (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border bg-status-watch-bg text-status-watch-text border-status-watch/30"
+            title={stuckReason ?? "Stuck"}
+          >
+            stuck
           </span>
         )}
       </div>

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
+import { nameFromEmail } from "@/lib/admin/profile";
+import { getOrgMentionables, resolveMentions } from "@/lib/comments/mentions";
+import { notify } from "@/lib/notifications/notify";
 
 /**
  * Anchored comments for a record. Reads and writes go through the SESSION
@@ -8,11 +11,16 @@ import { getOrgContext } from "@/lib/admin/auth";
  * org-scoped) are enforced by the database — no service-role bypass.
  *
  * v1 anchors on two entity types; the allowlist keeps a client from inventing
- * an entity_type. @mention parsing arrives in Phase 5.
+ * an entity_type. @mentions are parsed and resolved server-side (never trusted
+ * from the client) and each resolved teammate gets a 'mention' notification.
  */
 export const dynamic = "force-dynamic";
 
 const ENTITY_TYPES = new Set(["constituent", "fr_prospects"]);
+const ENTITY_LINK: Record<string, (id: string) => string> = {
+  constituent: (id) => `/admin/fundraising/donors/${id}`,
+  fr_prospects: (id) => `/admin/fundraising/prospects/${id}`,
+};
 const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
 const MAX_BODY = 5000;
@@ -108,6 +116,16 @@ export async function POST(req: NextRequest) {
   if (body.parent_id !== undefined && body.parent_id !== null && !isUuid(body.parent_id)) {
     return NextResponse.json({ error: "invalid parent_id" }, { status: 400 });
   }
+  // Display-only label for the mention notification's title/link.
+  const entityLabel =
+    typeof body.entity_label === "string" ? body.entity_label.slice(0, 200) : null;
+
+  const entityId = body.entity_id as string;
+
+  // Resolve @mentions SERVER-SIDE against the org's real members — the client
+  // never supplies the mention list. Store the resolved ids on the row.
+  const members = await getOrgMentionables(ctx.orgId);
+  const mentioned = resolveMentions(text, members);
 
   const sb = createServerSupabase();
   const { data, error } = await sb
@@ -115,10 +133,11 @@ export async function POST(req: NextRequest) {
     .insert({
       org_id: ctx.orgId, // from session — never a column default
       entity_type: entityType,
-      entity_id: body.entity_id as string,
+      entity_id: entityId,
       author_id: ctx.userId,
       body: text,
       parent_id: (body.parent_id as string | null | undefined) ?? null,
+      mentions: mentioned,
     })
     .select("id, author_id, body, parent_id, created_at")
     .single();
@@ -126,6 +145,33 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error("[/api/admin/comments POST] error:", error.message);
     return NextResponse.json({ error: "Failed to post comment" }, { status: 500 });
+  }
+
+  // Notify each mentioned teammate (never yourself). 'mention' is in-app only
+  // (not in EMAIL_TYPES). Best-effort: notify() never throws, and we don't let
+  // a notification problem fail the comment the caller just posted.
+  const targets = mentioned.filter((id) => id !== ctx.userId);
+  if (targets.length > 0) {
+    const authorName =
+      members.find((m) => m.userId === ctx.userId)?.displayName ?? nameFromEmail(ctx.email);
+    const url = ENTITY_LINK[entityType](entityId);
+    const snippet = text.length > 140 ? text.slice(0, 140) + "…" : text;
+    await Promise.allSettled(
+      targets.map((id) =>
+        notify({
+          orgId: ctx.orgId,
+          recipientId: id,
+          actorId: ctx.userId,
+          type: "mention",
+          title: `${authorName} mentioned you${entityLabel ? ` on ${entityLabel}` : ""}`,
+          body: snippet,
+          linkedEntityType: entityType,
+          linkedEntityId: entityId,
+          linkedLabel: entityLabel,
+          url,
+        })
+      )
+    );
   }
 
   return NextResponse.json({ comment: data });

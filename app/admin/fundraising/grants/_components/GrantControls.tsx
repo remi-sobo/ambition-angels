@@ -21,6 +21,14 @@ const KINDS = [
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
+const KIND_LABELS: Record<string, string> = {
+  loi: "LOI", application: "Application", interim_report: "Interim report",
+  final_report: "Final report", financial_report: "Financial report", other: "Deadline",
+};
+
+const fmtReqDate = (iso: string) =>
+  new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
 export function NewGrantForm() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -385,43 +393,152 @@ export function StageSelect({
   );
 }
 
-export function RequirementActions({ id, status }: { id: string; status: string }) {
+type Requirement = {
+  id: string;
+  kind: string;
+  label: string | null;
+  due_date: string;
+  status: string;
+  submitted_at: string | null;
+  notes: string | null;
+};
+
+// One requirement-calendar row: read view + inline edit (kind / due date /
+// label) + the status actions. Replaces the old display-only row so deadlines
+// can be corrected in place instead of deleted and recreated.
+export function RequirementRow({ requirement: r, today }: { requirement: Requirement; today: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [error, setError] = useState("");
+  const [kind, setKind] = useState(r.kind);
+  const [due, setDue] = useState(r.due_date);
+  const [label, setLabel] = useState(r.label ?? "");
+
+  const open = r.status === "upcoming" || r.status === "in_progress";
+  const isOverdue = open && r.due_date < today;
+
   const act = async (fn: () => Promise<Response>) => {
     setBusy(true);
     try { await fn(); router.refresh(); } finally { setBusy(false); }
   };
+
+  const startEdit = () => {
+    setKind(r.kind);
+    setDue(r.due_date);
+    setLabel(r.label ?? "");
+    setError("");
+    setEditing(true);
+  };
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!due) {
+      setError("A due date is required.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/grants/requirements/${r.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, due_date: due, label: label.trim() || null }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `HTTP ${res.status}`);
+      }
+      setEditing(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (editing) {
+    return (
+      <li className="px-5 py-3">
+        <form onSubmit={save} className="flex flex-wrap items-center gap-2">
+          <select value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls + " text-xs"}>
+            {KINDS.map(([v, l]) => (
+              <option key={v} value={v} className="bg-tile shadow-tile">{l}</option>
+            ))}
+          </select>
+          <input type="date" required value={due} onChange={(e) => setDue(e.target.value)} className={inputCls + " text-xs"} />
+          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (optional)" className={inputCls + " text-xs w-44"} />
+          <button type="submit" disabled={busy} className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-2.5 py-1 rounded-full transition-colors disabled:opacity-50">
+            {busy ? "Saving…" : "Save"}
+          </button>
+          <button type="button" onClick={() => setEditing(false)} className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 transition-colors">
+            Cancel
+          </button>
+          {error && <p className="text-expense text-[11px] w-full">{error}</p>}
+        </form>
+      </li>
+    );
+  }
+
   return (
-    <span className="flex items-center gap-2">
-      {status !== "submitted" && (
+    <li className="px-5 py-3 flex items-center gap-3">
+      <span
+        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+          isOverdue ? "bg-expense-bg text-expense" : open ? "bg-tile text-ink-2" : "bg-revenue-bg text-revenue"
+        }`}
+      >
+        {fmtReqDate(r.due_date)}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className={`text-sm font-medium truncate ${open ? "text-ink-1" : "text-ink-3 line-through"}`}>
+          {r.label || KIND_LABELS[r.kind] || r.kind}
+        </div>
+        {r.notes && <div className="text-[11px] text-ink-2 truncate">{r.notes}</div>}
+      </div>
+      {r.status === "submitted" && r.submitted_at && (
+        <span className="text-[11px] text-revenue whitespace-nowrap">
+          Submitted {new Date(r.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+        </span>
+      )}
+      {r.status === "waived" && <span className="text-[11px] text-ink-3">Waived</span>}
+      <span className="flex items-center gap-2">
         <button
           disabled={busy}
-          onClick={() =>
-            act(() =>
-              fetch(`/api/admin/grants/requirements/${id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: "submitted" }),
-              })
-            )
-          }
-          className="text-[11px] font-semibold text-revenue hover:text-revenue transition-colors disabled:opacity-50"
+          onClick={startEdit}
+          className="text-[11px] font-semibold text-ink-3 hover:text-orange transition-colors disabled:opacity-50"
         >
-          Mark submitted
+          Edit
         </button>
-      )}
-      <button
-        disabled={busy}
-        onClick={() => {
-          if (!confirm("Delete this deadline?")) return;
-          void act(() => fetch(`/api/admin/grants/requirements/${id}`, { method: "DELETE" }));
-        }}
-        className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
-      >
-        Delete
-      </button>
-    </span>
+        {open && r.status !== "submitted" && (
+          <button
+            disabled={busy}
+            onClick={() =>
+              act(() =>
+                fetch(`/api/admin/grants/requirements/${r.id}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ status: "submitted" }),
+                })
+              )
+            }
+            className="text-[11px] font-semibold text-revenue hover:text-revenue transition-colors disabled:opacity-50"
+          >
+            Mark submitted
+          </button>
+        )}
+        <button
+          disabled={busy}
+          onClick={() => {
+            if (!confirm("Delete this deadline?")) return;
+            void act(() => fetch(`/api/admin/grants/requirements/${r.id}`, { method: "DELETE" }));
+          }}
+          className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
+        >
+          Delete
+        </button>
+      </span>
+    </li>
   );
 }
 

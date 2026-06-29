@@ -2,12 +2,14 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getAdminUser } from "@/lib/admin/auth";
 import {
   TASK_CATEGORIES,
+  readTaskHealth,
   todayISO,
   type TaskCategory,
   type OpsProject,
   type OpsTask,
 } from "./_types/ops";
 import TasksSurface from "./_components/TasksSurface";
+import StuckWorkRollup from "./_components/StuckWorkRollup";
 import TodayView from "./_components/TodayView";
 import ThisWeekView from "./_components/ThisWeekView";
 import ActiveProjectsList from "./_components/ActiveProjectsList";
@@ -80,6 +82,12 @@ export default async function OpsLandingPage() {
   // Project name Map for the legacy section components (they expect a Map).
   const projectNamesMap = new Map(Object.entries(projectNames));
 
+  // Chronically deferred work — same readTaskHealth() read the row badges use,
+  // so the rollup and the badges can never disagree. (specs/ops-stuck-work.md)
+  const stuckTasks = allTasks
+    .filter((t) => readTaskHealth(t).health === "stuck")
+    .sort((a, b) => readTaskHealth(b).ageDays - readTaskHealth(a).ageDays);
+
   const openTaskCountsByProject = new Map<string, number>();
   const categoryCounts = Object.fromEntries(
     TASK_CATEGORIES.map((c) => [c, 0])
@@ -109,6 +117,8 @@ export default async function OpsLandingPage() {
         projectNames={projectNames}
         currentUser={currentUser}
       />
+
+      <StuckWorkRollup tasks={stuckTasks} projectNames={projectNames} />
 
       <TodayView
         dueToday={dueToday}

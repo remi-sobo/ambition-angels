@@ -32,7 +32,33 @@ export default function RulesEditor({ initialRules, categories }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [applyResult, setApplyResult] = useState<string | null>(null);
 
+  // Inline edit of an existing rule. `draft` holds the in-progress values for
+  // the row being edited so typing never touches the live list until Save.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{
+    pattern: string;
+    pattern_type: Rule["pattern_type"];
+    category_id: string;
+    priority: number;
+  }>({ pattern: "", pattern_type: "contains", category_id: "", priority: 0 });
+  const [editError, setEditError] = useState<string | null>(null);
+
   const catById = new Map(categories.map((c) => [c.id, c]));
+
+  // Category <option>s grouped by group_name — shared by the add form and the
+  // inline editor. A function so each <select> gets its own element instances.
+  const renderCategoryOptions = () =>
+    Array.from(new Set(categories.map((c) => c.group_name))).map((g) => (
+      <optgroup key={g} label={g}>
+        {categories
+          .filter((c) => c.group_name === g)
+          .map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.display_name}
+            </option>
+          ))}
+      </optgroup>
+    ));
 
   async function createRule() {
     if (!newPattern.trim() || !newCategory) return;
@@ -69,6 +95,49 @@ export default function RulesEditor({ initialRules, categories }: Props) {
       // Roll back.
       setRules((rs) => rs.map((r) => (r.id === id ? { ...r, enabled: !enabled } : r)));
     }
+  }
+
+  function startEdit(r: Rule) {
+    setEditingId(r.id);
+    setDraft({
+      pattern: r.pattern,
+      pattern_type: r.pattern_type,
+      category_id: r.category_id,
+      priority: r.priority,
+    });
+    setEditError(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditError(null);
+  }
+
+  async function saveEdit(id: string) {
+    if (!draft.pattern.trim() || !draft.category_id) {
+      setEditError("Pattern and category are required.");
+      return;
+    }
+    setBusy(true);
+    setEditError(null);
+    const res = await fetch(`/api/admin/finance/rules/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pattern: draft.pattern.trim(),
+        pattern_type: draft.pattern_type,
+        category_id: draft.category_id,
+        priority: draft.priority,
+      }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setEditError(j.error ?? "Failed to save rule");
+    } else {
+      setRules((rs) => rs.map((r) => (r.id === id ? { ...r, ...j.rule } : r)));
+      setEditingId(null);
+    }
+    setBusy(false);
   }
 
   async function remove(id: string) {
@@ -162,17 +231,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
             className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
           >
             <option value="">— Set category to —</option>
-            {Array.from(new Set(categories.map((c) => c.group_name))).map((g) => (
-              <optgroup key={g} label={g}>
-                {categories
-                  .filter((c) => c.group_name === g)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.display_name}
-                    </option>
-                  ))}
-              </optgroup>
-            ))}
+            {renderCategoryOptions()}
           </select>
           <button
             type="button"
@@ -255,38 +314,107 @@ export default function RulesEditor({ initialRules, categories }: Props) {
                 </td>
               </tr>
             )}
-            {sorted.map((r) => (
-              <tr key={r.id} className={`border-t border-hairline ${r.enabled ? "" : "opacity-50"}`}>
-                <td className="px-3 py-2">
-                  <input
-                    type="checkbox"
-                    checked={r.enabled}
-                    onChange={(e) => toggle(r.id, e.target.checked)}
-                    className="accent-orange"
-                  />
-                </td>
-                <td className="px-3 py-2 font-mono text-ink-1">{r.pattern}</td>
-                <td className="px-3 py-2 text-ink-2">{r.pattern_type.replace("_", " ")}</td>
-                <td className="px-3 py-2 text-ink-1">
-                  {catById.get(r.category_id)?.display_name ?? r.category_id}
-                  <span className="text-[10px] text-ink-2 ml-1.5">
-                    {catById.get(r.category_id)?.group_name}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-right text-ink-1 font-mono">{r.hit_count}</td>
-                <td className="px-3 py-2 text-right text-ink-1 font-mono">{r.priority}</td>
-                <td className="px-3 py-2 text-right">
-                  <button
-                    onClick={() => remove(r.id)}
-                    className="text-ink-2 hover:text-expense text-xs"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {sorted.map((r) =>
+              editingId === r.id ? (
+                <tr key={r.id} className="border-t border-hairline">
+                  <td className="px-3 py-2">
+                    <input type="checkbox" checked={r.enabled} disabled className="accent-orange opacity-50" />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      value={draft.pattern}
+                      onChange={(e) => setDraft((d) => ({ ...d, pattern: e.target.value }))}
+                      placeholder={
+                        draft.pattern_type === "regex" ? "/regex/" : draft.pattern_type === "starts_with" ? "WF DIRECT PAY" : "GUSTO"
+                      }
+                      className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1 text-xs text-ink-1 font-mono"
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <select
+                      value={draft.pattern_type}
+                      onChange={(e) => setDraft((d) => ({ ...d, pattern_type: e.target.value as Rule["pattern_type"] }))}
+                      className="w-full bg-ink border-[1.5px] border-outline rounded px-1 py-1 text-xs text-ink-1"
+                    >
+                      {PATTERN_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {t.replace("_", " ")}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="px-3 py-2">
+                    <select
+                      value={draft.category_id}
+                      onChange={(e) => setDraft((d) => ({ ...d, category_id: e.target.value }))}
+                      className="w-full bg-ink border-[1.5px] border-outline rounded px-1 py-1 text-xs text-ink-1"
+                    >
+                      {renderCategoryOptions()}
+                    </select>
+                  </td>
+                  <td className="px-3 py-2 text-right text-ink-2 font-mono">{r.hit_count}</td>
+                  <td className="px-3 py-2 text-right">
+                    <input
+                      type="number"
+                      step="1"
+                      value={draft.priority}
+                      onChange={(e) => {
+                        const n = parseInt(e.target.value, 10);
+                        setDraft((d) => ({ ...d, priority: Number.isNaN(n) ? 0 : n }));
+                      }}
+                      className="w-16 bg-ink border-[1.5px] border-outline rounded px-1 py-1 text-xs text-ink-1 text-right font-mono"
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-right whitespace-nowrap">
+                    <button
+                      onClick={() => saveEdit(r.id)}
+                      disabled={busy}
+                      className="text-revenue hover:opacity-80 text-xs font-medium disabled:opacity-40"
+                    >
+                      Save
+                    </button>
+                    <button onClick={cancelEdit} className="text-ink-2 hover:text-ink-1 text-xs ml-2">
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+              ) : (
+                <tr key={r.id} className={`border-t border-hairline ${r.enabled ? "" : "opacity-50"}`}>
+                  <td className="px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={r.enabled}
+                      onChange={(e) => toggle(r.id, e.target.checked)}
+                      className="accent-orange"
+                    />
+                  </td>
+                  <td className="px-3 py-2 font-mono text-ink-1">{r.pattern}</td>
+                  <td className="px-3 py-2 text-ink-2">{r.pattern_type.replace("_", " ")}</td>
+                  <td className="px-3 py-2 text-ink-1">
+                    {catById.get(r.category_id)?.display_name ?? r.category_id}
+                    <span className="text-[10px] text-ink-2 ml-1.5">
+                      {catById.get(r.category_id)?.group_name}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-right text-ink-1 font-mono">{r.hit_count}</td>
+                  <td className="px-3 py-2 text-right text-ink-1 font-mono">{r.priority}</td>
+                  <td className="px-3 py-2 text-right whitespace-nowrap">
+                    <button onClick={() => startEdit(r)} className="text-ink-2 hover:text-orange text-xs">
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => remove(r.id)}
+                      className="text-ink-2 hover:text-expense text-xs ml-2"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              )
+            )}
           </tbody>
         </table>
+        {editError && <p className="px-3 py-2 text-xs text-expense border-t border-hairline">{editError}</p>}
       </div>
     </div>
   );

@@ -22,6 +22,7 @@ import {
 } from "@/lib/finance/schedule";
 import ReconcileCard from "./_components/ReconcileCard";
 import RunwayTiers from "./_components/RunwayTiers";
+import InfoTip from "./_components/InfoTip";
 
 // Read live every request: the service-role client's reads go through the
 // global fetch Next caches by default, so without this a freshly-saved config
@@ -285,6 +286,15 @@ export default async function FinanceDashboardPage() {
         <Hero
           label="Raised YTD"
           value={money(raisedHard)}
+          info={
+            <InfoTip heading="Raised YTD">
+              Hard money toward the goal this fiscal year: <b>received + secured</b>.{" "}
+              <b>Received</b> is gifts that have landed (the <code>gifts</code> ledger);{" "}
+              <b>secured</b> is committed-but-not-yet-received money in the revenue
+              schedule (scheduled pledge installments, awarded grants, committed
+              AIG/Pledged deals). Projected pipeline is <b>not</b> included here.
+            </InfoTip>
+          }
           sub={
             cfg.goal > 0
               ? `${Math.round(goalPct * 100)}% of ${money(cfg.goal)} goal`
@@ -301,6 +311,15 @@ export default async function FinanceDashboardPage() {
         <Hero
           label="Spent YTD"
           value={money(expenseYTD)}
+          info={
+            <InfoTip heading="Spent YTD">
+              Every dollar out so far this fiscal year: the sum of all{" "}
+              <b>expense transactions</b> (negative <code>amount</code> in{" "}
+              <code>fin_transactions</code>) dated within the fiscal year. The % is{" "}
+              <b>Spent ÷ total budget</b> (budget base + activated contingency across
+              all categories).
+            </InfoTip>
+          }
           sub={
             totalBudget > 0
               ? `${Math.round(budgetPct * 100)}% of ${money(totalBudget)} budget`
@@ -322,13 +341,51 @@ export default async function FinanceDashboardPage() {
           label={ri.baselineSource === "config" ? "Monthly burn (baseline)" : "Monthly burn (3-mo)"}
           value={money(ri.baseline)}
           sub={ri.baselineSource === "config" ? `${money(burn3mo)} actual (3-mo)` : undefined}
+          info={
+            <InfoTip heading="Monthly burn">
+              The monthly spend that runway divides by.{" "}
+              {ri.baselineSource === "config" ? (
+                <>
+                  Currently the <b>baseline you set in Config</b> ({money(ri.baseline)}/mo);
+                  the actual <b>trailing 3-month average</b> expense is shown beneath it for
+                  comparison.
+                </>
+              ) : (
+                <>
+                  No baseline set in Config, so this is the <b>trailing 3-month average</b>:
+                  the average expense over the last 3 active months (months with any
+                  revenue or expense), with one-off transactions flagged
+                  &ldquo;exclude from runway&rdquo; netted out.
+                </>
+              )}
+            </InfoTip>
+          }
         />
         <Mini
           label="Net YTD"
           value={`${netYTD >= 0 ? "+" : "−"}${money(Math.abs(netYTD))}`}
           tone={netYTD >= 0 ? "good" : "warn"}
+          info={
+            <InfoTip heading="Net YTD">
+              <b>Revenue − expense</b> for the fiscal year so far — every inflow minus
+              every outflow in <code>fin_transactions</code>. Positive means more came in
+              than went out. This is cash flow, not the same as fundraising
+              &ldquo;Raised&rdquo; (which counts committed money not yet in the bank).
+            </InfoTip>
+          }
         />
-        <Mini label="Pipeline (weighted)" value={money(projectedWeighted)} />
+        <Mini
+          label="Pipeline (weighted)"
+          value={money(projectedWeighted)}
+          info={
+            <InfoTip heading="Pipeline (weighted)">
+              Open fundraising pipeline, <b>probability-weighted</b>: each open opportunity&apos;s{" "}
+              <b>ask × close-probability</b>, summed. Committed/won deals are excluded (they
+              count under Secured). This is the same projected figure the forward-runway
+              &ldquo;Projected&rdquo; tier uses, so the two can never disagree.
+            </InfoTip>
+          }
+        />
         <Mini
           label="Uncategorized"
           value={String(uncategorizedCount)}
@@ -354,6 +411,12 @@ export default async function FinanceDashboardPage() {
         <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
           <SectionHeading className="mb-1">
             Functional split
+            <InfoTip heading="Functional split">
+              This fiscal year&apos;s <b>expenses</b> grouped by each category&apos;s{" "}
+              <b>functional class</b> — <b>program</b>, <b>admin</b>, or{" "}
+              <b>fundraising</b> — the same split a Form 990 reports. Expenses whose
+              category has no class (or no category) fall under <b>Uncategorized</b>.
+            </InfoTip>
           </SectionHeading>
           <p className="text-xs text-ink-2 mb-5">
             How {money(expenseYTD)} of expense breaks down across program,
@@ -395,6 +458,13 @@ export default async function FinanceDashboardPage() {
         <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
           <SectionHeading className="mb-1">
             Revenue by source
+            <InfoTip heading="Revenue by source">
+              Money in, grouped by who it came from. Combines <b>received pledges</b>{" "}
+              (by their source type) with <b>positive bank transactions</b>, each
+              routed to a source by its revenue category (foundation, individual,
+              corporate, government, accelerator, earned, other). Projected pipeline is
+              not included — only money actually received.
+            </InfoTip>
           </SectionHeading>
           <p className="text-xs text-ink-2 mb-5">
             Received revenue plus actuals from bank transactions, grouped by
@@ -416,6 +486,12 @@ export default async function FinanceDashboardPage() {
         <div className="flex items-baseline justify-between flex-wrap gap-2 mb-4">
           <SectionHeading>
             Budget vs actual
+            <InfoTip heading="Budget vs actual">
+              Per expense group: <b>actual</b> is this year&apos;s expense transactions
+              summed by category; <b>budget</b> is each category&apos;s{" "}
+              <code>base amount + activated contingency</code>, rolled up to the group.
+              The % is <b>actual ÷ budget</b>.
+            </InfoTip>
           </SectionHeading>
           <Link
             href="/admin/finance/budget"
@@ -476,9 +552,42 @@ export default async function FinanceDashboardPage() {
             </Link>
           </div>
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <Cell label="Received" value={money(receivedTotal)} />
-            <Cell label="Secured" value={money(securedTotal)} accent />
-            <Cell label="Projected" value={money(projectedWeighted)} subtle />
+            <Cell
+              label="Received"
+              value={money(receivedTotal)}
+              info={
+                <InfoTip heading="Received">
+                  Real money that has landed this fiscal year — the sum of{" "}
+                  <b>gifts</b> dated within the year (the <code>gifts</code> ledger).
+                  This is the hard floor of goal progress.
+                </InfoTip>
+              }
+            />
+            <Cell
+              label="Secured"
+              value={money(securedTotal)}
+              accent
+              info={
+                <InfoTip heading="Secured">
+                  Committed money not yet received: the <b>committed</b> rows of the
+                  revenue schedule at full value — scheduled pledge installments,
+                  awarded grants, and committed AIG/Pledged deals. Restricted money is
+                  included here (it still counts toward the goal).
+                </InfoTip>
+              }
+            />
+            <Cell
+              label="Projected"
+              value={money(projectedWeighted)}
+              subtle
+              info={
+                <InfoTip heading="Projected">
+                  Open pipeline, <b>probability-weighted</b>: each open opportunity&apos;s{" "}
+                  <b>ask × close-probability</b>. Not yet committed, so it&apos;s shown
+                  separately from Received and Secured.
+                </InfoTip>
+              }
+            />
           </div>
           <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-2">
             Toward {money(cfg.goal)} goal
@@ -552,6 +661,7 @@ function Hero({
   deltaLabel,
   accent,
   sparkline,
+  info,
   children,
 }: {
   label: string;
@@ -561,6 +671,7 @@ function Hero({
   deltaLabel?: string;
   accent?: "orange";
   sparkline?: number[];
+  info?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   const dotClass =
@@ -569,7 +680,7 @@ function Hero({
     <div className="relative rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 overflow-hidden">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-widest text-ink-2">{label}</div>
+          <div className="text-[10px] uppercase tracking-widest text-ink-2">{label}{info}</div>
           <div className={`mt-1 font-display font-black text-3xl ${dotClass} leading-none`}>
             {value}
           </div>
@@ -600,12 +711,14 @@ function Mini({
   tone,
   href,
   sub,
+  info,
 }: {
   label: string;
   value: string;
   tone?: "good" | "warn";
   href?: string;
   sub?: string;
+  info?: React.ReactNode;
 }) {
   const valueClass =
     tone === "warn"
@@ -615,7 +728,7 @@ function Mini({
       : "text-ink-1";
   const inner = (
     <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-3 hover:bg-[#EFE6D4] transition-colors">
-      <div className="text-[10px] uppercase tracking-widest text-ink-2 mb-1">{label}</div>
+      <div className="text-[10px] uppercase tracking-widest text-ink-2 mb-1">{label}{info}</div>
       <div className={`text-lg font-medium ${valueClass}`}>{value}</div>
       {sub && <div className="mt-0.5 text-[10px] text-ink-2">{sub}</div>}
     </div>
@@ -637,15 +750,17 @@ function Cell({
   value,
   accent,
   subtle,
+  info,
 }: {
   label: string;
   value: string;
   accent?: boolean;
   subtle?: boolean;
+  info?: React.ReactNode;
 }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}</div>
+      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}{info}</div>
       <div
         className={`text-lg font-medium font-mono ${
           accent ? "text-orange" : subtle ? "text-ink-2" : "text-ink-1"

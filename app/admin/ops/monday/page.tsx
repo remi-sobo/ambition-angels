@@ -256,7 +256,14 @@ export default async function MondayPlanPage() {
   // server-render time, fine for an archive stamp.
   const nowISO = new Date().toISOString();
   const carryoverActions: TaskRowAction[] = [
-    { label: "Plan this week", variant: "primary", patch: { pinned_for_this_week: true } },
+    // Stamp planned_week explicitly: a slipped task is often still
+    // pinned_for_this_week=true from its original week, so toggling the pin
+    // would be a no-op and the task would never leave the carryover deck.
+    {
+      label: "Plan this week",
+      variant: "primary",
+      patch: { planned_week: mondayISO, pinned_for_this_week: true },
+    },
     { label: "Done", variant: "default", patch: { status: "done" } },
     { label: "Push", variant: "ghost", patch: { planned_week: nextMonday() } },
     { label: "Drop", variant: "ghost", patch: { archived_at: nowISO } },

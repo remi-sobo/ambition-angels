@@ -142,6 +142,8 @@ export type MeetingDetail = {
   matched: MatchedEntity[];
   suggestions: MeetingSuggestedTask[];
   linkedTasks: Array<{ id: string; title: string; status: string }>;
+  /** The agenda Reed drafted while this was still upcoming, if any — prep next to recap. */
+  agenda: SavedAgenda | null;
 };
 
 export async function getMeetingDetail(id: string): Promise<MeetingDetail | null> {
@@ -179,11 +181,16 @@ export async function getMeetingDetail(id: string): Promise<MeetingDetail | null
     .select("id, title, status")
     .eq("meeting_record_id", id);
 
+  // The agenda Reed drafted while this meeting was still upcoming lives on the
+  // same calendar event, so prep and recap sit together on the record.
+  const agenda = rec.calendar_event_id ? await loadLatestMeetingAgenda(sb, rec.calendar_event_id) : null;
+
   return {
     record: rec,
     matched,
     suggestions: (sugg ?? []) as MeetingSuggestedTask[],
     linkedTasks: (tasks ?? []) as Array<{ id: string; title: string; status: string }>,
+    agenda,
   };
 }
 

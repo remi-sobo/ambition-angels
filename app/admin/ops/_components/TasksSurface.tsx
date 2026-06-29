@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { AdminUser } from "@/lib/admin/auth";
 import TaskListView, { type GroupBy } from "./TaskListView";
 import TaskBoardView from "./TaskBoardView";
@@ -51,12 +51,29 @@ export default function TasksSurface({
   currentUser: AdminUser | null;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [scope, setScope] = useState<Scope>("active");
   const [view, setView] = useState<View>("list");
   const [groupBy, setGroupBy] = useState<GroupBy>("priority");
   const [linkFilter, setLinkFilter] = useState<LinkFilter>("all");
-  const [assignee, setAssignee] = useState<AssigneeFilter>("all");
   const [archiving, setArchiving] = useState(false);
+
+  // The assignee filter lives in the URL (?assignee=) so it survives the
+  // router.refresh() fired when a task is completed — client state would reset
+  // to "Everyone", forcing the user to reselect their name (Shannon's report).
+  const rawAssignee = searchParams.get("assignee");
+  const assignee: AssigneeFilter =
+    rawAssignee === "remi" || rawAssignee === "shannon" || rawAssignee === "unassigned"
+      ? rawAssignee
+      : "all";
+  const setAssignee = (value: AssigneeFilter) => {
+    const sp = new URLSearchParams(Array.from(searchParams.entries()));
+    if (value === "all") sp.delete("assignee");
+    else sp.set("assignee", value);
+    const qs = sp.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
 
   const activeTasks = useMemo(() => tasks.filter((t) => !t.archived_at), [tasks]);
   const archivedTasks = useMemo(

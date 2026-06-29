@@ -3,19 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSpeechRecognition } from "@/lib/hooks/useSpeechRecognition";
+import { useIsOwner } from "./AdminUserContext";
 
 /**
  * Report-an-issue sheet, opened from the + FAB / rail dock.
  *
- * Idea + Confusing stay a fast one-shot: describe it (type or voice), optionally
- * snap a photo, send — it becomes a task in "BloomOS Upgrades" and emails both
- * operators, exactly as before.
+ * EVERYONE goes through the same guided interview, for every concern type
+ * (bug / confusing / idea): describe it (type or voice), optionally attach a
+ * photo, then answer a couple of AI follow-ups. The interview synthesizes a
+ * Claude Code prompt that is always saved on the resulting "BloomOS Upgrades"
+ * task and emailed to the operators.
  *
- * Bug is now a guided debugging interview. Shannon/Remi describe what's off (by
- * voice or text); Claude asks a couple of focused follow-ups (current behavior,
- * expected behavior, where, repro), then synthesizes a ready-to-paste Claude
- * Code debugging prompt. They copy it straight into Claude Code and/or file it
- * as a task — no hand-crafting the prompt through a back-and-forth.
+ * The ONE difference is who sees the prompt: the owner (Remi) gets the prompt
+ * revealed with a "Copy prompt" button; everyone else just submits it to him and
+ * never sees the prompt. That keeps maximum info-gathering for all reporters
+ * while keeping the copy-into-Claude-Code step the owner's.
  */
 
 type ReportType = "bug" | "confusing" | "idea";
@@ -26,21 +28,22 @@ const TYPES: { value: ReportType; label: string; emoji: string }[] = [
 ];
 
 type Turn = { role: "user" | "assistant"; content: string };
-// describe → (bug only) chat → ready → done; simple types skip straight to done.
-type Phase = "describe" | "chat" | "ready" | "done";
+// describe → chat (the interview) → ready/finalizing → done.
+type Phase = "describe" | "chat" | "ready" | "finalizing" | "done";
 
 export default function ReportModal({ onClose }: { onClose: () => void }) {
   const pathname = usePathname();
+  const isOwner = useIsOwner();
   const [type, setType] = useState<ReportType>("bug");
   const [phase, setPhase] = useState<Phase>("describe");
 
-  // Shared intake.
+  // Intake.
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Bug conversation.
+  // Interview.
   const [turns, setTurns] = useState<Turn[]>([]);
   const [answer, setAnswer] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -53,7 +56,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
 
   const busy = thinking || saving;
 
-  // Close on Escape (never while mid-request).
+  // Close on Escape (never mid-request).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !busy) onClose();
@@ -83,7 +86,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
     setPreviewUrl(f ? URL.createObjectURL(f) : null);
   }
 
-  // ── Bug: run one conversation turn against the debug endpoint. ─────────────
+  // ── Run one interview turn; on "ready" branch by who's reporting. ──────────
   async function runDebug(nextTurns: Turn[]) {
     setError(null);
     setThinking(true);
@@ -93,6 +96,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           turns: nextTurns,
+          type,
           hasPhoto: !!file,
           pageContext: { path: pathname, title: typeof document !== "undefined" ? document.title : "" },
         }),
@@ -101,9 +105,17 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
       if (!r.ok) throw new Error(data?.error ?? `HTTP ${r.status}`);
 
       if (data.action === "ready") {
-        setPrompt(String(data.prompt ?? ""));
-        setPromptTitle(String(data.title ?? ""));
-        setPhase("ready");
+        const generated = String(data.prompt ?? "");
+        const genTitle = String(data.title ?? "");
+        setPrompt(generated);
+        setPromptTitle(genTitle);
+        if (isOwner) {
+          setPhase("ready");
+        } else {
+          // Everyone else never sees the prompt — file it straight to the owner.
+          setPhase("finalizing");
+          await fileReport({ debugPrompt: generated, title: genTitle });
+        }
       } else if (data.action === "ask" && data.message) {
         setTurns([...nextTurns, { role: "assistant", content: String(data.message) }]);
         setPhase("chat");
@@ -112,12 +124,16 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't reach the assistant.");
+      // If we were finalizing for a non-owner, keep them on a retryable screen.
+      if (!isOwner && phase === "finalizing") {
+        /* error shown on the finalizing screen */
+      }
     } finally {
       setThinking(false);
     }
   }
 
-  function startBug(e: React.FormEvent) {
+  function start(e: React.FormEvent) {
     e.preventDefault();
     if (!description.trim()) {
       setError("Tell me what's going on first.");
@@ -137,30 +153,17 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
     runDebug(next);
   }
 
-  // ── Simple types (idea/confusing): one-shot submit. ────────────────────────
-  async function submitSimple(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    if (!description.trim() && !file) {
-      setError("Add a description or a photo.");
-      return;
-    }
-    await fileReport({ description: description.trim() });
-  }
-
-  // ── Final task creation (shared by simple types and the bug "ready" step). ─
-  async function fileReport(opts: { description: string; debugPrompt?: string }) {
+  // ── Create the task (always carries the synthesized prompt). ───────────────
+  async function fileReport(opts: { debugPrompt: string; title?: string }) {
     setSaving(true);
     setError(null);
     try {
       const fd = new FormData();
       fd.append("type", type);
-      fd.append("description", opts.description);
-      if (opts.debugPrompt) {
-        fd.append("debugPrompt", opts.debugPrompt);
-        if (promptTitle) fd.append("title", promptTitle);
-        fd.append("transcript", JSON.stringify(turns));
-      }
+      fd.append("description", turns[0]?.content ?? description.trim());
+      fd.append("debugPrompt", opts.debugPrompt);
+      if (opts.title) fd.append("title", opts.title);
+      fd.append("transcript", JSON.stringify(turns));
       if (file) fd.append("photo", file);
       const r = await fetch("/api/admin/report", { method: "POST", body: fd });
       if (!r.ok) {
@@ -168,9 +171,10 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
         throw new Error(body?.error ?? `HTTP ${r.status}`);
       }
       setPhase("done");
-      setTimeout(onClose, opts.debugPrompt ? 1200 : 800);
+      setTimeout(onClose, 1200);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't send the report");
+      if (!isOwner) setPhase("finalizing"); // stay on retryable screen
     } finally {
       setSaving(false);
     }
@@ -186,7 +190,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
     }
   }
 
-  // Switching type resets the flow back to the intake step.
+  // Switching type resets back to the intake step.
   function chooseType(t: ReportType) {
     setType(t);
     setPhase("describe");
@@ -195,8 +199,6 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
     setPrompt("");
     setError(null);
   }
-
-  const isBug = type === "bug";
 
   return (
     <div
@@ -215,17 +217,15 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
         <div className="p-5 sm:p-6 space-y-4">
           <div>
             <h2 className="text-lg font-display font-bold uppercase tracking-tight text-ink-1">
-              {isBug ? "Report a bug" : "Report an issue"}
+              Report an issue
             </h2>
             <p className="text-xs text-ink-2 mt-0.5">
-              {isBug
-                ? "Tell me what's off. I'll ask a couple of quick questions, then hand you a ready-to-paste fix prompt."
-                : "Spotted something off? Snap it or describe it — it becomes a BloomOS Upgrade."}
+              Tell me what&apos;s going on — I&apos;ll ask a couple of quick questions to get the details.
             </p>
           </div>
 
-          {/* Type selector — hidden once a bug interview is underway. */}
-          {!(isBug && phase !== "describe") && (
+          {/* Type selector — hidden once the interview is underway. */}
+          {phase === "describe" && (
             <div>
               <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1.5">Type</div>
               <div className="grid grid-cols-3 gap-2">
@@ -248,19 +248,40 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {/* ── Done state. ── */}
+          {/* ── Done. ── */}
           {phase === "done" && (
             <p className="text-revenue text-sm py-4 text-center">
-              {isBug ? "Filed as a BloomOS Upgrade — thank you." : "Report sent — thank you."}
+              {isOwner ? "Filed as a BloomOS Upgrade — thank you." : "Sent to Remi — thank you."}
             </p>
           )}
 
-          {/* ── Describe step (intake): shared by all types. ── */}
+          {/* ── Finalizing (non-owner submit). ── */}
+          {phase === "finalizing" && (
+            <div className="py-4 text-center space-y-3">
+              {error ? (
+                <>
+                  <p className="text-expense text-xs">{error}</p>
+                  <button
+                    type="button"
+                    onClick={() => fileReport({ debugPrompt: prompt, title: promptTitle })}
+                    disabled={saving}
+                    className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
+                  >
+                    {saving ? "Sending…" : "Try again"}
+                  </button>
+                </>
+              ) : (
+                <p className="text-ink-2 text-sm">Sending to Remi…</p>
+              )}
+            </div>
+          )}
+
+          {/* ── Describe (intake). ── */}
           {phase === "describe" && (
-            <form onSubmit={isBug ? startBug : submitSimple} className="space-y-4">
+            <form onSubmit={start} className="space-y-4">
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">
-                  {isBug ? "What's going wrong?" : "What's going on?"}
+                  What&apos;s going on?
                 </div>
                 <div className="relative">
                   <textarea
@@ -268,22 +289,14 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
-                    placeholder={
-                      isBug
-                        ? "Describe what you did, what happened, and what you expected instead…"
-                        : "Describe what's weird, confusing, or what you'd improve…"
-                    }
+                    placeholder="Describe what you saw, what you expected, or what you'd like…"
                     className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 pr-12 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 text-base sm:text-sm resize-y"
                   />
                   <MicButton onAppend={(t) => setDescription((d) => joinSpeech(d, t))} />
                 </div>
               </div>
 
-              <PhotoPicker
-                fileRef={fileRef}
-                previewUrl={previewUrl}
-                onPick={pickFile}
-              />
+              <PhotoPicker fileRef={fileRef} previewUrl={previewUrl} onPick={pickFile} />
 
               {error && <p className="text-expense text-xs">{error}</p>}
 
@@ -301,19 +314,13 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                   disabled={busy}
                   className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
                 >
-                  {isBug
-                    ? thinking
-                      ? "Thinking…"
-                      : "Start debugging"
-                    : saving
-                    ? "Sending…"
-                    : "Send report"}
+                  {thinking ? "Thinking…" : "Continue"}
                 </button>
               </div>
             </form>
           )}
 
-          {/* ── Bug: conversation. ── */}
+          {/* ── Interview. ── */}
           {phase === "chat" && (
             <div className="space-y-4">
               <div className="space-y-2.5 max-h-[42vh] overflow-y-auto pr-1">
@@ -362,12 +369,10 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {/* ── Bug: the synthesized Claude Code prompt. ── */}
-          {phase === "ready" && (
+          {/* ── Owner-only: the synthesized prompt. ── */}
+          {phase === "ready" && isOwner && (
             <div className="space-y-4">
-              <div className="text-[10px] uppercase tracking-wider text-ink-2">
-                Your Claude Code prompt
-              </div>
+              <div className="text-[10px] uppercase tracking-wider text-ink-2">Your Claude Code prompt</div>
               <pre className="whitespace-pre-wrap bg-tile border-[1.5px] border-outline rounded-lg p-3 text-xs text-ink-1 max-h-[44vh] overflow-y-auto font-mono leading-relaxed">
                 {prompt}
               </pre>
@@ -385,7 +390,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => fileReport({ description: turns[0]?.content ?? "", debugPrompt: prompt })}
+                    onClick={() => fileReport({ debugPrompt: prompt, title: promptTitle })}
                     disabled={saving}
                     className="flex-1 border-[1.5px] border-outline bg-tile hover:text-ink-1 text-ink-2 text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50"
                   >
@@ -394,9 +399,8 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                   <button
                     type="button"
                     onClick={() => {
-                      // Re-open the interview. Append a fresh assistant prompt so
-                      // the transcript stays user/assistant-alternating (the model
-                      // requires the next call to end on a user message).
+                      // Re-open the interview; append an assistant turn so the
+                      // transcript stays alternating (next call must end on user).
                       setTurns((t) => [
                         ...t,
                         { role: "assistant", content: "Anything else I should add before I finalize the prompt?" },
@@ -496,7 +500,7 @@ function PhotoPicker({
 /**
  * Mic toggle anchored inside a text field. Streams finalized speech into the
  * field via onAppend; pulses while listening. Self-hides where the browser has
- * no Web Speech API (e.g. Firefox), so the field just stays type-only there.
+ * no Web Speech API (e.g. Firefox).
  */
 function MicButton({ onAppend }: { onAppend: (text: string) => void }) {
   const { supported, listening, error, toggle } = useSpeechRecognition({ onResult: onAppend });

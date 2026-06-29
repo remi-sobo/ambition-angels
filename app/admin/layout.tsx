@@ -9,6 +9,7 @@ import GlobalSearch from "./_components/search/GlobalSearch";
 import MobileTabBar from "./_components/MobileTabBar";
 import { ReedLauncherProvider } from "./_components/reed/ReedLauncherProvider";
 import AdminPWA from "./_components/AdminPWA";
+import { AdminUserProvider } from "./_components/AdminUserContext";
 import { getAdminUser } from "@/lib/admin/auth";
 import { hasEntitlement } from "@/lib/admin/entitlements";
 
@@ -65,6 +66,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // The floating QuickAddButton is still gated on authed since its
   // actions all require a valid session.
   return (
+    <AdminUserProvider value={user}>
     <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
       <AdminPWA />
       <Sidebar currentUser={user} />
@@ -84,5 +86,6 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       {authed && <QuickAddButton currentUser={user} />}
       {authed && <GlobalSearch />}
     </div>
+    </AdminUserProvider>
   );
 }

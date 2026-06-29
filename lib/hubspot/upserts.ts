@@ -14,9 +14,32 @@ import type { HubSpotRecord, EngagementSubtype } from "./fetchers";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+// Postgres text and jsonb columns cannot store NUL (\u0000). HubSpot bodies
+// (and the occasional subject line) carry them, which is exactly what trips
+// the "invalid input syntax for type json" batch failure. Strip them at the
+// boundary so records land on the fast path instead of the per-record fallback.
+function stripNul(s: string): string {
+  return s.split(String.fromCharCode(0)).join("");
+}
+
+// Deep-clone a HubSpot record with all NUL bytes removed from string values,
+// so it's safe to store in the raw_json jsonb column.
+function sanitizeJson<T>(value: T): T {
+  if (typeof value === "string") return stripNul(value) as T;
+  if (Array.isArray(value)) return value.map(sanitizeJson) as unknown as T;
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) out[k] = sanitizeJson(v);
+    return out as T;
+  }
+  return value;
+}
+
 function str(props: Record<string, string | null>, key: string): string | null {
   const v = props[key];
-  return typeof v === "string" && v.length > 0 ? v : null;
+  if (typeof v !== "string" || v.length === 0) return null;
+  const cleaned = stripNul(v);
+  return cleaned.length > 0 ? cleaned : null;
 }
 
 function tsz(props: Record<string, string | null>, key: string): string | null {
@@ -71,7 +94,7 @@ export async function upsertContacts(records: HubSpotRecord[]): Promise<number> 
     last_activity_at: tsz(r.properties, "notes_last_updated"),
     created_in_hubspot_at: tsz(r.properties, "createdate"),
     synced_at: SYNCED_AT(),
-    raw_json: r,
+    raw_json: sanitizeJson(r),
     updated_at: SYNCED_AT(),
   }));
   const { error } = await getSupabaseAdmin()
@@ -94,7 +117,7 @@ export async function upsertCompanies(records: HubSpotRecord[]): Promise<number>
     last_activity_at: tsz(r.properties, "hs_last_activity_date"),
     created_in_hubspot_at: tsz(r.properties, "createdate"),
     synced_at: SYNCED_AT(),
-    raw_json: r,
+    raw_json: sanitizeJson(r),
     updated_at: SYNCED_AT(),
   }));
   const { error } = await getSupabaseAdmin()
@@ -124,7 +147,7 @@ export async function upsertDeals(records: HubSpotRecord[]): Promise<number> {
       last_activity_at: tsz(r.properties, "hs_last_activity_date"),
       created_in_hubspot_at: tsz(r.properties, "createdate"),
       synced_at: SYNCED_AT(),
-      raw_json: r,
+      raw_json: sanitizeJson(r),
       updated_at: SYNCED_AT(),
     };
   });
@@ -187,11 +210,11 @@ export type EngagementUpsertResult = {
   }>;
 };
 
-// TODO: investigate which HubSpot field contains the bad JSON; common
-// culprits are null bytes (\u0000) in body fields, NaN/Infinity in numeric
-// columns inside raw_json, or invalid UTF-8 in subject lines. Surfacing
-// the failed hubspot_ids via per-record fallback gives us a way to inspect
-// real offenders later without sanitizing in flight.
+// NUL bytes (\u0000) in body/subject fields are the usual culprit, and we now
+// strip those up front via sanitizeJson (see str() and the raw_json writes
+// above), so the batch should take the fast path. The per-record fallback below
+// stays as a safety net for any other malformed-JSON cause (e.g. invalid
+// UTF-8), surfacing the offending hubspot_ids so a real outage isn't masked.
 function isJsonInputError(message: string): boolean {
   return /invalid input syntax for type json/i.test(message);
 }
@@ -213,7 +236,7 @@ export async function upsertEngagements(
     company_ids: assocIds(r, "companies"),
     deal_ids: assocIds(r, "deals"),
     synced_at: SYNCED_AT(),
-    raw_json: r,
+    raw_json: sanitizeJson(r),
     updated_at: SYNCED_AT(),
   }));
 

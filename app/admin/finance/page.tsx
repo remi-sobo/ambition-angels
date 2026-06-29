@@ -286,6 +286,8 @@ export default async function FinanceDashboardPage() {
         <Hero
           label="Raised YTD"
           value={money(raisedHard)}
+          href="/admin/finance/revenue"
+          hrefLabel="View revenue"
           info={
             <InfoTip heading="Raised YTD">
               Hard money toward the goal this fiscal year: <b>received + secured</b>.{" "}
@@ -311,6 +313,8 @@ export default async function FinanceDashboardPage() {
         <Hero
           label="Spent YTD"
           value={money(expenseYTD)}
+          href="/admin/finance/transactions?status=outflow"
+          hrefLabel="View expenses"
           info={
             <InfoTip heading="Spent YTD">
               Every dollar out so far this fiscal year: the sum of all{" "}
@@ -662,6 +666,8 @@ function Hero({
   accent,
   sparkline,
   info,
+  href,
+  hrefLabel,
   children,
 }: {
   label: string;
@@ -672,15 +678,36 @@ function Hero({
   accent?: "orange";
   sparkline?: number[];
   info?: React.ReactNode;
+  /** When set, the whole card links here (with a "view list" affordance). */
+  href?: string;
+  hrefLabel?: string;
   children?: React.ReactNode;
 }) {
   const dotClass =
     accent === "orange" ? "text-orange" : "text-ink-1";
   return (
-    <div className="relative rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 overflow-hidden">
-      <div className="flex items-start justify-between gap-3">
+    <div
+      className={`group relative rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 overflow-hidden ${
+        href
+          ? "transition-colors hover:border-ink-2 hover:bg-[#EFE6D4] focus-within:ring-2 focus-within:ring-orange/40"
+          : ""
+      }`}
+    >
+      {/* Full-card overlay link: keeps the whole widget clickable + keyboard-
+          focusable without nesting the InfoTip button inside an <a>. */}
+      {href && (
+        <Link
+          href={href}
+          aria-label={`${label} — ${hrefLabel ?? "view list"}`}
+          className="absolute inset-0 z-10"
+        />
+      )}
+      <div className={`flex items-start justify-between gap-3 ${href ? "pointer-events-none" : ""}`}>
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-widest text-ink-2">{label}{info}</div>
+          <div className="text-[10px] uppercase tracking-widest text-ink-2">
+            {label}
+            {info && <span className="pointer-events-auto relative z-20">{info}</span>}
+          </div>
           <div className={`mt-1 font-display font-black text-3xl ${dotClass} leading-none`}>
             {value}
           </div>
@@ -691,6 +718,11 @@ function Hero({
                 {delta >= 0 ? "▲" : "▼"} {money(Math.abs(delta))}
               </span>{" "}
               <span className="text-ink-2">{deltaLabel}</span>
+            </div>
+          )}
+          {href && (
+            <div className="mt-2 text-[11px] font-medium text-ink-3 group-hover:text-orange transition-colors">
+              {hrefLabel ?? "View list"} →
             </div>
           )}
         </div>

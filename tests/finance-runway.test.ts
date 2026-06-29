@@ -117,6 +117,20 @@ describe("summarizePledges", () => {
     expect(sums.undatedUnreceivedCount).toBe(0);
   });
 
+  test("weighted pipeline (projected) is never 'due', even dated this month", () => {
+    const sums = summarizePledges(
+      [
+        pledge({ amount: 50_000, status: "secured", expected_date: "2026-06-15" }), // committed → due
+        pledge({ amount: 20_000, status: "projected", expected_date: "2026-06-15" }), // pipeline → projected, not due
+        pledge({ amount: 10_000, status: "projected", expected_date: "2026-08-01" }), // pipeline later → projected
+      ],
+      endCur,
+      endHorizon
+    );
+    expect(sums.duePledges).toBe(50_000); // only the committed one
+    expect(sums.projPledges).toBe(30_000); // both pipeline rows
+  });
+
   test("received is excluded (already in the bank)", () => {
     const sums = summarizePledges(
       [pledge({ amount: 10_000, status: "received", expected_date: "2026-06-10" })],

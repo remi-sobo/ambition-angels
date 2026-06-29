@@ -37,8 +37,6 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "My Week", icon: "week", href: "/admin/ops/my-week" },
       { label: "Tasks", icon: "tasks", href: "/admin/ops" },
-      { label: "Monday Plan", icon: "monday", href: "/admin/ops/monday" },
-      { label: "Friday Review", icon: "friday", href: "/admin/ops/friday" },
       { label: "Projects", icon: "projects", href: "/admin/ops/projects" },
       { label: "Meetings", icon: "meetings", href: "/admin/meetings" },
       { label: "Booking page", icon: "events", href: "/admin/meet" },
@@ -324,6 +322,14 @@ function Icon({ name, className }: { name: IconName; className?: string }) {
 // nearest ancestor.
 
 function activeHref(pathname: string): string | null {
+  // The Monday/Friday wizard pages are entered through the My Week hub — keep
+  // that item lit rather than falling through to the /admin/ops (Tasks) prefix.
+  if (
+    pathname.startsWith("/admin/ops/monday") ||
+    pathname.startsWith("/admin/ops/friday")
+  ) {
+    return "/admin/ops/my-week";
+  }
   let best: string | null = null;
   for (const section of NAV_SECTIONS) {
     for (const item of section.items) {

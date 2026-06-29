@@ -8,6 +8,8 @@ import {
   TASK_PRIORITIES,
   categoryLabel,
   priorityLabel,
+  readTaskHealth,
+  todayISO,
   type TaskCategory,
   type OpsTask,
   type TaskStatus,
@@ -71,6 +73,103 @@ export default function TaskEditModal({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const isOwner = useIsOwner();
+
+  // ── Stuck-work forcing prompt ──────────────────────────────────────────────
+  // A dismissible strip (NOT an auto-modal — that friction makes people stop
+  // opening tasks). Shown only when the task reads 'stuck'. Offers the four
+  // dispositions the spec forces a choice between: decompose / delegate /
+  // schedule / drop. (specs/ops-stuck-work.md)
+  const { health: taskHealthState, stuckReason } = readTaskHealth(task);
+  const [promptDismissed, setPromptDismissed] = useState(false);
+  const [promptBusy, setPromptBusy] = useState(false);
+  const [promptMsg, setPromptMsg] = useState<string | null>(null);
+  const [decomposing, setDecomposing] = useState(false);
+  const [subtaskTitle, setSubtaskTitle] = useState("");
+  const showStuckPrompt = taskHealthState === "stuck" && !promptDismissed;
+
+  // Apply a quick disposition (delegate/schedule) and collapse the strip into a
+  // confirmation. updated_at moves, so the task stops reading 'stuck' next load.
+  async function promptPatch(body: Record<string, unknown>, successMsg: string) {
+    setPromptBusy(true);
+    try {
+      const r = await fetch(`/api/admin/ops/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      router.refresh();
+      setPromptMsg(successMsg);
+    } catch {
+      setPromptMsg("Couldn't apply — try again.");
+    } finally {
+      setPromptBusy(false);
+    }
+  }
+
+  function delegate() {
+    // Hand off to the other operator (Shannon runs the ops queue, so an
+    // unassigned stuck task goes to her).
+    const next = assignee === "shannon" ? "remi" : "shannon";
+    setAssignee(next);
+    void promptPatch(
+      { assigned_to: next },
+      `Delegated to ${next === "remi" ? "Remi" : "Shannon"}.`
+    );
+  }
+
+  function schedule() {
+    // Commit it to a day — today. Setting planned_day pins the week server-side.
+    const today = todayISO();
+    if (!dueDate) setDueDate(today);
+    void promptPatch({ planned_day: today }, "Scheduled for today.");
+  }
+
+  async function drop() {
+    // Archive and close — the honest "this isn't happening" exit.
+    setPromptBusy(true);
+    try {
+      const r = await fetch(`/api/admin/ops/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived_at: new Date().toISOString() }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      router.refresh();
+      onClose();
+    } catch {
+      setPromptMsg("Couldn't drop — try again.");
+      setPromptBusy(false);
+    }
+  }
+
+  async function addSubtask() {
+    const t = subtaskTitle.trim();
+    if (!t) return;
+    setPromptBusy(true);
+    try {
+      const r = await fetch(`/api/admin/ops/tasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: t,
+          parent_id: task.id,
+          category: task.category,
+          project_id: task.project_id,
+          assigned_to: task.assigned_to,
+        }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      router.refresh();
+      setSubtaskTitle("");
+      setDecomposing(false);
+      setPromptMsg("Subtask added — break the rest down the same way.");
+    } catch {
+      setPromptMsg("Couldn't add subtask — try again.");
+    } finally {
+      setPromptBusy(false);
+    }
+  }
 
   // Tasks filed by the guided reporter carry a ready-to-paste Claude Code prompt
   // as their description. The copy affordance is owner-only (Remi) by design —
@@ -210,6 +309,63 @@ export default function TaskEditModal({
           <h2 className="text-lg font-display font-bold uppercase tracking-tight text-ink-1">
             Edit task
           </h2>
+
+          {showStuckPrompt && (
+            <div className="rounded-lg border border-status-watch/30 bg-status-watch-bg px-3 py-2.5 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="text-xs text-ink-1">
+                  <span className="font-semibold uppercase tracking-wider text-status-watch-text">
+                    Stuck
+                  </span>
+                  <span className="text-ink-2"> — {stuckReason}. Pick one:</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPromptDismissed(true)}
+                  className="shrink-0 text-ink-3 hover:text-ink-1 text-sm leading-none"
+                  aria-label="Dismiss"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {promptMsg ? (
+                <p className="text-xs text-ink-2">{promptMsg}</p>
+              ) : decomposing ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={subtaskTitle}
+                    onChange={(e) => setSubtaskTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void addSubtask();
+                      }
+                    }}
+                    placeholder="First concrete step…"
+                    className="flex-1 bg-tile border-[1.5px] border-outline rounded-lg px-2.5 py-1.5 text-xs text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void addSubtask()}
+                    disabled={promptBusy || !subtaskTitle.trim()}
+                    className="shrink-0 bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
+                  >
+                    Add
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  <StuckAction label="Decompose" onClick={() => setDecomposing(true)} disabled={promptBusy} />
+                  <StuckAction label="Delegate" onClick={delegate} disabled={promptBusy} />
+                  <StuckAction label="Schedule" onClick={schedule} disabled={promptBusy} />
+                  <StuckAction label="Drop" onClick={() => void drop()} disabled={promptBusy} danger />
+                </div>
+              )}
+            </div>
+          )}
 
           <Field label="Title" required>
             <input
@@ -401,6 +557,33 @@ export default function TaskEditModal({
         </form>
       </div>
     </div>
+  );
+}
+
+function StuckAction({
+  label,
+  onClick,
+  disabled,
+  danger,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
+        danger
+          ? "border-expense/30 bg-expense-bg text-expense hover:bg-expense-bg"
+          : "border-outline bg-tile text-ink-1 hover:border-orange/60"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 

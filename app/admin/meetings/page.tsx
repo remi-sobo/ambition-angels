@@ -186,15 +186,17 @@ export default async function MeetingsPage() {
                     {(byDay.get(key) ?? []).map((m) => (
                       <div
                         key={m.eventId}
-                        className="flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel"
+                        className="group flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel transition-colors hover:bg-[#EFE6D4]"
                       >
-                        <span className="text-[12px] text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-20 shrink-0">
-                          {laTime(m.start)}
-                        </span>
-                        <span className="flex-1 min-w-0 text-[14px] text-ink-1 truncate">
-                          {m.title ?? "Untitled meeting"}
-                        </span>
-                        <MatchCluster matched={m.matched} muted />
+                        <Link href={`/admin/meetings/upcoming/${m.eventId}`} className="flex flex-1 min-w-0 items-center gap-3">
+                          <span className="text-[12px] text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-20 shrink-0">
+                            {laTime(m.start)}
+                          </span>
+                          <span className="flex-1 min-w-0 text-[14px] text-ink-1 group-hover:text-orange truncate transition-colors">
+                            {m.title ?? "Untitled meeting"}
+                          </span>
+                          <MatchCluster matched={m.matched} muted />
+                        </Link>
                         <MeetingAgendaButton eventId={m.eventId} title={m.title} start={m.start} />
                       </div>
                     ))}

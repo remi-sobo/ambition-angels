@@ -5,6 +5,7 @@ import { listMeetings, type MeetingListItem, type UpcomingMeeting } from "@/lib/
 import { meetingFollowUpGaps } from "@/lib/meetings/coverage";
 import { MatchCluster, StatusPill, SectionTitle } from "./_ui";
 import SyncMeetingsButton from "./SyncMeetingsButton";
+import MeetingAgendaButton from "./_components/MeetingAgendaButton";
 
 export const dynamic = "force-dynamic";
 
@@ -194,6 +195,7 @@ export default async function MeetingsPage() {
                           {m.title ?? "Untitled meeting"}
                         </span>
                         <MatchCluster matched={m.matched} muted />
+                        <MeetingAgendaButton eventId={m.eventId} title={m.title} start={m.start} />
                       </div>
                     ))}
                   </div>

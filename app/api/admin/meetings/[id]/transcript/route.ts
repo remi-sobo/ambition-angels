@@ -8,6 +8,7 @@ import {
   orgEmailDomain,
   primaryMatch,
 } from "@/lib/meetings/match";
+import { loadLatestMeetingAgenda } from "@/lib/meetings/dossier";
 
 // POST /api/admin/meetings/[id]/transcript — ingest a pasted transcript, run Reed
 // to produce a summary + 1–3 suggested follow-ups (staged, not live tasks). The
@@ -34,10 +35,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!rec) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const record = rec as { id: string; org_id: string; title: string | null; calendar_event_id: string | null };
 
-  // Attendee context + the primary entity to link suggested tasks to.
+  // Attendee context + the primary entity to link suggested tasks to, plus the
+  // prep agenda (if Reed drafted one) so the recap becomes a prep-vs-actual debrief.
   let attendeeNames: string[] = [];
   let primaryType: "constituent" | "partner" | null = null;
   let primaryId: string | null = null;
+  let agendaText: string | null = null;
   if (record.calendar_event_id) {
     const { data: ev } = await sb
       .from("calendar_events")
@@ -50,11 +53,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const primary = primaryMatch(await matchAttendees(sb, ctx.orgId, externalEmails(attendees, domain)));
     primaryType = primary?.type ?? null;
     primaryId = primary?.id ?? null;
+    // calendar_event_id is a global uuid PK and the record is org-scoped above,
+    // so the agenda thread for this event necessarily belongs to this org.
+    agendaText = (await loadLatestMeetingAgenda(sb, record.calendar_event_id))?.agenda ?? null;
   }
 
   let result;
   try {
-    result = await parseTranscript({ title: record.title, transcript, attendees: attendeeNames });
+    result = await parseTranscript({ title: record.title, transcript, attendees: attendeeNames, agenda: agendaText });
   } catch (e) {
     console.error("[meetings/:id/transcript] Reed failed:", e);
     return NextResponse.json({ error: "Transcript parsing failed" }, { status: 502 });

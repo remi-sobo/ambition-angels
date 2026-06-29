@@ -128,36 +128,27 @@ export function scheduleTotals(rows: RevenueScheduleRow[]): ScheduleTotals {
 }
 
 /**
- * Actual money landed in a window — the "received" end of the schedule.
- *
- * Landed money = gifts (the canonical received-money ledger) + manual
- * commitments marked received (e.g. a DAF gift reconciled from email that was
- * never booked as a gift). Counting both keeps "Received" consistent across the
- * dashboard, the finance report, and the revenue tab. Degrades to 0 on error.
+ * Actual money landed in a window — the "received" end of the schedule. Sums
+ * gifts only: the gifts ledger is the single source of truth for received money
+ * (HubSpot closed-won deals and manual gifts both land there). A "received"
+ * manual commitment is not a separate source — it's a reconcile placeholder
+ * that duplicates the eventual gift, so counting it double-counts. Degrades to 0.
  */
 export async function loadReceivedTotal(
   client: SupabaseClient,
   startISO: string,
   endISO: string
 ): Promise<number> {
-  const [giftsRes, commitsRes] = await Promise.all([
-    client.from("gifts").select("amount").gte("gift_date", startISO).lte("gift_date", endISO),
-    client
-      .from("fin_revenue_commitments")
-      .select("amount")
-      .eq("status", "received")
-      .gte("expected_date", startISO)
-      .lte("expected_date", endISO),
-  ]);
-  if (giftsRes.error) {
-    console.error("[finance] received-gifts load failed:", giftsRes.error.message);
+  const { data, error } = await client
+    .from("gifts")
+    .select("amount")
+    .gte("gift_date", startISO)
+    .lte("gift_date", endISO);
+  if (error) {
+    console.error("[finance] received-gifts load failed:", error.message);
+    return 0;
   }
-  if (commitsRes.error) {
-    console.error("[finance] received-commitments load failed:", commitsRes.error.message);
-  }
-  const gifts = (giftsRes.data ?? []).reduce((s, g) => s + Number(g.amount ?? 0), 0);
-  const commits = (commitsRes.data ?? []).reduce((s, c) => s + Number(c.amount ?? 0), 0);
-  return gifts + commits;
+  return (data ?? []).reduce((s, g) => s + Number(g.amount ?? 0), 0);
 }
 
 /** One pass producing the headline rollups the finance surfaces show. */

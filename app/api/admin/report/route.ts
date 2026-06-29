@@ -59,7 +59,28 @@ export async function POST(req: NextRequest) {
   const type: ReportType = rawType === "confusing" || rawType === "idea" ? rawType : "bug";
   const photo = form.get("photo");
 
-  if (!description && !(photo instanceof File && photo.size > 0)) {
+  // From the guided bug flow: a synthesized Claude Code debugging prompt, the
+  // Q&A transcript it came from, and a short title. All optional — a plain
+  // idea/confusing report (or a bug sent without finishing the interview) just
+  // omits them and behaves exactly as before.
+  const debugPrompt = String(form.get("debugPrompt") ?? "").trim();
+  const reportTitle = String(form.get("title") ?? "").trim();
+  let transcript: { role: "user" | "assistant"; content: string }[] = [];
+  const rawTranscript = String(form.get("transcript") ?? "");
+  if (rawTranscript) {
+    try {
+      const parsed = JSON.parse(rawTranscript);
+      if (Array.isArray(parsed)) {
+        transcript = parsed
+          .filter((t) => t && (t.role === "user" || t.role === "assistant") && typeof t.content === "string")
+          .map((t) => ({ role: t.role, content: String(t.content) }));
+      }
+    } catch {
+      /* ignore a malformed transcript — the prompt still stands on its own */
+    }
+  }
+
+  if (!description && !debugPrompt && !(photo instanceof File && photo.size > 0)) {
     return NextResponse.json({ error: "Add a description or a photo." }, { status: 400 });
   }
 
@@ -115,16 +136,46 @@ export async function POST(req: NextRequest) {
   }
 
   // 3. Create the task in that project.
-  const firstLine = (description || `${meta.label} report`).split("\n")[0].trim();
-  const title = `${meta.label}: ${firstLine}`.slice(0, 140);
-  const taskDescription = [
-    description || "(no description)",
-    "",
-    `Reported by ${reporter[0].toUpperCase()}${reporter.slice(1)} via the in-app reporter.`,
-    photoUrl ? `Photo: ${photoUrl}` : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  // When the guided bug flow produced a Claude Code prompt, the task description
+  // IS that prompt (so copying the description = copying the paste-ready brief),
+  // with the interview transcript + provenance appended below a divider for the
+  // record. A 'claude-prompt' label flags it so the UI can offer a one-tap copy.
+  const summaryLine = (reportTitle || description || `${meta.label} report`).split("\n")[0].trim();
+  const title = `${meta.label}: ${summaryLine}`.slice(0, 140);
+  const reporterLine = `Reported by ${reporter[0].toUpperCase()}${reporter.slice(1)} via the in-app reporter.`;
+
+  let taskDescription: string;
+  const labels = ["report", type];
+  if (debugPrompt) {
+    labels.push("claude-prompt");
+    const transcriptBlock = transcript.length
+      ? [
+          "Interview:",
+          ...transcript.map(
+            (t) => `${t.role === "assistant" ? "Q" : "A"}: ${t.content.replace(/\n+/g, " ").trim()}`,
+          ),
+        ].join("\n")
+      : "";
+    taskDescription = [
+      debugPrompt,
+      "",
+      "———",
+      reporterLine,
+      transcriptBlock,
+      photoUrl ? `Screenshot: ${photoUrl}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  } else {
+    taskDescription = [
+      description || "(no description)",
+      "",
+      reporterLine,
+      photoUrl ? `Photo: ${photoUrl}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
 
   const { data: task, error: taskErr } = await sb
     .from("ops_tasks")
@@ -136,7 +187,7 @@ export async function POST(req: NextRequest) {
       assigned_to: "remi",
       created_by: reporter,
       project_id: projectId,
-      labels: ["report", type],
+      labels,
       pinned_for_today: false,
     })
     .select("id")
@@ -153,10 +204,14 @@ export async function POST(req: NextRequest) {
   const projectLink = projectId
     ? `https://www.ambitionangels.org/admin/ops/projects/${projectId}`
     : "https://www.ambitionangels.org/admin/ops";
+  const promptBlock = debugPrompt
+    ? `<p style="margin:8px 0 4px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B6960;">Claude Code prompt (copy into Claude Code)</p>
+       <pre style="white-space:pre-wrap;margin:0;padding:14px;background:#0E0E0E;color:#FAFAF8;border-radius:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5;">${esc(debugPrompt)}</pre>`
+    : `<p style="white-space:pre-wrap;margin:8px 0 0;">${esc(description || "(no description)")}</p>`;
   const body = `
     <p style="margin:0 0 4px;"><span style="display:inline-block;font-weight:700;color:#E8500A;">${meta.emoji} ${meta.label}</span>
       <span style="color:#6B6960;"> · reported by ${esc(reporter)}</span></p>
-    <p style="white-space:pre-wrap;margin:8px 0 0;">${esc(description || "(no description)")}</p>
+    ${promptBlock}
     ${
       photoUrl
         ? `<div style="margin:16px 0;"><img src="${photoUrl}" alt="Report photo" style="max-width:100%;border-radius:12px;border:1px solid #F0EEE8;" /></div>`
@@ -164,7 +219,7 @@ export async function POST(req: NextRequest) {
     }
     <p style="margin:16px 0 0;"><a href="${projectLink}" style="display:inline-block;background:#E8500A;color:#fff;text-decoration:none;font-weight:600;font-size:13px;padding:8px 16px;border-radius:999px;">Open BloomOS Upgrades →</a></p>
   `;
-  await sendOperatorEmail(`${meta.emoji} BloomOS report: ${firstLine}`.slice(0, 120), operatorEmailShell("New BloomOS report", body)).catch(
+  await sendOperatorEmail(`${meta.emoji} BloomOS report: ${summaryLine}`.slice(0, 120), operatorEmailShell("New BloomOS report", body)).catch(
     (e) => console.error("[report] email failed:", e)
   );
 

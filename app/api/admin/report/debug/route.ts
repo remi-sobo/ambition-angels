@@ -154,14 +154,20 @@ export async function POST(req: NextRequest) {
       }),
     });
     if (!res.ok) {
-      console.error("[report/debug] Anthropic error:", await res.text());
-      return NextResponse.json({ error: "The assistant is unavailable right now." }, { status: 502 });
+      const detail = (await res.text()).slice(0, 300);
+      console.error("[report/debug] Anthropic error:", res.status, detail);
+      // Admin-only route — surface the upstream status/detail so we can see why.
+      return NextResponse.json(
+        { error: `Assistant error (${res.status}): ${detail || "no detail"}` },
+        { status: 502 },
+      );
     }
     const data = await res.json();
     parsed = parseModel(data?.content?.[0]?.text ?? "");
   } catch (e) {
-    console.error("[report/debug] request failed:", e);
-    return NextResponse.json({ error: "The assistant is unavailable right now." }, { status: 502 });
+    const detail = e instanceof Error ? e.message : String(e);
+    console.error("[report/debug] request failed:", detail);
+    return NextResponse.json({ error: `Assistant request failed: ${detail}` }, { status: 502 });
   }
 
   if (!parsed) {

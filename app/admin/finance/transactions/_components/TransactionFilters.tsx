@@ -15,9 +15,14 @@ export default function TransactionFilters({ categories }: Props) {
   const sp = useSearchParams();
 
   const [q, setQ] = useState(sp.get("q") ?? "");
+  // Free-text and date inputs are held in local state and pushed to the URL on
+  // a debounce. Binding them straight to the search param makes the controlled
+  // value lag router.replace() (which is async), so the field snaps back to its
+  // old value mid-edit — you type a date and it "resets". Local state is the
+  // source of truth while editing; the URL catches up after a pause.
+  const [dateFrom, setDateFrom] = useState(sp.get("from") ?? "");
+  const [dateTo, setDateTo] = useState(sp.get("to") ?? "");
   const category = sp.get("category") ?? "";
-  const dateFrom = sp.get("from") ?? "";
-  const dateTo = sp.get("to") ?? "";
   const status = sp.get("status") ?? "";
 
   const apply = useCallback(
@@ -43,6 +48,25 @@ export default function TransactionFilters({ categories }: Props) {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
+
+  // Same debounce for the date range — a complete date pushes to the URL after
+  // a short pause instead of on every keystroke, so editing a segment never
+  // triggers a mid-edit route change.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (dateFrom !== (sp.get("from") ?? "")) apply({ from: dateFrom });
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateFrom]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (dateTo !== (sp.get("to") ?? "")) apply({ to: dateTo });
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateTo]);
 
   // Group categories the same way the picker does — by group_name in source
   // order.
@@ -100,7 +124,7 @@ export default function TransactionFilters({ categories }: Props) {
           <input
             type="date"
             value={dateFrom}
-            onChange={(e) => apply({ from: e.target.value })}
+            onChange={(e) => setDateFrom(e.target.value)}
             className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
           />
         </div>
@@ -111,7 +135,7 @@ export default function TransactionFilters({ categories }: Props) {
           <input
             type="date"
             value={dateTo}
-            onChange={(e) => apply({ to: e.target.value })}
+            onChange={(e) => setDateTo(e.target.value)}
             className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
           />
         </div>

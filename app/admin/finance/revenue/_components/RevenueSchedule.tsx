@@ -65,6 +65,47 @@ export default function RevenueSchedule({
   const goalPct = goal > 0 ? (hard / goal) * 100 : 0;
   const goalPctWithProj = goal > 0 ? ((hard + projected) / goal) * 100 : 0;
 
+  // Split committed money (full value) from projected pipeline (weighted) so the
+  // two never read as the same kind of dollar — the #1 source of confusion here.
+  const committedRows = sorted.filter((r) => r.confidence === "committed");
+  const projectedRows = sorted.filter((r) => r.confidence === "projected");
+
+  const row = (r: RevenueScheduleRow) => (
+    <li
+      key={`${r.source_type}-${r.source_id}`}
+      className="grid grid-cols-[5.5rem_1fr_auto] sm:grid-cols-[6rem_7rem_1fr_auto] items-center gap-3 py-2 text-sm"
+    >
+      <span className="font-mono text-xs text-ink-2">{monthLabel(r.month)}</span>
+      <span className="hidden sm:block">
+        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${SOURCE_CHIP[r.source_type] ?? SOURCE_CHIP.manual}`}>
+          {SOURCE_LABEL[r.source_type] ?? r.source_type}
+        </span>
+      </span>
+      <span className="min-w-0 truncate text-ink-1" title={r.label}>
+        {r.label}
+        {r.needs_schedule && (
+          <span className="ml-2 text-[10px] text-[#A56A1B]" title="Awarded but not tranched — counted as a lump at the period start">
+            needs schedule
+          </span>
+        )}
+        {r.restricted && (
+          <span className="ml-2 text-[10px] text-[#A56A1B]">
+            restricted{r.restricted_to ? ` · ${r.restricted_to}` : ""}
+          </span>
+        )}
+      </span>
+      <span className="text-right font-mono [font-variant-numeric:tabular-nums]">
+        {r.confidence === "committed" ? (
+          <span className="text-ink-1">{money(r.gross_amount)}</span>
+        ) : (
+          <span className="text-ink-2" title={`${money(r.gross_amount)} ask, weighted`}>
+            {money(r.weighted_amount)}
+          </span>
+        )}
+      </span>
+    </li>
+  );
+
   return (
     <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
       <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
@@ -103,44 +144,55 @@ export default function RevenueSchedule({
         </div>
       )}
 
-      <ul className="divide-y divide-hairline">
-        {sorted.map((r) => (
-          <li
-            key={`${r.source_type}-${r.source_id}`}
-            className="grid grid-cols-[5.5rem_1fr_auto] sm:grid-cols-[6rem_7rem_1fr_auto] items-center gap-3 py-2 text-sm"
-          >
-            <span className="font-mono text-xs text-ink-2">{monthLabel(r.month)}</span>
-            <span className="hidden sm:block">
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${SOURCE_CHIP[r.source_type] ?? SOURCE_CHIP.manual}`}>
-                {SOURCE_LABEL[r.source_type] ?? r.source_type}
-              </span>
-            </span>
-            <span className="min-w-0 truncate text-ink-1" title={r.label}>
-              {r.label}
-              {r.needs_schedule && (
-                <span className="ml-2 text-[10px] text-[#A56A1B]" title="Awarded but not tranched — counted as a lump at the period start">
-                  needs schedule
-                </span>
-              )}
-              {r.restricted && (
-                <span className="ml-2 text-[10px] text-[#A56A1B]">
-                  restricted{r.restricted_to ? ` · ${r.restricted_to}` : ""}
-                </span>
-              )}
-            </span>
-            <span className="text-right font-mono [font-variant-numeric:tabular-nums]">
-              {r.confidence === "committed" ? (
-                <span className="text-ink-1">{money(r.gross_amount)}</span>
-              ) : (
-                <span className="text-ink-2" title={`${money(r.gross_amount)} ask, weighted`}>
-                  {money(r.weighted_amount)}
-                </span>
-              )}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {committedRows.length > 0 && (
+        <>
+          <GroupHeader
+            label="Committed"
+            sub="grants, pledges & signed commitments — counted at full value"
+            total={money(committed + restricted)}
+          />
+          <ul className="divide-y divide-hairline">{committedRows.map(row)}</ul>
+        </>
+      )}
+
+      {projectedRows.length > 0 && (
+        <>
+          <GroupHeader
+            label="Projected pipeline"
+            sub="open asks, weighted by probability — not committed yet"
+            total={money(projected)}
+            muted
+          />
+          <ul className="divide-y divide-hairline">{projectedRows.map(row)}</ul>
+        </>
+      )}
     </section>
+  );
+}
+
+function GroupHeader({
+  label,
+  sub,
+  total,
+  muted,
+}: {
+  label: string;
+  sub: string;
+  total: string;
+  muted?: boolean;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 mt-5 mb-1 pt-3 border-t border-outline first:mt-0 first:pt-0 first:border-t-0">
+      <div>
+        <span className={`text-[11px] font-semibold uppercase tracking-wider ${muted ? "text-ink-2" : "text-ink-1"}`}>
+          {label}
+        </span>
+        <span className="ml-2 text-[11px] text-ink-2">{sub}</span>
+      </div>
+      <span className={`text-xs font-mono [font-variant-numeric:tabular-nums] ${muted ? "text-ink-2" : "text-ink-1"}`}>
+        {total}
+      </span>
+    </div>
   );
 }
 

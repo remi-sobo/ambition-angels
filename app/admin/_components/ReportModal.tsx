@@ -394,6 +394,13 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                   <button
                     type="button"
                     onClick={() => {
+                      // Re-open the interview. Append a fresh assistant prompt so
+                      // the transcript stays user/assistant-alternating (the model
+                      // requires the next call to end on a user message).
+                      setTurns((t) => [
+                        ...t,
+                        { role: "assistant", content: "Anything else I should add before I finalize the prompt?" },
+                      ]);
                       setAnswer("");
                       setPhase("chat");
                     }}

@@ -7,6 +7,7 @@ import {
   type RunwayPledge,
 } from "@/lib/finance/runway";
 import { money } from "./charts";
+import InfoTip from "./InfoTip";
 
 // Three-tier forward runway, the headline of the Finance dashboard. All three
 // numbers come from the shared pure engine (lib/finance/runway): cash (bank net
@@ -87,7 +88,17 @@ export default function RunwayTiers({
     <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
       <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-ink-2">Forward runway</div>
+          <div className="text-[10px] uppercase tracking-widest text-ink-2">
+            Forward runway
+            <InfoTip heading="Forward runway">
+              How many months the money lasts, three ways, all divided by the monthly
+              burn baseline ({money(baseline)}/mo).{" "}
+              <b>Cash</b> = bank balance − what&apos;s left to spend this month.{" "}
+              <b>With pledges due</b> = cash + unreceived pledges due by month-end.{" "}
+              <b>Projected</b> = + unreceived pledges due within the horizon. Full value
+              (never weighted); received, restricted, and undated inflows are excluded.
+            </InfoTip>
+          </div>
           <p className="mt-1 text-xs text-ink-2 max-w-xl">
             How long the money lasts, three ways — cash today, plus what&apos;s owed and pledged. Months
             beyond the current month, at{" "}

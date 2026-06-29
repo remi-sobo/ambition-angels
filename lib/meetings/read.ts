@@ -3,6 +3,16 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import { externalEmails, matchAttendees, orgEmailDomain } from "./match";
+import {
+  loadConstituentDossier,
+  loadLatestMeetingAgenda,
+  loadMeetingBrief,
+  loadPartnerDossier,
+  type ConstituentDossier,
+  type MeetingBrief,
+  type PartnerDossier,
+  type SavedAgenda,
+} from "./dossier";
 import type {
   MatchedEntity,
   MeetingRecord,
@@ -174,5 +184,42 @@ export async function getMeetingDetail(id: string): Promise<MeetingDetail | null
     matched,
     suggestions: (sugg ?? []) as MeetingSuggestedTask[],
     linkedTasks: (tasks ?? []) as Array<{ id: string; title: string; status: string }>,
+  };
+}
+
+export type UpcomingMeetingDetail = {
+  brief: MeetingBrief;
+  constituents: ConstituentDossier[];
+  partners: PartnerDossier[];
+  agenda: SavedAgenda | null;
+};
+
+/**
+ * Detail view for an UPCOMING calendar meeting: who it's with (the brief), each
+ * matched donor/partner's dossier rendered inline, and the latest agenda Reed
+ * produced for it. All session-client / RLS-scoped — a viewer without
+ * fundraising/program read simply gets fewer dossiers, never another org's data.
+ */
+export async function getUpcomingMeetingDetail(eventId: string): Promise<UpcomingMeetingDetail | null> {
+  const sb = createServerSupabase();
+  const ctx = await getOrgContext();
+  if (!ctx) return null;
+
+  const brief = await loadMeetingBrief(sb, ctx.orgId, eventId);
+  if (!brief) return null;
+
+  const consIds = brief.entities.filter((e) => e.type === "constituent").map((e) => e.id);
+  const partIds = brief.entities.filter((e) => e.type === "partner").map((e) => e.id);
+  const [cons, parts, agenda] = await Promise.all([
+    Promise.all(consIds.map((id) => loadConstituentDossier(sb, id))),
+    Promise.all(partIds.map((id) => loadPartnerDossier(sb, id))),
+    loadLatestMeetingAgenda(sb, eventId),
+  ]);
+
+  return {
+    brief,
+    constituents: cons.filter((d): d is ConstituentDossier => d !== null),
+    partners: parts.filter((d): d is PartnerDossier => d !== null),
+    agenda,
   };
 }

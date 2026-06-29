@@ -13,6 +13,14 @@ import {
   type TaskStatus,
   type TaskPriority,
 } from "@/app/admin/ops/_types/ops";
+import { useIsOwner } from "./AdminUserContext";
+
+/** Pull any report screenshot URLs out of a task description for inline preview. */
+function extractImageUrls(text: string | null): string[] {
+  if (!text) return [];
+  const urls = text.match(/https?:\/\/[^\s)]+/g) ?? [];
+  return urls.filter((u) => /bloomos-reports/.test(u) || /\.(png|jpe?g|webp|gif|heic|heif)(\?|$)/i.test(u));
+}
 
 /**
  * Edit / delete modal for an existing task. Mirrors QuickAddModal's layout
@@ -62,10 +70,13 @@ export default function TaskEditModal({
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const isOwner = useIsOwner();
 
-  // Tasks filed by the guided bug reporter carry a ready-to-paste Claude Code
-  // prompt as their description — surface a one-tap copy for those.
-  const hasClaudePrompt = (task.labels ?? []).includes("claude-prompt");
+  // Tasks filed by the guided reporter carry a ready-to-paste Claude Code prompt
+  // as their description. The copy affordance is owner-only (Remi) by design —
+  // everyone else can report, but the prompt-to-paste step is his.
+  const hasClaudePrompt = (task.labels ?? []).includes("claude-prompt") && isOwner;
+  const photoUrls = extractImageUrls(task.description);
   async function copyPrompt() {
     try {
       await navigator.clipboard.writeText(task.description ?? "");
@@ -227,6 +238,20 @@ export default function TaskEditModal({
               >
                 {copied ? "Copied ✓" : "Copy for Claude Code"}
               </button>
+            )}
+            {photoUrls.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {photoUrls.map((url) => (
+                  <a key={url} href={url} target="_blank" rel="noreferrer" className="block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt="Report screenshot"
+                      className="max-h-48 rounded-lg border-[1.5px] border-outline object-contain hover:opacity-90 transition-opacity"
+                    />
+                  </a>
+                ))}
+              </div>
             )}
           </Field>
 

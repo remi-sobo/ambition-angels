@@ -4,6 +4,9 @@ import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const STATUSES = ["upcoming", "in_progress", "submitted", "waived"] as const;
+const KINDS = [
+  "loi", "application", "interim_report", "final_report", "financial_report", "other",
+] as const;
 
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -27,6 +30,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     update.submitted_at = body.status === "submitted" ? new Date().toISOString() : null;
   }
   if ("due_date" in body && isISODate(body.due_date)) update.due_date = body.due_date;
+  if ("kind" in body && KINDS.includes(body.kind as (typeof KINDS)[number])) update.kind = body.kind;
   if ("label" in body) {
     const v = body.label;
     if (v === null || v === "") update.label = null;

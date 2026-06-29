@@ -16,7 +16,11 @@ type Detail = {
   matched: MatchedEntity[];
   suggestions: MeetingSuggestedTask[];
   linkedTasks: Array<{ id: string; title: string; status: string }>;
+  agenda: { agenda: string; generatedAt: string } | null;
 };
+
+const fmtAgendaDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 function entityHref(e: MatchedEntity): string {
   return e.type === "partner" ? `/admin/partners/${e.id}` : `/admin/fundraising/donors/${e.id}`;
@@ -38,7 +42,7 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
   const [storeTranscript, setStoreTranscript] = useState(false);
   const [parsing, setParsing] = useState(false);
 
-  const { record, matched, suggestions, linkedTasks } = detail;
+  const { record, matched, suggestions, linkedTasks, agenda } = detail;
   const pending = suggestions.filter((s) => s.status === "pending");
 
   async function api(url: string, body: unknown) {
@@ -181,6 +185,23 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
           </div>
         )}
       </section>
+
+      {/* Reed's prep agenda — drafted while this meeting was upcoming. Collapsed
+          by default: it's context for the recap, not the recap itself. */}
+      {agenda && (
+        <details className="group rounded-card-lg border-[1.5px] border-outline bg-surface p-6">
+          <summary className="flex cursor-pointer items-center justify-between gap-3 list-none">
+            <SectionTitle>Reed&apos;s prep agenda</SectionTitle>
+            <span className="flex items-center gap-2 text-[11px] text-ink-3">
+              {fmtAgendaDate(agenda.generatedAt)}
+              <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </summary>
+          <p className="mt-4 text-sm text-ink-1 leading-relaxed whitespace-pre-wrap">{agenda.agenda}</p>
+        </details>
+      )}
 
       {/* Notes & follow-ups — Reed's summary, suggestions, and the ingest box. */}
       <section className="rounded-card-lg border-[1.5px] border-outline bg-surface p-6">

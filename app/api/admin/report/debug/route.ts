@@ -80,10 +80,16 @@ type Parsed =
   | { action: "ready"; title: string; prompt: string };
 
 function parseModel(text: string): Parsed | null {
-  const raw = ("{" + text).replace(/^```json\s*/i, "").replace(/```\s*$/g, "").trim();
+  // The model returns a single JSON object (this model rejects assistant
+  // prefill, so we can't prime the opening brace — instead we strip any code
+  // fence and slice from the first { to the last } to tolerate stray prose).
+  const stripped = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = stripped.indexOf("{");
+  const end = stripped.lastIndexOf("}");
+  if (start === -1 || end === -1 || end < start) return null;
   let obj: Record<string, unknown>;
   try {
-    obj = JSON.parse(raw);
+    obj = JSON.parse(stripped.slice(start, end + 1));
   } catch {
     return null;
   }
@@ -131,11 +137,10 @@ export async function POST(req: NextRequest) {
     questionsAsked,
   });
 
-  const messages = [
-    ...turns.map((t) => ({ role: t.role, content: t.content })),
-    // Prefill the opening brace so the model must continue valid JSON.
-    { role: "assistant" as const, content: "{" },
-  ];
+  // The conversation must end with a user message (this model does not support
+  // assistant prefill), which the client guarantees — every turn we run on ends
+  // with the operator's latest answer.
+  const messages = turns.map((t) => ({ role: t.role, content: t.content }));
 
   let parsed: Parsed | null = null;
   try {
@@ -154,20 +159,14 @@ export async function POST(req: NextRequest) {
       }),
     });
     if (!res.ok) {
-      const detail = (await res.text()).slice(0, 300);
-      console.error("[report/debug] Anthropic error:", res.status, detail);
-      // Admin-only route — surface the upstream status/detail so we can see why.
-      return NextResponse.json(
-        { error: `Assistant error (${res.status}): ${detail || "no detail"}` },
-        { status: 502 },
-      );
+      console.error("[report/debug] Anthropic error:", res.status, (await res.text()).slice(0, 500));
+      return NextResponse.json({ error: "The assistant is unavailable right now." }, { status: 502 });
     }
     const data = await res.json();
     parsed = parseModel(data?.content?.[0]?.text ?? "");
   } catch (e) {
-    const detail = e instanceof Error ? e.message : String(e);
-    console.error("[report/debug] request failed:", detail);
-    return NextResponse.json({ error: `Assistant request failed: ${detail}` }, { status: 502 });
+    console.error("[report/debug] request failed:", e);
+    return NextResponse.json({ error: "The assistant is unavailable right now." }, { status: 502 });
   }
 
   if (!parsed) {

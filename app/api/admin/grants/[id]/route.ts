@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
-import { autoPlotFinalReport } from "@/lib/fundraising/grants";
+import { autoPlotFinalReport, findOrCreateFunder } from "@/lib/fundraising/grants";
 
 const STAGES = [
   "prospect", "qualified", "loi", "proposal", "submitted",
@@ -65,11 +65,35 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (v === null || v === "") update.notes = null;
     else if (typeof v === "string") update.notes = v.slice(0, 2000);
   }
+  if ("owner" in body) {
+    const v = body.owner;
+    if (v === null || v === "") update.owner = null;
+    else if (typeof v === "string") update.owner = v.trim().slice(0, 200) || null;
+  }
+
+  const supabase = createServerSupabase();
+
+  // Funder: a uuid links an existing organization constituent, a name
+  // find-or-creates one (mirrors POST), and null/empty clears the link.
+  if ("funder_id" in body && (body.funder_id === null || body.funder_id === "")) {
+    update.funder_id = null;
+  } else if (typeof body.funder_id === "string" && /^[0-9a-f-]{36}$/i.test(body.funder_id)) {
+    update.funder_id = body.funder_id;
+  } else if ("funder_name" in body) {
+    const funderName = typeof body.funder_name === "string" ? body.funder_name.trim() : "";
+    if (!funderName) {
+      update.funder_id = null;
+    } else {
+      const funder = await findOrCreateFunder(supabase, funderName);
+      if ("error" in funder) return NextResponse.json({ error: funder.error }, { status: 500 });
+      update.funder_id = funder.id;
+    }
+  }
+
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }
 
-  const supabase = createServerSupabase();
   const { data, error } = await supabase
     .from("grants")
     .update(update)

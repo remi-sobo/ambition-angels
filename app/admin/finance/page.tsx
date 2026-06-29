@@ -23,6 +23,7 @@ import {
 import ReconcileCard from "./_components/ReconcileCard";
 import RunwayTiers from "./_components/RunwayTiers";
 import InfoTip from "./_components/InfoTip";
+import { constituentName } from "@/lib/fundraising/display";
 
 // Read live every request: the service-role client's reads go through the
 // global fetch Next caches by default, so without this a freshly-saved config
@@ -49,6 +50,7 @@ export default async function FinanceDashboardPage() {
     pledgesRes,
     uncatRes,
     recentRes,
+    recentGiftsRes,
     scheduleRows,
     receivedYTD,
   ] = await Promise.all([
@@ -81,6 +83,16 @@ export default async function FinanceDashboardPage() {
       .order("txn_date", { ascending: false })
       .order("id", { ascending: false })
       .limit(10),
+    // Last few gifts that landed — donor-named, from the canonical gifts ledger
+    // (the same source as Received / Raised YTD, so the box reconciles with the
+    // headline). Different signal from "Recent transactions", which is bank-level
+    // and doesn't show who gave.
+    supabase
+      .from("gifts")
+      .select("id, amount, gift_date, method, constituent:constituents ( type, first_name, last_name, org_name )")
+      .order("gift_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(5),
     loadRevenueSchedule(supabase),
     loadReceivedTotal(supabase, fy.start, fy.end),
   ]);
@@ -233,6 +245,14 @@ export default async function FinanceDashboardPage() {
       description: string;
       amount: number;
       category_id: string | null;
+    }>;
+  const recentGifts =
+    (recentGiftsRes.data ?? []) as unknown as Array<{
+      id: string;
+      amount: number;
+      gift_date: string;
+      method: string | null;
+      constituent: { type: string; first_name: string | null; last_name: string | null; org_name: string | null } | null;
     }>;
 
   const goalPct = cfg.goal > 0 ? raisedHard / cfg.goal : 0;
@@ -541,7 +561,7 @@ export default async function FinanceDashboardPage() {
         )}
       </section>
 
-      {/* Bottom strip: pledges + recent transactions */}
+      {/* Bottom strip: pledge pipeline + recent donations, then recent transactions */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
           <div className="flex items-baseline justify-between mb-4">
@@ -606,6 +626,48 @@ export default async function FinanceDashboardPage() {
         </div>
 
         <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
+          <div className="flex items-baseline justify-between mb-4">
+            <SectionHeading>
+              Recent donations
+              <InfoTip heading="Recent donations">
+                The last five <b>gifts</b> that landed, newest first — from the{" "}
+                <code>gifts</code> ledger, the same source as Received / Raised YTD.
+                Shows who gave, unlike Recent transactions (bank-level, no donor).
+              </InfoTip>
+            </SectionHeading>
+            <Link
+              href="/admin/fundraising/donors"
+              className="text-xs text-ink-2 hover:text-ink-1"
+            >
+              All →
+            </Link>
+          </div>
+          {recentGifts.length === 0 ? (
+            <Empty>No gifts recorded yet.</Empty>
+          ) : (
+            <ul className="text-xs">
+              {recentGifts.map((g) => {
+                const donor = g.constituent ? constituentName(g.constituent) : "Unknown donor";
+                return (
+                  <li
+                    key={g.id}
+                    className="grid grid-cols-[5rem_1fr_6rem] gap-3 py-1.5 border-t border-hairline first:border-t-0"
+                  >
+                    <span className="font-mono text-ink-2">{g.gift_date.slice(5)}</span>
+                    <span className="text-ink-1 truncate" title={donor}>
+                      {donor}
+                    </span>
+                    <span className="text-right font-mono text-revenue">
+                      {money(Number(g.amount))}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        <div className="lg:col-span-2 rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
           <div className="flex items-baseline justify-between mb-4">
             <SectionHeading>
               Recent transactions

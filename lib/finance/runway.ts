@@ -71,9 +71,15 @@ export function assembleRunwayPledges(
 
 /**
  * Split a pledge list into due (≤ end of current month) and projected (after
- * this month, through `endHorizon`) sums. Full value, never weighted. Received
- * and restricted dropped; undated counted for the nudge. ISO date strings sort
- * lexicographically, so plain string comparison is correct here.
+ * this month, through `endHorizon`) sums. Received and restricted dropped;
+ * undated counted for the nudge. ISO date strings sort lexicographically, so
+ * plain string comparison is correct here.
+ *
+ * "Due" is committed money landing by month-end. Projected *pipeline*
+ * (status "projected", already probability-weighted) is speculative, so it
+ * never counts as due — it only ever lands in the projected tier, even when its
+ * expected date is this month. Committed pledges (full value) are due when
+ * dated by month-end, else projected.
  */
 export function summarizePledges(
   pledges: RunwayPledge[],
@@ -91,9 +97,12 @@ export function summarizePledges(
       undatedUnreceivedCount++;
       continue;
     }
-    if (p.expected_date <= endCurrentMonth) duePledges += p.amount;
-    else if (p.expected_date <= endHorizon) projPledges += p.amount;
-    // beyond the horizon: not counted in any tier
+    if (p.expected_date > endHorizon) continue; // beyond the horizon: not counted
+    if (p.status !== "projected" && p.expected_date <= endCurrentMonth) {
+      duePledges += p.amount; // committed money due by month-end
+    } else {
+      projPledges += p.amount; // later commitments + all weighted pipeline
+    }
   }
 
   return { duePledges, projPledges, undatedUnreceivedCount };

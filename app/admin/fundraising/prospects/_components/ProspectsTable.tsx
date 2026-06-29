@@ -69,6 +69,29 @@ export default function ProspectsTable({
   const [owner, setOwner] = useState("");
   const [scored, setScored] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [identifying, setIdentifying] = useState<string | null>(null);
+
+  // Promote a single prospect into the pipeline at the Identify stage. Shared by
+  // the "Promote to pipeline" bulk action and the per-row "No lifecycle" cell —
+  // a prospect with no lifecycle has never entered the pipeline, so clicking it
+  // is the natural "mark as Identified" gesture.
+  const identifyOne = (r: ProspectRow) => {
+    if (identifying) return;
+    if (!confirm(`Mark ${displayName(r)} as Identified and move into the pipeline?`)) return;
+    setIdentifying(r.id);
+    void fetch("/api/admin/fundraising/prospects/promote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prospect_id: r.id }),
+    })
+      .then((res) => res.json())
+      .then((d: { promoted?: number }) => {
+        if (!d?.promoted) alert("Already in the pipeline.");
+        router.refresh();
+      })
+      .catch(() => alert("Could not move into the pipeline — try again."))
+      .finally(() => setIdentifying(null));
+  };
 
   const filtered = useMemo(
     () =>
@@ -120,8 +143,18 @@ export default function ProspectsTable({
       render: (r) =>
         r.lifecycle_stage ? (
           <CategoryTag category={r.lifecycle_stage}>{r.lifecycle_stage}</CategoryTag>
-        ) : (
+        ) : disqualifiedView ? (
           <span className="text-ink-2">—</span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => identifyOne(r)}
+            disabled={identifying === r.id}
+            title="Mark as Identified and move into the pipeline"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-ink-2 hover:text-orange border border-dashed border-outline hover:border-orange/50 rounded-full px-2 py-0.5 transition-colors disabled:opacity-50"
+          >
+            {identifying === r.id ? "Moving…" : "No lifecycle · Identify →"}
+          </button>
         ),
     },
     {

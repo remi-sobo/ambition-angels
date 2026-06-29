@@ -7,6 +7,7 @@
 // Phase 5; v1 is plain text.
 
 import { useCallback, useEffect, useState } from "react";
+import { MentionTextarea, type Mentionable } from "./MentionTextarea";
 
 export type CommentEntityType = "constituent" | "fr_prospects";
 
@@ -33,6 +34,22 @@ function timeAgo(iso: string): string {
 
 const initial = (name: string) => (name.trim()[0] ?? "?").toUpperCase();
 
+// Render a comment body, bolding @mentions that match a known teammate.
+function MentionBody({ text, names }: { text: string; names: Set<string> }) {
+  const parts = text.split(/(@\w+)/g);
+  return (
+    <p className="text-sm text-ink-1 mt-0.5 whitespace-pre-wrap break-words">
+      {parts.map((p, i) =>
+        p.startsWith("@") && names.has(p.slice(1).toLowerCase()) ? (
+          <span key={i} className="font-semibold text-orange-dark">{p}</span>
+        ) : (
+          <span key={i}>{p}</span>
+        )
+      )}
+    </p>
+  );
+}
+
 export function CommentThread({
   entityType,
   entityId,
@@ -44,6 +61,7 @@ export function CommentThread({
 }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [me, setMe] = useState<string | null>(null);
+  const [members, setMembers] = useState<Mentionable[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [body, setBody] = useState("");
@@ -61,6 +79,19 @@ export function CommentThread({
 
   useEffect(() => { void load(); }, [load]);
 
+  // @mention autocomplete source (org members), fetched once.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/admin/members", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { members: [] }))
+      .then((j) => { if (alive) setMembers(Array.isArray(j.members) ? j.members : []); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  // Lowercased member names, for bolding @mentions in rendered bodies.
+  const mentionNames = new Set(members.map((m) => m.displayName.toLowerCase()));
+
   const post = async (text: string, parentId: string | null) => {
     if (!text.trim()) return;
     setBusy(true);
@@ -71,6 +102,7 @@ export function CommentThread({
         body: JSON.stringify({
           entity_type: entityType,
           entity_id: entityId,
+          entity_label: entityLabel,
           body: text.trim(),
           parent_id: parentId,
         }),
@@ -112,7 +144,7 @@ export function CommentThread({
             <span className="text-sm font-semibold text-ink-1">{c.authorName}</span>
             <span className="text-[11px] text-ink-3">{timeAgo(c.createdAt)}</span>
           </div>
-          <p className="text-sm text-ink-1 mt-0.5 whitespace-pre-wrap break-words">{c.body}</p>
+          <MentionBody text={c.body} names={mentionNames} />
           <div className="flex items-center gap-3 mt-1">
             {!isReply && (
               <button
@@ -142,13 +174,14 @@ export function CommentThread({
               }}
               className="mt-2 flex flex-col gap-2"
             >
-              <textarea
+              <MentionTextarea
                 value={replyBody}
-                onChange={(e) => setReplyBody(e.target.value)}
-                placeholder={`Reply to ${c.authorName}…`}
+                onChange={setReplyBody}
+                members={members}
+                placeholder={`Reply to ${c.authorName}…  (@ to mention)`}
                 rows={2}
                 autoFocus
-                className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y"
+                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y"
               />
               <div>
                 <button
@@ -184,12 +217,13 @@ export function CommentThread({
           }}
           className="flex flex-col gap-2"
         >
-          <textarea
+          <MentionTextarea
             value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={`Leave a note about ${entityLabel} for the team…`}
+            onChange={setBody}
+            members={members}
+            placeholder={`Leave a note about ${entityLabel} for the team…  (@ to mention)`}
             rows={2}
-            className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y"
+            className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y"
           />
           <div>
             <button

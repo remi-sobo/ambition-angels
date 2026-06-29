@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
-import { autoPlotFinalReport } from "@/lib/fundraising/grants";
+import { autoPlotFinalReport, findOrCreateFunder } from "@/lib/fundraising/grants";
 
 const STAGES = [
   "prospect", "qualified", "loi", "proposal", "submitted",
@@ -35,25 +35,9 @@ export async function POST(req: NextRequest) {
   if (typeof body.funder_id === "string" && /^[0-9a-f-]{36}$/i.test(body.funder_id)) {
     funderId = body.funder_id;
   } else if (typeof body.funder_name === "string" && body.funder_name.trim()) {
-    const funderName = body.funder_name.trim();
-    const { data: existing } = await supabase
-      .from("constituents")
-      .select("id")
-      .eq("type", "organization")
-      .ilike("org_name", funderName)
-      .limit(1)
-      .maybeSingle();
-    if (existing) {
-      funderId = existing.id;
-    } else {
-      const { data: created, error: cErr } = await supabase
-        .from("constituents")
-        .insert({ type: "organization", org_name: funderName, source: "manual" })
-        .select("id")
-        .single();
-      if (cErr) return NextResponse.json({ error: cErr.message }, { status: 500 });
-      funderId = created.id;
-    }
+    const funder = await findOrCreateFunder(supabase, body.funder_name);
+    if ("error" in funder) return NextResponse.json({ error: funder.error }, { status: 500 });
+    funderId = funder.id;
   }
 
   const insert: Record<string, unknown> = { name, stage, funder_id: funderId, owner: user };

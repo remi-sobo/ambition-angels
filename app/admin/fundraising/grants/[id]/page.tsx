@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getAdminUser } from "@/lib/admin/auth";
 import { ensureGrantProject } from "@/lib/fundraising/grants";
-import { money } from "../../../finance/_components/charts";
 import { todayISO, type OpsProject, type OpsTask } from "../../../ops/_types/ops";
 import ProjectTaskList from "../../../ops/projects/[id]/_components/ProjectTaskList";
 import ProjectActivityLog from "../../../ops/projects/[id]/_components/ProjectActivityLog";
@@ -11,6 +10,7 @@ import {
   StageSelect,
   RequirementActions,
   AddRequirementForm,
+  EditableGrantDetails,
 } from "../_components/GrantControls";
 import GrantSeedTasks from "../_components/GrantSeedTasks";
 import { STAGE_LABELS } from "../_lib/stages";
@@ -91,18 +91,6 @@ export default async function GrantDetailPage({ params }: { params: { id: string
       ).data as OpsTask[] | null) ?? [])
     : [];
 
-  const facts: Array<[string, string]> = [
-    ["Funder", g.funder?.org_name ?? "—"],
-    ["Requested", g.amount_requested != null ? money(Number(g.amount_requested)) : "—"],
-    ["Awarded", g.amount_awarded != null ? money(Number(g.amount_awarded)) : "—"],
-    ["Period", g.period_start || g.period_end
-      ? `${g.period_start ? fmtDate(g.period_start) : "…"} → ${g.period_end ? fmtDate(g.period_end) : "…"}`
-      : "—"],
-    ["Program", g.program ?? "—"],
-    ["Restrictions", g.restrictions ?? "Unrestricted (none recorded)"],
-    ["Owner", g.owner ?? "—"],
-  ];
-
   return (
     <div className="min-h-screen bg-ink">
       <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
@@ -123,15 +111,22 @@ export default async function GrantDetailPage({ params }: { params: { id: string
           actions={<StageSelect grantId={g.id} stage={g.stage} periodEnd={g.period_end ?? null} />}
         />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <section className="lg:col-span-5 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
-            <h2 className="font-heading font-bold text-ink-1 text-sm mb-1">Details</h2>
-            {facts.map(([label, value]) => (
-              <div key={label} className="flex gap-3 text-xs">
-                <span className="text-ink-3 w-24 flex-shrink-0 uppercase tracking-wider font-semibold pt-px">{label}</span>
-                <span className="text-ink-1 break-words min-w-0">{value}</span>
-              </div>
-            ))}
-            {g.notes && <p className="text-xs text-ink-2 border-t border-outline pt-3 whitespace-pre-wrap">{g.notes}</p>}
+          <section className="lg:col-span-5 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5">
+            <EditableGrantDetails
+              grant={{
+                id: g.id,
+                name: g.name,
+                funderName: g.funder?.org_name ?? null,
+                amount_requested: g.amount_requested != null ? Number(g.amount_requested) : null,
+                amount_awarded: g.amount_awarded != null ? Number(g.amount_awarded) : null,
+                period_start: g.period_start ?? null,
+                period_end: g.period_end ?? null,
+                program: g.program ?? null,
+                restrictions: g.restrictions ?? null,
+                owner: g.owner ?? null,
+                notes: g.notes ?? null,
+              }}
+            />
           </section>
 
           <section className="lg:col-span-7 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">

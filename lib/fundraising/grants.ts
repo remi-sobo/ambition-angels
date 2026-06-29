@@ -1,6 +1,37 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
+ * Resolve a funder name to a constituent id, creating the organization
+ * constituent if no case-insensitive name match exists. The funder is always
+ * an organization constituent (a shared record with its people). Shared by
+ * grant create (POST) and grant edit (PATCH) so both behave identically.
+ *
+ * Returns `{ id }` on success or `{ error }` if the constituent insert failed.
+ */
+export async function findOrCreateFunder(
+  supabase: SupabaseClient,
+  funderName: string
+): Promise<{ id: string } | { error: string }> {
+  const name = funderName.trim();
+  const { data: existing } = await supabase
+    .from("constituents")
+    .select("id")
+    .eq("type", "organization")
+    .ilike("org_name", name)
+    .limit(1)
+    .maybeSingle();
+  if (existing) return { id: existing.id };
+
+  const { data: created, error } = await supabase
+    .from("constituents")
+    .insert({ type: "organization", org_name: name, source: "manual" })
+    .select("id")
+    .single();
+  if (error) return { error: error.message };
+  return { id: created.id };
+}
+
+/**
  * The project that backs a grant's workspace. Every grant has exactly one
  * (unique partial index on ops_projects.grant_id). Phase 2 creates it on grant
  * creation; this is the self-heal for grants made before that, or whose project

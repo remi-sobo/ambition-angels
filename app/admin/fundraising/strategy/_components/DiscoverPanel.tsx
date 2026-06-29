@@ -2,10 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 // AI prospect discovery for a strategy angle. Enter a target type → the agent
 // web-searches for net-new prospects that fit the angle → review and accept
-// candidates onto the bench (source = research, tagged with the angle).
+// candidates onto the Prospects bench (source = research, tagged with the
+// angle). Accepted candidates land at /admin/fundraising/prospects (shown with
+// an "AI" source badge); the panel links there so it's clear where they go.
+
+const PROSPECTS_HREF = "/admin/fundraising/prospects";
 
 type DiscoveryType = "individual" | "foundation" | "corporate";
 type Candidate = {
@@ -31,6 +36,7 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
   const [warning, setWarning] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<Candidate[] | null>(null);
   const [accepted, setAccepted] = useState<Record<number, "saving" | "done">>({});
+  const acceptedCount = Object.values(accepted).filter((s) => s === "done").length;
 
   async function discover() {
     setLoading(true);
@@ -89,7 +95,13 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
           <h2 className="font-heading font-bold text-ink-1 text-sm">
             Find prospects <span className="text-ink-3 font-normal">· AI</span>
           </h2>
-          <p className="text-[11px] text-ink-3">Web-search net-new prospects that fit this angle, then accept them onto the bench.</p>
+          <p className="text-[11px] text-ink-3">
+            Web-search net-new prospects that fit this angle, then accept them onto the{" "}
+            <Link href={PROSPECTS_HREF} className="text-orange hover:text-orange-dark underline">
+              Prospects bench
+            </Link>
+            .
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <select
@@ -142,21 +154,42 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={() => accept(i, c)}
-                  disabled={!!accepted[i]}
-                  className={`shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-                    accepted[i] === "done"
-                      ? "bg-revenue-bg text-revenue border border-revenue/30"
-                      : "bg-orange text-white hover:bg-orange-dark disabled:opacity-60"
-                  }`}
-                >
-                  {accepted[i] === "done" ? "On bench ✓" : accepted[i] === "saving" ? "…" : "+ Add to bench"}
-                </button>
+                <div className="shrink-0 flex flex-col items-end gap-1">
+                  <button
+                    onClick={() => accept(i, c)}
+                    disabled={!!accepted[i]}
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
+                      accepted[i] === "done"
+                        ? "bg-revenue-bg text-revenue border border-revenue/30"
+                        : "bg-orange text-white hover:bg-orange-dark disabled:opacity-60"
+                    }`}
+                  >
+                    {accepted[i] === "done" ? "On bench ✓" : accepted[i] === "saving" ? "…" : "+ Add to bench"}
+                  </button>
+                  {accepted[i] === "done" && (
+                    <Link href={PROSPECTS_HREF} className="text-[10px] text-ink-3 hover:text-orange underline">
+                      View on Prospects →
+                    </Link>
+                  )}
+                </div>
               </div>
             </li>
           ))}
         </ul>
+      )}
+
+      {acceptedCount > 0 && (
+        <div className="px-5 py-3 border-t border-outline flex items-center justify-between gap-3 flex-wrap bg-revenue-bg/40">
+          <p className="text-[11px] text-ink-2">
+            Added {acceptedCount} to the Prospects bench (tagged <span className="text-revenue font-semibold">AI</span>).
+          </p>
+          <Link
+            href={PROSPECTS_HREF}
+            className="text-xs font-semibold px-3 py-1.5 rounded-full border-[1.5px] border-orange/40 bg-orange/10 text-orange hover:bg-orange/20 transition-colors"
+          >
+            View prospects →
+          </Link>
+        </div>
       )}
     </section>
   );

@@ -16,7 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RunwayPledge } from "@/lib/finance/runway";
 
 export type RevenueConfidence = "committed" | "projected";
-export type RevenueSourceType = "pledge" | "grant" | "pipeline" | "manual";
+export type RevenueSourceType = "pledge" | "grant" | "pipeline" | "commitment" | "manual";
 
 export type RevenueScheduleRow = {
   source_type: RevenueSourceType;

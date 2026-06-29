@@ -10,6 +10,7 @@ const SOURCE_LABEL: Record<string, string> = {
   pledge: "Pledge",
   grant: "Grant",
   pipeline: "Pipeline",
+  commitment: "Commitment",
   manual: "Manual",
 };
 
@@ -17,6 +18,7 @@ const SOURCE_CHIP: Record<string, string> = {
   pledge: "bg-revenue-bg text-revenue border-revenue/30",
   grant: "bg-orange/15 text-orange border-orange/30",
   pipeline: "bg-tile text-ink-2 border-outline",
+  commitment: "bg-revenue-bg text-revenue border-revenue/30",
   manual: "bg-[#EFE6D4] text-ink-1 border-outline",
 };
 

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { loadRevenueSchedule, loadReceivedTotal } from "@/lib/finance/schedule";
-import PledgesEditor, { type Pledge } from "./_components/PledgesEditor";
-import RevenueSchedule from "./_components/RevenueSchedule";
+import { loadRevenueSchedule } from "@/lib/finance/schedule";
+import { constituentName } from "@/lib/fundraising/display";
+import RevenueManager, { type Commitment, type ReceivedGift } from "./_components/RevenueManager";
 
 type SearchParams = { year?: string };
+
+export const dynamic = "force-dynamic";
 
 export default async function RevenuePage({
   searchParams,
@@ -23,29 +25,50 @@ export default async function RevenuePage({
   const year =
     Number.isFinite(requested) && requested >= 2000 && requested <= 2100 ? requested : configYear;
   const goal = Number(cfg?.fundraising_goal ?? 0);
+  const yStart = `${year}-01-01`;
+  const yEnd = `${year}-12-31`;
 
-  const [pledgesRes, scheduleRows, receivedYTD] = await Promise.all([
+  const [commitmentsRes, scheduleRows, giftsRes] = await Promise.all([
     supabase
       .from("fin_revenue_commitments")
       .select(
-        "id, year, source_type, source_name, amount, status, expected_date, probability, restricted, restricted_to, notes, external_ref"
+        "id, year, source_type, source_name, amount, status, expected_date, probability, restricted, restricted_to, notes"
       )
       .eq("year", year)
       .order("status", { ascending: true })
       .order("amount", { ascending: false }),
-    // The canonical schedule for the read-only "feeds runway" panel. Scoped to
-    // the requested year so it tracks the year picker.
     loadRevenueSchedule(supabase),
-    loadReceivedTotal(supabase, `${year}-01-01`, `${year}-12-31`),
+    // Received gifts for the year (the canonical landed-money ledger), donor-named.
+    supabase
+      .from("gifts")
+      .select("id, amount, gift_date, constituent:constituents ( type, first_name, last_name, org_name )")
+      .gte("gift_date", yStart)
+      .lte("gift_date", yEnd)
+      .order("gift_date", { ascending: false })
+      .limit(500),
   ]);
 
   const scheduleForYear = scheduleRows.filter((r) => r.due_date.slice(0, 4) === String(year));
 
-  const pledges = (pledgesRes.data ?? []).map((p) => ({
-    ...p,
-    amount: Number(p.amount ?? 0),
-    probability: p.probability === null ? null : Number(p.probability),
-  })) as Pledge[];
+  const commitments = (commitmentsRes.data ?? []).map((c) => ({
+    ...c,
+    amount: Number(c.amount ?? 0),
+    probability: c.probability === null ? null : Number(c.probability),
+  })) as Commitment[];
+
+  const giftRows = (giftsRes.data ?? []) as unknown as Array<{
+    id: string;
+    amount: number;
+    gift_date: string;
+    constituent: { type: string; first_name: string | null; last_name: string | null; org_name: string | null } | null;
+  }>;
+  const receivedGifts: ReceivedGift[] = giftRows.map((g) => ({
+    id: g.id,
+    label: g.constituent ? constituentName(g.constituent) : "Gift",
+    date: g.gift_date,
+    amount: Number(g.amount),
+  }));
+  const receivedGiftsTotal = receivedGifts.reduce((s, g) => s + g.amount, 0);
 
   const years = [year - 1, year, year + 1].filter((y) => y >= 2024 && y <= 2030);
 
@@ -62,10 +85,8 @@ export default async function RevenuePage({
             Revenue · {year}
           </h1>
           <p className="mt-2 text-sm text-ink-2 max-w-2xl">
-            Pledges, grants in progress, and received gifts. Secured =
-            signed/committed but not yet in the bank. Projected = pipeline,
-            weighted by probability. Received = money landed (also recorded
-            as a transaction).
+            What&apos;s come in and what&apos;s still expected this year. Committed = signed but not yet
+            in the bank. Projected = pipeline, weighted by probability. Received = money landed.
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs">
@@ -85,11 +106,14 @@ export default async function RevenuePage({
         </div>
       </header>
 
-      <div className="mb-8">
-        <RevenueSchedule rows={scheduleForYear} goal={goal} received={receivedYTD} />
-      </div>
-
-      <PledgesEditor year={year} initialPledges={pledges} />
+      <RevenueManager
+        year={year}
+        goal={goal}
+        scheduleRows={scheduleForYear}
+        commitments={commitments}
+        receivedGifts={receivedGifts}
+        receivedGiftsTotal={receivedGiftsTotal}
+      />
     </div>
   );
 }

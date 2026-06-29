@@ -215,6 +215,16 @@ export default function TaskRow({
             stuck
           </span>
         )}
+        {/* Punt signal — deliberately distinct from the stuck badge (spec
+            failure mode #2): neutral chip, counts deliberate week-pushes. */}
+        {!showDone && (task.roll_count ?? 0) > 0 && (
+          <span
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] tracking-wide font-medium border bg-tile text-ink-2 border-outline tabular-nums"
+            title={`Rolled to a later week ${task.roll_count} time${task.roll_count === 1 ? "" : "s"}`}
+          >
+            ↻{task.roll_count}
+          </span>
+        )}
       </div>
 
       {task.due_date && (

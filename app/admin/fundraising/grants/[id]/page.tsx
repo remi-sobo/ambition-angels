@@ -8,7 +8,7 @@ import ProjectTaskList from "../../../ops/projects/[id]/_components/ProjectTaskL
 import ProjectActivityLog from "../../../ops/projects/[id]/_components/ProjectActivityLog";
 import {
   StageSelect,
-  RequirementActions,
+  RequirementRow,
   AddRequirementForm,
   EditableGrantDetails,
 } from "../_components/GrantControls";
@@ -17,15 +17,8 @@ import { STAGE_LABELS } from "../_lib/stages";
 import PageHeader from "../../../_components/PageHeader";
 
 // Grant detail: award facts, stage control, and the requirements calendar.
+// Requirement-row rendering (incl. inline edit) lives in GrantControls.
 export const dynamic = "force-dynamic";
-
-const KIND_LABELS: Record<string, string> = {
-  loi: "LOI", application: "Application", interim_report: "Interim report",
-  final_report: "Final report", financial_report: "Financial report", other: "Deadline",
-};
-
-const fmtDate = (iso: string) =>
-  new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 export default async function GrantDetailPage({ params }: { params: { id: string } }) {
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
@@ -140,38 +133,9 @@ export default async function GrantDetailPage({ params }: { params: { id: string
               </p>
             ) : (
               <ul className="divide-y divide-hairline">
-                {requirements.map((r) => {
-                  const open = r.status === "upcoming" || r.status === "in_progress";
-                  const isOverdue = open && r.due_date < today;
-                  return (
-                    <li key={r.id} className="px-5 py-3 flex items-center gap-3">
-                      <span
-                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
-                          isOverdue
-                            ? "bg-expense-bg text-expense"
-                            : open
-                            ? "bg-tile text-ink-2"
-                            : "bg-revenue-bg text-revenue"
-                        }`}
-                      >
-                        {fmtDate(r.due_date)}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className={`text-sm font-medium truncate ${open ? "text-ink-1" : "text-ink-3 line-through"}`}>
-                          {r.label || KIND_LABELS[r.kind]}
-                        </div>
-                        {r.notes && <div className="text-[11px] text-ink-2 truncate">{r.notes}</div>}
-                      </div>
-                      {r.status === "submitted" && r.submitted_at && (
-                        <span className="text-[11px] text-revenue whitespace-nowrap">
-                          Submitted {new Date(r.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        </span>
-                      )}
-                      {r.status === "waived" && <span className="text-[11px] text-ink-3">Waived</span>}
-                      {open && <RequirementActions id={r.id} status={r.status} />}
-                    </li>
-                  );
-                })}
+                {requirements.map((r) => (
+                  <RequirementRow key={r.id} requirement={r} today={today} />
+                ))}
               </ul>
             )}
             <AddRequirementForm grantId={g.id} />
@@ -181,6 +145,11 @@ export default async function GrantDetailPage({ params }: { params: { id: string
         {project ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div className="lg:col-span-7 space-y-4">
+              <p className="text-[11px] text-ink-3">
+                Tasks added here are filed to this grant&apos;s workspace project and show up in
+                your normal task views (My Week, Tasks, Ops) — assignee, due date, and priority set
+                here carry through.
+              </p>
               {tasks.length === 0 && <GrantSeedTasks grantId={g.id} />}
               <ProjectTaskList
                 projectId={project.id}

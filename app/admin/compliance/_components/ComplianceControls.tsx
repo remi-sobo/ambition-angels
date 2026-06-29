@@ -35,10 +35,67 @@ const KIND_LABELS: Record<string, string> = {
   custom: "Custom",
 };
 
+const RECUR_OPTIONS: Array<[string, string]> = [
+  ["annual", "Annually"],
+  ["quarterly", "Quarterly"],
+  ["biennial", "Every 2 years"],
+  ["none", "One-time"],
+];
+
 export function ComplianceRow({ item }: { item: ComplianceItem }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [eTitle, setETitle] = useState(item.title);
+  const [eKind, setEKind] = useState(item.kind);
+  const [eDue, setEDue] = useState(item.due_date);
+  const [eRecur, setERecur] = useState(item.recur);
+  const [eJurisdiction, setEJurisdiction] = useState(item.jurisdiction ?? "");
+
+  const startEdit = () => {
+    setETitle(item.title);
+    setEKind(item.kind);
+    setEDue(item.due_date);
+    setERecur(item.recur);
+    setEJurisdiction(item.jurisdiction ?? "");
+    setEditError("");
+    setEditing(true);
+  };
+
+  const saveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eTitle.trim() || !eDue) {
+      setEditError("Title and due date are required.");
+      return;
+    }
+    setBusy(true);
+    setEditError("");
+    try {
+      const res = await fetch(`/api/admin/compliance/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: eTitle.trim(),
+          kind: eKind,
+          due_date: eDue,
+          recur: eRecur,
+          jurisdiction: eJurisdiction.trim() || null,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `HTTP ${res.status}`);
+      }
+      setEditing(false);
+      router.refresh();
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const patch = async (fields: Record<string, unknown>) => {
     setBusy(true);
@@ -73,6 +130,57 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
     item.due_date < new Date().toISOString().slice(0, 10) &&
     (item.status === "upcoming" || item.status === "in_progress");
   const openItem = item.status === "upcoming" || item.status === "in_progress";
+
+  if (editing) {
+    return (
+      <article className="bg-surface border-[1.5px] border-orange/40 rounded-xl p-3 text-sm">
+        <form onSubmit={saveEdit} className="grid grid-cols-2 lg:grid-cols-6 gap-2 items-end">
+          <label className="col-span-2 text-xs text-ink-2">
+            Title
+            <input className={`${inputCls} w-full mt-1`} value={eTitle} required autoFocus
+              onChange={(e) => setETitle(e.target.value)} />
+          </label>
+          <label className="text-xs text-ink-2">
+            Type
+            <select className={`${inputCls} w-full mt-1`} value={eKind} onChange={(e) => setEKind(e.target.value)}>
+              {Object.entries(KIND_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>{v}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-ink-2">
+            Due
+            <input className={`${inputCls} w-full mt-1`} type="date" value={eDue} required
+              onChange={(e) => setEDue(e.target.value)} />
+          </label>
+          <label className="text-xs text-ink-2">
+            Repeats
+            <select className={`${inputCls} w-full mt-1`} value={eRecur} onChange={(e) => setERecur(e.target.value)}>
+              {RECUR_OPTIONS.map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-ink-2">
+            Jurisdiction
+            <input className={`${inputCls} w-full mt-1`} value={eJurisdiction} placeholder="IRS / CA / —"
+              onChange={(e) => setEJurisdiction(e.target.value)} />
+          </label>
+          <div className="col-span-full flex gap-2 items-center">
+            <button type="submit" disabled={busy}
+              className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
+              {busy ? "Saving…" : "Save"}
+            </button>
+            <button type="button" onClick={() => setEditing(false)}
+              className="text-xs text-ink-2 hover:text-ink-1 px-2">
+              Cancel
+            </button>
+            {editError && <p className="text-expense text-xs">{editError}</p>}
+          </div>
+        </form>
+      </article>
+    );
+  }
 
   return (
     <article
@@ -148,9 +256,16 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
           </button>
         )}
         <button
+          onClick={startEdit}
+          disabled={busy}
+          className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-orange"
+        >
+          Edit
+        </button>
+        <button
           onClick={() => void remove()}
           disabled={busy}
-          className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
+          className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
         >
           Delete
         </button>

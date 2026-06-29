@@ -4,6 +4,9 @@ import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const STATUSES = ["secured", "projected", "received"] as const;
+const SOURCE_TYPES = [
+  "foundation", "individual", "corporate", "government", "accelerator", "earned", "other",
+] as const;
 
 function isISODate(v: unknown): v is string {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -34,6 +37,9 @@ export async function PATCH(
   }
   if ("source_name" in body && typeof body.source_name === "string") {
     update.source_name = body.source_name.trim();
+  }
+  if (SOURCE_TYPES.includes(body.source_type as (typeof SOURCE_TYPES)[number])) {
+    update.source_type = body.source_type;
   }
   if ("amount" in body && typeof body.amount === "number" && body.amount >= 0) {
     update.amount = Math.round(body.amount * 100) / 100;

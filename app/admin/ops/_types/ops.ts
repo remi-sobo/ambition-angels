@@ -266,6 +266,58 @@ export function formatDueLabel(iso: string | null): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+// ── Stuck-work health ──────────────────────────────────────────────────────
+// Client-side mirror of the v_ops_task_health view (specs/ops-stuck-work.md).
+// The view is the canonical surface for the rollup; this helper computes the
+// same read per-row so every TaskRow can badge without re-routing its query
+// through the view. KEEP THESE THRESHOLDS IN SYNC with v_ops_task_health_config
+// (supabase/migrations/create_ops_task_health_view.sql).
+export const TASK_HEALTH_THRESHOLDS = {
+  agingAfterDays: 7, // open & this old → 'aging'
+  stuckAfterDays: 14, // open & this old AND stale → 'stuck'
+  staleTouchDays: 7, // days_since_last_touch floor for 'stuck'
+} as const;
+
+export type TaskHealth = "fresh" | "aging" | "stuck" | "done";
+
+export type TaskHealthRead = {
+  health: TaskHealth;
+  ageDays: number;
+  daysSinceLastTouch: number;
+  /** Human one-liner, only set when health is 'stuck'. */
+  stuckReason: string | null;
+};
+
+// Whole days since an ISO timestamp (floor), mirroring the view's epoch/86400.
+function daysSinceISO(iso: string): number {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+}
+
+export function readTaskHealth(
+  task: Pick<OpsTask, "status" | "archived_at" | "created_at" | "updated_at">
+): TaskHealthRead {
+  const ageDays = daysSinceISO(task.created_at);
+  const daysSinceLastTouch = daysSinceISO(task.updated_at);
+  const isOpen = task.status !== "done" && task.archived_at == null;
+  const { agingAfterDays, stuckAfterDays, staleTouchDays } = TASK_HEALTH_THRESHOLDS;
+
+  let health: TaskHealth;
+  if (!isOpen) health = "done";
+  else if (ageDays >= stuckAfterDays && daysSinceLastTouch >= staleTouchDays) health = "stuck";
+  else if (ageDays >= agingAfterDays) health = "aging";
+  else health = "fresh";
+
+  return {
+    health,
+    ageDays,
+    daysSinceLastTouch,
+    stuckReason:
+      health === "stuck"
+        ? `${ageDays} days old, no movement in ${daysSinceLastTouch} days`
+        : null,
+  };
+}
+
 export function formatRelative(iso: string | null): string {
   if (!iso) return "—";
   const ms = Date.now() - new Date(iso).getTime();

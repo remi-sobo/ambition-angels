@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import InfoTip from "./InfoTip";
 
 // "Set current balance" / reconcile. Lets the user anchor cash to a real,
 // bank-verified number in one field: type today's actual balance, see how far
@@ -74,7 +75,16 @@ export default function ReconcileCard({
     <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-ink-2">Cash on hand</div>
+          <div className="text-[10px] uppercase tracking-widest text-ink-2">
+            Cash on hand
+            <InfoTip heading="Cash on hand">
+              The trusted current bank balance: the <b>last balance you set</b> (the
+              anchor) <b>plus every transaction dated after it</b>. Formula:{" "}
+              <code>starting balance + Σ(transactions after the anchor date)</code>.
+              Use &ldquo;Set current balance&rdquo; to re-anchor it to the real bank
+              number whenever you upload.
+            </InfoTip>
+          </div>
           <div className="mt-1 font-display font-black text-3xl text-orange leading-none">{fmtMoney(computedCash)}</div>
           <div className="mt-2 flex items-center gap-2 text-xs">
             <span className="text-ink-2">anchored to {anchorDate ?? "— (set a balance)"}</span>

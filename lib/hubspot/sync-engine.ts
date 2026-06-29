@@ -64,6 +64,20 @@ function isSoftFailSummary(e: ErrorEntry): boolean {
   return e.message.startsWith("+ ") && e.message.endsWith(SOFT_FAIL_SUFFIX);
 }
 
+// A "soft" failure is a benign per-record engagement skip: either a detailed
+// entry (carries the offending hubspot_id) or the rolled-up summary. These mean
+// "we skipped a handful of malformed records but the step otherwise traversed
+// fully" — they should NOT block a run from counting as a full sync. A "hard"
+// failure is anything else (a step that threw, a spine-projection error): those
+// mean the spine wasn't fully refreshed, so the run is genuinely partial.
+function isSoftFailure(e: ErrorEntry): boolean {
+  return isSoftFailSummary(e) || e.hubspot_id != null;
+}
+
+function hasHardFailure(errors: ErrorEntry[]): boolean {
+  return errors.some((e) => !isSoftFailure(e));
+}
+
 function appendSoftFailure(
   errors: ErrorEntry[],
   step: Step,
@@ -375,7 +389,11 @@ export async function runChunk(jobInput: JobRow): Promise<JobRow> {
   // after the deals step (and the dedup/AIG/interactions passes) is reflected.
   if (!job.current_step) {
     await runSpineProjection(job, "engagements");
-    job.status = job.errors.length > 0 ? "partial" : "completed";
+    // Only a HARD failure (a step that threw, or a spine-projection error)
+    // demotes the run to "partial". A clean traversal that merely skipped a few
+    // malformed engagement records still counts as a full, trustworthy sync —
+    // otherwise the trust clock could never advance past those benign skips.
+    job.status = hasHardFailure(job.errors) ? "partial" : "completed";
     job.finished_at = new Date().toISOString();
   }
 

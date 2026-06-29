@@ -41,6 +41,8 @@ export default function PledgesEditor({ year, initialPledges }: Props) {
   const router = useRouter();
   const [pledges, setPledges] = useState<Pledge[]>(initialPledges);
   const [adding, setAdding] = useState(false);
+  // Set when the form is editing an existing row (vs. adding a new one).
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // New-commitment form state.
   const [src, setSrc] = useState<Pledge["source_type"]>("foundation");
@@ -54,38 +56,68 @@ export default function PledgesEditor({ year, initialPledges }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function create() {
-    setBusy(true);
-    setError(null);
-    const r = await fetch("/api/admin/finance/revenue", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        year,
-        source_type: src,
-        source_name: name,
-        amount: Number(amount.replace(/,/g, "")),
-        status: stat,
-        probability: prob === "" ? null : Number(prob) / 100,
-        expected_date: date || null,
-        restricted,
-        restricted_to: restricted ? restrictedTo : null,
-      }),
-    });
-    const j = await r.json().catch(() => ({}));
-    setBusy(false);
-    if (!r.ok) {
-      setError(j.error ?? "Failed to create pledge");
-      return;
-    }
-    setPledges((p) => [j.pledge, ...p]);
+  function resetForm() {
     setName("");
     setAmount("");
     setProb("");
     setDate("");
     setRestricted(false);
     setRestrictedTo("");
+    setSrc("foundation");
+    setStat("projected");
+    setEditingId(null);
     setAdding(false);
+    setError(null);
+  }
+
+  function startEdit(p: Pledge) {
+    setEditingId(p.id);
+    setSrc(p.source_type);
+    setName(p.source_name);
+    setAmount(String(p.amount));
+    setStat(p.status);
+    setProb(p.probability === null ? "" : String(Math.round(p.probability * 100)));
+    setDate(p.expected_date ?? "");
+    setRestricted(p.restricted);
+    setRestrictedTo(p.restricted_to ?? "");
+    setError(null);
+    setAdding(true);
+  }
+
+  // Create (POST) or, when editing an existing row, update (PATCH) — same form.
+  async function save() {
+    setBusy(true);
+    setError(null);
+    const fields = {
+      source_type: src,
+      source_name: name,
+      amount: Number(amount.replace(/,/g, "")),
+      status: stat,
+      probability: prob === "" ? null : Number(prob) / 100,
+      expected_date: date || null,
+      restricted,
+      restricted_to: restricted ? restrictedTo : null,
+    };
+    const r = await fetch(
+      editingId ? `/api/admin/finance/revenue/${editingId}` : "/api/admin/finance/revenue",
+      {
+        method: editingId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingId ? fields : { year, ...fields }),
+      }
+    );
+    const j = await r.json().catch(() => ({}));
+    setBusy(false);
+    if (!r.ok) {
+      setError(j.error ?? "Failed to save commitment");
+      return;
+    }
+    if (editingId) {
+      setPledges((p) => p.map((x) => (x.id === editingId ? (j.pledge ?? { ...x, ...fields }) : x)));
+    } else {
+      setPledges((p) => [j.pledge, ...p]);
+    }
+    resetForm();
   }
 
   async function markReceived(id: string) {
@@ -143,7 +175,7 @@ export default function PledgesEditor({ year, initialPledges }: Props) {
       {!adding && (
         <button
           type="button"
-          onClick={() => setAdding(true)}
+          onClick={() => { resetForm(); setAdding(true); }}
           className="px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium"
         >
           + Add commitment
@@ -152,6 +184,9 @@ export default function PledgesEditor({ year, initialPledges }: Props) {
 
       {adding && (
         <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
+          <div className="text-[11px] uppercase tracking-wider text-ink-2 font-medium mb-3">
+            {editingId ? "Edit commitment" : "New commitment"}
+          </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Field label="Source type">
               <select
@@ -235,17 +270,14 @@ export default function PledgesEditor({ year, initialPledges }: Props) {
             <button
               type="button"
               disabled={busy || !name || !amount}
-              onClick={create}
+              onClick={save}
               className="px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
             >
-              Save pledge
+              {busy ? "Saving…" : editingId ? "Save changes" : "Save pledge"}
             </button>
             <button
               type="button"
-              onClick={() => {
-                setAdding(false);
-                setError(null);
-              }}
+              onClick={resetForm}
               className="px-3 py-1.5 rounded-lg text-ink-1 hover:text-ink-1 text-sm"
             >
               Cancel
@@ -262,9 +294,9 @@ export default function PledgesEditor({ year, initialPledges }: Props) {
           tracked elsewhere.
         </div>
       )}
-      <PledgeSection title="Received" rows={received} onMark={null} onDelete={remove} />
-      <PledgeSection title="Secured" rows={secured} onMark={markReceived} onDelete={remove} />
-      <PledgeSection title="Projected pipeline" rows={projected} onMark={markReceived} onDelete={remove} />
+      <PledgeSection title="Received" rows={received} onMark={null} onEdit={startEdit} onDelete={remove} />
+      <PledgeSection title="Secured" rows={secured} onMark={markReceived} onEdit={startEdit} onDelete={remove} />
+      <PledgeSection title="Projected pipeline" rows={projected} onMark={markReceived} onEdit={startEdit} onDelete={remove} />
     </div>
   );
 }
@@ -273,11 +305,13 @@ function PledgeSection({
   title,
   rows,
   onMark,
+  onEdit,
   onDelete,
 }: {
   title: string;
   rows: Pledge[];
   onMark: ((id: string) => void) | null;
+  onEdit: (p: Pledge) => void;
   onDelete: (id: string) => void;
 }) {
   if (rows.length === 0) return null;
@@ -332,6 +366,12 @@ function PledgeSection({
                     Mark received
                   </button>
                 )}
+                <button
+                  onClick={() => onEdit(p)}
+                  className="text-xs text-ink-2 hover:text-orange mr-3"
+                >
+                  Edit
+                </button>
                 <button
                   onClick={() => onDelete(p.id)}
                   className="text-xs text-ink-2 hover:text-expense"

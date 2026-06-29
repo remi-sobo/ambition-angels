@@ -19,13 +19,19 @@ export default function MeetingAgendaButton({
   eventId,
   title,
   start,
+  label = "Prep with Reed",
+  size = "sm",
 }: {
   eventId: string;
   title: string | null;
   start: string;
+  label?: string;
+  size?: "sm" | "md";
 }) {
   const reed = useReedLauncher();
   if (!reed.enabled) return null;
+  const dims = size === "md" ? "text-[13px] gap-1.5 px-4 py-2" : "text-[11px] gap-1.5 px-3 py-1.5";
+  const mark = size === "md" ? "w-3.5 h-3.5" : "w-3 h-3";
   return (
     <button
       onClick={() =>
@@ -35,10 +41,10 @@ export default function MeetingAgendaButton({
           contextRef: { type: "meeting_agenda", event_id: eventId, title, start },
         })
       }
-      className="shrink-0 inline-flex items-center gap-1.5 text-[11px] font-semibold text-white bg-navy hover:bg-[#19305f] px-3 py-1.5 rounded-full transition-colors"
+      className={`shrink-0 inline-flex items-center font-semibold text-white bg-navy hover:bg-[#19305f] rounded-full transition-colors ${dims}`}
     >
-      <ReedMark className="w-3 h-3 text-orange-mid" />
-      Prep with Reed
+      <ReedMark className={`${mark} text-orange-mid`} />
+      {label}
     </button>
   );
 }

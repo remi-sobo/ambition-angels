@@ -215,6 +215,16 @@ function buildSystemPrompt(opts: {
       "- This org is on Bloom Flourish (human coaching). For a judgment-heavy call that goes beyond what software should decide — a major strategic pivot, a board conflict, a hard prioritization — you may offer to tee it up with a SOBO coaching session. Offer it sparingly, only when a human coach genuinely adds value; never force it.",
     );
   }
+  if (opts.contextRef?.type === "meeting_agenda") {
+    lines.push(
+      "",
+      "MEETING PREP MODE — the operator is preparing for an upcoming meeting and wants a thoughtful agenda. Work in steps:",
+      "1. Call get_meeting_brief with the event_id from the context to see who the meeting is with and whether each person is a first meeting or a follow-up (prior_touchpoints / is_first_meeting).",
+      "2. For EACH matched donor call get_constituent_dossier, and for each partner call get_partner_dossier — review their giving, recent interactions, and open asks. Don't skip this: the agenda must be grounded in their REAL history, never invented.",
+      "3. Produce a tailored agenda. FIRST meeting (no prior touchpoints): lead with a warm intro and discovery questions, grounded in whatever profile data exists. FOLLOW-UP: open by referencing the most recent interaction, pick up open threads and asks, and propose the natural next step.",
+      "Structure it as: a one-line objective for the meeting; 3–5 talking points, each tied to something concrete from their history; the specific ask or next step to land; and 1–2 open questions. Cite the real facts you used (last gift, last meeting, open opportunity, MOU status). If a dossier returns permission_denied, or the meeting has no matched donor/partner, say so plainly and prep from what you do have.",
+    );
+  }
   if (opts.mission) lines.push("", `Organization mission: ${opts.mission}`);
   if (opts.vision) lines.push(`Organization vision: ${opts.vision}`);
   if (opts.contextRef) lines.push("", `The user opened you from this record: ${JSON.stringify(opts.contextRef)}.`);

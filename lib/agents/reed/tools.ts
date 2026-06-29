@@ -8,6 +8,7 @@ import {
 import { loadRevenueSchedule, scheduleToRunwayPledges } from "@/lib/finance/schedule";
 import type { ReedTool } from "./client";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
+import { externalEmails, matchAttendees, orgEmailDomain } from "@/lib/meetings/match";
 
 /**
  * Reed's read-only tool set (Phase 4).
@@ -305,6 +306,225 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
           };
         });
         return { windowDays: days, count: items.length, requirements: items };
+      },
+    },
+
+    {
+      name: "get_meeting_brief",
+      description:
+        "For an UPCOMING meeting (by calendar event id), who it's with: the external attendees matched to " +
+        "your donors (constituents) and partners, plus a count of prior logged touchpoints with each — so " +
+        "you can tell a first meeting from a follow-up. Call this FIRST when preparing a meeting agenda, " +
+        "then pull each matched entity's dossier. Read-only.",
+      input_schema: {
+        type: "object",
+        properties: { event_id: { type: "string", description: "The calendar event id from the meeting context." } },
+        required: ["event_id"],
+        additionalProperties: false,
+      },
+      run: async (input) => {
+        const eventId = typeof input.event_id === "string" ? input.event_id : "";
+        if (!eventId) return { error: "bad_request", message: "event_id is required." };
+
+        const { data: ev } = await sb
+          .from("calendar_events")
+          .select("id, title, start_time, attendees, is_external, status")
+          .eq("id", eventId)
+          .maybeSingle();
+        if (!ev) return { error: "not_found", message: "No such meeting on your calendar (or you can't access it)." };
+
+        const e = ev as { title: string | null; start_time: string; attendees: Array<{ email?: string | null }> | null };
+        const domain = await orgEmailDomain(sb, orgId);
+        const emails = externalEmails(e.attendees ?? null, domain);
+        const matched = await matchAttendees(sb, orgId, emails);
+
+        // Prior touchpoints per matched entity → the first-vs-follow-up signal.
+        const nowIso = new Date().toISOString();
+        const consIds = matched.filter((m) => m.type === "constituent").map((m) => m.id);
+        const partIds = matched.filter((m) => m.type === "partner").map((m) => m.id);
+        const consCount = new Map<string, number>();
+        const partCount = new Map<string, number>();
+        if (consIds.length) {
+          const { data } = await sb
+            .from("interactions")
+            .select("constituent_id")
+            .in("constituent_id", consIds)
+            .lte("occurred_at", nowIso);
+          for (const r of (data ?? []) as Array<{ constituent_id: string }>) {
+            consCount.set(r.constituent_id, (consCount.get(r.constituent_id) ?? 0) + 1);
+          }
+        }
+        if (partIds.length) {
+          const { data } = await sb
+            .from("partner_interactions")
+            .select("partner_id")
+            .in("partner_id", partIds)
+            .lte("occurred_at", nowIso);
+          for (const r of (data ?? []) as Array<{ partner_id: string }>) {
+            partCount.set(r.partner_id, (partCount.get(r.partner_id) ?? 0) + 1);
+          }
+        }
+
+        const entities = matched.map((m) => {
+          const prior = m.type === "constituent" ? consCount.get(m.id) ?? 0 : partCount.get(m.id) ?? 0;
+          return { type: m.type, id: m.id, name: m.name, prior_touchpoints: prior, is_first_meeting: prior === 0 };
+        });
+
+        return {
+          event_id: eventId,
+          title: e.title,
+          start: e.start_time,
+          attendee_emails: emails,
+          entities,
+          note:
+            entities.length === 0
+              ? "No attendee matched a donor or partner — prep from the meeting title/attendees, and say the meeting is unmatched."
+              : "Pull each entity's dossier (get_constituent_dossier / get_partner_dossier) before drafting. is_first_meeting=true means no prior logged interactions — treat it as an intro/discovery meeting.",
+        };
+      },
+    },
+
+    {
+      name: "get_constituent_dossier",
+      description:
+        "Everything on one donor/constituent for meeting prep: profile (name, type, tags, location, " +
+        "do-not-contact, notes), giving summary (lifetime total, gift count, first & last gift, largest), " +
+        "active recurring plans, recent interaction history (calls/emails/meetings/notes, newest first), and " +
+        "open opportunities (asks in flight with stage and next step). Ground a meeting agenda in this " +
+        "person's real history — never invent giving or history. Read-only.",
+      input_schema: {
+        type: "object",
+        properties: {
+          constituent_id: { type: "string", description: "The constituent id (from get_meeting_brief)." },
+          history_limit: { type: "integer", description: "How many recent interactions to return (default 15).", minimum: 1, maximum: 40 },
+        },
+        required: ["constituent_id"],
+        additionalProperties: false,
+      },
+      run: async (input) => {
+        if (!(await hasPermission(sb, orgId, "fundraising.read"))) return deny("fundraising.read");
+        const id = typeof input.constituent_id === "string" ? input.constituent_id : "";
+        if (!id) return { error: "bad_request", message: "constituent_id is required." };
+        const limit = typeof input.history_limit === "number" ? Math.min(40, Math.max(1, Math.trunc(input.history_limit))) : 15;
+
+        const [cRes, giftsRes, plansRes, interRes, oppsRes] = await Promise.all([
+          sb.from("constituents").select("id, type, first_name, last_name, org_name, emails, tags, city, state, do_not_contact, notes").eq("id", id).maybeSingle(),
+          sb.from("gifts").select("amount, gift_date").eq("constituent_id", id).order("gift_date", { ascending: false }).limit(1000),
+          sb.from("recurring_plans").select("amount, frequency, status").eq("constituent_id", id).eq("status", "active"),
+          sb.from("interactions").select("kind, occurred_at, direction, subject, body_preview, notes, is_private").eq("constituent_id", id).order("occurred_at", { ascending: false }).limit(limit),
+          sb.from("opportunities").select("name, stage, next_step, next_step_due, ask_amount, expected_close").eq("constituent_id", id).neq("stage", "lost").order("next_step_due", { ascending: true, nullsFirst: false }).limit(20),
+        ]);
+        if (!cRes.data) return { error: "not_found", message: "No such constituent." };
+
+        const c = cRes.data as {
+          type: string; first_name: string | null; last_name: string | null; org_name: string | null;
+          emails: string[] | null; tags: string[] | null; city: string | null; state: string | null;
+          do_not_contact: boolean; notes: string | null;
+        };
+        const gifts = ((giftsRes.data ?? []) as Array<{ amount: number; gift_date: string }>).map((g) => ({ amount: Number(g.amount), gift_date: g.gift_date }));
+        const total = gifts.reduce((s, g) => s + g.amount, 0);
+        const largest = gifts.reduce((m, g) => (g.amount > m ? g.amount : m), 0);
+        const dates = gifts.map((g) => g.gift_date).sort();
+
+        return {
+          profile: {
+            name: [c.first_name, c.last_name].filter(Boolean).join(" ") || c.org_name || "Unnamed",
+            type: c.type,
+            emails: c.emails ?? [],
+            tags: c.tags ?? [],
+            location: [c.city, c.state].filter(Boolean).join(", ") || null,
+            do_not_contact: c.do_not_contact,
+            notes: c.notes ?? null,
+          },
+          giving: {
+            lifetime_total: round2(total),
+            gift_count: gifts.length,
+            first_gift_date: dates[0] ?? null,
+            last_gift_date: dates[dates.length - 1] ?? null,
+            largest_gift: round2(largest),
+          },
+          recurring_plans: (plansRes.data ?? []).map((p) => ({
+            amount: Number((p as { amount: number }).amount),
+            frequency: (p as { frequency: string }).frequency,
+            status: (p as { status: string }).status,
+          })),
+          recent_interactions: ((interRes.data ?? []) as Array<{
+            kind: string; occurred_at: string; direction: string | null; subject: string | null; body_preview: string | null; notes: string | null; is_private: boolean;
+          }>).map((it) => ({
+            kind: it.kind,
+            occurred_at: it.occurred_at,
+            direction: it.direction,
+            subject: it.is_private ? "(private)" : it.subject,
+            // Redact the body of private interactions — surface that it happened, not its content.
+            preview: it.is_private ? null : (it.body_preview ?? it.notes ?? null)?.slice(0, 280) ?? null,
+            is_private: it.is_private,
+          })),
+          open_opportunities: ((oppsRes.data ?? []) as Array<{
+            name: string | null; stage: string; next_step: string | null; next_step_due: string | null; ask_amount: number | null; expected_close: string | null;
+          }>).map((o) => ({
+            name: o.name,
+            stage: o.stage,
+            next_step: o.next_step,
+            next_step_due: o.next_step_due,
+            ask_amount: o.ask_amount == null ? null : Number(o.ask_amount),
+            expected_close: o.expected_close,
+          })),
+        };
+      },
+    },
+
+    {
+      name: "get_partner_dossier",
+      description:
+        "Everything on one program partner (school/employer/org) for meeting prep: profile (name, kind, " +
+        "relationship status, champion, program type, teen count, MOU status & dates, notes, last touch) and " +
+        "recent interaction history (newest first). Ground a partner meeting agenda in this real history. " +
+        "Read-only.",
+      input_schema: {
+        type: "object",
+        properties: {
+          partner_id: { type: "string", description: "The partner id (from get_meeting_brief)." },
+          history_limit: { type: "integer", description: "How many recent interactions to return (default 15).", minimum: 1, maximum: 40 },
+        },
+        required: ["partner_id"],
+        additionalProperties: false,
+      },
+      run: async (input) => {
+        if (!(await hasPermission(sb, orgId, "program.read"))) return deny("program.read");
+        const id = typeof input.partner_id === "string" ? input.partner_id : "";
+        if (!id) return { error: "bad_request", message: "partner_id is required." };
+        const limit = typeof input.history_limit === "number" ? Math.min(40, Math.max(1, Math.trunc(input.history_limit))) : 15;
+
+        const [pRes, interRes] = await Promise.all([
+          sb.from("partners").select("name, kind, status, champion_name, champion_email, champion_role, teen_count, program_type, mou_status, mou_start, mou_end, referral, notes, last_touch_at").eq("id", id).maybeSingle(),
+          sb.from("partner_interactions").select("kind, occurred_at, notes, logged_by").eq("partner_id", id).order("occurred_at", { ascending: false }).limit(limit),
+        ]);
+        if (!pRes.data) return { error: "not_found", message: "No such partner." };
+        const p = pRes.data as Record<string, unknown>;
+
+        return {
+          profile: {
+            name: (p.name as string | null) ?? "Partner",
+            kind: p.kind ?? null,
+            status: p.status ?? null,
+            champion: [p.champion_name, p.champion_role].filter(Boolean).join(" — ") || null,
+            champion_email: p.champion_email ?? null,
+            program_type: p.program_type ?? null,
+            teen_count: p.teen_count ?? null,
+            mou_status: p.mou_status ?? null,
+            mou_start: p.mou_start ?? null,
+            mou_end: p.mou_end ?? null,
+            referral: p.referral ?? null,
+            notes: p.notes ?? null,
+            last_touch_at: p.last_touch_at ?? null,
+          },
+          recent_interactions: ((interRes.data ?? []) as Array<{ kind: string; occurred_at: string; notes: string | null; logged_by: string | null }>).map((it) => ({
+            kind: it.kind,
+            occurred_at: it.occurred_at,
+            preview: it.notes?.slice(0, 280) ?? null,
+            logged_by: it.logged_by,
+          })),
+        };
       },
     },
 

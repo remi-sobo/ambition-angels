@@ -61,6 +61,20 @@ export default function TaskEditModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  // Tasks filed by the guided bug reporter carry a ready-to-paste Claude Code
+  // prompt as their description — surface a one-tap copy for those.
+  const hasClaudePrompt = (task.labels ?? []).includes("claude-prompt");
+  async function copyPrompt() {
+    try {
+      await navigator.clipboard.writeText(task.description ?? "");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setError("Couldn't copy — select the description text and copy manually.");
+    }
+  }
 
   // Close on Escape.
   useEffect(() => {
@@ -201,10 +215,19 @@ export default function TaskEditModal({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={3}
+              rows={hasClaudePrompt ? 6 : 3}
               placeholder="Notes, context, links…"
               className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
             />
+            {hasClaudePrompt && (
+              <button
+                type="button"
+                onClick={copyPrompt}
+                className="mt-2 inline-flex items-center gap-1.5 bg-orange/15 border border-orange/30 text-ink-1 hover:bg-orange/25 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+              >
+                {copied ? "Copied ✓" : "Copy for Claude Code"}
+              </button>
+            )}
           </Field>
 
           <div className="grid grid-cols-2 gap-3">

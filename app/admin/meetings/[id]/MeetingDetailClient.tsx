@@ -208,10 +208,18 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
         <SectionTitle>Notes &amp; follow-ups</SectionTitle>
 
         {record.summary ? (
-          <p className="text-sm text-ink-1 leading-relaxed whitespace-pre-wrap mb-5">{record.summary}</p>
+          <div className="mb-5">
+            {agenda && (
+              <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-orange-light px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-orange-dark">
+                Debriefed vs. prep agenda
+              </span>
+            )}
+            <p className="text-sm text-ink-1 leading-relaxed whitespace-pre-wrap">{record.summary}</p>
+          </div>
         ) : (
           <p className="text-sm text-ink-2 italic mb-5">
-            No summary yet. Paste a transcript below and Reed will draft one plus suggested follow-ups.
+            No summary yet. Paste a transcript below and Reed will draft one plus suggested follow-ups
+            {agenda ? ", comparing what happened against your prep agenda" : ""}.
           </p>
         )}
 

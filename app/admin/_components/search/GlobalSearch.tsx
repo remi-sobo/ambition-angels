@@ -151,6 +151,22 @@ export default function GlobalSearch() {
     };
   }, [open]);
 
+  // Escape closes (or steps back from a profile), handled at the document level
+  // so it works wherever focus is — including after opening a profile, when the
+  // clicked result unmounts and focus falls back to <body>, outside the dialog
+  // (which is why a dialog-only keydown handler missed it).
+  useEffect(() => {
+    if (!open) return;
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      if (profileId) closeProfile();
+      else close();
+    };
+    document.addEventListener("keydown", onEsc);
+    return () => document.removeEventListener("keydown", onEsc);
+  }, [open, profileId, close, closeProfile]);
+
   // ── Debounced, abortable DB fetch ──────────────────────────────────────
   useEffect(() => {
     if (!open) return;
@@ -247,18 +263,10 @@ export default function GlobalSearch() {
   );
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    // Profile (Mode B): Escape steps back to the palette; nav keys are inert.
-    if (profileId) {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        closeProfile();
-      }
-      return;
-    }
-    if (e.key === "Escape") {
-      e.preventDefault();
-      close();
-    } else if (e.key === "ArrowDown") {
+    // Escape is handled at the document level (above) so it works even when
+    // focus has left the overlay. Here we only drive in-overlay navigation.
+    if (profileId) return; // profile (Mode B): nav keys inert
+    if (e.key === "ArrowDown") {
       e.preventDefault();
       setActiveIndex((i) => (flat.length ? (i + 1) % flat.length : 0));
     } else if (e.key === "ArrowUp") {

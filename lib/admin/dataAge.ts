@@ -8,9 +8,12 @@
  * it now?", and it's what the Phase 4 briefing engine reads to demote or flag
  * anything computed off a stale spine.
  *
- * Trust is measured from the last *full successful* sync (status "completed"
- * with no errored step) — not the last run, because a "partial" or "failed"
- * run did not fully refresh the spine.
+ * Trust is measured from the last *full successful* sync (status "completed",
+ * i.e. all four steps traversed with no hard-errored step) — not the last run,
+ * because a "partial" or "failed" run did not fully refresh the spine. A run
+ * that only skipped a few malformed engagement records (soft per-record
+ * failures) still finishes "completed", so those benign skips don't stall the
+ * trust clock.
  *
  * The pure helpers (ageLabel / ageDays / severity) take an explicit `now` so
  * they're deterministic and unit-testable; `getDataAge()` is the thin DB read.

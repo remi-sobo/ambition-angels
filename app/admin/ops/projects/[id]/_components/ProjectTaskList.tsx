@@ -7,9 +7,12 @@ import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
 import {
   formatDueLabel,
   isTaskCategory,
+  priorityLabel,
+  TASK_PRIORITIES,
   type AdminUserId,
   type Category,
   type OpsTask,
+  type TaskPriority,
 } from "../../../_types/ops";
 
 /**
@@ -49,7 +52,13 @@ export default function ProjectTaskList({
   const doneTasks = tasks.filter((t) => t.status === "done");
 
   // ── Add task ───────────────────────────────────────────────────────────
+  // Quick-add takes title plus optional assignee / due date / priority so a
+  // task can be created fully-specified in one step (the API accepts all three).
+  // Assignee defaults to the project's assignee; priority to medium.
   const [newTitle, setNewTitle] = useState("");
+  const [newAssignee, setNewAssignee] = useState<AdminUserId | "">(projectAssignedTo ?? "");
+  const [newDue, setNewDue] = useState("");
+  const [newPriority, setNewPriority] = useState<TaskPriority>("medium");
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,7 +78,9 @@ export default function ProjectTaskList({
           title,
           category: isTaskCategory(projectCategory) ? projectCategory : "other",
           project_id: projectId,
-          assigned_to: projectAssignedTo,
+          assigned_to: newAssignee || null,
+          due_date: newDue || undefined,
+          priority: newPriority,
         }),
       });
       if (!r.ok) {
@@ -77,6 +88,9 @@ export default function ProjectTaskList({
         throw new Error(body?.error ?? `HTTP ${r.status}`);
       }
       setNewTitle("");
+      setNewDue("");
+      // Keep assignee + priority selected — adding several tasks for the same
+      // person/urgency in a row is common.
       startTransition(() => router.refresh());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Add failed");
@@ -332,22 +346,58 @@ export default function ProjectTaskList({
         </>
       )}
 
-      <form onSubmit={addTask} className="flex items-center gap-2">
-        <input
-          type="text"
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-          placeholder="Add a task (Enter to create)…"
-          disabled={adding}
-          className="flex-1 bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
-        />
-        <button
-          type="submit"
-          disabled={adding || !newTitle.trim()}
-          className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg"
-        >
-          {adding ? "Adding…" : "Add"}
-        </button>
+      <form onSubmit={addTask} className="space-y-2">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder="Add a task (Enter to create)…"
+            disabled={adding}
+            className="flex-1 bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+          />
+          <button
+            type="submit"
+            disabled={adding || !newTitle.trim()}
+            className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg"
+          >
+            {adding ? "Adding…" : "Add"}
+          </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <select
+            value={newAssignee}
+            onChange={(e) => setNewAssignee(e.target.value as AdminUserId | "")}
+            disabled={adding}
+            aria-label="Assignee"
+            className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
+          >
+            <option value="">Unassigned</option>
+            <option value="remi">Remi</option>
+            <option value="shannon">Shannon</option>
+          </select>
+          <input
+            type="date"
+            value={newDue}
+            onChange={(e) => setNewDue(e.target.value)}
+            disabled={adding}
+            aria-label="Due date"
+            className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
+          />
+          <select
+            value={newPriority}
+            onChange={(e) => setNewPriority(e.target.value as TaskPriority)}
+            disabled={adding}
+            aria-label="Priority"
+            className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
+          >
+            {TASK_PRIORITIES.map((p) => (
+              <option key={p} value={p}>
+                {priorityLabel(p)}
+              </option>
+            ))}
+          </select>
+        </div>
       </form>
       {error && <p className="text-expense text-xs mt-2">{error}</p>}
     </section>

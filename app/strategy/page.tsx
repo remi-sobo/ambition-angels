@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import StrategyRoom, { type Angle, type Tone } from "./StrategyRoom";
+import StrategyRoom, {
+  type Angle,
+  type Tone,
+  type RoomMeta,
+  type RoomStat,
+  type RoomYearItem,
+} from "./StrategyRoom";
 
 // Internal reference page. Gated at the edge (see middleware.ts) and kept out
 // of search indexes belt-and-suspenders, even though crawlers never get past
@@ -87,7 +93,58 @@ async function loadAngles(): Promise<Angle[]> {
   }
 }
 
+// Coerce a jsonb array of objects to a typed list, dropping malformed entries.
+function asList<T>(v: unknown, keys: (keyof T)[]): T[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is Record<string, unknown> => !!x && typeof x === "object")
+    .map((x) => {
+      const out = {} as Record<string, string>;
+      for (const k of keys) out[k as string] = typeof x[k as string] === "string" ? (x[k as string] as string) : "";
+      return out as T;
+    });
+}
+
+type MetaRow = {
+  eyebrow: string | null;
+  headline: string | null;
+  headline_accent: string | null;
+  subtitle: string | null;
+  stats: unknown;
+  this_year_heading: string | null;
+  year_intro: string | null;
+  this_year: unknown;
+};
+
+async function loadMeta(): Promise<RoomMeta | null> {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data: org } = await supabase
+      .from("orgs").select("id").eq("slug", "ambition-angels").maybeSingle();
+    if (!org?.id) return null;
+    const { data, error } = await supabase
+      .from("strategy_room_meta")
+      .select("eyebrow, headline, headline_accent, subtitle, stats, this_year_heading, year_intro, this_year")
+      .eq("org_id", org.id)
+      .maybeSingle();
+    if (error || !data) return null;
+    const r = data as MetaRow;
+    return {
+      eyebrow: r.eyebrow ?? "",
+      headline: r.headline ?? "",
+      headlineAccent: r.headline_accent ?? "",
+      subtitle: r.subtitle ?? "",
+      stats: asList<RoomStat>(r.stats, ["value", "label"]),
+      thisYearHeading: r.this_year_heading ?? "",
+      yearIntro: r.year_intro ?? "",
+      thisYear: asList<RoomYearItem>(r.this_year, ["label", "body"]),
+    };
+  } catch {
+    return null; // falls back to FALLBACK_META in StrategyRoom
+  }
+}
+
 export default async function StrategyPage() {
-  const angles = await loadAngles();
-  return <StrategyRoom angles={angles} />;
+  const [angles, meta] = await Promise.all([loadAngles(), loadMeta()]);
+  return <StrategyRoom angles={angles} meta={meta} />;
 }

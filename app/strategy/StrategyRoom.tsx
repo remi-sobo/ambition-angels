@@ -187,33 +187,53 @@ const FALLBACK_ANGLES: Angle[] = [
   },
 ];
 
-const stats = [
-  { value: "3,500+", label: "teens reached" },
-  { value: "87%", label: "Title I" },
-  { value: "74%", label: "second-internship completion" },
-  { value: "36", label: "partners" },
-];
+// The deck's presentation copy — the hero, the stat chips, and the grounding
+// "this year" block. Like the angles, this is now data (strategy_room_meta),
+// passed in by the server; FALLBACK_META is the seed copy used when the read is
+// empty.
+export type RoomStat = { value: string; label: string };
+export type RoomYearItem = { label: string; body: string };
+export type RoomMeta = {
+  eyebrow: string;
+  headline: string;
+  headlineAccent: string;
+  subtitle: string;
+  stats: RoomStat[];
+  thisYearHeading: string;
+  yearIntro: string;
+  thisYear: RoomYearItem[];
+};
 
-const thisYear = [
-  {
-    label: "Exposure",
-    body: "The app and 30-day simulated internships, live and proven across 36 partners and 3,500+ teens.",
-  },
-  {
-    label: "Conversations",
-    body: "The adult dashboard, using AI to turn any adult into a youth educator. In active buildout (Hub v8 with Demetric).",
-  },
-  {
-    label: "Connections",
-    body: "Ambition Coach, piloting now with Ricky and Charles. Formalizing volunteer agreements and session frameworks.",
-  },
-];
-
-const subtitle =
-  "One mission, framed for whoever is across the table. Open the angle that fits the room. Each card holds the hook you say out loud, the frame in our voice, who funds it, the metrics they want, and the ask.";
-
-const yearIntro =
-  "The grounding truth behind every angle above, so the story never gets ahead of the work.";
+const FALLBACK_META: RoomMeta = {
+  eyebrow: "Funding Angles · Internal Playbook",
+  headline: "Eight ways to tell the",
+  headlineAccent: "same true story",
+  subtitle:
+    "One mission, framed for whoever is across the table. Open the angle that fits the room. Each card holds the hook you say out loud, the frame in our voice, who funds it, the metrics they want, and the ask.",
+  stats: [
+    { value: "3,500+", label: "teens reached" },
+    { value: "87%", label: "Title I" },
+    { value: "74%", label: "second-internship completion" },
+    { value: "36", label: "partners" },
+  ],
+  thisYearHeading: "What we're doing this year",
+  yearIntro:
+    "The grounding truth behind every angle above, so the story never gets ahead of the work.",
+  thisYear: [
+    {
+      label: "Exposure",
+      body: "The app and 30-day simulated internships, live and proven across 36 partners and 3,500+ teens.",
+    },
+    {
+      label: "Conversations",
+      body: "The adult dashboard, using AI to turn any adult into a youth educator. In active buildout (Hub v8 with Demetric).",
+    },
+    {
+      label: "Connections",
+      body: "Ambition Coach, piloting now with Ricky and Charles. Formalizing volunteer agreements and session frameworks.",
+    },
+  ],
+};
 
 const tagToneClass: Record<Tone, string> = {
   primary: "bg-orange/10 text-orange",
@@ -227,10 +247,18 @@ const dotTexture = {
   backgroundSize: "22px 22px",
 };
 
-export default function StrategyRoom({ angles: propAngles }: { angles?: Angle[] }) {
+export default function StrategyRoom({
+  angles: propAngles,
+  meta: propMeta,
+}: {
+  angles?: Angle[];
+  meta?: RoomMeta | null;
+}) {
   // Prefer the table-driven deck; fall back to the seed copy so the page never
   // renders empty if the read fails or the migration hasn't been applied.
   const angles = propAngles && propAngles.length > 0 ? propAngles : FALLBACK_ANGLES;
+  const { eyebrow, headline, headlineAccent, subtitle, stats, thisYearHeading, yearIntro, thisYear } =
+    propMeta ?? FALLBACK_META;
   const [openIds, setOpenIds] = useState<Record<string, boolean>>({});
 
   const allOpen = useMemo(
@@ -285,11 +313,16 @@ export default function StrategyRoom({ angles: propAngles }: { angles?: Angle[] 
           </div>
 
           <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
-            Funding Angles · Internal Playbook
+            {eyebrow}
           </p>
           <h1 className="font-display font-black text-5xl lg:text-7xl leading-[0.95] tracking-tight max-w-4xl">
-            Eight ways to tell the{" "}
-            <span className="text-orange">same true story</span>
+            {headline}
+            {headlineAccent && (
+              <>
+                {" "}
+                <span className="text-orange">{headlineAccent}</span>
+              </>
+            )}
           </h1>
           <p className="font-body text-gray-mid text-base lg:text-lg leading-relaxed max-w-2xl mt-6">
             {subtitle}
@@ -495,7 +528,7 @@ export default function StrategyRoom({ angles: propAngles }: { angles?: Angle[] 
             {/* ── This year ──────────────────────────────────────────── */}
             <section className="mt-8 border border-dashed border-gray-mid rounded-card bg-white px-6 py-8 sm:px-8 print:break-inside-avoid">
               <h2 className="font-heading font-bold text-2xl text-ink">
-                What we&rsquo;re doing this year
+                {thisYearHeading}
               </h2>
               <p className="text-gray-warm text-sm sm:text-base mt-1.5 max-w-2xl">
                 {yearIntro}

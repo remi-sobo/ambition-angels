@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { logAICall, monthToDateSpendUsd, startOfUtcMonth } from "@/lib/ai/ledger";
+import { logAICall, monthToDateSpendUsd, spendSummary, startOfUtcMonth } from "@/lib/ai/ledger";
 import { mockSupabase } from "./support/supabaseMock";
 
 describe("logAICall", () => {
@@ -66,6 +66,36 @@ describe("monthToDateSpendUsd", () => {
   test("returns 0 on a read error", async () => {
     const { client } = mockSupabase([{ error: { message: "boom" } }]);
     expect(await monthToDateSpendUsd(client as unknown as SupabaseClient, "org-1")).toBe(0);
+  });
+});
+
+describe("spendSummary", () => {
+  test("totals spend and breaks it down per surface, highest first", async () => {
+    const { client } = mockSupabase([
+      {
+        data: [
+          { surface: "reed", cost_usd: 1 },
+          { surface: "funder_research", cost_usd: 4 },
+          { surface: "reed", cost_usd: 0.5 },
+          { surface: "funder_research", cost_usd: 2 },
+          { surface: null, cost_usd: 0.25 },
+        ],
+      },
+    ]);
+    const summary = await spendSummary(client as unknown as SupabaseClient, "org-1");
+    expect(summary.totalUsd).toBeCloseTo(7.75, 9);
+    expect(summary.bySurface).toEqual([
+      { surface: "funder_research", costUsd: 6, calls: 2 },
+      { surface: "reed", costUsd: 1.5, calls: 2 },
+      { surface: "other", costUsd: 0.25, calls: 1 },
+    ]);
+  });
+
+  test("returns an empty summary on a read error", async () => {
+    const { client } = mockSupabase([{ error: { message: "boom" } }]);
+    const summary = await spendSummary(client as unknown as SupabaseClient, "org-1");
+    expect(summary.totalUsd).toBe(0);
+    expect(summary.bySurface).toEqual([]);
   });
 });
 

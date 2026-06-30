@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ChatMessage, ThreadSummary } from "@/lib/messaging/threads";
+import { getSupabaseBrowser } from "@/lib/supabase/browser";
 import Button from "../../_components/Button";
 import NewMessageModal from "./NewMessageModal";
 import { AvatarStack, dayLabel, relTime, sameDay, shortTime } from "./Avatar";
@@ -21,12 +22,14 @@ function pingBadges() {
 
 export default function MessagesView({
   me,
+  orgId,
   threads: initialThreads,
   people,
   activeThreadId,
   initialMessages,
 }: {
   me: Person;
+  orgId: string;
   threads: ThreadSummary[];
   people: Person[];
   activeThreadId: string | null;
@@ -44,6 +47,16 @@ export default function MessagesView({
   // without re-subscribing every render.
   const messagesRef = useRef<LocalMessage[]>(initialMessages);
   messagesRef.current = messages;
+
+  // Refs the single Realtime channel reads without re-subscribing per thread.
+  const activeThreadIdRef = useRef(activeThreadId);
+  activeThreadIdRef.current = activeThreadId;
+  const nameLookupRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    const map: Record<string, string> = { [me.userId]: me.name };
+    for (const t of threads) for (const p of t.participants) map[p.userId] = p.name;
+    nameLookupRef.current = map;
+  }, [threads, me.userId, me.name]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollToBottom = useCallback((smooth = false) => {
@@ -136,6 +149,57 @@ export default function MessagesView({
       clearInterval(id);
     };
   }, [activeThreadId]);
+
+  // Live delivery via Supabase Realtime. One org-scoped channel (RLS only
+  // delivers rows in threads I belong to) subscribed once; it reads the open
+  // thread + name map from refs so it never re-subscribes on navigation. The
+  // polling above stays as a fallback if the socket drops. My own sends are
+  // skipped here — send() already appends them optimistically.
+  useEffect(() => {
+    if (!orgId) return;
+    const supabase = getSupabaseBrowser();
+    const channel = supabase
+      .channel(`org-messages:${orgId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages", filter: `org_id=eq.${orgId}` },
+        (payload) => {
+          const row = payload.new as {
+            id: string;
+            thread_id: string;
+            sender_id: string;
+            body: string;
+            created_at: string;
+          };
+          const activeId = activeThreadIdRef.current;
+          if (row.thread_id === activeId && row.sender_id !== me.userId) {
+            setMessages((prev) =>
+              prev.some((m) => m.id === row.id)
+                ? prev
+                : [
+                    ...prev,
+                    {
+                      id: row.id,
+                      threadId: row.thread_id,
+                      senderId: row.sender_id,
+                      senderName: nameLookupRef.current[row.sender_id] ?? "Teammate",
+                      body: row.body,
+                      createdAt: row.created_at,
+                      mine: false,
+                    },
+                  ]
+            );
+            fetch(`/api/admin/messages/${activeId}/read`, { method: "POST" }).catch(() => {});
+          }
+          // Refresh the thread list + sidebar/dock badges for any new message.
+          pingBadges();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [orgId, me.userId]);
 
   const openThread = (id: string) => router.push(`/admin/messages?t=${id}`);
   const backToList = () => router.push("/admin/messages");

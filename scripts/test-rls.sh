@@ -140,6 +140,8 @@ ordered=(
   surface_committed_deals_in_revenue_schedule.sql
   dedup_commitments_against_gifts.sql
   fix_due_tier_overdue_commitments_and_stale_grants.sql
+  add_planned_week_to_ops_tasks.sql
+  create_ops_task_health_view.sql
   create_ai_calls_ledger.sql
 )
 for f in "${ordered[@]}"; do
@@ -165,17 +167,13 @@ psql "$DATABASE_URL" -q -f "$mig/create_audit_log.sql" 2>&1 | grep -v "^$" | tai
 #     the platform stub does not provide — so it can't apply to the scratch DB.
 #   grant_shannon_owner.sql      — a data migration (UPDATE memberships for one
 #     real user) that depends on seeded auth.users/orgs rows absent here.
-#   create_ops_task_health_view.sql — reads ops_tasks.planned_week, a column NO
-#     committed migration creates (it exists only in the live DB — schema drift).
-#     So it cannot apply to a scratch DB rebuilt from migrations. Excluded until
-#     the planned_week column is captured in a migration; see PLAYBOOK notes.
 #   *.MANUAL.sql                 — manual data seeds run by hand in the Supabase
 #     SQL editor (OGSM reseed, finance rebase). They mutate seeded rows, not
 #     schema/RLS, and assume pre-existing data, so they are not part of the
 #     migration chain and must not be applied to the scratch DB.
 missing=$(ls "$mig"/*.sql | xargs -n1 basename |
   grep -v -F -x -f <(printf '%s\n' "${ordered[@]}" create_audit_log.sql pin_function_search_path.sql \
-    bloomos_global_search_phase3.sql grant_shannon_owner.sql create_ops_task_health_view.sql) |
+    bloomos_global_search_phase3.sql grant_shannon_owner.sql) |
   grep -v -E '\.MANUAL\.sql$' || true)
 if [ -n "$missing" ]; then
   echo "ERROR: migrations missing from the ordered list in $0:" >&2

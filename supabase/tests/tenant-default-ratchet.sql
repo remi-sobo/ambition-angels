@@ -31,8 +31,8 @@ declare
     'journey_steps','journeys','kpi_settings','kpi_snapshots','meeting_types','opportunities',
     'ops_projects','ops_tasks','page_views','partner_contacts','partner_interactions',
     'partner_waitlist','partners','pledge_payments','pledges','quiz_submissions','recurring_plans',
-    'relationships','segments','soft_credits','strategy_angles','students','ygb_attendance',
-    'ygb_registrations'
+    'relationships','segments','soft_credits','strategy_angles','strategy_room_meta','students',
+    'ygb_attendance','ygb_registrations'
   ];
   extra text;
 begin

@@ -127,8 +127,18 @@ export async function runProspectDiscovery(input: {
     web_search_count: webSearchCount,
   };
 
-  const raw = toolUse ? (toolUse.input as { candidates?: unknown }).candidates : null;
-  if (!Array.isArray(raw)) return { candidates: [], ...base };
+  const candidates = parseCandidates(toolUse ? toolUse.input : null);
+  return { candidates, ...base };
+}
+
+/**
+ * Coerce the model's submit_candidates tool input into safe, typed rows. Pure
+ * and offline-testable: drops nameless rows, forces a known type, truncates free
+ * text, and keeps only string sources (max 6). Exported for the eval suite.
+ */
+export function parseCandidates(rawInput: unknown): DiscoveryCandidate[] {
+  const raw = (rawInput as { candidates?: unknown } | null)?.candidates;
+  if (!Array.isArray(raw)) return [];
 
   const candidates: DiscoveryCandidate[] = [];
   for (const c of raw as Record<string, unknown>[]) {
@@ -146,7 +156,7 @@ export async function runProspectDiscovery(input: {
         : [],
     });
   }
-  return { candidates, ...base };
+  return candidates;
 }
 
 // Sonnet rough rates per million tokens.

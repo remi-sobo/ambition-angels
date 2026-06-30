@@ -1,6 +1,8 @@
 import { getOrgContext } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
 import { getCalendarConnectionStatus, type CalendarConnectionStatus } from "@/lib/google/connection";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { spendSummary } from "@/lib/ai/ledger";
 import PageHeader from "../_components/PageHeader";
 import { DisplayNameForm, ConnectCalendarControls, ChangePasswordForm, SignOutAllButton } from "./_components/AccountControls";
 import HubspotSyncPanel from "./_components/HubspotSyncPanel";
@@ -16,6 +18,19 @@ const ROLE_LABEL: Record<string, string> = {
   finance: "Finance",
   board_viewer: "Board viewer",
 };
+
+// Friendly names for the ai_calls.surface values written across the app.
+const SURFACE_LABEL: Record<string, string> = {
+  reed: "Reed",
+  funder_research: "Funder research",
+  next_best_action: "Next best action",
+  prospect_discovery: "Prospect discovery",
+  acknowledgment: "Thank-you drafts",
+  briefing: "Executive briefing",
+  career: "Career match",
+};
+
+const usd = (n: number) => `$${n.toFixed(2)}`;
 
 function Card({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
@@ -41,6 +56,10 @@ export default async function SettingsPage() {
     calendarStatus = null;
   }
 
+  // Month-to-date AI spend for this org, from the unified ledger. RLS-scoped
+  // via the session client; returns an empty summary if the read fails.
+  const spend = await spendSummary(createServerSupabase(), ctx.orgId);
+
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[760px]">
       <PageHeader title="Settings" subtitle="Your BloomOS account and security" />
@@ -57,6 +76,33 @@ export default async function SettingsPage() {
 
         <Card title="Your name" description="How BloomOS addresses you — shown in the greeting and on agenda owner chips.">
           <DisplayNameForm initialName={displayName} />
+        </Card>
+
+        <Card
+          title="AI usage this month"
+          description="What the org has spent on AI features so far this month, across every assistant and agent."
+        >
+          <div className="flex items-baseline gap-2 mb-3">
+            <span className="font-heading font-semibold text-[28px] leading-none tabular-nums text-ink-1">
+              {usd(spend.totalUsd)}
+            </span>
+            <span className="text-xs text-ink-2">month to date</span>
+          </div>
+          {spend.bySurface.length === 0 ? (
+            <p className="text-xs text-ink-2">No AI usage recorded yet this month.</p>
+          ) : (
+            <ul className="divide-y divide-outline">
+              {spend.bySurface.map((s) => (
+                <li key={s.surface} className="flex items-center justify-between py-1.5 text-sm">
+                  <span className="text-ink-1">{SURFACE_LABEL[s.surface] ?? s.surface}</span>
+                  <span className="text-ink-2 tabular-nums">
+                    {usd(s.costUsd)}
+                    <span className="text-ink-3"> · {s.calls} {s.calls === 1 ? "call" : "calls"}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
 
         <Card

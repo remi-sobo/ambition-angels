@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // One-time content lift of AA's real strategy (specs/bloomos-strategy.md,
@@ -184,6 +184,9 @@ export async function POST(req: NextRequest) {
   const ctx = await getOrgContext();
   if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!(await ctxHasPermission(ctx, "org.manage"))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const orgId = ctx.orgId;
   const supabase = getSupabaseAdmin();

@@ -54,6 +54,26 @@ export async function isAuthed(): Promise<boolean> {
   return (await getOrgContext()) !== null;
 }
 
+/**
+ * Permission check for code paths that run on the service-role client (which
+ * bypasses RLS) — e.g. the plan write routes. RLS policies gate writes with
+ * `private.has_permission(org_id, perm)`; a service-role route must re-assert
+ * the same gate in app code or the policy is silently skipped. We check the
+ * permission (not the role name) so a role/permission change stays a data
+ * change, exactly like the RLS helper. `role_permissions` is world-readable to
+ * any authenticated user, so the session client can read it.
+ */
+export async function ctxHasPermission(ctx: OrgContext, perm: string): Promise<boolean> {
+  const supabase = createServerSupabase();
+  const { data } = await supabase
+    .from("role_permissions")
+    .select("permission")
+    .eq("role", ctx.role)
+    .eq("permission", perm)
+    .maybeSingle();
+  return !!data;
+}
+
 export async function getAdminUser(): Promise<AdminUser | null> {
   const ctx = await getOrgContext();
   if (!ctx) return null;

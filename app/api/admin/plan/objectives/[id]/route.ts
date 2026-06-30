@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // Health vocabulary (strategy objects: objective / goal / KPI).
@@ -12,6 +12,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const ctx = await getOrgContext();
   if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!(await ctxHasPermission(ctx, "org.manage"))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (!isUuid(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
@@ -81,6 +84,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const ctx = await getOrgContext();
   if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!(await ctxHasPermission(ctx, "org.manage"))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (!isUuid(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });

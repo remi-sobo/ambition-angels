@@ -46,6 +46,15 @@ export default async function ObjectiveDetailPage({ params }: { params: { id: st
   if (!objectiveData) notFound();
   const objective = objectiveData as PlanObjective;
 
+  // All objectives in the org, for the goal re-parent dropdown in the tree.
+  const { data: allObjectivesData } = await sb
+    .from("plan_objectives")
+    .select("id, title")
+    .eq("org_id", orgId)
+    .order("sort_order")
+    .order("created_at");
+  const objectiveOptions = (allObjectivesData ?? []) as { id: string; title: string }[];
+
   const { data: goalsData } = await sb
     .from("plan_goals")
     .select("id, objective_id, title, description, target_date, owner, status, status_override, status_override_reason, sort_order")
@@ -135,6 +144,7 @@ export default async function ObjectiveDetailPage({ params }: { params: { id: st
         kpisByGoal={kpisByGoal}
         initiativesByGoal={initiativesByGoal}
         rollups={rollups}
+        objectiveOptions={objectiveOptions}
       />
 
       {/* The actual tasks doing the work, by initiative. Edited on the ops project page. */}

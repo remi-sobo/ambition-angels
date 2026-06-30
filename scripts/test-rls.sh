@@ -82,6 +82,7 @@ ordered=(
   bloomos_strategy_kpi_snapshots.sql
   create_strategy_angles.sql
   extend_strategy_angles_framing.sql
+  create_strategy_room_meta.sql
   create_funder_angles.sql
   create_briefings.sql
   create_partners.sql

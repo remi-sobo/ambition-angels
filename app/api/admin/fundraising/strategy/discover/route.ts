@@ -7,7 +7,8 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { isAuthed, getAdminUser, getOrgContext } from "@/lib/admin/auth";
+import { logAICall } from "@/lib/ai/ledger";
 import {
   runProspectDiscovery,
   estimateDiscoveryCostUsd,
@@ -117,6 +118,23 @@ export async function POST(req: NextRequest) {
       candidates: result.candidates.length,
     },
   });
+
+  // Mirror into the unified AI ledger (additive; fr_agent_activity_log above
+  // stays the agent-wallet cap source).
+  const ctx = await getOrgContext();
+  if (ctx?.orgId) {
+    await logAICall(supabase, {
+      orgId: ctx.orgId,
+      surface: "prospect_discovery",
+      model: result.model_used,
+      tokensInput: result.tokens_input,
+      tokensOutput: result.tokens_output,
+      costUsd,
+      triggeredBy: currentUser,
+      status: "success",
+      metadata: { web_search_count: result.web_search_count, candidates: result.candidates.length },
+    });
+  }
 
   return NextResponse.json({ candidates: result.candidates, budgetWarning });
 }

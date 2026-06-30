@@ -86,3 +86,53 @@ export async function monthToDateSpendUsd(
     return 0;
   }
 }
+
+export type SurfaceSpend = { surface: string; costUsd: number; calls: number };
+export type SpendSummary = {
+  monthStart: string;
+  totalUsd: number;
+  bySurface: SurfaceSpend[];
+};
+
+/**
+ * Month-to-date spend for an org, broken down per surface (highest first).
+ * The per-org spend view reads this. Returns an empty summary on any error so a
+ * read failure renders an empty card rather than throwing.
+ */
+export async function spendSummary(supabase: SupabaseClient, orgId: string): Promise<SpendSummary> {
+  const monthStart = startOfUtcMonth();
+  const empty: SpendSummary = { monthStart, totalUsd: 0, bySurface: [] };
+  try {
+    const { data, error } = (await supabase
+      .from("ai_calls")
+      .select("surface, cost_usd")
+      .eq("org_id", orgId)
+      .gte("created_at", monthStart)) as {
+      data: { surface: string | null; cost_usd: number | null }[] | null;
+      error: unknown;
+    };
+    if (error) {
+      console.error("[ai/ledger] spendSummary read failed:", (error as { message?: string }).message);
+      return empty;
+    }
+    const bySurface = new Map<string, SurfaceSpend>();
+    let totalUsd = 0;
+    for (const row of data ?? []) {
+      const surface = row.surface ?? "other";
+      const cost = Number(row.cost_usd ?? 0);
+      totalUsd += cost;
+      const acc = bySurface.get(surface) ?? { surface, costUsd: 0, calls: 0 };
+      acc.costUsd += cost;
+      acc.calls += 1;
+      bySurface.set(surface, acc);
+    }
+    return {
+      monthStart,
+      totalUsd,
+      bySurface: Array.from(bySurface.values()).sort((a, b) => b.costUsd - a.costUsd),
+    };
+  } catch (e) {
+    console.error("[ai/ledger] spendSummary threw:", e instanceof Error ? e.message : e);
+    return empty;
+  }
+}

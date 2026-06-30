@@ -19,6 +19,7 @@ import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "@/app/admin/ops/_types/ops";
 import { runNextBestAction, estimateNbaCostUsd } from "@/lib/agents/next-best-action/agent";
+import { logAICall } from "@/lib/ai/ledger";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 // Shared monthly agent wallet (same cap as the research route) + a rate limit,
@@ -303,13 +304,30 @@ export async function POST() {
     metadata: { kind: "next_best_action", estimated_cost_usd: Number(costUsd.toFixed(4)), suggestions: recs.length },
   });
 
+  // Mirror into the unified AI ledger (additive; fr_agent_activity_log above
+  // stays the agent-wallet cap source). Runs for every call, including the
+  // zero-recommendation path below.
+  const ctx = await getOrgContext();
+  if (ctx?.orgId) {
+    await logAICall(supabase, {
+      orgId: ctx.orgId,
+      surface: "next_best_action",
+      model: result.model,
+      tokensInput: result.tokensInput,
+      tokensOutput: result.tokensOutput,
+      costUsd,
+      triggeredBy: currentUser,
+      status: "success",
+      metadata: { suggestions: recs.length },
+    });
+  }
+
   if (recs.length === 0) {
     return NextResponse.json({ recommendations: [], stats: await fetchStats(supabase), budgetWarning });
   }
 
   // Persist: supersede prior open suggestions for these opportunities, then
   // insert the fresh batch.
-  const ctx = await getOrgContext();
   const batchId = randomUUID();
   const oppIds = recs.map((r) => r.opportunity_id);
   await supabase

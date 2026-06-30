@@ -120,3 +120,77 @@ export async function generateText(opts: GenerateTextOptions): Promise<GenerateT
     costUsd: estimateCostUsd(model, inputTokens + cacheReadTokens + cacheCreationTokens, outputTokens),
   };
 }
+
+export type StructuredTool = {
+  name: string;
+  description: string;
+  /** JSON Schema for the tool input. */
+  input_schema: unknown;
+};
+
+export type GenerateStructuredOptions = {
+  system: string;
+  prompt: string;
+  tier?: ModelTier;
+  model?: string;
+  maxTokens: number;
+  tool: StructuredTool;
+};
+
+export type GenerateStructuredResult = {
+  /** The tool's input object, or null if the model did not call the tool. */
+  input: unknown;
+  model: string;
+  usage: AIUsage;
+  costUsd: number;
+};
+
+/**
+ * Single forced-tool-call: caches the system prompt, forces the model to answer
+ * by calling exactly the named tool (no free text), and returns its validated
+ * input plus usage/cost. The caller coerces `input` with its own pure parser
+ * (the parseRecommendations / parseCandidates helpers in lib/agents). Bespoke
+ * multi-turn or web-search agents keep their own loops; this seam is for the
+ * single-shot structured calls.
+ */
+export async function generateStructured(
+  opts: GenerateStructuredOptions,
+): Promise<GenerateStructuredResult> {
+  const client = new Anthropic({ apiKey: requireKey() });
+  const model = opts.model ?? MODEL_BY_TIER[opts.tier ?? "fast"];
+
+  const resp = await client.messages.create({
+    model,
+    max_tokens: opts.maxTokens,
+    system: [{ type: "text" as const, text: opts.system, cache_control: { type: "ephemeral" as const } }],
+    messages: [{ role: "user", content: opts.prompt }],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tools: [{ name: opts.tool.name, description: opts.tool.description, input_schema: opts.tool.input_schema }] as any,
+    tool_choice: { type: "tool", name: opts.tool.name },
+  });
+
+  const toolUse = resp.content.find(
+    (b): b is Anthropic.Messages.ToolUseBlock => b.type === "tool_use" && b.name === opts.tool.name,
+  );
+
+  const usage = resp.usage as Anthropic.Usage & {
+    cache_read_input_tokens?: number | null;
+    cache_creation_input_tokens?: number | null;
+  };
+  const inputTokens =
+    (usage.input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0);
+  const outputTokens = usage.output_tokens ?? 0;
+  const resolvedModel = resp.model ?? model;
+
+  return {
+    input: toolUse ? toolUse.input : null,
+    model: resolvedModel,
+    usage: {
+      inputTokens,
+      outputTokens,
+      cacheReadTokens: usage.cache_read_input_tokens ?? 0,
+      cacheCreationTokens: usage.cache_creation_input_tokens ?? 0,
+    },
+    costUsd: estimateCostUsd(resolvedModel, inputTokens, outputTokens),
+  };
+}

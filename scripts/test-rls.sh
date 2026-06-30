@@ -185,3 +185,6 @@ fi
 
 echo "── Running leak assertions"
 run "$root/supabase/tests/rls-leak-test.sql"
+
+echo "── Running tenant-default ratchet"
+run "$root/supabase/tests/tenant-default-ratchet.sql"

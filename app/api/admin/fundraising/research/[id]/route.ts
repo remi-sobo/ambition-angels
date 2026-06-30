@@ -23,6 +23,7 @@ import {
 } from "@/lib/agents/funder-research/client";
 import { estimateCostUsd as estimateModelCostUsd } from "@/lib/ai/cost";
 import { logAICall } from "@/lib/ai/ledger";
+import { orgOverAICap } from "@/lib/ai/cap";
 
 // ── Cost + rate limit constants ───────────────────────────────────────────
 const MONTHLY_BUDGET_HARD_USD = 20;
@@ -131,6 +132,18 @@ export async function POST(
     mtdSpendUsd >= MONTHLY_BUDGET_WARN_USD
       ? `Approaching monthly budget: $${mtdSpendUsd.toFixed(2)} of $${MONTHLY_BUDGET_HARD_USD}.`
       : null;
+
+  // ── 2b. Global org backstop across ALL AI surfaces (above this agent's budget). Fail-open.
+  const orgCap = await orgOverAICap(supabase, ctx.orgId);
+  if (orgCap.over) {
+    return NextResponse.json(
+      {
+        error: `This org has reached its monthly AI spend cap ($${orgCap.capUsd}). Resets next month.`,
+        mtd_spend_usd: Number(orgCap.spentUsd.toFixed(2)),
+      },
+      { status: 402 }
+    );
+  }
 
   // ── 3. Create the run record, then run the agent in the background ────────
   const admin = getSupabaseAdmin();

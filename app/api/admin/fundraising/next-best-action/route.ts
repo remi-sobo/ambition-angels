@@ -20,6 +20,7 @@ import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "@/app/admin/ops/_types/ops";
 import { runNextBestAction, estimateNbaCostUsd } from "@/lib/agents/next-best-action/agent";
 import { logAICall } from "@/lib/ai/ledger";
+import { orgOverAICap } from "@/lib/ai/cap";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 // Shared monthly agent wallet (same cap as the research route) + a rate limit,
@@ -190,6 +191,18 @@ export async function POST() {
       ? `Approaching monthly budget: $${mtdSpendUsd.toFixed(2)} of $${MONTHLY_BUDGET_HARD_USD}.`
       : null;
 
+  // Global org backstop across ALL AI surfaces (above this agent's budget). Fail-open.
+  const ctx = await getOrgContext();
+  if (ctx?.orgId) {
+    const orgCap = await orgOverAICap(supabase, ctx.orgId);
+    if (orgCap.over) {
+      return NextResponse.json(
+        { error: `This org has reached its monthly AI spend cap ($${orgCap.capUsd}). Resets next month.`, mtd_spend_usd: Number(orgCap.spentUsd.toFixed(2)) },
+        { status: 402 }
+      );
+    }
+  }
+
   const { data: oppData, error: oppErr } = await supabase
     .from("opportunities")
     .select(
@@ -306,8 +319,7 @@ export async function POST() {
 
   // Mirror into the unified AI ledger (additive; fr_agent_activity_log above
   // stays the agent-wallet cap source). Runs for every call, including the
-  // zero-recommendation path below.
-  const ctx = await getOrgContext();
+  // zero-recommendation path below. Reuses ctx resolved in the pre-flight cap check.
   if (ctx?.orgId) {
     await logAICall(supabase, {
       orgId: ctx.orgId,

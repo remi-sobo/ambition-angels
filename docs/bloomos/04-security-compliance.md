@@ -78,3 +78,14 @@ Research verdict: **do not buy SOC 2 now.** Small-nonprofit buyers clear on ques
 - Inherit infrastructure attestations: Supabase SOC 2 Type 2 / Vercel SOC 2 Type 2 cited as subprocessor assurance; signed DPAs with both.
 
 **Ring 4 trigger (district-scale or multi-org deal 3–6 months out):** budget-path SOC 2 — Comp AI/Sprinto-class platform + partner auditor ≈ **$8–15K year one**, Type I then a 3–6-month-window Type II; annual pentest (~$4–8K) when questionnaires demand; cyber insurance (~$1–3K/yr, $1M) when a contract requires. VPAT/accessibility statement when the first RFP asks (WCAG 2.1 AA is the design-system target regardless — 06).
+
+## 7. Service-role write-on-behalf registry
+
+The service-role client (`lib/supabase/admin.ts`) bypasses RLS, so a write it makes can land a row for **any** user in any tenant. Most service-role use is reads or system/ingest writes (HubSpot sync, donations, the AI ledger), where the row belongs to the org, not to another person. The dangerous subset is **writing a row owned by or targeted at another specific user** — the case RLS would normally forbid. That subset is deliberately confined to a small, named set, each justified, so it stays greppable:
+
+| Module | Writes on behalf of | Why service-role (not the session client) |
+|---|---|---|
+| `lib/notifications/notify.ts` | The **recipient** of a notification | A user cannot insert a notification into another user's inbox under RLS; the actor triggers it, the recipient owns it. `notify()` is the **only** insert path into `notifications` (enforced by `tests/service-role-writes.test.ts`). `org_id` + `recipient_id` always come from session, never a column default. |
+| `lib/messaging/threads.ts` | Other **thread members** (DM / group) | A sender writes the shared thread, the membership rows for the other participants, and the message; under RLS a sender cannot write a `thread_member` row for someone else. Confined to this one module after an app-level membership check; notifications still fan out through `notify()`. |
+
+**Rule.** Before adding a new service-role write that acts on another user's behalf, add it to this table with its justification. The notifications invariant is enforced in CI; treat this table as the allowlist for the rest.

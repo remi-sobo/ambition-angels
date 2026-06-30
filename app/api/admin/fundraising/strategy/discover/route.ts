@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import { logAICall } from "@/lib/ai/ledger";
+import { orgOverAICap } from "@/lib/ai/cap";
 import {
   runProspectDiscovery,
   estimateDiscoveryCostUsd,
@@ -77,6 +78,18 @@ export async function POST(req: NextRequest) {
       ? `Approaching monthly budget: $${mtdSpend.toFixed(2)} of $${MONTHLY_BUDGET_HARD_USD}.`
       : null;
 
+  // Global org backstop across ALL AI surfaces (above this agent's budget). Fail-open.
+  const ctx = await getOrgContext();
+  if (ctx?.orgId) {
+    const orgCap = await orgOverAICap(supabase, ctx.orgId);
+    if (orgCap.over) {
+      return NextResponse.json(
+        { error: `This org has reached its monthly AI spend cap ($${orgCap.capUsd}). Resets next month.` },
+        { status: 402 }
+      );
+    }
+  }
+
   const { data: angle } = await supabase
     .from("strategy_angles")
     .select("id, name, hook")
@@ -120,8 +133,7 @@ export async function POST(req: NextRequest) {
   });
 
   // Mirror into the unified AI ledger (additive; fr_agent_activity_log above
-  // stays the agent-wallet cap source).
-  const ctx = await getOrgContext();
+  // stays the agent-wallet cap source). Reuses ctx from the pre-flight cap check.
   if (ctx?.orgId) {
     await logAICall(supabase, {
       orgId: ctx.orgId,

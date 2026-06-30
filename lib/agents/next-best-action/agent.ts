@@ -6,8 +6,8 @@
  *
  * Never logs the API key or the system prompt.
  */
-import Anthropic from "@anthropic-ai/sdk";
 import NBA_SYSTEM_PROMPT from "./prompt";
+import { generateStructured } from "@/lib/ai/gateway";
 import { cleanVoiceText } from "@/lib/ai/voice";
 import type { NbaCandidate, NbaChannel, NbaRecommendation } from "./types";
 
@@ -142,45 +142,30 @@ export async function runNextBestAction(
   candidates: NbaCandidate[],
   today: string
 ): Promise<NbaResult> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new Error("NBA agent: ANTHROPIC_API_KEY must be set");
   if (candidates.length === 0) return { recommendations: [], tokensInput: 0, tokensOutput: 0, model: NBA_MODEL };
 
-  const client = new Anthropic({ apiKey: key });
   const validIds = new Set(candidates.map((c) => c.opportunity_id));
 
-  const response = await client.messages.create({
+  // Through the shared seam: forces the submit_recommendations tool call and
+  // returns its input + usage. parseRecommendations does the coercion (tested).
+  const { input, usage, model } = await generateStructured({
+    system: NBA_SYSTEM_PROMPT,
+    prompt: formatCandidates(candidates, today),
     model: NBA_MODEL,
-    max_tokens: MAX_OUTPUT_TOKENS,
-    system: [{ type: "text", text: NBA_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-    messages: [{ role: "user", content: formatCandidates(candidates, today) }],
-    // Force the structured tool call so output is never free text.
-    tools: [
-      {
-        name: "submit_recommendations",
-        description: "Submit the prioritized next-action list. Call exactly once.",
-        input_schema: REC_INPUT_SCHEMA,
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ] as any,
-    tool_choice: { type: "tool", name: "submit_recommendations" },
+    maxTokens: MAX_OUTPUT_TOKENS,
+    tool: {
+      name: "submit_recommendations",
+      description: "Submit the prioritized next-action list. Call exactly once.",
+      input_schema: REC_INPUT_SCHEMA,
+    },
   });
 
-  const u = response.usage;
-  const tokensInput =
-    (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
-  const tokensOutput = u.output_tokens ?? 0;
-  const model = response.model ?? NBA_MODEL;
-  const empty = { recommendations: [] as NbaRecommendation[], tokensInput, tokensOutput, model };
-
-  const toolUse = response.content.find(
-    (b): b is Anthropic.Messages.ToolUseBlock =>
-      b.type === "tool_use" && b.name === "submit_recommendations"
-  );
-  if (!toolUse) return empty;
-
-  const recommendations = parseRecommendations(toolUse.input, validIds);
-  return { recommendations, tokensInput, tokensOutput, model };
+  return {
+    recommendations: parseRecommendations(input, validIds),
+    tokensInput: usage.inputTokens,
+    tokensOutput: usage.outputTokens,
+    model,
+  };
 }
 
 // Sonnet rough rates per million tokens (matches the model used above).

@@ -20,6 +20,7 @@ import { EntityTasks } from "../../../_components/EntityTasks";
 import { CommentThread } from "../../../_components/CommentThread";
 import { RailEntity } from "../../../_components/rail/RailEntityContext";
 import ConstituentDangerZone from "../_components/ConstituentDangerZone";
+import { mapStage, type HubSpotPledgeStatus } from "@/lib/finance/hubspot-pledges";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
 export const dynamic = "force-dynamic";
@@ -46,8 +47,10 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .limit(500),
     supabase
       .from("recurring_plans")
-      .select("id, amount, frequency, status")
-      .eq("constituent_id", params.id),
+      .select("id, amount, frequency, status, external_source, last_charged_at, last_payment_failed_at")
+      .eq("constituent_id", params.id)
+      .order("status")
+      .order("amount", { ascending: false }),
     // Full date history (dates only, cheap) — drives the first-gift stat
     // AND retention flags, independent of the timeline's display cap.
     supabase
@@ -98,7 +101,10 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
     acknowledgment_status: string; acknowledged_at: string | null;
     recurring_plan_id: string | null; external_source: string | null;
   }>).map((g) => ({ ...g, amount: Number(g.amount) }));
-  const plans = (plansRes.data ?? []) as Array<{ id: string; amount: number; frequency: string; status: string }>;
+  const plans = (plansRes.data ?? []) as Array<{
+    id: string; amount: number; frequency: string; status: string;
+    external_source: string | null; last_charged_at: string | null; last_payment_failed_at: string | null;
+  }>;
   const interactions = (interactionsRes.data ?? []) as Array<{
     id: string; kind: string; occurred_at: string; notes: string | null; logged_by: string | null;
     direction: string | null; subject: string | null; thread_id: string | null;
@@ -206,6 +212,59 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
     hasBrief = !!brief;
   }
 
+  // ── HubSpot mirror for this donor (X6) ──────────────────────────────────
+  // Comms (engagements) + Pledges (deals) live in the read-only hs_* mirror,
+  // keyed by the linked HubSpot contact id. The donor page surfaces them for
+  // contacts that came from / are matched to HubSpot; recurring stays native
+  // (BloomOS is the system of record for gifts/revenue). Best-effort: if the
+  // mirror tables aren't applied, render an unavailable note rather than 500.
+  type HsComm = { id: string; type: string; subject: string | null; preview: string | null; at: string | null };
+  type HsPledge = { id: string; name: string; amount: number; stage: string | null; close_date: string | null; status: Exclude<HubSpotPledgeStatus, "ignore"> };
+  let hsComms: HsComm[] = [];
+  let hsPledges: HsPledge[] = [];
+  let hsCommsError = false;
+  let hsPledgesError = false;
+  if (hubspotId) {
+    const [commsRes, dealsRes] = await Promise.all([
+      supabase
+        .from("hs_engagements")
+        .select("hubspot_id, engagement_type, subject, body_preview, occurred_at")
+        .contains("contact_ids", [hubspotId])
+        .order("occurred_at", { ascending: false, nullsFirst: false })
+        .limit(50),
+      supabase
+        .from("hs_deals")
+        .select("hubspot_id, name, amount, stage, close_date")
+        .eq("primary_contact_id", hubspotId)
+        .order("close_date", { ascending: false, nullsFirst: false })
+        .limit(100),
+    ]);
+    hsCommsError = !!commsRes.error;
+    hsPledgesError = !!dealsRes.error;
+    hsComms = ((commsRes.data ?? []) as Array<{
+      hubspot_id: string; engagement_type: string | null; subject: string | null; body_preview: string | null; occurred_at: string | null;
+    }>).map((e) => ({
+      id: e.hubspot_id,
+      type: e.engagement_type ?? "note",
+      subject: e.subject,
+      preview: e.body_preview,
+      at: e.occurred_at,
+    }));
+    hsPledges = ((dealsRes.data ?? []) as Array<{
+      hubspot_id: string; name: string | null; amount: number | null; stage: string | null; close_date: string | null;
+    }>)
+      .map((d) => ({ d, m: mapStage(d.stage) }))
+      .filter(({ m }) => m.status !== "ignore")
+      .map(({ d, m }) => ({
+        id: d.hubspot_id,
+        name: d.name ?? "(unnamed deal)",
+        amount: Number(d.amount ?? 0),
+        stage: d.stage,
+        close_date: d.close_date,
+        status: m.status as Exclude<HubSpotPledgeStatus, "ignore">,
+      }));
+  }
+
   // ── Household (Epic D1): the donor's household + combined member giving,
   // plus the list of households for the join control. ──
   const { data: householdsList } = await supabase
@@ -276,6 +335,18 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       channel: a.channel,
     })),
   ].sort((a, b) => b.sort - a.sort);
+
+  const COMM_TYPE_LABEL: Record<string, string> = {
+    email: "Email", call: "Call", meeting: "Meeting", note: "Note", task: "Task",
+  };
+  const PLEDGE_STATUS_STYLE: Record<Exclude<HubSpotPledgeStatus, "ignore">, string> = {
+    received: "bg-revenue/15 text-revenue",
+    secured: "bg-orange/20 text-orange",
+    projected: "bg-blue-500/15 text-blue-400",
+  };
+  const PLEDGE_STATUS_LABEL: Record<Exclude<HubSpotPledgeStatus, "ignore">, string> = {
+    received: "Received", secured: "Secured", projected: "Projected",
+  };
 
   return (
     <div className="min-h-screen bg-ink">
@@ -581,6 +652,109 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
             )}
           </section>
         </div>
+
+        {/* ── Recurring (native plans) + HubSpot Comms / Pledges ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
+              <h2 className="font-heading font-bold text-ink-1 text-sm">Recurring</h2>
+              {activePlan && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">
+                  {money(Number(activePlan.amount))}/{activePlan.frequency.slice(0, 2)} active
+                </span>
+              )}
+            </div>
+            {plans.length === 0 ? (
+              <p className="p-6 text-ink-2 text-sm">
+                No recurring plans. Stripe monthly donations create plans automatically; add a manual
+                plan on the Recurring page for offline standing gifts.
+              </p>
+            ) : (
+              <ul className="divide-y divide-hairline">
+                {plans.map((p) => (
+                  <li key={p.id} className="px-5 py-3 flex items-center gap-3">
+                    <span className="font-bold text-ink-1 [font-variant-numeric:tabular-nums]">
+                      {money(Number(p.amount))}
+                      <span className="text-ink-3 font-normal">/{p.frequency.slice(0, 2)}</span>
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wider text-ink-3">{p.status}</span>
+                    {p.external_source === "manual" && (
+                      <span className="text-[10px] uppercase tracking-wider text-ink-3">manual</span>
+                    )}
+                    {p.last_payment_failed_at && p.status === "active" && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense">payment failed</span>
+                    )}
+                    <span className="ml-auto text-xs text-ink-2 [font-variant-numeric:tabular-nums]">
+                      {p.last_charged_at ? `last ${fmtWhen(p.last_charged_at)}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {hubspotId && (
+            <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+              <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
+                <h2 className="font-heading font-bold text-ink-1 text-sm">Pledges</h2>
+                <span className="text-[10px] uppercase tracking-wider text-ink-3">from HubSpot</span>
+              </div>
+              {hsPledgesError ? (
+                <p className="p-6 text-ink-2 text-sm">HubSpot deals are unavailable right now. Try a sync, then reload.</p>
+              ) : hsPledges.length === 0 ? (
+                <p className="p-6 text-ink-2 text-sm">No HubSpot deals linked to this donor.</p>
+              ) : (
+                <ul className="divide-y divide-hairline">
+                  {hsPledges.map((p) => (
+                    <li key={p.id} className="px-5 py-3 flex items-center gap-3">
+                      <span className="text-sm text-ink-1 flex-1 truncate">{p.name}</span>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${PLEDGE_STATUS_STYLE[p.status]}`}>
+                        {PLEDGE_STATUS_LABEL[p.status]}
+                      </span>
+                      {p.close_date && (
+                        <span className="text-xs text-ink-3 w-24 text-right [font-variant-numeric:tabular-nums]">{fmtWhen(p.close_date)}</span>
+                      )}
+                      <span className="font-bold text-ink-1 w-24 text-right [font-variant-numeric:tabular-nums]">{money(p.amount)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+        </div>
+
+        {hubspotId && (
+          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
+              <h2 className="font-heading font-bold text-ink-1 text-sm">Comms</h2>
+              <span className="text-[10px] uppercase tracking-wider text-ink-3">from HubSpot</span>
+            </div>
+            {hsCommsError ? (
+              <p className="p-6 text-ink-2 text-sm">HubSpot communications are unavailable right now. Try a sync, then reload.</p>
+            ) : hsComms.length === 0 ? (
+              <p className="p-6 text-ink-2 text-sm">No HubSpot emails, calls, meetings, or notes linked to this donor.</p>
+            ) : (
+              <ul className="divide-y divide-hairline">
+                {hsComms.map((e) => (
+                  <li key={e.id} className="px-5 py-3 flex items-start gap-4">
+                    <span className="text-xs text-ink-2 w-24 flex-shrink-0 pt-px">{e.at ? fmtWhen(e.at) : "—"}</span>
+                    <span className="text-[10px] uppercase tracking-wider text-orange font-semibold w-16 flex-shrink-0 pt-1">
+                      {COMM_TYPE_LABEL[e.type] ?? e.type}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      {e.subject ? (
+                        <span className="text-ink-1 font-medium break-words">{e.subject}</span>
+                      ) : (
+                        <span className="text-ink-3 italic">(no subject)</span>
+                      )}
+                      {e.preview && <p className="text-ink-2 text-xs mt-0.5 line-clamp-2">{e.preview}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
 
         <RailEntity type="constituent" id={c.id} label={name} />
         <EntityTasks entityType="constituent" entityId={c.id} entityLabel={name} defaultCategory="fundraising" />

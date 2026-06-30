@@ -5,12 +5,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev      # start dev server at localhost:3000
-npm run build    # production build
-npm run lint     # ESLint via next lint
+npm run dev        # start dev server at localhost:3000
+npm run build      # production build
+npm run lint       # ESLint via next lint
+npm test           # vitest run (unit tests in tests/*.test.ts)
+npm run qa:visual  # Playwright visual QA (e2e/, auth-gated, run on a real session)
 ```
 
-The only tests are `tests/availability.test.ts` (meeting-scheduler logic); there is no test runner wired into npm scripts.
+Tests live in `tests/*.test.ts` (vitest) and run in CI via `.github/workflows/ci.yml` (typecheck + lint + `npm test`). A separate `.github/workflows/rls-test.yml` applies every migration to a throwaway Postgres and runs the cross-role leak assertions in `supabase/tests/rls-leak-test.sql`. `tests/migrations.test.ts` enforces that every `create table` / `create index` is idempotent (`if not exists`). The public site's only standalone test is `tests/availability.test.ts`; the rest cover BloomOS (finance runway, constituent resolution, briefing, stewardship, and more).
 
 ## Stack
 

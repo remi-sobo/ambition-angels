@@ -80,6 +80,7 @@ export default async function MessagesPage({
     <Shell>
       <MessagesView
         me={{ userId: ctx.userId, name: myName }}
+        orgId={ctx.orgId}
         threads={threads}
         people={people}
         activeThreadId={activeThreadId}

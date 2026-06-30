@@ -100,6 +100,36 @@ function formatCandidates(candidates: NbaCandidate[], today: string): string {
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(n)));
 
+/**
+ * Coerce the model's submit_recommendations tool input into safe, typed rows.
+ * Pure and offline-testable (no key, no network): drops any opportunity_id not
+ * in validIds (hallucinated rows), forces a known channel, clamps priority and
+ * due-in-days, truncates free text, and sorts by priority. Exported so the eval
+ * suite can golden-test the safety properties directly.
+ */
+export function parseRecommendations(rawInput: unknown, validIds: Set<string>): NbaRecommendation[] {
+  const raw = (rawInput as { recommendations?: unknown } | null)?.recommendations;
+  if (!Array.isArray(raw)) return [];
+
+  const out: NbaRecommendation[] = [];
+  for (const r of raw as Record<string, unknown>[]) {
+    const id = typeof r.opportunity_id === "string" ? r.opportunity_id : "";
+    if (!validIds.has(id)) continue; // drop any hallucinated id
+    const channel = CHANNELS.includes(r.channel as NbaChannel) ? (r.channel as NbaChannel) : "other";
+    out.push({
+      opportunity_id: id,
+      priority: typeof r.priority === "number" ? clamp(r.priority, 1, 999) : 999,
+      action: String(r.action ?? "").trim().slice(0, 200),
+      rationale: String(r.rationale ?? "").trim().slice(0, 240),
+      channel,
+      suggested_due_in_days:
+        typeof r.suggested_due_in_days === "number" ? clamp(r.suggested_due_in_days, 0, 30) : 3,
+    });
+  }
+  out.sort((a, b) => a.priority - b.priority);
+  return out;
+}
+
 export type NbaResult = {
   recommendations: NbaRecommendation[];
   tokensInput: number;
@@ -148,26 +178,8 @@ export async function runNextBestAction(
   );
   if (!toolUse) return empty;
 
-  const raw = (toolUse.input as { recommendations?: unknown }).recommendations;
-  if (!Array.isArray(raw)) return empty;
-
-  const out: NbaRecommendation[] = [];
-  for (const r of raw as Record<string, unknown>[]) {
-    const id = typeof r.opportunity_id === "string" ? r.opportunity_id : "";
-    if (!validIds.has(id)) continue; // drop any hallucinated id
-    const channel = CHANNELS.includes(r.channel as NbaChannel) ? (r.channel as NbaChannel) : "other";
-    out.push({
-      opportunity_id: id,
-      priority: typeof r.priority === "number" ? clamp(r.priority, 1, 999) : 999,
-      action: String(r.action ?? "").trim().slice(0, 200),
-      rationale: String(r.rationale ?? "").trim().slice(0, 240),
-      channel,
-      suggested_due_in_days:
-        typeof r.suggested_due_in_days === "number" ? clamp(r.suggested_due_in_days, 0, 30) : 3,
-    });
-  }
-  out.sort((a, b) => a.priority - b.priority);
-  return { recommendations: out, tokensInput, tokensOutput, model };
+  const recommendations = parseRecommendations(toolUse.input, validIds);
+  return { recommendations, tokensInput, tokensOutput, model };
 }
 
 // Sonnet rough rates per million tokens (matches the model used above).

@@ -10,7 +10,7 @@
 -- == profiles.user_id == memberships.user_id, so auth.users is the safe,
 -- consistent identity (same choice as notifications.recipient_id/actor_id).
 
-create table public.entity_comments (
+create table if not exists public.entity_comments (
   id          uuid primary key default gen_random_uuid(),
   org_id      uuid not null references public.orgs on delete cascade,
   entity_type text not null,                 -- 'constituent', 'fr_prospects', later 'grant', 'task', …
@@ -25,7 +25,7 @@ create table public.entity_comments (
 );
 
 -- thread feed for one record, oldest-first
-create index entity_comments_entity_idx
+create index if not exists entity_comments_entity_idx
   on public.entity_comments (entity_type, entity_id, created_at);
 
 alter table public.entity_comments enable row level security;

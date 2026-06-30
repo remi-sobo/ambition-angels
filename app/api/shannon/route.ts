@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { cleanVoiceText } from "@/lib/ai/voice";
 
 export const maxDuration = 60;
 
@@ -197,22 +198,20 @@ interface Analysis {
   closing: string;
 }
 
-function stripEmDashes(s: string): string {
-  return s.replace(/\s*[—–]\s*/g, ", ").replace(/,\s*,/g, ",");
-}
-
+// Voice sweep lives in the shared utility now (lib/ai/voice.ts); this scrub
+// keeps the same field-by-field shape and identical em-dash behavior.
 function scrubAnalysis(a: Analysis): Analysis {
   return {
-    headline: stripEmDashes(a.headline),
-    synthesis: stripEmDashes(a.synthesis),
-    closing: stripEmDashes(a.closing),
+    headline: cleanVoiceText(a.headline),
+    synthesis: cleanVoiceText(a.synthesis),
+    closing: cleanVoiceText(a.closing),
     options: a.options.map((o) => ({
       ...o,
-      title: stripEmDashes(o.title),
-      score_label: stripEmDashes(o.score_label),
-      summary: stripEmDashes(o.summary),
-      reasoning: stripEmDashes(o.reasoning),
-      first_step: stripEmDashes(o.first_step),
+      title: cleanVoiceText(o.title),
+      score_label: cleanVoiceText(o.score_label),
+      summary: cleanVoiceText(o.summary),
+      reasoning: cleanVoiceText(o.reasoning),
+      first_step: cleanVoiceText(o.first_step),
     })),
   };
 }

@@ -6,7 +6,7 @@
 -- no new keys. Server writes go through the service role (background task),
 -- so the write policy is a backstop for any client-side path.
 
-create table public.research_runs (
+create table if not exists public.research_runs (
   id           uuid primary key default gen_random_uuid(),
   org_id       uuid not null references public.orgs on delete cascade,
   prospect_id  uuid not null references public.fr_prospects on delete cascade,
@@ -21,7 +21,7 @@ create table public.research_runs (
 );
 
 -- latest run per prospect (the status endpoint reads newest-first)
-create index research_runs_prospect_idx
+create index if not exists research_runs_prospect_idx
   on public.research_runs (prospect_id, created_at desc);
 
 alter table public.research_runs enable row level security;

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrgContext } from "@/lib/admin/auth";
-import { getMessages, postMessage } from "@/lib/messaging/threads";
+import { getMessages, getThreadReadState, postMessage } from "@/lib/messaging/threads";
 
 /**
  * GET  — messages in a thread, oldest-first. `?after=<iso>` returns only newer
- *        ones (the open-conversation poll). 404 if you're not a member.
+ *        ones (the open-conversation poll); a full load also returns readState
+ *        (other members' read positions) for receipts. 404 if not a member.
  * POST — send a message: { body: string }. Returns the created message.
  */
 export const dynamic = "force-dynamic";
@@ -18,7 +19,9 @@ export async function GET(req: NextRequest, { params }: { params: { threadId: st
   const after = req.nextUrl.searchParams.get("after");
   const messages = await getMessages(ctx, params.threadId, after);
   if (messages === null) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json({ messages });
+  // Read receipts only matter on a full load; the after-poll skips them.
+  const readState = after ? undefined : (await getThreadReadState(ctx, params.threadId)) ?? undefined;
+  return NextResponse.json({ messages, readState });
 }
 
 export async function POST(req: NextRequest, { params }: { params: { threadId: string } }) {

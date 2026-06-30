@@ -4,6 +4,7 @@ import PageHeader from "../../_components/PageHeader";
 import NewAngleForm from "./_components/NewAngleForm";
 import ReedAngleWizard from "./_components/ReedAngleWizard";
 import AngleEditorCard, { type AdminAngle } from "./_components/AngleEditorCard";
+import RoomMetaEditor, { type RoomMetaInput } from "./_components/RoomMetaEditor";
 
 // Strategy tab — the editable source for the public Strategy Room
 // (app/strategy). Every framing angle is read from strategy_angles and edited
@@ -43,6 +44,29 @@ export default async function StrategyPage() {
     counts.set(r.angle_id, (counts.get(r.angle_id) ?? 0) + 1);
   }
 
+  // Presentation copy for the hero + "this year" block (one row per org).
+  const { data: metaRow } = await supabase
+    .from("strategy_room_meta")
+    .select("eyebrow, headline, headline_accent, subtitle, stats, this_year_heading, year_intro, this_year")
+    .maybeSingle();
+  const asArr = (v: unknown) => (Array.isArray(v) ? v : []);
+  const meta: RoomMetaInput = {
+    eyebrow: metaRow?.eyebrow ?? "",
+    headline: metaRow?.headline ?? "",
+    headline_accent: metaRow?.headline_accent ?? "",
+    subtitle: metaRow?.subtitle ?? "",
+    stats: asArr(metaRow?.stats).map((s: { value?: unknown; label?: unknown }) => ({
+      value: typeof s?.value === "string" ? s.value : "",
+      label: typeof s?.label === "string" ? s.label : "",
+    })),
+    this_year_heading: metaRow?.this_year_heading ?? "",
+    year_intro: metaRow?.year_intro ?? "",
+    this_year: asArr(metaRow?.this_year).map((y: { label?: unknown; body?: unknown }) => ({
+      label: typeof y?.label === "string" ? y.label : "",
+      body: typeof y?.body === "string" ? y.body : "",
+    })),
+  };
+
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <PageHeader
@@ -60,6 +84,8 @@ export default async function StrategyPage() {
           </div>
         }
       />
+
+      <RoomMetaEditor meta={meta} />
 
       <p className="text-xs text-ink-3 mb-4 max-w-2xl">
         Click any element to edit it — changes save on blur and show in the Strategy Room on its next load.

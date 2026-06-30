@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-03-25.dahlia",
 });
 
 export async function POST(req: NextRequest) {
+  // Public payment path — throttle per IP to deter card-testing attacks.
+  const rl = rateLimit(`create-payment-intent:${getClientIp(req)}`, { limit: 10, windowMs: 10 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests. Please try again in a few minutes." }, { status: 429 });
+  }
+
   const { amount, name, email, recurring, paymentMethodId } = await req.json();
 
   if (!amount || amount < 1) {

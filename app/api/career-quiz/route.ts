@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "@/lib/ai/gateway";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  // Unauthenticated and calls the model — throttle per IP to deter abuse.
+  const rl = rateLimit(`career-quiz:${getClientIp(req)}`, { limit: 10, windowMs: 10 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests. Please try again in a few minutes." }, { status: 429 });
+  }
+
   const body = await req.json();
   const { prompt } = body;
 

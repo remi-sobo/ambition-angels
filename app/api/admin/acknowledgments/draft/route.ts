@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import { generateText } from "@/lib/ai/gateway";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 // POST /api/admin/acknowledgments/draft — AI-drafted personal thank-you
 // note for one gift, grounded in the donor's real giving history.
@@ -12,6 +13,11 @@ import { generateText } from "@/lib/ai/gateway";
 export async function POST(req: NextRequest) {
   if (!(await isAuthed())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  // Admin-gated, but still a model call — a generous per-IP ceiling on runaway loops.
+  const rl = rateLimit(`ack-draft:${getClientIp(req)}`, { limit: 30, windowMs: 10 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many draft requests. Please try again shortly." }, { status: 429 });
   }
   const body = (await req.json().catch(() => null)) as { gift_id?: string } | null;
   const giftId = typeof body?.gift_id === "string" ? body.gift_id : "";

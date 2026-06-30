@@ -10,6 +10,7 @@
  * research agent (Opus). Never logs the API key.
  */
 import Anthropic from "@anthropic-ai/sdk";
+import { cleanVoiceText } from "@/lib/ai/voice";
 
 export const DISCOVERY_MODEL = "claude-sonnet-4-6";
 const MAX_WEB_SEARCHES = 8;
@@ -146,11 +147,11 @@ export function parseCandidates(rawInput: unknown): DiscoveryCandidate[] {
     if (!name) continue;
     const type = c.type === "foundation" || c.type === "corporate" ? c.type : "individual";
     candidates.push({
-      name: name.slice(0, 200),
-      org: typeof c.org === "string" && c.org.trim() ? c.org.trim().slice(0, 200) : null,
+      name: cleanVoiceText(name).slice(0, 200),
+      org: typeof c.org === "string" && c.org.trim() ? cleanVoiceText(c.org.trim()).slice(0, 200) : null,
       type,
-      fit_rationale: String(c.fit_rationale ?? "").trim().slice(0, 600),
-      signal: typeof c.signal === "string" && c.signal.trim() ? c.signal.trim().slice(0, 300) : null,
+      fit_rationale: cleanVoiceText(String(c.fit_rationale ?? "").trim()).slice(0, 600),
+      signal: typeof c.signal === "string" && c.signal.trim() ? cleanVoiceText(c.signal.trim()).slice(0, 300) : null,
       sources: Array.isArray(c.sources)
         ? (c.sources as unknown[]).filter((s): s is string => typeof s === "string").slice(0, 6)
         : [],

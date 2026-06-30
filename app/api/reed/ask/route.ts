@@ -10,6 +10,7 @@ import {
   REED_MONTHLY_WARN_USD,
 } from "@/lib/agents/reed/cost";
 import { logAICall, type AICallStatus } from "@/lib/ai/ledger";
+import { cleanVoiceText } from "@/lib/ai/voice";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -133,6 +134,8 @@ export async function POST(req: NextRequest) {
 
   const durationMs = Date.now() - startedAt;
   const costUsd = estimateReedCostUsd(run.tokensInput, run.tokensOutput);
+  // Voice sweep at the boundary: Reed's reply goes to a human and is stored.
+  const answer = cleanVoiceText(run.text);
 
   // 7–8. Persist: thread (create on first turn), then log row, then both messages.
   if (!threadId) {
@@ -193,13 +196,13 @@ export async function POST(req: NextRequest) {
         thread_id: threadId,
         org_id: ctx.orgId,
         role: "assistant",
-        content: run.text,
+        content: answer,
         activity_log_id: (logRow?.id as string | undefined) ?? null,
       },
     ]);
   }
 
-  return NextResponse.json({ text: run.text, thread_id: threadId, budgetWarning });
+  return NextResponse.json({ text: answer, thread_id: threadId, budgetWarning });
 }
 
 function buildSystemPrompt(opts: {

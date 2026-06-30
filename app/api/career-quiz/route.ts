@@ -22,9 +22,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // voice: false — the payload is a structured catalog (salary ranges use a
-    // dash that must survive), so it routes through the seam without the sweep.
-    const { text } = await generateText({ prompt, tier: "fast", maxTokens: 1500, voice: false });
+    // Swept by default. The sweep targets only the em dash, so salary ranges
+    // (en dash / hyphen) survive.
+    const { text } = await generateText({ prompt, tier: "fast", maxTokens: 1500 });
     const raw = text.replace(/```json|```/g, "").trim();
     const careers = JSON.parse(raw);
     return NextResponse.json({ careers });

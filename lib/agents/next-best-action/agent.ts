@@ -8,6 +8,7 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import NBA_SYSTEM_PROMPT from "./prompt";
+import { cleanVoiceText } from "@/lib/ai/voice";
 import type { NbaCandidate, NbaChannel, NbaRecommendation } from "./types";
 
 export const NBA_MODEL = "claude-sonnet-4-6";
@@ -119,8 +120,8 @@ export function parseRecommendations(rawInput: unknown, validIds: Set<string>): 
     out.push({
       opportunity_id: id,
       priority: typeof r.priority === "number" ? clamp(r.priority, 1, 999) : 999,
-      action: String(r.action ?? "").trim().slice(0, 200),
-      rationale: String(r.rationale ?? "").trim().slice(0, 240),
+      action: cleanVoiceText(String(r.action ?? "").trim()).slice(0, 200),
+      rationale: cleanVoiceText(String(r.rationale ?? "").trim()).slice(0, 240),
       channel,
       suggested_due_in_days:
         typeof r.suggested_due_in_days === "number" ? clamp(r.suggested_due_in_days, 0, 30) : 3,

@@ -45,6 +45,13 @@ const TABS: Tab[] = [
     ),
   },
   {
+    label: "Messages",
+    href: "/admin/messages",
+    icon: (
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+    ),
+  },
+  {
     label: "Money",
     href: "/admin/finance",
     icon: (
@@ -87,6 +94,33 @@ export default function MobileTabBar({
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [modal, setModal] = useState<"task" | "report" | null>(null);
+  const [msgUnread, setMsgUnread] = useState(0);
+
+  // Unread Messages badge on the dock. Same slow poll (50s) + same-tab events
+  // the sidebar uses, and a re-fetch on route change so opening a thread
+  // clears it.
+  useEffect(() => {
+    if (!currentUser) return;
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/admin/messages/unread-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (alive) setMsgUnread(typeof j.count === "number" ? j.count : 0);
+      } catch {
+        // Network blip — keep the last count, next poll recovers.
+      }
+    };
+    load();
+    const id = setInterval(load, 50000);
+    window.addEventListener("bloomos:messages-changed", load);
+    return () => {
+      alive = false;
+      clearInterval(id);
+      window.removeEventListener("bloomos:messages-changed", load);
+    };
+  }, [currentUser, pathname]);
 
   // Close the action sheet on Escape (hardware keyboard / external).
   useEffect(() => {
@@ -120,18 +154,28 @@ export default function MobileTabBar({
                   isActive ? "text-orange-mid" : "text-cream/55 hover:text-cream"
                 }`}
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-[22px] h-[22px]"
-                  aria-hidden
-                >
-                  {tab.icon}
-                </svg>
+                <span className="relative">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-[22px] h-[22px]"
+                    aria-hidden
+                  >
+                    {tab.icon}
+                  </svg>
+                  {tab.href === "/admin/messages" && msgUnread > 0 && (
+                    <span
+                      className="absolute -top-1 -right-1.5 min-w-[15px] h-[15px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-[9px] font-bold leading-none ring-2 ring-navy"
+                      aria-label={`${msgUnread} unread`}
+                    >
+                      {msgUnread > 9 ? "9+" : msgUnread}
+                    </span>
+                  )}
+                </span>
                 <span className="text-[10px] font-heading font-semibold leading-none">{tab.label}</span>
               </Link>
             );

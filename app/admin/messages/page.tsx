@@ -2,9 +2,11 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { getMyDisplayName, nameFromEmail } from "@/lib/admin/profile";
 import {
   getMessages,
+  getThreadReadState,
   listOrgPeople,
   listThreads,
   type ChatMessage,
+  type ThreadReadMember,
   type ThreadSummary,
 } from "@/lib/messaging/threads";
 import MessagesView from "./_components/MessagesView";
@@ -48,6 +50,7 @@ export default async function MessagesPage({
   let threads: ThreadSummary[] = [];
   let people: { userId: string; name: string }[] = [];
   let initialMessages: ChatMessage[] = [];
+  let initialReadState: ThreadReadMember[] = [];
   let activeThreadId: string | null = null;
 
   try {
@@ -58,6 +61,7 @@ export default async function MessagesPage({
       if (msgs !== null) {
         activeThreadId = t;
         initialMessages = msgs;
+        initialReadState = (await getThreadReadState(ctx, t)) ?? [];
       }
     }
   } catch (e) {
@@ -85,6 +89,7 @@ export default async function MessagesPage({
         people={people}
         activeThreadId={activeThreadId}
         initialMessages={initialMessages}
+        initialReadState={initialReadState}
       />
     </Shell>
   );

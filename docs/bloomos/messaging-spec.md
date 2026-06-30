@@ -170,11 +170,22 @@ the notifications count.
 
 ---
 
-## 7. Out of scope (v1) / future
+## 7. Shipped beyond v1
 
-- ~~Supabase **Realtime** subscriptions~~ — shipped (see §5 Delivery).
-- Realtime badges sidebar-wide (today the open Messages page drives instant
-  badge updates; elsewhere the 50s sidebar/dock poll applies).
-- Edit/delete/react, typing indicators, presence, attachments, search.
-- Message-level read receipts (we track per-thread `last_read_at` only).
+- **Realtime delivery** (§5).
+- **Sidebar-wide instant badges** — `AdminBadgesProvider` (mounted once in the
+  admin layout) runs a single poll + Realtime channel and feeds both the
+  sidebar and the mobile dock, so Inbox/Messages badges light the instant a
+  row lands on any page (`messaging_v2.sql` adds `notifications` to the
+  publication).
+- **Edits & soft deletes** (`messages.edited_at` / `deleted_at`, sender-scoped;
+  live via `messages` UPDATE).
+- **Reactions** (`message_reactions`, emoji toggle; live via INSERT/DELETE —
+  `REPLICA IDENTITY FULL` so un-reacts propagate).
+- **Read receipts** (per-thread `last_read_at`; "Seen" / "Seen by …" under your
+  last message; live via `message_thread_members` UPDATE).
+
+## 8. Still out of scope / future
+
+- Typing indicators, presence, attachments, message search, threaded replies.
 - Push/email for messages (in-app + Inbox pointer only today).

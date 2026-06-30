@@ -7,6 +7,7 @@ import QuickAddModal from "./QuickAddModal";
 import ReportModal from "./ReportModal";
 import { useReedLauncher } from "./reed/ReedLauncherProvider";
 import { ReedMark } from "./reed/ReedPanel";
+import { useAdminBadges } from "./AdminBadges";
 import type { AdminUser } from "@/lib/admin/auth";
 
 /**
@@ -95,33 +96,8 @@ export default function MobileTabBar({
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [modal, setModal] = useState<"task" | "report" | null>(null);
-  const [msgUnread, setMsgUnread] = useState(0);
-
-  // Unread Messages badge on the dock. Same slow poll (50s) + same-tab events
-  // the sidebar uses, and a re-fetch on route change so opening a thread
-  // clears it.
-  useEffect(() => {
-    if (!currentUser) return;
-    let alive = true;
-    const load = async () => {
-      try {
-        const r = await fetch("/api/admin/messages/unread-count", { cache: "no-store" });
-        if (!r.ok) return;
-        const j = await r.json();
-        if (alive) setMsgUnread(typeof j.count === "number" ? j.count : 0);
-      } catch {
-        // Network blip — keep the last count, next poll recovers.
-      }
-    };
-    load();
-    const id = setInterval(load, 50000);
-    window.addEventListener("bloomos:messages-changed", load);
-    return () => {
-      alive = false;
-      clearInterval(id);
-      window.removeEventListener("bloomos:messages-changed", load);
-    };
-  }, [currentUser, pathname]);
+  // Messages unread badge on the dock — shared, Realtime-driven (see AdminBadges).
+  const { messages: msgUnread } = useAdminBadges();
 
   // Close the action sheet on Escape (hardware keyboard / external).
   useEffect(() => {

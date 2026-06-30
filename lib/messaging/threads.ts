@@ -39,6 +39,15 @@ export type ThreadSummary = {
   unread: number;
 };
 
+export type MessageReaction = {
+  emoji: string;
+  count: number;
+  /** Whether the signed-in user is one of the reactors. */
+  mine: boolean;
+  /** Display names of reactors, for the tooltip. */
+  names: string[];
+};
+
 export type ChatMessage = {
   id: string;
   threadId: string;
@@ -48,6 +57,18 @@ export type ChatMessage = {
   createdAt: string;
   /** True when the signed-in user sent it (drives bubble alignment). */
   mine: boolean;
+  /** Set once the sender edits; null otherwise. */
+  editedAt: string | null;
+  /** Set on soft delete; body is blanked and the bubble shows a tombstone. */
+  deletedAt: string | null;
+  reactions: MessageReaction[];
+};
+
+/** A co-member's read position, for read receipts. */
+export type ThreadReadMember = {
+  userId: string;
+  name: string;
+  lastReadAt: string | null;
 };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -108,7 +129,7 @@ export async function listThreads(ctx: OrgContext): Promise<ThreadSummary[]> {
       .in("thread_id", threadIds),
     admin
       .from("messages")
-      .select("id, thread_id, sender_id, body, created_at")
+      .select("id, thread_id, sender_id, body, created_at, deleted_at")
       .in("thread_id", threadIds)
       .order("created_at", { ascending: false })
       .limit(2000),
@@ -128,6 +149,7 @@ export async function listThreads(ctx: OrgContext): Promise<ThreadSummary[]> {
     sender_id: string;
     body: string;
     created_at: string;
+    deleted_at: string | null;
   }[];
 
   const names = await getDisplayNames(Array.from(new Set(memberRows.map((m) => m.user_id))));
@@ -167,7 +189,7 @@ export async function listThreads(ctx: OrgContext): Promise<ThreadSummary[]> {
       others,
       lastMessage: last
         ? {
-            body: last.body,
+            body: last.deleted_at ? "Message deleted" : last.body,
             senderId: last.sender_id,
             senderName: nameOf(last.sender_id),
             createdAt: last.created_at,
@@ -197,7 +219,7 @@ export async function getMessages(
   const admin = getSupabaseAdmin();
   let q = admin
     .from("messages")
-    .select("id, thread_id, sender_id, body, created_at")
+    .select("id, thread_id, sender_id, body, created_at, edited_at, deleted_at")
     .eq("thread_id", threadId)
     .order("created_at", { ascending: true })
     .limit(500);
@@ -210,7 +232,12 @@ export async function getMessages(
     sender_id: string;
     body: string;
     created_at: string;
+    edited_at: string | null;
+    deleted_at: string | null;
   }[];
+
+  // Reactions for this page of messages, aggregated per (message, emoji).
+  const reactionsByMessage = await getReactions(rows.map((r) => r.id), ctx.userId);
 
   const names = await getDisplayNames(Array.from(new Set(rows.map((r) => r.sender_id))));
   return rows.map((r) => ({
@@ -218,10 +245,156 @@ export async function getMessages(
     threadId: r.thread_id,
     senderId: r.sender_id,
     senderName: names[r.sender_id] ?? FALLBACK_NAME,
-    body: r.body,
+    body: r.deleted_at ? "" : r.body,
     createdAt: r.created_at,
     mine: r.sender_id === ctx.userId,
+    editedAt: r.edited_at,
+    deletedAt: r.deleted_at,
+    reactions: reactionsByMessage.get(r.id) ?? [],
   }));
+}
+
+/** Aggregate reactions for a set of message ids into per-emoji chips. */
+async function getReactions(
+  messageIds: string[],
+  meId: string
+): Promise<Map<string, MessageReaction[]>> {
+  const out = new Map<string, MessageReaction[]>();
+  if (messageIds.length === 0) return out;
+  const admin = getSupabaseAdmin();
+  const { data } = await admin
+    .from("message_reactions")
+    .select("message_id, user_id, emoji")
+    .in("message_id", messageIds);
+  const rows = (data ?? []) as { message_id: string; user_id: string; emoji: string }[];
+  if (rows.length === 0) return out;
+
+  const names = await getDisplayNames(Array.from(new Set(rows.map((r) => r.user_id))));
+  // message_id -> emoji -> { count, mine, names }
+  const grouped = new Map<string, Map<string, MessageReaction>>();
+  for (const r of rows) {
+    const byEmoji = grouped.get(r.message_id) ?? new Map<string, MessageReaction>();
+    const chip = byEmoji.get(r.emoji) ?? { emoji: r.emoji, count: 0, mine: false, names: [] };
+    chip.count += 1;
+    if (r.user_id === meId) chip.mine = true;
+    chip.names.push(names[r.user_id] ?? FALLBACK_NAME);
+    byEmoji.set(r.emoji, chip);
+    grouped.set(r.message_id, byEmoji);
+  }
+  grouped.forEach((byEmoji, mid) => out.set(mid, Array.from(byEmoji.values())));
+  return out;
+}
+
+/** Other members' read positions for a thread (read receipts). Null if not a member. */
+export async function getThreadReadState(
+  ctx: OrgContext,
+  threadId: string
+): Promise<ThreadReadMember[] | null> {
+  if (!isUuid(threadId)) return null;
+  if (!(await isMember(threadId, ctx.userId))) return null;
+  const admin = getSupabaseAdmin();
+  const { data } = await admin
+    .from("message_thread_members")
+    .select("user_id, last_read_at")
+    .eq("thread_id", threadId)
+    .neq("user_id", ctx.userId);
+  const rows = (data ?? []) as { user_id: string; last_read_at: string | null }[];
+  const names = await getDisplayNames(rows.map((r) => r.user_id));
+  return rows.map((r) => ({
+    userId: r.user_id,
+    name: names[r.user_id] ?? FALLBACK_NAME,
+    lastReadAt: r.last_read_at,
+  }));
+}
+
+/** Edit your own message. Returns false if not yours / not found / deleted. */
+export async function editMessage(
+  ctx: OrgContext,
+  messageId: string,
+  body: string
+): Promise<boolean> {
+  if (!isUuid(messageId)) return false;
+  const text = body.trim();
+  if (!text || text.length > MAX_BODY) return false;
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin
+    .from("messages")
+    .update({ body: text, edited_at: nowIso() })
+    .eq("id", messageId)
+    .eq("sender_id", ctx.userId)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+  if (error) console.error("[messaging] edit failed:", error.message);
+  return !!data;
+}
+
+/** Soft-delete your own message. Returns false if not yours / not found. */
+export async function deleteMessage(ctx: OrgContext, messageId: string): Promise<boolean> {
+  if (!isUuid(messageId)) return false;
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin
+    .from("messages")
+    .update({ deleted_at: nowIso(), edited_at: null })
+    .eq("id", messageId)
+    .eq("sender_id", ctx.userId)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+  if (error) console.error("[messaging] delete failed:", error.message);
+  if (data) {
+    // Reactions on a removed message no longer make sense.
+    await admin.from("message_reactions").delete().eq("message_id", messageId);
+  }
+  return !!data;
+}
+
+/** Toggle your reaction on a message. Returns the new state, or null on failure. */
+export async function toggleReaction(
+  ctx: OrgContext,
+  messageId: string,
+  emoji: string
+): Promise<{ on: boolean } | null> {
+  if (!isUuid(messageId)) return null;
+  const clean = emoji.trim();
+  if (!clean || clean.length > 16) return null;
+  const admin = getSupabaseAdmin();
+
+  // Resolve the message's thread and confirm I'm a member (and it's live).
+  const { data: msg } = await admin
+    .from("messages")
+    .select("thread_id, deleted_at")
+    .eq("id", messageId)
+    .maybeSingle();
+  const row = msg as { thread_id: string; deleted_at: string | null } | null;
+  if (!row || row.deleted_at) return null;
+  if (!(await isMember(row.thread_id, ctx.userId))) return null;
+
+  const { data: existing } = await admin
+    .from("message_reactions")
+    .select("message_id")
+    .eq("message_id", messageId)
+    .eq("user_id", ctx.userId)
+    .eq("emoji", clean)
+    .maybeSingle();
+
+  if (existing) {
+    await admin
+      .from("message_reactions")
+      .delete()
+      .eq("message_id", messageId)
+      .eq("user_id", ctx.userId)
+      .eq("emoji", clean);
+    return { on: false };
+  }
+  const { error } = await admin
+    .from("message_reactions")
+    .insert({ message_id: messageId, user_id: ctx.userId, org_id: ctx.orgId, emoji: clean });
+  if (error) {
+    console.error("[messaging] react failed:", error.message);
+    return null;
+  }
+  return { on: true };
 }
 
 /**
@@ -366,6 +539,9 @@ export async function postMessage(
     body: text,
     createdAt: row.created_at,
     mine: true,
+    editedAt: null,
+    deletedAt: null,
+    reactions: [],
   };
 }
 

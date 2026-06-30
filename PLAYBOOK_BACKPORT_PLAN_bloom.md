@@ -14,6 +14,37 @@ Date: 2026-06-30. Reference: `PLAYBOOK_PROPOSAL_bloom.md`, `Sobo_Playbook_BLOOM_
 
 ---
 
+## Status (updated after the first build pass)
+
+The first execution pass reframed the plan around an AI gateway seam (see B15) and
+shipped more than the original seven. Done and merged to main:
+
+- **R0 doc drift** — `CLAUDE.md`, the `middleware.ts` auth header, and
+  `02-current-state.md` corrected.
+- **R3 design-token freeze gate** — `tests/design-tokens.test.ts`.
+- **The shared voice utility** — `lib/ai/voice.ts`, applied to the
+  acknowledgment route and the decision route; the seam exists for the rest.
+- **Beyond the seven:** the AI gateway seam (`lib/ai/gateway.ts`), one cost model
+  (`lib/ai/cost.ts`), the unified `ai_calls` spend ledger + per-org spend view +
+  Settings card, and an offline eval harness for two agents. Plus a restored RLS
+  leak gate (it had been red on main for days) and a `planned_week` schema-drift fix.
+
+Still open from the seven (good next pass):
+
+- **R1 rate-limit the public model-calling and donation routes** — the limiter
+  exists (`lib/rate-limit.ts`); wire it into `career-quiz`, `career-match`, the
+  acknowledgment draft route, and the donation routes.
+- **R1 greppable service-role write-on-behalf list.**
+- **R2 voice sweep + graceful degradation on the remaining AI surfaces** — Reed,
+  funder research, next-best-action, prospect discovery, the briefing narrative.
+  The shared utility and the deterministic-fallback pattern both exist; this is
+  applying them at the boundaries that still throw or skip the sweep.
+
+Deferred by design: the tenant-default ban (the `org_id`-default trap is still
+load-bearing; `tenant-two-hardening.md` sequences the CI guard for its Phase 9).
+
+---
+
 ## The seven backports, mapped to rings
 
 | # | Backport | Method rule | Ring |

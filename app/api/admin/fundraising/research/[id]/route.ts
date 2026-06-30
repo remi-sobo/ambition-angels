@@ -1,26 +1,21 @@
 /**
- * POST /api/admin/fundraising/research/[hubspot_id]
+ * POST /api/admin/fundraising/research/[prospect_id]
  *
- * Trigger funder research brief generation for one HubSpot contact.
- *
- * Flow:
- *   1. Auth via isAuthed + getAdminUser.
- *   2. Rate limit: max 5 briefs / 10 min / triggering user.
- *   3. Monthly budget cap: estimate MTD agent spend from
- *      fr_agent_activity_log. 402 over $20, warning over $12.
- *   4. Generate brief (loads context + calls agent).
- *   5. Insert into fr_prospect_briefs (status='draft', template_version='v1').
- *   6. Insert into fr_agent_activity_log (success/partial/failed).
- *   7. Return the saved brief + any budget warning.
- *
- * Single mutation point for fr_prospect_briefs + fr_agent_activity_log in
- * this PR.
+ * Kick off funder research for one prospect, in the BACKGROUND. The request
+ * validates + rate-limits + budget-checks, creates a research_runs row
+ * (status 'running'), and returns immediately with the run id. The agent run,
+ * brief persistence, activity-log entry, run-status update, and the
+ * completion/failure notification all happen after the response via
+ * runInBackground (waitUntil), so the user can navigate away and be notified
+ * when it finishes. Status is queryable at GET .../[id]/run.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext, getAdminUser, type AdminUser } from "@/lib/admin/auth";
 import { notify } from "@/lib/notifications/notify";
+import { runInBackground } from "@/lib/background";
 import { generateBriefForProspect } from "@/lib/agents/funder-research/generate-brief";
 import {
   AGENT_MODEL,
@@ -28,8 +23,6 @@ import {
 } from "@/lib/agents/funder-research/client";
 
 // ── Cost + rate limit constants ───────────────────────────────────────────
-// Opus rough rates per million tokens. Move to env / config when we have
-// more than one model in play.
 const OPUS_INPUT_PER_MILLION_USD = 15;
 const OPUS_OUTPUT_PER_MILLION_USD = 75;
 const MONTHLY_BUDGET_HARD_USD = 20;
@@ -48,10 +41,17 @@ function estimateCostUsd(tokensInput: number, tokensOutput: number): number {
   );
 }
 
-// Maximum allowed Vercel function execution time. The agent's web-search
-// loop can take 60-90s on a cold cache; bump the route timeout from the
-// default. (Project is on Fluid Compute — 300s default applies, but we set
-// this explicitly so it's discoverable.)
+type Prospect = {
+  id: string;
+  hubspot_contact_id: string | null;
+  name: string;
+  email: string | null;
+  org_name: string | null;
+  type: string;
+};
+
+// The agent's web-search loop can take 60-90s; the background task runs within
+// this same invocation's lifetime, so keep the route's max duration high.
 export const maxDuration = 300;
 
 export async function POST(
@@ -78,49 +78,13 @@ export async function POST(
     .select("id, hubspot_contact_id, name, email, org_name, type")
     .eq("id", prospectId)
     .maybeSingle();
-  const prospect = prospectRow as
-    | { id: string; hubspot_contact_id: string | null; name: string; email: string | null; org_name: string | null; type: string }
-    | null;
+  const prospect = prospectRow as Prospect | null;
   if (!prospect) {
     return NextResponse.json({ error: "Prospect not found" }, { status: 404 });
   }
   const hubspotId = prospect.hubspot_contact_id;
 
-  // Notify the user who started the run when it finishes. The agent runs
-  // server-side for up to 5 minutes, so this fires even if they closed the
-  // tab — that's the whole point. research.* is in notify()'s EMAIL_TYPES,
-  // so completion/failure also emails. actor_id is null: it's a system/agent
-  // event, not one person acting on another. Best-effort throughout — a
-  // notification failure must never change the research result the caller
-  // sees (mirrors lib/audit.ts).
-  const label = prospect.org_name || prospect.name;
-  const link = `/admin/fundraising/prospects/${prospectId}`;
-  const notifyCompleted = () =>
-    notify({
-      orgId: ctx.orgId,
-      recipientId: ctx.userId,
-      type: "research.completed",
-      title: `Funder research finished: ${label}`,
-      body: `Your research brief for ${prospect.name} is ready.`,
-      linkedEntityType: "fr_prospects",
-      linkedEntityId: prospectId,
-      linkedLabel: label,
-      url: link,
-    }).catch((e) => console.error("[research] notify(completed) failed:", e));
-  const notifyFailed = (reason: string) =>
-    notify({
-      orgId: ctx.orgId,
-      recipientId: ctx.userId,
-      type: "research.failed",
-      title: `Funder research failed: ${label}`,
-      body: reason,
-      linkedEntityType: "fr_prospects",
-      linkedEntityId: prospectId,
-      linkedLabel: label,
-      url: link,
-    }).catch((e) => console.error("[research] notify(failed) failed:", e));
-
-  // ── 1. Rate limit ───────────────────────────────────────────────────────
+  // ── 1. Rate limit (fail fast, before starting a run) ──────────────────────
   const windowStartIso = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
   const { count: recentCount, error: rateErr } = await supabase
     .from("fr_agent_activity_log")
@@ -129,21 +93,16 @@ export async function POST(
     .eq("triggered_by", currentUser)
     .gte("created_at", windowStartIso);
   if (rateErr) {
-    console.error("[research] rate-limit query failed:", {
-      code: rateErr.code,
-      message: rateErr.message,
-    });
+    console.error("[research] rate-limit query failed:", { code: rateErr.code, message: rateErr.message });
   }
   if ((recentCount ?? 0) >= RATE_LIMIT_MAX) {
     return NextResponse.json(
-      {
-        error: `Rate limit: ${RATE_LIMIT_MAX} briefs per 10 minutes. Try again in a few minutes.`,
-      },
+      { error: `Rate limit: ${RATE_LIMIT_MAX} briefs per 10 minutes. Try again in a few minutes.` },
       { status: 429 }
     );
   }
 
-  // ── 2. Monthly budget cap ───────────────────────────────────────────────
+  // ── 2. Monthly budget cap ─────────────────────────────────────────────────
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
@@ -152,17 +111,11 @@ export async function POST(
     .select("tokens_input, tokens_output")
     .gte("created_at", monthStart.toISOString());
   if (mtdErr) {
-    console.error("[research] mtd query failed:", {
-      code: mtdErr.code,
-      message: mtdErr.message,
-    });
+    console.error("[research] mtd query failed:", { code: mtdErr.code, message: mtdErr.message });
   }
   let mtdTokensInput = 0;
   let mtdTokensOutput = 0;
-  for (const r of (mtdRows ?? []) as Array<{
-    tokens_input: number | null;
-    tokens_output: number | null;
-  }>) {
+  for (const r of (mtdRows ?? []) as Array<{ tokens_input: number | null; tokens_output: number | null }>) {
     mtdTokensInput += r.tokens_input ?? 0;
     mtdTokensOutput += r.tokens_output ?? 0;
   }
@@ -178,45 +131,116 @@ export async function POST(
   }
   const budgetWarning =
     mtdSpendUsd >= MONTHLY_BUDGET_WARN_USD
-      ? `Approaching monthly budget: $${mtdSpendUsd.toFixed(
-          2
-        )} of $${MONTHLY_BUDGET_HARD_USD}.`
+      ? `Approaching monthly budget: $${mtdSpendUsd.toFixed(2)} of $${MONTHLY_BUDGET_HARD_USD}.`
       : null;
 
-  // ── 3. Run the agent ────────────────────────────────────────────────────
-  try {
-    const { result } = await generateBriefForProspect(prospect);
+  // ── 3. Create the run record, then run the agent in the background ────────
+  const admin = getSupabaseAdmin();
+  const { data: runRow, error: runErr } = await admin
+    .from("research_runs")
+    .insert({
+      org_id: ctx.orgId, // from session — never a column default
+      prospect_id: prospectId,
+      status: "running",
+      started_by: ctx.userId,
+    })
+    .select("id")
+    .single();
+  if (runErr || !runRow) {
+    console.error("[research] failed to create run row:", runErr?.message);
+    return NextResponse.json({ error: "Could not start research run." }, { status: 500 });
+  }
+  const runId = (runRow as { id: string }).id;
 
-    // ── 4. Persist the brief ──────────────────────────────────────────────
-    const { data: briefRow, error: briefErr } = await supabase
+  runInBackground(() =>
+    runResearch({ runId, prospect, prospectId, hubspotId, orgId: ctx.orgId, userId: ctx.userId, currentUser })
+  );
+
+  // 202: accepted, work continues server-side. The client polls .../[id]/run.
+  return NextResponse.json({ runId, status: "running", budgetWarning }, { status: 202 });
+}
+
+// ── Background worker ───────────────────────────────────────────────────────
+
+type RunCtx = {
+  runId: string;
+  prospect: Prospect;
+  prospectId: string;
+  hubspotId: string | null;
+  orgId: string;
+  userId: string;
+  currentUser: AdminUser;
+};
+
+async function runResearch(rc: RunCtx): Promise<void> {
+  const admin = getSupabaseAdmin();
+  const label = rc.prospect.org_name || rc.prospect.name;
+  const link = `/admin/fundraising/prospects/${rc.prospectId}`;
+  const nowIso = () => new Date().toISOString();
+
+  const markCompleted = async (briefId: string) => {
+    await admin
+      .from("research_runs")
+      .update({ status: "completed", brief_id: briefId, finished_at: nowIso(), updated_at: nowIso() })
+      .eq("id", rc.runId);
+    await notify({
+      orgId: rc.orgId,
+      recipientId: rc.userId,
+      type: "research.completed",
+      title: `Funder research finished: ${label}`,
+      body: `Your research brief for ${rc.prospect.name} is ready.`,
+      linkedEntityType: "fr_prospects",
+      linkedEntityId: rc.prospectId,
+      linkedLabel: label,
+      url: link,
+    }).catch((e) => console.error("[research] notify(completed) failed:", e));
+  };
+
+  const markFailed = async (reason: string) => {
+    await admin
+      .from("research_runs")
+      .update({ status: "failed", error: reason.slice(0, 1000), finished_at: nowIso(), updated_at: nowIso() })
+      .eq("id", rc.runId);
+    await notify({
+      orgId: rc.orgId,
+      recipientId: rc.userId,
+      type: "research.failed",
+      title: `Funder research failed: ${label}`,
+      body: reason,
+      linkedEntityType: "fr_prospects",
+      linkedEntityId: rc.prospectId,
+      linkedLabel: label,
+      url: link,
+    }).catch((e) => console.error("[research] notify(failed) failed:", e));
+  };
+
+  try {
+    const { result } = await generateBriefForProspect(rc.prospect);
+
+    const { data: briefRow, error: briefErr } = await admin
       .from("fr_prospect_briefs")
       .insert({
-        prospect_id: prospectId,
-        hubspot_contact_id: hubspotId,
+        prospect_id: rc.prospectId,
+        hubspot_contact_id: rc.hubspotId,
         content: result.brief,
         template_version: "v1",
         status: "draft",
-        generated_at: new Date().toISOString(),
+        generated_at: nowIso(),
         created_by: "agent",
       })
-      .select("*")
+      .select("id")
       .single();
 
     if (briefErr) {
-      // We have a result but couldn't save it. Log the failure and tell the
-      // caller — losing a brief silently would be worse than reporting it.
-      console.error("[research] failed to persist brief:", {
-        code: briefErr.code,
-        message: briefErr.message,
-      });
-      await supabase.from("fr_agent_activity_log").insert({
+      console.error("[research] failed to persist brief:", { code: briefErr.code, message: briefErr.message });
+      await admin.from("fr_agent_activity_log").insert({
         created_by: "agent",
-        triggered_by: currentUser,
+        triggered_by: rc.currentUser,
         action_type: ACTION_TYPE,
-        hubspot_contact_id: hubspotId,
+        hubspot_contact_id: rc.hubspotId,
         target_id: null,
         target_type: "brief",
-        prompt_summary: `Generate research brief for prospect=${prospectId}`,
+        prompt_summary: `Generate research brief for prospect=${rc.prospectId}`,
         model_used: result.model_used,
         tokens_input: result.tokens_input,
         tokens_output: result.tokens_output,
@@ -225,27 +249,21 @@ export async function POST(
         error_message: `Persist failed: ${briefErr.message}`,
         metadata: {
           web_search_count: result.web_search_count,
-          estimated_cost_usd: Number(
-            estimateCostUsd(result.tokens_input, result.tokens_output).toFixed(4)
-          ),
+          estimated_cost_usd: Number(estimateCostUsd(result.tokens_input, result.tokens_output).toFixed(4)),
         },
       });
-      await notifyFailed("Brief generated but couldn't be saved. Logged for review.");
-      return NextResponse.json(
-        { error: "Brief generated but could not be saved. Logged for review." },
-        { status: 502 }
-      );
+      await markFailed("Brief generated but couldn't be saved. Logged for review.");
+      return;
     }
 
-    // ── 5. Activity log: success ──────────────────────────────────────────
-    await supabase.from("fr_agent_activity_log").insert({
+    await admin.from("fr_agent_activity_log").insert({
       created_by: "agent",
-      triggered_by: currentUser,
+      triggered_by: rc.currentUser,
       action_type: ACTION_TYPE,
-      hubspot_contact_id: hubspotId,
+      hubspot_contact_id: rc.hubspotId,
       target_id: briefRow.id,
       target_type: "brief",
-      prompt_summary: `Generate research brief for prospect=${prospectId}`,
+      prompt_summary: `Generate research brief for prospect=${rc.prospectId}`,
       model_used: result.model_used,
       tokens_input: result.tokens_input,
       tokens_output: result.tokens_output,
@@ -253,53 +271,30 @@ export async function POST(
       status: "success",
       metadata: {
         web_search_count: result.web_search_count,
-        estimated_cost_usd: Number(
-          estimateCostUsd(result.tokens_input, result.tokens_output).toFixed(4)
-        ),
+        estimated_cost_usd: Number(estimateCostUsd(result.tokens_input, result.tokens_output).toFixed(4)),
       },
     });
 
-    await notifyCompleted();
-
-    return NextResponse.json({
-      brief: briefRow,
-      budgetWarning,
-    });
+    await markCompleted(briefRow.id);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const errorCode = (err as { code?: string }).code;
 
     if (errorCode === "CONTACT_NOT_FOUND") {
-      return NextResponse.json(
-        { error: "Contact not found in hs_contacts. Try syncing HubSpot first." },
-        { status: 404 }
-      );
+      await markFailed("Contact not found in hs_contacts. Try syncing HubSpot first.");
+      return;
     }
 
-    // Two failure modes after the API call enters the picture:
-    //
-    //   - AgentResultError: the API call returned a response, but we
-    //     couldn't extract a usable brief (no submit_brief tool call, or
-    //     the tool input failed shape validation). Carries real metrics.
-    //     Status: 'partial'.
-    //
-    //   - Anything else: API/network/unknown failure. No metrics. Status:
-    //     'failed'.
-    //
-    // This is the fix for PR 10's bug where parse failures silently
-    // dropped tokens / duration / model from the activity log.
     if (err instanceof AgentResultError) {
-      console.error("[research] tool extraction failed:", {
-        message: err.message,
-      });
-      await supabase.from("fr_agent_activity_log").insert({
+      console.error("[research] tool extraction failed:", { message: err.message });
+      await admin.from("fr_agent_activity_log").insert({
         created_by: "agent",
-        triggered_by: currentUser,
+        triggered_by: rc.currentUser,
         action_type: ACTION_TYPE,
-        hubspot_contact_id: hubspotId,
+        hubspot_contact_id: rc.hubspotId,
         target_id: null,
         target_type: "brief",
-        prompt_summary: `Generate research brief for prospect=${prospectId}`,
+        prompt_summary: `Generate research brief for prospect=${rc.prospectId}`,
         model_used: err.metrics.model_used,
         tokens_input: err.metrics.tokens_input,
         tokens_output: err.metrics.tokens_output,
@@ -310,43 +305,29 @@ export async function POST(
           kind: "tool_extraction_failure",
           web_search_count: err.metrics.web_search_count,
           estimated_cost_usd: Number(
-            estimateCostUsd(
-              err.metrics.tokens_input,
-              err.metrics.tokens_output
-            ).toFixed(4)
+            estimateCostUsd(err.metrics.tokens_input, err.metrics.tokens_output).toFixed(4)
           ),
           raw_response_summary: err.raw_response_summary ?? null,
         },
       });
-      await notifyFailed("The agent didn't return a valid brief. Logged for review.");
-      return NextResponse.json(
-        {
-          error:
-            "Agent didn't return a valid brief. Logged for review with full metrics — check fr_agent_activity_log.",
-        },
-        { status: 502 }
-      );
+      await markFailed("The agent didn't return a valid brief. Logged for review.");
+      return;
     }
 
-    // API / network / unknown — no usage data to record.
     console.error("[research] agent failure (api or unknown):", { message });
-    await supabase.from("fr_agent_activity_log").insert({
+    await admin.from("fr_agent_activity_log").insert({
       created_by: "agent",
-      triggered_by: currentUser,
+      triggered_by: rc.currentUser,
       action_type: ACTION_TYPE,
-      hubspot_contact_id: hubspotId,
+      hubspot_contact_id: rc.hubspotId,
       target_id: null,
       target_type: "brief",
-      prompt_summary: `Generate research brief for prospect=${prospectId}`,
+      prompt_summary: `Generate research brief for prospect=${rc.prospectId}`,
       model_used: AGENT_MODEL,
       status: "failed",
       error_message: message,
-      metadata: {
-        kind: "api_or_unknown_error",
-      },
+      metadata: { kind: "api_or_unknown_error" },
     });
-
-    await notifyFailed(`Agent error: ${message}`);
-    return NextResponse.json({ error: `Agent error: ${message}` }, { status: 502 });
+    await markFailed(`Agent error: ${message}`);
   }
 }

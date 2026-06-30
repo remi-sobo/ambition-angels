@@ -63,16 +63,27 @@ type ErrorBanner = {
   message: string;
 };
 
+function RunningNote({ label }: { label?: string }) {
+  return (
+    <p className="text-xs text-ink-1 italic">
+      Researching{label ? ` ${label}` : ""}… you can leave this page — we&apos;ll
+      notify you (and email you) the moment it&apos;s done.
+    </p>
+  );
+}
+
 export default function BriefPanel({
   prospectId,
+  prospectLabel,
   brief,
 }: {
   prospectId: string;
+  prospectLabel?: string;
   brief: ExistingBrief | null;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const [generating, setGenerating] = useState(false);
+  const [running, setRunning] = useState(false);
   const [error, setError] = useState<ErrorBanner | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
 
@@ -84,10 +95,50 @@ export default function BriefPanel({
     return () => clearInterval(id);
   }, [brief]);
 
+  // On mount, resume the running indicator if a run is already in flight
+  // (e.g. the user navigated away and came back).
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/admin/fundraising/research/${encodeURIComponent(prospectId)}/run`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { run: null }))
+      .then((j) => { if (alive && j?.run?.status === "running") setRunning(true); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [prospectId]);
+
+  // While a run is active, poll its status. On completion, pull the new brief;
+  // on failure, surface the reason. (You also get an inbox notification + email.)
+  useEffect(() => {
+    if (!running) return;
+    let alive = true;
+    const id = setInterval(async () => {
+      try {
+        const r = await fetch(
+          `/api/admin/fundraising/research/${encodeURIComponent(prospectId)}/run`,
+          { cache: "no-store" }
+        );
+        if (!r.ok) return;
+        const j = await r.json();
+        const status = j?.run?.status;
+        if (!alive) return;
+        if (status === "completed") {
+          setRunning(false);
+          startTransition(() => router.refresh());
+        } else if (status === "failed") {
+          setRunning(false);
+          setError({ kind: "agent", message: j?.run?.error || "Research failed." });
+        }
+      } catch {
+        // transient — next tick retries
+      }
+    }, 5000);
+    return () => { alive = false; clearInterval(id); };
+  }, [running, prospectId, router, startTransition]);
+
   async function trigger() {
     setError(null);
     setWarning(null);
-    setGenerating(true);
+    setRunning(true);
     try {
       const r = await fetch(
         `/api/admin/fundraising/research/${encodeURIComponent(prospectId)}`,
@@ -95,6 +146,7 @@ export default function BriefPanel({
       );
       const body = await r.json().catch(() => ({}));
       if (!r.ok) {
+        setRunning(false);
         const message =
           typeof body?.error === "string" ? body.error : `HTTP ${r.status}`;
         const kind: ErrorBanner["kind"] =
@@ -111,8 +163,10 @@ export default function BriefPanel({
       if (typeof body?.budgetWarning === "string" && body.budgetWarning) {
         setWarning(body.budgetWarning);
       }
-      startTransition(() => router.refresh());
+      // Run accepted (202); the poll effect drives it to completion. Leaving
+      // the page is now safe — the run continues server-side.
     } catch (e) {
+      setRunning(false);
       setError({
         kind: "unknown",
         message:
@@ -120,8 +174,6 @@ export default function BriefPanel({
             ? e.message
             : "Network error contacting the agent endpoint.",
       });
-    } finally {
-      setGenerating(false);
     }
   }
 
@@ -138,18 +190,13 @@ export default function BriefPanel({
           </div>
           <button
             onClick={trigger}
-            disabled={generating}
+            disabled={running}
             className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
           >
-            {generating ? "Researching…" : "Generate research brief"}
+            {running ? "Researching…" : "Generate research brief"}
           </button>
         </div>
-        {generating && (
-          <p className="mt-3 text-xs text-ink-2 italic">
-            Researching… this can take 30–90 seconds. Web search is running in
-            the background.
-          </p>
-        )}
+        {running && <RunningNote label={prospectLabel} />}
         {error && <ErrorBannerView err={error} onDismiss={() => setError(null)} />}
       </section>
     );
@@ -176,17 +223,16 @@ export default function BriefPanel({
         </div>
         <button
           onClick={trigger}
-          disabled={generating}
+          disabled={running}
           className="text-xs font-semibold text-orange hover:text-orange-dark bg-orange/10 hover:bg-orange/15 border border-orange/30 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
         >
-          {generating ? "Researching…" : "Regenerate"}
+          {running ? "Researching…" : "Regenerate"}
         </button>
       </header>
 
-      {generating && (
-        <div className="rounded-lg border border-orange/30 bg-orange/[0.06] p-3 text-xs text-ink-1">
-          Researching… this can take 30–90 seconds. Web search is running in
-          the background.
+      {running && (
+        <div className="rounded-lg border border-orange/30 bg-orange/[0.06] p-3">
+          <RunningNote label={prospectLabel} />
         </div>
       )}
 

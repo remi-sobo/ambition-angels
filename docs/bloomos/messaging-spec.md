@@ -152,10 +152,13 @@ arrow). Cream BloomOS workspace, navy chrome.
   optional group title.
 - Warm empty states matching the Inbox tone.
 
-**Refresh cadence** (polling, Realtime deferred — consistent with the codebase):
-thread list every ~20s; the open conversation every ~6s while the tab is
-visible; immediate refetch + badge events (`bloomos:messages-changed`,
-`bloomos:notifications-changed`) after send / read.
+**Delivery** — **Supabase Realtime** (`messaging_realtime.sql` adds `messages`
+to the `supabase_realtime` publication). `MessagesView` opens one org-scoped
+channel (`getSupabaseBrowser()`, cookie-authenticated so RLS only delivers rows
+in the subscriber's threads); a new message renders instantly. Polling (list
+~20s, open conversation ~6s) stays as a fallback if the socket drops, alongside
+the immediate badge events (`bloomos:messages-changed`,
+`bloomos:notifications-changed`) fired after send / read.
 
 ---
 
@@ -169,7 +172,9 @@ the notifications count.
 
 ## 7. Out of scope (v1) / future
 
-- Supabase **Realtime** subscriptions (replaces polling for instant delivery).
+- ~~Supabase **Realtime** subscriptions~~ — shipped (see §5 Delivery).
+- Realtime badges sidebar-wide (today the open Messages page drives instant
+  badge updates; elsewhere the 50s sidebar/dock poll applies).
 - Edit/delete/react, typing indicators, presence, attachments, search.
 - Message-level read receipts (we track per-thread `last_read_at` only).
 - Push/email for messages (in-app + Inbox pointer only today).

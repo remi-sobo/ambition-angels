@@ -12,7 +12,7 @@ import SearchTrigger from "./search/SearchTrigger";
 // of contents, so the full IA is visible even before every module ships.
 
 type IconName =
-  | "overview" | "briefing" | "inbox"
+  | "overview" | "briefing" | "inbox" | "messages"
   | "students" | "cohorts" | "intake" | "demoday" | "camp" | "schools" | "app" | "internships" | "career"
   | "majorgifts" | "donors" | "grants" | "campaigns" | "events"
   | "finance" | "revenue" | "expenses" | "budget" | "cashflow"
@@ -29,6 +29,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Overview", icon: "overview", href: "/admin" },
       { label: "Inbox", icon: "inbox", href: "/admin/inbox" },
+      { label: "Messages", icon: "messages", href: "/admin/messages" },
       { label: "Strategy", icon: "strategy", href: "/admin/strategic-plan" },
       { label: "Executive Briefing", icon: "briefing", href: "/admin/briefing" },
     ],
@@ -119,6 +120,11 @@ const ICON_NODES: Record<IconName, ReactNode> = {
     <>
       <path d="M4 13h4l1.5 2.5h5L16 13h4" />
       <path d="M4 13V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6M4 13v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+    </>
+  ),
+  messages: (
+    <>
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
     </>
   ),
   students: (
@@ -368,31 +374,43 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
   const [loggingOut, setLoggingOut] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [msgUnread, setMsgUnread] = useState(0);
 
-  // Unread inbox badge. Poll on a slow cadence (50s) — polling is the v1
-  // refresh mechanism; Realtime is deferred. We also re-fetch on route change
-  // (so opening a notification clears the badge) and on a same-tab
-  // "notifications changed" event the inbox dispatches after marking read.
+  // Unread badges for Inbox and Messages. Poll on a slow cadence (50s) —
+  // polling is the v1 refresh mechanism; Realtime is deferred. We also
+  // re-fetch on route change (so opening a thread/notification clears the
+  // badge) and on the same-tab "changed" events those surfaces dispatch after
+  // marking read or sending.
   useEffect(() => {
     if (!currentUser) return;
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch("/api/admin/notifications/unread-count", { cache: "no-store" });
-        if (!r.ok) return;
-        const j = await r.json();
-        if (alive) setUnread(typeof j.count === "number" ? j.count : 0);
+        const [nRes, mRes] = await Promise.all([
+          fetch("/api/admin/notifications/unread-count", { cache: "no-store" }),
+          fetch("/api/admin/messages/unread-count", { cache: "no-store" }),
+        ]);
+        if (nRes.ok) {
+          const j = await nRes.json();
+          if (alive) setUnread(typeof j.count === "number" ? j.count : 0);
+        }
+        if (mRes.ok) {
+          const j = await mRes.json();
+          if (alive) setMsgUnread(typeof j.count === "number" ? j.count : 0);
+        }
       } catch {
-        // Network blip — keep the last known count, the next poll recovers.
+        // Network blip — keep the last known counts, the next poll recovers.
       }
     };
     load();
     const id = setInterval(load, 50000);
     window.addEventListener("bloomos:notifications-changed", load);
+    window.addEventListener("bloomos:messages-changed", load);
     return () => {
       alive = false;
       clearInterval(id);
       window.removeEventListener("bloomos:notifications-changed", load);
+      window.removeEventListener("bloomos:messages-changed", load);
     };
   }, [currentUser, pathname]);
 
@@ -488,6 +506,14 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
                         aria-label={`${unread} unread`}
                       >
                         {unread > 9 ? "9+" : unread}
+                      </span>
+                    )}
+                    {item.href === "/admin/messages" && msgUnread > 0 && (
+                      <span
+                        className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-[10px] font-bold leading-none"
+                        aria-label={`${msgUnread} unread`}
+                      >
+                        {msgUnread > 9 ? "9+" : msgUnread}
                       </span>
                     )}
                   </Link>

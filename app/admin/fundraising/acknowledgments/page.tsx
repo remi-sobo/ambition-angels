@@ -15,6 +15,7 @@ import { ensureEscalationsForQueue } from "@/lib/fundraising/stewardship";
 import { type AckChannel } from "@/lib/fundraising/ack-channels";
 import AckComposer, { type AckTemplateLite } from "./_components/AckComposer";
 import ThankathonButton from "./_components/ThankathonButton";
+import LogAckButton from "./_components/LogAckButton";
 
 // The acknowledgments queue: every gift awaiting a thank-you, oldest first.
 // In v2 each pending thank-you is also a real `ops_task` (label `sys:ack`), so
@@ -65,6 +66,7 @@ export default async function AcknowledgmentsPage() {
         </Link>
         <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Acknowledgments</span>
         <div className="ml-auto flex items-center gap-4">
+          <LogAckButton />
           <ThankathonButton count={pending.length} />
           <Link
             href="/admin/fundraising/acknowledgments/letters"

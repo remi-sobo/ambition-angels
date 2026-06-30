@@ -19,7 +19,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { notify } from "@/lib/notifications/notify";
 import { generateBriefForProspect } from "@/lib/agents/funder-research/generate-brief";
 import {
   AGENT_MODEL,
@@ -57,7 +58,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const currentUser = await getAdminUser();
@@ -83,6 +85,40 @@ export async function POST(
     return NextResponse.json({ error: "Prospect not found" }, { status: 404 });
   }
   const hubspotId = prospect.hubspot_contact_id;
+
+  // Notify the user who started the run when it finishes. The agent runs
+  // server-side for up to 5 minutes, so this fires even if they closed the
+  // tab — that's the whole point. research.* is in notify()'s EMAIL_TYPES,
+  // so completion/failure also emails. actor_id is null: it's a system/agent
+  // event, not one person acting on another. Best-effort throughout — a
+  // notification failure must never change the research result the caller
+  // sees (mirrors lib/audit.ts).
+  const label = prospect.org_name || prospect.name;
+  const link = `/admin/fundraising/prospects/${prospectId}`;
+  const notifyCompleted = () =>
+    notify({
+      orgId: ctx.orgId,
+      recipientId: ctx.userId,
+      type: "research.completed",
+      title: `Funder research finished: ${label}`,
+      body: `Your research brief for ${prospect.name} is ready.`,
+      linkedEntityType: "fr_prospects",
+      linkedEntityId: prospectId,
+      linkedLabel: label,
+      url: link,
+    }).catch((e) => console.error("[research] notify(completed) failed:", e));
+  const notifyFailed = (reason: string) =>
+    notify({
+      orgId: ctx.orgId,
+      recipientId: ctx.userId,
+      type: "research.failed",
+      title: `Funder research failed: ${label}`,
+      body: reason,
+      linkedEntityType: "fr_prospects",
+      linkedEntityId: prospectId,
+      linkedLabel: label,
+      url: link,
+    }).catch((e) => console.error("[research] notify(failed) failed:", e));
 
   // ── 1. Rate limit ───────────────────────────────────────────────────────
   const windowStartIso = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
@@ -194,6 +230,7 @@ export async function POST(
           ),
         },
       });
+      await notifyFailed("Brief generated but couldn't be saved. Logged for review.");
       return NextResponse.json(
         { error: "Brief generated but could not be saved. Logged for review." },
         { status: 502 }
@@ -221,6 +258,8 @@ export async function POST(
         ),
       },
     });
+
+    await notifyCompleted();
 
     return NextResponse.json({
       brief: briefRow,
@@ -279,6 +318,7 @@ export async function POST(
           raw_response_summary: err.raw_response_summary ?? null,
         },
       });
+      await notifyFailed("The agent didn't return a valid brief. Logged for review.");
       return NextResponse.json(
         {
           error:
@@ -306,6 +346,7 @@ export async function POST(
       },
     });
 
+    await notifyFailed(`Agent error: ${message}`);
     return NextResponse.json({ error: `Agent error: ${message}` }, { status: 502 });
   }
 }

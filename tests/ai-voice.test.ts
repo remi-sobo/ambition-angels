@@ -6,8 +6,8 @@ describe("cleanVoiceText", () => {
     expect(cleanVoiceText("we shipped it — and it held")).toBe("we shipped it, and it held");
   });
 
-  test("turns an en dash into a comma-pause", () => {
-    expect(cleanVoiceText("fast – cheap")).toBe("fast, cheap");
+  test("leaves an en dash alone so numeric and date ranges survive", () => {
+    expect(cleanVoiceText("$1M–$5M over 2020–2024")).toBe("$1M–$5M over 2020–2024");
   });
 
   test("collapses the double comma the replacement can create", () => {
@@ -25,8 +25,9 @@ describe("cleanVoiceText", () => {
 });
 
 describe("violatesVoice", () => {
-  test("flags an em or en dash, passes clean text", () => {
+  test("flags an em dash, passes en dashes and clean text", () => {
     expect(violatesVoice("a — b")).toBe(true);
+    expect(violatesVoice("a – b")).toBe(false); // en dash is allowed
     expect(violatesVoice("a, b")).toBe(false);
     expect(violatesVoice("")).toBe(false);
   });
@@ -36,15 +37,15 @@ describe("cleanVoiceDeep", () => {
   test("repairs string leaves and preserves structure, numbers, and nulls", () => {
     const input = {
       title: "Maker — builder",
-      salary: "$50,000-$70,000",
+      salary: "$50,000–$70,000", // en dash range — must survive
       score: 7,
       active: true,
       note: null,
-      tags: ["fast – cheap", "good"],
+      tags: ["fast — cheap", "good"],
     };
     expect(cleanVoiceDeep(input)).toEqual({
       title: "Maker, builder",
-      salary: "$50,000-$70,000",
+      salary: "$50,000–$70,000",
       score: 7,
       active: true,
       note: null,

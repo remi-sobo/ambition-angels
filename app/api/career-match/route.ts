@@ -86,9 +86,9 @@ export async function POST(req: NextRequest) {
   const prompt = buildPrompt(answers, audienceMode);
 
   try {
-    // voice: false — structured catalog with salary ranges; route through the
-    // seam without the dash sweep so ranges survive.
-    const { text } = await generateText({ prompt, tier: "fast", maxTokens: 1500, voice: false });
+    // Swept by default. The sweep targets only the em dash, so salary ranges
+    // (en dash / hyphen) survive.
+    const { text } = await generateText({ prompt, tier: "fast", maxTokens: 1500 });
     const raw = text.replace(/```json|```/g, "").trim();
     const careers = JSON.parse(raw);
     return NextResponse.json({ careers });

@@ -16,6 +16,7 @@ import { createHash } from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { cleanVoiceText } from "@/lib/ai/voice";
 import type { Briefing } from "./engine";
 import type { Pulse } from "./pulse";
 import type { FollowupLite } from "./sources";
@@ -291,6 +292,11 @@ export async function generateNarrativeNow(
   }
   if (!ai) return fallbackNarrative(briefing, pulse, now);
 
+  // Voice sweep at the boundary: this narrative goes to the whole team.
+  const headline = cleanVoiceText(ai.headline);
+  const narrative = cleanVoiceText(ai.narrative);
+  const focus = cleanVoiceText(ai.focus);
+
   const generatedAt = new Date(now).toISOString();
   const input_hash = createHash("sha1").update(JSON.stringify(fs)).digest("hex");
   await sb
@@ -298,9 +304,9 @@ export async function generateNarrativeNow(
     .upsert(
       {
         brief_date: today,
-        headline: ai.headline,
-        narrative: ai.narrative,
-        focus: ai.focus,
+        headline,
+        narrative,
+        focus,
         input_hash,
         model: ai.model,
         generated_at: generatedAt,
@@ -311,7 +317,7 @@ export async function generateNarrativeNow(
       if (error) console.error("[briefing] narrative upsert failed:", error.message);
     });
 
-  return { headline: ai.headline, narrative: ai.narrative, focus: ai.focus, focusLink: topLink(briefing), model: ai.model, generatedAt, source: "ai" };
+  return { headline, narrative, focus, focusLink: topLink(briefing), model: ai.model, generatedAt, source: "ai" };
 }
 
 /** Read today's cached narrative, generating + storing it on a miss (first

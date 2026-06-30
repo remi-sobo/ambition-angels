@@ -14,25 +14,26 @@
  * - `violatesVoice` reports whether a string still breaks the rule (for tests
  *   and future evals).
  *
- * The em/en dash to comma-pause behavior is kept byte-identical to the prior
- * `stripEmDashes` so existing output does not change. A literal hyphen-minus is
- * deliberately NOT touched, so hyphenated words and numeric ranges
- * ("$50,000-$70,000") survive.
+ * Only the em dash (—) is the banned voice tic. En dashes (–) and the literal
+ * hyphen-minus (-) are deliberately left ALONE, so numeric and date ranges
+ * ("$50,000-$70,000", "$1M–$5M", "2020–2024") and hyphenated words survive.
+ * That makes the sweep safe to run on financial and structured content, so it
+ * can be applied at every AI boundary without mangling numbers.
  */
 
-const EM_DASH_RE = /\s*[—–]\s*/g;
+const EM_DASH_RE = /\s*—\s*/g;
 const DOUBLE_COMMA_RE = /,\s*,/g;
 
-/** Repair one string: em/en dashes become a comma-pause. */
+/** Repair one string: an em dash becomes a comma-pause. */
 export function cleanVoiceText(input: string): string {
   if (!input) return input;
   return input.replace(EM_DASH_RE, ", ").replace(DOUBLE_COMMA_RE, ",");
 }
 
-/** True when the string still contains an em or en dash. */
+/** True when the string still contains an em dash. */
 export function violatesVoice(input: string): boolean {
   if (!input) return false;
-  return /[—–]/.test(input);
+  return /—/.test(input);
 }
 
 /**

@@ -22,6 +22,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import FUNDER_RESEARCH_SYSTEM_PROMPT from "./prompt";
+import { cleanVoiceDeep } from "@/lib/ai/voice";
 import type { BriefContent, ResearchContext, ResearchResult } from "./types";
 
 // ── Configuration ──────────────────────────────────────────────────────────
@@ -645,7 +646,9 @@ export async function runFunderResearch(
   }
 
   return {
-    brief: briefToolUse.input,
+    // Voice sweep before the brief leaves the agent. Em-dash only, so the grant
+    // amounts and year ranges in the brief survive untouched.
+    brief: cleanVoiceDeep(briefToolUse.input as BriefContent),
     model_used: metrics.model_used,
     tokens_input: metrics.tokens_input,
     tokens_output: metrics.tokens_output,

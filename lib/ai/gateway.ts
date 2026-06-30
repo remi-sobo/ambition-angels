@@ -21,6 +21,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { cleanVoiceText } from "./voice";
+import { estimateCostUsd } from "./cost";
 
 export type ModelTier = "fast" | "deep";
 
@@ -68,6 +69,8 @@ export type GenerateTextResult = {
   text: string;
   model: string;
   usage: AIUsage;
+  /** Estimated USD cost from the shared price sheet, for the spend ledger. */
+  costUsd: number;
 };
 
 /** Resolve the configured key, or throw a typed error the caller can map. */
@@ -104,14 +107,16 @@ export async function generateText(opts: GenerateTextOptions): Promise<GenerateT
     cache_creation_input_tokens?: number | null;
   };
 
+  const inputTokens = usage.input_tokens ?? 0;
+  const outputTokens = usage.output_tokens ?? 0;
+  const cacheReadTokens = usage.cache_read_input_tokens ?? 0;
+  const cacheCreationTokens = usage.cache_creation_input_tokens ?? 0;
+
   return {
     text: opts.voice === false ? text : cleanVoiceText(text),
     model,
-    usage: {
-      inputTokens: usage.input_tokens ?? 0,
-      outputTokens: usage.output_tokens ?? 0,
-      cacheReadTokens: usage.cache_read_input_tokens ?? 0,
-      cacheCreationTokens: usage.cache_creation_input_tokens ?? 0,
-    },
+    usage: { inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens },
+    // Fold cache tokens into input, matching how the agents bill.
+    costUsd: estimateCostUsd(model, inputTokens + cacheReadTokens + cacheCreationTokens, outputTokens),
   };
 }

@@ -11,18 +11,16 @@
  * checked BEFORE the model call.
  */
 
+import { estimateCostUsd } from "@/lib/ai/cost";
+
 export const REED_ASK_MODEL = "claude-sonnet-4-6";
 
-// Sonnet 4.6 list price (USD per million tokens).
-const SONNET_INPUT_PER_MILLION_USD = 3;
-const SONNET_OUTPUT_PER_MILLION_USD = 15;
-
+/**
+ * Reed Ask cost. Delegates to the shared price sheet (lib/ai/cost.ts) so Reed
+ * and the funder agent bill from one table; numbers are unchanged (Sonnet).
+ */
 export function estimateReedCostUsd(tokensInput: number, tokensOutput: number): number {
-  return (
-    (tokensInput * SONNET_INPUT_PER_MILLION_USD +
-      tokensOutput * SONNET_OUTPUT_PER_MILLION_USD) /
-    1_000_000
-  );
+  return estimateCostUsd(REED_ASK_MODEL, tokensInput, tokensOutput);
 }
 
 /** Flat per-org monthly ceiling for Reed Ask, in USD. */

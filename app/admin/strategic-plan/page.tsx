@@ -217,6 +217,8 @@ export default async function StrategicPlanPage({
   // Funder readiness: graded against the same movements the Narrative renders.
   const readiness = lens === "org" && !isEmpty ? await getReadiness(orgId) : null;
   const objTitleById = new Map(objectives.map((o) => [o.id, o.title]));
+  // Re-parent options for goal cards (move a goal to another objective).
+  const objectiveOptions = objectives.map((o) => ({ id: o.id, title: o.title }));
   const goalOptions = goals.map((g) => ({
     id: g.id,
     title: g.title,
@@ -330,6 +332,7 @@ export default async function StrategicPlanPage({
                   kpisByGoal={kpisByGoal}
                   initiativesByGoal={initiativesByGoal}
                   rollups={rollups}
+                  objectiveOptions={objectiveOptions}
                 />
               ))}
 
@@ -344,6 +347,7 @@ export default async function StrategicPlanPage({
                         kpis={kpisByGoal[g.id] ?? []}
                         initiatives={initiativesByGoal[g.id] ?? []}
                         rollups={rollups}
+                        objectiveOptions={objectiveOptions}
                       />
                     ))}
                   </div>

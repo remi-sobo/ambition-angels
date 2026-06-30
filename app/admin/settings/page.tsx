@@ -3,6 +3,7 @@ import { getMyDisplayName } from "@/lib/admin/profile";
 import { getCalendarConnectionStatus, type CalendarConnectionStatus } from "@/lib/google/connection";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { spendSummary } from "@/lib/ai/ledger";
+import { orgMonthlyCapUsd } from "@/lib/ai/cap";
 import PageHeader from "../_components/PageHeader";
 import { DisplayNameForm, ConnectCalendarControls, ChangePasswordForm, SignOutAllButton } from "./_components/AccountControls";
 import HubspotSyncPanel from "./_components/HubspotSyncPanel";
@@ -59,6 +60,7 @@ export default async function SettingsPage() {
   // Month-to-date AI spend for this org, from the unified ledger. RLS-scoped
   // via the session client; returns an empty summary if the read fails.
   const spend = await spendSummary(createServerSupabase(), ctx.orgId);
+  const aiCapUsd = orgMonthlyCapUsd();
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[760px]">
@@ -86,7 +88,12 @@ export default async function SettingsPage() {
             <span className="font-heading font-semibold text-[28px] leading-none tabular-nums text-ink-1">
               {usd(spend.totalUsd)}
             </span>
-            <span className="text-xs text-ink-2">month to date</span>
+            <span className="text-xs text-ink-2">of {usd(aiCapUsd)} this month</span>
+            {spend.totalUsd >= aiCapUsd * 0.8 && (
+              <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full border text-expense bg-expense-bg border-expense/30">
+                {spend.totalUsd >= aiCapUsd ? "cap reached" : "near cap"}
+              </span>
+            )}
           </div>
           {spend.bySurface.length === 0 ? (
             <p className="text-xs text-ink-2">No AI usage recorded yet this month.</p>

@@ -164,19 +164,23 @@ the lone `stripEmDashes` in `app/api/shannon/route.ts`.
 ## B9. The gates have a reference implementation — reinforces Esface A6 **[graduate]**
 
 Esface A6 said the isolation, enumeration, and config-integrity gates apply to
-scoped tables, but Esface lacked them until an audit. Bloom supplies the working
-reference for two of the three, in CI: a cross-role leak test that seeds rows and
-asserts owner vs staff vs finance vs board_viewer vs anon visibility, and an
+scoped tables, but Esface lacked them until an audit. Bloom now supplies the
+working reference for all three, in CI: a cross-role leak test that seeds rows and
+asserts owner vs staff vs finance vs board_viewer vs anon visibility, an
 enumeration guard that fails the build when a migration is on disk but not in the
-ordered apply list. Bloom is missing only the token-freeze gate, which is the
-backport.
+ordered apply list, and a design-token freeze test. A live run of the harness this
+session also showed why the gate matters: the enumeration guard had been red on
+main for days (eight migrations unregistered, one un-appliable from schema drift),
+and PRs were merging over it. A gate only protects while it is green.
 
-**Rule.** Ship all three gates together so the next app does not ship two of three.
-The isolation gate is a seeded cross-role read matrix; the enumeration gate fails
-the build when a new scoped table or migration ships unregistered; the
-config-integrity gate freezes design tokens against a checked-in manifest.
-Reference: `supabase/tests/rls-leak-test.sql` and `scripts/test-rls.sh` (isolation
-and enumeration), `.github/workflows/rls-test.yml` (the required check).
+**Rule.** Ship all three gates together so the next app does not ship two of three,
+and treat a red gate as a build break, not a warning to merge past. The isolation
+gate is a seeded cross-role read matrix; the enumeration gate fails the build when
+a new scoped table or migration ships unregistered; the config-integrity gate
+freezes design tokens (and the type scale) against a checked-in manifest, so a
+token change has to be deliberate. Reference: `supabase/tests/rls-leak-test.sql` +
+`scripts/test-rls.sh` (isolation and enumeration), `tests/design-tokens.test.ts`
+(token freeze), `.github/workflows/rls-test.yml` (the required check).
 
 ---
 
@@ -261,6 +265,56 @@ before building; expect them to correct the spec. Reference:
 
 ---
 
+## B15. The AI gateway is a thin seam, adopted incrementally — adds to §3.3 **[candidate]**
+
+The base §3.3 wants one chokepoint for model calls. Bloom started with ten
+scattered call sites that shared an idiom but no module, then introduced a seam
+without a big-bang rewrite: a `generateText` helper for the plain text-in /
+text-out routes that bakes in the key check, task-tier model choice, system-prompt
+caching, the voice sweep, and a returned cost, and migrated the simple routes onto
+it first. The tool-loop agents keep their bespoke loops until they are migrated one
+at a time.
+
+**Rule.** Build the chokepoint as a thin seam and adopt it incrementally, simplest
+callers first, rather than rewriting the critical agents in one pass. A seam that
+half the surfaces use beats a perfect one that lands as a risky rewrite. Reference:
+`lib/ai/gateway.ts` (`generateText`), adopted in the career and acknowledgment
+routes.
+
+---
+
+## B16. A unified spend ledger with a per-tenant read — extends B4 **[candidate]**
+
+B4 capped spend per tenant from per-agent logs. Bloom adds the layer above: one
+append-only `ai_calls` row per model call across every surface (membership RLS,
+append-only, `org_id` with no default), written beside the per-agent logs, with a
+month-to-date read and a per-org spend view. Now spend is answerable in one place
+and visible to the operator, not just enforced.
+
+**Rule.** Write every model call to one per-tenant ledger and surface the
+month-to-date total back to the operator. The ledger is the seam a global cap, a
+billing line, and a usage card all read from. Reference:
+`supabase/migrations/create_ai_calls_ledger.sql`, `lib/ai/ledger.ts`
+(`logAICall` / `spendSummary`), the AI-usage card in `app/admin/settings/page.tsx`.
+
+---
+
+## B17. Make the model's output coercion a pure, offline-tested function — reinforces A4 / B6 **[graduate]**
+
+Esface A4 unit-tested its generation offline; Bloom proves the same for the
+structured agents by extracting the hallucination-coercion step (drop invented
+ids, force known enums, clamp, truncate, sort) out of the API call into a pure
+exported function, then golden-testing it with no key and no network. The safety
+net between a hallucinating model and the database stops being untested glue.
+
+**Rule.** Keep the model's output coercion pure and separate from the API call, so
+the safety properties are golden-tested offline. A structured-output agent without
+a test of its coercion is one schema change away from writing junk. Reference:
+`parseRecommendations` / `parseCandidates` in `lib/agents/*` with
+`tests/nba-parse.test.ts` and `tests/discovery-parse.test.ts`.
+
+---
+
 ## Appendix — files to copy from Bloom OS
 
 Add to the base playbook's "copy almost verbatim" map:
@@ -272,6 +326,13 @@ Add to the base playbook's "copy almost verbatim" map:
 - `app/api/reed/proposals/[id]/route.ts` — propose-and-confirm as the only write path.
 - `supabase/tests/rls-leak-test.sql` + `scripts/test-rls.sh` — the cross-role
   isolation gate and the migration-enumeration guard, wired in CI.
+- `tests/design-tokens.test.ts` — the config-integrity (design-token freeze) gate.
+- `lib/ai/gateway.ts` + `lib/ai/cost.ts` + `lib/ai/voice.ts` — the AI seam: one
+  text-in/text-out helper, one price sheet, one shared voice sweep.
+- `lib/ai/ledger.ts` + `supabase/migrations/create_ai_calls_ledger.sql` — the
+  unified per-tenant spend ledger and its month-to-date read.
+- `lib/agents/next-best-action/agent.ts` + `tests/nba-parse.test.ts` — pure,
+  offline-tested model-output coercion.
 - `lib/google/connection.ts` — AES-256-GCM app-layer credential storage.
 - `app/api/mcp/[secret]/route.ts` — a minimally scoped, secret-gated automation surface.
 - `supabase/migrations/mark_hs_staging_readonly.sql` +

@@ -10,7 +10,8 @@ import MobileTabBar from "./_components/MobileTabBar";
 import { ReedLauncherProvider } from "./_components/reed/ReedLauncherProvider";
 import AdminPWA from "./_components/AdminPWA";
 import { AdminUserProvider } from "./_components/AdminUserContext";
-import { getAdminUser } from "@/lib/admin/auth";
+import { AdminBadgesProvider } from "./_components/AdminBadges";
+import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import { hasEntitlement } from "@/lib/admin/entitlements";
 
 export const metadata: Metadata = {
@@ -49,8 +50,9 @@ export const viewport: Viewport = {
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   // Supabase-session-backed check (valid session + org membership).
-  const user = await getAdminUser();
+  const [user, ctx] = await Promise.all([getAdminUser(), getOrgContext()]);
   const authed = user !== null;
+  const orgId = ctx?.orgId ?? null;
 
   // Reed is gated by the `ai.reed` entitlement (Bloom Grow and up). On Bloom
   // base the FAB simply doesn't mount — and /api/reed/* will 402 server-side
@@ -67,6 +69,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // actions all require a valid session.
   return (
     <AdminUserProvider value={user}>
+    <AdminBadgesProvider orgId={orgId} enabled={authed}>
     <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
       <AdminPWA />
       <Sidebar currentUser={user} />
@@ -86,6 +89,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       {authed && <QuickAddButton currentUser={user} />}
       {authed && <GlobalSearch />}
     </div>
+    </AdminBadgesProvider>
     </AdminUserProvider>
   );
 }

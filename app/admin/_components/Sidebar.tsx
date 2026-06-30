@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import type { AdminUser } from "@/lib/admin/auth";
 import SearchTrigger from "./search/SearchTrigger";
+import { useAdminBadges } from "./AdminBadges";
 
 // ── BloomOS IA (docs/bloomos/06-design-system.md §1) ────────────────────────
 // Seven sections mapped over the pages that exist today. Items without a
@@ -373,46 +374,10 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [unread, setUnread] = useState(0);
-  const [msgUnread, setMsgUnread] = useState(0);
-
-  // Unread badges for Inbox and Messages. Poll on a slow cadence (50s) —
-  // polling is the v1 refresh mechanism; Realtime is deferred. We also
-  // re-fetch on route change (so opening a thread/notification clears the
-  // badge) and on the same-tab "changed" events those surfaces dispatch after
-  // marking read or sending.
-  useEffect(() => {
-    if (!currentUser) return;
-    let alive = true;
-    const load = async () => {
-      try {
-        const [nRes, mRes] = await Promise.all([
-          fetch("/api/admin/notifications/unread-count", { cache: "no-store" }),
-          fetch("/api/admin/messages/unread-count", { cache: "no-store" }),
-        ]);
-        if (nRes.ok) {
-          const j = await nRes.json();
-          if (alive) setUnread(typeof j.count === "number" ? j.count : 0);
-        }
-        if (mRes.ok) {
-          const j = await mRes.json();
-          if (alive) setMsgUnread(typeof j.count === "number" ? j.count : 0);
-        }
-      } catch {
-        // Network blip — keep the last known counts, the next poll recovers.
-      }
-    };
-    load();
-    const id = setInterval(load, 50000);
-    window.addEventListener("bloomos:notifications-changed", load);
-    window.addEventListener("bloomos:messages-changed", load);
-    return () => {
-      alive = false;
-      clearInterval(id);
-      window.removeEventListener("bloomos:notifications-changed", load);
-      window.removeEventListener("bloomos:messages-changed", load);
-    };
-  }, [currentUser, pathname]);
+  // Inbox + Messages unread counts, shared app-wide and Realtime-driven (see
+  // AdminBadges). The badge lights the instant a message/notification lands,
+  // on any page.
+  const { messages: msgUnread, notifications: unread } = useAdminBadges();
 
   // Close the mobile drawer whenever the route changes — without this,
   // tapping a link slides the next page in but leaves the drawer covering

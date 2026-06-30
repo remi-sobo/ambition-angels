@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ChatMessage, ThreadSummary } from "@/lib/messaging/threads";
+import type { ChatMessage, MessageReaction, ThreadReadMember, ThreadSummary } from "@/lib/messaging/threads";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
 import Button from "../../_components/Button";
 import NewMessageModal from "./NewMessageModal";
@@ -13,11 +13,62 @@ type LocalMessage = ChatMessage & { pending?: boolean };
 
 const LIST_POLL_MS = 20000;
 const CONVO_POLL_MS = 6000;
+const QUICK_EMOJIS = ["👍", "❤️", "😂", "🎉", "👀", "✅"];
 
 /** Tell the sidebar badge to re-poll the messages + notifications counts now. */
 function pingBadges() {
   window.dispatchEvent(new Event("bloomos:messages-changed"));
   window.dispatchEvent(new Event("bloomos:notifications-changed"));
+}
+
+function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
+}
+
+function dropOne(names: string[], name: string): string[] {
+  const i = names.indexOf(name);
+  if (i < 0) return names;
+  const out = names.slice();
+  out.splice(i, 1);
+  return out;
+}
+
+/** Toggle MY reaction on a message locally (optimistic). */
+function toggleMyReaction(m: LocalMessage, emoji: string, myName: string): LocalMessage {
+  const chips = m.reactions.map((c) => ({ ...c, names: [...c.names] }));
+  const idx = chips.findIndex((c) => c.emoji === emoji);
+  if (idx >= 0) {
+    const c = chips[idx];
+    if (c.mine) {
+      if (c.count <= 1) chips.splice(idx, 1);
+      else chips[idx] = { ...c, count: c.count - 1, mine: false, names: dropOne(c.names, myName) };
+    } else {
+      chips[idx] = { ...c, count: c.count + 1, mine: true, names: [...c.names, myName] };
+    }
+  } else {
+    chips.push({ emoji, count: 1, mine: true, names: [myName] });
+  }
+  return { ...m, reactions: chips };
+}
+
+/** Apply a remote reaction change (+1 / -1) by someone else. */
+function applyRemoteReaction(
+  m: LocalMessage,
+  emoji: string,
+  name: string,
+  delta: 1 | -1
+): LocalMessage {
+  const chips = m.reactions.map((c) => ({ ...c, names: [...c.names] }));
+  const idx = chips.findIndex((c) => c.emoji === emoji);
+  if (delta > 0) {
+    if (idx >= 0) chips[idx] = { ...chips[idx], count: chips[idx].count + 1, names: [...chips[idx].names, name] };
+    else chips.push({ emoji, count: 1, mine: false, names: [name] });
+  } else if (idx >= 0) {
+    const count = chips[idx].count - 1;
+    if (count <= 0) chips.splice(idx, 1);
+    else chips[idx] = { ...chips[idx], count, names: dropOne(chips[idx].names, name) };
+  }
+  return { ...m, reactions: chips };
 }
 
 export default function MessagesView({
@@ -27,6 +78,7 @@ export default function MessagesView({
   people,
   activeThreadId,
   initialMessages,
+  initialReadState,
 }: {
   me: Person;
   orgId: string;
@@ -34,12 +86,16 @@ export default function MessagesView({
   people: Person[];
   activeThreadId: string | null;
   initialMessages: ChatMessage[];
+  initialReadState: ThreadReadMember[];
 }) {
   const router = useRouter();
   const [threads, setThreads] = useState<ThreadSummary[]>(initialThreads);
   const [messages, setMessages] = useState<LocalMessage[]>(initialMessages);
+  const [readState, setReadState] = useState<ThreadReadMember[]>(initialReadState);
   const [draft, setDraft] = useState("");
   const [newOpen, setNewOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
 
   const active = threads.find((t) => t.id === activeThreadId) ?? null;
 
@@ -68,6 +124,9 @@ export default function MessagesView({
   useEffect(() => {
     setMessages(initialMessages);
   }, [activeThreadId, initialMessages]);
+  useEffect(() => {
+    setReadState(initialReadState);
+  }, [activeThreadId, initialReadState]);
 
   // Keep the latest threads when the server passes a fresher list.
   useEffect(() => {
@@ -110,30 +169,26 @@ export default function MessagesView({
     };
   }, []);
 
-  // Open-conversation poll: fetch only messages newer than the last real one,
-  // and only while the tab is visible.
+  // Open-conversation poll (fallback): full refresh so edits/deletes/reactions
+  // on existing messages reconcile even if a Realtime event was missed.
   useEffect(() => {
     if (!activeThreadId) return;
     let alive = true;
     const tick = async () => {
       if (document.hidden) return;
-      const real = messagesRef.current.filter((m) => !m.pending);
-      const after = real.length ? real[real.length - 1].createdAt : null;
       try {
-        const url = `/api/admin/messages/${activeThreadId}/messages${
-          after ? `?after=${encodeURIComponent(after)}` : ""
-        }`;
-        const r = await fetch(url, { cache: "no-store" });
+        const r = await fetch(`/api/admin/messages/${activeThreadId}/messages`, { cache: "no-store" });
         if (!r.ok) return;
         const j = await r.json();
         const incoming = (j.messages ?? []) as ChatMessage[];
-        if (!alive || incoming.length === 0) return;
+        if (!alive) return;
         setMessages((prev) => {
-          const seen = new Set(prev.map((m) => m.id));
-          const fresh = incoming.filter((m) => !seen.has(m.id));
-          return fresh.length ? [...prev, ...fresh] : prev;
+          const pending = prev.filter((m) => m.pending);
+          const serverIds = new Set(incoming.map((m) => m.id));
+          // Server snapshot + any still-in-flight optimistic messages.
+          return [...incoming, ...pending.filter((p) => !serverIds.has(p.id))];
         });
-        // A reply landing means our standing Inbox pointer cleared elsewhere.
+        if (Array.isArray(j.readState)) setReadState(j.readState);
         if (incoming.some((m) => !m.mine)) {
           fetch(`/api/admin/messages/${activeThreadId}/read`, { method: "POST" })
             .then(() => pingBadges())
@@ -150,29 +205,23 @@ export default function MessagesView({
     };
   }, [activeThreadId]);
 
-  // Live delivery via Supabase Realtime. One org-scoped channel (RLS only
-  // delivers rows in threads I belong to) subscribed once; it reads the open
-  // thread + name map from refs so it never re-subscribes on navigation. The
-  // polling above stays as a fallback if the socket drops. My own sends are
-  // skipped here — send() already appends them optimistically.
+  // Realtime: one org-scoped channel (RLS only delivers rows in my threads),
+  // subscribed once; reads the open thread + names from refs. Covers new
+  // messages, edits/deletes, reactions, and read receipts. My own actions are
+  // applied optimistically, so most "mine" events are no-ops here.
   useEffect(() => {
     if (!orgId) return;
     const supabase = getSupabaseBrowser();
+    const inActive = (threadId: string) => threadId === activeThreadIdRef.current;
+
     const channel = supabase
       .channel(`org-messages:${orgId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `org_id=eq.${orgId}` },
         (payload) => {
-          const row = payload.new as {
-            id: string;
-            thread_id: string;
-            sender_id: string;
-            body: string;
-            created_at: string;
-          };
-          const activeId = activeThreadIdRef.current;
-          if (row.thread_id === activeId && row.sender_id !== me.userId) {
+          const row = payload.new as { id: string; thread_id: string; sender_id: string; body: string; created_at: string };
+          if (inActive(row.thread_id) && row.sender_id !== me.userId) {
             setMessages((prev) =>
               prev.some((m) => m.id === row.id)
                 ? prev
@@ -186,16 +235,73 @@ export default function MessagesView({
                       body: row.body,
                       createdAt: row.created_at,
                       mine: false,
+                      editedAt: null,
+                      deletedAt: null,
+                      reactions: [],
                     },
                   ]
             );
-            fetch(`/api/admin/messages/${activeId}/read`, { method: "POST" }).catch(() => {});
+            fetch(`/api/admin/messages/${row.thread_id}/read`, { method: "POST" }).catch(() => {});
           }
-          // Refresh the thread list + sidebar/dock badges for any new message.
           pingBadges();
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages", filter: `org_id=eq.${orgId}` },
+        (payload) => {
+          const row = payload.new as { id: string; thread_id: string; body: string; edited_at: string | null; deleted_at: string | null };
+          if (inActive(row.thread_id)) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === row.id
+                  ? {
+                      ...m,
+                      body: row.deleted_at ? "" : row.body,
+                      editedAt: row.edited_at,
+                      deletedAt: row.deleted_at,
+                      reactions: row.deleted_at ? [] : m.reactions,
+                    }
+                  : m
+              )
+            );
+          }
+          pingBadges();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "message_reactions", filter: `org_id=eq.${orgId}` },
+        (payload) => {
+          const row = payload.new as { message_id: string; user_id: string; emoji: string };
+          if (row.user_id === me.userId) return; // mine is optimistic
+          const name = nameLookupRef.current[row.user_id] ?? "Teammate";
+          setMessages((prev) => prev.map((m) => (m.id === row.message_id ? applyRemoteReaction(m, row.emoji, name, 1) : m)));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "message_reactions", filter: `org_id=eq.${orgId}` },
+        (payload) => {
+          const row = payload.old as { message_id: string; user_id: string; emoji: string };
+          if (!row || row.user_id === me.userId) return;
+          const name = nameLookupRef.current[row.user_id] ?? "Teammate";
+          setMessages((prev) => prev.map((m) => (m.id === row.message_id ? applyRemoteReaction(m, row.emoji, name, -1) : m)));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "message_thread_members", filter: `org_id=eq.${orgId}` },
+        (payload) => {
+          const row = payload.new as { thread_id: string; user_id: string; last_read_at: string | null };
+          if (!inActive(row.thread_id) || row.user_id === me.userId) return;
+          setReadState((prev) =>
+            prev.map((r) => (r.userId === row.user_id ? { ...r, lastReadAt: row.last_read_at } : r))
+          );
+        }
+      )
       .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };
@@ -216,6 +322,9 @@ export default function MessagesView({
       body: text,
       createdAt: new Date().toISOString(),
       mine: true,
+      editedAt: null,
+      deletedAt: null,
+      reactions: [],
       pending: true,
     };
     setMessages((m) => [...m, temp]);
@@ -227,7 +336,8 @@ export default function MessagesView({
       });
       const j = await r.json();
       if (r.ok && j.message) {
-        setMessages((m) => m.map((x) => (x.id === temp.id ? (j.message as LocalMessage) : x)));
+        const real = j.message as LocalMessage;
+        setMessages((m) => [...m.filter((x) => x.id !== temp.id && x.id !== real.id), real]);
       } else {
         setMessages((m) => m.filter((x) => x.id !== temp.id));
         setDraft(text);
@@ -235,6 +345,62 @@ export default function MessagesView({
     } catch {
       setMessages((m) => m.filter((x) => x.id !== temp.id));
       setDraft(text);
+    }
+    pingBadges();
+  }
+
+  async function react(messageId: string, emoji: string) {
+    if (!activeThreadId) return;
+    setMessages((prev) => prev.map((m) => (m.id === messageId ? toggleMyReaction(m, emoji, me.name) : m)));
+    try {
+      await fetch(`/api/admin/messages/${activeThreadId}/reactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId, emoji }),
+      });
+    } catch {
+      // revert by toggling back; rare, low-stakes
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? toggleMyReaction(m, emoji, me.name) : m)));
+    }
+  }
+
+  function startEdit(m: LocalMessage) {
+    setEditingId(m.id);
+    setEditText(m.body);
+  }
+  function cancelEdit() {
+    setEditingId(null);
+    setEditText("");
+  }
+  async function saveEdit() {
+    const id = editingId;
+    const text = editText.trim();
+    if (!id || !activeThreadId) return cancelEdit();
+    if (!text) return cancelEdit();
+    setMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, body: text, editedAt: new Date().toISOString() } : m))
+    );
+    cancelEdit();
+    try {
+      await fetch(`/api/admin/messages/${activeThreadId}/messages/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: text }),
+      });
+    } catch {
+      // poll/realtime will reconcile
+    }
+  }
+  async function del(id: string) {
+    if (!activeThreadId) return;
+    if (!window.confirm("Delete this message?")) return;
+    setMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, body: "", deletedAt: new Date().toISOString(), reactions: [] } : m))
+    );
+    try {
+      await fetch(`/api/admin/messages/${activeThreadId}/messages/${id}`, { method: "DELETE" });
+    } catch {
+      // poll/realtime will reconcile
     }
     pingBadges();
   }
@@ -372,7 +538,19 @@ export default function MessagesView({
                     <p className="text-xs text-ink-3 mt-0.5">Say hello 👋</p>
                   </div>
                 ) : (
-                  <MessageStream messages={messages} isGroup={active.isGroup} />
+                  <MessageStream
+                    messages={messages}
+                    isGroup={active.isGroup}
+                    readState={readState}
+                    editingId={editingId}
+                    editText={editText}
+                    setEditText={setEditText}
+                    onSaveEdit={saveEdit}
+                    onCancelEdit={cancelEdit}
+                    onReact={react}
+                    onStartEdit={startEdit}
+                    onDelete={del}
+                  />
                 )}
               </div>
 
@@ -397,14 +575,54 @@ export default function MessagesView({
   );
 }
 
-function firstName(name: string): string {
-  return name.trim().split(/\s+/)[0] || name;
-}
+// ── Message stream: day dividers, grouped runs, receipts ─────────────────────
 
-// ── Message stream: day dividers + grouped runs ──────────────────────────────
-
-function MessageStream({ messages, isGroup }: { messages: LocalMessage[]; isGroup: boolean }) {
+function MessageStream({
+  messages,
+  isGroup,
+  readState,
+  editingId,
+  editText,
+  setEditText,
+  onSaveEdit,
+  onCancelEdit,
+  onReact,
+  onStartEdit,
+  onDelete,
+}: {
+  messages: LocalMessage[];
+  isGroup: boolean;
+  readState: ThreadReadMember[];
+  editingId: string | null;
+  editText: string;
+  setEditText: (v: string) => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onReact: (messageId: string, emoji: string) => void;
+  onStartEdit: (m: LocalMessage) => void;
+  onDelete: (id: string) => void;
+}) {
   const RUN_GAP_MS = 5 * 60 * 1000;
+
+  // The receipt sits under the last message I sent (live, not deleted) that
+  // someone else has read past.
+  let receiptIndex = -1;
+  let receiptText: string | null = null;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.mine && !m.deletedAt && !m.pending) {
+      const t = new Date(m.createdAt).getTime();
+      const seenBy = readState
+        .filter((r) => r.lastReadAt && new Date(r.lastReadAt).getTime() >= t)
+        .map((r) => firstName(r.name));
+      if (seenBy.length) {
+        receiptIndex = i;
+        receiptText = isGroup ? `Seen by ${seenBy.join(", ")}` : "Seen";
+      }
+      break;
+    }
+  }
+
   return (
     <div className="space-y-0.5">
       {messages.map((m, i) => {
@@ -438,7 +656,25 @@ function MessageStream({ messages, isGroup }: { messages: LocalMessage[]; isGrou
               showName={startRun && !m.mine && isGroup}
               showTime={endRun}
               tight={!startRun}
+              editing={editingId === m.id}
+              editText={editText}
+              setEditText={setEditText}
+              onSaveEdit={onSaveEdit}
+              onCancelEdit={onCancelEdit}
+              onReact={onReact}
+              onStartEdit={onStartEdit}
+              onDelete={onDelete}
             />
+            {receiptIndex === i && receiptText && (
+              <div className="flex justify-end pr-1 mt-0.5">
+                <span className="inline-flex items-center gap-1 text-[10px] text-ink-3">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M2 13l4 4 7-9M12 16l1.5 1.5 7-9" />
+                  </svg>
+                  {receiptText}
+                </span>
+              </div>
+            )}
           </div>
         );
       })}
@@ -451,34 +687,200 @@ function Bubble({
   showName,
   showTime,
   tight,
+  editing,
+  editText,
+  setEditText,
+  onSaveEdit,
+  onCancelEdit,
+  onReact,
+  onStartEdit,
+  onDelete,
 }: {
   m: LocalMessage;
   showName: boolean;
   showTime: boolean;
   tight: boolean;
+  editing: boolean;
+  editText: string;
+  setEditText: (v: string) => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onReact: (messageId: string, emoji: string) => void;
+  onStartEdit: (m: LocalMessage) => void;
+  onDelete: (id: string) => void;
 }) {
-  return (
-    <div className={`flex ${m.mine ? "justify-end" : "justify-start"} ${tight ? "mt-0.5" : "mt-2"}`}>
-      <div className={`flex flex-col max-w-[80%] ${m.mine ? "items-end" : "items-start"}`}>
-        {showName && (
-          <span className="text-[11px] font-semibold text-ink-3 px-1 mb-0.5">{m.senderName}</span>
-        )}
-        <div
-          className={`px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words rounded-card ${
-            m.mine
-              ? `bg-orange text-white ${m.pending ? "opacity-60" : ""}`
-              : "bg-surface text-ink-1 border border-hairline"
-          }`}
-        >
-          {m.body}
+  const [picker, setPicker] = useState(false);
+  const [menu, setMenu] = useState(false);
+  const deleted = !!m.deletedAt;
+
+  if (editing) {
+    return (
+      <div className="flex justify-end mt-2">
+        <div className="flex flex-col items-end w-full max-w-[80%]">
+          <textarea
+            value={editText}
+            autoFocus
+            onChange={(e) => setEditText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                onSaveEdit();
+              } else if (e.key === "Escape") {
+                onCancelEdit();
+              }
+            }}
+            rows={2}
+            className="w-full resize-none bg-surface border border-orange rounded-card px-3 py-2 text-sm text-ink-1 focus:outline-none"
+          />
+          <div className="flex items-center gap-2 mt-1">
+            <button type="button" onClick={onCancelEdit} className="text-[11px] font-semibold text-ink-2 hover:text-ink-1">
+              Cancel
+            </button>
+            <button type="button" onClick={onSaveEdit} className="text-[11px] font-semibold text-orange hover:text-orange-dark">
+              Save
+            </button>
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`group flex ${m.mine ? "justify-end" : "justify-start"} ${tight ? "mt-0.5" : "mt-2"}`}>
+      <div className={`flex flex-col max-w-[80%] ${m.mine ? "items-end" : "items-start"}`}>
+        {showName && <span className="text-[11px] font-semibold text-ink-3 px-1 mb-0.5">{m.senderName}</span>}
+
+        <div className={`flex items-center gap-1.5 ${m.mine ? "flex-row" : "flex-row-reverse"}`}>
+          {/* Hover/tap action cluster (hidden until hover on desktop). */}
+          {!deleted && (
+            <div className="relative flex items-center gap-0.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+              <button
+                type="button"
+                onClick={() => {
+                  setPicker((v) => !v);
+                  setMenu(false);
+                }}
+                aria-label="Add reaction"
+                className="w-7 h-7 flex items-center justify-center rounded-full text-ink-3 hover:text-ink-1 hover:bg-tile"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M9 10h.01M15 10h.01M8.5 14.5a4 4 0 0 0 7 0" />
+                </svg>
+              </button>
+              {m.mine && !m.pending && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenu((v) => !v);
+                    setPicker(false);
+                  }}
+                  aria-label="Message actions"
+                  className="w-7 h-7 flex items-center justify-center rounded-full text-ink-3 hover:text-ink-1 hover:bg-tile"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                    <circle cx="5" cy="12" r="1.4" />
+                    <circle cx="12" cy="12" r="1.4" />
+                    <circle cx="19" cy="12" r="1.4" />
+                  </svg>
+                </button>
+              )}
+
+              {picker && (
+                <div className={`absolute bottom-9 ${m.mine ? "right-0" : "left-0"} z-10 flex items-center gap-0.5 bg-surface border border-hairline rounded-full shadow-tile px-1.5 py-1`}>
+                  {QUICK_EMOJIS.map((e) => (
+                    <button
+                      key={e}
+                      type="button"
+                      onClick={() => {
+                        onReact(m.id, e);
+                        setPicker(false);
+                      }}
+                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-tile text-base leading-none"
+                    >
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {menu && m.mine && (
+                <div className={`absolute bottom-9 ${m.mine ? "right-0" : "left-0"} z-10 w-32 bg-surface border border-hairline rounded-card shadow-tile py-1 text-sm`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onStartEdit(m);
+                      setMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-1.5 text-ink-1 hover:bg-tile"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onDelete(m.id);
+                      setMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-1.5 text-status-critical-text hover:bg-status-critical-bg/60"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* The bubble */}
+          {deleted ? (
+            <div className="px-3.5 py-2 text-sm italic text-ink-3 rounded-card border border-dashed border-hairline">
+              Message deleted
+            </div>
+          ) : (
+            <div
+              className={`px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words rounded-card ${
+                m.mine ? `bg-orange text-white ${m.pending ? "opacity-60" : ""}` : "bg-surface text-ink-1 border border-hairline"
+              }`}
+            >
+              {m.body}
+            </div>
+          )}
+        </div>
+
+        {/* Reaction chips */}
+        {!deleted && m.reactions.length > 0 && (
+          <div className={`flex flex-wrap gap-1 mt-1 ${m.mine ? "justify-end" : "justify-start"}`}>
+            {m.reactions.map((r) => (
+              <ReactionChip key={r.emoji} r={r} onClick={() => onReact(m.id, r.emoji)} />
+            ))}
+          </div>
+        )}
+
         {showTime && (
           <span className="text-[10px] text-ink-3 px-1 mt-0.5">
             {m.pending ? "Sending…" : shortTime(m.createdAt)}
+            {m.editedAt && !deleted ? " · edited" : ""}
           </span>
         )}
       </div>
     </div>
+  );
+}
+
+function ReactionChip({ r, onClick }: { r: MessageReaction; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={r.names.join(", ")}
+      className={`inline-flex items-center gap-1 px-1.5 h-6 rounded-full border text-xs leading-none transition-colors ${
+        r.mine
+          ? "bg-orange-light border-orange/40 text-orange-dark"
+          : "bg-tile border-hairline text-ink-2 hover:bg-[#EFE6D4]"
+      }`}
+    >
+      <span className="text-[13px]">{r.emoji}</span>
+      <span className="font-semibold tabular-nums">{r.count}</span>
+    </button>
   );
 }
 

@@ -191,7 +191,11 @@ export default async function ProspectDetailPage({ params }: { params: { id: str
 
       <ProspectAngles prospectId={prospect.id} onAngles={onAngles} allAngles={allAngles} />
 
-      <BriefPanel prospectId={prospect.id} brief={brief} />
+      <BriefPanel
+        prospectId={prospect.id}
+        prospectLabel={prospect.org_name || prospect.name}
+        brief={brief}
+      />
 
       <CommentThread
         entityType="fr_prospects"

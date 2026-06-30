@@ -12,7 +12,7 @@ import SearchTrigger from "./search/SearchTrigger";
 // of contents, so the full IA is visible even before every module ships.
 
 type IconName =
-  | "overview" | "briefing"
+  | "overview" | "briefing" | "inbox"
   | "students" | "cohorts" | "intake" | "demoday" | "camp" | "schools" | "app" | "internships" | "career"
   | "majorgifts" | "donors" | "grants" | "campaigns" | "events"
   | "finance" | "revenue" | "expenses" | "budget" | "cashflow"
@@ -28,6 +28,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Command Center",
     items: [
       { label: "Overview", icon: "overview", href: "/admin" },
+      { label: "Inbox", icon: "inbox", href: "/admin/inbox" },
       { label: "Strategy", icon: "strategy", href: "/admin/strategic-plan" },
       { label: "Executive Briefing", icon: "briefing", href: "/admin/briefing" },
     ],
@@ -112,6 +113,12 @@ const ICON_NODES: Record<IconName, ReactNode> = {
     <>
       <path d="M12 4l1.6 4.9 4.9 1.6-4.9 1.6L12 17l-1.6-4.9L5.5 10.5l4.9-1.6L12 4z" />
       <path d="M18.5 15.5l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7.7-2.3z" />
+    </>
+  ),
+  inbox: (
+    <>
+      <path d="M4 13h4l1.5 2.5h5L16 13h4" />
+      <path d="M4 13V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6M4 13v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
     </>
   ),
   students: (
@@ -360,6 +367,34 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
+
+  // Unread inbox badge. Poll on a slow cadence (50s) — polling is the v1
+  // refresh mechanism; Realtime is deferred. We also re-fetch on route change
+  // (so opening a notification clears the badge) and on a same-tab
+  // "notifications changed" event the inbox dispatches after marking read.
+  useEffect(() => {
+    if (!currentUser) return;
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/admin/notifications/unread-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (alive) setUnread(typeof j.count === "number" ? j.count : 0);
+      } catch {
+        // Network blip — keep the last known count, the next poll recovers.
+      }
+    };
+    load();
+    const id = setInterval(load, 50000);
+    window.addEventListener("bloomos:notifications-changed", load);
+    return () => {
+      alive = false;
+      clearInterval(id);
+      window.removeEventListener("bloomos:notifications-changed", load);
+    };
+  }, [currentUser, pathname]);
 
   // Close the mobile drawer whenever the route changes — without this,
   // tapping a link slides the next page in but leaves the drawer covering
@@ -447,6 +482,14 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
                       className={`w-4 h-4 shrink-0 ${active === item.href ? "text-[#F47840]" : "opacity-70"}`}
                     />
                     <span className="truncate">{item.label}</span>
+                    {item.href === "/admin/inbox" && unread > 0 && (
+                      <span
+                        className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-[10px] font-bold leading-none"
+                        aria-label={`${unread} unread`}
+                      >
+                        {unread > 9 ? "9+" : unread}
+                      </span>
+                    )}
                   </Link>
                 ) : (
                   <div

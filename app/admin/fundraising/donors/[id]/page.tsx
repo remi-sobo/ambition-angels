@@ -17,6 +17,7 @@ import { HouseholdControls } from "../_components/HouseholdControls";
 import { AddSoftCredit, SoftCreditChip, SC_TYPE_LABEL } from "../_components/SoftCreditControls";
 import EmailActions from "../_components/EmailActions";
 import { EntityTasks } from "../../../_components/EntityTasks";
+import { CommentThread } from "../../../_components/CommentThread";
 import { RailEntity } from "../../../_components/rail/RailEntityContext";
 import ConstituentDangerZone from "../_components/ConstituentDangerZone";
 
@@ -583,6 +584,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
 
         <RailEntity type="constituent" id={c.id} label={name} />
         <EntityTasks entityType="constituent" entityId={c.id} entityLabel={name} defaultCategory="fundraising" />
+        <CommentThread entityType="constituent" entityId={c.id} entityLabel={name} />
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">

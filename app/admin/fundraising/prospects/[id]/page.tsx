@@ -7,6 +7,7 @@ import DealsTable, { type HsDeal } from "./_components/DealsTable";
 import EngagementTimeline, { type HsEngagement } from "./_components/EngagementTimeline";
 import BriefPanel, { type ExistingBrief } from "./_components/BriefPanel";
 import ProspectAngles, { type OnAngle } from "./_components/ProspectAngles";
+import { CommentThread } from "../../../_components/CommentThread";
 
 // Prospect detail — keyed by the bench entity (fr_prospects.id), so it works for
 // HubSpot-sourced, manually-added, and AI-discovered prospects alike. HubSpot
@@ -191,6 +192,12 @@ export default async function ProspectDetailPage({ params }: { params: { id: str
       <ProspectAngles prospectId={prospect.id} onAngles={onAngles} allAngles={allAngles} />
 
       <BriefPanel prospectId={prospect.id} brief={brief} />
+
+      <CommentThread
+        entityType="fr_prospects"
+        entityId={prospect.id}
+        entityLabel={prospect.org_name || prospect.name}
+      />
 
       <ScoreEditor prospectId={prospect.id} initial={score} />
 

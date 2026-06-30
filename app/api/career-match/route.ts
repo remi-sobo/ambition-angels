@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { generateText } from "@/lib/ai/gateway";
 
 type Answers = {
   age: string;
@@ -78,28 +79,10 @@ export async function POST(req: NextRequest) {
   const prompt = buildPrompt(answers, audienceMode);
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1500,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      console.error("Anthropic API error:", err);
-      return NextResponse.json({ error: "Career matching failed" }, { status: 500 });
-    }
-
-    const data = await res.json();
-    const raw = data.content[0].text.replace(/```json|```/g, "").trim();
+    // voice: false — structured catalog with salary ranges; route through the
+    // seam without the dash sweep so ranges survive.
+    const { text } = await generateText({ prompt, tier: "fast", maxTokens: 1500, voice: false });
+    const raw = text.replace(/```json|```/g, "").trim();
     const careers = JSON.parse(raw);
     return NextResponse.json({ careers });
   } catch (err) {

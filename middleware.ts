@@ -7,9 +7,11 @@ import { updateSession } from "@/lib/supabase/middleware";
  *
  *  1. /admin/* — the operating system. /admin itself renders the monolith
  *     (with its own client-side login UI), so it's let through; all nested
- *     routes are gated and bounce to /admin when unauthed. Auth mirrors
- *     lib/admin/auth.ts: the admin_auth cookie must match one of
- *     ADMIN_PASSWORD_REMI, ADMIN_PASSWORD_SHANNON, or the legacy ADMIN_PASSWORD.
+ *     routes are gated and bounce to /admin when there is no signed-in user.
+ *     Auth is the Supabase session cookie, refreshed here via updateSession();
+ *     this is a coarse "is anyone signed in" gate only. Real membership and
+ *     permission enforcement lives in route handlers (getOrgContext in
+ *     lib/admin/auth.ts) and RLS.
  *
  *  2. /demoday — the static Fast Forward demo-day lookbook (rewritten to
  *     /demoday/index.html). Both entry points sit behind a shared password

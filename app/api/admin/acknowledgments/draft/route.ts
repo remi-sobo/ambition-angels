@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
+import { generateText } from "@/lib/ai/gateway";
 
 // POST /api/admin/acknowledgments/draft — AI-drafted personal thank-you
 // note for one gift, grounded in the donor's real giving history.
@@ -80,25 +81,10 @@ Rules:
 - Output ONLY the note text.`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 400,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-    if (!res.ok) {
-      console.error("Anthropic API error:", await res.text());
-      return NextResponse.json({ error: "Draft generation failed" }, { status: 502 });
-    }
-    const data = await res.json();
-    const draft = (data.content?.[0]?.text ?? "").trim();
+    // Through the shared gateway: prompt-cached, and the prose is swept for
+    // voice (no em dashes) before it reaches the editable draft.
+    const { text } = await generateText({ prompt, tier: "fast", maxTokens: 400 });
+    const draft = text.trim();
     if (!draft) {
       return NextResponse.json({ error: "Draft generation returned nothing" }, { status: 502 });
     }

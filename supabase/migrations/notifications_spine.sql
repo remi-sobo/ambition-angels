@@ -1,6 +1,6 @@
 -- Phase 1: notifications spine
 
-create table public.notifications (
+create table if not exists public.notifications (
   id                  uuid primary key default gen_random_uuid(),
   org_id              uuid not null references public.orgs on delete cascade,
   recipient_id        uuid not null references auth.users on delete cascade,
@@ -18,11 +18,11 @@ create table public.notifications (
 );
 
 -- feed: recipient's notifications, newest first
-create index notifications_recipient_created_idx
+create index if not exists notifications_recipient_created_idx
   on public.notifications (recipient_id, created_at desc);
 
 -- fast unread count
-create index notifications_recipient_unread_idx
+create index if not exists notifications_recipient_unread_idx
   on public.notifications (recipient_id)
   where read_at is null;
 

@@ -2,11 +2,13 @@
 
 BloomOS is **not greenfield**. The existing admin is a real head start: ~30 Supabase tables, working finance/ops/fundraising modules, HubSpot sync, AI research agents, and a PWA shell. This doc inventories what exists, the verdict per area, and the urgent fixes.
 
-## ⚠️ Phase 0 — urgent, independent of everything else
+## ✅ Phase 0 — resolved (Ring 0/1 shipped)
 
-1. **`claude-sonnet-4-20250514` is retired June 15, 2026** (days away). `app/api/career-quiz/route.ts` and any other call sites must move to `claude-sonnet-4-6`. Also note: prompt-based JSON forcing / assistant prefill returns HTTP 400 on 4.6+ — migrate to structured outputs (`output_config.format`).
-2. **Auth is a shared-password cookie storing the password itself as the cookie value** (`lib/admin/auth.ts`). Two users ("remi", "shannon") map to env-var passwords. No hashing, no sessions, no revocation, no MFA. This is the single biggest blocker for everything else and is Ring 1's first deliverable.
-3. **Every DB access uses the service-role client** (`lib/supabase/admin.ts`), bypassing RLS. There is no RLS posture at all. Acceptable for a 2-person internal tool; fatal for a product holding donor + minor data.
+These were the urgent blockers in the original audit. All three have since shipped; kept here for the record.
+
+1. **Model migration — done.** Call sites run `claude-sonnet-4-6` (and `claude-opus-4-8` for the deeper tasks). Plain text routes now go through the shared `lib/ai/gateway.ts`; the structured agents force tool output. No retired model ids remain.
+2. **Auth — done.** Auth is the Supabase session cookie, refreshed in middleware and resolved server-side via `getOrgContext()` in `lib/admin/auth.ts`, which requires a `memberships` row (RLS-proven). The shared-password cookie is gone.
+3. **RLS — done.** RLS is enabled per domain (`enable_rls_per_domain.sql`) and gated by one authority, `private.has_permission(org_id, perm)`, that both the policies and the app's clean-403 check call. Service-role is confined to named server paths and covered by the cross-role leak test in CI (`supabase/tests/rls-leak-test.sql`).
 
 ## Inventory and verdicts
 

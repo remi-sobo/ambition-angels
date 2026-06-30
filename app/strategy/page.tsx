@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import StrategyRoom from "./StrategyRoom";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import StrategyRoom, { type Angle, type Tone } from "./StrategyRoom";
 
 // Internal reference page. Gated at the edge (see middleware.ts) and kept out
 // of search indexes belt-and-suspenders, even though crawlers never get past
@@ -9,6 +10,84 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
 };
 
-export default function StrategyPage() {
-  return <StrategyRoom />;
+// Read live on every load so an admin edit (or a Reed-drafted angle) shows here
+// without a deploy. Funders reach this page via the password gate and carry no
+// Supabase session, so the read goes through the service-role client scoped to
+// the resident org — not getOrgContext.
+export const dynamic = "force-dynamic";
+
+// status_badge slug -> the human tag the deck prints ("North Star", etc.).
+const TAG_LABEL: Record<string, string> = {
+  "north-star": "North Star",
+  proven: "Proven",
+  building: "Building",
+  reframed: "Reframed",
+  productizing: "Productizing",
+  "core-thesis": "Core thesis",
+  new: "New and timely",
+  "emerging-stub": "Emerging stub",
+};
+
+type AngleRow = {
+  key: string;
+  name: string;
+  nav_title: string | null;
+  status_badge: string | null;
+  tone: string | null;
+  hook: string | null;
+  frame: string | null;
+  lead: string | null;
+  funds_label: string | null;
+  funds: string | null;
+  want: string | null;
+  catch_label: string | null;
+  catch_body: string | null;
+  ask: string | null;
+  flag: string | null;
+};
+
+const TONES: Tone[] = ["primary", "soft", "neutral"];
+const toTone = (v: string | null): Tone => (TONES.includes(v as Tone) ? (v as Tone) : "neutral");
+
+async function loadAngles(): Promise<Angle[]> {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data: org } = await supabase
+      .from("orgs").select("id").eq("slug", "ambition-angels").maybeSingle();
+    if (!org?.id) return [];
+    const { data, error } = await supabase
+      .from("strategy_angles")
+      .select(
+        "key, name, nav_title, status_badge, tone, hook, frame, lead, funds_label, funds, want, catch_label, catch_body, ask, flag",
+      )
+      .eq("org_id", org.id)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+    if (error || !data) return [];
+    return (data as AngleRow[]).map((r, i) => ({
+      num: String(i + 1).padStart(2, "0"),
+      id: r.key,
+      title: r.name,
+      navTitle: r.nav_title || r.name,
+      tag: r.status_badge ? TAG_LABEL[r.status_badge] ?? r.status_badge : "",
+      tone: toTone(r.tone),
+      hook: r.hook ?? "",
+      frame: r.frame ?? "",
+      lead: r.lead ?? "",
+      fundsLabel: r.funds_label || "Who funds this",
+      funds: r.funds ?? "",
+      want: r.want ?? "",
+      catch: r.catch_body ? { label: r.catch_label || "The catch", body: r.catch_body } : undefined,
+      ask: r.ask ?? "",
+      flag: r.flag || undefined,
+    }));
+  } catch {
+    // Any read failure falls back to the seed copy baked into StrategyRoom.
+    return [];
+  }
+}
+
+export default async function StrategyPage() {
+  const angles = await loadAngles();
+  return <StrategyRoom angles={angles} />;
 }

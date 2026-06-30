@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const getSupabase = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,6 +37,12 @@ function buildDonationNotifyHTML(params: {
 }
 
 export async function POST(req: NextRequest) {
+  // Public write path — throttle per IP to deter spam and card-testing.
+  const rl = rateLimit(`save-donation:${getClientIp(req)}`, { limit: 10, windowMs: 10 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests. Please try again in a few minutes." }, { status: 429 });
+  }
+
   const supabase = getSupabase();
   const {
     firstName,

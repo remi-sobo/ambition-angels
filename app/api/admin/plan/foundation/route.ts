@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // values / behaviors are stored as jsonb string arrays. Coerce loosely so the
@@ -34,6 +34,9 @@ export async function PUT(req: NextRequest) {
   const ctx = await getOrgContext();
   if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!(await ctxHasPermission(ctx, "org.manage"))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });

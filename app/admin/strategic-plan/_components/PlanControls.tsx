@@ -113,6 +113,94 @@ async function api(url: string, method: string, body?: unknown): Promise<boolean
   return true;
 }
 
+// ── Inline click-to-edit text ──────────────────────────────────────────────
+// Renders the value (or a muted placeholder) until clicked, then an input /
+// textarea that commits on blur or Enter (Esc cancels). An empty commit saves
+// null, so a field can be cleared. The display element inherits `className` so
+// each call site keeps its own typography; the editor uses the shared input
+// style unless `inputClassName` overrides it. Mirrors the ops project header's
+// inline-edit idiom (app/admin/ops/projects/[id]/_components/ProjectHeader).
+function EditableText({
+  value,
+  onSave,
+  placeholder = "—",
+  multiline = false,
+  className = "",
+  inputClassName,
+  ariaLabel,
+}: {
+  value: string | null;
+  onSave: (next: string | null) => void | Promise<void>;
+  placeholder?: string;
+  multiline?: boolean;
+  className?: string;
+  inputClassName?: string;
+  ariaLabel?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? "");
+  // Keep the draft in sync when the underlying value changes (e.g. after a refresh).
+  useEffect(() => {
+    setDraft(value ?? "");
+  }, [value]);
+
+  const cancel = () => {
+    setDraft(value ?? "");
+    setEditing(false);
+  };
+  const commit = () => {
+    setEditing(false);
+    const next = draft.trim() === "" ? null : draft.trim();
+    if (next !== (value ?? null)) void onSave(next);
+    else setDraft(value ?? "");
+  };
+
+  if (editing) {
+    const cls = inputClassName ?? `${inputCls} ${multiline ? "w-full" : ""}`;
+    if (multiline) {
+      return (
+        <textarea
+          autoFocus
+          rows={2}
+          aria-label={ariaLabel}
+          className={cls}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => { if (e.key === "Escape") cancel(); }}
+        />
+      );
+    }
+    return (
+      <input
+        autoFocus
+        aria-label={ariaLabel}
+        className={cls}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") { e.preventDefault(); commit(); }
+          if (e.key === "Escape") cancel();
+        }}
+      />
+    );
+  }
+
+  const has = !!(value && value.trim());
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className={`text-left hover:underline decoration-dotted underline-offset-2 ${className}`}
+      title="Click to edit"
+      aria-label={ariaLabel}
+    >
+      {has ? value : <span className="text-ink-3 font-normal italic">{placeholder}</span>}
+    </button>
+  );
+}
+
 // ── Seed button (one-time AA strategy load) ────────────────────────────────
 export function SeedButton() {
   const router = useRouter();
@@ -388,16 +476,27 @@ export function ObjectiveCard({
   kpisByGoal,
   initiativesByGoal,
   rollups = {},
+  objectiveOptions,
 }: {
   objective: PlanObjective;
   goals: PlanGoal[];
   kpisByGoal: Record<string, PlanKpi[]>;
   initiativesByGoal: Record<string, PlanInitiative[]>;
   rollups?: Record<string, InitiativeRollup>;
+  /** When passed, goals under this objective get a re-parent dropdown. */
+  objectiveOptions?: { id: string; title: string }[];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
+  const patch = async (fields: Record<string, unknown>) => {
+    setBusy(true);
+    try {
+      if (await api(`/api/admin/plan/objectives/${objective.id}`, "PATCH", fields)) router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
   const remove = async () => {
     if (!confirm(`Delete objective “${objective.title}”? Its goals are kept but unlinked.`)) return;
     setBusy(true);
@@ -415,7 +514,12 @@ export function ObjectiveCard({
       className={`scroll-mt-24 border-[1.5px] border-outline rounded-card-lg p-5 bg-tile/40 ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="font-heading font-bold text-ink-1 flex-1 min-w-0 text-lg">{objective.title}</h2>
+        <EditableText
+          value={objective.title}
+          onSave={(v) => { if (v) void patch({ title: v }); }}
+          ariaLabel="Objective title"
+          className="font-heading font-bold text-ink-1 flex-1 min-w-0 text-lg"
+        />
         <StatusOverride
           entity="objectives"
           id={objective.id}
@@ -424,12 +528,27 @@ export function ObjectiveCard({
           computed={deriveHealth(goals.flatMap((g) => (kpisByGoal[g.id] ?? []).map((k) => k.status)))}
           stored={objective.status}
         />
-        {objective.owner && <span className="text-[11px] text-ink-2">{objective.owner}</span>}
+        <EditableText
+          value={objective.owner}
+          onSave={(v) => patch({ owner: v })}
+          placeholder="+ owner"
+          ariaLabel="Objective owner"
+          className="text-[11px] text-ink-2"
+        />
         <button onClick={() => void remove()} className="text-[11px] text-ink-2 hover:text-expense px-1">Delete</button>
       </div>
-      {objective.three_year_statement && (
-        <p className="text-xs text-ink-2 italic mt-1">3-year · {objective.three_year_statement}</p>
-      )}
+      <p className="text-xs text-ink-2 italic mt-1">
+        <span className="not-italic text-ink-3">3-year · </span>
+        <EditableText
+          value={objective.three_year_statement}
+          onSave={(v) => patch({ three_year_statement: v })}
+          placeholder="add a 3-year statement"
+          multiline
+          ariaLabel="3-year statement"
+          className="italic"
+          inputClassName={`${inputCls} w-full mt-1 not-italic`}
+        />
+      </p>
 
       <div className="space-y-3 mt-4">
         {goals.map((g) => (
@@ -439,6 +558,7 @@ export function ObjectiveCard({
             kpis={kpisByGoal[g.id] ?? []}
             initiatives={initiativesByGoal[g.id] ?? []}
             rollups={rollups}
+            objectiveOptions={objectiveOptions}
           />
         ))}
         {goals.length === 0 && <p className="text-xs text-ink-3">No goals under this objective yet.</p>}
@@ -506,11 +626,14 @@ export function GoalCard({
   kpis = [],
   initiatives,
   rollups = {},
+  objectiveOptions,
 }: {
   goal: PlanGoal;
   kpis?: PlanKpi[];
   initiatives: PlanInitiative[];
   rollups?: Record<string, InitiativeRollup>;
+  /** When passed, the goal shows a dropdown to move it to another objective. */
+  objectiveOptions?: { id: string; title: string }[];
 }) {
   const router = useRouter();
   const { isLeaving, complete } = useTaskComplete();
@@ -523,12 +646,31 @@ export function GoalCard({
   const openInits = initiatives.filter((i) => i.status !== "done");
   const doneInits = initiatives.filter((i) => i.status === "done");
 
+  const patchGoal = async (fields: Record<string, unknown>) => {
+    setBusy(true);
+    try {
+      if (await api(`/api/admin/plan/goals/${goal.id}`, "PATCH", fields)) router.refresh();
+    } finally { setBusy(false); }
+  };
   const addInitiative = async () => {
     if (!newInit.trim()) return;
     setBusy(true);
     try {
       const ok = await api("/api/admin/plan/initiatives", "POST", { title: newInit.trim(), goal_id: goal.id });
       if (ok) { setNewInit(""); router.refresh(); }
+    } finally { setBusy(false); }
+  };
+  const patchInit = async (init: PlanInitiative, fields: Record<string, unknown>) => {
+    setBusy(true);
+    try {
+      if (await api(`/api/admin/plan/initiatives/${init.id}`, "PATCH", fields)) router.refresh();
+    } finally { setBusy(false); }
+  };
+  const removeInit = async (init: PlanInitiative) => {
+    if (!confirm(`Delete initiative “${init.title}”?`)) return;
+    setBusy(true);
+    try {
+      if (await api(`/api/admin/plan/initiatives/${init.id}`, "DELETE")) router.refresh();
     } finally { setBusy(false); }
   };
   const runToggleInit = async (init: PlanInitiative, status: "todo" | "done") => {
@@ -554,7 +696,12 @@ export function GoalCard({
   return (
     <section className={`bg-surface border-[1.5px] border-outline rounded-card p-5 ${busy ? "opacity-60" : ""}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="font-heading font-semibold text-ink-1 flex-1 min-w-0">{goal.title}</h3>
+        <EditableText
+          value={goal.title}
+          onSave={(v) => { if (v) void patchGoal({ title: v }); }}
+          ariaLabel="Goal title"
+          className="font-heading font-semibold text-ink-1 flex-1 min-w-0"
+        />
         <StatusOverride
           entity="goals"
           id={goal.id}
@@ -563,9 +710,48 @@ export function GoalCard({
           computed={deriveHealth(kpis.map((k) => k.status))}
           stored={goal.status}
         />
-        {goal.owner && <span className="text-[11px] text-ink-2">{goal.owner}</span>}
-        {goal.target_date && <span className="text-[11px] text-ink-2 tabular-nums">by {goal.target_date}</span>}
+        {objectiveOptions && objectiveOptions.length > 0 && (
+          <select
+            value={goal.objective_id ?? ""}
+            onChange={(e) => void patchGoal({ objective_id: e.target.value || null })}
+            aria-label="Move goal to objective"
+            title="Move to another objective"
+            className="text-[10px] font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer bg-tile text-ink-2 max-w-[140px]"
+          >
+            <option value="">No objective</option>
+            {objectiveOptions.map((o) => (
+              <option key={o.id} value={o.id} className="bg-surface text-ink-1">{o.title}</option>
+            ))}
+          </select>
+        )}
+        <EditableText
+          value={goal.owner}
+          onSave={(v) => patchGoal({ owner: v })}
+          placeholder="+ owner"
+          ariaLabel="Goal owner"
+          className="text-[11px] text-ink-2"
+        />
+        <span className="text-[11px] text-ink-2 tabular-nums flex items-center gap-1">
+          <span className="text-ink-3">by</span>
+          <input
+            type="date"
+            value={goal.target_date ?? ""}
+            onChange={(e) => void patchGoal({ target_date: e.target.value || null })}
+            aria-label="Goal target date"
+            className="bg-transparent text-[11px] text-ink-2 cursor-pointer focus:outline-none"
+          />
+        </span>
         <button onClick={() => void removeGoal()} className="text-[11px] text-ink-2 hover:text-expense px-1">Delete</button>
+      </div>
+      <div className="text-xs text-ink-2 mt-1">
+        <EditableText
+          value={goal.description}
+          onSave={(v) => patchGoal({ description: v })}
+          placeholder="+ add a description"
+          multiline
+          ariaLabel="Goal description"
+          inputClassName={`${inputCls} w-full mt-1`}
+        />
       </div>
 
       {/* KPIs / measures */}
@@ -596,13 +782,30 @@ export function GoalCard({
                 <button
                   onClick={() => toggleInitiative(i)}
                   disabled={busy || leaving}
-                  className={`w-4 h-4 rounded-full border flex items-center justify-center text-[10px] ${
+                  className={`w-4 h-4 rounded-full border flex items-center justify-center text-[10px] shrink-0 ${
                     leaving ? "bg-orange border-orange text-white" : "border-outline text-transparent hover:border-orange/60"
                   }`}
                   aria-label="Mark done"
                 >✓</button>
-                <span className={leaving ? "text-ink-2 line-through" : "text-ink-1"}>{i.title}</span>
-                {i.owner && <span className="text-[10px] text-ink-2">· {i.owner}</span>}
+                <EditableText
+                  value={i.title}
+                  onSave={(v) => { if (v) void patchInit(i, { title: v }); }}
+                  ariaLabel="Initiative title"
+                  className={`flex-1 min-w-0 ${leaving ? "text-ink-2 line-through" : "text-ink-1"}`}
+                />
+                <EditableText
+                  value={i.owner}
+                  onSave={(v) => patchInit(i, { owner: v })}
+                  placeholder="+ owner"
+                  ariaLabel="Initiative owner"
+                  className="text-[10px] text-ink-2 shrink-0"
+                />
+                <button
+                  onClick={() => void removeInit(i)}
+                  disabled={busy}
+                  className="text-ink-3 hover:text-expense text-sm px-1 shrink-0"
+                  aria-label="Delete initiative"
+                >×</button>
               </div>
               {r && r.projects > 0 && (
                 <div className="ml-6 mt-1 flex items-center gap-2">
@@ -674,6 +877,9 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
   // surface can show start → now → target instead of a bare number (B2-2).
   const [editingBaseline, setEditingBaseline] = useState(false);
   const [bval, setBval] = useState(kpi.baseline?.toString() ?? "");
+  // The descriptive fields (unit / owner / cadence) live behind a details
+  // toggle so the value-dense row stays readable.
+  const [showDetails, setShowDetails] = useState(false);
 
   const patch = async (fields: Record<string, unknown>) => {
     setBusy(true);
@@ -710,8 +916,14 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
   const fresh = measureFreshness(kpi.last_updated_at, kpi.cadence);
 
   return (
-    <div className={`flex items-center gap-2 text-xs bg-tile/60 rounded-lg px-3 py-1.5 ${busy ? "opacity-60" : ""}`}>
-      <span className="text-ink-1 flex-1 min-w-0 truncate">{kpi.title}</span>
+    <div className={`bg-tile/60 rounded-lg ${busy ? "opacity-60" : ""}`}>
+    <div className="flex items-center gap-2 text-xs px-3 py-1.5">
+      <EditableText
+        value={kpi.title}
+        onSave={(v) => { if (v) void patch({ title: v }); }}
+        ariaLabel="Measure title"
+        className="text-ink-1 flex-1 min-w-0 truncate"
+      />
       <span
         className={`hidden sm:inline text-[9px] tabular-nums ${fresh.stale ? "text-status-watch-text font-semibold" : "text-ink-3"}`}
         title={kpi.source === "auto" ? "Refreshed from the spine" : "Last manual update"}
@@ -798,7 +1010,49 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
           <option key={k} value={k} className="bg-surface text-ink-1">{v}</option>
         ))}
       </select>
+      <button
+        onClick={() => setShowDetails((v) => !v)}
+        className={`text-sm leading-none ${showDetails ? "text-orange" : "text-ink-3 hover:text-orange"}`}
+        aria-label="Edit unit, owner, cadence"
+        aria-expanded={showDetails}
+        title="Unit · owner · cadence"
+      >⋯</button>
       <button onClick={() => void remove()} className="text-ink-3 hover:text-expense">×</button>
+    </div>
+    {showDetails && (
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 pb-2 pt-1.5 text-[11px] text-ink-3 border-t border-hairline">
+        <span className="flex items-center gap-1">Unit
+          <EditableText
+            value={kpi.unit}
+            onSave={(v) => patch({ unit: v })}
+            placeholder="—"
+            ariaLabel="Measure unit"
+            className="text-ink-1"
+            inputClassName={`${inputCls} !py-0.5 !px-1.5 !text-xs w-16`}
+          />
+        </span>
+        <span className="flex items-center gap-1">Owner
+          <EditableText
+            value={kpi.owner}
+            onSave={(v) => patch({ owner: v })}
+            placeholder="+ owner"
+            ariaLabel="Measure owner"
+            className="text-ink-1"
+            inputClassName={`${inputCls} !py-0.5 !px-1.5 !text-xs w-28`}
+          />
+        </span>
+        <span className="flex items-center gap-1">Cadence
+          <EditableText
+            value={kpi.cadence}
+            onSave={(v) => patch({ cadence: v })}
+            placeholder="e.g. monthly"
+            ariaLabel="Measure cadence"
+            className="text-ink-1"
+            inputClassName={`${inputCls} !py-0.5 !px-1.5 !text-xs w-24`}
+          />
+        </span>
+      </div>
+    )}
     </div>
   );
 }

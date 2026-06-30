@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const isUuid = (v: unknown): v is string =>
@@ -10,6 +10,9 @@ export async function POST(req: NextRequest) {
   const ctx = await getOrgContext();
   if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!(await ctxHasPermission(ctx, "org.manage"))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const title = body && typeof body.title === "string" ? body.title.trim().slice(0, 300) : "";

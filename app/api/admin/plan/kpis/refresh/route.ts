@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { refreshOrgPlanMetrics } from "@/lib/admin/plan/metrics";
 
@@ -11,6 +11,9 @@ export async function POST(req: NextRequest) {
   const ctx = await getOrgContext();
   if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!(await ctxHasPermission(ctx, "org.manage"))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const { updated, results } = await refreshOrgPlanMetrics(getSupabaseAdmin(), ctx.orgId);
   await audit(req, {

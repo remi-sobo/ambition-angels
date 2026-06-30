@@ -11,6 +11,7 @@ import {
 } from "@/lib/agents/reed/cost";
 import { logAICall, type AICallStatus } from "@/lib/ai/ledger";
 import { cleanVoiceText } from "@/lib/ai/voice";
+import { orgOverAICap } from "@/lib/ai/cap";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -69,6 +70,15 @@ export async function POST(req: NextRequest) {
   }
   const budgetWarning =
     mtdSpend >= REED_MONTHLY_WARN_USD ? `Heads up — Reed is at $${mtdSpend.toFixed(2)} of $${REED_MONTHLY_CAP_USD} this month.` : null;
+
+  // 2b. Global org backstop across ALL AI surfaces (above the per-surface cap). Fail-open.
+  const orgCap = await orgOverAICap(supabase, ctx.orgId);
+  if (orgCap.over) {
+    return NextResponse.json(
+      { error: `This org has reached its monthly AI spend cap ($${orgCap.capUsd}). It resets next month.`, capped: true },
+      { status: 429 },
+    );
+  }
 
   // 3. Assemble context: the org foundation (RLS-scoped) + the surface's anchor.
   const { data: foundation } = await supabase

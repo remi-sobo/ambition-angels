@@ -3,15 +3,21 @@
 import { useMemo, useState } from "react";
 
 /**
- * Internal Strategy Room. Eight ways we frame the same mission, each a
+ * Internal Strategy Room. Several ways we frame the same mission, each a
  * collapsible card, plus a grounding "what we're doing this year" block.
- * State lives entirely in component state (no storage APIs). Gating happens
+ * Accordion state lives in component state (no storage APIs). Gating happens
  * at the edge in middleware.ts, so there is no password logic here.
+ *
+ * The angles are now data: the server (app/strategy/page.tsx) reads them from
+ * the strategy_angles table and passes them in, so an admin can edit the deck
+ * (or have Reed draft a new angle) without a code change. FALLBACK_ANGLES below
+ * is the seed copy, rendered only if the table read comes back empty — the
+ * funder-facing page never shows a blank deck.
  */
 
-type Tone = "primary" | "soft" | "neutral";
+export type Tone = "primary" | "soft" | "neutral";
 
-type Angle = {
+export type Angle = {
   num: string;
   id: string;
   title: string;
@@ -29,7 +35,7 @@ type Angle = {
   flag?: string;
 };
 
-const angles: Angle[] = [
+const FALLBACK_ANGLES: Angle[] = [
   {
     num: "01",
     id: "economic-mobility",
@@ -221,12 +227,15 @@ const dotTexture = {
   backgroundSize: "22px 22px",
 };
 
-export default function StrategyRoom() {
+export default function StrategyRoom({ angles: propAngles }: { angles?: Angle[] }) {
+  // Prefer the table-driven deck; fall back to the seed copy so the page never
+  // renders empty if the read fails or the migration hasn't been applied.
+  const angles = propAngles && propAngles.length > 0 ? propAngles : FALLBACK_ANGLES;
   const [openIds, setOpenIds] = useState<Record<string, boolean>>({});
 
   const allOpen = useMemo(
     () => angles.every((a) => openIds[a.id]),
-    [openIds],
+    [openIds, angles],
   );
 
   function toggle(id: string) {

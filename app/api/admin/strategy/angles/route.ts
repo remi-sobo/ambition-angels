@@ -1,38 +1,42 @@
 /**
- * POST /api/admin/strategy/angles — create a new funding angle. Slugifies the
- * name into `key`, appends after the last angle by sort_order. The resident-org
- * default + RLS apply; org_id is not accepted from the client.
+ * POST /api/admin/strategy/angles — create a new funding/framing angle.
+ * Slugifies the name into `key`, appends after the last angle by sort_order.
+ * Accepts the full framing shape (hook…flag) so a Reed-drafted angle can be
+ * created complete. The resident-org default + RLS apply; org_id is not
+ * accepted from the client.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import {
+  ANGLE_BADGES,
+  ANGLE_TONES,
+  ANGLE_TEXT_FIELDS,
+  angleFieldMax,
+  angleStr,
+  slugifyAngle,
+} from "@/lib/admin/strategy/angle-fields";
 
 export const dynamic = "force-dynamic";
-
-const BADGES = [
-  "north-star", "proven", "building", "reframed",
-  "productizing", "core-thesis", "new", "emerging-stub",
-];
-
-const slugify = (s: string) =>
-  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
-
-const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
 
 export async function POST(req: NextRequest) {
   if (!(await isAuthed())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
-  const name = str(body?.name);
+  const name = angleStr(body?.name, 300);
   if (!name) return NextResponse.json({ error: "name is required" }, { status: 400 });
-  const key = slugify(name);
+  const key = slugifyAngle(name);
   if (!key) return NextResponse.json({ error: "name must contain letters or numbers" }, { status: 400 });
 
-  const badge = str(body?.status_badge);
-  if (badge && !BADGES.includes(badge)) {
+  const badge = angleStr(body?.status_badge);
+  if (badge && !ANGLE_BADGES.includes(badge as (typeof ANGLE_BADGES)[number])) {
     return NextResponse.json({ error: "invalid status_badge" }, { status: 400 });
+  }
+  const tone = angleStr(body?.tone);
+  if (tone && !ANGLE_TONES.includes(tone as (typeof ANGLE_TONES)[number])) {
+    return NextResponse.json({ error: "invalid tone" }, { status: 400 });
   }
 
   const supabase = createServerSupabase();
@@ -44,19 +48,18 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
   const sortOrder = ((last?.sort_order as number | undefined) ?? 0) + 1;
 
+  const insert: Record<string, unknown> = {
+    key,
+    name,
+    status_badge: badge,
+    tone,
+    sort_order: sortOrder,
+  };
+  for (const f of ANGLE_TEXT_FIELDS) insert[f] = angleStr(body?.[f], angleFieldMax(f));
+
   const { data, error } = await supabase
     .from("strategy_angles")
-    .insert({
-      key,
-      name,
-      status_badge: badge,
-      hook: str(body?.hook),
-      funds: str(body?.funds),
-      want: str(body?.want),
-      ask: str(body?.ask),
-      approach: str(body?.approach),
-      sort_order: sortOrder,
-    })
+    .insert(insert)
     .select("id, key")
     .single();
 

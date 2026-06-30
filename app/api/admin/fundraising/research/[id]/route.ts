@@ -21,10 +21,9 @@ import {
   AGENT_MODEL,
   AgentResultError,
 } from "@/lib/agents/funder-research/client";
+import { estimateCostUsd as estimateModelCostUsd } from "@/lib/ai/cost";
 
 // ── Cost + rate limit constants ───────────────────────────────────────────
-const OPUS_INPUT_PER_MILLION_USD = 15;
-const OPUS_OUTPUT_PER_MILLION_USD = 75;
 const MONTHLY_BUDGET_HARD_USD = 20;
 const MONTHLY_BUDGET_WARN_USD = 12;
 
@@ -33,12 +32,10 @@ const RATE_LIMIT_MAX = 5;
 
 const ACTION_TYPE = "research_brief" as const;
 
+// Delegates to the shared price sheet (lib/ai/cost.ts) at the funder agent's
+// model; numbers are unchanged (Opus). Local wrapper keeps call sites simple.
 function estimateCostUsd(tokensInput: number, tokensOutput: number): number {
-  return (
-    (tokensInput * OPUS_INPUT_PER_MILLION_USD +
-      tokensOutput * OPUS_OUTPUT_PER_MILLION_USD) /
-    1_000_000
-  );
+  return estimateModelCostUsd(AGENT_MODEL, tokensInput, tokensOutput);
 }
 
 type Prospect = {

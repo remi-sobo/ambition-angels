@@ -22,6 +22,7 @@ import {
   AgentResultError,
 } from "@/lib/agents/funder-research/client";
 import { estimateCostUsd as estimateModelCostUsd } from "@/lib/ai/cost";
+import { logAICall } from "@/lib/ai/ledger";
 
 // ── Cost + rate limit constants ───────────────────────────────────────────
 const MONTHLY_BUDGET_HARD_USD = 20;
@@ -270,6 +271,20 @@ async function runResearch(rc: RunCtx): Promise<void> {
         web_search_count: result.web_search_count,
         estimated_cost_usd: Number(estimateCostUsd(result.tokens_input, result.tokens_output).toFixed(4)),
       },
+    });
+
+    // Mirror into the unified AI ledger. Additive: fr_agent_activity_log above
+    // stays the source for the funder cap; this feeds the per-org spend view.
+    await logAICall(admin, {
+      orgId: rc.orgId,
+      surface: "funder_research",
+      model: result.model_used,
+      tokensInput: result.tokens_input,
+      tokensOutput: result.tokens_output,
+      costUsd: estimateCostUsd(result.tokens_input, result.tokens_output),
+      triggeredBy: rc.currentUser,
+      status: "success",
+      metadata: { web_search_count: result.web_search_count },
     });
 
     await markCompleted(briefRow.id);

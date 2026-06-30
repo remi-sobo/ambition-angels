@@ -9,6 +9,7 @@ import {
   REED_MONTHLY_CAP_USD,
   REED_MONTHLY_WARN_USD,
 } from "@/lib/agents/reed/cost";
+import { logAICall, type AICallStatus } from "@/lib/ai/ledger";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -170,6 +171,20 @@ export async function POST(req: NextRequest) {
     })
     .select("id")
     .single();
+
+  // Mirror into the unified AI ledger. Additive: reed_activity_log above stays
+  // the source for Reed's own cap; this feeds the per-org spend view. Never throws.
+  await logAICall(supabase, {
+    orgId: ctx.orgId,
+    surface: "reed",
+    model: run.model,
+    tokensInput: run.tokensInput,
+    tokensOutput: run.tokensOutput,
+    costUsd,
+    triggeredBy: ctx.email,
+    status: run.status as AICallStatus,
+    metadata: { thread_id: threadId },
+  });
 
   if (threadId) {
     await supabase.from("reed_messages").insert([

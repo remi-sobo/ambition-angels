@@ -160,6 +160,12 @@ begin
   returning id into t2c;
   insert into gifts (org_id, constituent_id, amount, gift_date, method, external_source, external_id)
   values (t2, t2c, 25, '2026-02-03', 'card', 'leak-test', 'leak-test-t2-gift');
+
+  -- One AI-call ledger row per org, to prove ai_calls is tenant-isolated.
+  insert into ai_calls (org_id, surface, model_used, tokens_input, tokens_output, cost_usd)
+  values (aa, 'reed', 'claude-sonnet-4-6', 100, 50, 0.01);
+  insert into ai_calls (org_id, surface, model_used, tokens_input, tokens_output, cost_usd)
+  values (t2, 'reed', 'claude-sonnet-4-6', 100, 50, 0.01);
 end $$;
 
 -- ── Tenant-two owner: zero AA rows, full access to its own ───────────────
@@ -179,10 +185,12 @@ begin
   if (select count(*) from interactions where org_id = aa) <> 0 then raise exception 'LEAK: tenant-two reads AA interactions'; end if;
   if (select count(*) from segments     where org_id = aa) <> 0 then raise exception 'LEAK: tenant-two reads AA segments'; end if;
   if (select count(*) from hs_contacts  where org_id = aa) <> 0 then raise exception 'LEAK: tenant-two reads AA hs_contacts (staging)'; end if;
+  if (select count(*) from ai_calls     where org_id = aa) <> 0 then raise exception 'LEAK: tenant-two reads AA ai_calls (spend ledger)'; end if;
 
   -- But it DOES see its own org's rows (proves isolation, not lockout).
   if (select count(*) from constituents) = 0 then raise exception 'tenant-two owner cannot read its OWN constituents'; end if;
   if (select count(*) from gifts) = 0 then raise exception 'tenant-two owner cannot read its OWN gifts'; end if;
+  if (select count(*) from ai_calls) = 0 then raise exception 'tenant-two owner cannot read its OWN ai_calls'; end if;
   if (select count(*) from gifts where external_id = 'leak-test-t2-gift') = 0 then
     raise exception 'tenant-two owner cannot read its own seeded gift';
   end if;

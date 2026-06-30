@@ -14,7 +14,20 @@ Date: 2026-06-30. Reference: `PLAYBOOK_PROPOSAL_bloom.md`, `Sobo_Playbook_BLOOM_
 
 ---
 
-## Status (updated after the first build pass)
+## Status — COMPLETE
+
+All seven backports are merged to main, plus a larger AI metering and gating layer
+that grew out of them. The only thing still open is the **hard** tenant-default ban,
+which is gated on tenant-two hardening Phase 9 (its ratchet, B18, is already live).
+
+Beyond the original seven, also shipped: the AI gateway seam (`generateText` +
+`generateStructured`), one cost model, the unified `ai_calls` ledger + per-org
+spend view + Settings usage card, a global fail-open spend backstop (`lib/ai/cap.ts`),
+an offline eval harness for two agents, the design-token freeze gate, the
+service-role write-on-behalf registry, the tenant-default ratchet, a restored RLS
+leak gate (red on main for days), and the `planned_week` schema-drift fix.
+
+### Original first-pass detail
 
 The first execution pass reframed the plan around an AI gateway seam (see B15) and
 shipped more than the original seven. Done and merged to main:

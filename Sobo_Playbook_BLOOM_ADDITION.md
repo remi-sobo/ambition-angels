@@ -277,9 +277,13 @@ at a time.
 
 **Rule.** Build the chokepoint as a thin seam and adopt it incrementally, simplest
 callers first, rather than rewriting the critical agents in one pass. A seam that
-half the surfaces use beats a perfect one that lands as a risky rewrite. Reference:
-`lib/ai/gateway.ts` (`generateText`), adopted in the career and acknowledgment
-routes.
+half the surfaces use beats a perfect one that lands as a risky rewrite. The seam
+grows by call shape: `generateText` for prose routes, `generateStructured` (forces
+one named tool, returns its input + usage for a pure parser to coerce) for the
+single-shot structured agents. Multi-turn and web-search agents stay bespoke until
+each is migrated deliberately. Reference: `lib/ai/gateway.ts` (`generateText`,
+`generateStructured`), adopted in the career and acknowledgment routes and the
+next-best-action agent.
 
 ---
 
@@ -293,9 +297,13 @@ and visible to the operator, not just enforced.
 
 **Rule.** Write every model call to one per-tenant ledger and surface the
 month-to-date total back to the operator. The ledger is the seam a global cap, a
-billing line, and a usage card all read from. Reference:
+billing line, and a usage card all read from. Put one global per-org backstop
+above the per-surface caps, env-tunable and **fail-open** (a ledger read error
+reads as zero spent, so metering can never become an outage), generous enough that
+it only catches runaway, not normal use. Reference:
 `supabase/migrations/create_ai_calls_ledger.sql`, `lib/ai/ledger.ts`
-(`logAICall` / `spendSummary`), the AI-usage card in `app/admin/settings/page.tsx`.
+(`logAICall` / `spendSummary`), `lib/ai/cap.ts` (`orgOverAICap`), the AI-usage
+card in `app/admin/settings/page.tsx`.
 
 ---
 
@@ -315,6 +323,24 @@ a test of its coercion is one schema change away from writing junk. Reference:
 
 ---
 
+## B18. When you cannot ban a hazard yet, freeze it and ratchet — adds to §6 **[candidate]**
+
+A gate is usually a ban: zero leaks, zero unregistered tables, zero token drift.
+But some hazards are still load-bearing when you find them. Bloom's `org_id`-default
+trap is the case: ~74 tenant tables depend on the default today, and the migration
+that removes it per-domain is mid-flight (tenant-two-hardening, Phase 9). A hard ban
+would fail the build; doing nothing lets the trap spread.
+
+**Rule.** When a hazard cannot be banned outright yet, freeze the current set as a
+baseline and ratchet: the build fails only when the set GROWS, and shrinks for free
+as the cleanup lands. The ratchet turns one way. Document the exit (when the cleanup
+completes, replace the ratchet with the hard ban and delete the baseline). A
+concurrently-merged table that trips the ratchet is the gate working, not a false
+alarm: add it to the baseline deliberately, which keeps the addition in the diff.
+Reference: `supabase/tests/tenant-default-ratchet.sql`, run by `scripts/test-rls.sh`.
+
+---
+
 ## Appendix — files to copy from Bloom OS
 
 Add to the base playbook's "copy almost verbatim" map:
@@ -327,10 +353,12 @@ Add to the base playbook's "copy almost verbatim" map:
 - `supabase/tests/rls-leak-test.sql` + `scripts/test-rls.sh` — the cross-role
   isolation gate and the migration-enumeration guard, wired in CI.
 - `tests/design-tokens.test.ts` — the config-integrity (design-token freeze) gate.
-- `lib/ai/gateway.ts` + `lib/ai/cost.ts` + `lib/ai/voice.ts` — the AI seam: one
-  text-in/text-out helper, one price sheet, one shared voice sweep.
-- `lib/ai/ledger.ts` + `supabase/migrations/create_ai_calls_ledger.sql` — the
-  unified per-tenant spend ledger and its month-to-date read.
+- `supabase/tests/tenant-default-ratchet.sql` — the freeze-and-ratchet gate (B18).
+- `lib/ai/gateway.ts` + `lib/ai/cost.ts` + `lib/ai/voice.ts` — the AI seam:
+  text-in/text-out and forced-tool helpers, one price sheet, one shared voice sweep.
+- `lib/ai/ledger.ts` + `lib/ai/cap.ts` + `supabase/migrations/create_ai_calls_ledger.sql`
+  — the unified per-tenant spend ledger, its month-to-date read, and the global
+  fail-open backstop.
 - `lib/agents/next-best-action/agent.ts` + `tests/nba-parse.test.ts` — pure,
   offline-tested model-output coercion.
 - `lib/google/connection.ts` — AES-256-GCM app-layer credential storage.

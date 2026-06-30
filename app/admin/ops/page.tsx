@@ -20,10 +20,32 @@ import PageHeader from "../_components/PageHeader";
 // stale ISR cache to lie about "what's due today."
 export const dynamic = "force-dynamic";
 
-export default async function OpsLandingPage() {
+export default async function OpsLandingPage({
+  searchParams,
+}: {
+  searchParams?: { assignee?: string | string[] };
+}) {
   const supabase = getSupabaseAdmin();
   const today = todayISO();
   const currentUser = await getAdminUser();
+
+  // Mirror the assignee filter that TasksSurface keeps in the URL (?assignee=),
+  // so a person-filtered view scopes the whole landing — Today and This Week —
+  // not just the main list. Changing the dropdown re-renders this (force-dynamic)
+  // page with the new param.
+  const rawAssignee = Array.isArray(searchParams?.assignee)
+    ? searchParams?.assignee[0]
+    : searchParams?.assignee;
+  const assignee =
+    rawAssignee === "remi" || rawAssignee === "shannon" || rawAssignee === "unassigned"
+      ? rawAssignee
+      : "all";
+  const matchesAssignee = (t: OpsTask) =>
+    assignee === "all"
+      ? true
+      : assignee === "unassigned"
+        ? !t.assigned_to
+        : t.assigned_to === assignee;
 
   // All ops queries fan out in parallel.
   const [allTasksRes, activeProjectsRes] = await Promise.all([
@@ -46,7 +68,9 @@ export default async function OpsLandingPage() {
 
   // Pin/due-derived slices for the preserved Today / This Week sections.
   // Archived tasks never appear on these active surfaces.
-  const dueToday = allTasks.filter((t) => t.due_date === today && t.status !== "done" && !t.archived_at);
+  const dueToday = allTasks.filter(
+    (t) => t.due_date === today && t.status !== "done" && !t.archived_at && matchesAssignee(t)
+  );
   const dueTodayIds = new Set(dueToday.map((t) => t.id));
   const pinnedToday = allTasks.filter(
     (t) =>
@@ -54,10 +78,11 @@ export default async function OpsLandingPage() {
       t.status !== "done" &&
       !t.archived_at &&
       !dueTodayIds.has(t.id) &&
-      t.due_date !== today
+      t.due_date !== today &&
+      matchesAssignee(t)
   );
   const pinnedWeek = allTasks
-    .filter((t) => t.pinned_for_this_week && t.status !== "done" && !t.archived_at)
+    .filter((t) => t.pinned_for_this_week && t.status !== "done" && !t.archived_at && matchesAssignee(t))
     .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""));
 
   // Project name lookup for task rows / pills. Cover every project a task

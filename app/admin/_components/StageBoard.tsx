@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 /**
@@ -8,11 +8,18 @@ import { useRouter } from "next/navigation";
  * horizontal funnel/Kanban component" for fundraising stages, grants, partner
  * pipeline, student journey).
  *
- * Marries the column/summary layout of the presentational <Pipeline> with the
- * native HTML5 drag-and-drop + optimistic move proven in the Ops TaskBoardView:
- * drag a card to another column and it advances that item's stage. The caller
- * owns persistence via `onMove`; the board owns the drag mechanics, the
- * optimistic re-bucketing, and the revert-on-failure.
+ * Marries the column/summary layout of the presentational <Pipeline> with an
+ * optimistic move: drag a card to another column and it advances that item's
+ * stage. The caller owns persistence via `onMove`; the board owns the drag
+ * mechanics, the optimistic re-bucketing, and the revert-on-failure.
+ *
+ * Drag is driven by Pointer Events rather than the HTML5 drag-and-drop API.
+ * Native HTML5 DnD never fires on touch devices and won't even start in Firefox
+ * without a dataTransfer payload — so on the admin PWA (tablets/phones) the
+ * cards simply couldn't be dragged. Pointer Events unify mouse, touch and pen
+ * across every browser: press a card, move past a small threshold to pick it
+ * up, release over a column to drop. A short move counts as a tap, so the
+ * cards' own links/buttons keep working.
  *
  * Generic over the item type T. `getItemColumn` reads the item's current
  * column key (e.g. its stage); `onMove(id, toKey)` persists the change and must
@@ -21,6 +28,9 @@ import { useRouter } from "next/navigation";
  */
 
 export type StageColumn = { key: string; label: string };
+
+// Pixels of movement before a press becomes a drag (below this it's a tap/click).
+const DRAG_THRESHOLD = 6;
 
 export default function StageBoard<T>({
   title,
@@ -71,6 +81,19 @@ export default function StageBoard<T>({
   const [dragId, setDragId] = useState<string | null>(null);
   const [hoverCol, setHoverCol] = useState<string | null>(null);
 
+  // Transient pointer-gesture tracking. Kept in a ref so a press that turns out
+  // to be a tap never triggers a re-render.
+  const pending = useRef<{
+    id: string;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    started: boolean;
+  } | null>(null);
+  // Set right after a real drag so the trailing synthetic click on the card
+  // (link/edit) is swallowed instead of navigating.
+  const suppressClick = useRef(false);
+
   useEffect(() => setMoves({}), [items]);
 
   const columnOf = (item: T) => moves[getItemId(item)] ?? getItemColumn(item);
@@ -82,29 +105,71 @@ export default function StageBoard<T>({
     if (byColumn[key]) byColumn[key].push(item);
   }
 
-  const draggableCard = (item: T) => (
-    <div
-      key={getItemId(item)}
-      draggable
-      onDragStart={() => setDragId(getItemId(item))}
-      onDragEnd={() => {
-        setDragId(null);
-        setHoverCol(null);
-      }}
-      onClick={onCardClick ? () => onCardClick(item) : undefined}
-      className={`cursor-grab active:cursor-grabbing ${
-        dragId === getItemId(item) ? "opacity-50" : ""
-      }`}
-    >
-      {renderCard(item)}
-    </div>
-  );
+  // Which column sits under a viewport point (works over a card or empty space).
+  function colKeyAtPoint(x: number, y: number): string | null {
+    if (typeof document === "undefined") return null;
+    const el = document.elementFromPoint(x, y);
+    const col = el?.closest?.("[data-stage-col]");
+    return col?.getAttribute("data-stage-col") ?? null;
+  }
 
-  async function handleDrop(toKey: string) {
-    const id = dragId;
+  function onPointerDown(e: React.PointerEvent, id: string) {
+    // Only the primary mouse button starts a drag.
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    // Let form controls inside a card (the inline edit panel) handle their own
+    // gestures — don't hijack typing or option selection.
+    if ((e.target as HTMLElement).closest("input,textarea,select,label,summary")) {
+      pending.current = null;
+      return;
+    }
+    pending.current = { id, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, started: false };
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    const p = pending.current;
+    if (!p || p.pointerId !== e.pointerId) return;
+    if (!p.started) {
+      if (Math.hypot(e.clientX - p.startX, e.clientY - p.startY) < DRAG_THRESHOLD) return;
+      p.started = true;
+      // Keep receiving moves even as the pointer leaves this card.
+      try {
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      } catch {
+        /* element detached — harmless */
+      }
+      setDragId(p.id);
+    }
+    setHoverCol(colKeyAtPoint(e.clientX, e.clientY));
+  }
+
+  function endDrag() {
+    pending.current = null;
     setDragId(null);
     setHoverCol(null);
-    if (!id) return;
+  }
+
+  function onPointerUp(e: React.PointerEvent) {
+    const p = pending.current;
+    if (!p || p.pointerId !== e.pointerId) return;
+    if (p.started) {
+      const toKey = colKeyAtPoint(e.clientX, e.clientY);
+      const id = p.id;
+      suppressClick.current = true; // a real drag — eat the trailing click
+      endDrag();
+      if (toKey) void handleDrop(id, toKey);
+    } else {
+      // No movement: it was a tap/click — let the card's own handlers run.
+      pending.current = null;
+    }
+  }
+
+  function onPointerCancel(e: React.PointerEvent) {
+    const p = pending.current;
+    if (!p || p.pointerId !== e.pointerId) return;
+    endDrag();
+  }
+
+  async function handleDrop(id: string, toKey: string) {
     const item = items.find((it) => getItemId(it) === id);
     if (!item || columnOf(item) === toKey) return;
     setMoves((m) => ({ ...m, [id]: toKey })); // optimistic
@@ -122,6 +187,35 @@ export default function StageBoard<T>({
     }
   }
 
+  const draggableCard = (item: T) => {
+    const id = getItemId(item);
+    return (
+      <div
+        key={id}
+        onPointerDown={(e) => onPointerDown(e, id)}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+        onClickCapture={(e) => {
+          if (suppressClick.current) {
+            e.preventDefault();
+            e.stopPropagation();
+            suppressClick.current = false;
+          }
+        }}
+        onClick={onCardClick ? () => onCardClick(item) : undefined}
+        // touch-action: none lets us own the drag gesture on touch screens
+        // instead of the browser scrolling the page out from under the card.
+        style={{ touchAction: "none" }}
+        className={`select-none cursor-grab active:cursor-grabbing ${
+          dragId === id ? "opacity-40" : ""
+        }`}
+      >
+        {renderCard(item)}
+      </div>
+    );
+  };
+
   return (
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
       {title != null && (
@@ -137,14 +231,7 @@ export default function StageBoard<T>({
             return (
               <div
                 key={col.key}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setHoverCol(col.key);
-                }}
-                onDragLeave={() =>
-                  setHoverCol((c) => (c === col.key ? null : c))
-                }
-                onDrop={() => handleDrop(col.key)}
+                data-stage-col={col.key}
                 className={`flex-1 rounded-lg p-1.5 -m-px transition-colors ${
                   isOver ? "bg-orange/5 ring-1 ring-orange/40" : ""
                 }`}

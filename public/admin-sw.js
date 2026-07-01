@@ -12,7 +12,7 @@
  * Scope is set to "/admin/" at registration time (see AdminPWA.tsx).
  */
 
-const CACHE = "aa-admin-v6";
+const CACHE = "aa-admin-v7";
 const CORE = ["/admin"];
 
 self.addEventListener("install", (event) => {
@@ -22,7 +22,18 @@ self.addEventListener("install", (event) => {
       .then((c) => c.addAll(CORE))
       .catch(() => undefined)
   );
-  self.skipWaiting();
+  // NOTE: intentionally NOT calling self.skipWaiting() here. A freshly
+  // installed SW stays in "waiting" until the user accepts the update via
+  // the "A new version is ready" prompt (see AdminPWA.tsx), which posts a
+  // SKIP_WAITING message. This avoids swapping the app out from under an
+  // active session.
+});
+
+// The update prompt asks the waiting worker to take over on demand.
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("activate", (event) => {

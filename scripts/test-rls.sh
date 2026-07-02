@@ -150,6 +150,8 @@ ordered=(
   messaging_v2_replica.sql
   comms_v2_phase1_tables.sql
   comms_v2_phase1_default_drops.sql
+  enforce_grant_funder.sql
+  create_asks_log.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

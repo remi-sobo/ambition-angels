@@ -15,6 +15,9 @@ import {
 import GrantSeedTasks from "../_components/GrantSeedTasks";
 import { STAGE_LABELS } from "../_lib/stages";
 import PageHeader from "../../../_components/PageHeader";
+import { money } from "../../../finance/_components/charts";
+import { ASK_FORM_LABELS } from "@/lib/fundraising/asks";
+import { NewAskForm, StatusChip } from "../../asks/_components/AskControls";
 
 // Grant detail: award facts, stage control, and the requirements calendar.
 // Requirement-row rendering (incl. inline edit) lives in GrantControls.
@@ -56,6 +59,28 @@ export default async function GrantDetailPage({ params }: { params: { id: string
     status: string; submitted_at: string | null; notes: string | null;
   }>;
   const today = todayISO();
+
+  // Asks logged against this grant (the ask log ties into the pipeline). The
+  // proposal PDF for a grant lives on its ask, so this is also the way in to
+  // the documents for this grant.
+  const asks = (
+    (
+      await supabase
+        .from("asks")
+        .select("id, form, title, status, amount_requested, ask_date, ask_documents(count)")
+        .eq("grant_id", g.id)
+        .order("ask_date", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+    ).data ?? []
+  ) as Array<{
+    id: string;
+    form: string;
+    title: string | null;
+    status: string;
+    amount_requested: number | null;
+    ask_date: string | null;
+    ask_documents: { count: number }[] | null;
+  }>;
 
   // The grant's workspace project. Phase 2 creates this on grant creation;
   // self-heal here covers grants made before Phase 2 (or whose project insert
@@ -109,6 +134,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
               grant={{
                 id: g.id,
                 name: g.name,
+                funderId: g.funder?.id ?? null,
                 funderName: g.funder?.org_name ?? null,
                 amount_requested: g.amount_requested != null ? Number(g.amount_requested) : null,
                 amount_awarded: g.amount_awarded != null ? Number(g.amount_awarded) : null,
@@ -141,6 +167,51 @@ export default async function GrantDetailPage({ params }: { params: { id: string
             <AddRequirementForm grantId={g.id} />
           </section>
         </div>
+
+        {/* ── Asks: the solicitations behind this grant + their PDFs ── */}
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="font-heading font-bold text-ink-1 text-sm">Asks</h2>
+            {g.funder?.id && (
+              <NewAskForm
+                grantId={g.id}
+                fixedFunder={{ id: g.funder.id, name: g.funder.org_name ?? "This funder" }}
+              />
+            )}
+          </div>
+          {asks.length === 0 ? (
+            <p className="px-5 py-6 text-ink-2 text-sm">
+              No asks logged for this grant yet. Log the proposal or LOI you submitted and attach the
+              PDF — it lands in the Ask Log too.
+            </p>
+          ) : (
+            <ul className="divide-y divide-hairline">
+              {asks.map((a) => {
+                const docCount = a.ask_documents?.[0]?.count ?? 0;
+                return (
+                  <li key={a.id} className="px-5 py-3">
+                    <Link href={`/admin/fundraising/asks/${a.id}`} className="flex items-center gap-3 group">
+                      <StatusChip status={a.status} />
+                      <span className="min-w-0 flex-1">
+                        <span className="text-sm text-ink-1 font-medium truncate group-hover:text-orange transition-colors block">
+                          {a.title || ASK_FORM_LABELS[a.form] || a.form}
+                        </span>
+                        <span className="text-[11px] text-ink-2">
+                          {ASK_FORM_LABELS[a.form] ?? a.form}
+                          {a.ask_date ? ` · ${new Date(a.ask_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
+                          {docCount > 0 ? ` · ${docCount} doc${docCount === 1 ? "" : "s"}` : ""}
+                        </span>
+                      </span>
+                      {a.amount_requested != null && (
+                        <span className="text-sm text-ink-1 tabular-nums whitespace-nowrap">{money(Number(a.amount_requested))}</span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
 
         {project ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">

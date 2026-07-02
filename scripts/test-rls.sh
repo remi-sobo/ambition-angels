@@ -145,6 +145,11 @@ ordered=(
   add_planned_week_to_ops_tasks.sql
   create_ops_task_health_view.sql
   create_ai_calls_ledger.sql
+  messaging_realtime.sql
+  messaging_v2.sql
+  messaging_v2_replica.sql
+  comms_v2_phase1_tables.sql
+  comms_v2_phase1_default_drops.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

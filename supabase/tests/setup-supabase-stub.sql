@@ -57,6 +57,14 @@ grant select, insert, update, delete on all tables in schema public to authentic
 alter default privileges in schema public
   grant select, insert, update, delete on tables to authenticated, anon;
 
+-- Supabase Realtime's publication (the platform creates it; the messaging
+-- migrations add tables to it).
+do $$ begin
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    create publication supabase_realtime;
+  end if;
+end $$;
+
 -- Tables that exist in production but predate the migrations folder
 -- (created ad hoc). Minimal shapes — enough for org_id stamping and RLS.
 create table if not exists page_views (

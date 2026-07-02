@@ -39,6 +39,10 @@ export async function POST(req: NextRequest) {
     if ("error" in funder) return NextResponse.json({ error: funder.error }, { status: 500 });
     funderId = funder.id;
   }
+  // Every grant is tied to a funder (enforced NOT NULL in Postgres too).
+  if (!funderId) {
+    return NextResponse.json({ error: "A funder is required for every grant." }, { status: 400 });
+  }
 
   const insert: Record<string, unknown> = { name, stage, funder_id: funderId, owner: user };
   if (typeof body.amount_requested === "number" && body.amount_requested >= 0)

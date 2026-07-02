@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import ReedPanel from "./ReedPanel";
 
 /**
@@ -37,6 +38,7 @@ export function ReedLauncherProvider({
 }) {
   const [open, setOpen] = useState(false);
   const [opts, setOpts] = useState<OpenOpts>({});
+  const router = useRouter();
 
   const doOpen = useCallback(
     (o?: OpenOpts) => {
@@ -46,7 +48,12 @@ export function ReedLauncherProvider({
     },
     [enabled]
   );
-  const close = useCallback(() => setOpen(false), []);
+  // Refresh on close so anything the conversation persisted (the Q&A history on
+  // /admin/reed, new drafts/suggestions) shows up without a manual reload.
+  const close = useCallback(() => {
+    setOpen(false);
+    router.refresh();
+  }, [router]);
 
   const value = useMemo<ReedLauncher>(
     () => ({ enabled, open: doOpen, close }),

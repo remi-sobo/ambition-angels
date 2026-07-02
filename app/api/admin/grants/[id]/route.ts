@@ -74,20 +74,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const supabase = createServerSupabase();
 
   // Funder: a uuid links an existing organization constituent, a name
-  // find-or-creates one (mirrors POST), and null/empty clears the link.
-  if ("funder_id" in body && (body.funder_id === null || body.funder_id === "")) {
-    update.funder_id = null;
-  } else if (typeof body.funder_id === "string" && /^[0-9a-f-]{36}$/i.test(body.funder_id)) {
+  // find-or-creates one (mirrors POST). Funder is required on every grant, so
+  // an explicit clear is rejected rather than written to null.
+  if (typeof body.funder_id === "string" && /^[0-9a-f-]{36}$/i.test(body.funder_id)) {
     update.funder_id = body.funder_id;
-  } else if ("funder_name" in body) {
+  } else if (
+    "funder_name" in body ||
+    ("funder_id" in body && (body.funder_id === null || body.funder_id === ""))
+  ) {
     const funderName = typeof body.funder_name === "string" ? body.funder_name.trim() : "";
     if (!funderName) {
-      update.funder_id = null;
-    } else {
-      const funder = await findOrCreateFunder(supabase, funderName);
-      if ("error" in funder) return NextResponse.json({ error: funder.error }, { status: 500 });
-      update.funder_id = funder.id;
+      return NextResponse.json({ error: "A funder is required for every grant." }, { status: 400 });
     }
+    const funder = await findOrCreateFunder(supabase, funderName);
+    if ("error" in funder) return NextResponse.json({ error: funder.error }, { status: 500 });
+    update.funder_id = funder.id;
   }
 
   if (Object.keys(update).length === 0) {

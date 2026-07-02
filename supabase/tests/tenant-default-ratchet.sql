@@ -18,12 +18,13 @@ do $$
 declare
   -- Frozen baseline: every public table that carried an org_id column default
   -- as of 2026-06-30. New defaults are forbidden; removals are welcome.
+  -- 2026-07: email_campaigns + segments removed (comms_v2_phase1_default_drops.sql).
   baseline text[] := array[
     'acknowledgments','appeals','applications','attendance','blackouts','board_meetings',
     'board_members','bookings','briefings','bv_newsletter_subscribers','bv_showcase_submissions',
     'campaigns','click_events','cohort_members','cohort_sessions','cohorts','compliance_items',
     'connection_candidates','connections','constituents','demoday_notes','demoday_signups',
-    'donations','email_campaigns','email_sends','fin_budget','fin_categories','fin_category_rules',
+    'donations','email_sends','fin_budget','fin_categories','fin_category_rules',
     'fin_config','fin_imports','fin_revenue_commitments','fin_transactions','fr_agent_activity_log',
     'fr_email_drafts','fr_funding_opportunities','fr_prospect_briefs','fr_prospect_scores',
     'fr_touches','funder_angles','funds','gifts','grant_requirements','grants','hs_companies',
@@ -31,7 +32,7 @@ declare
     'journey_steps','journeys','kpi_settings','kpi_snapshots','meeting_types','opportunities',
     'ops_projects','ops_tasks','page_views','partner_contacts','partner_interactions',
     'partner_waitlist','partners','pledge_payments','pledges','quiz_submissions','recurring_plans',
-    'relationships','segments','soft_credits','strategy_angles','strategy_room_meta','students',
+    'relationships','soft_credits','strategy_angles','strategy_room_meta','students',
     'ygb_attendance','ygb_registrations'
   ];
   extra text;

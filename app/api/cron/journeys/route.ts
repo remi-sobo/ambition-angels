@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { analyzeDonor } from "@/lib/fundraising/retention";
-import { personalize, campaignHtml, campaignText } from "@/lib/fundraising/comms-email";
+import { personalize, buildCampaignEmail } from "@/lib/fundraising/comms-email";
+import { loadOrgCommsSettings, sendBlocker, type OrgCommsSettings } from "@/lib/comms/settings";
 
 // Epic J — journey automation engine. Runs hourly (vercel.json): enrolls
 // constituents on each active journey's trigger, then advances every due
@@ -17,7 +18,6 @@ function isAuthed(req: NextRequest): boolean {
   return !!secret && req.headers.get("authorization") === `Bearer ${secret}`;
 }
 
-const FROM = "Ambition Angels <careers@mail.ambitionangels.org>";
 const nowIso = () => new Date().toISOString();
 const plusDaysIso = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString();
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
@@ -26,8 +26,9 @@ type Admin = ReturnType<typeof getSupabaseAdmin>;
 type Step = { step_order: number; delay_days: number; subject: string; body: string };
 
 // Insert an enrollment if the constituent is contactable and not already in
-// this journey. next_run_at honors the first step's delay.
-async function tryEnroll(admin: Admin, journeyId: string, constituentId: string, step0Delay: number) {
+// this journey. next_run_at honors the first step's delay. org_id comes from
+// the journey row — a service-role write must never ride a column default.
+async function tryEnroll(admin: Admin, journeyId: string, orgId: string, constituentId: string, step0Delay: number) {
   const { data: c } = await admin
     .from("constituents")
     .select("emails, do_not_contact")
@@ -38,7 +39,7 @@ async function tryEnroll(admin: Admin, journeyId: string, constituentId: string,
   await admin
     .from("journey_enrollments")
     .upsert(
-      { journey_id: journeyId, constituent_id: constituentId, current_step: 0, next_run_at: plusDaysIso(step0Delay), status: "active" },
+      { org_id: orgId, journey_id: journeyId, constituent_id: constituentId, current_step: 0, next_run_at: plusDaysIso(step0Delay), status: "active" },
       { onConflict: "journey_id,constituent_id", ignoreDuplicates: true }
     );
 }
@@ -55,7 +56,15 @@ export async function GET(req: NextRequest) {
   let failed = 0;
 
   // ── Enrollment ──
-  const { data: journeys } = await admin.from("journeys").select("id, trigger").eq("status", "active");
+  const { data: journeys } = await admin.from("journeys").select("id, org_id, trigger").eq("status", "active");
+
+  // Sending identity per org; a missing/incomplete settings row blocks that
+  // org's sends (same refusal the campaign send path makes).
+  const settingsCache = new Map<string, OrgCommsSettings | null>();
+  const settingsFor = async (orgId: string): Promise<OrgCommsSettings | null> => {
+    if (!settingsCache.has(orgId)) settingsCache.set(orgId, await loadOrgCommsSettings(admin, orgId));
+    return settingsCache.get(orgId)!;
+  };
   const stepCache = new Map<string, Step[]>();
   const stepsFor = async (journeyId: string): Promise<Step[]> => {
     if (stepCache.has(journeyId)) return stepCache.get(journeyId)!;
@@ -69,7 +78,7 @@ export async function GET(req: NextRequest) {
     return steps;
   };
 
-  for (const j of (journeys ?? []) as Array<{ id: string; trigger: string }>) {
+  for (const j of (journeys ?? []) as Array<{ id: string; org_id: string; trigger: string }>) {
     const steps = await stepsFor(j.id);
     if (steps.length === 0) continue;
     const step0Delay = steps[0].delay_days;
@@ -80,7 +89,7 @@ export async function GET(req: NextRequest) {
       const ids = Array.from(new Set((recent ?? []).map((g) => g.constituent_id as string)));
       for (const id of ids) {
         const { count } = await admin.from("gifts").select("id", { count: "exact", head: true }).eq("constituent_id", id);
-        if ((count ?? 0) === 1) { await tryEnroll(admin, j.id, id, step0Delay); enrolled++; }
+        if ((count ?? 0) === 1) { await tryEnroll(admin, j.id, j.org_id, id, step0Delay); enrolled++; }
       }
     } else if (j.trigger === "lapsed") {
       const { data: gifts } = await admin
@@ -94,7 +103,7 @@ export async function GET(req: NextRequest) {
       const activePlan = new Set((plans ?? []).map((p) => p.constituent_id as string));
       for (const [id, dates] of Array.from(byDonor.entries())) {
         const { flags } = analyzeDonor(dates, today, activePlan.has(id));
-        if (flags.includes("lybunt") || flags.includes("cadence_lapsed")) { await tryEnroll(admin, j.id, id, step0Delay); enrolled++; }
+        if (flags.includes("lybunt") || flags.includes("cadence_lapsed")) { await tryEnroll(admin, j.id, j.org_id, id, step0Delay); enrolled++; }
       }
     }
   }
@@ -109,6 +118,7 @@ export async function GET(req: NextRequest) {
 
   const activeJourneyIds = new Set((journeys ?? []).map((j) => j.id));
   const triggerById = new Map((journeys ?? []).map((j) => [j.id, j.trigger]));
+  const orgById = new Map((journeys ?? []).map((j) => [j.id, j.org_id as string]));
 
   for (const e of (due ?? []) as Array<{ id: string; journey_id: string; constituent_id: string; current_step: number }>) {
     if (!activeJourneyIds.has(e.journey_id)) continue; // journey paused → hold
@@ -126,6 +136,20 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
     const email = ((c?.emails as string[] | null) ?? [])[0];
     if (!c || c.do_not_contact || !email) {
+      await admin.from("journey_enrollments").update({ status: "cancelled" }).eq("id", e.id);
+      continue;
+    }
+
+    // Suppression check (unsubscribed / bounced / complained). Unsubscribe no
+    // longer sets do_not_contact, so this is the check that keeps journeys
+    // from emailing someone who opted out. citext equality is case-insensitive.
+    const { data: sup } = await admin
+      .from("email_suppressions")
+      .select("id")
+      .eq("org_id", orgById.get(e.journey_id)!)
+      .eq("email", email)
+      .maybeSingle();
+    if (sup) {
       await admin.from("journey_enrollments").update({ status: "cancelled" }).eq("id", e.id);
       continue;
     }
@@ -160,15 +184,27 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const settings = await settingsFor(orgById.get(e.journey_id)!);
+    if (sendBlocker(settings) || !settings) {
+      // No sending identity for this org — hold the enrollment and retry
+      // tomorrow rather than sending from a constant or dropping the step.
+      failed++;
+      console.error(`[cron/journeys] send blocked for org ${orgById.get(e.journey_id)}: ${sendBlocker(settings)}`);
+      await admin.from("journey_enrollments").update({ next_run_at: plusDaysIso(1) }).eq("id", e.id);
+      continue;
+    }
+
     try {
-      const text = personalize(step.body, (c.first_name as string) ?? "");
-      await resend.emails.send({
-        from: FROM,
-        to: email,
-        subject: step.subject,
-        html: campaignHtml(text, e.constituent_id),
-        text: campaignText(text, e.constituent_id),
-      });
+      const { error: sendError } = await resend.emails.send(
+        buildCampaignEmail({
+          settings,
+          to: email,
+          subject: step.subject,
+          bodyText: personalize(step.body, (c.first_name as string) ?? ""),
+          constituentId: e.constituent_id,
+        })
+      );
+      if (sendError) throw new Error(sendError.message);
       sent++;
       const nextStep = e.current_step + 1;
       if (nextStep >= steps.length) {

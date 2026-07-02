@@ -25,6 +25,7 @@ export function mockSupabase(results: QueuedResult[]) {
     eq: (a: unknown, b: unknown) => (calls.eq.push([a, b]), builder),
     contains: (a: unknown, b: unknown) => (calls.contains.push([a, b]), builder),
     gte: () => builder,
+    not: () => builder,
     limit: () => builder,
     order: () => builder,
     insert: (o: unknown) => (calls.insert.push(o), builder),

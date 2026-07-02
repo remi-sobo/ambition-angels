@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // Epic I — create an email campaign draft against a saved segment.
 const isUuid = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await getOrgContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
@@ -18,6 +19,7 @@ export async function POST(req: NextRequest) {
   if (!text.trim()) return NextResponse.json({ error: "body is required" }, { status: 400 });
 
   const insert: Record<string, unknown> = {
+    org_id: ctx.orgId,
     name, subject, body: text.slice(0, 20000), status: "draft",
     created_by: (await getAdminUser()) ?? null,
   };

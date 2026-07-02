@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // Saved donor segments: a named filter definition interpreted by
@@ -25,7 +25,8 @@ export async function GET() {
 const FILTER_KEYS = ["q", "type", "source", "tag", "min_total", "since"] as const;
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await createServerSupabase()
     .from("segments")
-    .insert({ name, definition, created_by: (await getAdminUser()) ?? null })
+    .insert({ org_id: ctx.orgId, name, definition, created_by: (await getAdminUser()) ?? null })
     .select("id")
     .single();
   if (error || !data) {

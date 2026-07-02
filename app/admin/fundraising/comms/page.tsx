@@ -2,6 +2,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { NewCampaignForm, CampaignActions } from "./_components/CommsControls";
+import { SettingsCard, type CommsSettings } from "./_components/SettingsCard";
 
 // Epic I — donor communications: compose campaigns against saved segments,
 // test, and send (DNC/unsubscribe honored by the send path).
@@ -25,13 +26,18 @@ const fmtDate = (iso: string) =>
 
 export default async function CommsPage() {
   const supabase = createServerSupabase();
-  const [campaignsRes, segmentsRes] = await Promise.all([
+  const [campaignsRes, segmentsRes, settingsRes] = await Promise.all([
     supabase
       .from("email_campaigns")
       .select("id, name, subject, status, recipient_count, sent_count, failed_count, sent_at, segment_id, segment:segments ( name )")
       .order("created_at", { ascending: false })
       .limit(200),
     supabase.from("segments").select("id, name").order("created_at", { ascending: false }).limit(100),
+    supabase
+      .from("org_comms_settings")
+      .select("from_name, from_email, reply_to, mailing_address, footer_text, daily_send_cap")
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   if (campaignsRes.error) {
@@ -48,6 +54,7 @@ export default async function CommsPage() {
 
   const campaigns = (campaignsRes.data ?? []) as unknown as Campaign[];
   const segments = (segmentsRes.data ?? []) as Array<{ id: string; name: string }>;
+  const settings = (settingsRes.data ?? null) as CommsSettings | null;
   const sent = campaigns.filter((c) => c.status === "sent");
   const totalSent = sent.reduce((s, c) => s + c.sent_count, 0);
 
@@ -64,6 +71,8 @@ export default async function CommsPage() {
           </div>
           <NewCampaignForm segments={segments} />
         </div>
+
+        <SettingsCard settings={settings} />
 
         {segments.length === 0 && (
           <div className="bg-[#F4E8D0] text-[#A56A1B] rounded-xl px-5 py-3 text-sm">

@@ -7,6 +7,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { STAGES, STAGE_LABELS } from "../_lib/stages";
+import FunderPicker, { type FunderChoice } from "../../_components/FunderPicker";
+
+// Turn a FunderPicker choice into the grant API's funder fields. A picked
+// funder sends funder_id; a typed name sends funder_name (find-or-created).
+const funderPayload = (f: FunderChoice): Record<string, string> =>
+  f.funderId ? { funder_id: f.funderId } : { funder_name: f.funderName.trim() };
 
 
 const KINDS = [
@@ -35,13 +41,17 @@ export function NewGrantForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [name, setName] = useState("");
-  const [funder, setFunder] = useState("");
+  const [funder, setFunder] = useState<FunderChoice>({ funderId: null, funderName: "" });
   const [amount, setAmount] = useState("");
   const [deadline, setDeadline] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!funder.funderId && !funder.funderName.trim()) {
+      setError("Every grant needs a funder — search for one or type a new name.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -50,7 +60,7 @@ export function NewGrantForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          funder_name: funder || undefined,
+          ...funderPayload(funder),
           amount_requested: amount ? Number(amount) : undefined,
           first_deadline: deadline || undefined,
           period_end: periodEnd || undefined,
@@ -59,7 +69,7 @@ export function NewGrantForm() {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
       if (j.warning) alert(j.warning);
-      setName(""); setFunder(""); setAmount(""); setDeadline(""); setPeriodEnd("");
+      setName(""); setFunder({ funderId: null, funderName: "" }); setAmount(""); setDeadline(""); setPeriodEnd("");
       setOpen(false);
       router.refresh();
     } catch (err) {
@@ -86,8 +96,8 @@ export function NewGrantForm() {
         <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Koshland 2026" className={inputCls + " w-52"} />
       </label>
       <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
-        Funder
-        <input value={funder} onChange={(e) => setFunder(e.target.value)} placeholder="Foundation name" className={inputCls + " w-48"} />
+        Funder *
+        <FunderPicker value={funder} onChange={setFunder} placeholder="Foundation name" className="w-56" />
       </label>
       <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
         Ask ($)
@@ -130,6 +140,7 @@ const fmtDay = (iso: string) =>
 export type GrantDetails = {
   id: string;
   name: string;
+  funderId: string | null;
   funderName: string | null;
   amount_requested: number | null;
   amount_awarded: number | null;
@@ -148,7 +159,10 @@ export function EditableGrantDetails({ grant }: { grant: GrantDetails }) {
   const [error, setError] = useState("");
 
   const [name, setName] = useState(grant.name);
-  const [funder, setFunder] = useState(grant.funderName ?? "");
+  const [funder, setFunder] = useState<FunderChoice>({
+    funderId: grant.funderId,
+    funderName: grant.funderName ?? "",
+  });
   const [requested, setRequested] = useState(grant.amount_requested?.toString() ?? "");
   const [awarded, setAwarded] = useState(grant.amount_awarded?.toString() ?? "");
   const [periodStart, setPeriodStart] = useState(grant.period_start ?? "");
@@ -160,7 +174,7 @@ export function EditableGrantDetails({ grant }: { grant: GrantDetails }) {
 
   const startEdit = () => {
     setName(grant.name);
-    setFunder(grant.funderName ?? "");
+    setFunder({ funderId: grant.funderId, funderName: grant.funderName ?? "" });
     setRequested(grant.amount_requested?.toString() ?? "");
     setAwarded(grant.amount_awarded?.toString() ?? "");
     setPeriodStart(grant.period_start ?? "");
@@ -179,6 +193,10 @@ export function EditableGrantDetails({ grant }: { grant: GrantDetails }) {
       setError("Grant name is required.");
       return;
     }
+    if (!funder.funderId && !funder.funderName.trim()) {
+      setError("Every grant needs a funder.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -187,7 +205,7 @@ export function EditableGrantDetails({ grant }: { grant: GrantDetails }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          funder_name: funder.trim(),
+          ...funderPayload(funder),
           amount_requested: requested.trim() === "" ? null : Number(requested),
           amount_awarded: awarded.trim() === "" ? null : Number(awarded),
           period_start: periodStart || null,
@@ -254,8 +272,8 @@ export function EditableGrantDetails({ grant }: { grant: GrantDetails }) {
         <input required value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
       </label>
       <label className={fieldLabel}>
-        Funder
-        <input value={funder} onChange={(e) => setFunder(e.target.value)} placeholder="Foundation name" className={inputCls} />
+        Funder *
+        <FunderPicker value={funder} onChange={setFunder} placeholder="Foundation name" />
       </label>
       <div className="grid grid-cols-2 gap-3">
         <label className={fieldLabel}>

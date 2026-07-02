@@ -47,7 +47,9 @@ begin
   insert into campaigns (org_id, name) values (aa,'Smoke Campaign');
   insert into appeals (org_id, name) values (aa,'Smoke Appeal');
   insert into opportunities (org_id, constituent_id, stage) values (aa, c, 'cultivate');
-  insert into grants (org_id, name) values (aa,'Smoke Grant') returning id into gr;
+  -- Grants are tied to a funder (enforce_grant_funder.sql made funder_id NOT
+  -- NULL); the smoke donor stands in as the funder here.
+  insert into grants (org_id, name, funder_id) values (aa,'Smoke Grant', c) returning id into gr;
   insert into grant_requirements (org_id, grant_id, kind, due_date) values (aa, gr, 'application','2026-09-01');
 
   insert into hs_contacts (hubspot_id, email, raw_json, org_id) values ('smoke-hs','smoke@example.org','{}'::jsonb, aa)

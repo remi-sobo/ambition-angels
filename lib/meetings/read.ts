@@ -156,7 +156,9 @@ export async function getMeetingDetail(id: string): Promise<MeetingDetail | null
   const rec = record as MeetingRecord;
 
   // Matched entities: recompute from the linked event's attendees when present
-  // (covers events not yet fanned out); otherwise from the timeline rows.
+  // (covers events not yet fanned out). Always merge in whatever's on the
+  // timeline for this record too, so a manually-connected donor/partner shows
+  // even on a calendar meeting whose attendees never auto-matched.
   let matched: MatchedEntity[] = [];
   if (rec.calendar_event_id) {
     const { data: ev } = await sb
@@ -167,8 +169,15 @@ export async function getMeetingDetail(id: string): Promise<MeetingDetail | null
     const domain = await orgEmailDomain(sb, ctx.orgId);
     const emails = externalEmails((ev as { attendees: Attendee[] | null } | null)?.attendees ?? null, domain);
     matched = await matchAttendees(sb, ctx.orgId, emails);
-  } else {
-    matched = (await matchedByRecord(sb, [rec.id])).get(rec.id) ?? [];
+  }
+  const fromTimeline = (await matchedByRecord(sb, [rec.id])).get(rec.id) ?? [];
+  const seen = new Set(matched.map((m) => `${m.type}:${m.id}`));
+  for (const e of fromTimeline) {
+    const key = `${e.type}:${e.id}`;
+    if (!seen.has(key)) {
+      matched.push(e);
+      seen.add(key);
+    }
   }
 
   const { data: sugg } = await sb

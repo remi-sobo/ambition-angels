@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   type FollowUpStatus,
   type MatchedEntity,
@@ -10,6 +10,13 @@ import {
   type MeetingSuggestedTask,
 } from "@/lib/meetings/types";
 import { Avatar, StatusPill, SectionTitle } from "../_ui";
+
+type ConnectResult = {
+  type: "constituent" | "partner";
+  id: string;
+  name: string;
+  subtitle: string;
+};
 
 type Detail = {
   record: MeetingRecord;
@@ -162,9 +169,12 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
       <section className="rounded-card-lg border-[1.5px] border-outline bg-surface p-6">
         <SectionTitle>Who it was with</SectionTitle>
         {matched.length === 0 ? (
-          <p className="text-sm text-ink-2 italic">
-            No matched donor or partner — this meeting is in the unmatched tray.
-          </p>
+          <div className="space-y-3">
+            <p className="text-sm text-ink-2 italic">
+              No matched donor or partner — this meeting is in the unmatched tray.
+            </p>
+            <ConnectEntity meetingId={record.id} />
+          </div>
         ) : (
           <div className="flex flex-wrap gap-2">
             {matched.map((e) => (
@@ -296,6 +306,107 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+/**
+ * Manual connect control for the unmatched tray: search the CRM for a donor or
+ * partner and link them to this meeting. Persists via the meeting's `connect`
+ * route (which fans out to the timeline), then refreshes so the newly connected
+ * entity shows in "Who it was with".
+ */
+function ConnectEntity({ meetingId }: { meetingId: string }) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<ConnectResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const seq = useRef(0);
+
+  useEffect(() => {
+    const term = q.trim();
+    if (term.length < 2) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const mine = ++seq.current;
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/admin/meetings/${meetingId}/connect?q=${encodeURIComponent(term)}`);
+        const json = (await r.json()) as { results?: ConnectResult[] };
+        if (mine === seq.current) setResults(json.results ?? []);
+      } catch {
+        if (mine === seq.current) setResults([]);
+      } finally {
+        if (mine === seq.current) setSearching(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q, meetingId]);
+
+  async function connect(entity: ConnectResult) {
+    setSaving(true);
+    try {
+      const r = await fetch(`/api/admin/meetings/${meetingId}/connect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entity_type: entity.type, entity_id: entity.id }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      setQ("");
+      setResults([]);
+      startTransition(() => router.refresh());
+    } catch (e) {
+      console.error(e);
+      alert("Couldn't connect. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="rounded-card border border-dashed border-outline bg-tile/30 p-4">
+      <label className="text-[11px] uppercase tracking-wider text-ink-2 font-semibold">
+        Connect a donor or partner
+      </label>
+      <input
+        type="text"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        disabled={saving}
+        placeholder="Search the CRM by name…"
+        className="mt-2 w-full text-sm rounded-card border border-outline bg-surface p-2.5 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/40 disabled:opacity-50"
+      />
+      {q.trim().length >= 2 && (
+        <div className="mt-2 space-y-1">
+          {searching && results.length === 0 ? (
+            <p className="text-[12px] text-ink-3 px-1 py-1.5">Searching…</p>
+          ) : results.length === 0 ? (
+            <p className="text-[12px] text-ink-3 px-1 py-1.5">No matches.</p>
+          ) : (
+            results.map((e) => (
+              <button
+                key={`${e.type}:${e.id}`}
+                onClick={() => connect(e)}
+                disabled={saving}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-card text-left hover:bg-[#EFE6D4] disabled:opacity-40 transition-colors"
+              >
+                <Avatar entity={{ type: e.type, id: e.id, name: e.name, matchedEmail: null }} />
+                <span className="min-w-0 flex flex-col leading-tight">
+                  <span className="text-[13px] text-ink-1 truncate">{e.name}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-ink-3 truncate">
+                    {e.type === "partner" ? "Partner" : "Donor"} · {e.subtitle}
+                  </span>
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

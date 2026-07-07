@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PageHeader from "../_components/PageHeader";
 import EmptyState from "../_components/EmptyState";
 import OrgChart from "./_components/OrgChart";
@@ -29,6 +30,14 @@ export default async function StaffPage() {
         title="Staff"
         subtitle="The team, who reports to whom, and each person's profile."
         eyebrow={`${tree.count} ${tree.count === 1 ? "person" : "people"}`}
+        actions={
+          <Link
+            href="/admin/staff/reviews"
+            className="rounded-md border border-outline px-3 py-1.5 text-sm font-semibold text-ink-1 hover:border-orange/50"
+          >
+            Reviews
+          </Link>
+        }
       />
       {tree.count === 0 ? (
         <EmptyState

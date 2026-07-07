@@ -4,7 +4,9 @@ import EmptyState from "../../_components/EmptyState";
 import { StatusChip } from "../../_components/StatusChip";
 import PhotoControl from "./_components/PhotoControl";
 import DevelopmentSections from "./_components/DevelopmentSections";
+import ReviewsSection from "./_components/ReviewsSection";
 import { getStaffMember, getStaffDevelopment } from "../_lib/read";
+import { getSubjectReviews, getReviewCompetencies } from "../_lib/reviews";
 import { STAFF_METRIC_META } from "@/lib/admin/staff/metrics";
 
 // A staff member's profile: identity + photo, and (labeled empty for now)
@@ -35,7 +37,9 @@ export default async function StaffProfilePage({ params }: { params: { id: strin
   if (!data) notFound();
   const { member, managerName, photoUrl, canEditPhoto, canViewSensitive, isSelf } = data;
 
-  const development = canViewSensitive ? await getStaffDevelopment(member.id) : null;
+  const [development, reviews, competencies] = canViewSensitive
+    ? await Promise.all([getStaffDevelopment(member.id), getSubjectReviews(member.id), getReviewCompetencies()])
+    : [null, [], []];
   const autoOptions = Object.entries(STAFF_METRIC_META).map(([key, m]) => ({
     key,
     label: m.label,
@@ -84,17 +88,20 @@ export default async function StaffProfilePage({ params }: { params: { id: strin
         {/* Development column: Goals / KPIs (Phase 2), Reviews (Phase 3) */}
         <div className="flex flex-col gap-8">
           {development ? (
-            <DevelopmentSections
-              staffId={member.id}
-              goals={development.goals}
-              kpis={development.kpis}
-              canApprove={!isSelf}
-              autoOptions={autoOptions}
-            />
+            <>
+              <DevelopmentSections
+                staffId={member.id}
+                goals={development.goals}
+                kpis={development.kpis}
+                canApprove={!isSelf}
+                autoOptions={autoOptions}
+              />
+              <ReviewsSection subjectStaffId={member.id} cycles={reviews} competencies={competencies} />
+            </>
           ) : (
             <EmptyState
               label="development data"
-              hint="Goals and KPIs are visible only to this person, their managers, and admins."
+              hint="Goals, KPIs, and reviews are visible only to this person, their managers, and admins."
             />
           )}
         </div>

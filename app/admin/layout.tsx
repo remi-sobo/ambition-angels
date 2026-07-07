@@ -13,6 +13,7 @@ import { AdminUserProvider } from "./_components/AdminUserContext";
 import { AdminBadgesProvider } from "./_components/AdminBadges";
 import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import { hasEntitlement } from "@/lib/admin/entitlements";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: {
@@ -59,6 +60,19 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // (Phase 4), so hiding it here is an affordance, not the security boundary.
   const reedEnabled = authed && (await hasEntitlement("ai.reed"));
 
+  // Per-tenant label for the Staff module (Phase 4 org_terminology), so the nav
+  // reads "Team"/"People" when an org has renamed it. Falls back to "Staff".
+  let staffLabel: string | null = null;
+  if (orgId) {
+    const { data } = await createServerSupabase()
+      .from("org_terminology")
+      .select("label")
+      .eq("org_id", orgId)
+      .eq("term_key", "staff")
+      .maybeSingle();
+    staffLabel = (data as { label: string } | null)?.label ?? null;
+  }
+
   // The shell (sidebar + main column) renders on every /admin/* visit,
   // including the unauthed login screen at /admin. Earlier this layout
   // skipped the shell when unauthed — but that meant logged-in users
@@ -72,7 +86,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     <AdminBadgesProvider orgId={orgId} enabled={authed}>
     <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
       <AdminPWA />
-      <Sidebar currentUser={user} />
+      <Sidebar currentUser={user} staffLabel={staffLabel} />
       {/* One Reed launcher shared by the rail (desktop capture-to-Reed) and the
           FAB (mobile), so there's a single Reed drawer regardless of entry. */}
       <ReedLauncherProvider enabled={reedEnabled}>

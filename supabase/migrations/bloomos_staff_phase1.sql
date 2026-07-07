@@ -141,25 +141,30 @@ insert into public.role_permissions (role, permission) values
 on conflict do nothing;
 
 -- ── Seed: Remi + Shannon (AA org) ────────────────────────────────────────────
--- Idempotent via unique (org_id, user_id). Shannon's reports_to is resolved from
--- Remi's seeded row so re-applying is safe whether or not Remi already exists.
-with remi as (
-  insert into public.staff (org_id, user_id, full_name, title, reports_to, sort_order)
-  values ('17c75da8-082d-4c8f-b00b-a4100fb2eb22',
-          'aa39cd02-b813-4e75-aa36-52adadf5d2fe',
-          'Remi Sobomehin', 'Founder & CEO', null, 0)
-  on conflict (org_id, user_id) do nothing
-  returning id
-)
+-- Idempotent via unique (org_id, user_id). Insert both people, THEN link
+-- Shannon to Remi in a separate statement — a data-modifying CTE's insert isn't
+-- visible to a sibling table read in the same statement, so resolving Remi's id
+-- inline returns null (the reports_to must be set by its own UPDATE).
 insert into public.staff (org_id, user_id, full_name, title, reports_to, sort_order)
-select '17c75da8-082d-4c8f-b00b-a4100fb2eb22',
-       '7312ba86-5203-4cf6-81d8-d8fbd3e2ec89',
-       'Shannon', 'Operations & Executive Support',
-       (select id from public.staff
-        where org_id = '17c75da8-082d-4c8f-b00b-a4100fb2eb22'
-          and user_id = 'aa39cd02-b813-4e75-aa36-52adadf5d2fe'),
-       1
+values ('17c75da8-082d-4c8f-b00b-a4100fb2eb22',
+        'aa39cd02-b813-4e75-aa36-52adadf5d2fe',
+        'Remi Sobomehin', 'Founder & CEO', null, 0)
 on conflict (org_id, user_id) do nothing;
+
+insert into public.staff (org_id, user_id, full_name, title, reports_to, sort_order)
+values ('17c75da8-082d-4c8f-b00b-a4100fb2eb22',
+        '7312ba86-5203-4cf6-81d8-d8fbd3e2ec89',
+        'Shannon', 'Operations & Executive Support', null, 1)
+on conflict (org_id, user_id) do nothing;
+
+update public.staff shannon
+set reports_to = remi.id
+from public.staff remi
+where shannon.org_id = '17c75da8-082d-4c8f-b00b-a4100fb2eb22'
+  and shannon.user_id = '7312ba86-5203-4cf6-81d8-d8fbd3e2ec89'
+  and remi.org_id = '17c75da8-082d-4c8f-b00b-a4100fb2eb22'
+  and remi.user_id = 'aa39cd02-b813-4e75-aa36-52adadf5d2fe'
+  and shannon.reports_to is null;
 
 -- ── staff-photos storage bucket + policies ───────────────────────────────────
 -- Private bucket (public=false, like the other bloomos buckets). Path convention

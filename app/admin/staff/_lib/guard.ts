@@ -33,6 +33,16 @@ export async function resolveStaffAccess(staffId: string): Promise<StaffAccess |
   return { supabase, ctx, staff: row, canView: canView === true, isSelf: row.user_id === ctx.userId };
 }
 
+/** Resolve session context gated on staff.manage (cycle-admin actions). */
+export async function resolveManage(): Promise<{ supabase: SupabaseClient; ctx: OrgContext } | null> {
+  const { hasPermission } = await import("@/lib/admin/permissions");
+  const ctx = await getOrgContext();
+  if (!ctx) return null;
+  const supabase = createServerSupabase();
+  if (!(await hasPermission(supabase, ctx.orgId, "staff.manage"))) return null;
+  return { supabase, ctx };
+}
+
 export const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
 

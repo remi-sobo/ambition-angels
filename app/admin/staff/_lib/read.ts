@@ -32,12 +32,21 @@ export type StaffRow = {
 
 export type StaffNode = StaffRow & { reports: StaffNode[] };
 
-export type StaffTree = {
+export type AssembledTree = {
   roots: StaffNode[];
   /** Rows the tree couldn't place under a root (orphaned manager, cross-org). */
   orphans: StaffNode[];
   count: number;
 };
+
+export type StaffTree = AssembledTree & {
+  /** Viewer holds staff.write — may edit/reorder/reparent (enables the editable chart). */
+  canWrite: boolean;
+  /** Flat active rows, for the editable chart's descendant/cycle checks. */
+  all: StaffRow[];
+};
+
+export type PendingInvite = { id: string; email: string; role: string };
 
 const SELECT =
   "id, org_id, user_id, full_name, title, reports_to, department, employment_type, photo_path, start_date, status, sort_order";
@@ -53,16 +62,63 @@ export async function getStaffTree(): Promise<StaffTree | null> {
   const supabase = createServerSupabase();
   if (!(await hasPermission(supabase, ctx.orgId, "staff.read"))) return null;
 
+  const [rowsRes, canWrite] = await Promise.all([
+    supabase
+      .from("staff")
+      .select(SELECT)
+      .eq("org_id", ctx.orgId)
+      .eq("status", "active")
+      .order("sort_order")
+      .order("full_name"),
+    hasPermission(supabase, ctx.orgId, "staff.write"),
+  ]);
+
+  const rows = (rowsRes.data ?? []) as StaffRow[];
+  const tree = assembleTree(rows);
+  return { ...tree, canWrite, all: rows };
+}
+
+/** Pending (unaccepted) invitations — "ghost" nodes on the chart. RLS on
+ *  invitations gates this to members.manage holders, so regular staff get []. */
+export async function getPendingInvites(): Promise<PendingInvite[]> {
+  const ctx = await getOrgContext();
+  if (!ctx) return [];
+  const supabase = createServerSupabase();
+  const { data } = await supabase
+    .from("invitations")
+    .select("id, email, role")
+    .eq("org_id", ctx.orgId)
+    .is("accepted_at", null)
+    .order("created_at");
+  return (data ?? []) as PendingInvite[];
+}
+
+/** Lightweight {id, full_name} list of active staff — for the manager picker. */
+export async function getStaffOptions(): Promise<{ id: string; full_name: string }[]> {
+  const ctx = await getOrgContext();
+  if (!ctx) return [];
+  const supabase = createServerSupabase();
   const { data } = await supabase
     .from("staff")
-    .select(SELECT)
+    .select("id, full_name")
     .eq("org_id", ctx.orgId)
     .eq("status", "active")
-    .order("sort_order")
     .order("full_name");
+  return (data ?? []) as { id: string; full_name: string }[];
+}
 
-  const rows = (data ?? []) as StaffRow[];
-  return assembleTree(rows);
+/** The tenant's label for the Staff module ("Staff" default, or a renamed term). */
+export async function getStaffLabel(): Promise<string> {
+  const ctx = await getOrgContext();
+  if (!ctx) return "Staff";
+  const supabase = createServerSupabase();
+  const { data } = await supabase
+    .from("org_terminology")
+    .select("label")
+    .eq("org_id", ctx.orgId)
+    .eq("term_key", "staff")
+    .maybeSingle();
+  return (data as { label: string } | null)?.label?.trim() || "Staff";
 }
 
 /**
@@ -71,7 +127,7 @@ export async function getStaffTree(): Promise<StaffTree | null> {
  * cap even though the DB trigger already rejects them — a corrupt row must never
  * hang the render.
  */
-export function assembleTree(rows: StaffRow[]): StaffTree {
+export function assembleTree(rows: StaffRow[]): AssembledTree {
   const byId = new Map<string, StaffNode>();
   for (const r of rows) byId.set(r.id, { ...r, reports: [] });
 

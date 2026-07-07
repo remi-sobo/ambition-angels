@@ -370,7 +370,13 @@ function activeSectionLabel(pathname: string): string {
   return "BloomOS";
 }
 
-export default function Sidebar({ currentUser }: { currentUser: AdminUser | null }) {
+export default function Sidebar({
+  currentUser,
+  staffLabel,
+}: {
+  currentUser: AdminUser | null;
+  staffLabel?: string | null;
+}) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -465,7 +471,9 @@ export default function Sidebar({ currentUser }: { currentUser: AdminUser | null
                       name={item.icon}
                       className={`w-4 h-4 shrink-0 ${active === item.href ? "text-[#F47840]" : "opacity-70"}`}
                     />
-                    <span className="truncate">{item.label}</span>
+                    <span className="truncate">
+                      {item.href === "/admin/staff" && staffLabel ? staffLabel : item.label}
+                    </span>
                     {item.href === "/admin/inbox" && unread > 0 && (
                       <span
                         className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-[10px] font-bold leading-none"

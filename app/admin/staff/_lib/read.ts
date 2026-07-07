@@ -113,7 +113,44 @@ export type StaffMember = {
   /** Viewer may edit HR fields (title, manager, …). */
   canManage: boolean;
   isSelf: boolean;
+  /** Viewer may see the sensitive tier (goals/KPIs/reviews): self, a manager
+   *  above, or a staff.manage holder. Gates whether those sections render. */
+  canViewSensitive: boolean;
 };
+
+export type StaffGoal = {
+  id: string;
+  staff_id: string;
+  title: string;
+  description: string | null;
+  metric_type: string;
+  target_value: number | null;
+  current_value: number | null;
+  unit: string | null;
+  period: string | null;
+  target_date: string | null;
+  linked_plan_goal_id: string | null;
+  status: string;
+  approval_status: string;
+  sort_order: number;
+};
+
+export type StaffKpi = {
+  id: string;
+  staff_id: string;
+  title: string;
+  unit: string | null;
+  target: number | null;
+  current: number | null;
+  cadence: string | null;
+  source: string;
+  linked_metric_key: string | null;
+  status: string;
+  last_updated_at: string | null;
+  sort_order: number;
+};
+
+export type StaffDevelopment = { goals: StaffGoal[]; kpis: StaffKpi[] };
 
 /**
  * A single person's profile. Returns null when unauthenticated, lacking
@@ -157,6 +194,9 @@ export async function getStaffMember(id: string): Promise<StaffMember | null> {
   const canManage = await hasPermission(supabase, ctx.orgId, "staff.write");
   const isSelf = member.user_id === ctx.userId;
 
+  // Ask the DB the same question the sensitive-tier policies ask.
+  const { data: canView } = await supabase.rpc("can_view_staff", { p_staff_id: id });
+
   return {
     member,
     managerName,
@@ -164,5 +204,37 @@ export async function getStaffMember(id: string): Promise<StaffMember | null> {
     canEditPhoto: canManage || isSelf,
     canManage,
     isSelf,
+    canViewSensitive: canView === true,
+  };
+}
+
+/**
+ * A person's goals + KPIs. RLS returns rows only where the caller can_view_staff,
+ * so an unauthorized viewer gets empty lists; the profile page gates the whole
+ * section on canViewSensitive so it never shows a misleadingly-empty tier.
+ */
+export async function getStaffDevelopment(staffId: string): Promise<StaffDevelopment> {
+  const supabase = createServerSupabase();
+  const [goalsRes, kpisRes] = await Promise.all([
+    supabase
+      .from("staff_goals")
+      .select(
+        "id, staff_id, title, description, metric_type, target_value, current_value, unit, period, target_date, linked_plan_goal_id, status, approval_status, sort_order"
+      )
+      .eq("staff_id", staffId)
+      .order("sort_order")
+      .order("created_at"),
+    supabase
+      .from("staff_kpis")
+      .select(
+        "id, staff_id, title, unit, target, current, cadence, source, linked_metric_key, status, last_updated_at, sort_order"
+      )
+      .eq("staff_id", staffId)
+      .order("sort_order")
+      .order("created_at"),
+  ]);
+  return {
+    goals: (goalsRes.data ?? []) as StaffGoal[],
+    kpis: (kpisRes.data ?? []) as StaffKpi[],
   };
 }

@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import PageHeader from "../../_components/PageHeader";
-import SectionHeading from "../../_components/SectionHeading";
 import EmptyState from "../../_components/EmptyState";
 import { StatusChip } from "../../_components/StatusChip";
 import PhotoControl from "./_components/PhotoControl";
-import { getStaffMember } from "../_lib/read";
+import DevelopmentSections from "./_components/DevelopmentSections";
+import { getStaffMember, getStaffDevelopment } from "../_lib/read";
+import { STAFF_METRIC_META } from "@/lib/admin/staff/metrics";
 
 // A staff member's profile: identity + photo, and (labeled empty for now)
 // Goals, KPIs, and Reviews. Sections fill in as Phases 2-3 land. Session client
@@ -32,7 +33,14 @@ export default async function StaffProfilePage({ params }: { params: { id: strin
 
   const data = await getStaffMember(params.id);
   if (!data) notFound();
-  const { member, managerName, photoUrl, canEditPhoto } = data;
+  const { member, managerName, photoUrl, canEditPhoto, canViewSensitive, isSelf } = data;
+
+  const development = canViewSensitive ? await getStaffDevelopment(member.id) : null;
+  const autoOptions = Object.entries(STAFF_METRIC_META).map(([key, m]) => ({
+    key,
+    label: m.label,
+    unit: m.unit,
+  }));
 
   return (
     <div className="p-6 lg:p-8 max-w-4xl">
@@ -73,29 +81,22 @@ export default async function StaffProfilePage({ params }: { params: { id: strin
           </div>
         </div>
 
-        {/* Development column: Goals / KPIs / Reviews (Phases 2-3) */}
+        {/* Development column: Goals / KPIs (Phase 2), Reviews (Phase 3) */}
         <div className="flex flex-col gap-8">
-          <section>
-            <SectionHeading className="mb-3">Goals</SectionHeading>
-            <EmptyState
-              label="Goals"
-              hint="Period objectives for this person, optionally cascading from a strategy goal. Coming in Phase 2."
+          {development ? (
+            <DevelopmentSections
+              staffId={member.id}
+              goals={development.goals}
+              kpis={development.kpis}
+              canApprove={!isSelf}
+              autoOptions={autoOptions}
             />
-          </section>
-          <section>
-            <SectionHeading className="mb-3">KPIs</SectionHeading>
+          ) : (
             <EmptyState
-              label="KPIs"
-              hint="Recurring personal metrics with targets — some auto-read from the BloomOS spine. Coming in Phase 2."
+              label="development data"
+              hint="Goals and KPIs are visible only to this person, their managers, and admins."
             />
-          </section>
-          <section>
-            <SectionHeading className="mb-3">Reviews</SectionHeading>
-            <EmptyState
-              label="Reviews"
-              hint="360 review cycles: self, manager, upward, and peer feedback. Coming in Phase 3."
-            />
-          </section>
+          )}
         </div>
       </div>
     </div>

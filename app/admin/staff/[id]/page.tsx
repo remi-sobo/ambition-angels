@@ -5,7 +5,8 @@ import { StatusChip } from "../../_components/StatusChip";
 import PhotoControl from "./_components/PhotoControl";
 import DevelopmentSections from "./_components/DevelopmentSections";
 import ReviewsSection from "./_components/ReviewsSection";
-import { getStaffMember, getStaffDevelopment } from "../_lib/read";
+import StaffEditForm from "./_components/StaffEditForm";
+import { getStaffMember, getStaffDevelopment, getStaffOptions } from "../_lib/read";
 import { getSubjectReviews, getReviewCompetencies } from "../_lib/reviews";
 import { STAFF_METRIC_META } from "@/lib/admin/staff/metrics";
 
@@ -35,7 +36,9 @@ export default async function StaffProfilePage({ params }: { params: { id: strin
 
   const data = await getStaffMember(params.id);
   if (!data) notFound();
-  const { member, managerName, photoUrl, canEditPhoto, canViewSensitive, isSelf } = data;
+  const { member, managerName, photoUrl, canEditPhoto, canManage, canViewSensitive, isSelf } = data;
+
+  const managerOptions = canManage ? await getStaffOptions() : [];
 
   const [development, reviews, competencies] = canViewSensitive
     ? await Promise.all([getStaffDevelopment(member.id), getSubjectReviews(member.id), getReviewCompetencies()])
@@ -83,6 +86,7 @@ export default async function StaffProfilePage({ params }: { params: { id: strin
               <MetaRow label="Started" value={member.start_date} />
             ) : null}
           </div>
+          {canManage ? <StaffEditForm member={member} managerOptions={managerOptions} /> : null}
         </div>
 
         {/* Development column: Goals / KPIs (Phase 2), Reviews (Phase 3) */}

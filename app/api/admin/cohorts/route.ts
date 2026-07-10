@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const STATUSES = ["planning", "active", "completed", "archived"] as const;
@@ -8,14 +8,16 @@ const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const name = body && typeof body.name === "string" ? body.name.trim().slice(0, 160) : "";
   if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
 
-  const insert: Record<string, unknown> = { name };
+  // org from session, never a column default (the program-domain defaults are gone).
+  const insert: Record<string, unknown> = { name, org_id: ctx.orgId };
   if (STATUSES.includes(body?.status as (typeof STATUSES)[number])) insert.status = body!.status;
   for (const f of ["program", "term", "location"] as const) {
     if (typeof body?.[f] === "string" && (body[f] as string).trim())

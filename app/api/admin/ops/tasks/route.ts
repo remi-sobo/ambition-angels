@@ -80,9 +80,19 @@ export async function POST(req: NextRequest) {
   if (body.project_id !== undefined && body.project_id !== null && typeof body.project_id !== "string") {
     return NextResponse.json({ error: "project_id must be a string" }, { status: 400 });
   }
-  // Optional CRM link (partner org / constituent) — set together.
+  // Optional entity link — set together. Vocabulary mirrors the DB CHECK
+  // (ops_tasks_linked_entity_type_check, widened by program_spine_schema.sql
+  // to match the spine registry).
+  const LINK_TYPES = [
+    "partner", "constituent", "opportunity", "volunteer", "milestone",
+    "student", "cohort", "application", "program", "grant", "document", "metric",
+  ] as const;
   const linkType = body.linked_entity_type;
-  if (linkType !== undefined && linkType !== null && linkType !== "partner" && linkType !== "constituent") {
+  if (
+    linkType !== undefined &&
+    linkType !== null &&
+    !LINK_TYPES.includes(linkType as (typeof LINK_TYPES)[number])
+  ) {
     return NextResponse.json({ error: "linked_entity_type is invalid" }, { status: 400 });
   }
   if (linkType && (typeof body.linked_entity_id !== "string" || !/^[0-9a-f-]{36}$/i.test(body.linked_entity_id))) {
@@ -108,7 +118,7 @@ export async function POST(req: NextRequest) {
     planned_week:
       (body.planned_week as string | null | undefined) ??
       (body.pinned_for_this_week === true ? thisMonday() : null),
-    linked_entity_type: (linkType as "partner" | "constituent" | null | undefined) ?? null,
+    linked_entity_type: (linkType as string | null | undefined) ?? null,
     linked_entity_id: linkType ? (body.linked_entity_id as string) : null,
     linked_label: typeof body.linked_label === "string" ? body.linked_label.slice(0, 200) : null,
   };

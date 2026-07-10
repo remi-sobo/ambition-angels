@@ -129,6 +129,18 @@ const RECORD_LOOKUPS: Record<string, RecordLookup> = {
     toLabel: (r) => (r.title as string) || (r.filename as string) || "",
   },
   metric: { table: "metric_definitions", select: "id, name", toLabel: name },
+  student: {
+    table: "students",
+    select: "id, first_name, last_name",
+    toLabel: (r) => [r.first_name, r.last_name].filter(Boolean).join(" "),
+  },
+  cohort: { table: "cohorts", select: "id, name", toLabel: name },
+  application: {
+    table: "applications",
+    select: "id, first_name, last_name",
+    toLabel: (r) => [r.first_name, r.last_name].filter(Boolean).join(" "),
+  },
+  program: { table: "programs", select: "id, name", toLabel: name },
   ops_task: { table: "ops_tasks", select: "id, title", toLabel: title },
   ops_project: { table: "ops_projects", select: "id, title", toLabel: title },
   compliance_item: { table: "compliance_items", select: "id, title", toLabel: title },

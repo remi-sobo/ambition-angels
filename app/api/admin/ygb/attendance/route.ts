@@ -46,10 +46,19 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getSupabaseAdmin();
+  // Check-in lives in its registration's org — derive, never default.
+  const { data: reg } = await supabase
+    .from("ygb_registrations")
+    .select("org_id")
+    .eq("id", registration_id)
+    .maybeSingle();
+  if (!reg) return NextResponse.json({ error: "Registration not found" }, { status: 404 });
+
   const { error } = await supabase
     .from("ygb_attendance")
     .upsert(
       {
+        org_id: reg.org_id,
         registration_id,
         attendance_date,
         checked_in,

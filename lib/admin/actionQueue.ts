@@ -29,7 +29,9 @@ export type ActionItemRow = {
     | "acknowledgment"
     | "reconciliation_item"
     | "document_renewal"
-    | "metric_stale";
+    | "metric_stale"
+    | "application_pending"
+    | "session_unrecorded";
   source_id: string;
   title: string;
   entity_type: string | null;
@@ -67,6 +69,8 @@ const SOURCE_FALLBACK_HREF: Record<ActionItemRow["source"], string> = {
   reconciliation_item: "/admin/finance/reconcile",
   document_renewal: "/admin/documents",
   metric_stale: "/admin/kpis",
+  application_pending: "/admin/intake",
+  session_unrecorded: "/admin/cohorts",
 };
 
 const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };

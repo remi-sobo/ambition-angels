@@ -21,10 +21,14 @@ declare
   -- 2026-07: email_campaigns + segments removed (comms_v2_phase1_default_drops.sql).
   -- 2026-07: kpi_settings + kpi_snapshots removed — tables dropped by
   --          metrics_retire_dead_kpi_tables.sql (one trap deleted outright).
+  -- 2026-07: the eight program-domain tables removed — defaults dropped by
+  --          program_spine_schema.sql after every writer was made org-explicit
+  --          (students, cohorts, cohort_members, cohort_sessions, attendance,
+  --          applications, ygb_registrations, ygb_attendance).
   baseline text[] := array[
-    'acknowledgments','appeals','applications','attendance','blackouts','board_meetings',
+    'acknowledgments','appeals','blackouts','board_meetings',
     'board_members','bookings','briefings','bv_newsletter_subscribers','bv_showcase_submissions',
-    'campaigns','click_events','cohort_members','cohort_sessions','cohorts','compliance_items',
+    'campaigns','click_events','compliance_items',
     'connection_candidates','connections','constituents','demoday_notes','demoday_signups',
     'donations','email_sends','fin_budget','fin_categories','fin_category_rules',
     'fin_config','fin_imports','fin_revenue_commitments','fin_transactions','fr_agent_activity_log',
@@ -34,8 +38,7 @@ declare
     'journey_steps','journeys','meeting_types','opportunities',
     'ops_projects','ops_tasks','page_views','partner_contacts','partner_interactions',
     'partner_waitlist','partners','pledge_payments','pledges','quiz_submissions','recurring_plans',
-    'relationships','soft_credits','strategy_angles','strategy_room_meta','students',
-    'ygb_attendance','ygb_registrations'
+    'relationships','soft_credits','strategy_angles','strategy_room_meta'
   ];
   extra text;
 begin

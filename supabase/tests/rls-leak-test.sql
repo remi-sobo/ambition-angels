@@ -265,6 +265,343 @@ begin
   end if;
 end $$;
 
+-- ════ Operating Spine: v_action_items + entity_types ═════════════════════
+-- The unified action queue is a security_invoker view over five RLS-gated
+-- sources; if the invoker option were ever dropped it would run as owner and
+-- merge tenants. These checks fail loudly in that world.
+reset role;
+reset request.jwt.claim.sub;
+
+-- Seed one open tenant-two action item (a pending-ack gift) as service role.
+do $$
+declare t2 uuid; t2c uuid;
+begin
+  select id into t2 from orgs where slug = 'tenant-two';
+  select id into t2c from constituents where org_id = t2 limit 1;
+  insert into gifts (org_id, constituent_id, amount, gift_date, method, external_source, external_id, acknowledgment_status)
+  values (t2, t2c, 75, '2026-02-05', 'card', 'leak-test', 'leak-test-t2-action', 'pending')
+  on conflict do nothing;
+end $$;
+
+-- The view itself must run as invoker; a definer view here merges tenants.
+do $$ begin
+  if (select coalesce(array_position(reloptions, 'security_invoker=on'), 0)
+      from pg_class where relname = 'v_action_items' and relnamespace = 'public'::regnamespace) = 0 then
+    raise exception 'v_action_items is not security_invoker — tenants would merge';
+  end if;
+end $$;
+
+set role authenticated;
+
+-- AA owner: sees AA's open items (the seeded ops task), nothing of tenant-two's.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare t2 uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  if (select count(*) from v_action_items where source = 'ops_task') = 0 then
+    raise exception 'AA owner cannot read AA ops tasks through v_action_items';
+  end if;
+  if (select count(*) from v_action_items where org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two action items';
+  end if;
+  -- Registry is global config: readable by any authenticated member.
+  if (select count(*) from entity_types) < 10 then
+    raise exception 'authenticated member cannot read the entity_types registry';
+  end if;
+end $$;
+
+-- Tenant-two owner: sees only its own action items, zero AA rows.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from v_action_items where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA action items through v_action_items';
+  end if;
+  if (select count(*) from v_action_items) = 0 then
+    raise exception 'tenant-two owner cannot read its OWN action items';
+  end if;
+end $$;
+
+-- Registry writes are denied for every authenticated user (service-role only).
+do $$ begin
+  insert into entity_types (entity_type, display_name, module, route_pattern)
+  values ('leak-test-type', 'Leak', 'ops', '/admin/ops');
+  raise exception 'LEAK: authenticated user wrote to the entity_types registry';
+exception when insufficient_privilege then null; -- expected: RLS denial
+end $$;
+
+-- user_org_state is self-only and membership-bound: no org_id default, so a
+-- row can never silently land in the resident org (the ops_tasks default trap).
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare aa uuid; t2 uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select id into t2 from public.orgs where slug = 'tenant-two';
+
+  -- Own row in own org: fine.
+  insert into user_org_state (user_id, org_id, last_seen_at)
+  values ('00000000-0000-0000-0000-000000000001', aa, now())
+  on conflict (user_id, org_id) do update set last_seen_at = now();
+
+  -- Parking state in an org you don't belong to: denied.
+  begin
+    insert into user_org_state (user_id, org_id, last_seen_at)
+    values ('00000000-0000-0000-0000-000000000001', t2, now());
+    raise exception 'LEAK: AA owner wrote user_org_state into tenant-two';
+  exception when insufficient_privilege then null; -- expected
+  end;
+
+  -- Writing another user's state: denied.
+  begin
+    insert into user_org_state (user_id, org_id, last_seen_at)
+    values ('00000000-0000-0000-0000-000000000002', aa, now());
+    raise exception 'LEAK: AA owner wrote another user''s user_org_state';
+  exception when insufficient_privilege then null; -- expected
+  end;
+end $$;
+
+-- Stranger (session, no membership): the queue is empty, not an error, and
+-- user_org_state rejects the write (no membership anywhere).
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from v_action_items) <> 0 then
+    raise exception 'LEAK: non-member reads action items';
+  end if;
+end $$;
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into user_org_state (user_id, org_id, last_seen_at)
+  values ('00000000-0000-0000-0000-000000000003', aa, now());
+  raise exception 'LEAK: non-member wrote user_org_state';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- ════ Documents: org isolation, role gates, board link-scoping ═══════════
+reset role;
+reset request.jwt.claim.sub;
+
+-- A board_viewer principal (no documents.* permission by design).
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-000000000005','boardie@example.org')
+on conflict do nothing;
+insert into memberships (user_id, org_id, role)
+select '00000000-0000-0000-0000-000000000005', id, 'board_viewer'
+from orgs where slug = 'ambition-angels'
+on conflict do nothing;
+
+-- Seed (service role): one plain AA document, one AA document linked to a
+-- board meeting, one restricted AA document, one tenant-two document.
+do $$
+declare aa uuid; t2 uuid; mtg uuid; boarddoc uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+  select id into t2 from orgs where slug = 'tenant-two';
+
+  insert into documents (org_id, storage_path, filename, title)
+  values (aa, aa || '/d1/plain.pdf', 'plain.pdf', 'leak-test-plain');
+
+  insert into documents (org_id, storage_path, filename, title, expires_at)
+  values (aa, aa || '/d2/policy.pdf', 'policy.pdf', 'leak-test-expiring', current_date + 10);
+
+  insert into documents (org_id, storage_path, filename, title, visibility)
+  values (aa, aa || '/d3/hr.pdf', 'hr.pdf', 'leak-test-restricted', 'restricted');
+
+  insert into board_meetings (org_id, meeting_date, title)
+  values (aa, current_date, 'leak-test-meeting')
+  returning id into mtg;
+  insert into documents (org_id, storage_path, filename, title)
+  values (aa, aa || '/d4/packet.pdf', 'packet.pdf', 'leak-test-packet')
+  returning id into boarddoc;
+  insert into document_links (org_id, document_id, entity_type, entity_id)
+  values (aa, boarddoc, 'board_meeting', mtg);
+
+  insert into documents (org_id, storage_path, filename, title)
+  values (t2, t2 || '/d5/t2.pdf', 't2.pdf', 'leak-test-t2-doc');
+end $$;
+
+set role authenticated;
+
+-- AA owner: all four AA documents (documents.admin covers restricted), no
+-- tenant-two rows, and expiring docs surface in the unified queue.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  if (select count(*) from documents where title like 'leak-test%') <> 4 then
+    raise exception 'AA owner should see 4 AA documents, saw %',
+      (select count(*) from documents where title like 'leak-test%');
+  end if;
+  if (select count(*) from documents where title = 'leak-test-t2-doc') <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two document';
+  end if;
+  if (select count(*) from v_action_items where source = 'document_renewal') = 0 then
+    raise exception 'expiring document did not surface as a renewal in v_action_items';
+  end if;
+end $$;
+
+-- AA owner cannot park a link row in tenant-two (WITH CHECK on org_id).
+do $$
+declare t2 uuid; d uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  select id into d from public.documents where title = 'leak-test-plain';
+  insert into document_links (org_id, document_id, entity_type, entity_id)
+  values (t2, d, 'constituent', gen_random_uuid());
+  raise exception 'LEAK: AA owner wrote a document_link into tenant-two';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- Staff: reads org docs but NOT restricted ones; delete denied (no
+-- documents.delete for staff).
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$ begin
+  if (select count(*) from documents where title = 'leak-test-plain') = 0 then
+    raise exception 'staff cannot read org documents';
+  end if;
+  if (select count(*) from documents where title = 'leak-test-restricted') <> 0 then
+    raise exception 'LEAK: staff reads a restricted document';
+  end if;
+end $$;
+do $$
+declare n int;
+begin
+  with del as (
+    delete from documents where title = 'leak-test-plain' returning 1
+  )
+  select count(*) into n from del;
+  if n <> 0 then raise exception 'LEAK: staff deleted a document (documents.delete is owner/admin)'; end if;
+end $$;
+
+-- board_viewer: exactly the board-linked packet, nothing else — link-scoped
+-- access by construction, no blanket documents.read.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$ begin
+  if (select count(*) from documents where title like 'leak-test%') <> 1 then
+    raise exception 'board_viewer should see exactly the board packet, saw %',
+      (select count(*) from documents where title like 'leak-test%');
+  end if;
+  if (select count(*) from documents where title = 'leak-test-packet') <> 1 then
+    raise exception 'board_viewer cannot read the board packet through the link carve-out';
+  end if;
+end $$;
+
+-- Tenant-two owner: only its own document, none of AA's (incl. the packet).
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$ begin
+  if (select count(*) from documents where title like 'leak-test%') <> 1
+     or (select count(*) from documents where title = 'leak-test-t2-doc') <> 1 then
+    raise exception 'LEAK: tenant-two document visibility is wrong';
+  end if;
+end $$;
+
+-- Stranger: nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from documents) <> 0 then
+    raise exception 'LEAK: non-member reads documents';
+  end if;
+end $$;
+
+-- ════ Metric Catalog: org isolation, board read, stale-arm scoping ═══════
+reset role;
+reset request.jwt.claim.sub;
+
+-- Seed (service role): one owned AA metric and one owned tenant-two metric,
+-- both with no snapshot — so both are stale and BOTH orgs' queue arms fire,
+-- proving the arm separates tenants rather than merely being empty.
+do $$
+declare aa uuid; t2 uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+  select id into t2 from orgs where slug = 'tenant-two';
+
+  insert into profiles (user_id, display_name) values
+    ('00000000-0000-0000-0000-000000000001', 'Remi'),
+    ('00000000-0000-0000-0000-000000000004', 'T2 Owner')
+  on conflict (user_id) do nothing;
+
+  insert into metric_definitions (org_id, metric_key, name, cadence, owner_id)
+  values (aa, 'leak_test_metric', 'leak-test-aa-metric', 'monthly',
+          '00000000-0000-0000-0000-000000000001')
+  on conflict (org_id, metric_key) do nothing;
+
+  insert into metric_definitions (org_id, metric_key, name, cadence, owner_id)
+  values (t2, 'leak_test_metric', 'leak-test-t2-metric', 'monthly',
+          '00000000-0000-0000-0000-000000000004')
+  on conflict (org_id, metric_key) do nothing;
+end $$;
+
+set role authenticated;
+
+-- AA owner: own metric + its stale queue item, nothing of tenant-two's.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare t2 uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  if (select count(*) from metric_definitions where name = 'leak-test-aa-metric') <> 1 then
+    raise exception 'AA owner cannot read its own metric definition';
+  end if;
+  if (select count(*) from metric_definitions where org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two metric definitions';
+  end if;
+  if (select count(*) from v_action_items where source = 'metric_stale' and title like '%leak-test-aa-metric%') = 0 then
+    raise exception 'owned metric with no snapshot did not surface as metric_stale';
+  end if;
+  if (select count(*) from v_action_items where source = 'metric_stale' and org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner sees tenant-two stale metrics in the queue';
+  end if;
+  -- Writing a snapshot clears the stale item on next read (freshness is derived).
+  insert into metric_snapshots (org_id, metric_id, captured_on, value)
+  select org_id, id, current_date, 42 from metric_definitions where name = 'leak-test-aa-metric';
+  if (select count(*) from v_action_items where source = 'metric_stale' and title like '%leak-test-aa-metric%') <> 0 then
+    raise exception 'metric_stale item did not clear after a fresh snapshot';
+  end if;
+end $$;
+
+-- board_viewer: reads the catalog (open decision D) but cannot write it.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$ begin
+  if (select count(*) from metric_definitions where name = 'leak-test-aa-metric') <> 1 then
+    raise exception 'board_viewer cannot read the metric catalog (metrics.read seed missing)';
+  end if;
+end $$;
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into metric_definitions (org_id, metric_key, name)
+  values (aa, 'leak_test_board_write', 'board-write');
+  raise exception 'LEAK: board_viewer wrote a metric definition';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- Tenant-two owner: only its own metric and its own stale item.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from metric_definitions where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA metric definitions';
+  end if;
+  if (select count(*) from v_action_items where source = 'metric_stale' and title like '%leak-test-t2-metric%') = 0 then
+    raise exception 'tenant-two owner cannot see its OWN stale metric';
+  end if;
+end $$;
+
+-- Stranger: nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from metric_definitions) <> 0 then
+    raise exception 'LEAK: non-member reads metric definitions';
+  end if;
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

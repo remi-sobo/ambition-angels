@@ -15,7 +15,7 @@ const OWNER_ORDER = ["Remi", "Shannon"];
 type KpiRow = {
   id: string; title: string; owner: string | null; unit: string | null;
   target: number | null; current: number | null; status: string; source: string;
-  metric_key: string | null; last_updated_at: string | null;
+  metric_key: string | null; metric_id: string | null; last_updated_at: string | null;
   goal_id: string | null; objective_id: string | null;
 };
 
@@ -25,11 +25,17 @@ export default async function ScorecardPage() {
   const orgId = ctx.orgId;
   const sb = getSupabaseAdmin();
 
-  const [objsRes, goalsRes, kpisRes, snapsRes] = await Promise.all([
+  const [objsRes, goalsRes, kpisRes, snapsRes, catalogSnapsRes] = await Promise.all([
     sb.from("plan_objectives").select("id, title, sort_order").eq("org_id", orgId),
     sb.from("plan_goals").select("id, title, objective_id").eq("org_id", orgId),
-    sb.from("plan_kpis").select("id, title, owner, unit, target, current, status, source, metric_key, last_updated_at, goal_id, objective_id").eq("org_id", orgId),
+    sb.from("plan_kpis").select("id, title, owner, unit, target, current, status, source, metric_key, metric_id, last_updated_at, goal_id, objective_id").eq("org_id", orgId),
     sb.from("plan_kpi_snapshots").select("kpi_id, value, captured_on").eq("org_id", orgId).order("captured_on", { ascending: true }),
+    // Metric Catalog read-swap (spec #3 Phase 4): value + trend come from the
+    // catalog's one history table for linked KPIs; plan-side columns stay the
+    // fallback (they're write-synced by the same code paths, so the numbers
+    // are identical either way — the swap changes the source of truth, not
+    // the rendering).
+    sb.from("metric_snapshots").select("metric_id, value, captured_on").eq("org_id", orgId).order("captured_on", { ascending: true }),
   ]);
 
   const objById = new Map(
@@ -44,25 +50,33 @@ export default async function ScorecardPage() {
     arr.push(Number(s.value));
     historyByKpi.set(s.kpi_id, arr);
   }
+  const catalogHistory = new Map<string, { value: number; captured_on: string }[]>();
+  for (const s of (catalogSnapsRes.data ?? []) as { metric_id: string; value: number; captured_on: string }[]) {
+    const arr = catalogHistory.get(s.metric_id) ?? [];
+    arr.push({ value: Number(s.value), captured_on: s.captured_on });
+    catalogHistory.set(s.metric_id, arr);
+  }
 
   const kpis = (kpisRes.data ?? []) as KpiRow[];
   const toCard = (k: KpiRow): ScorecardKpi & { _objSort: number } => {
     const goal = k.goal_id ? goalById.get(k.goal_id) : undefined;
     const objId = goal?.objective_id ?? k.objective_id ?? null;
     const obj = objId ? objById.get(objId) : undefined;
+    const catalog = k.metric_id ? catalogHistory.get(k.metric_id) : undefined;
+    const catalogLatest = catalog?.[catalog.length - 1];
     return {
       id: k.id,
       title: k.title,
       unit: k.unit,
       target: k.target === null ? null : Number(k.target),
-      current: k.current === null ? null : Number(k.current),
+      current: catalogLatest?.value ?? (k.current === null ? null : Number(k.current)),
       status: k.status,
       source: k.source,
       metricKey: k.metric_key,
-      lastUpdatedAt: k.last_updated_at,
+      lastUpdatedAt: catalogLatest ? catalogLatest.captured_on : k.last_updated_at,
       goalTitle: goal?.title ?? null,
       objectiveTitle: obj?.title ?? null,
-      history: (historyByKpi.get(k.id) ?? []).slice(-12),
+      history: (catalog?.map((s) => s.value) ?? historyByKpi.get(k.id) ?? []).slice(-12),
       _objSort: obj?.sort_order ?? 99,
     };
   };

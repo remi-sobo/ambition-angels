@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import SectionHeading from "../_components/SectionHeading";
 import PageHeader from "../_components/PageHeader";
+import { EntityDocuments } from "../_components/EntityDocuments";
 import StatCard from "../_components/StatCard";
 import {
   MemberRow,
@@ -137,6 +138,23 @@ export default async function BoardPage() {
           )}
         </div>
       </section>
+
+      {/* Board packet & minutes files for the latest meeting. Documents linked
+          to a board_meeting are the ONLY documents a board_viewer can read —
+          access is link-scoped by the documents RLS carve-out, never a blanket
+          documents.read. */}
+      {meetings.length > 0 && (
+        <section className="mt-8">
+          <SectionHeading className="mb-2">
+            {`Documents — ${meetings[0].title || "latest meeting"} (${meetings[0].meeting_date})`}
+          </SectionHeading>
+          <EntityDocuments
+            entityType="board_meeting"
+            entityId={meetings[0].id}
+            entityLabel={meetings[0].title || "Board meeting"}
+          />
+        </section>
+      )}
     </div>
   );
 }

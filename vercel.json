@@ -35,6 +35,10 @@
     {
       "path": "/api/cron/hubspot-sync",
       "schedule": "0 7,19 * * *"
+    },
+    {
+      "path": "/api/cron/metric-snapshots",
+      "schedule": "0 13 * * *"
     }
   ]
 }

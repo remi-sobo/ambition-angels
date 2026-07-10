@@ -11,7 +11,7 @@ import { getFinanceSnapshot } from "@/lib/admin/finance";
  *
  * This registry ABSORBS the existing PLAN_METRICS registry rather than
  * becoming a third one (Phase 0 recon: BloomOS already had two — PLAN_METRICS
- * org-scoped and healthy, lib/kpis.ts org-blind and retired by this spec).
+ * org-scoped and healthy, and the org-blind lib/kpis.ts, now fully retired).
  * Every resolver reuses a canonical computation; none invents a formula:
  * cash_runway_months and monthly_burn read the same getFinanceSnapshot() the
  * Command Center status line reads, so the hub and the status line can never disagree

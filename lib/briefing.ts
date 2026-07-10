@@ -1,14 +1,21 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { computeKpis, formatKpi, type KpiValue } from "@/lib/kpis";
+import { fmtMetricValue } from "@/lib/admin/metrics/format";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 /**
  * The AI Executive Briefing (modules/01-command-center.md).
  *
- * Discipline: every number is computed by SQL (the metric registry + the
+ * Discipline: every number is computed by SQL (the Metric Catalog + the
  * same queries the Monday digest uses). The model receives ONLY those
  * numbers and narrates — it never invents data, and a failed model call
  * degrades gracefully to the data-only briefing.
+ *
+ * The KPI block reads the Metric Catalog (metric_definitions + latest
+ * metric_snapshots) — the same numbers the /admin/kpis hub and the scorecard
+ * show, replacing the retired org-blind lib/kpis.ts registry. Like every
+ * other query in this file it runs unscoped on the service-role client
+ * (single-tenant digest); org-scoping the digest is part of the wider
+ * tenant-two hardening, not special to this block.
  */
 
 export type BriefingData = {
@@ -43,7 +50,7 @@ export async function gatherBriefingData(supabase: SupabaseClient): Promise<Brie
   const horizon = daysAhead(14);
   const weekAgoTs = `${weekAgo}T00:00:00Z`;
 
-  const [giftsRes, newConstRes, movesRes, acksRes, overdueMovesRes, compOverdueRes, grantDueRes, compDueRes, kpis] =
+  const [giftsRes, newConstRes, movesRes, acksRes, overdueMovesRes, compOverdueRes, grantDueRes, compDueRes, metricDefsRes, metricSnapsRes] =
     await Promise.all([
       supabase.from("gifts").select("amount").gte("gift_date", weekAgo).limit(5000),
       supabase.from("constituents").select("id", { count: "exact", head: true }).gte("created_at", weekAgoTs),
@@ -62,7 +69,13 @@ export async function gatherBriefingData(supabase: SupabaseClient): Promise<Brie
       supabase.from("compliance_items").select("title, due_date")
         .in("status", ["upcoming", "in_progress"]).gte("due_date", today)
         .lte("due_date", horizon).order("due_date").limit(8),
-      computeKpis(supabase),
+      supabase.from("metric_definitions")
+        .select("id, name, unit, department")
+        .eq("active", true)
+        .order("department").order("name").limit(40),
+      supabase.from("metric_snapshots")
+        .select("metric_id, value, captured_on")
+        .order("captured_on", { ascending: false }).limit(500),
     ]);
 
   const gifts = (giftsRes.data ?? []) as Array<{ amount: number }>;
@@ -97,8 +110,25 @@ export async function gatherBriefingData(supabase: SupabaseClient): Promise<Brie
       complianceOverdue: compOverdueRes.count ?? 0,
     },
     deadlines,
-    kpis: (kpis as KpiValue[]).map((k) => ({ label: k.label, value: formatKpi(k, k.value) })),
+    kpis: buildKpiBlock(
+      (metricDefsRes.data ?? []) as Array<{ id: string; name: string; unit: string | null }>,
+      (metricSnapsRes.data ?? []) as Array<{ metric_id: string; value: number }>,
+    ),
   };
+}
+
+/** Latest catalog value per metric, formatted; metrics never captured are omitted. */
+function buildKpiBlock(
+  defs: Array<{ id: string; name: string; unit: string | null }>,
+  snapsNewestFirst: Array<{ metric_id: string; value: number }>,
+): Array<{ label: string; value: string }> {
+  const latest = new Map<string, number>();
+  for (const s of snapsNewestFirst) {
+    if (!latest.has(s.metric_id)) latest.set(s.metric_id, Number(s.value));
+  }
+  return defs
+    .filter((d) => latest.has(d.id))
+    .map((d) => ({ label: d.name, value: fmtMetricValue(d.unit, latest.get(d.id)!) }));
 }
 
 const MODEL = "claude-sonnet-4-6";

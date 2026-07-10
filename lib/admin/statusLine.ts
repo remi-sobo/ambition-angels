@@ -7,11 +7,11 @@ import { getFinanceSnapshot } from "@/lib/admin/finance";
 import { FINANCE, TASKS } from "@/lib/admin/thresholds";
 
 /**
- * Operating Spine — Phase 4: the deterministic Command Center verdict and the
+ * Operating Spine — Phase 4: the deterministic Command Center statusLine and the
  * "changed since you were last here" diff. Rule-based only — no model calls;
  * Reed narrates on top of this surface later (spec #6), Reed does not decide.
  *
- * The verdict reuses the same canonical reads the rest of BloomOS trusts:
+ * The statusLine reuses the same canonical reads the rest of BloomOS trusts:
  * finance from getFinanceSnapshot() (cash/burn/runway can't drift from the
  * Finance dashboard) and open items from getActionQueue() (the v_action_items
  * spine, RLS-scoped). Thresholds come from lib/admin/thresholds, never inline
@@ -25,10 +25,10 @@ import { FINANCE, TASKS } from "@/lib/admin/thresholds";
 
 const SESSION_GAP_MS = 30 * 60 * 1000;
 
-export type VerdictLevel = "critical" | "watch" | "steady";
+export type StatusLevel = "critical" | "watch" | "steady";
 
-export type Verdict = {
-  level: VerdictLevel;
+export type StatusLine = {
+  level: StatusLevel;
   /** One line naming the real conditions behind the level. */
   line: string;
   runwayMonths: number | null;
@@ -37,7 +37,7 @@ export type Verdict = {
   openCount: number;
 };
 
-export const getVerdict = cache(async (): Promise<Verdict> => {
+export const getStatusLine = cache(async (): Promise<StatusLine> => {
   const [finance, queue] = await Promise.all([getFinanceSnapshot(), getActionQueue()]);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -52,7 +52,7 @@ export const getVerdict = cache(async (): Promise<Verdict> => {
   );
   if (acksDue > 0) parts.push(`${acksDue} thank-you${acksDue === 1 ? "" : "s"} due`);
 
-  let level: VerdictLevel = "steady";
+  let level: StatusLevel = "steady";
   let lead = "Steady";
   if ((runway != null && runway <= FINANCE.runwayCriticalMonths) || overdue.length >= TASKS.overdueCriticalCount) {
     level = "critical";

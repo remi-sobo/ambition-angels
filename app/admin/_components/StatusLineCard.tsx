@@ -1,11 +1,11 @@
-import { getVerdict, getChangeSince, type VerdictLevel } from "@/lib/admin/verdict";
+import { getStatusLine, getChangeSince, type StatusLevel } from "@/lib/admin/statusLine";
 
-// Operating Spine — Phase 4: the Command Center verdict line + "changed since
+// Operating Spine — Phase 4: the Command Center statusLine line + "changed since
 // you were last here" diff. Deterministic rules over the spine's canonical
 // reads (finance snapshot + v_action_items); no LLM anywhere. Reed narrates
 // this surface in a later spec — Reed does not decide.
 
-const LEVEL_STYLE: Record<VerdictLevel, { dot: string; text: string }> = {
+const LEVEL_STYLE: Record<StatusLevel, { dot: string; text: string }> = {
   critical: { dot: "bg-status-critical", text: "text-status-critical-text" },
   watch: { dot: "bg-status-watch", text: "text-status-watch-text" },
   steady: { dot: "bg-status-healthy", text: "text-status-healthy" },
@@ -22,15 +22,15 @@ const timeAgo = (iso: string) => {
   return `${Math.floor(h / 24)}d ago`;
 };
 
-export default async function VerdictCard() {
-  let verdict, change;
+export default async function StatusLineCard() {
+  let statusLine, change;
   try {
-    [verdict, change] = await Promise.all([getVerdict(), getChangeSince()]);
+    [statusLine, change] = await Promise.all([getStatusLine(), getChangeSince()]);
   } catch {
-    return null; // never let the verdict break the Command Center
+    return null; // never let the statusLine break the Command Center
   }
 
-  const style = LEVEL_STYLE[verdict.level];
+  const style = LEVEL_STYLE[statusLine.level];
 
   const deltas: string[] = [];
   if (change?.since) {
@@ -45,7 +45,7 @@ export default async function VerdictCard() {
     <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel px-5 py-4">
       <p className="flex items-center gap-2.5 text-sm font-semibold">
         <span aria-hidden className={`h-2.5 w-2.5 rounded-full shrink-0 ${style.dot}`} />
-        <span className={style.text}>{verdict.line}</span>
+        <span className={style.text}>{statusLine.line}</span>
       </p>
       {change?.since && (
         <p className="mt-1.5 pl-5 text-xs text-ink-2">

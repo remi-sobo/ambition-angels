@@ -170,13 +170,13 @@ export async function refreshOrgPlanMetrics(
 ): Promise<RefreshResult> {
   const { data: kpis } = await supabase
     .from("plan_kpis")
-    .select("id, metric_key, target")
+    .select("id, metric_key, target, metric_id")
     .eq("org_id", orgId)
     .eq("source", "auto")
     .not("metric_key", "is", null);
 
   const results: { key: string; value: number }[] = [];
-  for (const k of (kpis ?? []) as { id: string; metric_key: string; target: number | null }[]) {
+  for (const k of (kpis ?? []) as { id: string; metric_key: string; target: number | null; metric_id: string | null }[]) {
     const fn = PLAN_METRICS[k.metric_key];
     if (!fn) continue;
     const value = await fn(supabase, orgId);
@@ -199,6 +199,18 @@ export async function refreshOrgPlanMetrics(
           { org_id: orgId, kpi_id: k.id, captured_on: new Date().toISOString().slice(0, 10), value },
           { onConflict: "kpi_id,captured_on" }
         );
+      // Mirror into the Metric Catalog's one history table. This function is
+      // the single writer for both sides of a plan-linked metric, so
+      // plan_kpis.current and the catalog's latest snapshot cannot diverge
+      // (the spec's transition failure mode).
+      if (k.metric_id) {
+        await supabase
+          .from("metric_snapshots")
+          .upsert(
+            { org_id: orgId, metric_id: k.metric_id, captured_on: new Date().toISOString().slice(0, 10), value },
+            { onConflict: "metric_id,captured_on" }
+          );
+      }
     }
   }
   return { updated: results.length, results };

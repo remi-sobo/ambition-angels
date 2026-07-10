@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendOperatorEmailTo, getOperatorEmails, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
-import { snapshotKpis } from "@/lib/kpis";
 import { refreshAllPlanMetrics } from "@/lib/admin/plan/metrics";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { generateBriefing } from "@/lib/briefing";
@@ -124,8 +123,9 @@ export async function GET(req: NextRequest) {
     body += `<p>A quiet week — no new gifts, nothing overdue, nothing due in the next two weeks.</p>`;
   }
 
-  // Weekly KPI snapshot — powers the scorecard's 4-week trends.
-  await snapshotKpis(supabase);
+  // KPI snapshots now live in the Metric Catalog: the daily metric-snapshots
+  // cron captures every computed metric, and manual entries write
+  // metric_snapshots directly (spec #3 Phase 5 retired kpi_snapshots).
 
   // Refresh the strategy auto-KPIs (Phase 3) so the plan reads live numbers
   // without anyone typing them. Best-effort — never block the digest on it.

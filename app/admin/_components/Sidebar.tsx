@@ -44,7 +44,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Meetings", icon: "meetings", href: "/admin/meetings" },
       { label: "Booking page", icon: "events", href: "/admin/meet" },
       { label: "Staff", icon: "team", href: "/admin/staff" },
-      { label: "Documents", icon: "documents", soon: true },
+      { label: "Documents", icon: "documents", href: "/admin/documents" },
     ],
   },
   {

@@ -2,12 +2,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
 /**
- * The code-defined metric registry (docs/bloomos/03-architecture.md §7).
- * Every KPI is computed from the spine — no hand-entered values. The
- * scorecard renders these, the weekly cron snapshots them (trends), and
- * the AI briefing will read the same registry instead of writing SQL.
+ * Legacy computed-KPI helpers, retained ONLY for the weekly digest email
+ * (lib/briefing.ts). The Metric Catalog (spec #3) superseded this as the
+ * org's metric registry: /admin/kpis reads metric_definitions +
+ * metric_snapshots, and the kpi_settings / kpi_snapshots tables this module
+ * once fed were dropped (metrics_retire_dead_kpi_tables.sql). Migrating the
+ * digest's KPI block to the catalog retires this file entirely.
  *
  * Values are computed for the current calendar year where "YTD" applies.
+ * NOTE: not org-scoped — safe only under the single-tenant digest.
  */
 
 export type KpiValue = {
@@ -103,21 +106,6 @@ export async function computeKpis(supabase: SupabaseClient): Promise<KpiValue[]>
     { key: "compliance_overdue", label: "Overdue compliance items", value: complianceOverdue.count ?? 0, unit: "count", direction: "down" },
     { key: "open_tasks", label: "Open tasks", value: openTasks.count ?? 0, unit: "count", direction: "down" },
   ];
-}
-
-/** Weekly snapshot for trends (called by the Monday digest cron). */
-export async function snapshotKpis(supabase: SupabaseClient): Promise<void> {
-  const kpis = await computeKpis(supabase);
-  const captured_on = new Date().toISOString().slice(0, 10);
-  const rows = kpis.map((k) => ({
-    metric_key: k.key,
-    captured_on,
-    value: Math.round(k.value * 100) / 100,
-  }));
-  const { error } = await supabase
-    .from("kpi_snapshots")
-    .upsert(rows, { onConflict: "org_id,metric_key,captured_on" });
-  if (error) console.error("snapshotKpis failed:", error.message);
 }
 
 export function formatKpi(k: Pick<KpiValue, "unit">, v: number): string {

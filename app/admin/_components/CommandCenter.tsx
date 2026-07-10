@@ -1,6 +1,5 @@
 import Greeting from "./Greeting";
-import BriefingStrip from "./BriefingStrip";
-import NeedsYouQueue from "./NeedsYouQueue";
+import NeedsYouToday from "./NeedsYouToday";
 import VerdictCard from "./VerdictCard";
 import MyWeekCard from "./overview/MyWeekCard";
 import RoleViewShell, { type ViewKey } from "./overview/RoleViewShell";
@@ -15,9 +14,10 @@ import { getMyDisplayName, firstName } from "@/lib/admin/profile";
 // of self-contained widget components (app/admin/_components/overview/*), so a
 // future widget customizer is cheap.
 //
-// The "Needs you today" briefing stays a shared strip above the toggle through
-// Phase 1; Phase 2/3 split it — fires into the CEO cockpit, the stale-data /
-// hygiene items into the Ops panel where they're actionable.
+// "Needs you today" (NeedsYouToday) is the ONE list of what needs a human:
+// briefing signal cards on top, the v_action_items queue below in expandable
+// per-module groups. It absorbed the former BriefingStrip + NeedsYouQueue
+// pair, which stacked two overlapping lists.
 
 export default async function CommandCenter() {
   const [user, displayName] = await Promise.all([getAdminUser(), getMyDisplayName()]);
@@ -30,8 +30,7 @@ export default async function CommandCenter() {
         <Greeting name={greetingName} org="Ambition Angels" />
         <VerdictCard />
         <MyWeekCard />
-        <BriefingStrip />
-        <NeedsYouQueue />
+        <NeedsYouToday />
         <RoleViewShell defaultView={defaultView} ceo={<CeoCockpit />} ops={<OpsPanel />} />
       </div>
     </div>

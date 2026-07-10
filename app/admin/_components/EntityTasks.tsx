@@ -25,7 +25,9 @@ export function EntityTasks({
   entityLabel,
   defaultCategory,
 }: {
-  entityType: "partner" | "constituent";
+  // Any registry entity type the ops_tasks link CHECK accepts
+  // (partner, constituent, cohort, student, grant, …).
+  entityType: string;
   entityId: string;
   entityLabel: string;
   defaultCategory: string;

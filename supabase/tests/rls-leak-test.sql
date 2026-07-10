@@ -602,6 +602,88 @@ do $$ begin
   end if;
 end $$;
 
+-- ════ Program spine: programs / stages / queue-arm isolation ══════════════
+reset role;
+reset request.jwt.claim.sub;
+
+-- Seed (service role): a program, a stage row, and a pending application per
+-- org. org_id is EXPLICIT everywhere — the eight program tables have no
+-- column default anymore (the migration would fail these inserts otherwise).
+do $$
+declare aa uuid; t2 uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+  select id into t2 from orgs where slug = 'tenant-two';
+
+  insert into programs (org_id, name) values (aa, 'leak-test-aa-program')
+  on conflict (org_id, name) do nothing;
+  insert into programs (org_id, name) values (t2, 'leak-test-t2-program')
+  on conflict (org_id, name) do nothing;
+
+  insert into participant_stages (org_id, stage_key, label, sort_order, engaged)
+  values (aa, 'leak_test_stage', 'Leak Test', 99, true)
+  on conflict (org_id, stage_key) do nothing;
+
+  insert into applications (org_id, first_name, last_name, status)
+  values (aa, 'Leaky', 'Applicant', 'new');
+  insert into applications (org_id, first_name, last_name, status)
+  values (t2, 'Tenant', 'Applicant', 'offered');
+end $$;
+
+set role authenticated;
+
+-- AA owner: own program rows + the pending-application queue item; nothing
+-- of tenant-two's through any surface.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare t2 uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  if (select count(*) from programs where name = 'leak-test-aa-program') <> 1 then
+    raise exception 'AA owner cannot read its own program';
+  end if;
+  if (select count(*) from programs where org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two programs';
+  end if;
+  if (select count(*) from participant_stages where stage_key = 'leak_test_stage') <> 1 then
+    raise exception 'AA owner cannot read its own participant stages';
+  end if;
+  if (select count(*) from v_action_items where source = 'application_pending' and title like '%Leaky%') = 0 then
+    raise exception 'pending application did not surface in the queue';
+  end if;
+  if (select count(*) from v_action_items where source = 'application_pending' and org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner sees tenant-two applications in the queue';
+  end if;
+end $$;
+
+-- Tenant-two owner: its own pending application only.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from programs where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA programs';
+  end if;
+  if (select count(*) from v_action_items where source = 'application_pending' and title like '%Tenant Applicant%') = 0 then
+    raise exception 'tenant-two owner cannot see its OWN pending application';
+  end if;
+  if (select count(*) from v_action_items where source = 'application_pending' and org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two sees AA applications in the queue';
+  end if;
+end $$;
+
+-- Stranger: nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from programs) <> 0 then
+    raise exception 'LEAK: non-member reads programs';
+  end if;
+  if (select count(*) from participant_stages) <> 0 then
+    raise exception 'LEAK: non-member reads participant stages';
+  end if;
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

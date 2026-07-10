@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const STAGES = [
@@ -8,7 +8,8 @@ const STAGES = [
 ] as const;
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -16,7 +17,8 @@ export async function POST(req: NextRequest) {
     body && typeof body.first_name === "string" ? body.first_name.trim().slice(0, 120) : "";
   if (!firstName) return NextResponse.json({ error: "First name is required" }, { status: 400 });
 
-  const insert: Record<string, unknown> = { first_name: firstName };
+  // org from session, never a column default.
+  const insert: Record<string, unknown> = { first_name: firstName, org_id: ctx.orgId };
   if (STAGES.includes(body?.stage as (typeof STAGES)[number])) insert.stage = body!.stage;
   if (typeof body?.email === "string" && body.email.includes("@"))
     insert.email = body.email.trim().toLowerCase();

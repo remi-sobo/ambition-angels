@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 // Public student application intake (modules/02-program.md "Intake").
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
 
   let cohortId: string | null = null;
   let cohortName: string | null = null;
+  let cohortOrgId: string | null = null;
   const rawCohort = str(body.cohort_id, 40);
   if (rawCohort) {
     if (!/^[0-9a-f-]{36}$/i.test(rawCohort)) {
@@ -58,7 +60,7 @@ export async function POST(req: NextRequest) {
     }
     const { data: cohort } = await supabase
       .from("cohorts")
-      .select("id, name")
+      .select("id, name, org_id")
       .eq("id", rawCohort)
       .eq("accepting_applications", true)
       .maybeSingle();
@@ -70,11 +72,15 @@ export async function POST(req: NextRequest) {
     }
     cohortId = cohort.id;
     cohortName = cohort.name;
+    cohortOrgId = cohort.org_id;
   }
 
   const email = str(body.email, 160).toLowerCase();
   const dob = str(body.dob, 10);
   const insert = {
+    // The target cohort's org when one is chosen; otherwise the resident
+    // org this public form belongs to. Never a column default.
+    org_id: cohortOrgId ?? (await getResidentOrgId()),
     cohort_id: cohortId,
     first_name: firstName,
     last_name: lastName,

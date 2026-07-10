@@ -134,6 +134,16 @@ const RECORD_LOOKUPS: Record<string, RecordLookup> = {
   board_meeting: { table: "board_meetings", select: "id, title", toLabel: title },
 };
 
+/**
+ * Table behind an entity type, for callers that must verify a link target
+ * exists in the caller's org (the document_links org-match invariant —
+ * spec #2 Appendix B). Returns null for registry types with no direct table
+ * mapping; linking to those is rejected rather than left unvalidated.
+ */
+export function entityTableFor(type: string): string | null {
+  return RECORD_LOOKUPS[type]?.table ?? null;
+}
+
 const warned = new Set<string>();
 function warnUnknownType(type: string) {
   if (warned.has(type)) return;

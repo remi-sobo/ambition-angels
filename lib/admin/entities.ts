@@ -160,10 +160,10 @@ export async function resolveEntities(refs: EntityRef[]): Promise<ResolvedEntity
 
   const titles = new Map<string, string>(); // `${type}:${id}` → record label
   await Promise.all(
-    [...needLookup.entries()].map(async ([type, ids]) => {
+    Array.from(needLookup.entries()).map(async ([type, ids]) => {
       const lookup = RECORD_LOOKUPS[type];
-      const { data } = await supabase.from(lookup.table).select(lookup.select).in("id", [...ids]);
-      for (const row of (data ?? []) as Record<string, unknown>[]) {
+      const { data } = await supabase.from(lookup.table).select(lookup.select).in("id", Array.from(ids));
+      for (const row of (data ?? []) as unknown as Record<string, unknown>[]) {
         const label = lookup.toLabel(row);
         if (label) titles.set(`${type}:${row.id as string}`, label);
       }

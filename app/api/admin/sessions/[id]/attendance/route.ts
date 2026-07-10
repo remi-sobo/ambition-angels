@@ -25,7 +25,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const supabase = getSupabaseAdmin();
   const { data: session } = await supabase
     .from("cohort_sessions")
-    .select("id, cohort_id, status")
+    .select("id, cohort_id, status, org_id")
     .eq("id", params.id)
     .maybeSingle();
   if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -63,6 +63,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (todo.length > 0) {
       const { error } = await supabase.from("attendance").insert(
         todo.map((student_id) => ({
+          org_id: session.org_id, // the session's org — never a column default
           session_id: session.id,
           student_id,
           status: "present",
@@ -117,6 +118,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const { error } = await supabase.from("attendance").upsert(
     {
+      org_id: session.org_id, // the session's org — never a column default
       session_id: session.id,
       student_id: studentId,
       status,

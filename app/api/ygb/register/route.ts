@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { buildYgbRegistrationEmail } from "@/lib/email/templates/ygb-registration";
 
@@ -134,10 +135,13 @@ export async function POST(req: NextRequest) {
   }
   let remaining = Math.max(0, CAPACITY - (count ?? 0));
 
+  // Public form on the resident org's website — org resolved explicitly
+  // (lib/admin/orgs.ts), never a column default.
+  const orgId = await getResidentOrgId();
   const rows = campers.map((c) => {
     const status = remaining > 0 ? "confirmed" : "waitlisted";
     if (remaining > 0) remaining--;
-    return { ...shared, ...c, status };
+    return { ...shared, ...c, status, org_id: orgId };
   });
 
   const { data: inserted, error } = await supabase

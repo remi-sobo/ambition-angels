@@ -20,7 +20,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "session_date (YYYY-MM-DD) is required" }, { status: 400 });
   }
 
+  // A session lives in its cohort's org — derive, never default.
+  const { data: cohort } = await getSupabaseAdmin()
+    .from("cohorts")
+    .select("org_id")
+    .eq("id", params.id)
+    .maybeSingle();
+  if (!cohort) return NextResponse.json({ error: "Cohort not found" }, { status: 404 });
+
   const insert: Record<string, unknown> = {
+    org_id: cohort.org_id,
     cohort_id: params.id,
     session_date: body!.session_date,
   };

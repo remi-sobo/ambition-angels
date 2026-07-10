@@ -158,6 +158,8 @@ ordered=(
   documents_schema.sql
   metrics_catalog_schema.sql
   metrics_plan_kpis_backfill.sql
+  metrics_stale_queue_arm.sql
+  metrics_retire_dead_kpi_tables.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

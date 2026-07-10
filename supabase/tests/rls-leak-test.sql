@@ -506,6 +506,102 @@ do $$ begin
   end if;
 end $$;
 
+-- ════ Metric Catalog: org isolation, board read, stale-arm scoping ═══════
+reset role;
+reset request.jwt.claim.sub;
+
+-- Seed (service role): one owned AA metric and one owned tenant-two metric,
+-- both with no snapshot — so both are stale and BOTH orgs' queue arms fire,
+-- proving the arm separates tenants rather than merely being empty.
+do $$
+declare aa uuid; t2 uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+  select id into t2 from orgs where slug = 'tenant-two';
+
+  insert into profiles (user_id, display_name) values
+    ('00000000-0000-0000-0000-000000000001', 'Remi'),
+    ('00000000-0000-0000-0000-000000000004', 'T2 Owner')
+  on conflict (user_id) do nothing;
+
+  insert into metric_definitions (org_id, metric_key, name, cadence, owner_id)
+  values (aa, 'leak_test_metric', 'leak-test-aa-metric', 'monthly',
+          '00000000-0000-0000-0000-000000000001')
+  on conflict (org_id, metric_key) do nothing;
+
+  insert into metric_definitions (org_id, metric_key, name, cadence, owner_id)
+  values (t2, 'leak_test_metric', 'leak-test-t2-metric', 'monthly',
+          '00000000-0000-0000-0000-000000000004')
+  on conflict (org_id, metric_key) do nothing;
+end $$;
+
+set role authenticated;
+
+-- AA owner: own metric + its stale queue item, nothing of tenant-two's.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare t2 uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  if (select count(*) from metric_definitions where name = 'leak-test-aa-metric') <> 1 then
+    raise exception 'AA owner cannot read its own metric definition';
+  end if;
+  if (select count(*) from metric_definitions where org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two metric definitions';
+  end if;
+  if (select count(*) from v_action_items where source = 'metric_stale' and title like '%leak-test-aa-metric%') = 0 then
+    raise exception 'owned metric with no snapshot did not surface as metric_stale';
+  end if;
+  if (select count(*) from v_action_items where source = 'metric_stale' and org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner sees tenant-two stale metrics in the queue';
+  end if;
+  -- Writing a snapshot clears the stale item on next read (freshness is derived).
+  insert into metric_snapshots (org_id, metric_id, captured_on, value)
+  select org_id, id, current_date, 42 from metric_definitions where name = 'leak-test-aa-metric';
+  if (select count(*) from v_action_items where source = 'metric_stale' and title like '%leak-test-aa-metric%') <> 0 then
+    raise exception 'metric_stale item did not clear after a fresh snapshot';
+  end if;
+end $$;
+
+-- board_viewer: reads the catalog (open decision D) but cannot write it.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$ begin
+  if (select count(*) from metric_definitions where name = 'leak-test-aa-metric') <> 1 then
+    raise exception 'board_viewer cannot read the metric catalog (metrics.read seed missing)';
+  end if;
+end $$;
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into metric_definitions (org_id, metric_key, name)
+  values (aa, 'leak_test_board_write', 'board-write');
+  raise exception 'LEAK: board_viewer wrote a metric definition';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- Tenant-two owner: only its own metric and its own stale item.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from metric_definitions where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA metric definitions';
+  end if;
+  if (select count(*) from v_action_items where source = 'metric_stale' and title like '%leak-test-t2-metric%') = 0 then
+    raise exception 'tenant-two owner cannot see its OWN stale metric';
+  end if;
+end $$;
+
+-- Stranger: nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from metric_definitions) <> 0 then
+    raise exception 'LEAK: non-member reads metric definitions';
+  end if;
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

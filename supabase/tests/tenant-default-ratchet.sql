@@ -19,6 +19,8 @@ declare
   -- Frozen baseline: every public table that carried an org_id column default
   -- as of 2026-06-30. New defaults are forbidden; removals are welcome.
   -- 2026-07: email_campaigns + segments removed (comms_v2_phase1_default_drops.sql).
+  -- 2026-07: kpi_settings + kpi_snapshots removed — tables dropped by
+  --          metrics_retire_dead_kpi_tables.sql (one trap deleted outright).
   baseline text[] := array[
     'acknowledgments','appeals','applications','attendance','blackouts','board_meetings',
     'board_members','bookings','briefings','bv_newsletter_subscribers','bv_showcase_submissions',
@@ -29,7 +31,7 @@ declare
     'fr_email_drafts','fr_funding_opportunities','fr_prospect_briefs','fr_prospect_scores',
     'fr_touches','funder_angles','funds','gifts','grant_requirements','grants','hs_companies',
     'hs_contacts','hs_deals','hs_engagements','hs_sync_jobs','interactions','journey_enrollments',
-    'journey_steps','journeys','kpi_settings','kpi_snapshots','meeting_types','opportunities',
+    'journey_steps','journeys','meeting_types','opportunities',
     'ops_projects','ops_tasks','page_views','partner_contacts','partner_interactions',
     'partner_waitlist','partners','pledge_payments','pledges','quiz_submissions','recurring_plans',
     'relationships','soft_credits','strategy_angles','strategy_room_meta','students',

@@ -13,6 +13,7 @@ import { RubricEditor } from "./_components/RubricEditor";
 import { MergeControl } from "./_components/MergeControl";
 import { type ScoreFactors } from "../_lib/rubric";
 import { EntityTasks } from "../../_components/EntityTasks";
+import { EntityDocuments } from "../../_components/EntityDocuments";
 import { RailEntity } from "../../_components/rail/RailEntityContext";
 
 // Partner org profile + contacts directory + activity timeline (Ring 3).
@@ -158,6 +159,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
           <div className="lg:col-span-8 space-y-4">
             <RailEntity type="partner" id={p.id} label={p.name} />
             <EntityTasks entityType="partner" entityId={p.id} entityLabel={p.name} defaultCategory="program" />
+            <EntityDocuments entityType="partner" entityId={p.id} entityLabel={p.name} />
 
             <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5">
               <div className="flex items-center justify-between gap-3 mb-3">

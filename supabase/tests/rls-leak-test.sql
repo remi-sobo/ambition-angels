@@ -382,6 +382,130 @@ begin
 exception when insufficient_privilege then null; -- expected
 end $$;
 
+-- ════ Documents: org isolation, role gates, board link-scoping ═══════════
+reset role;
+reset request.jwt.claim.sub;
+
+-- A board_viewer principal (no documents.* permission by design).
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-000000000005','boardie@example.org')
+on conflict do nothing;
+insert into memberships (user_id, org_id, role)
+select '00000000-0000-0000-0000-000000000005', id, 'board_viewer'
+from orgs where slug = 'ambition-angels'
+on conflict do nothing;
+
+-- Seed (service role): one plain AA document, one AA document linked to a
+-- board meeting, one restricted AA document, one tenant-two document.
+do $$
+declare aa uuid; t2 uuid; mtg uuid; boarddoc uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+  select id into t2 from orgs where slug = 'tenant-two';
+
+  insert into documents (org_id, storage_path, filename, title)
+  values (aa, aa || '/d1/plain.pdf', 'plain.pdf', 'leak-test-plain');
+
+  insert into documents (org_id, storage_path, filename, title, expires_at)
+  values (aa, aa || '/d2/policy.pdf', 'policy.pdf', 'leak-test-expiring', current_date + 10);
+
+  insert into documents (org_id, storage_path, filename, title, visibility)
+  values (aa, aa || '/d3/hr.pdf', 'hr.pdf', 'leak-test-restricted', 'restricted');
+
+  insert into board_meetings (org_id, meeting_date, title)
+  values (aa, current_date, 'leak-test-meeting')
+  returning id into mtg;
+  insert into documents (org_id, storage_path, filename, title)
+  values (aa, aa || '/d4/packet.pdf', 'packet.pdf', 'leak-test-packet')
+  returning id into boarddoc;
+  insert into document_links (org_id, document_id, entity_type, entity_id)
+  values (aa, boarddoc, 'board_meeting', mtg);
+
+  insert into documents (org_id, storage_path, filename, title)
+  values (t2, t2 || '/d5/t2.pdf', 't2.pdf', 'leak-test-t2-doc');
+end $$;
+
+set role authenticated;
+
+-- AA owner: all four AA documents (documents.admin covers restricted), no
+-- tenant-two rows, and expiring docs surface in the unified queue.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  if (select count(*) from documents where title like 'leak-test%') <> 4 then
+    raise exception 'AA owner should see 4 AA documents, saw %',
+      (select count(*) from documents where title like 'leak-test%');
+  end if;
+  if (select count(*) from documents where title = 'leak-test-t2-doc') <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two document';
+  end if;
+  if (select count(*) from v_action_items where source = 'document_renewal') = 0 then
+    raise exception 'expiring document did not surface as a renewal in v_action_items';
+  end if;
+end $$;
+
+-- AA owner cannot park a link row in tenant-two (WITH CHECK on org_id).
+do $$
+declare t2 uuid; d uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  select id into d from public.documents where title = 'leak-test-plain';
+  insert into document_links (org_id, document_id, entity_type, entity_id)
+  values (t2, d, 'constituent', gen_random_uuid());
+  raise exception 'LEAK: AA owner wrote a document_link into tenant-two';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- Staff: reads org docs but NOT restricted ones; delete denied (no
+-- documents.delete for staff).
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$ begin
+  if (select count(*) from documents where title = 'leak-test-plain') = 0 then
+    raise exception 'staff cannot read org documents';
+  end if;
+  if (select count(*) from documents where title = 'leak-test-restricted') <> 0 then
+    raise exception 'LEAK: staff reads a restricted document';
+  end if;
+end $$;
+do $$
+declare n int;
+begin
+  with del as (
+    delete from documents where title = 'leak-test-plain' returning 1
+  )
+  select count(*) into n from del;
+  if n <> 0 then raise exception 'LEAK: staff deleted a document (documents.delete is owner/admin)'; end if;
+end $$;
+
+-- board_viewer: exactly the board-linked packet, nothing else — link-scoped
+-- access by construction, no blanket documents.read.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$ begin
+  if (select count(*) from documents where title like 'leak-test%') <> 1 then
+    raise exception 'board_viewer should see exactly the board packet, saw %',
+      (select count(*) from documents where title like 'leak-test%');
+  end if;
+  if (select count(*) from documents where title = 'leak-test-packet') <> 1 then
+    raise exception 'board_viewer cannot read the board packet through the link carve-out';
+  end if;
+end $$;
+
+-- Tenant-two owner: only its own document, none of AA's (incl. the packet).
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$ begin
+  if (select count(*) from documents where title like 'leak-test%') <> 1
+     or (select count(*) from documents where title = 'leak-test-t2-doc') <> 1 then
+    raise exception 'LEAK: tenant-two document visibility is wrong';
+  end if;
+end $$;
+
+-- Stranger: nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from documents) <> 0 then
+    raise exception 'LEAK: non-member reads documents';
+  end if;
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

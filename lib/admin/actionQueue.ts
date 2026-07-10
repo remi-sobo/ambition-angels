@@ -22,7 +22,13 @@ import { resolveEntities } from "@/lib/admin/entities";
 
 export type ActionItemRow = {
   org_id: string;
-  source: "ops_task" | "grant_requirement" | "compliance_item" | "acknowledgment" | "reconciliation_item";
+  source:
+    | "ops_task"
+    | "grant_requirement"
+    | "compliance_item"
+    | "acknowledgment"
+    | "reconciliation_item"
+    | "document_renewal";
   source_id: string;
   title: string;
   entity_type: string | null;
@@ -58,6 +64,7 @@ const SOURCE_FALLBACK_HREF: Record<ActionItemRow["source"], string> = {
   compliance_item: "/admin/compliance",
   acknowledgment: "/admin/fundraising/acknowledgments",
   reconciliation_item: "/admin/finance/reconcile",
+  document_renewal: "/admin/documents",
 };
 
 const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };

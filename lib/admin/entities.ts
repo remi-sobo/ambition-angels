@@ -123,6 +123,11 @@ const RECORD_LOOKUPS: Record<string, RecordLookup> = {
       return [usd, r.gift_date as string | null].filter(Boolean).join(" · ");
     },
   },
+  document: {
+    table: "documents",
+    select: "id, title, filename",
+    toLabel: (r) => (r.title as string) || (r.filename as string) || "",
+  },
   ops_task: { table: "ops_tasks", select: "id, title", toLabel: title },
   ops_project: { table: "ops_projects", select: "id, title", toLabel: title },
   compliance_item: { table: "compliance_items", select: "id, title", toLabel: title },

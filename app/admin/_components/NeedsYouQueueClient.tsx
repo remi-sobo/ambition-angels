@@ -38,6 +38,7 @@ const MODULE_LABEL: Record<string, string> = {
   finance: "Finance",
   program: "Program",
   board: "Board",
+  documents: "Documents",
 };
 
 const SOURCE_LABEL: Record<QueueItem["source"], string> = {
@@ -46,6 +47,7 @@ const SOURCE_LABEL: Record<QueueItem["source"], string> = {
   compliance_item: "Compliance",
   acknowledgment: "Thank-you",
   reconciliation_item: "Reconcile",
+  document_renewal: "Renewal",
 };
 
 const todayISO = () => new Date().toISOString().slice(0, 10);

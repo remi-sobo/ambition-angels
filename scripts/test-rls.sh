@@ -155,6 +155,7 @@ ordered=(
   spine_entity_registry.sql
   spine_action_items_view.sql
   spine_user_org_state.sql
+  documents_schema.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

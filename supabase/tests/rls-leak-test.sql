@@ -265,6 +265,82 @@ begin
   end if;
 end $$;
 
+-- ════ Operating Spine: v_action_items + entity_types ═════════════════════
+-- The unified action queue is a security_invoker view over five RLS-gated
+-- sources; if the invoker option were ever dropped it would run as owner and
+-- merge tenants. These checks fail loudly in that world.
+reset role;
+reset request.jwt.claim.sub;
+
+-- Seed one open tenant-two action item (a pending-ack gift) as service role.
+do $$
+declare t2 uuid; t2c uuid;
+begin
+  select id into t2 from orgs where slug = 'tenant-two';
+  select id into t2c from constituents where org_id = t2 limit 1;
+  insert into gifts (org_id, constituent_id, amount, gift_date, method, external_source, external_id, acknowledgment_status)
+  values (t2, t2c, 75, '2026-02-05', 'card', 'leak-test', 'leak-test-t2-action', 'pending')
+  on conflict do nothing;
+end $$;
+
+-- The view itself must run as invoker; a definer view here merges tenants.
+do $$ begin
+  if (select coalesce(array_position(reloptions, 'security_invoker=on'), 0)
+      from pg_class where relname = 'v_action_items' and relnamespace = 'public'::regnamespace) = 0 then
+    raise exception 'v_action_items is not security_invoker — tenants would merge';
+  end if;
+end $$;
+
+set role authenticated;
+
+-- AA owner: sees AA's open items (the seeded ops task), nothing of tenant-two's.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare t2 uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  if (select count(*) from v_action_items where source = 'ops_task') = 0 then
+    raise exception 'AA owner cannot read AA ops tasks through v_action_items';
+  end if;
+  if (select count(*) from v_action_items where org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two action items';
+  end if;
+  -- Registry is global config: readable by any authenticated member.
+  if (select count(*) from entity_types) < 10 then
+    raise exception 'authenticated member cannot read the entity_types registry';
+  end if;
+end $$;
+
+-- Tenant-two owner: sees only its own action items, zero AA rows.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from v_action_items where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA action items through v_action_items';
+  end if;
+  if (select count(*) from v_action_items) = 0 then
+    raise exception 'tenant-two owner cannot read its OWN action items';
+  end if;
+end $$;
+
+-- Registry writes are denied for every authenticated user (service-role only).
+do $$ begin
+  insert into entity_types (entity_type, display_name, module, route_pattern)
+  values ('leak-test-type', 'Leak', 'ops', '/admin/ops');
+  raise exception 'LEAK: authenticated user wrote to the entity_types registry';
+exception when insufficient_privilege then null; -- expected: RLS denial
+end $$;
+
+-- Stranger (session, no membership): the queue is empty, not an error.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from v_action_items) <> 0 then
+    raise exception 'LEAK: non-member reads action items';
+  end if;
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

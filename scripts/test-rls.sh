@@ -156,6 +156,8 @@ ordered=(
   spine_action_items_view.sql
   spine_user_org_state.sql
   documents_schema.sql
+  metrics_catalog_schema.sql
+  metrics_plan_kpis_backfill.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

@@ -7,12 +7,14 @@ import type { QueueItem } from "@/lib/admin/actionQueue";
 import type { AdminUser } from "@/lib/admin/auth";
 import EntityChip from "./EntityChip";
 
-// Client half of the "Needs You" queue: the mine-toggle (best-effort — owner
-// columns are free text today, spec open decision B) and one-click completion.
-// Completion dispatches on (source, sourceId) ONLY — never on row position —
-// to each source's existing endpoint; v_action_items itself is read-only.
-// Sources without a safe one-click (a thank-you needs a channel, accepting a
-// reconciliation proposal books money) deep-link instead.
+// Client half of the "Needs you today" queue: per-module EXPANDABLE groups
+// (a row of labeled doors with counts — never a long flat list), the
+// best-effort mine-toggle (owner columns are free text today, spec open
+// decision B), and one-click completion. Completion dispatches on
+// (source, sourceId) ONLY — never on row position — to each source's
+// existing endpoint; v_action_items itself is read-only. Sources without a
+// safe one-click (a thank-you needs a channel, accepting a reconciliation
+// proposal books money) deep-link instead.
 
 const COMPLETION: Partial<
   Record<QueueItem["source"], { label: string; request: (id: string) => { url: string; body: unknown } }>
@@ -79,6 +81,13 @@ function DueChip({ due }: { due: string | null }) {
   );
 }
 
+type Group = {
+  module: string;
+  items: QueueItem[];
+  overdue: number;
+  dueToday: number;
+};
+
 export default function NeedsYouQueueClient({
   items,
   me,
@@ -88,19 +97,48 @@ export default function NeedsYouQueueClient({
 }) {
   const router = useRouter();
   const [mineOnly, setMineOnly] = useState(false);
-  const [showAll, setShowAll] = useState(false);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // null = "use the default" (most urgent group open); after any click the
+  // user's choices win.
+  const [openModules, setOpenModules] = useState<Set<string> | null>(null);
 
   const key = (it: QueueItem) => `${it.source}:${it.sourceId}`;
 
-  const visible = useMemo(() => {
+  const groups = useMemo((): Group[] => {
+    const today = todayISO();
     const live = items.filter((it) => !removed.has(key(it)));
-    return mineOnly ? live.filter((it) => isMine(it.ownerRef, me)) : live;
+    const filtered = mineOnly ? live.filter((it) => isMine(it.ownerRef, me)) : live;
+    const byModule = new Map<string, QueueItem[]>();
+    for (const it of filtered) {
+      const arr = byModule.get(it.module) ?? [];
+      arr.push(it);
+      byModule.set(it.module, arr);
+    }
+    return Array.from(byModule.entries())
+      .map(([module, list]) => ({
+        module,
+        items: list, // already urgency-ranked by the loader
+        overdue: list.filter((it) => it.dueDate != null && it.dueDate < today).length,
+        dueToday: list.filter((it) => it.dueDate === today).length,
+      }))
+      // Most urgent door first: overdue count, then due-today, then size.
+      .sort((a, b) => b.overdue - a.overdue || b.dueToday - a.dueToday || b.items.length - a.items.length);
   }, [items, removed, mineOnly, me]);
 
-  const shown = showAll ? visible : visible.slice(0, 10);
+  const total = groups.reduce((s, g) => s + g.items.length, 0);
+  // Default: only the single most urgent group starts open.
+  const defaultOpen = groups.length > 0 ? new Set([groups[0].module]) : new Set<string>();
+  const open = openModules ?? defaultOpen;
+
+  const toggle = (module: string) =>
+    setOpenModules((prev) => {
+      const next = new Set(prev ?? defaultOpen);
+      if (next.has(module)) next.delete(module);
+      else next.add(module);
+      return next;
+    });
 
   async function complete(it: QueueItem) {
     const completion = COMPLETION[it.source];
@@ -128,15 +166,14 @@ export default function NeedsYouQueueClient({
     }
   }
 
+  if (total === 0 && !mineOnly) return null;
+
   return (
-    <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="font-heading font-semibold text-ink-1">
-          Needs you
-          {visible.length > 0 && (
-            <span className="ml-2 text-xs font-semibold text-ink-2">{visible.length}</span>
-          )}
-        </h2>
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">
+          Action queue
+        </span>
         {me && (
           <button
             type="button"
@@ -153,66 +190,93 @@ export default function NeedsYouQueueClient({
         )}
       </div>
 
-      {error && <p className="mb-3 text-xs font-semibold text-expense">{error}</p>}
+      {error && <p className="mb-2 text-xs font-semibold text-expense">{error}</p>}
 
-      {shown.length === 0 ? (
-        <p className="text-sm text-ink-2">
-          {mineOnly ? "Nothing assigned to you is open." : "Nothing needs you — all clear."}
-        </p>
+      {total === 0 ? (
+        <p className="text-sm text-ink-2">Nothing assigned to you is open.</p>
       ) : (
-        <ul className="divide-y divide-hairline">
-          {shown.map((it) => {
-            const k = key(it);
-            const completion = COMPLETION[it.source];
+        <div className="space-y-1.5">
+          {groups.map((g) => {
+            const isOpen = open.has(g.module);
             return (
-              <li key={k} className="py-2.5 flex items-center gap-3">
-                <DueChip due={it.dueDate} />
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={it.href}
-                    className="text-sm font-medium text-ink-1 hover:text-orange transition-colors block truncate"
+              <div key={g.module} className="rounded-card border-[1.5px] border-outline bg-tile overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggle(g.module)}
+                  aria-expanded={isOpen}
+                  className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-[#F5EFE0] transition-colors"
+                >
+                  <span
+                    aria-hidden
+                    className={`text-ink-3 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}
                   >
-                    {it.title}
-                  </Link>
-                  <div className="mt-0.5 flex items-center gap-2 min-w-0">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-3 whitespace-nowrap">
-                      {MODULE_LABEL[it.module] ?? it.module} · {SOURCE_LABEL[it.source]}
+                    ▶
+                  </span>
+                  <span className="text-sm font-semibold text-ink-1 flex-1">
+                    {MODULE_LABEL[g.module] ?? g.module}
+                  </span>
+                  {g.overdue > 0 && (
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense whitespace-nowrap">
+                      {g.overdue} overdue
                     </span>
-                    {it.entity && <EntityChip entity={it.entity} className="max-w-[16rem]" />}
-                  </div>
-                </div>
-                {completion ? (
-                  <button
-                    type="button"
-                    onClick={() => complete(it)}
-                    disabled={busy === k}
-                    className="text-xs font-semibold px-2.5 py-1 rounded-full border border-outline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors disabled:opacity-50 whitespace-nowrap"
-                  >
-                    {busy === k ? "…" : completion.label}
-                  </button>
-                ) : (
-                  <Link
-                    href={it.href}
-                    className="text-xs font-semibold px-2.5 py-1 rounded-full border border-outline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors whitespace-nowrap"
-                  >
-                    Open
-                  </Link>
+                  )}
+                  {g.dueToday > 0 && (
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange whitespace-nowrap">
+                      {g.dueToday} today
+                    </span>
+                  )}
+                  <span className="text-xs font-semibold text-ink-2 tabular-nums">{g.items.length}</span>
+                </button>
+
+                {isOpen && (
+                  <ul className="divide-y divide-hairline border-t border-outline bg-surface">
+                    {g.items.map((it) => {
+                      const k = key(it);
+                      const completion = COMPLETION[it.source];
+                      return (
+                        <li key={k} className="pl-9 pr-4 py-2.5 flex items-center gap-3">
+                          <DueChip due={it.dueDate} />
+                          <div className="min-w-0 flex-1">
+                            <Link
+                              href={it.href}
+                              className="text-sm font-medium text-ink-1 hover:text-orange transition-colors block truncate"
+                            >
+                              {it.title}
+                            </Link>
+                            <div className="mt-0.5 flex items-center gap-2 min-w-0">
+                              <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-3 whitespace-nowrap">
+                                {SOURCE_LABEL[it.source]}
+                              </span>
+                              {it.entity && <EntityChip entity={it.entity} className="max-w-[16rem]" />}
+                            </div>
+                          </div>
+                          {completion ? (
+                            <button
+                              type="button"
+                              onClick={() => complete(it)}
+                              disabled={busy === k}
+                              className="text-xs font-semibold px-2.5 py-1 rounded-full border border-outline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors disabled:opacity-50 whitespace-nowrap"
+                            >
+                              {busy === k ? "…" : completion.label}
+                            </button>
+                          ) : (
+                            <Link
+                              href={it.href}
+                              className="text-xs font-semibold px-2.5 py-1 rounded-full border border-outline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors whitespace-nowrap"
+                            >
+                              Open
+                            </Link>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 )}
-              </li>
+              </div>
             );
           })}
-        </ul>
+        </div>
       )}
-
-      {visible.length > 10 && (
-        <button
-          type="button"
-          onClick={() => setShowAll((v) => !v)}
-          className="mt-3 text-xs font-semibold text-orange hover:text-orange-dark"
-        >
-          {showAll ? "Show fewer" : `Show all ${visible.length}`}
-        </button>
-      )}
-    </section>
+    </div>
   );
 }

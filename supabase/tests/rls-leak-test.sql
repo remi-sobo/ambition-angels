@@ -333,12 +333,53 @@ do $$ begin
 exception when insufficient_privilege then null; -- expected: RLS denial
 end $$;
 
--- Stranger (session, no membership): the queue is empty, not an error.
+-- user_org_state is self-only and membership-bound: no org_id default, so a
+-- row can never silently land in the resident org (the ops_tasks default trap).
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare aa uuid; t2 uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select id into t2 from public.orgs where slug = 'tenant-two';
+
+  -- Own row in own org: fine.
+  insert into user_org_state (user_id, org_id, last_seen_at)
+  values ('00000000-0000-0000-0000-000000000001', aa, now())
+  on conflict (user_id, org_id) do update set last_seen_at = now();
+
+  -- Parking state in an org you don't belong to: denied.
+  begin
+    insert into user_org_state (user_id, org_id, last_seen_at)
+    values ('00000000-0000-0000-0000-000000000001', t2, now());
+    raise exception 'LEAK: AA owner wrote user_org_state into tenant-two';
+  exception when insufficient_privilege then null; -- expected
+  end;
+
+  -- Writing another user's state: denied.
+  begin
+    insert into user_org_state (user_id, org_id, last_seen_at)
+    values ('00000000-0000-0000-0000-000000000002', aa, now());
+    raise exception 'LEAK: AA owner wrote another user''s user_org_state';
+  exception when insufficient_privilege then null; -- expected
+  end;
+end $$;
+
+-- Stranger (session, no membership): the queue is empty, not an error, and
+-- user_org_state rejects the write (no membership anywhere).
 set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
 do $$ begin
   if (select count(*) from v_action_items) <> 0 then
     raise exception 'LEAK: non-member reads action items';
   end if;
+end $$;
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into user_org_state (user_id, org_id, last_seen_at)
+  values ('00000000-0000-0000-0000-000000000003', aa, now());
+  raise exception 'LEAK: non-member wrote user_org_state';
+exception when insufficient_privilege then null; -- expected
 end $$;
 
 reset role;

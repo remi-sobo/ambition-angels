@@ -39,6 +39,7 @@ const MODULE_LABEL: Record<string, string> = {
   program: "Program",
   board: "Board",
   documents: "Documents",
+  metrics: "Metrics",
 };
 
 const SOURCE_LABEL: Record<QueueItem["source"], string> = {
@@ -48,6 +49,7 @@ const SOURCE_LABEL: Record<QueueItem["source"], string> = {
   acknowledgment: "Thank-you",
   reconciliation_item: "Reconcile",
   document_renewal: "Renewal",
+  metric_stale: "Metric update",
 };
 
 const todayISO = () => new Date().toISOString().slice(0, 10);

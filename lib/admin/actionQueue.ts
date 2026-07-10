@@ -28,7 +28,8 @@ export type ActionItemRow = {
     | "compliance_item"
     | "acknowledgment"
     | "reconciliation_item"
-    | "document_renewal";
+    | "document_renewal"
+    | "metric_stale";
   source_id: string;
   title: string;
   entity_type: string | null;
@@ -65,6 +66,7 @@ const SOURCE_FALLBACK_HREF: Record<ActionItemRow["source"], string> = {
   acknowledgment: "/admin/fundraising/acknowledgments",
   reconciliation_item: "/admin/finance/reconcile",
   document_renewal: "/admin/documents",
+  metric_stale: "/admin/kpis",
 };
 
 const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };

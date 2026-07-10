@@ -128,6 +128,7 @@ const RECORD_LOOKUPS: Record<string, RecordLookup> = {
     select: "id, title, filename",
     toLabel: (r) => (r.title as string) || (r.filename as string) || "",
   },
+  metric: { table: "metric_definitions", select: "id, name", toLabel: name },
   ops_task: { table: "ops_tasks", select: "id, title", toLabel: title },
   ops_project: { table: "ops_projects", select: "id, title", toLabel: title },
   compliance_item: { table: "compliance_items", select: "id, title", toLabel: title },

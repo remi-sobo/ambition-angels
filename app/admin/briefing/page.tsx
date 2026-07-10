@@ -40,7 +40,7 @@ export default async function BriefingPage() {
         }
       />
 
-      {/* Lead with Today: the agenda sits above the verdict (spec Phase 4). */}
+      {/* Lead with Today: the agenda sits above the status line (spec Phase 4). */}
       <div className="mb-6">
         <TodayAgenda />
       </div>

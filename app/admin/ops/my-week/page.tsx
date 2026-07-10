@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { loadRhythmSnapshot, rhythmModeForToday } from "@/lib/admin/ops/rhythm";
-import { buildMondayVerdict, buildFridayVerdict, type Verdict } from "@/lib/admin/ops/verdict";
+import { buildMondayStatus, buildFridayStatus, type WeekStatus } from "@/lib/admin/ops/statusLine";
 import { formatWeekHeader, formatDayLabel, todayInTZ } from "@/lib/admin/ops/week";
-import VerdictLine from "../_components/VerdictLine";
+import WeekStatusLine from "../_components/WeekStatusLine";
 
 export const dynamic = "force-dynamic";
 
@@ -72,10 +72,10 @@ export default async function MyWeekHubPage() {
   const mode = rhythmModeForToday();
   const snapshot = await loadRhythmSnapshot(mode);
 
-  const verdict: Verdict | null = snapshot
+  const status: WeekStatus | null = snapshot
     ? snapshot.mode === "monday_plan"
-      ? buildMondayVerdict(snapshot.who.role, snapshot.counts)
-      : buildFridayVerdict(snapshot.who.role, snapshot.counts)
+      ? buildMondayStatus(snapshot.who.role, snapshot.counts)
+      : buildFridayStatus(snapshot.who.role, snapshot.counts)
     : null;
 
   const weekOf = snapshot?.weekOf ?? null;
@@ -100,10 +100,10 @@ export default async function MyWeekHubPage() {
         </div>
       </header>
 
-      {/* ── Verdict ─────────────────────────────────────────────────────── */}
+      {/* ── WeekStatus ─────────────────────────────────────────────────────── */}
       <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-        {verdict ? (
-          <VerdictLine verdict={verdict} />
+        {status ? (
+          <WeekStatusLine status={status} />
         ) : (
           <p className="text-sm text-ink-2">
             Sign in to see this week&apos;s read.

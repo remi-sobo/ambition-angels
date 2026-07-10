@@ -32,7 +32,7 @@ export function worstHealth(a: string | null, b: string | null): string | null {
 export const isOffTrack = (health: string | null): boolean =>
   health === "behind" || health === "at_risk";
 
-/** Human label for a health value (shared by chips, the verdict, the briefing). */
+/** Human label for a health value (shared by chips, the status line, the briefing). */
 export const HEALTH_LABEL: Record<string, string> = {
   behind: "Behind",
   at_risk: "At risk",

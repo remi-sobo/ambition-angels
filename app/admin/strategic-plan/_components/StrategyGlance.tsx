@@ -6,7 +6,7 @@ import { StatusChip } from "@/app/admin/_components/StatusChip";
 import OwnerChip from "./OwnerChip";
 import type { StrategyHeadlineKpi } from "@/lib/admin/overview/sources";
 
-// The Org-lens glance (Phase B1): a deterministic verdict line, the "Needs
+// The Org-lens glance (Phase B1): a deterministic statusLine line, the "Needs
 // attention" exception list, and the objective grid — the three-second "are we
 // winning" read above the editable plan tree. Management by exception: healthy
 // tiles recede, off-track tiles carry a warm accent and a badge. Read-only over
@@ -51,12 +51,12 @@ function MeasureRow({ m }: { m: StrategyHeadlineKpi }) {
 }
 
 export default async function StrategyGlance() {
-  const { hasPlan, objectives, verdict, exceptions } = await getStrategyGlance();
+  const { hasPlan, objectives, statusLine, exceptions } = await getStrategyGlance();
   if (!hasPlan) return null;
 
   return (
     <div className="space-y-4 mb-8">
-      <p className="font-heading text-lg text-ink-1 leading-snug">{verdict}</p>
+      <p className="font-heading text-lg text-ink-1 leading-snug">{statusLine}</p>
 
       {exceptions.length > 0 && (
         <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">

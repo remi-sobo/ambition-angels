@@ -1,7 +1,7 @@
 import type { OrgContext } from "@/lib/admin/auth";
 
 /**
- * Deterministic, role-weighted verdict lines for the weekly rhythm (Operating
+ * Deterministic, role-weighted status lines for the weekly rhythm (Operating
  * Rhythm v2, Phase 2). NO AI: the same counts always produce the same sentence.
  * The CONTENT is identical for everyone; the ORDER changes by role, because the
  * lead of the line is what the role should look at first —
@@ -44,24 +44,24 @@ export type FridayCounts = {
   followUpsNeeded: number;
 };
 
-export type VerdictSegment = { key: string; text: string; flare: boolean };
-export type Verdict = {
+export type StatusSegment = { key: string; text: string; flare: boolean };
+export type WeekStatus = {
   /** Lead clause (the first segment's text), for emphasis. */
   lead: string;
   /** The full sentence, segments joined. */
   sentence: string;
-  segments: VerdictSegment[];
+  segments: StatusSegment[];
   tone: "calm" | "attention";
 };
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
-function ordered(segments: VerdictSegment[], order: string[]): VerdictSegment[] {
+function ordered(segments: StatusSegment[], order: string[]): StatusSegment[] {
   const by = new Map(segments.map((s) => [s.key, s]));
-  return order.map((k) => by.get(k)).filter((s): s is VerdictSegment => !!s);
+  return order.map((k) => by.get(k)).filter((s): s is StatusSegment => !!s);
 }
 
-function assemble(prefix: string, segs: VerdictSegment[]): Verdict {
+function assemble(prefix: string, segs: StatusSegment[]): WeekStatus {
   const sentence = `${prefix} ${segs.map((s) => s.text).join(", ")}.`;
   return {
     lead: segs[0]?.text ?? "",
@@ -72,7 +72,7 @@ function assemble(prefix: string, segs: VerdictSegment[]): Verdict {
 }
 
 /** Monday "Plan" (Aim): where is my time going, and is it going to what matters. */
-export function buildMondayVerdict(role: Role, c: MondayCounts): Verdict {
+export function buildMondayStatus(role: Role, c: MondayCounts): WeekStatus {
   if (c.open === 0 && c.carriedOver === 0 && c.meetings === 0) {
     return {
       lead: "a clear deck",
@@ -82,7 +82,7 @@ export function buildMondayVerdict(role: Role, c: MondayCounts): Verdict {
     };
   }
 
-  const segments: VerdictSegment[] = [
+  const segments: StatusSegment[] = [
     { key: "carried", text: `${c.carriedOver} carried over`, flare: c.carriedOver > 0 },
     {
       key: "open",
@@ -105,8 +105,8 @@ export function buildMondayVerdict(role: Role, c: MondayCounts): Verdict {
 }
 
 /** Friday "Close" (Account): what's true now, and what did I fail to close. */
-export function buildFridayVerdict(role: Role, c: FridayCounts): Verdict {
-  const segments: VerdictSegment[] = [
+export function buildFridayStatus(role: Role, c: FridayCounts): WeekStatus {
+  const segments: StatusSegment[] = [
     { key: "follow", text: `${c.followUpsNeeded} to follow up`, flare: c.followUpsNeeded > 0 },
     { key: "open", text: `${c.open} still open`, flare: c.open > 0 },
     { key: "done", text: `${c.done} done`, flare: false },

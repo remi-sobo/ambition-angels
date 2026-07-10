@@ -1,4 +1,5 @@
 import { getMetricCatalog, staleAfter, type CatalogMetric } from "@/lib/admin/metrics/catalog";
+import { fmtMetricValue as fmtValue } from "@/lib/admin/metrics/format";
 import { getDisplayNames } from "@/lib/admin/profile";
 import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
@@ -17,14 +18,6 @@ export const dynamic = "force-dynamic";
 // scorecard, retired in Phase 5.
 
 const DEPARTMENTS = ["finance", "fundraising", "program", "ops", "strategy"] as const;
-
-function fmtValue(unit: string | null, v: number): string {
-  if (unit === "usd") return v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-  if (unit === "pct") return `${Math.round(v * 10) / 10}%`;
-  if (unit === "months") return `${Math.round(v * 10) / 10} mo`;
-  if (unit === "boolean") return v >= 1 ? "Yes" : "No";
-  return Number.isInteger(v) ? String(v) : String(Math.round(v * 100) / 100);
-}
 
 function ageDays(capturedOn: string): number {
   return Math.max(0, Math.floor((Date.now() - new Date(capturedOn + "T00:00:00Z").getTime()) / 86_400_000));

@@ -1,5 +1,6 @@
 import Greeting from "./Greeting";
 import BriefingStrip from "./BriefingStrip";
+import NeedsYouQueue from "./NeedsYouQueue";
 import MyWeekCard from "./overview/MyWeekCard";
 import RoleViewShell, { type ViewKey } from "./overview/RoleViewShell";
 import CeoCockpit from "./overview/CeoCockpit";
@@ -28,6 +29,7 @@ export default async function CommandCenter() {
         <Greeting name={greetingName} org="Ambition Angels" />
         <MyWeekCard />
         <BriefingStrip />
+        <NeedsYouQueue />
         <RoleViewShell defaultView={defaultView} ceo={<CeoCockpit />} ops={<OpsPanel />} />
       </div>
     </div>

@@ -1,9 +1,12 @@
 import { getStatusLine, getChangeSince, type StatusLevel } from "@/lib/admin/statusLine";
+import { getOutlook } from "@/lib/admin/outlookRead";
+import OutlookPanel from "./OutlookPanel";
 
-// Operating Spine — Phase 4: the Command Center statusLine line + "changed since
-// you were last here" diff. Deterministic rules over the spine's canonical
-// reads (finance snapshot + v_action_items); no LLM anywhere. Reed narrates
-// this surface in a later spec — Reed does not decide.
+// Status & Outlook — the Command Center status line, the "changed since you
+// were last here" diff, and the 30/60/90 outlook chips (spec #5).
+// Deterministic rules over the spine's canonical reads (finance snapshot,
+// revenue schedule, v_action_items, metric catalog); no LLM anywhere. Reed
+// narrates this surface in a later spec — Reed does not decide.
 
 const LEVEL_STYLE: Record<StatusLevel, { dot: string; text: string }> = {
   critical: { dot: "bg-status-critical", text: "text-status-critical-text" },
@@ -23,11 +26,11 @@ const timeAgo = (iso: string) => {
 };
 
 export default async function StatusLineCard() {
-  let statusLine, change;
+  let statusLine, change, outlook;
   try {
-    [statusLine, change] = await Promise.all([getStatusLine(), getChangeSince()]);
+    [statusLine, change, outlook] = await Promise.all([getStatusLine(), getChangeSince(), getOutlook()]);
   } catch {
-    return null; // never let the statusLine break the Command Center
+    return null; // never let the status line break the Command Center
   }
 
   const style = LEVEL_STYLE[statusLine.level];
@@ -53,6 +56,7 @@ export default async function StatusLineCard() {
           {deltas.length > 0 ? deltas.join(" · ") : "no changes."}
         </p>
       )}
+      {outlook && <OutlookPanel outlook={outlook} />}
     </section>
   );
 }

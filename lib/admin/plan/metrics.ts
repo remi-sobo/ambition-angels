@@ -33,7 +33,7 @@ export type PlanMetricFn = (supabase: SupabaseClient, orgId: string) => Promise<
 
 export const PLAN_METRICS: Record<string, PlanMetricFn> = {
   // Grant dollars secured this year — grants that reached an awarded/active/
-  // closed stage. Mirrors lib/kpis.ts `grants_awarded_ytd`.
+  // closed stage.
   dollars_raised_grants_ytd: async (s, org) => {
     const { data } = await s
       .from("grants")
@@ -47,7 +47,7 @@ export const PLAN_METRICS: Record<string, PlanMetricFn> = {
 
   // Grant applications submitted this year — any grant that reached the
   // submitted stage or beyond. No submitted_at column exists, so updated_at
-  // within the year is the proxy (same approximation lib/kpis.ts uses).
+  // within the year is the proxy.
   grants_submitted_ytd: async (s, org) => {
     const { count } = await s
       .from("grants")

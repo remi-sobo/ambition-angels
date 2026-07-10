@@ -2,7 +2,7 @@
  * Strategy glance — the executive's three-second read, assembled deterministically
  * from the rollup (no AI). Two outputs:
  *
- *  - `verdict`: one plain-language sentence (the count, then the worst exception).
+ *  - `statusLine`: one plain-language sentence (the count, then the worst exception).
  *  - `exceptions`: the "Needs attention" list (off-track objectives + an overdue
  *    OGSM review), each linking into the plan.
  *
@@ -32,7 +32,7 @@ export type StrategyException = {
 export type StrategyGlanceData = {
   hasPlan: boolean;
   objectives: StrategyObjectiveTile[];
-  verdict: string;
+  statusLine: string;
   exceptions: StrategyException[];
 };
 
@@ -59,18 +59,18 @@ const offTrackObjectives = (objectives: StrategyObjectiveTile[]): StrategyObject
     );
 
 /** Clause 1 (the count) + clause 2 (the worst exception, dropped when none). */
-export function buildVerdict(objectives: StrategyObjectiveTile[]): string {
+export function buildStatusLine(objectives: StrategyObjectiveTile[]): string {
   const total = objectives.length;
   const onTrack = objectives.filter((o) => o.health === "on_track" || o.health === "done").length;
-  let verdict = `${onTrack} of ${total} objective${total === 1 ? "" : "s"} on track.`;
+  let statusLine = `${onTrack} of ${total} objective${total === 1 ? "" : "s"} on track.`;
 
   const worst = offTrackObjectives(objectives)[0];
   if (worst) {
     const word = worst.health === "behind" ? "behind" : "at risk";
     const m = worstMeasure(worst);
-    verdict += ` ${worst.title} is ${word}${m ? `: ${measureClause(m)}` : ""}.`;
+    statusLine += ` ${worst.title} is ${word}${m ? `: ${measureClause(m)}` : ""}.`;
   }
-  return verdict;
+  return statusLine;
 }
 
 /** Only surface a review when it's due today or overdue (not "in 5 days"). */
@@ -118,11 +118,11 @@ export function buildExceptions(
 
 export const getStrategyGlance = cache(async (): Promise<StrategyGlanceData> => {
   const rollup = await getStrategyRollup();
-  if (!rollup.hasPlan) return { hasPlan: false, objectives: [], verdict: "", exceptions: [] };
+  if (!rollup.hasPlan) return { hasPlan: false, objectives: [], statusLine: "", exceptions: [] };
   return {
     hasPlan: true,
     objectives: rollup.objectives,
-    verdict: buildVerdict(rollup.objectives),
+    statusLine: buildStatusLine(rollup.objectives),
     exceptions: buildExceptions(rollup.objectives, rollup.nextReviewAt),
   };
 });

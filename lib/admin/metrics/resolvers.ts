@@ -14,7 +14,7 @@ import { getFinanceSnapshot } from "@/lib/admin/finance";
  * org-scoped and healthy, lib/kpis.ts org-blind and retired by this spec).
  * Every resolver reuses a canonical computation; none invents a formula:
  * cash_runway_months and monthly_burn read the same getFinanceSnapshot() the
- * Command Center verdict reads, so the hub and the verdict can never disagree
+ * Command Center status line reads, so the hub and the status line can never disagree
  * on runway (pinned by tests/metrics.test.ts).
  */
 
@@ -25,7 +25,7 @@ export const METRIC_RESOLVERS: Record<string, MetricResolver> = {
   ...PLAN_METRICS,
 
   // Trailing 3-active-month average monthly expense — the exact burn the
-  // verdict and the Finance dashboard show.
+  // status line and the Finance dashboard show.
   monthly_burn: async () => {
     const fin = await getFinanceSnapshot();
     return fin.burn3mo ?? null;

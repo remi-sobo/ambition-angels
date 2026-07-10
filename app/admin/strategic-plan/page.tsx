@@ -32,7 +32,7 @@ import {
 } from "./_components/PlanControls";
 
 // Strategic plan (BloomOS Strategy — specs/bloomos-strategy-command-center.md):
-// one spine, three lenses. Org = the glance (verdict + grid, B1). Area = the
+// one spine, three lenses. Org = the glance (status line + grid, B1). Area = the
 // editable Foundation → Objectives → Goals → KPIs + Initiatives tree, scoped and
 // filtered. Mine = that tree filtered to what the viewer owns. Lens + filters are
 // URL-synced (B2). All reads org-scoped on the service-role client.
@@ -304,7 +304,7 @@ export default async function StrategicPlanPage({
 
           {lens === "org" ? (
             <>
-              {/* Org lens: the verdict, exceptions, objective grid (B1), the unassigned tray, the counts, the why. */}
+              {/* Org lens: the status line, exceptions, objective grid (B1), the unassigned tray, the counts, the why. */}
               {readiness && <ReadinessPanel data={readiness} />}
               <StrategyGlance />
               <UnassignedMetrics metrics={unassignedMetrics} goals={goalOptions} />

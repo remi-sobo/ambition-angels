@@ -7,7 +7,7 @@ import type { Readiness, ReadinessCheck } from "@/lib/admin/strategy/readiness";
 /**
  * Funder-readiness summary (B2-5): a score, the open blockers, and the
  * advisories, each linking to where it's fixed. Collapsed by default to a
- * one-line verdict; expands to the full checklist.
+ * one-line status; expands to the full checklist.
  */
 function Row({ c }: { c: ReadinessCheck }) {
   return (

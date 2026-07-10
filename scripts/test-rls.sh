@@ -160,6 +160,7 @@ ordered=(
   metrics_plan_kpis_backfill.sql
   metrics_stale_queue_arm.sql
   metrics_retire_dead_kpi_tables.sql
+  program_spine_schema.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

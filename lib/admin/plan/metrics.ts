@@ -7,6 +7,7 @@ import {
   computeCorporateRaisedFy,
   computeRunwayMonths,
 } from "@/lib/admin/strategy/money";
+import { getEngagedStageKeys } from "@/lib/admin/program/stages";
 
 /**
  * BloomOS Strategy, Phase 3 — the auto-metric registry (specs/bloomos-strategy.md).
@@ -96,14 +97,17 @@ export const PLAN_METRICS: Record<string, PlanMetricFn> = {
     return count ?? 0;
   },
 
-  // Active teens — students in an engaged journey stage (excludes discover =
-  // not-yet-active prospects, plus alumni and withdrawn).
+  // Active participants — students in an engaged journey stage. Which stages
+  // count as "engaged" is per-org DATA (participant_stages, program spine
+  // spec #4), not a hardcoded list; getEngagedStageKeys falls back to the
+  // starter template if an org has no rows.
   active_teens: async (s, org) => {
+    const engaged = await getEngagedStageKeys(s, org);
     const { count } = await s
       .from("students")
       .select("id", { count: "exact", head: true })
       .eq("org_id", org)
-      .in("stage", ["learn", "practice", "connect", "launch"]);
+      .in("stage", engaged);
     return count ?? 0;
   },
 

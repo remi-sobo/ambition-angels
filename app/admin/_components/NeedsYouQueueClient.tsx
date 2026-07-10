@@ -52,6 +52,8 @@ const SOURCE_LABEL: Record<QueueItem["source"], string> = {
   reconciliation_item: "Reconcile",
   document_renewal: "Renewal",
   metric_stale: "Metric update",
+  application_pending: "Application",
+  session_unrecorded: "Attendance",
 };
 
 const todayISO = () => new Date().toISOString().slice(0, 10);

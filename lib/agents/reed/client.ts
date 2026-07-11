@@ -29,6 +29,24 @@ export type ReedTool = {
   run: (input: Record<string, unknown>) => Promise<unknown>;
 };
 
+/**
+ * A tool may return rich tool_result content (text + document blocks — how
+ * read_document hands file bytes to the model) by wrapping the block array in
+ * this marker shape. Everything else is JSON.stringify'd as before.
+ */
+export type ReedBlocksResult = { __reedBlocks: unknown[] };
+
+export function toToolResultContent(out: unknown): string | unknown[] {
+  if (
+    out !== null &&
+    typeof out === "object" &&
+    Array.isArray((out as Partial<ReedBlocksResult>).__reedBlocks)
+  ) {
+    return (out as ReedBlocksResult).__reedBlocks;
+  }
+  return JSON.stringify(out);
+}
+
 export type ReedRunResult = {
   text: string;
   tokensInput: number;
@@ -93,21 +111,26 @@ export async function runReedAsk(opts: {
       if (block.type !== "tool_use") continue;
       const tool = byName.get(block.name);
       let ok = true;
-      let resultStr: string;
+      let result: string | unknown[];
       if (!tool) {
         ok = false;
-        resultStr = JSON.stringify({ error: `unknown tool: ${block.name}` });
+        result = JSON.stringify({ error: `unknown tool: ${block.name}` });
       } else {
         try {
           const out = await tool.run((block.input ?? {}) as Record<string, unknown>);
-          resultStr = JSON.stringify(out);
+          result = toToolResultContent(out);
         } catch (e) {
           ok = false;
-          resultStr = JSON.stringify({ error: e instanceof Error ? e.message : "tool failed" });
+          result = JSON.stringify({ error: e instanceof Error ? e.message : "tool failed" });
         }
       }
       toolCalls.push({ name: block.name, ok });
-      toolResults.push({ type: "tool_result", tool_use_id: block.id, content: resultStr, is_error: !ok });
+      toolResults.push({
+        type: "tool_result",
+        tool_use_id: block.id,
+        content: result as Anthropic.ToolResultBlockParam["content"],
+        is_error: !ok,
+      });
     }
     messages.push({ role: "user", content: toolResults });
   }

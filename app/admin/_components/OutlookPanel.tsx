@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Outlook, OutlookWindow } from "@/lib/admin/outlook";
+import ExplainWithReed from "./ExplainWithReed";
 
 // The 30/60/90 outlook, rendered as three compact chips inside the status
 // card — click a window to expand its detail (cash trajectory, inflows,
@@ -95,6 +96,12 @@ export default function OutlookPanel({ outlook }: { outlook: Outlook }) {
               {active.metricsOffTrack.length > 4 && ` +${active.metricsOffTrack.length - 4} more`}
             </p>
           )}
+          <div className="pt-0.5">
+            <ExplainWithReed
+              surface="outlook"
+              question={`What's driving the ${active.days}-day outlook (level: ${active.level}), and what should I act on first?`}
+            />
+          </div>
         </div>
       )}
     </div>

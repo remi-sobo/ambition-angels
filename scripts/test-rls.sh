@@ -162,6 +162,7 @@ ordered=(
   metrics_retire_dead_kpi_tables.sql
   program_spine_schema.sql
   owner_uuid_promotion.sql
+  reed_suggestions_payload.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

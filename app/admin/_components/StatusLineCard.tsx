@@ -1,6 +1,7 @@
 import { getStatusLine, getChangeSince, type StatusLevel } from "@/lib/admin/statusLine";
 import { getOutlook } from "@/lib/admin/outlookRead";
 import OutlookPanel from "./OutlookPanel";
+import ExplainWithReed from "./ExplainWithReed";
 
 // Status & Outlook — the Command Center status line, the "changed since you
 // were last here" diff, and the 30/60/90 outlook chips (spec #5).
@@ -49,6 +50,12 @@ export default async function StatusLineCard() {
       <p className="flex items-center gap-2.5 text-sm font-semibold">
         <span aria-hidden className={`h-2.5 w-2.5 rounded-full shrink-0 ${style.dot}`} />
         <span className={style.text}>{statusLine.line}</span>
+        <span className="ml-auto font-normal">
+          <ExplainWithReed
+            surface="status_line"
+            question={`Why is the status "${statusLine.level}" today? Walk me through each condition behind it and what would change the level.`}
+          />
+        </span>
       </p>
       {change?.since && (
         <p className="mt-1.5 pl-5 text-xs text-ink-2">

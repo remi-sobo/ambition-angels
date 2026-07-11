@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { gatherBriefing } from "@/lib/admin/briefing/gather";
 import { getActionQueue, type QueueItem } from "@/lib/admin/actionQueue";
-import { getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import BriefingCard from "../briefing/_components/BriefingCard";
 import NeedsYouQueueClient from "./NeedsYouQueueClient";
 
@@ -30,6 +30,7 @@ export default async function NeedsYouToday() {
     // ditto for the queue
   }
   const me = (await getAdminUser()) ?? null;
+  const meId = (await getOrgContext())?.userId ?? null;
 
   if (briefingTop.length === 0 && items.length === 0) {
     return (
@@ -65,7 +66,7 @@ export default async function NeedsYouToday() {
         </div>
       )}
 
-      <NeedsYouQueueClient items={items} me={me} />
+      <NeedsYouQueueClient items={items} me={me} meId={meId} />
     </section>
   );
 }

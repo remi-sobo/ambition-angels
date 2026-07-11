@@ -684,6 +684,47 @@ do $$ begin
   end if;
 end $$;
 
+-- ════ Owner promotion: text → uuid sync + queue owner_id ═════════════════
+-- The sync trigger must map a free-text assignee to a same-org profile, an
+-- explicit uuid write must win, and v_action_items must expose the uuid so
+-- the queue's "Mine" filter is an exact match.
+reset role;
+reset request.jwt.claim.sub;
+
+do $$
+declare aa uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+  insert into profiles (user_id, display_name)
+  values ('00000000-0000-0000-0000-000000000002', 'Shannon')
+  on conflict (user_id) do nothing;
+  -- assigned_to is CHECK-constrained to lowercase names; the trigger's
+  -- case-insensitive match against display_name 'Remi' is what's under test.
+  insert into ops_tasks (org_id, title, category, created_by, assigned_to)
+  values (aa, 'owner-promo-test', 'operations', 'remi', 'remi');
+  -- Explicit uuid write wins over the text heuristic (future UI path).
+  insert into ops_tasks (org_id, title, category, created_by, assigned_to, assigned_to_id)
+  values (aa, 'owner-promo-explicit', 'operations', 'remi', 'remi',
+          '00000000-0000-0000-0000-000000000002');
+end $$;
+
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  if (select assigned_to_id from ops_tasks where title = 'owner-promo-test')
+     is distinct from '00000000-0000-0000-0000-000000000001'::uuid then
+    raise exception 'sync trigger did not map text assignee ''Remi'' to the profile uuid';
+  end if;
+  if (select assigned_to_id from ops_tasks where title = 'owner-promo-explicit')
+     is distinct from '00000000-0000-0000-0000-000000000002'::uuid then
+    raise exception 'explicit assigned_to_id write was overridden by the sync trigger';
+  end if;
+  if (select owner_id from v_action_items where source = 'ops_task' and title = 'owner-promo-test')
+     is distinct from '00000000-0000-0000-0000-000000000001'::uuid then
+    raise exception 'v_action_items does not expose the promoted owner uuid';
+  end if;
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

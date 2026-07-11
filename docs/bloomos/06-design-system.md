@@ -2,38 +2,34 @@
 
 ## 1. Information architecture (CEO-first, evolved from the approved mockup)
 
-Left sidebar, seven labeled sections. This IA is the product's table of contents and maps 1:1 to module docs. Sections are ordered **CEO-first**: the top of the sidebar is what the CEO opens BloomOS for — status, briefing, strategy, scorecard, then money and governance — and the back half is the rest of the org's daily work (program delivery, operations, analytics).
+Left sidebar, seven labeled sections. This IA is the product's table of contents and maps 1:1 to module docs. Section order (approved by Remi, 2026-07): **Command Center → Fundraising → Operations → Finance → Program → Governance → Data** — CEO-first at the top (status, briefing, strategy, scorecard, then money in), the team's daily execution right behind it, oversight and analytics at the bottom.
 
 ```
 BloomOS — Operating System for Ambition Angels
 
-COMMAND CENTER          GOVERNANCE              OPERATIONS
-  Overview                Board                   My Week
-  Executive Briefing      Compliance              Tasks
-  Strategy                                        Projects
-  KPIs                  PROGRAM                   Meetings
-  Inbox                   Students                Booking page
-  Messages                Cohorts                 Staff
-                          Intake                  Documents
-FUNDRAISING               Demo Day
-  Today's Moves           YGB Camp              DATA
-  Pipeline                Schools & Partners      Website Analytics
-  Donors                  Ambition App            App Analytics
-  Grants                  Internships             Student Analytics
-  Prospects               Career Readiness        Surveys
-  Strategy
-  Ask Log                
-  Campaigns
-  Events
-FINANCE
-  Overview
-  Revenue
-  Expenses
-  Budget vs Actual
-  Cash Flow
+COMMAND CENTER          OPERATIONS              PROGRAM
+  Overview                My Week                 Students
+  Executive Briefing      Tasks                   Cohorts
+  Strategy                Projects                Intake
+  KPIs                    Meetings                Demo Day
+  Inbox                   Booking page            YGB Camp
+  Messages                Staff                   Schools & Partners
+                          Documents               Ambition App
+FUNDRAISING                                       Internships
+  Today's Moves         FINANCE                   Career Readiness
+  Pipeline                Overview
+  Donors                  Revenue               GOVERNANCE
+  Grants                  Expenses                Board
+  Prospects               Budget vs Actual        Compliance
+  Strategy                Cash Flow
+  Ask Log                                       DATA
+  Campaigns                                       Website Analytics
+  Events                                          App Analytics
+                                                  Student Analytics
+                                                  Surveys
 ```
 
-Deviations from the original mockup, kept deliberately: Compliance exists (`/admin/compliance`) and lives under Governance. Strategy and KPIs moved from Governance into the Command Center — they are daily CEO surfaces (the Strategic Plan hub and the Metric Catalog), not board-meeting artifacts. Fundraising and Finance ride directly under the Command Center because money is the CEO's first job; Program, Operations, and Data follow as the wider team's daily sections.
+Deviations from the original mockup, kept deliberately: Compliance exists (`/admin/compliance`) and lives under Governance. Strategy and KPIs moved from Governance into the Command Center — they are daily CEO surfaces (the Strategic Plan hub and the Metric Catalog), not board-meeting artifacts. Fundraising rides directly under the Command Center because money is the CEO's first job; Operations sits high because My Week/Tasks are everyone's daily front door; Governance and Data close the list as periodic rather than daily surfaces.
 
 Top bar: date · global search (⌘K) · notifications bell · org/user avatar. Footer: *BloomOS™ — All-in-one operating system for nonprofits. Data, Finance, Fundraising, Programs, Impact. Built by SOBO Consulting.* Support: `support@bloomos.co` (placeholder).
 

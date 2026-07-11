@@ -8,9 +8,12 @@ import SearchTrigger from "./search/SearchTrigger";
 import { useAdminBadges } from "./AdminBadges";
 
 // ── BloomOS IA (docs/bloomos/06-design-system.md §1) ────────────────────────
-// Seven sections mapped over the pages that exist today. Items without a
-// page yet render as muted "Soon" rows — the sidebar is the product's table
-// of contents, so the full IA is visible even before every module ships.
+// Seven sections, ordered CEO-first: the top of the sidebar is what the CEO
+// opens BloomOS for (status, briefing, strategy, scorecard, then money and
+// governance); the back half is the rest of the org's daily work (program
+// delivery, operations, analytics). Items without a page yet render as muted
+// "Soon" rows — the sidebar is the product's table of contents, so the full
+// IA is visible even before every module ships.
 
 type IconName =
   | "overview" | "briefing" | "inbox" | "messages"
@@ -26,13 +29,64 @@ type NavSection = { label: string; items: NavItem[] };
 
 const NAV_SECTIONS: NavSection[] = [
   {
+    // The CEO's first five minutes: where do we stand, what needs me, what's
+    // the plan, are the numbers moving — then team comms.
     label: "Command Center",
     items: [
       { label: "Overview", icon: "overview", href: "/admin" },
+      { label: "Executive Briefing", icon: "briefing", href: "/admin/briefing" },
+      { label: "Strategy", icon: "strategy", href: "/admin/strategic-plan" },
+      { label: "KPIs", icon: "kpis", href: "/admin/kpis" },
       { label: "Inbox", icon: "inbox", href: "/admin/inbox" },
       { label: "Messages", icon: "messages", href: "/admin/messages" },
-      { label: "Strategy", icon: "strategy", href: "/admin/strategic-plan" },
-      { label: "Executive Briefing", icon: "briefing", href: "/admin/briefing" },
+    ],
+  },
+  {
+    // Money in — the CEO's primary external job.
+    label: "Fundraising",
+    items: [
+      { label: "Today's Moves", icon: "tasks", href: "/admin/fundraising/today" },
+      { label: "Pipeline", icon: "majorgifts", href: "/admin/fundraising" },
+      { label: "Donors", icon: "donors", href: "/admin/fundraising/donors" },
+      { label: "Grants", icon: "grants", href: "/admin/fundraising/grants" },
+      { label: "Prospects", icon: "events", href: "/admin/fundraising/prospects" },
+      { label: "Strategy", icon: "strategy", href: "/admin/fundraising/strategy" },
+      { label: "Ask Log", icon: "documents", href: "/admin/fundraising/asks" },
+      { label: "Campaigns", icon: "campaigns", href: "/admin/fundraising/campaigns" },
+      { label: "Events", icon: "events", soon: true },
+    ],
+  },
+  {
+    // Money out + runway — the survival numbers.
+    label: "Finance",
+    items: [
+      { label: "Overview", icon: "finance", href: "/admin/finance" },
+      { label: "Revenue", icon: "revenue", href: "/admin/finance/revenue" },
+      { label: "Expenses", icon: "expenses", href: "/admin/finance/transactions" },
+      { label: "Budget vs Actual", icon: "budget", href: "/admin/finance/budget" },
+      { label: "Cash Flow", icon: "cashflow", soon: true },
+    ],
+  },
+  {
+    label: "Governance",
+    items: [
+      { label: "Board", icon: "board", href: "/admin/board" },
+      { label: "Compliance", icon: "compliance", href: "/admin/compliance" },
+    ],
+  },
+  {
+    // From here down: the rest of the org's daily work.
+    label: "Program",
+    items: [
+      { label: "Students", icon: "students", href: "/admin/students" },
+      { label: "Cohorts", icon: "cohorts", href: "/admin/cohorts" },
+      { label: "Intake", icon: "intake", href: "/admin/intake" },
+      { label: "Demo Day", icon: "demoday", href: "/admin/demoday" },
+      { label: "YGB Camp", icon: "camp", href: "/admin/ygb" },
+      { label: "Schools & Partners", icon: "schools", href: "/admin/partners" },
+      { label: "Ambition App", icon: "app", soon: true },
+      { label: "Internships", icon: "internships", soon: true },
+      { label: "Career Readiness", icon: "career", soon: true },
     ],
   },
   {
@@ -48,57 +102,12 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Fundraising",
-    items: [
-      { label: "Today's Moves", icon: "tasks", href: "/admin/fundraising/today" },
-      { label: "Donors", icon: "donors", href: "/admin/fundraising/donors" },
-      { label: "Pipeline", icon: "majorgifts", href: "/admin/fundraising" },
-      { label: "Strategy", icon: "strategy", href: "/admin/fundraising/strategy" },
-      { label: "Prospects", icon: "events", href: "/admin/fundraising/prospects" },
-      { label: "Grants", icon: "grants", href: "/admin/fundraising/grants" },
-      { label: "Ask Log", icon: "documents", href: "/admin/fundraising/asks" },
-      { label: "Campaigns", icon: "campaigns", href: "/admin/fundraising/campaigns" },
-      { label: "Events", icon: "events", soon: true },
-    ],
-  },
-  {
-    label: "Program",
-    items: [
-      { label: "Students", icon: "students", href: "/admin/students" },
-      { label: "Cohorts", icon: "cohorts", href: "/admin/cohorts" },
-      { label: "Intake", icon: "intake", href: "/admin/intake" },
-      { label: "Demo Day", icon: "demoday", href: "/admin/demoday" },
-      { label: "YGB Camp", icon: "camp", href: "/admin/ygb" },
-      { label: "Schools & Partners", icon: "schools", href: "/admin/partners" },
-      { label: "Ambition App", icon: "app", soon: true },
-      { label: "Internships", icon: "internships", soon: true },
-      { label: "Career Readiness", icon: "career", soon: true },
-    ],
-  },
-  {
-    label: "Finance",
-    items: [
-      { label: "Overview", icon: "finance", href: "/admin/finance" },
-      { label: "Revenue", icon: "revenue", href: "/admin/finance/revenue" },
-      { label: "Expenses", icon: "expenses", href: "/admin/finance/transactions" },
-      { label: "Budget vs Actual", icon: "budget", href: "/admin/finance/budget" },
-      { label: "Cash Flow", icon: "cashflow", soon: true },
-    ],
-  },
-  {
     label: "Data",
     items: [
       { label: "Website Analytics", icon: "webanalytics", href: "/admin/analytics" },
       { label: "App Analytics", icon: "appanalytics", soon: true },
       { label: "Student Analytics", icon: "studentanalytics", soon: true },
       { label: "Surveys", icon: "surveys", soon: true },
-    ],
-  },
-  {
-    label: "Governance",
-    items: [
-      { label: "Board", icon: "board", href: "/admin/board" },
-      { label: "Compliance", icon: "compliance", href: "/admin/compliance" },
     ],
   },
 ];

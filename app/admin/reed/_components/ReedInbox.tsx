@@ -15,6 +15,7 @@ type Suggestion = {
   rationale: string | null;
   priority: string;
   status: string;
+  payload: Record<string, unknown> | null;
   created_at: string;
 };
 type Proposal = {
@@ -368,9 +369,29 @@ function ApprovedCard({ draft }: { draft: Draft }) {
   );
 }
 
+// The two typed extraction payloads the accept route can apply (spec #6,
+// Phase 4). Rendered as an explicit "accepting will do X" line so the human
+// knows accept means apply. A payload of any OTHER shape renders as plain
+// JSON with no apply framing — the accept route also refuses to apply it.
+function extractionSummary(payload: Record<string, unknown> | null): { text: string; unknown: boolean } | null {
+  if (!payload) return null;
+  if (payload.kind === "document_fields") {
+    const parts: string[] = [];
+    if (typeof payload.expires_at === "string") parts.push(`set expiry to ${payload.expires_at}`);
+    if (typeof payload.doc_type === "string") parts.push(`set type to ${payload.doc_type}`);
+    return { text: `Accepting will ${parts.join(" and ") || "update the document"} on the source document.`, unknown: false };
+  }
+  if (payload.kind === "obligation_task") {
+    const due = typeof payload.due_date === "string" ? `, due ${payload.due_date}` : "";
+    return { text: `Accepting will create the task "${String(payload.title ?? "")}"${due}, linked to the source document.`, unknown: false };
+  }
+  return { text: JSON.stringify(payload), unknown: true };
+}
+
 function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const extraction = extractionSummary(suggestion.payload);
 
   async function decide(action: "accept" | "dismiss") {
     setBusy(true);
@@ -402,13 +423,18 @@ function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
       </div>
       <h3 className="font-heading font-semibold text-ink-1 text-sm">{suggestion.title}</h3>
       {suggestion.rationale && <p className="mt-1 text-[13px] text-ink-2 leading-relaxed">{suggestion.rationale}</p>}
+      {extraction && (
+        <p className={`mt-1.5 text-xs leading-relaxed ${extraction.unknown ? "text-ink-3 font-mono break-all" : "text-ink-2 font-semibold"}`}>
+          {extraction.unknown ? <>Unsupported proposal payload (nothing will be applied): {extraction.text}</> : extraction.text}
+        </p>
+      )}
       <div className="mt-3 flex items-center gap-2">
         <button
           onClick={() => decide("accept")}
           disabled={busy}
           className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full disabled:opacity-50"
         >
-          Accept
+          {extraction && !extraction.unknown ? "Accept & apply" : "Accept"}
         </button>
         <button
           onClick={() => decide("dismiss")}

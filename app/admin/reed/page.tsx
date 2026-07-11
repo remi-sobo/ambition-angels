@@ -34,7 +34,7 @@ export default async function ReedPage() {
       .limit(50),
     supabase
       .from("reed_suggestions")
-      .select("id, domain, title, rationale, priority, status, created_at")
+      .select("id, domain, title, rationale, priority, status, payload, created_at")
       .eq("status", "suggested")
       .order("created_at", { ascending: false })
       .limit(50),

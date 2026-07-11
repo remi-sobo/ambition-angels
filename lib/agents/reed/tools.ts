@@ -17,6 +17,7 @@ import { getDisplayNames } from "@/lib/admin/profile";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { DOCUMENTS_BUCKET } from "@/lib/documents/config";
 import { FINANCE_FORMULA_OVERLAY, METRIC_KEY_ALIASES, TOOL_FIELD_GLOSSARY } from "./metricGlossary";
+import { EXTRACTION_DOMAIN, parseExtractionPayload } from "./extraction";
 
 /**
  * Reed's read-only tool set (Phase 4).
@@ -756,6 +757,84 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
                 `${text}\n</untrusted_document>`,
             },
           ],
+        };
+      },
+    },
+
+    {
+      name: "propose_document_extraction",
+      description:
+        "After reading a document, propose a structured extraction from it as an INERT suggestion a human " +
+        "reviews in the Reed inbox. Two kinds: 'document_fields' (set the document's expires_at and/or " +
+        "doc_type — e.g. an award letter's expiry) and 'obligation_task' (a candidate task for an obligation " +
+        "the document creates — e.g. a reporting deadline — with title and due_date). Only propose what the " +
+        "document ACTUALLY says; never infer dates it doesn't state. Proposing writes nothing to the " +
+        "document or the task list — accepting in the inbox does, and the reviewer sees which document the " +
+        "proposal came from.",
+      input_schema: {
+        type: "object",
+        properties: {
+          document_id: { type: "string", description: "The document this extraction came from (from list_documents/read_document)." },
+          kind: { type: "string", enum: ["document_fields", "obligation_task"] },
+          payload: {
+            type: "object",
+            description:
+              "document_fields → { expires_at?: 'YYYY-MM-DD', doc_type? }; " +
+              "obligation_task → { title, due_date?: 'YYYY-MM-DD', description?, category? }.",
+            additionalProperties: true,
+          },
+          rationale: { type: "string", description: "Where in the document this comes from — quote or cite the passage." },
+        },
+        required: ["document_id", "kind", "payload", "rationale"],
+        additionalProperties: false,
+      },
+      run: async (input) => {
+        const payloadIn = input.payload && typeof input.payload === "object" ? (input.payload as Record<string, unknown>) : {};
+        const parsed = parseExtractionPayload({ ...payloadIn, kind: input.kind, document_id: input.document_id });
+        if (!parsed.ok) return { error: "bad_request", message: parsed.error };
+        const payload = parsed.payload;
+
+        const domain = EXTRACTION_DOMAIN[payload.kind];
+        if (!(await hasPermission(sb, orgId, `${domain}.write`))) return deny(`${domain}.write`);
+
+        // The document must be visible to the asking user (session client) —
+        // Reed can't propose against a row the user couldn't see.
+        const { data: doc } = await sb
+          .from("documents")
+          .select("id, title, filename")
+          .eq("id", payload.document_id)
+          .eq("org_id", orgId)
+          .maybeSingle();
+        if (!doc) return { error: "not_found", message: "No such document (or you can't access it)." };
+        const docLabel = (doc.title as string | null) ?? (doc.filename as string);
+
+        const title =
+          payload.kind === "obligation_task"
+            ? payload.title
+            : `Update fields on "${docLabel}"${payload.expires_at ? ` — expires ${payload.expires_at}` : ""}${payload.doc_type ? ` — type ${payload.doc_type}` : ""}`;
+
+        const { data, error } = await sb
+          .from("reed_suggestions")
+          .insert({
+            org_id: orgId,
+            domain,
+            title: title.slice(0, 300),
+            rationale: typeof input.rationale === "string" ? input.rationale.slice(0, 2000) : null,
+            priority: "medium",
+            target_type: "document",
+            target_id: payload.document_id,
+            payload,
+            created_by: createdBy,
+            status: "suggested",
+          })
+          .select("id")
+          .single();
+        if (error) return { error: "save_failed", message: error.message };
+        return {
+          proposed: true,
+          suggestion_id: (data as { id: string }).id,
+          status: "suggested",
+          note: `Recorded as an inert extraction proposal from "${docLabel}". A human reviews it in the Reed inbox; nothing was written to the document or the task list.`,
         };
       },
     },

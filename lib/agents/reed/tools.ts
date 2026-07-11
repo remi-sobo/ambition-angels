@@ -9,6 +9,12 @@ import { loadRevenueSchedule, scheduleToRunwayPledges } from "@/lib/finance/sche
 import type { ReedTool } from "./client";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { loadConstituentDossier, loadMeetingBrief, loadPartnerDossier } from "@/lib/meetings/dossier";
+import { getActionQueue } from "@/lib/admin/actionQueue";
+import { getStatusLine } from "@/lib/admin/statusLine";
+import { getOutlook } from "@/lib/admin/outlookRead";
+import { getMetricCatalog } from "@/lib/admin/metrics/catalog";
+import { getDisplayNames } from "@/lib/admin/profile";
+import { FINANCE_FORMULA_OVERLAY, METRIC_KEY_ALIASES, TOOL_FIELD_GLOSSARY } from "./metricGlossary";
 
 /**
  * Reed's read-only tool set (Phase 4).
@@ -27,6 +33,16 @@ import { loadConstituentDossier, loadMeetingBrief, loadPartnerDossier } from "@/
  * admin snapshot import computeRunway/summarizePledges from lib/finance/runway
  * (a pure, DB-free module), so the three runway tiers can't drift between Reed
  * and the dashboard. If you change a still-copied formula, change it here too.
+ *
+ * Spine tools (spec #6) are the deliberate exception to the no-transitive-
+ * service-role rule above: get_status_and_outlook calls the canonical
+ * getStatusLine()/getOutlook() loaders — the exact reads the Command Center
+ * renders — and those reach getFinanceSnapshot(), which is service-role. A
+ * session-client re-implementation would be a second opinion, the thing the
+ * spine exists to prevent. The boundary holds because the tool checks
+ * finance.read (session client, RLS-verified) BEFORE calling the loaders.
+ * getChangeSince is deliberately NOT exposed to Reed: it WRITES
+ * user_org_state on read, and a chat turn must never stamp a visit.
  */
 
 // Copied from lib/admin/finance.ts (pure; not imported, to keep this module free
@@ -395,34 +411,160 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
     },
 
     {
-      name: "explain_metric",
+      name: "get_needs_you_queue",
       description:
-        "Return the locked, authoritative definition of a BloomOS metric so explanations stay consistent " +
-        "with how the dashboards compute it. Use before explaining what a number means.",
+        "The 'Needs You' queue — the same ranked action list the Command Center shows the asking user: " +
+        "tasks, grant requirements, compliance, thank-yous due, reconciliation, document renewals, stale " +
+        "metrics, pending applications, unrecorded sessions. Rows are already scoped to what the asking " +
+        "user may see, and ranked deterministically (overdue first, then soonest due, then priority). Use " +
+        "for 'what needs me today', 'what's overdue', 'what's on my plate'. Narrate items in the order " +
+        "returned — never re-rank.",
       input_schema: {
         type: "object",
         properties: {
-          metric: {
-            type: "string",
-            enum: ["cash_on_hand", "runway", "burn", "raised_ytd", "committed", "weighted_open", "forecast", "gap_to_goal"],
-          },
+          limit: { type: "integer", description: "Max items to return (default 40).", minimum: 1, maximum: 100 },
         },
-        required: ["metric"],
         additionalProperties: false,
       },
       run: async (input) => {
-        const defs: Record<string, string> = {
-          cash_on_hand: "Reconciled starting balance + the sum of all ledger transactions dated after the anchor date.",
-          runway: "Cash on hand ÷ monthly burn. Null when there is no burn. ≤3 months is critical, ≤6 is a watch.",
-          burn: "Average monthly expense over the last 3 active months (months with any revenue or expense).",
-          raised_ytd: "Sum of gifts dated within the current fiscal year. The fundraising (gift) view, not the bank ledger.",
-          committed: "Raised this FY + stewardship-stage asks (treated as committed).",
-          weighted_open: "Σ(ask_amount × probability) over open stages (identify/qualify/cultivate/solicit); probability defaults to 50% when blank.",
-          forecast: "Committed + weighted-open pipeline. Deliberately not total pipeline.",
-          gap_to_goal: "Fundraising goal − forecast.",
+        const limit = typeof input.limit === "number" ? Math.max(1, Math.min(100, input.limit)) : 40;
+        const queue = await getActionQueue();
+        const today = new Date().toISOString().slice(0, 10);
+        const overdueCount = queue.filter((it) => it.dueDate != null && it.dueDate < today).length;
+        return {
+          total: queue.length,
+          overdueCount,
+          returned: Math.min(limit, queue.length),
+          items: queue.slice(0, limit),
+          note:
+            queue.length > limit
+              ? `Showing the top ${limit} of ${queue.length} — say so if you summarize.`
+              : "This is the complete queue for this user right now.",
         };
-        const metric = String(input.metric ?? "");
-        return { metric, definition: defs[metric] ?? "Unknown metric." };
+      },
+    },
+
+    {
+      name: "get_status_and_outlook",
+      description:
+        "The Command Center's deterministic status line (steady/watch/critical + the one-line why: runway, " +
+        "overdue count, thank-yous due) and the 30/60/90-day outlook (projected cash, committed vs projected " +
+        "inflows, deadlines due per window, metrics trending off-target, per-window level). Use for 'how are " +
+        "we doing', 'why is the status amber', 'what's coming'. Narrate these conditions VERBATIM — the " +
+        "levels and windows are decided by the system, never by you. (The 'changed since you were here' " +
+        "diff is deliberately not available: reading it stamps the user's visit.)",
+      input_schema: { type: "object", properties: {}, additionalProperties: false },
+      run: async () => {
+        // The status line and outlook include the service-role finance
+        // snapshot, so gate on finance.read before the loaders run.
+        if (!(await hasPermission(sb, orgId, "finance.read"))) return deny("finance.read");
+        const [status, outlook] = await Promise.all([getStatusLine(), getOutlook()]);
+        return { status, outlook };
+      },
+    },
+
+    {
+      name: "audit_metric_catalog",
+      description:
+        "The org's Metric Catalog with freshness — every active metric's key, name, department, definition, " +
+        "owner, cadence, latest value + capture date, days since capture, stale flag, and target. Use for " +
+        "AUDIT questions: 'which metrics are stale', 'what am I behind on updating', 'which metrics have no " +
+        "owner'. Staleness is decided by the catalog's cadence rules, not by you. Metrics without an owner " +
+        "are findings to report, never omissions.",
+      input_schema: { type: "object", properties: {}, additionalProperties: false },
+      run: async () => {
+        if (!(await hasPermission(sb, orgId, "metrics.read"))) return deny("metrics.read");
+        const catalog = await getMetricCatalog();
+        const active = catalog.filter((m) => m.active);
+        const names = await getDisplayNames(
+          Array.from(new Set(active.map((m) => m.owner_id).filter(Boolean))) as string[],
+        );
+        const today = Date.now();
+        const metrics = active.map((m) => ({
+          metric_key: m.metric_key,
+          name: m.name,
+          description: m.description,
+          department: m.department,
+          unit: m.unit,
+          direction: m.direction,
+          cadence: m.cadence,
+          source_kind: m.source_kind,
+          target: m.target,
+          owner: m.owner_id ? (names[m.owner_id] ?? null) : null,
+          unowned: m.owner_id == null,
+          latest: m.latest,
+          ageDays: m.latest
+            ? Math.floor((today - new Date(m.latest.captured_on + "T00:00:00Z").getTime()) / 86400000)
+            : null,
+          stale: m.stale,
+        }));
+        return {
+          count: metrics.length,
+          staleCount: metrics.filter((m) => m.stale).length,
+          unownedCount: metrics.filter((m) => m.unowned).length,
+          inactiveCount: catalog.length - active.length,
+          metrics,
+        };
+      },
+    },
+
+    {
+      name: "explain_metric",
+      description:
+        "The authoritative definition of a metric, read from the Metric Catalog (definition, unit, " +
+        "direction, cadence, target, latest value, freshness), overlaid with the locked finance formula " +
+        "where one exists — so your explanation matches the hub, scorecard, and status line exactly. Pass " +
+        "the metric_key (from audit_metric_catalog or the KPI hub). Figures that are fields of the finance/" +
+        "forecast tools (forecast, committed, weighted_open, gap_to_goal, raised_ytd, cash_on_hand) resolve " +
+        "to their locked definitions too. Use before explaining what a number means.",
+      input_schema: {
+        type: "object",
+        properties: {
+          metric_key: { type: "string", description: "Catalog metric_key, or a finance tool-field name." },
+        },
+        required: ["metric_key"],
+        additionalProperties: false,
+      },
+      run: async (input) => {
+        const raw = String(input.metric_key ?? "").trim();
+        if (!raw) return { error: "bad_request", message: "metric_key is required." };
+        const key = METRIC_KEY_ALIASES[raw] ?? raw;
+
+        // Catalog first — the single registry (spec #3). RLS scopes the read;
+        // the clean-refusal check keeps "no access" distinct from "no such key".
+        if (await hasPermission(sb, orgId, "metrics.read")) {
+          const catalog = await getMetricCatalog();
+          const row = catalog.find((m) => m.metric_key === key);
+          if (row) {
+            return {
+              metric_key: row.metric_key,
+              source: "catalog",
+              name: row.name,
+              definition: row.description,
+              locked_formula: FINANCE_FORMULA_OVERLAY[row.metric_key] ?? null,
+              unit: row.unit,
+              direction: row.direction,
+              cadence: row.cadence,
+              target: row.target,
+              latest: row.latest,
+              stale: row.stale,
+            };
+          }
+        }
+
+        const toolField = TOOL_FIELD_GLOSSARY[key];
+        if (toolField) {
+          return {
+            metric_key: key,
+            source: "tool_field",
+            definition: toolField,
+            note: "A figure from get_finance_snapshot / get_fundraising_forecast results, not a catalog metric.",
+          };
+        }
+        return {
+          error: "not_found",
+          message: `No catalog metric or tool-field definition for "${raw}". Call audit_metric_catalog to see the org's metric keys.`,
+        };
       },
     },
 

@@ -8,10 +8,11 @@ import SearchTrigger from "./search/SearchTrigger";
 import { useAdminBadges } from "./AdminBadges";
 
 // ── BloomOS IA (docs/bloomos/06-design-system.md §1) ────────────────────────
-// Seven sections, ordered CEO-first: the top of the sidebar is what the CEO
-// opens BloomOS for (status, briefing, strategy, scorecard, then money and
-// governance); the back half is the rest of the org's daily work (program
-// delivery, operations, analytics). Items without a page yet render as muted
+// Seven sections in the approved order (Remi, 2026-07): Command Center →
+// Fundraising → Operations → Finance → Program → Governance → Data. CEO-first
+// at the top (status, briefing, strategy, scorecard, then money in), the
+// team's daily execution right behind it, oversight and analytics at the
+// bottom. Items without a page yet render as muted
 // "Soon" rows — the sidebar is the product's table of contents, so the full
 // IA is visible even before every module ships.
 
@@ -57,6 +58,19 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    // The team's execution layer — everyone's daily work lives here.
+    label: "Operations",
+    items: [
+      { label: "My Week", icon: "week", href: "/admin/ops/my-week" },
+      { label: "Tasks", icon: "tasks", href: "/admin/ops" },
+      { label: "Projects", icon: "projects", href: "/admin/ops/projects" },
+      { label: "Meetings", icon: "meetings", href: "/admin/meetings" },
+      { label: "Booking page", icon: "events", href: "/admin/meet" },
+      { label: "Staff", icon: "team", href: "/admin/staff" },
+      { label: "Documents", icon: "documents", href: "/admin/documents" },
+    ],
+  },
+  {
     // Money out + runway — the survival numbers.
     label: "Finance",
     items: [
@@ -68,14 +82,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Governance",
-    items: [
-      { label: "Board", icon: "board", href: "/admin/board" },
-      { label: "Compliance", icon: "compliance", href: "/admin/compliance" },
-    ],
-  },
-  {
-    // From here down: the rest of the org's daily work.
+    // Program delivery.
     label: "Program",
     items: [
       { label: "Students", icon: "students", href: "/admin/students" },
@@ -90,15 +97,10 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Operations",
+    label: "Governance",
     items: [
-      { label: "My Week", icon: "week", href: "/admin/ops/my-week" },
-      { label: "Tasks", icon: "tasks", href: "/admin/ops" },
-      { label: "Projects", icon: "projects", href: "/admin/ops/projects" },
-      { label: "Meetings", icon: "meetings", href: "/admin/meetings" },
-      { label: "Booking page", icon: "events", href: "/admin/meet" },
-      { label: "Staff", icon: "team", href: "/admin/staff" },
-      { label: "Documents", icon: "documents", href: "/admin/documents" },
+      { label: "Board", icon: "board", href: "/admin/board" },
+      { label: "Compliance", icon: "compliance", href: "/admin/compliance" },
     ],
   },
   {

@@ -38,6 +38,7 @@ export type ActionItemRow = {
   entity_id: string | null;
   entity_label: string | null;
   owner_ref: string | null;
+  owner_id: string | null;
   due_date: string | null;
   priority: string;
   status: string;
@@ -53,6 +54,8 @@ export type QueueItem = {
   priority: string;
   status: string;
   ownerRef: string | null;
+  /** Owner as a real profile uuid (ops tasks, compliance, stale metrics). */
+  ownerId: string | null;
   /** Resolved linked entity, when the row carries one the registry knows. */
   entity: { label: string; typeLabel: string; url: string | null } | null;
   /** Deep link for the row itself. */
@@ -97,7 +100,7 @@ export const getActionQueue = cache(async (): Promise<QueueItem[]> => {
     supabase
       .from("v_action_items")
       .select(
-        "org_id, source, source_id, title, entity_type, entity_id, entity_label, owner_ref, due_date, priority, status, module",
+        "org_id, source, source_id, title, entity_type, entity_id, entity_label, owner_ref, owner_id, due_date, priority, status, module",
       )
       .eq("org_id", ctx.orgId)
       .limit(500),
@@ -132,6 +135,7 @@ export const getActionQueue = cache(async (): Promise<QueueItem[]> => {
       priority: r.priority,
       status: r.status,
       ownerRef: r.owner_ref,
+      ownerId: r.owner_id,
       entity: entity ? { label: entity.label, typeLabel: entity.typeLabel, url: entity.url } : null,
       href: entity?.url ?? SOURCE_FALLBACK_HREF[r.source],
     };

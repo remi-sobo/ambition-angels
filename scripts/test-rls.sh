@@ -161,6 +161,7 @@ ordered=(
   metrics_stale_queue_arm.sql
   metrics_retire_dead_kpi_tables.sql
   program_spine_schema.sql
+  owner_uuid_promotion.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

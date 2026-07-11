@@ -9,8 +9,9 @@ import EntityChip from "./EntityChip";
 
 // Client half of the "Needs you today" queue: per-module EXPANDABLE groups
 // (a row of labeled doors with counts — never a long flat list), the
-// best-effort mine-toggle (owner columns are free text today, spec open
-// decision B), and one-click completion. Completion dispatches on
+// mine-toggle (exact uuid match via the promoted owner columns, text
+// fallback for sources without one), and one-click completion. Completion
+// dispatches on
 // (source, sourceId) ONLY — never on row position — to each source's
 // existing endpoint; v_action_items itself is read-only. Sources without a
 // safe one-click (a thank-you needs a channel, accepting a reconciliation
@@ -58,10 +59,17 @@ const SOURCE_LABEL: Record<QueueItem["source"], string> = {
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-/** Best-effort text-owner match: 'remi' matches "remi", "Remi Sobo", … */
-function isMine(ownerRef: string | null, me: AdminUser | null): boolean {
-  if (!ownerRef || !me) return false;
-  return ownerRef.trim().toLowerCase().split(/\s+/)[0] === me;
+/**
+ * Owner match for the Mine filter. Sources with a promoted uuid owner
+ * (ops tasks, compliance items, stale metrics — owner_uuid_promotion.sql)
+ * match exactly on the caller's user id. Rows that only carry free text
+ * fall back to the old first-name heuristic, so nothing that matched before
+ * silently disappears.
+ */
+function isMine(it: Pick<QueueItem, "ownerId" | "ownerRef">, meId: string | null, me: AdminUser | null): boolean {
+  if (it.ownerId) return meId != null && it.ownerId === meId;
+  if (!it.ownerRef || !me) return false;
+  return it.ownerRef.trim().toLowerCase().split(/\s+/)[0] === me;
 }
 
 function DueChip({ due }: { due: string | null }) {
@@ -93,9 +101,11 @@ type Group = {
 export default function NeedsYouQueueClient({
   items,
   me,
+  meId = null,
 }: {
   items: QueueItem[];
   me: AdminUser | null;
+  meId?: string | null;
 }) {
   const router = useRouter();
   const [mineOnly, setMineOnly] = useState(false);
@@ -111,7 +121,7 @@ export default function NeedsYouQueueClient({
   const groups = useMemo((): Group[] => {
     const today = todayISO();
     const live = items.filter((it) => !removed.has(key(it)));
-    const filtered = mineOnly ? live.filter((it) => isMine(it.ownerRef, me)) : live;
+    const filtered = mineOnly ? live.filter((it) => isMine(it, meId, me)) : live;
     const byModule = new Map<string, QueueItem[]>();
     for (const it of filtered) {
       const arr = byModule.get(it.module) ?? [];
@@ -127,7 +137,7 @@ export default function NeedsYouQueueClient({
       }))
       // Most urgent door first: overdue count, then due-today, then size.
       .sort((a, b) => b.overdue - a.overdue || b.dueToday - a.dueToday || b.items.length - a.items.length);
-  }, [items, removed, mineOnly, me]);
+  }, [items, removed, mineOnly, me, meId]);
 
   const total = groups.reduce((s, g) => s + g.items.length, 0);
   // Default: only the single most urgent group starts open.
@@ -180,7 +190,7 @@ export default function NeedsYouQueueClient({
           <button
             type="button"
             onClick={() => setMineOnly((v) => !v)}
-            title="Best-effort match on the free-text owner field"
+            title="Items assigned to you (free-text owners matched by first name)"
             className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
               mineOnly
                 ? "border-orange bg-orange/10 text-orange"

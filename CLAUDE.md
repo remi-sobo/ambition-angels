@@ -42,7 +42,7 @@ Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + auth), S
 - Admin + meet data lives in Supabase (`lib/supabase/*`, types in `lib/database.types.ts`).
 
 **Key API routes (public):**
-- `app/api/career-quiz/route.ts` and `app/api/career-match/route.ts` — Claude-powered career matching (model `claude-sonnet-4-6`). Require `ANTHROPIC_API_KEY`.
+- `app/api/career-match/route.ts` — Claude-powered career matching (model `claude-sonnet-4-6`). Requires `ANTHROPIC_API_KEY`.
 - `app/api/create-payment-intent`, `app/api/stripe-webhook`, `app/api/save-donation`, `app/api/send-receipt` — Stripe donation pipeline.
 - `app/api/partner-waitlist`, `app/api/program-partner-signup` — form intake.
 - `app/api/meet/*` — scheduler availability/booking.

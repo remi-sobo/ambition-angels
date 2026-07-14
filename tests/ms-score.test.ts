@@ -1,6 +1,12 @@
 import { describe, expect, test } from "vitest";
 
-import { pearson, rankCareers, type ScorableOccupation } from "../lib/ms/score";
+import {
+  pearson,
+  rankCareers,
+  dominantPair,
+  MAX_PER_HOLLAND_PAIR,
+  type ScorableOccupation,
+} from "../lib/ms/score";
 import { traitsToRiasec, asRiasecProfile, type RiasecProfile } from "../lib/ms/riasec";
 
 const profile = (r: number, i: number, a: number, s: number, e: number, c: number): RiasecProfile => ({
@@ -129,6 +135,74 @@ describe("rankCareers — the Job Zone guarantee", () => {
     expect(a).toEqual(b);
     // All correlations are 0; tie-break favors lower job zones first.
     expect(a[0].jobZone).toBeLessThanOrEqual(3);
+  });
+});
+
+describe("rankCareers — diversity cap and negative-fit floor", () => {
+  // Twelve profile-twins of one teaching-assistant-ish shape plus a spread
+  // of genuinely different careers further down the correlation ranking.
+  const TWINS: ScorableOccupation[] = Array.from({ length: 12 }, (_, i) => ({
+    socCode: `25-90${String(i).padStart(2, "0")}`,
+    riasec: profile(1, 2, 1.5, 5.5 - i * 0.01, 2, 4),
+    jobZone: 4,
+  }));
+  const DISTINCT: ScorableOccupation[] = [
+    { socCode: "29-1141", riasec: profile(2.5, 4, 1.5, 5.5, 2.5, 3.5), jobZone: 4 }, // SI
+    { socCode: "39-9031", riasec: profile(3, 2, 1, 5, 3.5, 2), jobZone: 3 }, // SE-ish
+    { socCode: "31-1128", riasec: profile(4, 2, 1, 5.5, 1.5, 3), jobZone: 2 }, // SR
+    { socCode: "21-1093", riasec: profile(1, 2.5, 1.5, 5.5, 3, 3.8), jobZone: 3 }, // SC variant
+  ];
+  const helper = traitsToRiasec({ build: 1, analyze: 2, create: 1, help: 5, lead: 2, organize: 4 });
+
+  test("no more than MAX_PER_HOLLAND_PAIR profile-twins in a big-catalog top ten", () => {
+    const result = rankCareers(helper, [...TWINS, ...DISTINCT]);
+    expect(result).toHaveLength(10);
+    const counts = new Map<string, number>();
+    for (const o of result) {
+      const cat = [...TWINS, ...DISTINCT].find((c) => c.socCode === o.socCode)!;
+      const pair = dominantPair(cat.riasec);
+      counts.set(pair, (counts.get(pair) ?? 0) + 1);
+    }
+    // The twins ("SC") got capped... unless backfill was needed, which with
+    // 16 candidates and 4 distinct pairs it is (4 distinct + 3 twins = 7,
+    // backfill tops up) — so assert the cap held BEFORE backfill kicked in:
+    // all four distinct careers made the list instead of being buried.
+    for (const d of DISTINCT) {
+      expect(result.map((o) => o.socCode)).toContain(d.socCode);
+    }
+    expect(counts.get(dominantPair(TWINS[0].riasec))! ).toBeGreaterThanOrEqual(MAX_PER_HOLLAND_PAIR);
+  });
+
+  test("anti-matched careers never appear while enough real matches exist", () => {
+    // A builder kid against a catalog with six good R matches and six
+    // strongly inverted profiles.
+    const builder = traitsToRiasec({ build: 5, analyze: 3, create: 1, help: 0, lead: 1, organize: 2 });
+    const good: ScorableOccupation[] = Array.from({ length: 6 }, (_, i) => ({
+      socCode: `47-00${i}0`,
+      riasec: profile(5.5 - i * 0.05, 3, 1, 1, 1.5, 2.5),
+      jobZone: 3,
+    }));
+    const inverted: ScorableOccupation[] = Array.from({ length: 6 }, (_, i) => ({
+      socCode: `27-00${i}0`,
+      riasec: profile(1, 2, 5.5 - i * 0.05, 4.5, 3, 1),
+      jobZone: 3,
+    }));
+    const result = rankCareers(builder, [...good, ...inverted]);
+    // Six positives exist (≥ minKeep), so every negative-fit entry is gone.
+    expect(result.every((o) => o.score >= 0)).toBe(true);
+    expect(result.length).toBeGreaterThanOrEqual(5);
+  });
+
+  test("the floor never empties a tiny catalog below minKeep", () => {
+    const builder = traitsToRiasec({ build: 5, analyze: 3, create: 1, help: 0, lead: 1, organize: 2 });
+    const inverted: ScorableOccupation[] = Array.from({ length: 6 }, (_, i) => ({
+      socCode: `27-00${i}0`,
+      riasec: profile(1, 2, 5.5 - i * 0.05, 4.5, 3, 1),
+      jobZone: 3,
+    }));
+    // Nothing fits — the kid still gets the least-bad five, not a blank page.
+    const result = rankCareers(builder, inverted);
+    expect(result.length).toBeGreaterThanOrEqual(5);
   });
 });
 

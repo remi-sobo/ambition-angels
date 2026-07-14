@@ -678,45 +678,6 @@ export const getQueueTasks = cache(async (assignee: "remi" | "shannon"): Promise
   return { tasks, total: countRes.count ?? 0 };
 });
 
-// ── Acknowledgments due: pending thank-yous, oldest first, IRS-flagged ────────
-
-export type AckRow = {
-  id: string;
-  donor: string;
-  amount: number;
-  giftDate: string;
-  irs: boolean;
-  href: string;
-};
-
-export const getAcksDue = cache(async (): Promise<{ rows: AckRow[]; total: number; totalValue: number }> => {
-  const sb = createServerSupabase();
-  const res = await sb
-    .from("gifts")
-    .select("id, amount, gift_date, constituent:constituents ( id, type, first_name, last_name, org_name )")
-    .eq("acknowledgment_status", "pending")
-    .order("gift_date", { ascending: true })
-    .limit(50);
-
-  const rows = (res.data ?? []) as unknown as Array<{
-    id: string;
-    amount: number;
-    gift_date: string;
-    constituent: ConstituentLite;
-  }>;
-
-  const mapped: AckRow[] = rows.map((g) => ({
-    id: g.id,
-    donor: g.constituent ? constituentName(g.constituent) : "Anonymous",
-    amount: Number(g.amount),
-    giftDate: g.gift_date,
-    irs: Number(g.amount) >= 250,
-    href: g.constituent ? profileHref(g.constituent) : "/admin/fundraising/acknowledgments",
-  }));
-
-  return { rows: mapped, total: mapped.length, totalValue: mapped.reduce((s, r) => s + r.amount, 0) };
-});
-
 // ── Scheduling lane: upcoming confirmed bookings ─────────────────────────────
 
 export type BookingRow = { id: string; name: string; type: string; start: string };

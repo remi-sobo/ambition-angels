@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { NATIONAL_MEDIAN, fmtUsd } from "@/lib/ms/render";
+import RoomBanner from "./RoomBanner";
 
 // The result (Phase 2, rows made playable in Phase 3): the ranked catalog,
 // pay sitting quietly next to each career, not headlining it. Tapping a
@@ -26,10 +27,11 @@ export default async function ResultsPage({ params }: { params: { session: strin
   const supabase = getSupabaseAdmin();
   const { data: session } = await supabase
     .from("ms_sessions")
-    .select("id, claim_code, ranked_careers, created_at")
+    .select("id, claim_code, ranked_careers, created_at, handle, room_id, ms_rooms(room_code)")
     .eq("id", params.session)
     .maybeSingle();
   if (!session) notFound();
+  const room = session.ms_rooms as unknown as { room_code: string } | null;
 
   const ranked = (session.ranked_careers ?? []) as RankedEntry[];
   const socCodes = ranked.map((r) => r.soc_code);
@@ -55,6 +57,10 @@ export default async function ResultsPage({ params }: { params: { session: strin
         <p className="font-body text-cream/60 mb-10">
           Ranked by how you&rsquo;re actually wired. Tap one you&rsquo;ve never heard of. Tell nobody.
         </p>
+
+        {room && session.handle && (
+          <RoomBanner sessionId={session.id} roomCode={room.room_code} handle={session.handle} />
+        )}
 
         <ol className="space-y-2.5">
           {ranked.map((entry, i) => {

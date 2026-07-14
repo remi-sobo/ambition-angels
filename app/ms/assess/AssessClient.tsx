@@ -8,7 +8,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ITEMS, SCALE, QUESTION } from "@/lib/ms/instrument";
 
-export default function AssessClient() {
+export default function AssessClient({ roomCode = null }: { roomCode?: string | null }) {
   const router = useRouter();
   const [answers, setAnswers] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -26,7 +26,10 @@ export default function AssessClient() {
         const res = await fetch("/api/ms/session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answers: finalAnswers }),
+          body: JSON.stringify({
+            answers: finalAnswers,
+            ...(roomCode ? { room_code: roomCode } : {}),
+          }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -44,7 +47,7 @@ export default function AssessClient() {
         setSubmitting(false);
       }
     },
-    [router]
+    [router, roomCode]
   );
 
   const tap = useCallback(

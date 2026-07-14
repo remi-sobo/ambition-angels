@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import JoinRoom from "./JoinRoom";
 
 // /ms landing (specs/ms-career-game.md): one screen, one button, no
 // marketing. Live and public but not in site nav — shareable by link only,
@@ -39,9 +40,10 @@ export default function MsLandingPage() {
         <p className="font-body text-sm text-cream/40 mt-5">
           No sign-up. No email. Nothing to lose.
         </p>
+        <JoinRoom />
         <Link
           href="/ms/deck"
-          className="font-body text-sm text-cream/50 hover:text-cream underline underline-offset-4 mt-8"
+          className="font-body text-sm text-cream/50 hover:text-cream underline underline-offset-4 mt-6"
         >
           Played before? Open your deck
         </Link>

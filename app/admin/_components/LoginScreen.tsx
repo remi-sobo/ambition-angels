@@ -120,54 +120,40 @@ export default function LoginScreen({
 
   return (
     <div className="fixed inset-0 z-50 lg:grid lg:grid-cols-2">
-      {/* Brand panel — espresso, dot texture, the question the product
-          answers. Synthetic verdict copy mirrors the bloomos.org hero. */}
-      <div
-        className="hidden lg:flex flex-col justify-between p-12 xl:p-16 bg-navy text-cream overflow-hidden"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="text-cream">{wordmark}</div>
-
-        <div className="max-w-md">
-          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93] mb-4">
-            The question every nonprofit leader asks
-          </div>
-          <h1 className="font-heading font-bold text-cream text-5xl xl:text-6xl tracking-tight leading-[1.05]">
-            Are we <span className="text-orange-mid">winning?</span>
+      {/* Brand panel — the BloomOS illustration (tulip mark over the valley),
+          words at the bottom over a soft scrim so they never fight the mark. */}
+      <div className="hidden lg:block relative bg-navy overflow-hidden">
+        {/* Plain <img> (not next/image): more reliable behind the admin
+            PWA's cache-first service worker than the image optimizer. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/admin/login-art.webp"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 pt-40 pb-12 px-12 xl:px-16"
+          style={{
+            background:
+              "linear-gradient(to top, rgba(23,20,15,0.82) 0%, rgba(23,20,15,0.55) 55%, transparent 100%)",
+          }}
+        >
+          <h1 className="font-heading font-bold text-cream text-4xl xl:text-5xl tracking-tight leading-[1.08] max-w-md">
+            Everything your mission runs on.
           </h1>
-          <p className="text-cream/70 text-sm leading-relaxed mt-5">
-            One system for strategy, fundraising, finance, and operations. One
-            sentence every morning that answers the question.
+          <p className="text-cream/85 text-sm leading-relaxed mt-4">
+            One system. All your work. Stronger impact.
           </p>
-
-          <div className="mt-10 bg-navy-light border border-white/10 rounded-card-lg p-6">
-            <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93]">
-              Tuesday · your verdict
-            </div>
-            <p className="text-cream/90 text-sm leading-relaxed mt-3">
-              3 of 4 objectives on track. Grants are $180k short, two asks
-              close this month. Runway: 9.2 months.
-            </p>
-            <span className="inline-block mt-4 text-[11px] font-semibold text-[#A8B58C] bg-white/[0.06] border border-white/10 rounded-full px-3 py-1">
-              Runway +0.4 mo
-            </span>
+          <div className="text-cream/50 text-xs mt-8">
+            BloomOS is a SOBO Consulting product.
           </div>
-        </div>
-
-        <div className="text-cream/40 text-xs">
-          BloomOS is a SOBO Consulting product.
         </div>
       </div>
 
       {/* Form panel — cream workspace, same surface language as the app. */}
       <div className="h-full overflow-y-auto bg-ink flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
-          {/* Compact brand header where the left panel is hidden. */}
-          <div className="lg:hidden text-ink-1 mb-10">{wordmark}</div>
+          <div className="text-ink-1 mb-10">{wordmark}</div>
 
           {sessionEmail ? (
             <div>

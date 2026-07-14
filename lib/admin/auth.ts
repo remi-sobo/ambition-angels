@@ -38,6 +38,10 @@ export async function getOrgContext(): Promise<OrgContext | null> {
     .from("memberships")
     .select("org_id, role")
     .eq("user_id", user.id)
+    // Deterministic pick when a user holds several memberships: oldest wins.
+    // Interim fix — the real resolution is the bloom_active_org cookie +
+    // switcher (core fence spec §6c, Phase C1).
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
   if (!membership) return null;

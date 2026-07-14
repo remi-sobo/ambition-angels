@@ -12,6 +12,13 @@ import {
 // renewal, and policy deadline in one tickler. Marking an item filed rolls
 // its date forward a period — the calendar maintains itself. The daily
 // reminder email nudges at T-14/7/1 and on overdue.
+//
+// Items come from exactly two places: the one-time 501(c)(3) template seed
+// in supabase/migrations/create_compliance.sql, and manual entry via the
+// "New item" form below. A recurring filing is ONE row that always shows
+// its NEXT due date — a quarterly item shows only the upcoming quarter, and
+// the next one appears when it's marked filed. (This also feeds the
+// Command Center Action Queue via v_action_items.)
 export const dynamic = "force-dynamic";
 
 export default async function CompliancePage() {

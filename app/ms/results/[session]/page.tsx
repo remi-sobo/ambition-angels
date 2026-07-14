@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { NATIONAL_MEDIAN, fmtUsd } from "@/lib/ms/render";
 
-// The result (Phase 2): the ranked catalog, pay sitting quietly next to
-// each career, not headlining it. Rows are not tappable yet — THE DAY, the
-// clues, and THE ANSWER arrive with Phase 3. Server-rendered on the
-// service role: the session row and titles never travel through an anon
+// The result (Phase 2, rows made playable in Phase 3): the ranked catalog,
+// pay sitting quietly next to each career, not headlining it. Tapping a
+// career starts the card — THE DAY, then the clue ladder, then THE ANSWER.
+// Explored cards show how few clues the table needed. Server-rendered on
+// the service role: session rows and titles never travel through an anon
 // client path.
 export const metadata: Metadata = {
   title: "What You're Built For",
@@ -31,11 +33,15 @@ export default async function ResultsPage({ params }: { params: { session: strin
 
   const ranked = (session.ranked_careers ?? []) as RankedEntry[];
   const socCodes = ranked.map((r) => r.soc_code);
-  const { data: occs } = await supabase
-    .from("ms_occupations")
-    .select("soc_code, title, pay_median")
-    .in("soc_code", socCodes);
+  const [{ data: occs }, { data: explored }] = await Promise.all([
+    supabase.from("ms_occupations").select("soc_code, title, pay_median").in("soc_code", socCodes),
+    supabase
+      .from("ms_explored")
+      .select("soc_code, clues_used")
+      .eq("session_id", params.session),
+  ]);
   const occBySoc = new Map((occs ?? []).map((o) => [o.soc_code, o]));
+  const exploredBySoc = new Map((explored ?? []).map((e) => [e.soc_code, e.clues_used as number]));
 
   return (
     <div className="min-h-screen bg-ink text-cream">
@@ -47,32 +53,37 @@ export default async function ResultsPage({ params }: { params: { session: strin
           Here&rsquo;s what you&rsquo;re <span className="text-orange">built for</span>
         </h1>
         <p className="font-body text-cream/60 mb-10">
-          Ranked by how you&rsquo;re actually wired. Every one of these is a real job with real pay.
+          Ranked by how you&rsquo;re actually wired. Tap one you&rsquo;ve never heard of. Tell nobody.
         </p>
 
         <ol className="space-y-2.5">
           {ranked.map((entry, i) => {
             const occ = occBySoc.get(entry.soc_code);
             if (!occ) return null;
+            const cluesUsed = exploredBySoc.get(entry.soc_code);
             return (
-              <li
-                key={entry.soc_code}
-                className="flex items-baseline gap-4 rounded-2xl border border-cream/12 px-5 py-4"
-              >
-                <span className="font-display text-3xl text-orange w-10 flex-shrink-0 tabular-nums">
-                  {i + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-heading font-semibold text-lg leading-snug">{occ.title}</p>
-                  {entry.job_zone <= 3 && (
+              <li key={entry.soc_code}>
+                <Link
+                  href={`/ms/card/${params.session}/${entry.soc_code}`}
+                  className="flex items-baseline gap-4 rounded-2xl border border-cream/12 hover:border-orange/70 transition-colors px-5 py-4"
+                >
+                  <span className="font-display text-3xl text-orange w-10 flex-shrink-0 tabular-nums">
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-heading font-semibold text-lg leading-snug">{occ.title}</p>
                     <p className="font-body text-[12px] text-cream/45 mt-0.5">
-                      No four-year degree needed
+                      {cluesUsed != null
+                        ? `In your deck · got it on clue ${cluesUsed}`
+                        : entry.job_zone <= 3
+                          ? "No four-year degree needed"
+                          : " "}
                     </p>
-                  )}
-                </div>
-                <span className="font-body text-sm text-cream/40 tabular-nums flex-shrink-0">
-                  {fmtPay(occ.pay_median)}
-                </span>
+                  </div>
+                  <span className="font-body text-sm text-cream/40 tabular-nums flex-shrink-0">
+                    {fmtPay(occ.pay_median)}
+                  </span>
+                </Link>
               </li>
             );
           })}

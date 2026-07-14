@@ -88,6 +88,9 @@ function mapEvent(
     org_id: conn.orgId,
     owner_user_id: conn.userId,
     google_event_id: e.id,
+    // Instances of a recurring event (singleEvents: true) each get their own
+    // google_event_id; recurringEventId is the stable series key they share.
+    recurring_event_id: e.recurringEventId ?? null,
     calendar_id: conn.calendarId,
     title: e.summary ?? null,
     description: e.description ?? null,

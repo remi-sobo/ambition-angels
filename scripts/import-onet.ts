@@ -26,16 +26,27 @@
  * SUPABASE_SERVICE_ROLE_KEY in the environment):
  *
  *   npx tsx scripts/import-onet.ts \
- *     --onet-dir ~/Downloads/db_29_3_text \
+ *     --onet-dir ~/Downloads/db_30_3_text \
  *     --oews-csv ~/Downloads/national_M2024_dl.csv \
  *     --pay-as-of "May 2024" \
  *     [--dry-run]
  *
+ * --oews-csv is optional: without it the occupations import with null pay
+ * and pay_as_of 'pending' (cards fail the pay gate until a pay pass runs —
+ * on purpose; a card never ships a made-up number).
+ *
+ * Handles both O*NET file layouts: 30.x ("Career Interest Types.txt",
+ * "Sample of Reported Titles.txt") and the older 29.x ("Interests.txt",
+ * "Alternate Titles.txt").
+ *
  * Where to get the files:
  *   O*NET:  onetcenter.org → Database → "text" bulk download (public domain,
- *           attribution required — the deck page footer carries it).
+ *           attribution required — the /ms surfaces carry it).
  *   OEWS:   bls.gov/oes → special requests → oesm24nat.zip → open the
- *           national xlsx and save as CSV.
+ *           national xlsx and save as CSV. (Note: bls.gov blocks datacenter
+ *           IPs — download in a normal browser. supabase/functions/
+ *           ms-refresh-oews is the server-side variant and hits the same
+ *           wall; a browser download is the reliable path.)
  */
 
 import { readFileSync, existsSync } from "node:fs";
@@ -43,7 +54,7 @@ import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { renderClue6, renderClue7, NATIONAL_MEDIAN } from "../lib/ms/render";
 
-type Args = { onetDir: string; oewsCsv: string; payAsOf: string; dryRun: boolean };
+type Args = { onetDir: string; oewsCsv: string | null; payAsOf: string; dryRun: boolean };
 
 function parseArgs(): Args {
   const argv = process.argv.slice(2);
@@ -52,19 +63,27 @@ function parseArgs(): Args {
     return i >= 0 ? argv[i + 1] : undefined;
   };
   const onetDir = get("--onet-dir");
-  const oewsCsv = get("--oews-csv");
-  if (!onetDir || !oewsCsv) {
+  if (!onetDir) {
     console.error(
-      "Usage: npx tsx scripts/import-onet.ts --onet-dir <dir> --oews-csv <file> [--pay-as-of 'May 2024'] [--dry-run]"
+      "Usage: npx tsx scripts/import-onet.ts --onet-dir <dir> [--oews-csv <file>] [--pay-as-of 'May 2024'] [--dry-run]"
     );
     process.exit(1);
   }
   return {
     onetDir,
-    oewsCsv,
+    oewsCsv: get("--oews-csv") ?? null,
     payAsOf: get("--pay-as-of") ?? "May 2024",
     dryRun: argv.includes("--dry-run"),
   };
+}
+
+/** First file in dir that exists, across O*NET 29.x/30.x layouts. */
+function firstExisting(dir: string, names: string[]): string | null {
+  for (const name of names) {
+    const path = join(dir, name);
+    if (existsSync(path)) return path;
+  }
+  return null;
 }
 
 // ── Parsers ────────────────────────────────────────────────────────────────
@@ -158,15 +177,16 @@ type OccRow = {
 async function main() {
   const args = parseArgs();
 
-  // ── O*NET ────────────────────────────────────────────────────────────────
-  const occFile = join(args.onetDir, "Occupation Data.txt");
-  const interestsFile = join(args.onetDir, "Interests.txt");
-  const zonesFile = join(args.onetDir, "Job Zones.txt");
-  for (const f of [occFile, interestsFile, zonesFile]) {
-    if (!existsSync(f)) {
-      console.error(`Missing required O*NET file: ${f}`);
-      process.exit(1);
-    }
+  // ── O*NET (30.x names first, 29.x fallbacks) ─────────────────────────────
+  const occFile = firstExisting(args.onetDir, ["Occupation Data.txt"]);
+  const interestsFile = firstExisting(args.onetDir, ["Career Interest Types.txt", "Interests.txt"]);
+  const zonesFile = firstExisting(args.onetDir, ["Job Zones.txt"]);
+  if (!occFile || !interestsFile || !zonesFile) {
+    console.error(
+      `Missing required O*NET file(s) in ${args.onetDir}: need Occupation Data.txt, ` +
+        `Career Interest Types.txt (or Interests.txt), Job Zones.txt`
+    );
+    process.exit(1);
   }
 
   const occupations = readTsv(occFile); // O*NET-SOC Code, Title, Description
@@ -193,27 +213,29 @@ async function main() {
   }
 
   const variantsByOnet = new Map<string, string[]>();
-  const altFile = join(args.onetDir, "Alternate Titles.txt");
-  if (existsSync(altFile)) {
+  const altFile = firstExisting(args.onetDir, ["Sample of Reported Titles.txt", "Alternate Titles.txt"]);
+  if (altFile) {
     for (const row of readTsv(altFile)) {
       const code = row["O*NET-SOC Code"];
-      const alt = row["Alternate Title"];
+      const alt = row["Reported Job Title"] || row["Alternate Title"];
       if (!code || !alt) continue;
       const list = variantsByOnet.get(code) ?? [];
       if (list.length < 20 && !list.includes(alt)) list.push(alt);
       variantsByOnet.set(code, list);
     }
   } else {
-    console.warn("Alternate Titles.txt not found — title_variants will be empty (gates get weaker).");
+    console.warn("No titles file found — title_variants will be empty (gates get weaker).");
   }
 
   const tasksByOnet = new Map<string, string[]>();
-  const tasksFile = join(args.onetDir, "Task Statements.txt");
-  if (existsSync(tasksFile)) {
+  const tasksFile = firstExisting(args.onetDir, ["Task Statements.txt"]);
+  if (tasksFile) {
     for (const row of readTsv(tasksFile)) {
       const code = row["O*NET-SOC Code"];
       const task = row["Task"];
       if (!code || !task) continue;
+      // Prefer Core tasks when the column exists (30.x); accept all in 29.x.
+      if (row["Task Type"] && row["Task Type"] !== "Core") continue;
       const list = tasksByOnet.get(code) ?? [];
       if (list.length < 8) list.push(task);
       tasksByOnet.set(code, list);
@@ -222,24 +244,28 @@ async function main() {
     console.warn("Task Statements.txt not found — generator grounding will rely on descriptions only.");
   }
 
-  // ── OEWS ─────────────────────────────────────────────────────────────────
-  const oewsRows = parseCsv(readFileSync(args.oewsCsv, "utf8"));
-  const header = oewsRows[0].map((h) => h.trim().toUpperCase());
-  const col = (name: string) => header.indexOf(name);
-  const iOcc = col("OCC_CODE");
-  const iGroup = col("O_GROUP");
-  const iMedian = col("A_MEDIAN");
-  const iP90 = col("A_PCT90");
-  if (iOcc === -1 || iMedian === -1) {
-    console.error(`OEWS CSV missing OCC_CODE/A_MEDIAN columns. Found: ${header.join(", ")}`);
-    process.exit(1);
-  }
+  // ── OEWS (optional; without it pay stays null and pay_as_of 'pending') ───
   const payBySoc = new Map<string, { median: number | null; p90: number | null }>();
-  for (const row of oewsRows.slice(1)) {
-    if (iGroup !== -1 && row[iGroup]?.trim() !== "detailed") continue;
-    const soc = row[iOcc]?.trim();
-    if (!soc) continue;
-    payBySoc.set(soc, { median: parseWage(row[iMedian]), p90: iP90 === -1 ? null : parseWage(row[iP90]) });
+  if (args.oewsCsv) {
+    const oewsRows = parseCsv(readFileSync(args.oewsCsv, "utf8"));
+    const header = oewsRows[0].map((h) => h.trim().toUpperCase());
+    const col = (name: string) => header.indexOf(name);
+    const iOcc = col("OCC_CODE");
+    const iGroup = col("O_GROUP");
+    const iMedian = col("A_MEDIAN");
+    const iP90 = col("A_PCT90");
+    if (iOcc === -1 || iMedian === -1) {
+      console.error(`OEWS CSV missing OCC_CODE/A_MEDIAN columns. Found: ${header.join(", ")}`);
+      process.exit(1);
+    }
+    for (const row of oewsRows.slice(1)) {
+      if (iGroup !== -1 && row[iGroup]?.trim() !== "detailed") continue;
+      const soc = row[iOcc]?.trim();
+      if (!soc) continue;
+      payBySoc.set(soc, { median: parseWage(row[iMedian]), p90: iP90 === -1 ? null : parseWage(row[iP90]) });
+    }
+  } else {
+    console.warn("--oews-csv not given: importing without pay. Cards fail the pay gate until a pay pass runs.");
   }
 
   if (args.payAsOf !== NATIONAL_MEDIAN.asOf) {
@@ -282,7 +308,7 @@ async function main() {
       pay_median: pay.median,
       pay_p90: pay.p90,
       pay_source_url: `https://www.bls.gov/oes/current/oes${socCode.replace("-", "")}.htm`,
-      pay_as_of: args.payAsOf,
+      pay_as_of: args.oewsCsv ? args.payAsOf : "pending",
     });
   }
 

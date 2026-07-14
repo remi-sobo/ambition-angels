@@ -34,9 +34,10 @@ const COMPLETION: Partial<
   },
 };
 
+// No "fundraising" entry: the loader folds fundraising work into the ops
+// group so tasks live in one place (see lib/admin/actionQueue.ts).
 const MODULE_LABEL: Record<string, string> = {
   ops: "Ops",
-  fundraising: "Fundraising",
   compliance: "Compliance",
   finance: "Finance",
   program: "Program",

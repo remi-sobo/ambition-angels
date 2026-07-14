@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PageHeader from "../_components/PageHeader";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
@@ -7,6 +8,13 @@ import InboxList, { type InboxItem } from "./InboxList";
 // (recipient_id = auth.uid() AND notifications.read), so the query carries no
 // recipient filter — the feed index (recipient_id, created_at desc) serves
 // the newest-first order.
+//
+// Inbox vs Messages (both live under Command Center, intentionally separate):
+// Inbox is the read-once notification feed — alerts, mentions, and system
+// events from anywhere in BloomOS. Messages (/admin/messages) is the team
+// chat itself. A new chat message also drops ONE unread pointer here per
+// conversation (see postMessage in lib/messaging/threads.ts), so a message
+// can legitimately appear in both places until it's read.
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 100;
@@ -42,7 +50,19 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-ink">
       <div className="max-w-[900px] px-4 lg:px-8 py-6 lg:py-8">
-        <PageHeader title="Inbox" subtitle="Notifications for you, in this org." />
+        <PageHeader
+          title="Inbox"
+          subtitle={
+            <>
+              Alerts, mentions, and updates for you from across BloomOS. New team
+              messages ping here too — open one to reply in{" "}
+              <Link href="/admin/messages" className="text-orange hover:underline">
+                Messages
+              </Link>
+              .
+            </>
+          }
+        />
         {children}
       </div>
     </div>

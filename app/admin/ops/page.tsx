@@ -55,6 +55,12 @@ export default async function OpsLandingPage({
       .order("display_order", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: true })
       .limit(1000),
+    // "Active Projects" = ops_projects rows whose lifecycle status is 'active'
+    // (not 'paused'/'done'/'archived'), 10 most recently touched. Status is set
+    // by hand on the project page, with one automation: every grant gets a
+    // workspace project at creation, and when the grant reaches a terminal
+    // stage (declined/closed) that project is auto-marked 'done' so finished
+    // grants don't linger here (lib/fundraising/grants.ts syncGrantProjectStatus).
     supabase
       .from("ops_projects")
       .select("*")

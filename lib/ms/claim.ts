@@ -23,3 +23,18 @@ export function newClaimCode(): string {
 export function normalizeClaimCode(input: string): string {
   return input.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
+
+/**
+ * Room codes (Phase 5): four characters from the same unambiguous alphabet
+ * — short enough to type off a projected screen in seconds, and rooms
+ * expire in hours so the smaller space (28^4 ≈ 614k) never gets crowded.
+ */
+export const ROOM_CODE_LENGTH = 4;
+
+export function newRoomCode(): string {
+  let code = "";
+  for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
+    code += ALPHABET[randomInt(ALPHABET.length)];
+  }
+  return code;
+}

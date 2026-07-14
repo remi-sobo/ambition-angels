@@ -6,6 +6,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AssessPage() {
-  return <AssessClient />;
+export default function AssessPage({ searchParams }: { searchParams: { room?: string } }) {
+  return <AssessClient roomCode={searchParams.room ?? null} />;
 }

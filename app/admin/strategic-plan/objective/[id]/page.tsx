@@ -68,7 +68,7 @@ export default async function ObjectiveDetailPage({ params }: { params: { id: st
 
   const { data: kpisData } = await sb
     .from("plan_kpis")
-    .select("id, goal_id, objective_id, title, unit, target, current, baseline, baseline_date, owner, source, metric_key, status, cadence, last_updated_at")
+    .select("id, goal_id, objective_id, title, unit, target, current, baseline, baseline_date, owner, source, metric_key, status, cadence, notes, last_updated_at")
     .eq("org_id", orgId)
     .limit(500);
   const kpis = ((kpisData ?? []) as PlanKpi[]).filter(

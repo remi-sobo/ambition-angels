@@ -31,7 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     update.title = body.title.trim().slice(0, 300);
   if (STATUSES.includes(body.status as (typeof STATUSES)[number])) update.status = body.status;
   if (SOURCES.includes(body.source as (typeof SOURCES)[number])) update.source = body.source;
-  for (const [field, max] of [["unit", 40], ["owner", 60], ["cadence", 40], ["metric_key", 80]] as const) {
+  for (const [field, max] of [["unit", 40], ["owner", 60], ["cadence", 40], ["metric_key", 80], ["notes", 2000]] as const) {
     if (field in body) {
       const v = textOrNull(body[field], max);
       if (v !== undefined) update[field] = v;

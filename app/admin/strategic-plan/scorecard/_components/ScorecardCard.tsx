@@ -2,11 +2,13 @@
 
 // KPI scorecard card. Anatomy: headline value vs target, % progress, paced RAG
 // status, trend sparkline, freshness, the goal → objective cascade — plus
-// provenance (where the number comes from) and inline editing of the current
-// value for manual measures. Editing PATCHes /api/admin/plan/kpis/[id], which
-// stamps last_updated_at and snapshots the value, then we refresh — so the same
-// edit shows on the Strategic Plan front page and the Strategy Narrative (all
-// read plan_kpis live). One source, three surfaces.
+// provenance (where the number comes from) and in-place editing. The scorecard
+// is the working surface: manual values, status, owner, and notes all edit here
+// via PATCH /api/admin/plan/kpis/[id] (which stamps last_updated_at and
+// snapshots value changes), then we refresh — so the same edit shows on the
+// Strategic Plan front page and the Strategy Narrative (all read plan_kpis
+// live). One source, three surfaces. Structural editing (add/delete measures,
+// targets, baselines) stays on the plan.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -15,6 +17,8 @@ import { kpiProvenance } from "@/lib/admin/plan/provenance";
 export type ScorecardKpi = {
   id: string;
   title: string;
+  owner: string | null;
+  notes: string | null;
   unit: string | null;
   target: number | null;
   current: number | null;
@@ -34,6 +38,7 @@ const HEALTH: Record<string, { label: string; bar: string; pill: string }> = {
   behind: { label: "Behind", bar: "bg-expense", pill: "bg-expense-bg text-expense" },
   not_started: { label: "Not started", bar: "bg-gray-mid", pill: "bg-tile text-ink-2" },
 };
+const STATUS_ORDER = ["not_started", "on_track", "at_risk", "behind", "done"] as const;
 
 function fmtVal(v: number | null, unit: string | null): string {
   if (v === null || v === undefined) return "—";
@@ -85,30 +90,55 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
 
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(kpi.current?.toString() ?? "");
+  const [editingOwner, setEditingOwner] = useState(false);
+  const [ownerVal, setOwnerVal] = useState(kpi.owner ?? "");
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesVal, setNotesVal] = useState(kpi.notes ?? "");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const save = async () => {
-    const n = val.trim() === "" ? null : Number(val);
-    if (n !== null && !Number.isFinite(n)) {
-      alert("Enter a number");
-      return;
-    }
+  // One PATCH path for every field on the card; failures surface inline with
+  // the actual reason (a 403 here means the account lacks org.manage).
+  const patch = async (fields: Record<string, unknown>): Promise<boolean> => {
     setBusy(true);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/plan/kpis/${kpi.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ current: n }),
+        body: JSON.stringify(fields),
       });
       if (!res.ok) {
-        alert("Could not save");
-        return;
+        setError(
+          res.status === 403
+            ? "Your account can't edit measures — ask an admin for the manage permission."
+            : `Could not save (${(await res.json().catch(() => ({} as { error?: string }))).error ?? `HTTP ${res.status}`}).`
+        );
+        return false;
       }
-      setEditing(false);
       router.refresh();
+      return true;
+    } catch {
+      setError("Could not save — check your connection and try again.");
+      return false;
     } finally {
       setBusy(false);
     }
+  };
+
+  const saveVal = async () => {
+    const n = val.trim() === "" ? null : Number(val);
+    if (n !== null && !Number.isFinite(n)) {
+      setError("Enter a number.");
+      return;
+    }
+    if (await patch({ current: n })) setEditing(false);
+  };
+  const saveOwner = async () => {
+    if (await patch({ owner: ownerVal.trim() || null })) setEditingOwner(false);
+  };
+  const saveNotes = async () => {
+    if (await patch({ notes: notesVal.trim() || null })) setEditingNotes(false);
   };
 
   return (
@@ -134,31 +164,29 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
               value={val}
               onChange={(e) => setVal(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") void save();
+                if (e.key === "Enter") void saveVal();
                 if (e.key === "Escape") setEditing(false);
               }}
             />
-            <button onClick={() => void save()} className="text-revenue text-lg leading-none" aria-label="Save">✓</button>
+            <button onClick={() => void saveVal()} className="text-revenue text-lg leading-none" aria-label="Save">✓</button>
             <button onClick={() => setEditing(false)} className="text-ink-3 text-lg leading-none" aria-label="Cancel">✕</button>
           </span>
         ) : (
           <div className="flex items-baseline gap-1.5">
-            {prov.editable ? (
+            <span className="text-2xl font-bold text-ink-1 tabular-nums leading-none">{fmtVal(kpi.current, kpi.unit)}</span>
+            {kpi.target !== null && <span className="text-xs text-ink-3 tabular-nums">/ {fmtVal(kpi.target, kpi.unit)}</span>}
+            {prov.editable && (
               <button
                 onClick={() => {
                   setVal(kpi.current?.toString() ?? "");
                   setEditing(true);
                 }}
-                className="group flex items-baseline gap-1 text-2xl font-bold text-ink-1 tabular-nums leading-none hover:text-orange transition-colors"
-                title="Click to update this measure"
+                className="text-[10px] font-semibold text-orange bg-orange/10 hover:bg-orange/20 rounded-full px-2 py-0.5 transition-colors"
+                title="Update this measure's value"
               >
-                {fmtVal(kpi.current, kpi.unit)}
-                <span className="text-[11px] text-ink-3 group-hover:text-orange">✎</span>
+                ✎ Update
               </button>
-            ) : (
-              <span className="text-2xl font-bold text-ink-1 tabular-nums leading-none">{fmtVal(kpi.current, kpi.unit)}</span>
             )}
-            {kpi.target !== null && <span className="text-xs text-ink-3 tabular-nums">/ {fmtVal(kpi.target, kpi.unit)}</span>}
           </div>
         )}
         <Sparkline values={kpi.history} />
@@ -176,7 +204,16 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
       )}
 
       <div className="flex items-center gap-2 flex-wrap">
-        <span className={`text-[10px] font-semibold rounded-full px-2 py-0.5 ${h.pill}`}>{h.label}</span>
+        <select
+          value={kpi.status}
+          onChange={(e) => void patch({ status: e.target.value })}
+          title="Set this measure's status"
+          className={`text-[10px] font-semibold rounded-full px-2 py-0.5 border-0 cursor-pointer ${h.pill}`}
+        >
+          {STATUS_ORDER.map((s) => (
+            <option key={s} value={s} className="bg-surface text-ink-1">{HEALTH[s].label}</option>
+          ))}
+        </select>
         {delta !== null && delta !== 0 && (
           <span className={`text-[10px] font-semibold tabular-nums ${delta > 0 ? "text-revenue" : "text-expense"}`}>
             {delta > 0 ? "▲" : "▼"} {fmtVal(Math.abs(delta), kpi.unit)} since start
@@ -185,10 +222,73 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
         <span className="text-[10px] text-ink-3 ml-auto">{freshness(kpi.lastUpdatedAt)}</span>
       </div>
 
-      {/* Provenance — where this number comes from. */}
+      {/* Notes — the "why" next to the number: context, blockers, expected movement. */}
+      {editingNotes ? (
+        <span className="flex items-start gap-1">
+          <textarea
+            autoFocus
+            rows={2}
+            className="flex-1 rounded-md border border-outline bg-app px-2 py-1 text-xs text-ink-1 focus:outline-none focus:border-orange"
+            value={notesVal}
+            placeholder="What's behind this number?"
+            onChange={(e) => setNotesVal(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setEditingNotes(false);
+            }}
+          />
+          <button onClick={() => void saveNotes()} className="text-revenue text-lg leading-none" aria-label="Save note">✓</button>
+          <button onClick={() => setEditingNotes(false)} className="text-ink-3 text-lg leading-none" aria-label="Cancel note">✕</button>
+        </span>
+      ) : (
+        <button
+          onClick={() => {
+            setNotesVal(kpi.notes ?? "");
+            setEditingNotes(true);
+          }}
+          className="text-left text-[11px] leading-snug hover:underline decoration-dotted underline-offset-2"
+          title="Click to edit the note"
+        >
+          {kpi.notes ? (
+            <span className="text-ink-2 whitespace-pre-wrap">{kpi.notes}</span>
+          ) : (
+            <span className="text-ink-3 italic">+ add note</span>
+          )}
+        </button>
+      )}
+
+      {error && <p className="text-[11px] text-expense">{error}</p>}
+
+      {/* Provenance — where this number comes from — and who owns the measure. */}
       <div className="text-[10px] text-ink-3 leading-snug border-t border-hairline pt-2 flex items-start gap-1">
         <span aria-hidden>{prov.editable ? "✎" : "⟳"}</span>
-        <span className="min-w-0">{prov.detail}</span>
+        <span className="min-w-0 flex-1">{prov.detail}</span>
+        {editingOwner ? (
+          <span className="flex items-center gap-1 shrink-0">
+            <input
+              autoFocus
+              className="w-20 rounded-md border border-outline bg-app px-1.5 py-0.5 text-[10px] text-ink-1 focus:outline-none focus:border-orange"
+              value={ownerVal}
+              placeholder="owner"
+              onChange={(e) => setOwnerVal(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void saveOwner();
+                if (e.key === "Escape") setEditingOwner(false);
+              }}
+            />
+            <button onClick={() => void saveOwner()} className="text-revenue leading-none" aria-label="Save owner">✓</button>
+          </span>
+        ) : (
+          <button
+            onClick={() => {
+              setOwnerVal(kpi.owner ?? "");
+              setEditingOwner(true);
+            }}
+            className="shrink-0 hover:text-orange hover:underline decoration-dotted underline-offset-2"
+            title="Reassign this measure"
+          >
+            {kpi.owner ? `→ ${kpi.owner}` : "+ owner"}
+          </button>
+        )}
       </div>
 
       {(kpi.goalTitle || kpi.objectiveTitle) && (

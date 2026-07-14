@@ -81,6 +81,7 @@ const PUBLIC_ADMIN_PATHS = new Set([
   "/admin/icon-512-maskable.png",
   "/admin/favicon-32.png",
   "/admin/bloomos-mark.png",
+  "/admin/login-art.webp",
 ]);
 
 // The lookbook's two reachable URLs. /demoday/favicon.png is intentionally

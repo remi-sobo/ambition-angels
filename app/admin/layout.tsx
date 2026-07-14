@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     default: "BloomOS",
     template: "%s · BloomOS",
   },
-  description: "BloomOS — operating system for Ambition Angels.",
+  description: "BloomOS — the operating system for your nonprofit.",
   manifest: "/admin/manifest.webmanifest",
   applicationName: "BloomOS",
   appleWebApp: {
@@ -94,7 +94,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     <AdminBadgesProvider orgId={orgId} enabled={authed}>
     <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
       <AdminPWA />
-      <Sidebar currentUser={user} staffLabel={staffLabel} features={features} />
+      <Sidebar
+        currentUser={user}
+        staffLabel={staffLabel}
+        orgName={ctx?.orgName ?? null}
+        features={features}
+      />
       {/* One Reed launcher shared by the rail (desktop capture-to-Reed) and the
           FAB (mobile), so there's a single Reed drawer regardless of entry. */}
       <ReedLauncherProvider enabled={reedEnabled}>

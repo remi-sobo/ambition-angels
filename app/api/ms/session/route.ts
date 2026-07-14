@@ -6,6 +6,9 @@ import { traitsToRiasec, asRiasecProfile } from "@/lib/ms/riasec";
 import { rankCareers, type ScorableOccupation } from "@/lib/ms/score";
 import { newClaimCode, normalizeClaimCode, ROOM_CODE_LENGTH } from "@/lib/ms/claim";
 import { newHandle } from "@/lib/ms/handles";
+import { generateSummary } from "@/lib/ms/summary";
+
+export const maxDuration = 60; // scoring is instant; the summary call needs headroom
 
 // Phase 2 spine (specs/ms-career-game.md solo flow): 30 tap answers in,
 // a session out. Fully deterministic — the scorer is a pure function over
@@ -59,6 +62,20 @@ export async function POST(req: NextRequest) {
 
   const ranked = rankCareers(traitsToRiasec(traits), catalog);
 
+  // Phase 6: the three-sentence "what you're built for" — the first of the
+  // two permitted live model calls. Input is six sums and three titles; no
+  // free text from a child exists to send. Null on any failure: the results
+  // page renders fine without it.
+  const { data: topOccs } = await supabase
+    .from("ms_occupations")
+    .select("soc_code, title")
+    .in("soc_code", ranked.slice(0, 3).map((r) => r.socCode));
+  const titleBySoc = new Map((topOccs ?? []).map((o) => [o.soc_code, o.title]));
+  const summaryText = await generateSummary(
+    traits,
+    ranked.slice(0, 3).map((r) => titleBySoc.get(r.socCode)).filter((t): t is string => Boolean(t))
+  );
+
   // Group mode (Phase 5): a room code joins this session to a live room
   // and assigns a handle — never a typed name. A stale or wrong code is a
   // clear error before the student invests eight minutes.
@@ -100,6 +117,7 @@ export async function POST(req: NextRequest) {
       .insert({
         claim_code: claimCode,
         trait_scores: traits,
+        summary_text: summaryText,
         room_id: roomId,
         handle,
         ranked_careers: ranked.map((r) => ({

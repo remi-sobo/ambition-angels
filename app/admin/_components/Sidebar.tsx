@@ -72,7 +72,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Schools & Partners", icon: "schools", href: "/admin/partners" },
       { label: "Ambition App", icon: "app", soon: true },
       { label: "Internships", icon: "internships", soon: true },
-      { label: "Career Readiness", icon: "career", soon: true },
+      { label: "Career Library", icon: "career", href: "/admin/careers" },
     ],
   },
   {

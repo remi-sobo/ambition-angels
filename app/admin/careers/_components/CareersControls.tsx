@@ -52,6 +52,23 @@ const CLUE_LABELS = [
 
 const GENERATING_LABEL = "Writing the card… ~30s";
 
+// Curation math (from the scorer simulation): every RIASEC letter needs
+// this many approved cards before a kid whose profile lives there gets a
+// full, real top ten instead of thin-corner filler.
+const COVERAGE_TARGET = 7;
+const LETTER_LABELS: Record<string, string> = {
+  R: "Build",
+  I: "Analyze",
+  A: "Create",
+  S: "Help",
+  E: "Lead",
+  C: "Organize",
+};
+
+function dominantLetter(riasec: Record<string, number>): string {
+  return Object.entries(riasec).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "?";
+}
+
 function useApi() {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -365,8 +382,52 @@ export function CareersControls({
     </div>
   );
 
+  // Coverage per dominant RIASEC letter: approved counts (what the scorer
+  // sees) and pipeline counts (what is coming).
+  const coverage = ["R", "I", "A", "S", "E", "C"].map((letter) => {
+    const ofLetter = (rows: { occ: OccupationView }[]) =>
+      rows.filter((x) => dominantLetter(x.occ.riasec) === letter);
+    return {
+      letter,
+      approved: ofLetter(approved).length,
+      // Reachable without a four-year degree: the Job Zone guarantee needs
+      // ~3 of these per letter or thin-corner kids get poor-fit promotions.
+      accessible: ofLetter(approved).filter((x) => x.occ.job_zone <= 3).length,
+      pipeline: ofLetter(drafts).length,
+    };
+  });
+
   return (
     <div className="space-y-8">
+      <section>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2 mb-2">
+          Catalog coverage — a kid strongest in each trait needs {COVERAGE_TARGET}+ approved cards
+        </p>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          {coverage.map(({ letter, approved: a, accessible, pipeline: p }) => (
+            <div
+              key={letter}
+              className={`rounded-xl border-[1.5px] px-3 py-2 ${
+                a >= COVERAGE_TARGET && accessible >= 3
+                  ? "border-outline bg-surface"
+                  : "border-orange/60 bg-orange-light"
+              }`}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-2">
+                {LETTER_LABELS[letter]} ({letter})
+              </p>
+              <p className="text-[15px] font-bold text-ink-1 tabular-nums">
+                {a}
+                <span className="text-[11px] font-semibold text-ink-2"> / {COVERAGE_TARGET}</span>
+              </p>
+              <p className="text-[10px] text-ink-2 tabular-nums">
+                {accessible}/3 no-degree{p > 0 ? ` · +${p} queued` : ""}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {(notice || batchProgress) && (
         <div className="bg-surface shadow-panel border-[1.5px] border-outline rounded-xl px-4 py-3">
           {batchProgress && (

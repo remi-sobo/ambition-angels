@@ -454,7 +454,7 @@ export default function AdminPage() {
       >
         <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
           <div className="font-display font-black text-3xl text-ink-1 mb-1 tracking-tight uppercase">BloomOS</div>
-          <div className="text-ink-2 text-sm mb-8">Operating System for Ambition Angels</div>
+          <div className="text-ink-2 text-sm mb-8">The operating system for nonprofits</div>
           {magicSent ? (
             <div className="text-ink-1 text-sm leading-relaxed">
               Check your email — we sent a one-time sign-in link to{" "}

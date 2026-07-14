@@ -444,7 +444,7 @@ export default function HowToPage() {
       </div>
 
       <p className="text-xs text-ink-3 mt-12 border-t border-outline pt-5">
-        BloomOS™ · the operating system for Ambition Angels. This guide mirrors the sidebar — if a
+        BloomOS™ · the operating system for your nonprofit. This guide mirrors the sidebar — if a
         module is here, it&apos;s in the menu on the left.
       </p>
     </div>

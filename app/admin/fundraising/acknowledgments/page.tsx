@@ -150,6 +150,7 @@ export default async function AcknowledgmentsPage() {
                         complianceBlock={complianceBlock(receiptGift)}
                         templates={templates}
                         defaultChannel={(g.constituent?.preferred_ack_channel as AckChannel | null) ?? null}
+                        orgName={ctx?.orgName ?? "our organization"}
                       />
                     </div>
                   </li>

@@ -385,10 +385,14 @@ function activeSectionLabel(pathname: string): string {
 export default function Sidebar({
   currentUser,
   staffLabel,
+  orgName,
   features,
 }: {
   currentUser: AdminUser | null;
   staffLabel?: string | null;
+  /** From ctx.orgName (the orgs row). Null pre-auth — the tagline must stay
+   *  generic then; a shared host can't name a tenant before sign-in. */
+  orgName?: string | null;
   /**
    * Enabled entitlement keys for the session org (from getEntitlements).
    * null = no session yet (login screen) — show the full IA rather than a
@@ -465,7 +469,7 @@ export default function Sidebar({
           </div>
         </Link>
         <div className="text-[11px] tracking-wide text-cream/50 mt-1.5">
-          Operating System for Ambition Angels
+          {orgName ? `Operating System for ${orgName}` : "The operating system for nonprofits"}
         </div>
       </div>
 

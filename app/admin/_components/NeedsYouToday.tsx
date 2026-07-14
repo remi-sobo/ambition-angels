@@ -15,6 +15,11 @@ import NeedsYouQueueClient from "./NeedsYouQueueClient";
 //      counts, never a wall of rows. The most urgent group starts open.
 // Previously these were two stacked sections ("Needs you today" + "Needs
 // you") saying overlapping things; this merges them.
+//
+// The Ops group is deliberately left out here (Shannon: redundant — those
+// tasks already live in the Tasks area and in each view's own task widget).
+// Only this Overview surface filters; getActionQueue() itself still carries
+// ops rows for the status line, the outlook, and Reed.
 export default async function NeedsYouToday() {
   let briefingTop = [] as Awaited<ReturnType<typeof gatherBriefing>>["top"];
   try {
@@ -25,7 +30,7 @@ export default async function NeedsYouToday() {
 
   let items: QueueItem[] = [];
   try {
-    items = await getActionQueue();
+    items = (await getActionQueue()).filter((it) => it.module !== "ops");
   } catch {
     // ditto for the queue
   }

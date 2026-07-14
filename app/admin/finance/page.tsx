@@ -23,6 +23,7 @@ import {
 import ReconcileCard from "./_components/ReconcileCard";
 import RunwayTiers from "./_components/RunwayTiers";
 import InfoTip from "./_components/InfoTip";
+import NarrativeBackLink from "../_components/NarrativeBackLink";
 import { constituentName } from "@/lib/fundraising/display";
 
 // Read live every request: the service-role client's reads go through the
@@ -33,7 +34,11 @@ export const dynamic = "force-dynamic";
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
-export default async function FinanceDashboardPage() {
+export default async function FinanceDashboardPage({
+  searchParams,
+}: {
+  searchParams?: { from?: string };
+}) {
   const supabase = getSupabaseAdmin();
 
   // Canonical numbers (cash, runway, burn, monthly series, YTD) come from the
@@ -276,6 +281,7 @@ export default async function FinanceDashboardPage() {
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+      <NarrativeBackLink from={searchParams?.from} />
       {/* Header — SubNav now lives in app/admin/finance/layout.tsx so it
           persists across every finance page. */}
       <PageHeader
@@ -288,18 +294,21 @@ export default async function FinanceDashboardPage() {
           one-tap "set current balance" and a freshness indicator. */}
       <ReconcileCard computedCash={cashOnHand} anchorDate={cfg.startDate} reconciledAt={cfg.reconciledAt} />
 
-      {/* Forward runway — three tiers from the shared engine. */}
-      <RunwayTiers
-        baseline={ri.baseline}
-        baselineSource={ri.baselineSource}
-        bankBalance={ri.bankBalance}
-        mtdSpend={ri.mtdSpend}
-        endCurrentMonth={endOfMonthISO(now, 0)}
-        horizonEnds={horizonEnds}
-        defaultHorizon={cfg.horizon}
-        pledges={runwayPledges}
-        restrictedInflows={snap.restrictedInflows}
-      />
+      {/* Forward runway — three tiers from the shared engine. Anchored (#runway)
+          so the narrative's Cash runway widget can land here. */}
+      <section id="runway" className="scroll-mt-24">
+        <RunwayTiers
+          baseline={ri.baseline}
+          baselineSource={ri.baselineSource}
+          bankBalance={ri.bankBalance}
+          mtdSpend={ri.mtdSpend}
+          endCurrentMonth={endOfMonthISO(now, 0)}
+          horizonEnds={horizonEnds}
+          defaultHorizon={cfg.horizon}
+          pledges={runwayPledges}
+          restrictedInflows={snap.restrictedInflows}
+        />
+      </section>
 
       {/* Hero KPIs */}
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">

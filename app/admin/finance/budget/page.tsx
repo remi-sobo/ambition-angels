@@ -2,8 +2,9 @@ import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { FinCategory } from "@/lib/finance/types";
 import BudgetEditor, { type BudgetRow } from "./_components/BudgetEditor";
+import NarrativeBackLink from "../../_components/NarrativeBackLink";
 
-type SearchParams = { year?: string };
+type SearchParams = { year?: string; from?: string };
 
 export default async function BudgetPage({
   searchParams,
@@ -57,6 +58,7 @@ export default async function BudgetPage({
 
   return (
     <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8">
+      <NarrativeBackLink from={searchParams.from} />
       <header className="mb-6 flex items-baseline justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { StatusChip } from "../../../_components/StatusChip";
 import type { Status } from "@/lib/admin/status";
 import type { NarrativeKpi } from "@/lib/admin/strategy/narrative";
@@ -81,22 +82,31 @@ export function MeasureRow({ kpi }: { kpi: NarrativeKpi }) {
   );
 }
 
-/** A big headline stat: label, value, optional sublabel + status chip. */
+/**
+ * A big headline stat: label, value, optional sublabel + status chip. With
+ * `href`, the whole card is a link to the canonical detail page (the widget
+ * stays purely navigational — no detail is duplicated on the narrative).
+ */
 export function StatBig({
   label,
   value,
   sub,
   status,
   accent = false,
+  href,
+  hrefLabel,
 }: {
   label: string;
   value: ReactNode;
   sub?: ReactNode;
   status?: Status;
   accent?: boolean;
+  href?: string;
+  hrefLabel?: string;
 }) {
-  return (
-    <div className={`rounded-card-lg border p-5 ${accent ? "border-orange/30 bg-orange-light" : "border-hairline bg-surface"}`}>
+  const cardCls = `rounded-card-lg border p-5 ${accent ? "border-orange/30 bg-orange-light" : "border-hairline bg-surface"}`;
+  const inner = (
+    <>
       <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-1.5">
         {label}
       </div>
@@ -107,8 +117,24 @@ export function StatBig({
           {sub && <span className="text-[12px] text-ink-2">{sub}</span>}
         </div>
       )}
-    </div>
+      {href && (
+        <div className="mt-2 text-[11px] font-medium text-ink-3 group-hover:text-orange transition-colors">
+          {hrefLabel ?? "View details"} →
+        </div>
+      )}
+    </>
   );
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={`group block ${cardCls} transition-colors hover:border-orange/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange/40`}
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return <div className={cardCls}>{inner}</div>;
 }
 
 /** Section wrapper giving each movement a consistent eyebrow + display title. */

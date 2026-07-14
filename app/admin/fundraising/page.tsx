@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { money } from "../finance/_components/charts";
 import PageHeader from "../_components/PageHeader";
+import NarrativeBackLink from "../_components/NarrativeBackLink";
 import SectionSummary from "../_components/SectionSummary";
 import StatCard from "../_components/StatCard";
 import { NewOpportunityForm } from "./_components/PipelineBoard";
@@ -48,7 +49,7 @@ function constituentName(c: DbOpportunity["constituent"]): string {
 export default async function MajorGiftsPage({
   searchParams,
 }: {
-  searchParams?: { pipeline?: string; year?: string };
+  searchParams?: { pipeline?: string; year?: string; from?: string };
 }) {
   const supabase = createServerSupabase();
   const { data } = await supabase
@@ -143,6 +144,7 @@ export default async function MajorGiftsPage({
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1400px]">
+      <NarrativeBackLink from={searchParams?.from} />
       <PageHeader
         title="Pipeline"
         subtitle="Moves-management pipeline · Identification → Stewardship"

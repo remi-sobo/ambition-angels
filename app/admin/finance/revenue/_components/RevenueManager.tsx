@@ -318,23 +318,23 @@ export default function RevenueManager({
         ) : (
           <>
             {committedRows.length > 0 && (
-              <>
+              <div id="committed" className="scroll-mt-24 mt-5 pt-3 border-t border-outline">
                 <GroupHeader label="Committed" sub="grants, pledges & signed commitments — full value" total={money(committedTotal)} />
                 <ul className="divide-y divide-hairline">{committedRows.map(scheduleRow)}</ul>
-              </>
+              </div>
             )}
             {projectedRows.length > 0 && (
-              <>
+              <div id="projected" className="scroll-mt-24 mt-5 pt-3 border-t border-outline">
                 <GroupHeader label="Projected pipeline" sub="open asks, weighted by probability — not committed yet" total={money(projectedTotal)} muted />
                 <ul className="divide-y divide-hairline">{projectedRows.map(scheduleRow)}</ul>
-              </>
+              </div>
             )}
           </>
         )}
       </section>
 
       {/* ── Received this year ─────────────────────────────────────────── */}
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
+      <section id="received" className="scroll-mt-24 rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
         <div className="flex items-baseline justify-between gap-3 mb-1">
           <h2 className="font-heading font-bold text-ink-1 text-lg">Received this year</h2>
           <span className="text-xs font-mono text-revenue [font-variant-numeric:tabular-nums]">{money(totalReceived)}</span>
@@ -373,9 +373,11 @@ function Stat({ label, value, sub, accent }: { label: string; value: string; sub
   );
 }
 
+// Group separation (top margin/border) lives on the anchored wrapper divs
+// above, so each group can be a scroll target for the Strategy Narrative.
 function GroupHeader({ label, sub, total, muted }: { label: string; sub: string; total: string; muted?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 mt-5 mb-1 pt-3 border-t border-outline first:mt-0 first:pt-0 first:border-t-0">
+    <div className="flex items-baseline justify-between gap-3 mb-1">
       <div>
         <span className={`text-[11px] font-semibold uppercase tracking-wider ${muted ? "text-ink-2" : "text-ink-1"}`}>{label}</span>
         <span className="ml-2 text-[11px] text-ink-2">{sub}</span>

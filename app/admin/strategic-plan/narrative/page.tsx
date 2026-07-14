@@ -77,10 +77,16 @@ export default async function StrategyNarrativePage({
   const openBlockers = readiness.blockers.filter((b) => !b.ok).map((b) => b.label);
 
   // Presenter mode — full-screen slides over the same data, keyboard-driven.
+  // The money widgets render unlinked here: a live pitch shouldn't navigate
+  // into the admin detail pages on a stray click.
   if (searchParams?.present === "1") {
     return (
       <Presenter
-        slides={movements.map((m) => m.node)}
+        slides={[
+          movements[0].node,
+          <MovementRaise key="raise" money={money} linked={false} />,
+          movements[2].node,
+        ]}
         titles={movements.map((m) => m.title)}
         blockers={openBlockers}
       />

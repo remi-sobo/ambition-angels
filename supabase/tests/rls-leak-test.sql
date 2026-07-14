@@ -846,6 +846,11 @@ do $$ begin
   raise exception 'LEAK: anon reads ms_deliveries (adult emails) directly';
 exception when insufficient_privilege then null; -- expected
 end $$;
+do $$ begin
+  perform count(*) from ms_rooms;
+  raise exception 'LEAK: anon reads ms_rooms (host emails + tokens) directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
 reset role;
 set role authenticated;
 set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
@@ -862,6 +867,11 @@ end $$;
 do $$ begin
   perform count(*) from ms_deliveries;
   raise exception 'LEAK: owner session reads ms_deliveries directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+do $$ begin
+  perform count(*) from ms_rooms;
+  raise exception 'LEAK: owner session reads ms_rooms directly (service-path only)';
 exception when insufficient_privilege then null; -- expected
 end $$;
 

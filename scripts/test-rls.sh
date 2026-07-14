@@ -167,6 +167,7 @@ ordered=(
   create_ms_sessions.sql
   create_ms_explored.sql
   create_ms_deliveries.sql
+  create_ms_rooms.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

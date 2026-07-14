@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createHash } from "crypto";
 import { isTaskCategory, isTaskPriority, isAdminUserId } from "@/app/admin/ops/_types/ops";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 import { audit } from "@/lib/audit";
 
 /**
@@ -62,7 +63,15 @@ export async function ingestTask(
       : [];
     const labels = Array.from(new Set(["cowork", ...callerLabels, ref]));
 
+    // Explicit tenancy: both callers (HTTP ingest + MCP) run on the
+    // service-role client, where the ops_tasks org_id column default was the
+    // only org assignment. These are machine intake paths with no session, so
+    // the org is a deployment fact — same resident-org resolution the public
+    // program-intake routes use. Keeps working after the Phase C default drop.
+    const org_id = await getResidentOrgId();
+
     const insert = {
+      org_id,
       title,
       description: typeof t.description === "string" ? t.description.slice(0, 4000) : null,
       category,

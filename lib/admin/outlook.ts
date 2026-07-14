@@ -67,8 +67,16 @@ export type Outlook = {
 };
 
 const DAY = 86_400_000;
-const addDays = (iso: string, n: number) =>
+export const addDays = (iso: string, n: number) =>
   new Date(new Date(iso + "T00:00:00Z").getTime() + n * DAY).toISOString().slice(0, 10);
+
+/**
+ * Whether a queue item's due date falls inside a window's (today, end] range.
+ * Shared with the /admin/queue drilldown so the list a chip links to is made
+ * of exactly the rows its dueTotal counted — one definition, no drift.
+ */
+export const isDueInWindow = (dueDate: string | null, todayISO: string, endDate: string): boolean =>
+  dueDate != null && dueDate > todayISO && dueDate <= endDate;
 
 /** Least-squares slope (value per day) over a metric's snapshots. */
 function slopePerDay(history: { captured_on: string; value: number }[]): number | null {
@@ -115,7 +123,7 @@ export function buildOutlook(
     const dueByModule: Record<string, number> = {};
     let dueTotal = 0;
     for (const it of inputs.queueItems) {
-      if (it.dueDate == null || it.dueDate <= todayISO || it.dueDate > endDate) continue;
+      if (!isDueInWindow(it.dueDate, todayISO, endDate)) continue;
       dueTotal += 1;
       dueByModule[it.module] = (dueByModule[it.module] ?? 0) + 1;
     }

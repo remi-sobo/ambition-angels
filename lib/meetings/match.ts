@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { constituentName } from "@/lib/fundraising/display";
+import { loadExcludedSeriesKeys, seriesKey } from "./exclusions";
 import type { MatchedEntity } from "./types";
 
 /**
@@ -184,7 +185,7 @@ export async function ensureMeetingRecordsForOwner(
 
   const { data: events } = await sb
     .from("calendar_events")
-    .select("id, title, start_time, attendees, is_external, status, google_event_id")
+    .select("id, title, start_time, attendees, is_external, status, google_event_id, recurring_event_id")
     .eq("org_id", orgId)
     .eq("owner_user_id", ownerUserId)
     .eq("is_external", true)
@@ -194,12 +195,22 @@ export async function ensureMeetingRecordsForOwner(
     .limit(200);
   if (!events?.length) return { created: 0, matched: 0 };
 
-  const eventRows = events as Array<{
+  // Events the owner excluded from the follow-up loop (personal/recurring)
+  // never get a meeting_record, so they can't reappear as needing follow-up.
+  const excluded = await loadExcludedSeriesKeys(sb, orgId, ownerUserId);
+
+  const eventRows = (events as Array<{
     id: string;
     title: string | null;
     start_time: string;
     attendees: Attendee[] | null;
-  }>;
+    google_event_id: string | null;
+    recurring_event_id: string | null;
+  }>).filter((ev) => {
+    const key = seriesKey(ev);
+    return !(key && excluded.has(key));
+  });
+  if (eventRows.length === 0) return { created: 0, matched: 0 };
   const eventIds = eventRows.map((e) => e.id);
   const { data: existing } = await sb
     .from("meeting_records")

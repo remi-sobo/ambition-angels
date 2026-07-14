@@ -813,6 +813,30 @@ do $$ begin
 exception when insufficient_privilege then null; -- expected
 end $$;
 
+-- Sessions (create_ms_sessions.sql): a kid's trait profile and results are
+-- reachable only through the service-role route handlers — no client role
+-- reads them, ever.
+reset role;
+reset request.jwt.claim.sub;
+insert into ms_sessions (claim_code, trait_scores, ranked_careers)
+values ('LEAKT1', '{"build":1}'::jsonb, '[]'::jsonb)
+on conflict (claim_code) do nothing;
+
+set role anon;
+do $$ begin
+  perform count(*) from ms_sessions;
+  raise exception 'LEAK: anon reads ms_sessions directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  perform count(*) from ms_sessions;
+  raise exception 'LEAK: owner session reads ms_sessions directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

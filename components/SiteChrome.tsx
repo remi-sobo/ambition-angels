@@ -20,6 +20,8 @@ export default function SiteChrome({
   // (see /admin — its sidebar shell is the chrome, no public nav needed).
   const standalone =
     (pathname?.startsWith("/admin") ||
+      pathname === "/ms" ||
+      pathname?.startsWith("/ms/") ||
       pathname?.startsWith("/ygb") ||
       pathname?.startsWith("/shannon") ||
       pathname?.startsWith("/strategy") ||

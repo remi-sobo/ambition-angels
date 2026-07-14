@@ -2,6 +2,7 @@ import "server-only";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
+import { isRecurringInstance, loadExcludedSeriesKeys, seriesKey } from "./exclusions";
 import { externalEmails, matchAttendees, orgEmailDomain } from "./match";
 import {
   loadConstituentDossier,
@@ -114,18 +115,29 @@ export async function listMeetings(now: Date): Promise<{
   const past = (records ?? []) as MeetingRecord[];
   const matched = await matchedByRecord(sb, past.map((r) => r.id));
 
-  // Upcoming external events straight off the calendar mirror (RLS-scoped).
+  // Upcoming external events straight off the calendar mirror (RLS-scoped),
+  // minus anything the viewer excluded from the follow-up loop.
   const { data: events } = await sb
     .from("calendar_events")
-    .select("id, title, start_time, attendees, is_external, status")
+    .select("id, title, start_time, attendees, is_external, status, google_event_id, recurring_event_id")
     .eq("is_external", true)
     .gte("start_time", now.toISOString())
     .neq("status", "cancelled")
     .order("start_time", { ascending: true })
     .limit(25);
+  const excluded = await loadExcludedSeriesKeys(sb, ctx.orgId);
   const domain = await orgEmailDomain(sb, ctx.orgId);
   const upcoming: UpcomingMeeting[] = [];
-  for (const ev of (events ?? []) as Array<{ id: string; title: string | null; start_time: string; attendees: Attendee[] | null }>) {
+  for (const ev of (events ?? []) as Array<{
+    id: string;
+    title: string | null;
+    start_time: string;
+    attendees: Attendee[] | null;
+    google_event_id: string | null;
+    recurring_event_id: string | null;
+  }>) {
+    const key = seriesKey(ev);
+    if (key && excluded.has(key)) continue;
     const emails = externalEmails(ev.attendees, domain);
     const ents = await matchAttendees(sb, ctx.orgId, emails);
     upcoming.push({ eventId: ev.id, title: ev.title, start: ev.start_time, matched: ents });
@@ -144,6 +156,9 @@ export type MeetingDetail = {
   linkedTasks: Array<{ id: string; title: string; status: string }>;
   /** The agenda Reed drafted while this was still upcoming, if any — prep next to recap. */
   agenda: SavedAgenda | null;
+  /** True when the linked calendar event is an instance of a recurring series —
+   *  the client then offers "exclude all future occurrences". */
+  recurring: boolean;
 };
 
 export async function getMeetingDetail(id: string): Promise<MeetingDetail | null> {
@@ -160,14 +175,21 @@ export async function getMeetingDetail(id: string): Promise<MeetingDetail | null
   // timeline for this record too, so a manually-connected donor/partner shows
   // even on a calendar meeting whose attendees never auto-matched.
   let matched: MatchedEntity[] = [];
+  let recurring = false;
   if (rec.calendar_event_id) {
     const { data: ev } = await sb
       .from("calendar_events")
-      .select("attendees")
+      .select("attendees, google_event_id, recurring_event_id")
       .eq("id", rec.calendar_event_id)
       .maybeSingle();
+    const evRow = ev as {
+      attendees: Attendee[] | null;
+      google_event_id: string | null;
+      recurring_event_id: string | null;
+    } | null;
+    recurring = evRow ? isRecurringInstance(evRow) : false;
     const domain = await orgEmailDomain(sb, ctx.orgId);
-    const emails = externalEmails((ev as { attendees: Attendee[] | null } | null)?.attendees ?? null, domain);
+    const emails = externalEmails(evRow?.attendees ?? null, domain);
     matched = await matchAttendees(sb, ctx.orgId, emails);
   }
   const fromTimeline = (await matchedByRecord(sb, [rec.id])).get(rec.id) ?? [];
@@ -200,6 +222,7 @@ export async function getMeetingDetail(id: string): Promise<MeetingDetail | null
     suggestions: (sugg ?? []) as MeetingSuggestedTask[],
     linkedTasks: (tasks ?? []) as Array<{ id: string; title: string; status: string }>,
     agenda,
+    recurring,
   };
 }
 

@@ -24,6 +24,7 @@ type Detail = {
   suggestions: MeetingSuggestedTask[];
   linkedTasks: Array<{ id: string; title: string; status: string }>;
   agenda: { agenda: string; generatedAt: string } | null;
+  recurring: boolean;
 };
 
 const fmtAgendaDate = (iso: string) =>
@@ -49,12 +50,12 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
   const [storeTranscript, setStoreTranscript] = useState(false);
   const [parsing, setParsing] = useState(false);
 
-  const { record, matched, suggestions, linkedTasks, agenda } = detail;
+  const { record, matched, suggestions, linkedTasks, agenda, recurring } = detail;
   const pending = suggestions.filter((s) => s.status === "pending");
 
-  async function api(url: string, body: unknown) {
+  async function api(url: string, body: unknown, method: "POST" | "PATCH" = "POST") {
     const r = await fetch(url, {
-      method: "POST",
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
@@ -62,10 +63,14 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
     return r;
   }
 
-  async function setStatus(status: FollowUpStatus) {
+  async function setStatus(status: FollowUpStatus, applyToSeries = false) {
     setBusy(true);
     try {
-      await api(`/api/admin/meetings/${record.id}`, { follow_up_status: status });
+      await api(
+        `/api/admin/meetings/${record.id}`,
+        { follow_up_status: status, ...(applyToSeries ? { apply_to_series: true } : {}) },
+        "PATCH"
+      );
       startTransition(() => router.refresh());
     } catch (e) {
       console.error(e);
@@ -134,6 +139,23 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
             );
           })}
         </div>
+
+        {/* Recurring events (basketball practice, family meetings…) come back
+            every week — offer a permanent opt-out for the whole series. */}
+        {recurring && (
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setStatus("dismissed", true)}
+              disabled={busy}
+              className="text-[12px] font-medium px-3 py-1.5 rounded-full border border-outline text-ink-2 hover:text-ink-1 hover:bg-tile disabled:opacity-40 transition-colors"
+            >
+              Never needs follow-up — dismiss all future occurrences
+            </button>
+            <span className="text-[11px] text-ink-3">
+              This is a recurring event. Excluding it also hides it from Upcoming.
+            </span>
+          </div>
+        )}
 
         {linkedTasks.length > 0 && (
           <div className="mt-5">

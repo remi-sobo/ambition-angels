@@ -44,7 +44,11 @@ function Card({ title, description, children }: { title: string; description?: s
   );
 }
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams?: { calendar?: string; reason?: string };
+}) {
   const ctx = await getOrgContext();
   if (!ctx) return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;
   const displayName = (await getMyDisplayName()) ?? "";
@@ -117,7 +121,11 @@ export default async function SettingsPage() {
           description="Connect your calendar so BloomOS can show your day. Read-only — BloomOS never changes your events."
         >
           {calendarStatus ? (
-            <ConnectCalendarControls status={calendarStatus} />
+            <ConnectCalendarControls
+              status={calendarStatus}
+              oauthResult={searchParams?.calendar}
+              oauthReason={searchParams?.reason}
+            />
           ) : (
             <p className="text-xs text-ink-2">
               Calendar status is unavailable right now (the server isn&apos;t fully configured). Try again shortly.

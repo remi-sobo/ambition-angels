@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { audit } from "@/lib/audit";
 
 /**
  * Supabase Auth redirect target: exchanges the one-time code from magic
@@ -14,8 +15,19 @@ export async function GET(req: NextRequest) {
 
   if (code) {
     const supabase = createServerSupabase();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Same ledger as password sign-ins (/api/admin/login). Method comes
+      // from the auth provider: "google" for OAuth, "email" for magic links.
+      await audit(req, {
+        action: "auth.login",
+        entityType: "auth",
+        actorUserId: data.user?.id ?? null,
+        after: {
+          email: data.user?.email ?? null,
+          method: (data.user?.app_metadata?.provider as string | undefined) ?? "otp",
+        },
+      });
       return NextResponse.redirect(new URL(safeNext, req.nextUrl.origin));
     }
     console.error("Auth callback error:", error.message);

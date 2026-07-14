@@ -5,7 +5,7 @@ import MyWeekCard from "./overview/MyWeekCard";
 import RoleViewShell, { type ViewKey } from "./overview/RoleViewShell";
 import CeoCockpit from "./overview/CeoCockpit";
 import OpsPanel from "./overview/OpsPanel";
-import { getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import { getMyDisplayName, firstName } from "@/lib/admin/profile";
 
 // Command Center — two curated role views (CEO cockpit for Remi, Ops control
@@ -20,14 +20,19 @@ import { getMyDisplayName, firstName } from "@/lib/admin/profile";
 // pair, which stacked two overlapping lists.
 
 export default async function CommandCenter() {
-  const [user, displayName] = await Promise.all([getAdminUser(), getMyDisplayName()]);
+  const [user, displayName, ctx] = await Promise.all([
+    getAdminUser(),
+    getMyDisplayName(),
+    getOrgContext(),
+  ]);
   const defaultView: ViewKey = user === "shannon" ? "ops" : "ceo";
   const greetingName = displayName ? firstName(displayName) : "there";
+  const orgName = ctx?.orgName ?? "your organization";
 
   return (
     <div className="min-h-screen bg-ink">
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-        <Greeting name={greetingName} org="Ambition Angels" />
+        <Greeting name={greetingName} org={orgName} />
         <StatusLineCard />
         <MyWeekCard />
         <NeedsYouToday />

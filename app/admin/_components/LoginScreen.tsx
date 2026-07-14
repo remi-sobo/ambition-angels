@@ -2,16 +2,35 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getSupabaseBrowser } from "@/lib/supabase/browser";
 
-// BloomOS login. On success we router.refresh() so the server layout and
-// the /admin page re-render with the new Supabase session and the Command
-// Center replaces this screen.
-export default function LoginScreen() {
+// BloomOS sign-in, split-screen: brand panel on the left (the "are we
+// winning" pitch from bloomos.org, synthetic numbers only), the form on the
+// right. Renders as a fixed overlay so the pre-auth view never exposes the
+// sidebar IA — a shared host shows no tenant identity before auth, which is
+// also why every string here is generic BloomOS, never an org name.
+//
+// On success we router.refresh() so the server layout and the /admin page
+// re-render with the new Supabase session and the Command Center replaces
+// this screen.
+//
+// `sessionEmail` is set when a valid session exists but holds no org
+// membership (e.g. a Google account outside the allowlist) — without the
+// explicit dead-end message that state would silently loop back to the form.
+export default function LoginScreen({
+  sessionEmail = null,
+  authError = false,
+}: {
+  sessionEmail?: string | null;
+  authError?: boolean;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loginError, setLoginError] = useState("");
+  const [loginError, setLoginError] = useState(
+    authError ? "That sign-in link is invalid or expired. Try again." : ""
+  );
   const [magicSent, setMagicSent] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
 
@@ -55,96 +74,252 @@ export default function LoginScreen() {
     }
   };
 
+  const handleGoogle = async () => {
+    setLoggingIn(true);
+    setLoginError("");
+    const { error } = await getSupabaseBrowser().auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/admin`,
+      },
+    });
+    // On success the browser navigates to Google; we only land here on error.
+    if (error) {
+      setLoginError("Could not start Google sign-in. Try again.");
+      setLoggingIn(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    setLoggingIn(true);
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+      router.refresh();
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
+  const wordmark = (
+    <div className="flex items-center gap-2.5">
+      {/* Plain <img> (not next/image): more reliable behind the admin
+          PWA's cache-first service worker than the image optimizer. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/admin/bloomos-mark.png"
+        alt=""
+        width={36}
+        height={36}
+        className="rounded-xl shrink-0"
+      />
+      <span className="font-display font-black text-3xl tracking-tight normal-case leading-none">
+        Bloom<span className="text-[#A8B58C]">OS</span>
+      </span>
+    </div>
+  );
+
   return (
-    <div
-      className="min-h-screen bg-ink flex items-center justify-center px-4"
-      style={{
-        backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-        backgroundSize: "22px 22px",
-      }}
-    >
-      <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
-        <div className="flex items-center gap-3 mb-1">
-          {/* Plain <img> (not next/image): more reliable behind the admin
-              PWA's cache-first service worker than the image optimizer. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/admin/bloomos-mark.png"
-            alt=""
-            width={48}
-            height={48}
-            className="rounded-xl shrink-0"
-          />
-          <div className="font-display font-black text-4xl text-ink-1 tracking-tight normal-case leading-none">
-            Bloom<span className="text-[#A8B58C]">OS</span>
+    <div className="fixed inset-0 z-50 lg:grid lg:grid-cols-2">
+      {/* Brand panel — espresso, dot texture, the question the product
+          answers. Synthetic verdict copy mirrors the bloomos.org hero. */}
+      <div
+        className="hidden lg:flex flex-col justify-between p-12 xl:p-16 bg-navy text-cream overflow-hidden"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
+        <div className="text-cream">{wordmark}</div>
+
+        <div className="max-w-md">
+          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93] mb-4">
+            The question every nonprofit leader asks
+          </div>
+          <h1 className="font-heading font-bold text-cream text-5xl xl:text-6xl tracking-tight leading-[1.05]">
+            Are we <span className="text-orange-mid">winning?</span>
+          </h1>
+          <p className="text-cream/70 text-sm leading-relaxed mt-5">
+            One system for strategy, fundraising, finance, and operations. One
+            sentence every morning that answers the question.
+          </p>
+
+          <div className="mt-10 bg-navy-light border border-white/10 rounded-card-lg p-6">
+            <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93]">
+              Tuesday · your verdict
+            </div>
+            <p className="text-cream/90 text-sm leading-relaxed mt-3">
+              3 of 4 objectives on track. Grants are $180k short, two asks
+              close this month. Runway: 9.2 months.
+            </p>
+            <span className="inline-block mt-4 text-[11px] font-semibold text-[#A8B58C] bg-white/[0.06] border border-white/10 rounded-full px-3 py-1">
+              Runway +0.4 mo
+            </span>
           </div>
         </div>
-        <div className="text-ink-2 text-sm mb-8">Operating System for Ambition Angels</div>
-        {magicSent ? (
-          <div className="text-ink-1 text-sm leading-relaxed">
-            Check your email — we sent a one-time sign-in link to{" "}
-            <span className="text-ink-1 font-semibold">{email}</span>.
-          </div>
-        ) : (
-          <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              autoComplete="email"
-              className="bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50"
-              autoFocus
-            />
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                autoComplete="current-password"
-                className="w-full bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 pr-12 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50"
-              />
+
+        <div className="text-cream/40 text-xs">
+          BloomOS is a SOBO Consulting product.
+        </div>
+      </div>
+
+      {/* Form panel — cream workspace, same surface language as the app. */}
+      <div className="h-full overflow-y-auto bg-ink flex flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-sm">
+          {/* Compact brand header where the left panel is hidden. */}
+          <div className="lg:hidden text-ink-1 mb-10">{wordmark}</div>
+
+          {sessionEmail ? (
+            <div>
+              <h2 className="font-heading font-bold text-ink-1 text-2xl tracking-tight">
+                No workspace yet
+              </h2>
+              <p className="text-ink-2 text-sm leading-relaxed mt-3">
+                You&apos;re signed in as{" "}
+                <span className="font-semibold text-ink-1">{sessionEmail}</span>,
+                but that account doesn&apos;t belong to an organization on
+                BloomOS. Ask your organization&apos;s admin for an invite, or
+                sign out and use a different account.
+              </p>
               <button
                 type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-2 hover:text-ink-1 transition-colors"
+                onClick={handleSignOut}
+                disabled={loggingIn}
+                className="mt-6 w-full bg-surface hover:bg-tile border-[1.5px] border-outline text-ink-1 font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
               >
-                {showPassword ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 12s3.5-6.5 9-6.5S21 12 21 12s-3.5 6.5-9 6.5S3 12 3 12z" />
-                    <circle cx="12" cy="12" r="2.8" />
-                    <path d="M4 4l16 16" />
-                  </svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 12s3.5-6.5 9-6.5S21 12 21 12s-3.5 6.5-9 6.5S3 12 3 12z" />
-                    <circle cx="12" cy="12" r="2.8" />
-                  </svg>
-                )}
+                Sign out
               </button>
             </div>
-            {loginError && <p className="text-expense text-xs">{loginError}</p>}
-            <button
-              type="submit"
-              disabled={loggingIn}
-              className="bg-orange hover:bg-orange-dark text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
+          ) : magicSent ? (
+            <div>
+              <h2 className="font-heading font-bold text-ink-1 text-2xl tracking-tight">
+                Check your email
+              </h2>
+              <p className="text-ink-2 text-sm leading-relaxed mt-3">
+                We sent a one-time sign-in link to{" "}
+                <span className="font-semibold text-ink-1">{email}</span>.
+              </p>
+              <button
+                type="button"
+                onClick={() => setMagicSent(false)}
+                className="mt-6 text-ink-2 hover:text-ink-1 text-xs transition-colors"
+              >
+                Use a different email or password instead
+              </button>
+            </div>
+          ) : (
+            <>
+              <h2 className="font-heading font-bold text-ink-1 text-2xl tracking-tight">
+                Welcome back
+              </h2>
+              <p className="text-ink-2 text-sm mt-1 mb-7">
+                Sign in to your organization&apos;s BloomOS.
+              </p>
+
+              <button
+                type="button"
+                onClick={handleGoogle}
+                disabled={loggingIn}
+                className="w-full flex items-center justify-center gap-2.5 bg-surface hover:bg-tile border-[1.5px] border-outline text-ink-1 font-semibold text-sm py-3 rounded-xl transition-colors disabled:opacity-60"
+              >
+                <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
+                  <path
+                    fill="#EA4335"
+                    d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                  />
+                </svg>
+                Sign in with Google
+              </button>
+
+              <div className="flex items-center gap-3 my-6">
+                <div className="h-px flex-1 bg-hairline" />
+                <span className="text-ink-3 text-xs">or</span>
+                <div className="h-px flex-1 bg-hairline" />
+              </div>
+
+              <form onSubmit={handleLogin} className="flex flex-col gap-4">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email"
+                  autoComplete="email"
+                  className="bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50"
+                  autoFocus
+                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                    autoComplete="current-password"
+                    className="w-full bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 pr-12 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-2 hover:text-ink-1 transition-colors"
+                  >
+                    {showPassword ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12s3.5-6.5 9-6.5S21 12 21 12s-3.5 6.5-9 6.5S3 12 3 12z" />
+                        <circle cx="12" cy="12" r="2.8" />
+                        <path d="M4 4l16 16" />
+                      </svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12s3.5-6.5 9-6.5S21 12 21 12s-3.5 6.5-9 6.5S3 12 3 12z" />
+                        <circle cx="12" cy="12" r="2.8" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {loginError && <p className="text-expense text-xs">{loginError}</p>}
+                <button
+                  type="submit"
+                  disabled={loggingIn}
+                  className="bg-orange hover:bg-orange-dark text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
+                >
+                  {loggingIn ? "Signing in…" : "Sign in"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMagicLink}
+                  disabled={loggingIn}
+                  className="text-ink-2 hover:text-ink-1 text-xs transition-colors disabled:opacity-60"
+                >
+                  Email me a one-time sign-in link instead
+                </button>
+              </form>
+            </>
+          )}
+
+          <p className="text-ink-2 text-xs mt-10 pt-5 border-t border-hairline">
+            New to BloomOS?{" "}
+            <a
+              href="https://bloomos.org"
+              className="font-semibold text-orange-dark hover:text-orange transition-colors"
             >
-              {loggingIn ? "Signing in…" : "Sign In"}
-            </button>
-            <button
-              type="button"
-              onClick={handleMagicLink}
-              disabled={loggingIn}
-              className="text-ink-2 hover:text-ink-1 text-xs transition-colors disabled:opacity-60"
-            >
-              Email me a one-time sign-in link instead
-            </button>
-          </form>
-        )}
+              Book a walkthrough
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

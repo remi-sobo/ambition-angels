@@ -3,7 +3,16 @@ import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 /**
- * Server-side auth gates for two areas:
+ * Host guard + server-side auth gates.
+ *
+ * Host guard (BloomOS core fence, Phase A1): app.bloomos.org serves ONLY the
+ * admin surface — "/" 307s to /admin, and any path outside /admin, /auth, and
+ * /api returns a minimal 404 so AA's marketing site never renders on the app
+ * host. ambitionangels.org behavior is unchanged. localhost and Vercel preview
+ * hosts are both-capable (marketing + admin); test the app-host branch locally
+ * with a hosts-file entry for app.bloomos.org.
+ *
+ * Auth gates for three areas:
  *
  *  1. /admin/* — the operating system. /admin itself renders the monolith
  *     (with its own client-side login UI), so it's let through; all nested
@@ -25,6 +34,40 @@ import { updateSession } from "@/lib/supabase/middleware";
  *     /api/strategy/login. Logged-in admins pass through. Fails closed: if
  *     STRATEGY_ROOM_PASSWORD is unset, only admins can view.
  */
+
+// Hosts that serve only the admin app. The PUBLIC_ADMIN_PATHS assets below
+// all live under /admin/, so the prefix allowlist covers them.
+const APP_HOSTS = new Set(["app.bloomos.org"]);
+const APP_HOST_PREFIXES = ["/admin", "/auth", "/api"];
+
+function requestHost(req: NextRequest): string {
+  // Vercel terminates at the edge, so the original host arrives in
+  // x-forwarded-host; plain `host` covers local dev. Strip any port.
+  const raw = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+  return raw.split(",")[0].trim().split(":")[0].toLowerCase();
+}
+
+function isAppHostPath(pathname: string): boolean {
+  return APP_HOST_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+function appHostNotFound(): NextResponse {
+  return new NextResponse(
+    `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>404</title>
+</head>
+<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0E0E0E;background:#FAFAF8">
+<main style="text-align:center"><h1 style="font-size:22px;margin:0 0 6px">404</h1><p style="margin:0;color:#6B6960;font-size:14px">This page doesn&rsquo;t exist on this host.</p></main>
+</body>
+</html>`,
+    { status: 404, headers: { "content-type": "text/html; charset=utf-8" } }
+  );
+}
 
 // Public assets under /admin that the browser must be able to fetch
 // without an auth cookie (PWA manifest + icons, and the logo mark shown
@@ -160,6 +203,27 @@ function demodayGateHtml(error: boolean): string {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // ── App-host guard ────────────────────────────────────────────────────
+  // On app.bloomos.org, only the admin surface exists: "/" redirects to
+  // /admin, admin/auth/api paths fall through to the gates below, and
+  // everything else (AA's marketing routes) 404s.
+  if (APP_HOSTS.has(requestHost(req))) {
+    if (pathname === "/") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/admin";
+      url.search = "";
+      return NextResponse.redirect(url, 307);
+    }
+    if (!isAppHostPath(pathname)) return appHostNotFound();
+  }
+
+  // Paths matched only for the app-host guard (the broad matcher entry) pass
+  // straight through on every other host — marketing behavior is unchanged,
+  // and updateSession() never runs where it didn't before this guard existed.
+  const gated =
+    pathname.startsWith("/admin/") || DEMODAY_PATHS.has(pathname) || pathname === "/strategy";
+  if (!gated) return NextResponse.next();
+
   // Refresh the Supabase session on every matched request and learn whether
   // a signed-in user is present. Coarse gate only — membership/permission
   // enforcement lives in route handlers + RLS.
@@ -203,5 +267,15 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path+", "/demoday", "/demoday/index.html", "/strategy"],
+  matcher: [
+    "/admin/:path+",
+    "/demoday",
+    "/demoday/index.html",
+    "/strategy",
+    // Host-guard coverage: "/" and extension-less page paths, so the app host
+    // can redirect/404 them. Excludes /api and Next internals; files with an
+    // extension (static assets) are left alone. Non-app hosts pass straight
+    // through via the `gated` early return above.
+    "/((?!api/|_next/|.*\\.[^/]+$).*)",
+  ],
 };

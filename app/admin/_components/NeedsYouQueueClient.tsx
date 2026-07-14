@@ -35,7 +35,9 @@ const COMPLETION: Partial<
 };
 
 // No "fundraising" entry: the loader folds fundraising work into the ops
-// group so tasks live in one place (see lib/admin/actionQueue.ts).
+// group so tasks live in one place (see lib/admin/actionQueue.ts). On the
+// Overview, NeedsYouToday then drops the ops group entirely — those tasks
+// already live in the Tasks area — so "Ops" is only a fallback label here.
 const MODULE_LABEL: Record<string, string> = {
   ops: "Ops",
   compliance: "Compliance",

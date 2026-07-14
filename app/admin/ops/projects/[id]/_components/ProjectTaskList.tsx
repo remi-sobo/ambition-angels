@@ -9,6 +9,7 @@ import {
   isTaskCategory,
   priorityLabel,
   TASK_PRIORITIES,
+  taskHasAssignee,
   type AdminUserId,
   type Category,
   type OpsTask,
@@ -66,17 +67,22 @@ export default function ProjectTaskList({
     e.preventDefault();
     const title = newTitle.trim();
     if (!title) return;
-    setAdding(true);
+    // Projects accept a wider category set than tasks; fall back to
+    // "other" when the project's category isn't a valid task category.
+    const category = isTaskCategory(projectCategory) ? projectCategory : "other";
     setError(null);
+    if (!taskHasAssignee(newAssignee, category)) {
+      setError("Every task needs an owner — pick a team member to assign this to.");
+      return;
+    }
+    setAdding(true);
     try {
       const r = await fetch("/api/admin/ops/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // Projects accept a wider category set than tasks; fall back to
-          // "other" when the project's category isn't a valid task category.
           title,
-          category: isTaskCategory(projectCategory) ? projectCategory : "other",
+          category,
           project_id: projectId,
           assigned_to: newAssignee || null,
           due_date: newDue || undefined,

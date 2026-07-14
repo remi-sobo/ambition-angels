@@ -175,6 +175,22 @@ export function isAdminUserId(v: unknown): v is AdminUserId {
   return v === "remi" || v === "shannon";
 }
 
+// ── Assignee requirement ───────────────────────────────────────────────────
+// Every task must have an owner so it can't slip through unnoticed: either a
+// team member (assigned_to) or an owning department/team via category —
+// 'other' is the catch-all bucket, not a department, so it doesn't count.
+// Enforced by the create/edit forms only; automated writers (ingest, the
+// reporter, MCP) may still file unassigned tasks for triage.
+export function taskHasAssignee(
+  assignedTo: string | null | undefined,
+  category: string
+): boolean {
+  return Boolean(assignedTo) || (isTaskCategory(category) && category !== "other");
+}
+
+export const ASSIGNEE_REQUIRED_MESSAGE =
+  "Every task needs an owner — assign a team member, or set the category to the owning team (e.g. Fundraising, Finance).";
+
 // ── Style helpers ──────────────────────────────────────────────────────────
 // Centralized so all components render consistent colors.
 

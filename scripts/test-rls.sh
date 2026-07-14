@@ -164,6 +164,7 @@ ordered=(
   owner_uuid_promotion.sql
   reed_suggestions_payload.sql
   create_ms_career_library.sql
+  create_ms_sessions.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

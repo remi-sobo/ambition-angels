@@ -64,13 +64,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // One regeneration on gate failure (the gates are the cheap reviewer);
-    // beyond that, store the failing draft so a human can see what is wrong
-    // instead of burning deep-tier calls in a loop.
-    let result = await generateCard(input);
-    if (!result.gates.passed) {
-      result = await generateCard(input);
-    }
+    // One call per click. A gate-failing draft is stored WITH its failures
+    // so the review UI shows exactly what is wrong and offers Regenerate —
+    // a silent second deep-tier call doubled the wait and looked like a
+    // hang from the admin's seat.
+    const result = await generateCard(input);
 
     const { error } = await supabase.from("ms_cards").upsert(
       {

@@ -1,5 +1,3 @@
-import { randomInt } from "node:crypto";
-
 /**
  * The six-character claim code — the artifact that cannot get lost
  * (specs/ms-career-game.md locked decision 9). A kid writes it on his hand;
@@ -9,12 +7,24 @@ import { randomInt } from "node:crypto";
  */
 const ALPHABET = "23456789ABCDEFGHJKMNPQRSTWXZ";
 
+// Web Crypto instead of node:crypto — client components import this module
+// (for normalizeClaimCode and the length constants), and a node: import here
+// breaks their webpack build. Rejection sampling keeps the draw unbiased.
+function randomIndex(max: number): number {
+  const limit = 256 - (256 % max);
+  const buf = new Uint8Array(1);
+  for (;;) {
+    globalThis.crypto.getRandomValues(buf);
+    if (buf[0] < limit) return buf[0] % max;
+  }
+}
+
 export const CLAIM_CODE_LENGTH = 6;
 
 export function newClaimCode(): string {
   let code = "";
   for (let i = 0; i < CLAIM_CODE_LENGTH; i++) {
-    code += ALPHABET[randomInt(ALPHABET.length)];
+    code += ALPHABET[randomIndex(ALPHABET.length)];
   }
   return code;
 }
@@ -34,7 +44,7 @@ export const ROOM_CODE_LENGTH = 4;
 export function newRoomCode(): string {
   let code = "";
   for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
-    code += ALPHABET[randomInt(ALPHABET.length)];
+    code += ALPHABET[randomIndex(ALPHABET.length)];
   }
   return code;
 }

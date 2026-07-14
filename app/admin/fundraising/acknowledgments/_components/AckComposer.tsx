@@ -25,6 +25,7 @@ export default function AckComposer({
   complianceBlock,
   templates,
   defaultChannel,
+  orgName,
 }: {
   giftId: string;
   donorName: string;
@@ -32,6 +33,8 @@ export default function AckComposer({
   complianceBlock: string;
   templates: AckTemplateLite[];
   defaultChannel?: AckChannel | null;
+  /** From ctx.orgName — seeds the default subject; never hardcode a tenant. */
+  orgName: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -39,7 +42,7 @@ export default function AckComposer({
   const [channel, setChannel] = useState<AckChannel>(defaultChannel ?? "email");
   const [busy, setBusy] = useState<"" | "draft" | "send" | "log">("");
   const [error, setError] = useState("");
-  const [subject, setSubject] = useState("Thank you for supporting Ambition Angels");
+  const [subject, setSubject] = useState(`Thank you for supporting ${orgName}`);
   const [note, setNote] = useState("");
 
   const firstName = donorName.split(/\s+/)[0] || "friend";

@@ -1,10 +1,8 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getAdminUser } from "@/lib/admin/auth";
 import {
-  TASK_CATEGORIES,
   readTaskHealth,
   todayISO,
-  type TaskCategory,
   type OpsProject,
   type OpsTask,
 } from "./_types/ops";
@@ -119,15 +117,12 @@ export default async function OpsLandingPage({
     .filter((t) => readTaskHealth(t).health === "stuck")
     .sort((a, b) => readTaskHealth(b).ageDays - readTaskHealth(a).ageDays);
 
+  // Open (not done, not archived) tasks — feeds the per-project counts and
+  // the By Category panel, which derives its own counts + expandable lists
+  // from this same array so the two can never disagree.
+  const openTasks = allTasks.filter((t) => t.status !== "done" && !t.archived_at);
   const openTaskCountsByProject = new Map<string, number>();
-  const categoryCounts = Object.fromEntries(
-    TASK_CATEGORIES.map((c) => [c, 0])
-  ) as Record<TaskCategory, number>;
-  for (const t of allTasks) {
-    if (t.status === "done" || t.archived_at) continue;
-    if ((TASK_CATEGORIES as readonly string[]).includes(t.category)) {
-      categoryCounts[t.category]++;
-    }
+  for (const t of openTasks) {
     if (t.project_id) {
       openTaskCountsByProject.set(
         t.project_id,
@@ -161,7 +156,7 @@ export default async function OpsLandingPage({
         projects={activeProjects}
         openTaskCounts={openTaskCountsByProject}
       />
-      <CategoryCounts counts={categoryCounts} />
+      <CategoryCounts tasks={openTasks} projectNames={projectNames} />
     </div>
   );
 }

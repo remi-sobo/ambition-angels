@@ -21,7 +21,21 @@ function runwayStatus(months: number | null, cash: number): Status {
 
 const titleCase = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 
-export default function MovementRaise({ money }: { money: MoneySummary }) {
+// Each widget links to the ONE canonical home of its number (finance or
+// pipeline) — the destination lists the underlying records; nothing is
+// duplicated here. `linked={false}` for presenter mode (funder-facing,
+// keyboard-driven — no admin nav leaking into a live pitch).
+const WIDGET_HREF = {
+  floor: { href: "/admin/finance/budget?from=narrative", hrefLabel: "View budget lines" },
+  secured: { href: "/admin/finance/revenue?from=narrative#received", hrefLabel: "View gifts received" },
+  residual: { href: "/admin/fundraising?from=narrative", hrefLabel: "Work the pipeline" },
+  weighted: { href: "/admin/finance/revenue?from=narrative#projected", hrefLabel: "View open asks" },
+  realistic: { href: "/admin/finance/revenue?from=narrative", hrefLabel: "View revenue schedule" },
+  runway: { href: "/admin/finance?from=narrative#runway", hrefLabel: "View runway" },
+} as const;
+
+export default function MovementRaise({ money, linked = true }: { money: MoneySummary; linked?: boolean }) {
+  const link = (k: keyof typeof WIDGET_HREF) => (linked ? WIDGET_HREF[k] : {});
   const {
     floor, ceiling, secured, weightedPipeline, realistic, residual,
     cashOnHand, runwayMonths, monthlyBurn, runwayTargetMonths, runwayBridge,
@@ -126,16 +140,17 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
       )}
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
-        <StatBig label="Committed floor" value={formatUsd(floor)} sub="the necessary plan" accent />
-        <StatBig label="Secured to date" value={formatUsd(secured)} sub="raised this fiscal year" />
-        <StatBig label="Net-new to floor" value={formatUsd(residual)} sub="floor − secured − weighted" />
-        <StatBig label="Weighted pipeline" value={formatUsd(weightedPipeline)} sub="open asks × probability" />
-        <StatBig label="Realistic close" value={formatUsd(realistic)} sub="secured + weighted" />
+        <StatBig label="Committed floor" value={formatUsd(floor)} sub="the necessary plan" accent {...link("floor")} />
+        <StatBig label="Secured to date" value={formatUsd(secured)} sub="raised this fiscal year" {...link("secured")} />
+        <StatBig label="Net-new to floor" value={formatUsd(residual)} sub="floor − secured − weighted" {...link("residual")} />
+        <StatBig label="Weighted pipeline" value={formatUsd(weightedPipeline)} sub="open asks × probability" {...link("weighted")} />
+        <StatBig label="Realistic close" value={formatUsd(realistic)} sub="secured + weighted" {...link("realistic")} />
         <StatBig
           label="Cash runway"
           value={runwayMonths == null ? "—" : `${runwayMonths % 1 === 0 ? runwayMonths : runwayMonths.toFixed(1)} mo`}
           sub={`${formatUsd(cashOnHand)} on hand`}
           status={runwayStatus(runwayMonths, cashOnHand)}
+          {...link("runway")}
         />
       </div>
 

@@ -3,8 +3,9 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { loadRevenueSchedule } from "@/lib/finance/schedule";
 import { constituentName } from "@/lib/fundraising/display";
 import RevenueManager, { type Commitment, type ReceivedGift } from "./_components/RevenueManager";
+import NarrativeBackLink from "../../_components/NarrativeBackLink";
 
-type SearchParams = { year?: string };
+type SearchParams = { year?: string; from?: string };
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +75,7 @@ export default async function RevenuePage({
 
   return (
     <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8">
+      <NarrativeBackLink from={searchParams.from} />
       <header className="mb-6 flex items-baseline justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">

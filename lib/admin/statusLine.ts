@@ -42,7 +42,9 @@ export const getStatusLine = cache(async (): Promise<StatusLine> => {
   const today = new Date().toISOString().slice(0, 10);
 
   const overdue = queue.filter((it) => it.dueDate != null && it.dueDate < today);
-  const acksDue = queue.filter((it) => it.source === "acknowledgment").length;
+  // Thank-yous due: acknowledgment rows plus the ops tasks that mirror one
+  // (the queue keeps only one row per gift — the `ack` flag marks both forms).
+  const acksDue = queue.filter((it) => it.ack).length;
   const runway = finance.runwayMonths;
 
   const parts: string[] = [];

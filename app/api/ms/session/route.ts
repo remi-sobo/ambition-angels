@@ -4,7 +4,8 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { answersToTraits } from "@/lib/ms/instrument";
 import { traitsToRiasec, asRiasecProfile } from "@/lib/ms/riasec";
 import { rankCareers, type ScorableOccupation } from "@/lib/ms/score";
-import { newClaimCode } from "@/lib/ms/claim";
+import { newClaimCode, normalizeClaimCode, ROOM_CODE_LENGTH } from "@/lib/ms/claim";
+import { newHandle } from "@/lib/ms/handles";
 
 // Phase 2 spine (specs/ms-career-game.md solo flow): 30 tap answers in,
 // a session out. Fully deterministic — the scorer is a pure function over
@@ -58,6 +59,38 @@ export async function POST(req: NextRequest) {
 
   const ranked = rankCareers(traitsToRiasec(traits), catalog);
 
+  // Group mode (Phase 5): a room code joins this session to a live room
+  // and assigns a handle — never a typed name. A stale or wrong code is a
+  // clear error before the student invests eight minutes.
+  let roomId: string | null = null;
+  let handle: string | null = null;
+  if (body?.room_code != null) {
+    const roomCode = typeof body.room_code === "string" ? normalizeClaimCode(body.room_code) : "";
+    if (roomCode.length !== ROOM_CODE_LENGTH) {
+      return NextResponse.json({ error: "Invalid room code" }, { status: 400 });
+    }
+    const { data: room } = await supabase
+      .from("ms_rooms")
+      .select("id, expires_at")
+      .eq("room_code", roomCode)
+      .maybeSingle();
+    if (!room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
+    if (new Date(room.expires_at).getTime() < Date.now()) {
+      return NextResponse.json({ error: "Room has closed" }, { status: 410 });
+    }
+    roomId = room.id;
+    const { data: taken } = await supabase
+      .from("ms_sessions")
+      .select("handle")
+      .eq("room_id", room.id);
+    const inUse = new Set((taken ?? []).map((t) => t.handle));
+    for (let i = 0; i < 50 && !handle; i++) {
+      const candidate = newHandle();
+      if (!inUse.has(candidate)) handle = candidate;
+    }
+    if (!handle) handle = `Player ${inUse.size + 1}`;
+  }
+
   // Claim-code collisions are survivable (28^6 space) but not impossible:
   // retry the unique insert a few times before giving up loudly.
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -67,6 +100,8 @@ export async function POST(req: NextRequest) {
       .insert({
         claim_code: claimCode,
         trait_scores: traits,
+        room_id: roomId,
+        handle,
         ranked_careers: ranked.map((r) => ({
           soc_code: r.socCode,
           score: Math.round(r.score * 1000) / 1000,
@@ -77,7 +112,7 @@ export async function POST(req: NextRequest) {
       .select("id")
       .single();
     if (!error && data) {
-      return NextResponse.json({ sessionId: data.id, claimCode });
+      return NextResponse.json({ sessionId: data.id, claimCode, handle });
     }
     if (error && error.code !== "23505") {
       console.error("ms session: insert failed:", error);

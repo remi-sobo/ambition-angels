@@ -728,4 +728,92 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+-- ════ /ms career library (create_ms_career_library.sql) ══════════════════
+-- Access model under test (specs/ms-decisions-after-recon.md D8):
+--   - base tables are service-path only for EVERY non-service role — even
+--     the owner reads them through admin routes, not the session client;
+--   - anon reads ms_catalog and sees approved cards only, with no title,
+--     no title_variants, and no clue_8 (the answer never reaches the
+--     client before the reveal route).
+
+-- Seed as service role: one approved card, one draft.
+insert into ms_occupations (soc_code, title, title_variants, riasec, job_zone,
+                            pay_median, pay_p90, pay_source_url, pay_as_of)
+values
+  ('29-2055', 'Surgical Technologists', array['Surgical Tech'],
+   '{"R":5.0,"I":3.0,"A":1.0,"S":4.0,"E":1.5,"C":4.5}'::jsonb, 3,
+   62830, 90700, 'https://www.bls.gov/oes/current/oes292055.htm', 'May 2024'),
+  ('15-1255', 'Web and Digital Interface Designers', array['UX Researcher'],
+   '{"R":1.0,"I":4.5,"A":4.0,"S":2.0,"E":2.5,"C":3.0}'::jsonb, 4,
+   98090, 176490, 'https://www.bls.gov/oes/current/oes151255.htm', 'May 2024')
+on conflict (soc_code) do nothing;
+
+insert into ms_cards (soc_code, field, day_vignette,
+                      clue_1, clue_2, clue_3, clue_4, clue_5, clue_6, clue_7, clue_8,
+                      status, reviewed_by, reviewed_at)
+values
+  ('29-2055', 'health', 'leak-test day', 'c1','c2','c3','c4','c5','c6','c7',
+   'leak-test clue 8: the count is the last word',
+   'approved', 'remi@ambitionangels.org', now()),
+  ('15-1255', 'tech', 'leak-test draft day', 'c1','c2','c3','c4','c5','c6','c7','c8',
+   'draft', null, null)
+on conflict (soc_code) do nothing;
+
+-- The approved-requires-review constraint holds even for the service role.
+do $$ begin
+  update ms_cards set status = 'approved' where soc_code = '15-1255';
+  raise exception 'ms_cards accepted approved without reviewed_by (constraint missing)';
+exception when check_violation then null; -- expected
+end $$;
+
+-- Anon: catalog only, approved only, no answer columns.
+set role anon;
+do $$
+declare
+  cols text;
+begin
+  if (select count(*) from ms_catalog) <> 1 then
+    raise exception 'anon does not see exactly the approved card in ms_catalog';
+  end if;
+  if (select count(*) from ms_catalog where soc_code = '15-1255') <> 0 then
+    raise exception 'LEAK: anon sees a draft card in ms_catalog';
+  end if;
+  select string_agg(column_name, ',') into cols
+  from information_schema.columns
+  where table_schema = 'public' and table_name = 'ms_catalog'
+    and column_name in ('title', 'title_variants', 'clue_8');
+  if cols is not null then
+    raise exception 'LEAK: ms_catalog exposes answer column(s): %', cols;
+  end if;
+end $$;
+
+do $$ begin
+  perform count(*) from ms_cards;
+  raise exception 'LEAK: anon reads ms_cards directly';
+exception when insufficient_privilege then null; -- expected: grants revoked
+end $$;
+do $$ begin
+  perform count(*) from ms_occupations;
+  raise exception 'LEAK: anon reads ms_occupations directly';
+exception when insufficient_privilege then null; -- expected: grants revoked
+end $$;
+
+-- Owner session: same story — base tables are service-path only.
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  perform count(*) from ms_cards;
+  raise exception 'LEAK: owner session reads ms_cards directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+do $$ begin
+  perform count(*) from ms_occupations;
+  raise exception 'LEAK: owner session reads ms_occupations directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

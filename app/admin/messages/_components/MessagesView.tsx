@@ -415,7 +415,15 @@ export default function MessagesView({
           }`}
         >
           <header className="flex items-center justify-between gap-2 px-4 py-3.5 border-b border-hairline">
-            <h1 className="font-heading font-bold text-lg text-ink-1">Messages</h1>
+            {/* One-line purpose note so operators can tell this apart from the
+                Inbox notification feed (which only gets a pointer per unread
+                conversation — the chat itself lives here). */}
+            <div className="min-w-0">
+              <h1 className="font-heading font-bold text-lg text-ink-1 leading-tight">Messages</h1>
+              <p className="text-[11px] text-ink-3 truncate">
+                Chat with your team — alerts &amp; mentions live in Inbox
+              </p>
+            </div>
             <Button size="sm" onClick={() => setNewOpen(true)}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M12 5v14M5 12h14" />

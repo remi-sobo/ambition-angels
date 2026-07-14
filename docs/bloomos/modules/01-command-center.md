@@ -1,7 +1,23 @@
 # Module 01 — Command Center
 
-**Sidebar:** Overview · Executive Briefing
+**Sidebar:** Overview · Inbox · Messages · Strategy · Executive Briefing
 **Job:** the CEO opens BloomOS and knows, in 30 seconds, what's happening across the mission and what needs them today.
+
+## Inbox vs Messages (intentionally two sections)
+
+- **Inbox (`/admin/inbox`)** — the per-user **notification feed**: alerts,
+  mentions, task assignments, and system events from anywhere in BloomOS
+  (`notifications` table, `notifications_spine.sql`). Read-once rows with an
+  optional click-through link.
+- **Messages (`/admin/messages`)** — the **team chat** itself: DMs and group
+  conversations between org members (see `docs/bloomos/messaging-spec.md`).
+
+They overlap on purpose: when someone sends you a chat message, `postMessage`
+also drops **one** unread `message.received` pointer into your Inbox per
+conversation ("so nothing gets missed"), linking to the thread. Opening the
+thread clears both the chat unread and the Inbox pointer. So a new message
+showing up in both places is the designed behavior, not a duplicate feature —
+each page carries a plain-language subtitle stating its role.
 
 ## Overview (dashboard)
 

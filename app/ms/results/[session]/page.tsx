@@ -27,7 +27,7 @@ export default async function ResultsPage({ params }: { params: { session: strin
   const supabase = getSupabaseAdmin();
   const { data: session } = await supabase
     .from("ms_sessions")
-    .select("id, claim_code, ranked_careers, created_at, handle, room_id, ms_rooms(room_code)")
+    .select("id, claim_code, ranked_careers, summary_text, created_at, handle, room_id, ms_rooms(room_code)")
     .eq("id", params.session)
     .maybeSingle();
   if (!session) notFound();
@@ -54,6 +54,11 @@ export default async function ResultsPage({ params }: { params: { session: strin
         <h1 className="font-display text-5xl sm:text-6xl leading-[0.95] mb-3">
           Here&rsquo;s what you&rsquo;re <span className="text-orange">built for</span>
         </h1>
+        {session.summary_text && (
+          <p className="font-body text-lg text-cream/85 leading-relaxed mb-4">
+            {session.summary_text}
+          </p>
+        )}
         <p className="font-body text-cream/60 mb-10">
           Ranked by how you&rsquo;re actually wired. Tap one you&rsquo;ve never heard of. Tell nobody.
         </p>

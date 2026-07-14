@@ -34,6 +34,7 @@ Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + auth), S
 - `/companies`, `/program-partners` — outreach pages (noindex, not linked from nav)
 - `/update` — investor update (not linked from nav)
 - `/meet` — meeting scheduler backed by Supabase (`meeting_types`, bookings)
+- `/ms` — "What Are You Built For," the middle-school career game (specs/ms-career-game.md + amendments; noindex, standalone chrome, shareable by link only). Solo: landing → 30-item tap-only wizard (`/ms/assess`) → deterministic RIASEC ranking (`/ms/results/[session]`) → card play (`/ms/card/[session]/[soc]`) → permanent no-login deck by 6-char claim code (`/ms/deck/[code]`). Group: `/ms/host` opens a room, `/ms/room/[room]` is the projected screen, students join by 4-char room code. APIs under `app/api/ms/*` (session, reveal, deliver, room). Hard rules: no student email/name anywhere (auto handles), no LLM in the matching path, card `title`/`clue_8` only via the reveal route (which writes `clues_used`), AI live only for the results summary + facilitator prompts.
 
 **Admin** — a large internal dashboard under `/admin` (finance, fundraising, ops, KPIs, board, compliance), running as an installable PWA. Auth via `lib/admin/auth.ts`; data in Supabase; HubSpot sync for fundraising.
 

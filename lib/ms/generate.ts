@@ -136,7 +136,8 @@ export async function generateCard(occ: OccupationInput): Promise<GeneratedCard>
     system: buildSystemPrompt(),
     prompt: buildUserPrompt(occ),
     tier: "deep",
-    maxTokens: 2000,
+    maxTokens: 1400, // vignette + six clues; a tighter ceiling keeps the wait ~30s
+
     tool: CARD_TOOL,
   });
 

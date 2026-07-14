@@ -1,8 +1,11 @@
 "use client";
 
 // Client pieces of the career library pipeline: curate an imported
-// occupation into the queue, generate a draft, review it (read the ladder,
-// edit inline, approve). Approval is the one action that cannot be batched.
+// occupation into the queue, generate a draft (one deep-model call,
+// ~30 seconds — the UI says so and opens the card when it lands), review
+// it (read the ladder, edit inline, approve). "Generate all queued" works
+// through the queue one card at a time. Approval is the one action that
+// cannot be batched, and never will be.
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -47,11 +50,15 @@ const CLUE_LABELS = [
   "The thing nobody knows",
 ];
 
+const GENERATING_LABEL = "Writing the card… ~30s";
+
 function useApi() {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
-  const call = async (key: string, url: string, method: string, body?: unknown) => {
+  const [notice, setNotice] = useState<string | null>(null);
+  const call = async (key: string, url: string, method: string, body?: unknown): Promise<boolean> => {
     setBusy(key);
+    setNotice(null);
     try {
       const res = await fetch(url, {
         method,
@@ -59,14 +66,20 @@ function useApi() {
         body: body === undefined ? undefined : JSON.stringify(body),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) alert(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setNotice(j.error ?? `That didn't work (HTTP ${res.status}). Try again.`);
+      }
       router.refresh();
       return res.ok;
+    } catch {
+      setNotice("Network hiccup — the request may still be finishing. Give it a few seconds, then refresh.");
+      router.refresh();
+      return false;
     } finally {
       setBusy(null);
     }
   };
-  return { busy, call };
+  return { busy, notice, setNotice, call };
 }
 
 const fmtPay = (n: number | null) => (n == null ? "—" : `$${n.toLocaleString("en-US")}`);
@@ -92,10 +105,17 @@ function Chip({ children, tone = "neutral" }: { children: React.ReactNode; tone?
   );
 }
 
+function Notice({ text }: { text: string | null }) {
+  if (!text) return null;
+  return (
+    <p className="text-[12px] text-orange-dark bg-orange-light rounded-lg px-3 py-2 mt-2">{text}</p>
+  );
+}
+
 // ── Review panel ──────────────────────────────────────────────────────────
 
 function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
-  const { busy, call } = useApi();
+  const { busy, notice, call } = useApi();
   const [edits, setEdits] = useState<Record<string, string>>({});
   const isDraft = card.status === "draft";
   const clueKeys = ["clue_1", "clue_2", "clue_3", "clue_4", "clue_5", "clue_6", "clue_7", "clue_8"] as const;
@@ -162,6 +182,8 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
         })}
       </div>
 
+      <Notice text={notice} />
+
       <div className="flex flex-wrap items-center gap-2 pt-1">
         {isDraft && dirty && (
           <button
@@ -191,7 +213,7 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
               disabled={busy !== null}
               className="text-[12px] font-semibold bg-tile text-ink-1 px-4 py-1.5 rounded-full disabled:opacity-50"
             >
-              {busy === "generate" ? "Generating…" : card.day_vignette ? "Regenerate" : "Generate draft"}
+              {busy === "generate" ? GENERATING_LABEL : card.day_vignette ? "Regenerate" : "Generate draft"}
             </button>
             <button
               onClick={() =>
@@ -256,10 +278,11 @@ export function CareersControls({
   occupations: OccupationView[];
   cards: CardView[];
 }) {
-  const { busy, call } = useApi();
+  const { busy, notice, setNotice, call } = useApi();
   const [search, setSearch] = useState("");
   const [zone, setZone] = useState<number | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const [batchProgress, setBatchProgress] = useState<string | null>(null);
 
   const cardBySoc = useMemo(() => new Map(cards.map((c) => [c.soc_code, c])), [cards]);
   const occBySoc = useMemo(() => new Map(occupations.map((o) => [o.soc_code, o])), [occupations]);
@@ -268,8 +291,36 @@ export function CareersControls({
     .map((c) => ({ card: c, occ: occBySoc.get(c.soc_code) }))
     .filter((x): x is { card: CardView; occ: OccupationView } => Boolean(x.occ));
   const drafts = catalog.filter((x) => x.card.status === "draft");
+  const queued = drafts.filter((x) => !x.card.day_vignette);
   const approved = catalog.filter((x) => x.card.status === "approved");
   const retired = catalog.filter((x) => x.card.status === "retired");
+
+  const anythingBusy = busy !== null || batchProgress !== null;
+
+  const generateOne = async (soc: string): Promise<boolean> => {
+    const ok = await call(`gen-${soc}`, "/api/admin/careers/generate", "POST", { soc_code: soc });
+    if (ok) setOpen(soc);
+    return ok;
+  };
+
+  const generateAllQueued = async () => {
+    const list = queued.map((x) => ({ soc: x.card.soc_code, title: x.occ.title }));
+    for (let i = 0; i < list.length; i++) {
+      setBatchProgress(`Writing ${i + 1} of ${list.length}: ${list[i].title}…`);
+      const ok = await call(`gen-${list[i].soc}`, "/api/admin/careers/generate", "POST", {
+        soc_code: list[i].soc,
+      });
+      if (!ok) {
+        setBatchProgress(null);
+        setNotice(
+          `Stopped at ${list[i].title} — ${list.length - i - 1} still queued. Fix or retry, then run it again; finished drafts are saved.`
+        );
+        return;
+      }
+    }
+    setBatchProgress(null);
+    setNotice(`Done — ${list.length} drafts written. Read each one, then approve.`);
+  };
 
   const results = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -302,11 +353,11 @@ export function CareersControls({
       {card.status === "draft" && !card.day_vignette && open !== card.soc_code && (
         <div className="mt-2">
           <button
-            onClick={() => call(`gen-${card.soc_code}`, "/api/admin/careers/generate", "POST", { soc_code: card.soc_code })}
-            disabled={busy !== null}
+            onClick={() => generateOne(card.soc_code)}
+            disabled={anythingBusy}
             className="text-[12px] font-semibold bg-ink-1 text-surface px-4 py-1.5 rounded-full disabled:opacity-50"
           >
-            {busy === `gen-${card.soc_code}` ? "Generating…" : "Generate draft"}
+            {busy === `gen-${card.soc_code}` ? GENERATING_LABEL : "Generate draft"}
           </button>
         </div>
       )}
@@ -316,11 +367,34 @@ export function CareersControls({
 
   return (
     <div className="space-y-8">
+      {(notice || batchProgress) && (
+        <div className="bg-surface shadow-panel border-[1.5px] border-outline rounded-xl px-4 py-3">
+          {batchProgress && (
+            <p className="text-[13px] font-semibold text-ink-1">
+              <span className="inline-block w-3.5 h-3.5 border-2 border-outline border-t-ink-1 rounded-full animate-spin align-[-2px] mr-2" />
+              {batchProgress}
+            </p>
+          )}
+          <Notice text={notice} />
+        </div>
+      )}
+
       {drafts.length > 0 && (
         <section>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2 mb-2">
-            In the pipeline ({drafts.length})
-          </p>
+          <div className="flex flex-wrap items-center gap-3 mb-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2">
+              In the pipeline ({drafts.length})
+            </p>
+            {queued.length > 1 && (
+              <button
+                onClick={generateAllQueued}
+                disabled={anythingBusy}
+                className="text-[12px] font-semibold bg-ink-1 text-surface px-4 py-1.5 rounded-full disabled:opacity-50"
+              >
+                Generate all queued ({queued.length}) — about {Math.ceil(queued.length * 0.6)} min
+              </button>
+            )}
+          </div>
           <div className="space-y-2">
             {drafts.map((x) => (
               <CatalogRow key={x.card.soc_code} {...x} />
@@ -380,7 +454,7 @@ export function CareersControls({
               <span className="ml-auto" />
               <button
                 onClick={() => call(`q-${o.soc_code}`, "/api/admin/careers/queue", "POST", { soc_code: o.soc_code })}
-                disabled={busy !== null}
+                disabled={anythingBusy}
                 className="text-[12px] font-semibold bg-tile text-ink-1 px-4 py-1.5 rounded-full hover:bg-[#EFE6D4] disabled:opacity-50"
               >
                 {busy === `q-${o.soc_code}` ? "Adding…" : "Add to queue"}

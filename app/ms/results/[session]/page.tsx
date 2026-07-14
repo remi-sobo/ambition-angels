@@ -26,7 +26,7 @@ export default async function ResultsPage({ params }: { params: { session: strin
   const supabase = getSupabaseAdmin();
   const { data: session } = await supabase
     .from("ms_sessions")
-    .select("id, ranked_careers, created_at")
+    .select("id, claim_code, ranked_careers, created_at")
     .eq("id", params.session)
     .maybeSingle();
   if (!session) notFound();
@@ -88,6 +88,21 @@ export default async function ResultsPage({ params }: { params: { session: strin
             );
           })}
         </ol>
+
+        <Link
+          href={`/ms/deck/${session.claim_code}`}
+          className="block mt-10 rounded-2xl border border-orange/50 hover:border-orange transition-colors px-6 py-5"
+        >
+          <p className="font-heading text-[11px] tracking-[0.25em] uppercase text-cream/50">
+            Your deck code · write this down
+          </p>
+          <p className="font-display text-5xl sm:text-6xl tracking-[0.12em] text-orange mt-2">
+            {session.claim_code}
+          </p>
+          <p className="font-body text-sm text-cream/60 mt-2">
+            Everything you explore lands in your deck. This code opens it on any device, forever.
+          </p>
+        </Link>
 
         <p className="font-body text-[11px] text-cream/30 mt-10">
           Pay figures: U.S. Bureau of Labor Statistics, median annual wage. Career data:

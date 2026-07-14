@@ -822,10 +822,13 @@ insert into ms_sessions (claim_code, trait_scores, ranked_careers)
 values ('LEAKT1', '{"build":1}'::jsonb, '[]'::jsonb)
 on conflict (claim_code) do nothing;
 
--- Explored rows (create_ms_explored.sql) get the same treatment.
+-- Explored rows (create_ms_explored.sql) and deliveries
+-- (create_ms_deliveries.sql — adult emails live here) get the same treatment.
 insert into ms_explored (session_id, soc_code, clues_used)
 select s.id, '29-2055', 4 from ms_sessions s where s.claim_code = 'LEAKT1'
 on conflict do nothing;
+insert into ms_deliveries (session_id, adult_email)
+select s.id, 'leak-test-adult@example.com' from ms_sessions s where s.claim_code = 'LEAKT1';
 
 set role anon;
 do $$ begin
@@ -836,6 +839,11 @@ end $$;
 do $$ begin
   perform count(*) from ms_explored;
   raise exception 'LEAK: anon reads ms_explored directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
+do $$ begin
+  perform count(*) from ms_deliveries;
+  raise exception 'LEAK: anon reads ms_deliveries (adult emails) directly';
 exception when insufficient_privilege then null; -- expected
 end $$;
 reset role;
@@ -849,6 +857,11 @@ end $$;
 do $$ begin
   perform count(*) from ms_explored;
   raise exception 'LEAK: owner session reads ms_explored directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+do $$ begin
+  perform count(*) from ms_deliveries;
+  raise exception 'LEAK: owner session reads ms_deliveries directly (service-path only)';
 exception when insufficient_privilege then null; -- expected
 end $$;
 

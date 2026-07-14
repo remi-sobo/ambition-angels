@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
-import { autoPlotFinalReport, findOrCreateFunder } from "@/lib/fundraising/grants";
+import {
+  autoPlotFinalReport,
+  findOrCreateFunder,
+  isTerminalGrantStage,
+} from "@/lib/fundraising/grants";
 
 const STAGES = [
   "prospect", "qualified", "loi", "proposal", "submitted",
@@ -87,13 +91,18 @@ export async function POST(req: NextRequest) {
   // load (Phase 3). org_id is taken explicitly from the grant row, never the
   // column default, so this stays correct once a second tenant exists; RLS
   // governs the insert via the same authenticated client as the grant insert.
+  // A grant backfilled straight into a terminal stage (declined/closed) gets a
+  // 'done' project — its work is already over, so it must not land on the ops
+  // "Active Projects" surface.
+  const projectDone = isTerminalGrantStage(stage);
   const { error: projErr } = await supabase.from("ops_projects").insert({
     grant_id: data.id,
     org_id: data.org_id,
     title: data.name,
     category: "fundraising",
     created_by: user ?? "remi",
-    status: "active",
+    status: projectDone ? "done" : "active",
+    ...(projectDone ? { completed_at: new Date().toISOString() } : {}),
   });
   if (projErr) {
     console.error("[grants] linked-project insert failed:", projErr.message);

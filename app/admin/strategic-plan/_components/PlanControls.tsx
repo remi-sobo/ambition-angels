@@ -54,6 +54,7 @@ export type PlanKpi = {
   metric_key: string | null;
   status: string;
   cadence: string | null;
+  notes: string | null;
   last_updated_at: string | null;
 };
 
@@ -1013,9 +1014,9 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
       <button
         onClick={() => setShowDetails((v) => !v)}
         className={`text-sm leading-none ${showDetails ? "text-orange" : "text-ink-3 hover:text-orange"}`}
-        aria-label="Edit unit, owner, cadence"
+        aria-label="Edit unit, owner, cadence, note"
         aria-expanded={showDetails}
-        title="Unit · owner · cadence"
+        title="Unit · owner · cadence · note"
       >⋯</button>
       <button onClick={() => void remove()} className="text-ink-3 hover:text-expense">×</button>
     </div>
@@ -1049,6 +1050,17 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
             ariaLabel="Measure cadence"
             className="text-ink-1"
             inputClassName={`${inputCls} !py-0.5 !px-1.5 !text-xs w-24`}
+          />
+        </span>
+        <span className="flex items-start gap-1 w-full">Note
+          <EditableText
+            value={kpi.notes}
+            onSave={(v) => patch({ notes: v })}
+            placeholder="+ what's behind this number?"
+            multiline
+            ariaLabel="Measure note"
+            className="text-ink-1 flex-1 min-w-0 whitespace-pre-wrap"
+            inputClassName={`${inputCls} w-full !py-1 !px-1.5 !text-xs`}
           />
         </span>
       </div>

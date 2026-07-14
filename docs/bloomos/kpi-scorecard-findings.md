@@ -77,3 +77,25 @@ the place the team actually runs KPIs from.
 
 Either way, the data layer is already live and shared across the plan,
 scorecard, and narrative — this is a UI/workflow decision, not a plumbing one.
+
+## 5. Decision: Option B (scoped) — shipped
+
+Remi chose Option B. What changed:
+
+- **`plan_kpis.notes` column** (`supabase/migrations/plan_kpis_notes.sql` —
+  apply by hand in the Supabase SQL editor, like the other migrations).
+- **Scorecard cards now edit in place:** manual values get a visible
+  "✎ Update" button (no more hunt-the-pencil), status is a dropdown, the owner
+  is reassignable from the provenance row, and every card has a click-to-edit
+  note ("+ add note").
+- **Notes also show/edit on the plan page** (the "⋯" details toggle on each
+  measure row) and the objective page.
+- **Errors are no longer silent:** a failed save shows the reason inline — a
+  permissions failure now says to ask an admin for the manage permission
+  instead of a generic "Could not save".
+- **Division of labor kept:** structural editing (add/delete measures, targets,
+  baselines, re-parenting) stays on the plan page; the scorecard is where you
+  run the KPIs.
+
+Still open: confirm Shannon's account has `org.manage` — without it, edits
+will fail (now with a clear message).

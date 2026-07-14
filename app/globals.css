@@ -407,3 +407,17 @@
     min-height: 40px;
   }
 }
+
+/* /ms THE ANSWER: the 400ms full-screen card turn (specs/ms-career-game.md
+   design direction). Applied via motion-safe:animate-[ms-card-turn_400ms_ease-out],
+   so prefers-reduced-motion users get the title with no turn at all. */
+@keyframes ms-card-turn {
+  from {
+    transform: rotateY(90deg);
+    opacity: 0;
+  }
+  to {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}

@@ -165,6 +165,7 @@ ordered=(
   reed_suggestions_payload.sql
   create_ms_career_library.sql
   create_ms_sessions.sql
+  create_ms_explored.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

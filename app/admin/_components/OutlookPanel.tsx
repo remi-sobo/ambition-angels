@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Outlook, OutlookWindow } from "@/lib/admin/outlook";
 import ExplainWithReed from "./ExplainWithReed";
 
@@ -9,6 +10,10 @@ import ExplainWithReed from "./ExplainWithReed";
 // what's due, metrics trending off-target). Expand-on-demand, never a wall
 // of rows. All numbers are deterministic reads of canonical sources
 // (lib/admin/outlook.ts); nothing here is narrated or guessed.
+//
+// Each chip's due count is a labeled link ("N action items due") into
+// /admin/queue?due=<days>, which lists the exact rows behind the number
+// (same loader, same isDueInWindow predicate).
 
 const LEVEL_DOT: Record<OutlookWindow["level"], string> = {
   critical: "bg-status-critical",
@@ -41,22 +46,32 @@ export default function OutlookPanel({ outlook }: { outlook: Outlook }) {
           Outlook
         </span>
         {outlook.windows.map((w) => (
-          <button
+          <span
             key={w.days}
-            type="button"
-            onClick={() => setOpen(open === w.days ? null : w.days)}
-            aria-expanded={open === w.days}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${
+            className={`inline-flex items-center rounded-full border text-xs font-semibold transition-colors ${
               open === w.days
                 ? "border-orange bg-orange/10 text-ink-1"
-                : "border-outline bg-tile text-ink-2 hover:text-ink-1"
+                : "border-outline bg-tile text-ink-2"
             }`}
           >
-            <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${LEVEL_DOT[w.level]}`} />
-            {w.days}d
-            {w.projectedCash !== null && <span className="tabular-nums">{usd(w.projectedCash)}</span>}
-            <span className="text-ink-3 tabular-nums">· {w.dueTotal} due</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setOpen(open === w.days ? null : w.days)}
+              aria-expanded={open === w.days}
+              className="inline-flex items-center gap-1.5 pl-2.5 py-1 hover:text-ink-1 transition-colors"
+            >
+              <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${LEVEL_DOT[w.level]}`} />
+              {w.days}d
+              {w.projectedCash !== null && <span className="tabular-nums">{usd(w.projectedCash)}</span>}
+            </button>
+            <Link
+              href={`/admin/queue?due=${w.days}`}
+              title={`See the ${w.dueTotal} action item${w.dueTotal === 1 ? "" : "s"} due within ${w.days} days`}
+              className="pl-1.5 pr-2.5 py-1 text-ink-3 tabular-nums hover:text-orange transition-colors"
+            >
+              · {w.dueTotal} action item{w.dueTotal === 1 ? "" : "s"} due
+            </Link>
+          </span>
         ))}
       </div>
 
@@ -78,13 +93,24 @@ export default function OutlookPanel({ outlook }: { outlook: Outlook }) {
             )}
           </p>
           <p>
-            <span className="font-semibold text-ink-1">Due in the window:</span>{" "}
+            <span className="font-semibold text-ink-1">Action items due in the window:</span>{" "}
             {active.dueTotal === 0
               ? "nothing dated."
               : Object.entries(active.dueByModule)
                   .sort((a, b) => b[1] - a[1])
                   .map(([m, n]) => `${n} ${MODULE_LABEL[m] ?? m}`)
                   .join(" · ") + "."}
+            {active.dueTotal > 0 && (
+              <>
+                {" "}
+                <Link
+                  href={`/admin/queue?due=${active.days}`}
+                  className="font-semibold text-orange hover:text-orange-dark"
+                >
+                  View all {active.dueTotal} →
+                </Link>
+              </>
+            )}
           </p>
           {active.metricsOffTrack.length > 0 && (
             <p>

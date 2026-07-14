@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildOutlook, type OutlookInputs } from "@/lib/admin/outlook";
+import { addDays, buildOutlook, isDueInWindow, type OutlookInputs } from "@/lib/admin/outlook";
 
 // Status & Outlook (spec #5) — the pure 30/60/90 math over canonical inputs.
 
@@ -48,6 +48,20 @@ describe("cash projection", () => {
 });
 
 describe("deadline buckets", () => {
+  // The same predicate the /admin/queue drilldown filters with — the list a
+  // chip links to must be made of exactly the rows dueTotal counted.
+  test("isDueInWindow matches buildOutlook's (today, end] edges", () => {
+    const end = addDays(TODAY, 30);
+    expect(end).toBe("2026-08-09");
+    expect(isDueInWindow(null, TODAY, end)).toBe(false);
+    expect(isDueInWindow("2026-07-01", TODAY, end)).toBe(false); // overdue
+    expect(isDueInWindow(TODAY, TODAY, end)).toBe(false); // due today is not "upcoming"
+    expect(isDueInWindow("2026-07-11", TODAY, end)).toBe(true);
+    expect(isDueInWindow("2026-08-09", TODAY, end)).toBe(true); // window edge inclusive
+    expect(isDueInWindow("2026-08-10", TODAY, end)).toBe(false);
+  });
+
+
   test("items bucket by window edge and module; overdue counted separately", () => {
     const { windows, overdueNow } = buildOutlook(
       base({

@@ -39,6 +39,12 @@ export default function MsLandingPage() {
         <p className="font-body text-sm text-cream/40 mt-5">
           No sign-up. No email. Nothing to lose.
         </p>
+        <Link
+          href="/ms/deck"
+          className="font-body text-sm text-cream/50 hover:text-cream underline underline-offset-4 mt-8"
+        >
+          Played before? Open your deck
+        </Link>
       </div>
       <footer className="px-6 py-5 text-center">
         <p className="font-body text-[11px] text-cream/30">

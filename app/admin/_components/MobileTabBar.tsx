@@ -9,6 +9,7 @@ import { useReedLauncher } from "./reed/ReedLauncherProvider";
 import { ReedMark } from "./reed/ReedPanel";
 import { useAdminBadges } from "./AdminBadges";
 import type { AdminUser } from "@/lib/admin/auth";
+import type { FeatureKey } from "@/lib/admin/entitlements";
 
 /**
  * Phone-only floating home bar (`lg:hidden`) — an Oura-style dock pinned to the
@@ -22,7 +23,9 @@ import type { AdminUser } from "@/lib/admin/auth";
  * only mounts at xl); this bar replaces them on phones.
  */
 
-type Tab = { label: string; href: string; icon: ReactNode };
+// `feature` mirrors the sidebar's entitlement mapping (core fence B1): a tab
+// whose org lacks the key is dropped from the dock.
+type Tab = { label: string; href: string; icon: ReactNode; feature?: FeatureKey };
 
 const TABS: Tab[] = [
   {
@@ -38,6 +41,7 @@ const TABS: Tab[] = [
   {
     label: "Tasks",
     href: "/admin/ops",
+    feature: "modules.ops",
     icon: (
       <>
         <rect x="4.5" y="4.5" width="15" height="15" rx="2.5" />
@@ -48,6 +52,7 @@ const TABS: Tab[] = [
   {
     label: "Messages",
     href: "/admin/messages",
+    feature: "modules.messages",
     icon: (
       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
     ),
@@ -55,6 +60,7 @@ const TABS: Tab[] = [
   {
     label: "Money",
     href: "/admin/finance",
+    feature: "modules.finance",
     icon: (
       <>
         <path d="M12 4a8 8 0 1 0 8 8h-8V4z" />
@@ -65,6 +71,7 @@ const TABS: Tab[] = [
   {
     label: "Funds",
     href: "/admin/fundraising",
+    feature: "modules.fundraising",
     icon: (
       <path d="M12 19.5C7 15.5 4 12.8 4 9.6 4 7.4 5.7 6 7.6 6c1.6 0 2.9.8 4.4 2.6C13.5 6.8 14.8 6 16.4 6 18.3 6 20 7.4 20 9.6c0 3.2-3 5.9-8 9.9z" />
     ),
@@ -85,13 +92,19 @@ function activeHref(pathname: string): string | null {
 export default function MobileTabBar({
   currentUser,
   reedEnabled,
+  features,
 }: {
   currentUser: AdminUser | null;
   reedEnabled: boolean;
+  /** Enabled entitlement keys for the session org; null = don't filter. */
+  features?: string[] | null;
 }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const active = activeHref(pathname);
+  const tabs = features
+    ? TABS.filter((tab) => !tab.feature || features.includes(tab.feature))
+    : TABS;
   const { open: openReed } = useReedLauncher();
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -120,7 +133,7 @@ export default function MobileTabBar({
           aria-label="Quick navigation"
           className="pointer-events-auto flex flex-1 max-w-sm items-stretch justify-around rounded-full border border-white/10 bg-navy/95 backdrop-blur-md shadow-2xl shadow-black/40 px-1.5 py-1.5"
         >
-          {TABS.map((tab) => {
+          {tabs.map((tab) => {
             const isActive = active === tab.href;
             return (
               <Link

@@ -7,6 +7,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS } from "../_lib/stages";
 
+// Per-org stage vocabulary (participant_stages, program spine spec #4),
+// passed down from the server page. The static constants above remain only
+// as the default when no stages are provided.
+export type StageOption = { stage_key: string; label: string; terminal: boolean };
+
+const FALLBACK_STAGES: StageOption[] = STAGE_ORDER.map((s) => ({
+  stage_key: s,
+  label: STAGE_LABELS[s],
+  terminal: !JOURNEY_STAGES.includes(s as (typeof JOURNEY_STAGES)[number]),
+}));
+
 export type Student = {
   id: string;
   first_name: string;
@@ -39,7 +50,13 @@ export function fullName(s: Pick<Student, "first_name" | "last_name">) {
   return [s.first_name, s.last_name].filter(Boolean).join(" ");
 }
 
-export function StudentRow({ student }: { student: Student }) {
+export function StudentRow({
+  student,
+  stages = FALLBACK_STAGES,
+}: {
+  student: Student;
+  stages?: StageOption[];
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -74,10 +91,11 @@ export function StudentRow({ student }: { student: Student }) {
   };
 
   const contactEmail = student.email ?? student.guardian_email;
-  const stageIdx = JOURNEY_STAGES.indexOf(student.stage as (typeof JOURNEY_STAGES)[number]);
-  const next = stageIdx >= 0 && stageIdx < JOURNEY_STAGES.length - 1
-    ? JOURNEY_STAGES[stageIdx + 1]
-    : null;
+  // "Advance" walks the org's non-terminal journey in order.
+  const journey = stages.filter((s) => !s.terminal);
+  const stageIdx = journey.findIndex((s) => s.stage_key === student.stage);
+  const next = stageIdx >= 0 && stageIdx < journey.length - 1 ? journey[stageIdx + 1] : null;
+  const labelOf = (key: string) => stages.find((s) => s.stage_key === key)?.label ?? key;
 
   return (
     <article
@@ -116,17 +134,20 @@ export function StudentRow({ student }: { student: Student }) {
           onChange={(e) => patch({ stage: e.target.value })}
           className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1 text-ink-1 cursor-pointer"
         >
-          {STAGE_ORDER.map((s) => (
-            <option key={s} value={s} className="bg-surface">{STAGE_LABELS[s]}</option>
+          {stages.map((s) => (
+            <option key={s.stage_key} value={s.stage_key} className="bg-surface">{s.label}</option>
           ))}
+          {!stages.some((s) => s.stage_key === student.stage) && (
+            <option value={student.stage} className="bg-surface">{labelOf(student.stage)}</option>
+          )}
         </select>
         {next && (
           <button
-            onClick={() => patch({ stage: next, touch: true })}
+            onClick={() => patch({ stage: next.stage_key, touch: true })}
             disabled={busy}
             className="px-2 py-1 rounded-md text-[11px] font-semibold bg-orange/15 text-orange hover:bg-orange/25"
           >
-            Advance → {STAGE_LABELS[next]}
+            Advance → {next.label}
           </button>
         )}
         <button

@@ -41,9 +41,6 @@ function MovementNav() {
         <Link href="/admin/strategic-plan/narrative?present=1" className="font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full">
           ▶ Present
         </Link>
-        <Link href="/admin/strategic-plan" className="text-ink-2 hover:text-orange hover:underline">
-          ← Strategic Plan
-        </Link>
       </span>
     </div>
   );

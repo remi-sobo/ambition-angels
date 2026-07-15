@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { AdminUser } from "@/lib/admin/auth";
 import {
+  ASSIGNEE_REQUIRED_MESSAGE,
   TASK_CATEGORIES,
   TASK_PRIORITIES,
   categoryLabel,
   priorityLabel,
+  taskHasAssignee,
   type TaskCategory,
   type TaskPriority,
 } from "@/app/admin/ops/_types/ops";
@@ -42,6 +44,7 @@ export default function QuickAddModal({
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [assigneeError, setAssigneeError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   // Close on Escape.
@@ -84,6 +87,10 @@ export default function QuickAddModal({
     setError(null);
     if (!title.trim()) {
       setError("Title is required.");
+      return;
+    }
+    if (!taskHasAssignee(assignee, category)) {
+      setAssigneeError(ASSIGNEE_REQUIRED_MESSAGE);
       return;
     }
     setSaving(true);
@@ -156,7 +163,10 @@ export default function QuickAddModal({
             <Field label="Category" required>
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value as TaskCategory)}
+                onChange={(e) => {
+                  setCategory(e.target.value as TaskCategory);
+                  setAssigneeError(null);
+                }}
                 className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               >
                 {TASK_CATEGORIES.map((c) => (
@@ -185,13 +195,19 @@ export default function QuickAddModal({
             <Field label="Assigned to">
               <select
                 value={assignee}
-                onChange={(e) => setAssignee(e.target.value as AdminUser | "")}
+                onChange={(e) => {
+                  setAssignee(e.target.value as AdminUser | "");
+                  setAssigneeError(null);
+                }}
                 className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               >
                 <option value="">Unassigned</option>
                 <option value="remi">Remi</option>
                 <option value="shannon">Shannon</option>
               </select>
+              {assigneeError && (
+                <p className="mt-1 text-expense text-xs">{assigneeError}</p>
+              )}
             </Field>
             <Field label="Due date">
               <input

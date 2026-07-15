@@ -144,14 +144,9 @@ export default async function ProjectsListPage({
   return (
     <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8">
       <header className="flex items-baseline justify-between gap-4 mb-6 flex-wrap">
-        <div>
-          <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
-            Projects
-          </h1>
-          <Link href="/admin/ops" className="text-xs text-ink-2 hover:text-ink-1 mt-1 inline-block">
-            ← Ops
-          </Link>
-        </div>
+        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
+          Projects
+        </h1>
         <div className="text-xs text-ink-2">
           {totalCount > 0 ? (
             <>

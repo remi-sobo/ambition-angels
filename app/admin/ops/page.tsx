@@ -1,10 +1,9 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getAdminUser } from "@/lib/admin/auth";
+import { loadStuckProjectContext } from "@/lib/admin/ops/stuck-context";
 import {
-  TASK_CATEGORIES,
   readTaskHealth,
   todayISO,
-  type TaskCategory,
   type OpsProject,
   type OpsTask,
 } from "./_types/ops";
@@ -55,6 +54,12 @@ export default async function OpsLandingPage({
       .order("display_order", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: true })
       .limit(1000),
+    // "Active Projects" = ops_projects rows whose lifecycle status is 'active'
+    // (not 'paused'/'done'/'archived'), 10 most recently touched. Status is set
+    // by hand on the project page, with one automation: every grant gets a
+    // workspace project at creation, and when the grant reaches a terminal
+    // stage (declined/closed) that project is auto-marked 'done' so finished
+    // grants don't linger here (lib/fundraising/grants.ts syncGrantProjectStatus).
     supabase
       .from("ops_projects")
       .select("*")
@@ -113,15 +118,21 @@ export default async function OpsLandingPage({
     .filter((t) => readTaskHealth(t).health === "stuck")
     .sort((a, b) => readTaskHealth(b).ageDays - readTaskHealth(a).ageDays);
 
+  // Project context (title + donor/partnership identifiers) for the stuck
+  // cards — small lookups scoped to just the projects stuck tasks reference,
+  // and no queries at all when there are none.
+  const stuckProjectContext = await loadStuckProjectContext(
+    supabase,
+    stuckTasks,
+    allTasks
+  );
+
+  // Open (not done, not archived) tasks — feeds the per-project counts and
+  // the By Category panel, which derives its own counts + expandable lists
+  // from this same array so the two can never disagree.
+  const openTasks = allTasks.filter((t) => t.status !== "done" && !t.archived_at);
   const openTaskCountsByProject = new Map<string, number>();
-  const categoryCounts = Object.fromEntries(
-    TASK_CATEGORIES.map((c) => [c, 0])
-  ) as Record<TaskCategory, number>;
-  for (const t of allTasks) {
-    if (t.status === "done" || t.archived_at) continue;
-    if ((TASK_CATEGORIES as readonly string[]).includes(t.category)) {
-      categoryCounts[t.category]++;
-    }
+  for (const t of openTasks) {
     if (t.project_id) {
       openTaskCountsByProject.set(
         t.project_id,
@@ -133,7 +144,7 @@ export default async function OpsLandingPage({
   return (
     <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       <PageHeader
-        title="Ops"
+        title="Tasks"
         subtitle="Today, this week, projects, categories. Anchor for the day."
       />
 
@@ -143,7 +154,11 @@ export default async function OpsLandingPage({
         currentUser={currentUser}
       />
 
-      <StuckWorkRollup tasks={stuckTasks} projectNames={projectNames} />
+      <StuckWorkRollup
+        tasks={stuckTasks}
+        projectNames={projectNames}
+        projectContext={stuckProjectContext}
+      />
 
       <TodayView
         dueToday={dueToday}
@@ -155,7 +170,7 @@ export default async function OpsLandingPage({
         projects={activeProjects}
         openTaskCounts={openTaskCountsByProject}
       />
-      <CategoryCounts counts={categoryCounts} />
+      <CategoryCounts tasks={openTasks} projectNames={projectNames} />
     </div>
   );
 }

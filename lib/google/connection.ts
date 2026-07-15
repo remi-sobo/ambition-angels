@@ -67,12 +67,18 @@ export async function updateConnectionMeta(
   if (error) throw new Error(`connection meta update failed: ${error.message}`);
 }
 
-/** Store (or rotate) a user's encrypted Google Calendar refresh token. */
+/** Store (or rotate) a user's encrypted Google Calendar refresh token for one calendar. */
 export async function upsertGoogleCalendarConnection(args: {
   orgId: string;
   userId: string;
   refreshToken: string;
   calendarId?: string;
+  /** Calendar display name, shown on the Settings card. */
+  label?: string;
+  /** The Google account this token belongs to (primary calendar id). */
+  accountEmail?: string;
+  /** True for the account's own primary calendar — preferred write target. */
+  isPrimary?: boolean;
 }): Promise<void> {
   const calendarId = args.calendarId ?? "primary";
   const enc = toByteaHex(encryptSecret(args.refreshToken));
@@ -85,12 +91,83 @@ export async function upsertGoogleCalendarConnection(args: {
       external_id: calendarId,
       refresh_token_enc: enc,
       status: "active",
-      meta: { calendar_id: calendarId },
+      meta: {
+        calendar_id: calendarId,
+        ...(args.label ? { label: args.label } : {}),
+        ...(args.accountEmail ? { account_email: args.accountEmail } : {}),
+        ...(args.isPrimary !== undefined ? { is_primary: args.isPrimary } : {}),
+      },
       updated_at: new Date().toISOString(),
     },
     { onConflict: "org_id,provider,external_id" }
   );
   if (error) throw new Error(`google_calendar connection upsert failed: ${error.message}`);
+}
+
+/**
+ * OAuth staging: between the Google callback and the calendar picker, the new
+ * account's refresh token lives on a single per-user `pending` row (invisible
+ * to sync, which filters status='active'). Finalizing the picker turns it into
+ * active per-calendar rows and deletes it.
+ */
+function pendingExternalId(userId: string): string {
+  return `pending:${userId}`;
+}
+
+export async function upsertPendingGoogleAccount(args: {
+  orgId: string;
+  userId: string;
+  refreshToken: string;
+  accountEmail: string;
+}): Promise<void> {
+  const enc = toByteaHex(encryptSecret(args.refreshToken));
+  const sb = getSupabaseAdmin();
+  const { error } = await sb.from("connections").upsert(
+    {
+      org_id: args.orgId,
+      user_id: args.userId,
+      provider: PROVIDER,
+      external_id: pendingExternalId(args.userId),
+      refresh_token_enc: enc,
+      status: "pending",
+      meta: { account_email: args.accountEmail },
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "org_id,provider,external_id" }
+  );
+  if (error) throw new Error(`pending google account upsert failed: ${error.message}`);
+}
+
+export async function getPendingGoogleAccount(
+  orgId: string,
+  userId: string
+): Promise<{ refreshToken: string; accountEmail: string } | null> {
+  const sb = getSupabaseAdmin();
+  const { data, error } = await sb
+    .from("connections")
+    .select("refresh_token_enc, meta")
+    .eq("provider", PROVIDER)
+    .eq("org_id", orgId)
+    .eq("external_id", pendingExternalId(userId))
+    .eq("status", "pending")
+    .maybeSingle();
+  if (error) throw new Error(`loading pending google account failed: ${error.message}`);
+  if (!data?.refresh_token_enc) return null;
+  return {
+    refreshToken: decryptSecret(fromBytea(data.refresh_token_enc)),
+    accountEmail: ((data.meta as Record<string, unknown> | null)?.account_email as string) ?? "",
+  };
+}
+
+export async function deletePendingGoogleAccount(orgId: string, userId: string): Promise<void> {
+  const sb = getSupabaseAdmin();
+  await sb
+    .from("connections")
+    .delete()
+    .eq("provider", PROVIDER)
+    .eq("org_id", orgId)
+    .eq("external_id", pendingExternalId(userId))
+    .eq("status", "pending");
 }
 
 /** All active Google Calendar connections (one per connected user), decrypted. */
@@ -120,53 +197,62 @@ export async function listActiveCalendarConnections(): Promise<GoogleCalendarCon
     });
 }
 
-/** One user's active Google Calendar connection, decrypted — for per-user writes. */
+/** One user's active Google Calendar connection, decrypted — for per-user
+ *  writes (task blocks). With several calendars connected, prefer the account's
+ *  own primary calendar; otherwise the oldest connection, deterministically. */
 export async function getActiveCalendarConnection(
   userId: string
 ): Promise<GoogleCalendarConnection | null> {
   const sb = getSupabaseAdmin();
   const { data, error } = await sb
     .from("connections")
-    .select("id, org_id, user_id, external_id, refresh_token_enc, status, meta")
+    .select("id, org_id, user_id, external_id, refresh_token_enc, status, meta, created_at")
     .eq("provider", PROVIDER)
     .eq("user_id", userId)
     .eq("status", "active")
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: true });
   if (error) throw new Error(`loading google_calendar connection failed: ${error.message}`);
-  if (!data || !data.user_id || !data.refresh_token_enc) return null;
-  const meta = data.meta as Record<string, unknown> | null;
+  const rows = (data ?? []).filter((r) => r.user_id && r.refresh_token_enc);
+  const preferred =
+    rows.find((r) => (r.meta as Record<string, unknown> | null)?.is_primary === true) ?? rows[0];
+  if (!preferred) return null;
+  const meta = preferred.meta as Record<string, unknown> | null;
   return {
-    id: data.id as string,
-    orgId: data.org_id as string,
-    userId: data.user_id as string,
-    refreshToken: decryptSecret(fromBytea(data.refresh_token_enc)),
-    calendarId: (meta?.calendar_id as string) ?? (data.external_id as string) ?? "primary",
-    status: data.status as string,
+    id: preferred.id as string,
+    orgId: preferred.org_id as string,
+    userId: preferred.user_id as string,
+    refreshToken: decryptSecret(fromBytea(preferred.refresh_token_enc)),
+    calendarId: (meta?.calendar_id as string) ?? (preferred.external_id as string) ?? "primary",
+    status: preferred.status as string,
     syncToken: readSyncToken(meta),
     watch: readWatch(meta),
   };
 }
 
+export type ConnectedCalendar = {
+  calendarId: string;
+  label: string;
+  accountEmail: string | null;
+};
+
 export type CalendarConnectionStatus = {
   connected: boolean;
-  calendarId: string | null;
+  calendars: ConnectedCalendar[];
   lastSyncedAt: string | null;
   lastStatus: string | null;
   eventCount: number;
 };
 
-/** Connection + freshness summary for one user, for the Settings card. */
+/** Connections + freshness summary for one user, for the Settings card. */
 export async function getCalendarConnectionStatus(userId: string): Promise<CalendarConnectionStatus> {
   const sb = getSupabaseAdmin();
-  const { data: conn } = await sb
+  const { data: conns } = await sb
     .from("connections")
-    .select("external_id, meta, status")
+    .select("external_id, meta, status, created_at")
     .eq("provider", PROVIDER)
     .eq("user_id", userId)
     .eq("status", "active")
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: true });
   const { data: job } = await sb
     .from("calendar_sync_jobs")
     .select("status, finished_at")
@@ -179,11 +265,19 @@ export async function getCalendarConnectionStatus(userId: string): Promise<Calen
     .select("id", { count: "exact", head: true })
     .eq("owner_user_id", userId);
 
+  const calendars: ConnectedCalendar[] = (conns ?? []).map((c) => {
+    const meta = c.meta as Record<string, unknown> | null;
+    const calendarId = (meta?.calendar_id as string) ?? (c.external_id as string) ?? "primary";
+    return {
+      calendarId,
+      label: (meta?.label as string) ?? calendarId,
+      accountEmail: (meta?.account_email as string) ?? null,
+    };
+  });
+
   return {
-    connected: !!conn,
-    calendarId: conn
-      ? (((conn.meta as Record<string, unknown> | null)?.calendar_id as string) ?? (conn.external_id as string) ?? "primary")
-      : null,
+    connected: calendars.length > 0,
+    calendars,
     lastSyncedAt: (job?.finished_at as string | null) ?? null,
     lastStatus: (job?.status as string | null) ?? null,
     eventCount: count ?? 0,

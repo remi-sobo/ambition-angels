@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
 import type { FinCategory } from "@/lib/finance/types";
 import { loadRevenueSchedule, loadReceivedTotal, scheduleTotals } from "@/lib/finance/schedule";
@@ -21,6 +22,8 @@ function fiscalYearBounds(year: number, startMonth: number): { start: string; en
 
 export default async function FinanceReportPage() {
   const supabase = getSupabaseAdmin();
+  const ctx = await getOrgContext();
+  const orgName = ctx?.orgName ?? "our organization";
   const snap = await getFinanceSnapshot();
   const cfg = snap.cfg;
   const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
@@ -117,7 +120,7 @@ export default async function FinanceReportPage() {
       <div id="board-report" className="bg-white text-ink-1 rounded-card-lg border-[1.5px] border-outline p-8 space-y-7">
         {/* Title */}
         <header className="border-b border-outline pb-4">
-          <div className="text-[11px] uppercase tracking-widest text-ink-2">Ambition Angels · Board Financial Report</div>
+          <div className="text-[11px] uppercase tracking-widest text-ink-2">{orgName} · Board Financial Report</div>
           <h1 className="font-heading font-bold text-2xl text-ink-1 mt-1">Fiscal Year {cfg.year}</h1>
           <div className="text-xs text-ink-2 mt-1">As of {asOf} · {reconciledTxt}</div>
         </header>

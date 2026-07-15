@@ -23,7 +23,7 @@ const TOOLS = [
   {
     name: "create_task",
     description:
-      "Create a to-do in BloomOS (Ambition Angels' operating system). It lands on the ops board in Today's Moves, assigned to Shannon by default. Use this to push tasks from the morning report. Pass a stable dedupe_key (e.g. the source email's thread or message id) so re-running the report doesn't create duplicates.",
+      "Create a to-do in BloomOS (Ambition Angels' operating system). It lands on the ops board task list, assigned to Shannon by default. Use this to push tasks from the morning report. Pass a stable dedupe_key (e.g. the source email's thread or message id) so re-running the report doesn't create duplicates.",
     inputSchema: {
       type: "object",
       properties: {
@@ -37,7 +37,7 @@ const TOOLS = [
           description: "Default operations.",
         },
         assignee: { type: "string", enum: ["shannon", "remi"], description: "Default shannon." },
-        pin_today: { type: "boolean", description: "Show in Today's Moves. Default true." },
+        pin_today: { type: "boolean", description: "Also pin to the ops board's Today section. Default false." },
         dedupe_key: {
           type: "string",
           description: "Stable id (e.g. email thread/message id) so the same task isn't created twice on re-run.",

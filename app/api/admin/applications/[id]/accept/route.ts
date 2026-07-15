@@ -45,6 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const { data: created, error: createErr } = await supabase
       .from("students")
       .insert({
+        org_id: app.org_id, // the application's org — never a column default
         first_name: app.first_name,
         last_name: app.last_name,
         email: app.email,
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const { error: enrollErr } = await supabase
       .from("cohort_members")
       .upsert(
-        { cohort_id: app.cohort_id, student_id: studentId, status: "enrolled" },
+        { org_id: app.org_id, cohort_id: app.cohort_id, student_id: studentId, status: "enrolled" },
         { onConflict: "cohort_id,student_id" }
       );
     if (enrollErr) {

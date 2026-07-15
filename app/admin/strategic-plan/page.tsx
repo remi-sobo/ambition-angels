@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import ReedReviewButton from "./_components/ReedReviewButton";
@@ -11,7 +12,7 @@ import { getUnassignedPlanMetrics } from "@/lib/admin/plan/metrics";
 import { getReadiness } from "@/lib/admin/strategy/readiness";
 import ReadinessPanel from "./_components/ReadinessPanel";
 import PageHeader from "../_components/PageHeader";
-import StatCard from "../_components/StatCard";
+import SectionHeading from "../_components/SectionHeading";
 import StrategyGlance from "./_components/StrategyGlance";
 import StrategyControls, { type LensKey } from "./_components/StrategyControls";
 import UnassignedMetrics from "./_components/UnassignedMetrics";
@@ -32,11 +33,54 @@ import {
 } from "./_components/PlanControls";
 
 // Strategic plan (BloomOS Strategy — specs/bloomos-strategy-command-center.md):
-// one spine, three lenses. Org = the glance (verdict + grid, B1). Area = the
+// one spine, three lenses. Org = the glance (status line + grid, B1). Area = the
 // editable Foundation → Objectives → Goals → KPIs + Initiatives tree, scoped and
 // filtered. Mine = that tree filtered to what the viewer owns. Lens + filters are
 // URL-synced (B2). All reads org-scoped on the service-role client.
+//
+// The Org lens is grouped into three labeled sub-sections (operator feedback:
+// one undifferentiated pile of KPIs + narrative + admin chrome read as noise):
+// "How the plan is doing" (whole-org health), "For funders" (the outward
+// view), "Plan upkeep" (maintenance chores). Sub-page links live with their
+// section, not in the header, which keeps only the actions that change the plan.
 export const dynamic = "force-dynamic";
+
+// A labeled sub-section: small uppercase heading, plain-language line saying
+// what it holds and who it's for, and the deep links that belong to it.
+function PlanSection({
+  title,
+  description,
+  links = [],
+  children,
+}: {
+  title: string;
+  description: string;
+  links?: { href: string; label: string }[];
+  children: ReactNode;
+}) {
+  return (
+    <section className="mb-10">
+      <div className="flex items-baseline justify-between gap-3 flex-wrap">
+        <SectionHeading>{title}</SectionHeading>
+        {links.length > 0 && (
+          <span className="flex items-center gap-4">
+            {links.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="text-[11px] font-semibold text-orange hover:text-orange-dark whitespace-nowrap"
+              >
+                {l.label} →
+              </Link>
+            ))}
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-ink-2 mt-1 mb-4">{description}</p>
+      {children}
+    </section>
+  );
+}
 
 const str = (v: string | string[] | undefined): string | undefined =>
   typeof v === "string" ? v : undefined;
@@ -237,42 +281,15 @@ export default async function StrategicPlanPage({
         }
         actions={
           <div className="flex items-center gap-2 flex-wrap">
-            {!isEmpty && (
+            {/* Only actions that change the plan live up here; links into the
+                sub-pages (scorecard, narrative, review, people, set up) sit in
+                the labeled section each belongs to. */}
+            {isEmpty && (
               <Link
-                href="/admin/strategic-plan/scorecard"
-                className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors"
-              >
-                KPI Scorecard
-              </Link>
-            )}
-            {!isEmpty && (
-              <Link
-                href="/admin/strategic-plan/narrative"
+                href="/admin/strategic-plan/setup"
                 className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"
               >
-                Narrative
-              </Link>
-            )}
-            <Link
-              href="/admin/strategic-plan/setup"
-              className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"
-            >
-              Set up
-            </Link>
-            {!isEmpty && (
-              <Link
-                href="/admin/strategic-plan/people"
-                className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"
-              >
-                People
-              </Link>
-            )}
-            {!isEmpty && (
-              <Link
-                href="/admin/strategic-plan/review"
-                className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"
-              >
-                Monthly review
+                Set up
               </Link>
             )}
             {!isEmpty && <ReedReviewButton />}
@@ -304,17 +321,41 @@ export default async function StrategicPlanPage({
 
           {lens === "org" ? (
             <>
-              {/* Org lens: the verdict, exceptions, objective grid (B1), the unassigned tray, the counts, the why. */}
-              {readiness && <ReadinessPanel data={readiness} />}
-              <StrategyGlance />
-              <UnassignedMetrics metrics={unassignedMetrics} goals={goalOptions} />
-              <div className="grid grid-cols-4 gap-3 mb-8">
-                <StatCard label="Objectives" value={objectives.length} />
-                <StatCard label="Goals" value={goals.length} />
-                <StatCard label="Initiatives done" value={`${doneInits}/${initiatives.length}`} />
-                <StatCard label="At risk / behind" value={atRisk} muted={atRisk === 0} />
-              </div>
-              <FoundationPanel foundation={foundation} />
+              {/* Org lens: three labeled sub-sections — health, the funder
+                  view, and upkeep — so a first-time operator can tell what
+                  each block is and who it's for. */}
+              <PlanSection
+                title="How the plan is doing"
+                description="The whole organization at a glance — every objective, its health, and what needs attention first. Rolls up automatically from the measures underneath."
+                links={[{ href: "/admin/strategic-plan/scorecard", label: "KPI Scorecard" }]}
+              >
+                <p className="text-xs text-ink-3 mb-4 tabular-nums">
+                  {objectives.length} objectives · {goals.length} goals · {doneInits} of {initiatives.length} initiatives done
+                  {atRisk > 0 && ` · ${atRisk} at risk or behind`}
+                </p>
+                <StrategyGlance />
+              </PlanSection>
+
+              <PlanSection
+                title="For funders"
+                description="The outward-facing view — a readiness check before you present, and the narrative you share with donors and grantmakers."
+                links={[{ href: "/admin/strategic-plan/narrative", label: "Narrative" }]}
+              >
+                {readiness && <ReadinessPanel data={readiness} />}
+              </PlanSection>
+
+              <PlanSection
+                title="Plan upkeep"
+                description="Housekeeping for whoever maintains the plan — attach loose metrics, run the monthly review, and keep owners and the foundation current."
+                links={[
+                  { href: "/admin/strategic-plan/review", label: "Monthly review" },
+                  { href: "/admin/strategic-plan/people", label: "People" },
+                  { href: "/admin/strategic-plan/setup", label: "Set up" },
+                ]}
+              >
+                <UnassignedMetrics metrics={unassignedMetrics} goals={goalOptions} />
+                <FoundationPanel foundation={foundation} />
+              </PlanSection>
             </>
           ) : treeObjectives.length === 0 && treeOrphans.length === 0 ? (
             <p className="text-sm text-ink-2">

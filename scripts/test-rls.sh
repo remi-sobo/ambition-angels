@@ -152,6 +152,24 @@ ordered=(
   comms_v2_phase1_default_drops.sql
   enforce_grant_funder.sql
   create_asks_log.sql
+  spine_entity_registry.sql
+  spine_action_items_view.sql
+  spine_user_org_state.sql
+  documents_schema.sql
+  metrics_catalog_schema.sql
+  metrics_plan_kpis_backfill.sql
+  metrics_stale_queue_arm.sql
+  metrics_retire_dead_kpi_tables.sql
+  program_spine_schema.sql
+  owner_uuid_promotion.sql
+  reed_suggestions_payload.sql
+  create_ms_career_library.sql
+  create_ms_sessions.sql
+  create_ms_explored.sql
+  create_ms_deliveries.sql
+  create_ms_rooms.sql
+  create_meeting_exclusions.sql
+  bloomos_strategy_objective_notes_tasks.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"
@@ -176,13 +194,19 @@ psql "$DATABASE_URL" -q -f "$mig/create_audit_log.sql" 2>&1 | grep -v "^$" | tai
 #     the platform stub does not provide — so it can't apply to the scratch DB.
 #   grant_shannon_owner.sql      — a data migration (UPDATE memberships for one
 #     real user) that depends on seeded auth.users/orgs rows absent here.
+#   bloomos_staff_phase1..4.sql  — mix schema with seed rows keyed to the real
+#     AA org id ('17c75da8-…'), which doesn't exist in the scratch DB, so the
+#     seed inserts violate the orgs FK. Their RLS follows the standard
+#     has_permission(org_id, 'staff.*') pattern already exercised by the
+#     matrix; splitting seed from schema so they can run here is a follow-up.
 #   *.MANUAL.sql                 — manual data seeds run by hand in the Supabase
 #     SQL editor (OGSM reseed, finance rebase). They mutate seeded rows, not
 #     schema/RLS, and assume pre-existing data, so they are not part of the
 #     migration chain and must not be applied to the scratch DB.
 missing=$(ls "$mig"/*.sql | xargs -n1 basename |
   grep -v -F -x -f <(printf '%s\n' "${ordered[@]}" create_audit_log.sql pin_function_search_path.sql \
-    bloomos_global_search_phase3.sql grant_shannon_owner.sql) |
+    bloomos_global_search_phase3.sql grant_shannon_owner.sql \
+    bloomos_staff_phase1.sql bloomos_staff_phase2.sql bloomos_staff_phase3.sql bloomos_staff_phase4.sql) |
   grep -v -E '\.MANUAL\.sql$' || true)
 if [ -n "$missing" ]; then
   echo "ERROR: migrations missing from the ordered list in $0:" >&2

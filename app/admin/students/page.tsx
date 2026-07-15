@@ -4,26 +4,34 @@ import StatCard from "../_components/StatCard";
 import PageHeader from "../_components/PageHeader";
 import SectionSummary from "../_components/SectionSummary";
 import { StudentRow, NewStudentForm, type Student } from "./_components/StudentControls";
-import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS } from "./_lib/stages";
+import { getParticipantStages } from "@/lib/admin/program/stages";
 
-// Student spine (Ring 3, modules/02-program.md "Students"): one roster for
-// every teen across programs, organized by journey stage —
-// discover → learn → practice → connect → launch. YGB campers and
-// career-quiz teens are folded in by the create_students migration.
+// Participant roster (program spine, spec #4): one roster across programs,
+// organized by the org's journey stages. The stage vocabulary is per-org
+// DATA (participant_stages) — labels, order, which stages count as engaged,
+// and which are terminal all come from the table, not a hardcoded array.
 export const dynamic = "force-dynamic";
 
 export default async function StudentsPage() {
   const supabase = getSupabaseAdmin();
-  const { data } = await supabase
-    .from("students")
-    .select("*")
-    .order("last_activity_at", { ascending: false, nullsFirst: false })
-    .limit(500);
+  const [{ data }, stages] = await Promise.all([
+    supabase
+      .from("students")
+      .select("*")
+      .order("last_activity_at", { ascending: false, nullsFirst: false })
+      .limit(500),
+    getParticipantStages(),
+  ]);
   const students = (data ?? []) as Student[];
 
+  const journey = stages.filter((s) => !s.terminal);
+  const engagedKeys = new Set(stages.filter((s) => s.engaged).map((s) => s.stage_key));
+  const terminalKeys = new Set(stages.filter((s) => s.terminal).map((s) => s.stage_key));
+  const stageOptions = stages.map((s) => ({ stage_key: s.stage_key, label: s.label, terminal: s.terminal }));
+
   const byStage = (s: string) => students.filter((x) => x.stage === s);
-  const active = students.filter((x) => x.stage !== "alumni" && x.stage !== "withdrawn");
-  const engaged = active.filter((x) => x.stage !== "discover");
+  const active = students.filter((x) => !terminalKeys.has(x.stage));
+  const engaged = active.filter((x) => engagedKeys.has(x.stage));
   const monthAgo = new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10);
   const newThisMonth = students.filter(
     (x) => x.last_activity_at && x.last_activity_at >= monthAgo
@@ -42,7 +50,7 @@ export default async function StudentsPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard label="On the roster" value={active.length} sub={`${students.length} all-time`} />
-        <StatCard label="Engaged (past discover)" value={engaged.length} sub="learn and beyond" />
+        <StatCard label="Engaged" value={engaged.length} sub="in an engaged stage" />
         <StatCard
           label="Active this month"
           value={newThisMonth.length}
@@ -57,13 +65,16 @@ export default async function StudentsPage() {
         />
       </div>
 
-      {/* Journey funnel */}
-      <div className="grid grid-cols-5 gap-1.5 mb-8">
-        {JOURNEY_STAGES.map((s, i) => {
-          const n = byStage(s).length;
+      {/* Journey funnel — one cell per non-terminal stage, org-defined */}
+      <div
+        className="grid gap-1.5 mb-8"
+        style={{ gridTemplateColumns: `repeat(${Math.max(journey.length, 1)}, minmax(0, 1fr))` }}
+      >
+        {journey.map((s, i) => {
+          const n = byStage(s.stage_key).length;
           return (
             <div
-              key={s}
+              key={s.stage_key}
               className={`rounded-lg border px-2 py-2.5 text-center ${
                 n > 0 ? "bg-orange/10 border-orange/30" : "bg-surface shadow-panel border-outline"
               }`}
@@ -72,7 +83,7 @@ export default async function StudentsPage() {
                 {n}
               </div>
               <div className="text-[10px] uppercase tracking-wider text-ink-2">
-                {i + 1}. {STAGE_LABELS[s]}
+                {i + 1}. {s.label}
               </div>
             </div>
           );
@@ -80,17 +91,17 @@ export default async function StudentsPage() {
       </div>
 
       <div className="space-y-8">
-        {STAGE_ORDER.map((stage) => {
-          const rows = byStage(stage);
+        {stages.map((stage) => {
+          const rows = byStage(stage.stage_key);
           if (rows.length === 0) return null;
           return (
-            <section key={stage}>
+            <section key={stage.stage_key}>
               <SectionHeading className="mb-2">
-                {STAGE_LABELS[stage]} ({rows.length})
+                {stage.label} ({rows.length})
               </SectionHeading>
               <div className="space-y-2">
                 {rows.map((s) => (
-                  <StudentRow key={s.id} student={s} />
+                  <StudentRow key={s.id} student={s} stages={stageOptions} />
                 ))}
               </div>
             </section>

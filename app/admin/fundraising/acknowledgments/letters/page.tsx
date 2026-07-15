@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import { complianceBlock, requiresSubstantiation, type ReceiptGift } from "@/lib/fundraising/receipt";
 import PrintButton from "../_components/PrintButton";
@@ -11,8 +12,8 @@ import PrintButton from "../_components/PrintButton";
 // is the bulk fallback for mailed receipts.
 export const dynamic = "force-dynamic";
 
-const LETTER_BODY =
-  "Thank you for your generous gift to Ambition Angels. Your support directly funds the students and programs at the heart of our mission, and we are grateful to have you with us.";
+const letterBody = (org: string) =>
+  `Thank you for your generous gift to ${org}. Your support directly funds the students and programs at the heart of our mission, and we are grateful to have you with us.`;
 
 const longDate = (iso: string) =>
   new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
@@ -38,6 +39,11 @@ type LetterGift = {
 
 export default async function BatchLettersPage() {
   const supabase = createServerSupabase();
+  const ctx = await getOrgContext();
+  // Org name from the orgs row, never hardcoded (shared-host rule). The
+  // letterhead address/EIN below are still resident-org literals — they move
+  // to org settings when a second tenant needs letters.
+  const orgName = ctx?.orgName ?? "our organization";
   const { data } = await supabase
     .from("gifts")
     .select(
@@ -90,7 +96,7 @@ export default async function BatchLettersPage() {
               className="max-w-[680px] mx-auto px-10 py-12 break-after-page"
               style={{ fontFamily: "Georgia, serif", lineHeight: 1.7 }}
             >
-              <div className="font-bold text-lg">Ambition Angels</div>
+              <div className="font-bold text-lg">{orgName}</div>
               <div className="text-xs text-[#666] mb-8">380 Portage Ave, Palo Alto, CA 94306 · EIN 87-2513010</div>
               <div className="text-sm mb-6">{longDate(today)}</div>
               <div className="text-sm whitespace-pre-line mb-6">
@@ -98,8 +104,8 @@ export default async function BatchLettersPage() {
                 {addr ? `\n${addr}` : ""}
               </div>
               <p className="text-sm mb-4">Dear {first},</p>
-              <p className="text-sm mb-6">{LETTER_BODY}</p>
-              <p className="text-sm mb-6">With gratitude,<br />The Ambition Angels team</p>
+              <p className="text-sm mb-6">{letterBody(orgName)}</p>
+              <p className="text-sm mb-6">With gratitude,<br />The {orgName} team</p>
               <hr className="border-0 border-t border-[#ddd] my-6" />
               <pre className="text-xs text-[#444] whitespace-pre-wrap" style={{ fontFamily: "Georgia, serif" }}>
                 {complianceBlock(receiptGift)}

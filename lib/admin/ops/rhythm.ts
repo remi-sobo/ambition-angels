@@ -9,12 +9,12 @@ import {
   laDateOf,
   weekdayIndex,
 } from "./week";
-import type { MondayCounts, FridayCounts } from "./verdict";
+import type { MondayCounts, FridayCounts } from "./statusLine";
 
 /**
- * Server-side counts for the "My Week" hub verdict (Operating Rhythm v2,
- * Phase 2). Deterministic reads only — the verdict sentence is assembled from
- * these numbers by lib/admin/ops/verdict.ts. Service-role client for the
+ * Server-side counts for the "My Week" hub status (Operating Rhythm v2,
+ * Phase 2). Deterministic reads only — the status sentence is assembled from
+ * these numbers by lib/admin/ops/status.ts. Service-role client for the
  * ops_tasks/meeting reads, ALWAYS org-scoped (the house trap); the calendar
  * read goes through the session client (RLS) via getAgenda, exactly like the
  * Monday Plan page.
@@ -29,7 +29,7 @@ export function rhythmModeForToday(dow: number = weekdayIndex()): RhythmMode {
 
 // Working window used for the (approximate) open-hours figure. Precise
 // open-block computation against real busy gaps lands with the day walk (P5);
-// here we just need a defensible number for the verdict, hence the "~".
+// here we just need a defensible number for the status, hence the "~".
 const WORK_HOURS_PER_DAY = 8; // 9–5
 const WORK_DAYS = 5; // Mon–Fri
 const WORK_HOURS_PER_WEEK = WORK_HOURS_PER_DAY * WORK_DAYS;
@@ -38,7 +38,7 @@ export type RhythmSnapshot =
   | { mode: "monday_plan"; weekOf: string; who: ResolvedUser; counts: MondayCounts }
   | { mode: "friday_close"; weekOf: string; who: ResolvedUser; counts: FridayCounts };
 
-/** Load the verdict snapshot for the time-appropriate mode, or null if unauthed. */
+/** Load the status snapshot for the time-appropriate mode, or null if unauthed. */
 export async function loadRhythmSnapshot(
   mode: RhythmMode = rhythmModeForToday()
 ): Promise<RhythmSnapshot | null> {

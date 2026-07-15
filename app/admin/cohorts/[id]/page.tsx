@@ -19,6 +19,8 @@ import {
   type SessionLite,
   type MarkLite,
 } from "../_lib/rollups";
+import { EntityTasks } from "../../_components/EntityTasks";
+import { EntityDocuments } from "../../_components/EntityDocuments";
 
 // Cohort dashboard: enrollment vs capacity, sessions, per-member dosage
 // (modules/02-program.md "Cohorts" + "Attendance & dosage").
@@ -188,6 +190,13 @@ export default async function CohortPage({ params }: { params: { id: string } })
           )}
         </div>
       </section>
+
+      {/* Spine attachments: the cohort is a registry entity now (spec #4),
+          so curriculum files, rosters, and prep tasks hang off the record. */}
+      <div className="mt-8 space-y-4">
+        <EntityTasks entityType="cohort" entityId={cohort.id} entityLabel={cohort.name} defaultCategory="program" />
+        <EntityDocuments entityType="cohort" entityId={cohort.id} entityLabel={cohort.name} />
+      </div>
     </div>
   );
 }

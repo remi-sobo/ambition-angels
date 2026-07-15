@@ -12,7 +12,7 @@ import AdminPWA from "./_components/AdminPWA";
 import { AdminUserProvider } from "./_components/AdminUserContext";
 import { AdminBadgesProvider } from "./_components/AdminBadges";
 import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
-import { hasEntitlement } from "@/lib/admin/entitlements";
+import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     default: "BloomOS",
     template: "%s · BloomOS",
   },
-  description: "BloomOS — operating system for Ambition Angels.",
+  description: "BloomOS — the operating system for your nonprofit.",
   manifest: "/admin/manifest.webmanifest",
   applicationName: "BloomOS",
   appleWebApp: {
@@ -55,10 +55,18 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const authed = user !== null;
   const orgId = ctx?.orgId ?? null;
 
+  // One request-cached entitlement read feeds the whole shell: the Reed FAB
+  // gate, the sidebar's module filter, and the mobile dock — plus every
+  // module-layout FeatureGate rendered below shares the same query.
+  // `features` is null pre-auth so the login screen keeps the full IA (B2
+  // de-AAs the pre-auth shell).
+  const ents = authed && orgId ? await getEntitlements(orgId) : null;
+  const features = ents ? Array.from(ents) : null;
+
   // Reed is gated by the `ai.reed` entitlement (Bloom Grow and up). On Bloom
   // base the FAB simply doesn't mount — and /api/reed/* will 402 server-side
   // (Phase 4), so hiding it here is an affordance, not the security boundary.
-  const reedEnabled = authed && (await hasEntitlement("ai.reed"));
+  const reedEnabled = !!ents && hasFeature(ents, "ai.reed");
 
   // Per-tenant label for the Staff module (Phase 4 org_terminology), so the nav
   // reads "Team"/"People" when an org has renamed it. Falls back to "Staff".
@@ -86,7 +94,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     <AdminBadgesProvider orgId={orgId} enabled={authed}>
     <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
       <AdminPWA />
-      <Sidebar currentUser={user} staffLabel={staffLabel} />
+      <Sidebar
+        currentUser={user}
+        staffLabel={staffLabel}
+        orgName={ctx?.orgName ?? null}
+        features={features}
+      />
       {/* One Reed launcher shared by the rail (desktop capture-to-Reed) and the
           FAB (mobile), so there's a single Reed drawer regardless of entry. */}
       <ReedLauncherProvider enabled={reedEnabled}>
@@ -98,7 +111,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             still carry Reed + quick-add there. Phones get the unified tab bar
             below instead (so the two FABs don't collide on small screens). */}
         {reedEnabled && <AskReedButton />}
-        {authed && <MobileTabBar currentUser={user} reedEnabled={reedEnabled} />}
+        {authed && <MobileTabBar currentUser={user} reedEnabled={reedEnabled} features={features} />}
       </ReedLauncherProvider>
       {authed && <QuickAddButton currentUser={user} />}
       {authed && <GlobalSearch />}

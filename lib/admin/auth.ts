@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 /**
@@ -21,11 +22,16 @@ export type OrgContext = {
   userId: string;
   email: string;
   orgId: string;
+  /** Display name from the orgs row — the ONLY place tenant identity may
+   *  come from in shell chrome (greeting, sidebar tagline, report headers).
+   *  A shared host must never hardcode a tenant name. */
+  orgName: string;
   role: "owner" | "admin" | "staff" | "finance" | "board_viewer";
 };
 
-/** Session + membership context, or null when unauthenticated/unprovisioned. */
-export async function getOrgContext(): Promise<OrgContext | null> {
+/** Session + membership context, or null when unauthenticated/unprovisioned.
+ *  React-cached so layout + page can both call it in one request. */
+export const getOrgContext = cache(async (): Promise<OrgContext | null> => {
   const supabase = createServerSupabase();
   const {
     data: { user },
@@ -33,22 +39,34 @@ export async function getOrgContext(): Promise<OrgContext | null> {
   if (!user) return null;
 
   // RLS on memberships lets a user read only rows in orgs they belong to,
-  // so any row coming back proves membership.
+  // so any row coming back proves membership. The orgs embed rides the same
+  // proof ("members read org" policy).
   const { data: membership } = await supabase
     .from("memberships")
-    .select("org_id, role")
+    .select("org_id, role, orgs(name)")
     .eq("user_id", user.id)
+    // Deterministic pick when a user holds several memberships: oldest wins.
+    // Interim fix — the real resolution is the bloom_active_org cookie +
+    // switcher (core fence spec §6c, Phase C1).
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
   if (!membership) return null;
+
+  // Many-to-one embed; supabase-js without generated types may hand back an
+  // object or a one-element array depending on inference.
+  const orgRow = membership.orgs as { name: string } | { name: string }[] | null;
+  const orgName =
+    (Array.isArray(orgRow) ? orgRow[0]?.name : orgRow?.name) || "your organization";
 
   return {
     userId: user.id,
     email: user.email ?? "",
     orgId: membership.org_id,
+    orgName,
     role: membership.role,
   };
-}
+});
 
 export async function isAuthed(): Promise<boolean> {
   return (await getOrgContext()) !== null;

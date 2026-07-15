@@ -87,7 +87,7 @@ export async function gatherInputs(): Promise<{
       sb.from("bloomos_briefing_state").select("item_id, decision, hidden_until"),
       // Strategy rollup (Phase 4): objective health + the OGSM review nudge.
       // Resilient if unseeded / plan_reviews not yet migrated (data → null).
-      sb.from("plan_objectives").select("id, title, status, status_override"),
+      sb.from("plan_objectives").select("id, title, status, status_override").is("deleted_at", null),
       sb.from("plan_goals").select("id, objective_id"),
       sb.from("plan_kpis").select("goal_id, objective_id, status"),
       sb.from("plan_reviews").select("next_review_at").order("conducted_at", { ascending: false }).limit(1),

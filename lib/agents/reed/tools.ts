@@ -140,7 +140,7 @@ type Plan = {
 // Load the OGSM tree (session client, RLS-scoped). Shared by the strategy tools.
 async function loadPlan(sb: SupabaseClient, orgId: string): Promise<Plan> {
   const [obj, goal, init, kpi, rev] = await Promise.all([
-    sb.from("plan_objectives").select("id, title, three_year_statement, owner, status, sort_order").eq("org_id", orgId).order("sort_order"),
+    sb.from("plan_objectives").select("id, title, three_year_statement, owner, status, sort_order").eq("org_id", orgId).is("deleted_at", null).order("sort_order"),
     sb.from("plan_goals").select("id, objective_id, title, target_date, owner, status, sort_order").eq("org_id", orgId).order("sort_order"),
     sb.from("plan_initiatives").select("id, goal_id, title, owner, status, sort_order").eq("org_id", orgId).order("sort_order"),
     sb.from("plan_kpis").select("id, goal_id, objective_id, title, unit, target, current, owner, cadence, source, metric_key, status").eq("org_id", orgId),

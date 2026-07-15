@@ -107,7 +107,7 @@ export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
   const sb = getSupabaseAdmin();
   const [foundationRes, objectivesRes, goalsRes, kpisRes, initiativesRes] = await Promise.all([
     sb.from("plan_foundation").select("mission, vision, proof_points").eq("org_id", ORG(orgId)).maybeSingle(),
-    sb.from("plan_objectives").select("id, title, three_year_statement, owner, status, status_override").eq("org_id", ORG(orgId)).order("sort_order").order("created_at"),
+    sb.from("plan_objectives").select("id, title, three_year_statement, owner, status, status_override").eq("org_id", ORG(orgId)).is("deleted_at", null).order("sort_order").order("created_at"),
     sb.from("plan_goals").select("id, objective_id, title, description, owner, status, status_override").eq("org_id", ORG(orgId)).order("sort_order").order("created_at"),
     sb.from("plan_kpis").select("id, goal_id, objective_id, title, unit, target, current, baseline, status, metric_key, owner").eq("org_id", ORG(orgId)).order("created_at"),
     sb.from("plan_initiatives").select("id, goal_id, title, owner, status").eq("org_id", ORG(orgId)).order("sort_order").order("created_at"),

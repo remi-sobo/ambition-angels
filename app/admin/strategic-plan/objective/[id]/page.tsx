@@ -42,6 +42,7 @@ export default async function ObjectiveDetailPage({ params }: { params: { id: st
     .select("id, title, owner, status, status_override, status_override_reason, three_year_statement, sort_order")
     .eq("id", params.id)
     .eq("org_id", orgId)
+    .is("deleted_at", null)
     .maybeSingle();
   if (!objectiveData) notFound();
   const objective = objectiveData as PlanObjective;
@@ -51,6 +52,7 @@ export default async function ObjectiveDetailPage({ params }: { params: { id: st
     .from("plan_objectives")
     .select("id, title")
     .eq("org_id", orgId)
+    .is("deleted_at", null)
     .order("sort_order")
     .order("created_at");
   const objectiveOptions = (allObjectivesData ?? []) as { id: string; title: string }[];

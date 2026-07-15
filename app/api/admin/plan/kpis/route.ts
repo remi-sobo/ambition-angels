@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   }
   if (objectiveId) {
     const { data } = await supabase
-      .from("plan_objectives").select("id").eq("id", objectiveId).eq("org_id", ctx.orgId).maybeSingle();
+      .from("plan_objectives").select("id").eq("id", objectiveId).eq("org_id", ctx.orgId).is("deleted_at", null).maybeSingle();
     if (!data) return NextResponse.json({ error: "Objective not found" }, { status: 404 });
   }
 

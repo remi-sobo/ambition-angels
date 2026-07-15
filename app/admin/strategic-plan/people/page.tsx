@@ -36,7 +36,7 @@ export default async function StrategyPeoplePage() {
   const sb = getSupabaseAdmin();
 
   const [objsRes, goalsRes, kpisRes, initsRes] = await Promise.all([
-    sb.from("plan_objectives").select("id, title, owner, status").eq("org_id", orgId),
+    sb.from("plan_objectives").select("id, title, owner, status").eq("org_id", orgId).is("deleted_at", null),
     sb.from("plan_goals").select("id, title, owner, status").eq("org_id", orgId),
     sb.from("plan_kpis").select("id, title, owner, status, unit, target, current, goal_id, objective_id").eq("org_id", orgId),
     sb.from("plan_initiatives").select("id, title, owner, status").eq("org_id", orgId),

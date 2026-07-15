@@ -73,7 +73,7 @@ export default async function StrategicPlanPage({
   const [foundationRes, objectivesRes, goalsRes, kpisRes, initiativesRes, projectsRes] =
     await Promise.all([
       supabase.from("plan_foundation").select("*").eq("org_id", orgId).maybeSingle(),
-      supabase.from("plan_objectives").select("*").eq("org_id", orgId).order("sort_order").order("created_at"),
+      supabase.from("plan_objectives").select("*").eq("org_id", orgId).is("deleted_at", null).order("sort_order").order("created_at"),
       supabase.from("plan_goals").select("*").eq("org_id", orgId).order("sort_order").order("created_at").limit(200),
       supabase.from("plan_kpis").select("*").eq("org_id", orgId).order("created_at").limit(500),
       supabase.from("plan_initiatives").select("*").eq("org_id", orgId).order("sort_order").order("created_at").limit(1000),

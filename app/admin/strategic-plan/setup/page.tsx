@@ -24,7 +24,7 @@ export default async function StrategySetupPage() {
 
   const [foundationRes, objsRes, goalsRes, kpisRes, initsRes, reviewRes] = await Promise.all([
     sb.from("plan_foundation").select("mission, vision, values, behaviors").eq("org_id", orgId).maybeSingle(),
-    sb.from("plan_objectives").select("id, title").eq("org_id", orgId).order("sort_order").order("created_at"),
+    sb.from("plan_objectives").select("id, title").eq("org_id", orgId).is("deleted_at", null).order("sort_order").order("created_at"),
     sb.from("plan_goals").select("id, title, objective_id").eq("org_id", orgId).order("sort_order").order("created_at"),
     sb.from("plan_kpis").select("id, goal_id, objective_id, source, metric_key").eq("org_id", orgId),
     sb.from("plan_initiatives").select("id, goal_id").eq("org_id", orgId),

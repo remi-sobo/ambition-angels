@@ -12,7 +12,7 @@
  * Scope is set to "/admin/" at registration time (see AdminPWA.tsx).
  */
 
-const CACHE = "aa-admin-v7";
+const CACHE = "aa-admin-v8";
 const CORE = ["/admin"];
 
 self.addEventListener("install", (event) => {
@@ -78,7 +78,14 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Static assets under /admin/ (icons, manifest): cache-first.
-  if (url.pathname.startsWith("/admin/")) {
+  //
+  // Guarded by destination: Next's RSC data fetches (router.refresh(), soft
+  // navigations) are same-path GETs with mode !== "navigate", so without the
+  // guard they land here and the first response gets pinned — every later
+  // router.refresh() on that page then serves a stale tree until reload.
+  // Real static assets carry a concrete destination; RSC fetches carry "".
+  const STATIC_DESTINATIONS = ["image", "font", "style", "script", "manifest"];
+  if (url.pathname.startsWith("/admin/") && STATIC_DESTINATIONS.includes(req.destination)) {
     event.respondWith(
       (async () => {
         const cached = await caches.match(req);

@@ -119,7 +119,7 @@ export const getStrategyRollup = cache(async (): Promise<StrategyRollup> => {
   const orgId = ctx.orgId;
 
   const [objsRes, goalsRes, kpisRes, reviewRes] = await Promise.all([
-    sb.from("plan_objectives").select("id, title, status, status_override, owner").eq("org_id", orgId).order("sort_order").order("created_at"),
+    sb.from("plan_objectives").select("id, title, status, status_override, owner").eq("org_id", orgId).is("deleted_at", null).order("sort_order").order("created_at"),
     sb.from("plan_goals").select("id, objective_id").eq("org_id", orgId),
     sb.from("plan_kpis").select("id, goal_id, objective_id, status, title, unit, target, current, owner").eq("org_id", orgId),
     // Resilient if plan_reviews isn't migrated yet (error → data null).

@@ -11,6 +11,7 @@ import {
   type PlanKpi,
   type PlanInitiative,
 } from "../_components/PlanControls";
+import DeletedCharts, { type DeletedChart } from "../_components/DeletedCharts";
 import ReviewComplete from "./_components/ReviewComplete";
 
 // Monthly OGSM review mode (BloomOS Strategy, Phase 4). Walk the four
@@ -28,16 +29,19 @@ export default async function StrategyReviewPage() {
   const orgId = ctx.orgId;
   const sb = getSupabaseAdmin();
 
-  const [objectivesRes, goalsRes, kpisRes, initiativesRes, reviewsRes] = await Promise.all([
-    sb.from("plan_objectives").select("*").eq("org_id", orgId).order("sort_order").order("created_at"),
+  const [objectivesRes, goalsRes, kpisRes, initiativesRes, reviewsRes, deletedRes] = await Promise.all([
+    sb.from("plan_objectives").select("*").eq("org_id", orgId).is("deleted_at", null).order("sort_order").order("created_at"),
     sb.from("plan_goals").select("*").eq("org_id", orgId).order("sort_order").order("created_at").limit(200),
     sb.from("plan_kpis").select("*").eq("org_id", orgId).order("created_at").limit(500),
     sb.from("plan_initiatives").select("*").eq("org_id", orgId).order("sort_order").order("created_at").limit(1000),
     // Resilient if plan_reviews isn't migrated yet (error → data null).
     sb.from("plan_reviews").select("*").eq("org_id", orgId).order("conducted_at", { ascending: false }).limit(6),
+    // Soft-deleted charts, for the recoverable archive in the header.
+    sb.from("plan_objectives").select("id, title, deleted_at").eq("org_id", orgId).not("deleted_at", "is", null).order("deleted_at", { ascending: false }),
   ]);
 
   const objectives = (objectivesRes.data ?? []) as PlanObjective[];
+  const deletedCharts = (deletedRes.data ?? []) as DeletedChart[];
   const goals = (goalsRes.data ?? []) as PlanGoal[];
   const kpis = (kpisRes.data ?? []) as PlanKpi[];
   const initiatives = (initiativesRes.data ?? []) as PlanInitiative[];
@@ -67,7 +71,12 @@ export default async function StrategyReviewPage() {
             <Link href="/admin/strategic-plan" className="text-orange hover:underline">full plan</Link>
           </>
         }
-        actions={<RefreshMetricsButton />}
+        actions={
+          <div className="flex items-center gap-2">
+            <DeletedCharts deleted={deletedCharts} />
+            <RefreshMetricsButton />
+          </div>
+        }
       />
 
       {objectives.length === 0 && orphanGoals.length === 0 ? (

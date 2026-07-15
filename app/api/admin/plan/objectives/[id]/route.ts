@@ -96,10 +96,13 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     .from("plan_objectives").select("*").eq("id", params.id).eq("org_id", ctx.orgId).maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Goals point here ON DELETE SET NULL; KPIs attached to this objective
-  // ON DELETE CASCADE. Goals (and their initiatives/KPIs) survive, unparented.
+  // Soft delete: stamp deleted_at instead of removing the row, so the chart is
+  // recoverable (inline Undo, or the "Deleted charts" panel on the OGSM review
+  // page). Goals and KPIs stay linked and are hidden with it; a restore
+  // (POST …/restore) brings the whole chart back intact.
+  const deleted_at = new Date().toISOString();
   const { error } = await supabase
-    .from("plan_objectives").delete().eq("id", params.id).eq("org_id", ctx.orgId);
+    .from("plan_objectives").update({ deleted_at }).eq("id", params.id).eq("org_id", ctx.orgId);
   if (error) {
     console.error("Delete objective failed:", error.message);
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });
@@ -109,6 +112,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     entityType: "plan_objective",
     entityId: params.id,
     before,
+    after: { deleted_at },
   });
   return NextResponse.json({ ok: true });
 }

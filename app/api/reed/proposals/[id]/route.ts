@@ -78,7 +78,10 @@ async function resolveParent(
   parentId: string,
 ): Promise<string | null> {
   const table = parentType === "objective" ? "plan_objectives" : "plan_goals";
-  const real = await sb.from(table).select("id").eq("id", parentId).eq("org_id", orgId).maybeSingle();
+  let q = sb.from(table).select("id").eq("id", parentId).eq("org_id", orgId);
+  // Never parent new work onto a soft-deleted objective (it's hidden/archived).
+  if (parentType === "objective") q = q.is("deleted_at", null);
+  const real = await q.maybeSingle();
   if (real.data) return parentId;
   const viaProposal = await sb
     .from("reed_plan_proposals")

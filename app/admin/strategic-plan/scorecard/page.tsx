@@ -28,7 +28,7 @@ export default async function ScorecardPage() {
   const sb = getSupabaseAdmin();
 
   const [objsRes, goalsRes, kpisRes, snapsRes, catalogSnapsRes] = await Promise.all([
-    sb.from("plan_objectives").select("id, title, sort_order").eq("org_id", orgId),
+    sb.from("plan_objectives").select("id, title, sort_order").eq("org_id", orgId).is("deleted_at", null),
     sb.from("plan_goals").select("id, title, objective_id").eq("org_id", orgId),
     sb.from("plan_kpis").select("id, title, owner, unit, target, current, status, source, metric_key, metric_id, last_updated_at, goal_id, objective_id, notes").eq("org_id", orgId),
     sb.from("plan_kpi_snapshots").select("kpi_id, value, captured_on").eq("org_id", orgId).order("captured_on", { ascending: true }),

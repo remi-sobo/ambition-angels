@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { deriveHealth } from "@/lib/admin/plan/health";
 import { measureFreshness } from "@/lib/admin/plan/freshness";
@@ -489,6 +489,15 @@ export function ObjectiveCard({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  // Soft-delete undo: the DELETE stamps deleted_at right away (recoverable
+  // later from "Deleted charts"), then the card renders as an inline
+  // "deleted · Undo" bar until the window closes and a refresh collapses it.
+  // Undo is purely local (restore + clear the flag) — the server tree never
+  // saw the delete, so no refresh is needed and none is issued: a refresh
+  // canceled mid-flight would leave the router serving a stale tree.
+  const [deleted, setDeleted] = useState(false);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (undoTimer.current) clearTimeout(undoTimer.current); }, []);
 
   const patch = async (fields: Record<string, unknown>) => {
     setBusy(true);
@@ -499,15 +508,43 @@ export function ObjectiveCard({
     }
   };
   const remove = async () => {
-    if (!confirm(`Delete objective “${objective.title}”? Its goals are kept but unlinked.`)) return;
     setBusy(true);
     try {
-      await api(`/api/admin/plan/objectives/${objective.id}`, "DELETE");
-      router.refresh();
+      if (await api(`/api/admin/plan/objectives/${objective.id}`, "DELETE")) {
+        setDeleted(true);
+        undoTimer.current = setTimeout(() => router.refresh(), 8000);
+      }
     } finally {
       setBusy(false);
     }
   };
+  const undo = async () => {
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    setBusy(true);
+    try {
+      if (await api(`/api/admin/plan/objectives/${objective.id}/restore`, "POST")) setDeleted(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (deleted) {
+    return (
+      <section className={`border-[1.5px] border-dashed border-outline rounded-card-lg p-4 flex flex-wrap items-center gap-3 bg-tile/40 ${busy ? "opacity-60" : ""}`}>
+        <p className="text-sm text-ink-2 flex-1 min-w-[200px]">
+          Deleted <strong className="text-ink-1">“{objective.title}”</strong> — its goals and measures went with it.
+          Recover it any time from <span className="font-semibold">Deleted charts</span>.
+        </p>
+        <button
+          onClick={() => void undo()}
+          disabled={busy}
+          className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50"
+        >
+          Undo
+        </button>
+      </section>
+    );
+  }
 
   return (
     <section

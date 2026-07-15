@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getAdminUser } from "@/lib/admin/auth";
+import { loadStuckProjectContext } from "@/lib/admin/ops/stuck-context";
 import {
   readTaskHealth,
   todayISO,
@@ -117,6 +118,15 @@ export default async function OpsLandingPage({
     .filter((t) => readTaskHealth(t).health === "stuck")
     .sort((a, b) => readTaskHealth(b).ageDays - readTaskHealth(a).ageDays);
 
+  // Project context (title + donor/partnership identifiers) for the stuck
+  // cards — small lookups scoped to just the projects stuck tasks reference,
+  // and no queries at all when there are none.
+  const stuckProjectContext = await loadStuckProjectContext(
+    supabase,
+    stuckTasks,
+    allTasks
+  );
+
   // Open (not done, not archived) tasks — feeds the per-project counts and
   // the By Category panel, which derives its own counts + expandable lists
   // from this same array so the two can never disagree.
@@ -144,7 +154,11 @@ export default async function OpsLandingPage({
         currentUser={currentUser}
       />
 
-      <StuckWorkRollup tasks={stuckTasks} projectNames={projectNames} />
+      <StuckWorkRollup
+        tasks={stuckTasks}
+        projectNames={projectNames}
+        projectContext={stuckProjectContext}
+      />
 
       <TodayView
         dueToday={dueToday}

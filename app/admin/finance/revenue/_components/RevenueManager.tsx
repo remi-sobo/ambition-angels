@@ -306,7 +306,7 @@ export default function RevenueManager({
                 className="px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40">
                 {busy ? "Saving…" : editingId ? "Save changes" : "Add commitment"}
               </button>
-              <button onClick={resetForm} className="px-3 py-1.5 rounded-lg text-ink-2 hover:text-ink-1 text-sm">Cancel</button>
+              <button onClick={resetForm} className={`px-3 py-1.5 rounded-lg text-ink-2 hover:${TYPE.body}`}>Cancel</button>
             </div>
           </div>
         )}

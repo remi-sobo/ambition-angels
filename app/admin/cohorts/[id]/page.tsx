@@ -131,7 +131,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
           acceptingApplications={Boolean(cohort.accepting_applications)}
         />
       </div>
-      <p className="text-ink-2 text-sm mb-6">
+      <p className={`${TYPE.bodyMuted} mb-6`}>
         {[cohort.program, cohort.term, cohort.location].filter(Boolean).join(" · ") || "—"}
         {cohort.start_date && (
           <span className="ml-1.5">

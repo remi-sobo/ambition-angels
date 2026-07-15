@@ -131,7 +131,7 @@ export default async function ReportsPage({
             <h2 className={TYPE.cardTitle}>By campaign</h2>
           </div>
           {groups.length === 0 ? (
-            <p className="p-6 text-ink-2 text-sm">No gifts match these filters.</p>
+            <p className={`p-6 ${TYPE.bodyMuted}`}>No gifts match these filters.</p>
           ) : (
             <ul className="divide-y divide-hairline">
               {groups.map((g) => (
@@ -150,7 +150,7 @@ export default async function ReportsPage({
             <h2 className={TYPE.cardTitle}>Recent gifts in range</h2>
           </div>
           {gifts.length === 0 ? (
-            <p className="p-6 text-ink-2 text-sm">No gifts match these filters.</p>
+            <p className={`p-6 ${TYPE.bodyMuted}`}>No gifts match these filters.</p>
           ) : (
             <ul className="divide-y divide-hairline">
               {gifts.slice(0, 50).map((g, i) => (
@@ -175,7 +175,7 @@ export default async function ReportsPage({
             <h2 className={TYPE.cardTitle}>Saved donor segments</h2>
           </div>
           {segments.length === 0 ? (
-            <p className="p-6 text-ink-2 text-sm">
+            <p className={`p-6 ${TYPE.bodyMuted}`}>
               No saved segments yet. Build and save one from the Donors page (Segments &amp; export).
             </p>
           ) : (

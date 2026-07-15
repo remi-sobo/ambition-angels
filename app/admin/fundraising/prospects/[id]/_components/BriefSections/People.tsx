@@ -1,9 +1,10 @@
 import type { BriefContent, Person } from "@/lib/agents/funder-research/types";
+import { TYPE } from "@/lib/admin/typeScale";
 
 function PersonCard({ p }: { p: Person }) {
   return (
     <div className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-3">
-      <div className="font-medium text-ink-1 text-sm">{p.name}</div>
+      <div className={`font-medium ${TYPE.body}`}>{p.name}</div>
       {p.title && <div className="text-xs text-ink-2 mt-0.5">{p.title}</div>}
       {p.professional_background && (
         <div className="text-xs text-ink-2 mt-2 leading-relaxed">

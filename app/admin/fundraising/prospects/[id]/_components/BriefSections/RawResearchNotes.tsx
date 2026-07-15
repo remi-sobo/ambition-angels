@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Minimal JSX-tree markdown renderer matching the pattern from PR Ops-2's
@@ -88,7 +89,7 @@ function renderMarkdown(md: string): ReactNode {
         items.push(
           <li
             key={`li-${key}-${j}`}
-            className="ml-5 list-disc text-ink-1 text-sm"
+            className={`ml-5 list-disc ${TYPE.body}`}
           >
             {renderInline(lines[i].slice(2), `li-${key}-${j}`)}
           </li>

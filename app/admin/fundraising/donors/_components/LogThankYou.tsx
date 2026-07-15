@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ACK_CHANNELS, CHANNEL_LABEL, type AckChannel } from "@/lib/fundraising/ack-channels";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Log a proactive, non-gift thank-you (no gift behind it, so no receipt
 // language). Reusable across constituent / opportunity / volunteer / milestone
@@ -86,7 +87,7 @@ export default function LogThankYou({
         onChange={(e) => setNote(e.target.value)}
         rows={3}
         placeholder="A short note for the record (optional)."
-        className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40"
+        className={`w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40`}
       />
       <div className="flex items-center gap-3">
         <button

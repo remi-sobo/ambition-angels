@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageHeader from "../../../_components/PageHeader";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type MatchedRow = {
   account: string;
@@ -197,7 +198,7 @@ export default function QbBudgetImportPage() {
             type="button"
             disabled={!file || busy !== "idle"}
             onClick={doPreview}
-            className="px-4 py-2 rounded-lg bg-tile hover:bg-[#EFE6D4] text-ink-1 text-sm font-medium disabled:opacity-40"
+            className={`px-4 py-2 rounded-lg bg-tile hover:bg-[#EFE6D4] ${TYPE.body} font-medium disabled:opacity-40`}
           >
             {busy === "previewing" ? "Parsing…" : "Preview"}
           </button>
@@ -350,7 +351,7 @@ export default function QbBudgetImportPage() {
             <button
               type="button"
               onClick={() => { setPreview(null); setOverrides({}); }}
-              className="px-4 py-2 rounded-lg text-ink-1 hover:text-ink-1 text-sm"
+              className={`px-4 py-2 rounded-lg text-ink-1 hover:${TYPE.body}`}
             >
               Cancel
             </button>

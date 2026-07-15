@@ -433,7 +433,7 @@ export function AskDocuments({ askId, documents }: { askId: string; documents: A
   return (
     <div>
       {documents.length === 0 ? (
-        <p className="px-5 py-6 text-ink-2 text-sm">
+        <p className={`px-5 py-6 ${TYPE.bodyMuted}`}>
           No documents yet. Upload the proposal PDF, cover letter, or budget — the paper trail for
           this ask lives here.
         </p>

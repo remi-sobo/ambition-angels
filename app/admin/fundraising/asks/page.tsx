@@ -96,7 +96,7 @@ export default async function AsksPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {asks.length === 0 ? (
-            <p className="p-6 text-ink-2 text-sm">
+            <p className={`p-6 ${TYPE.bodyMuted}`}>
               No asks logged yet. Log every solicitation — a grant proposal, a major-gift ask, a
               sponsorship request — and attach the PDF you sent.
             </p>

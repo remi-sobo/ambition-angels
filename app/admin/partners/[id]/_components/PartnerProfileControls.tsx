@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { KIND_LABELS, inputCls } from "../../_lib/partners";
 import { STATUS_ORDER, STATUS_LABELS } from "../../_lib/status";
+import { TYPE } from "@/lib/admin/typeScale";
 
 const splitCsv = (s: string): string[] =>
   s.split(",").map((x) => x.trim()).filter(Boolean);
@@ -204,7 +205,7 @@ export function ContactCard({ contact }: { contact: ContactT }) {
   return (
     <div className={`bg-surface border rounded-xl p-3 ${busy ? "opacity-60" : ""} ${contact.is_primary ? "border-orange/40" : "border-outline"}`}>
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-semibold text-ink-1 text-sm">{name}</span>
+        <span className={`font-semibold ${TYPE.body}`}>{name}</span>
         {contact.is_primary && (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">Primary</span>
         )}

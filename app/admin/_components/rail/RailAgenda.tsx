@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { AgendaItem } from "@/lib/agenda/service";
+import { TYPE } from "@/lib/admin/typeScale";
 
 const STALE_MIN = 20; // synced longer ago than this → ochre tick + refresh nudge
 const MIN_OFFSET = -7; // matches AgendaShelf's fetch window
@@ -118,7 +119,7 @@ export default function RailAgenda({
   return (
     <section className="px-5 pt-5 pb-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93]">
+        <h2 className={`flex items-center gap-2 ${TYPE.sectionHeader} !text-[#bfae93]`}>
           <span className="w-[3px] h-3 rounded-full bg-orange" aria-hidden />
           Agenda
         </h2>

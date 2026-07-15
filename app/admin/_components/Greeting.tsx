@@ -30,7 +30,7 @@ export default function Greeting({ name, org }: { name: string; org: string }) {
       >
         Good {part}, {name}.
       </h1>
-      <p className="text-ink-2 text-sm mt-1">
+      <p className={`${TYPE.bodyMuted} mt-1`}>
         Here&apos;s what&apos;s happening across {org} today.
       </p>
     </div>

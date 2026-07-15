@@ -65,7 +65,7 @@ export default async function SessionAttendancePage({
       <h1 className={`${TYPE.pageTitle} mt-2`}>
         {session.title || "Session"}
       </h1>
-      <p className="text-ink-2 text-sm mt-0.5 mb-6 tabular-nums">
+      <p className={`${TYPE.bodyMuted} mt-0.5 mb-6 tabular-nums`}>
         {session.session_date}
         {time ? ` · ${time}` : ""}
         {session.location ? ` · ${session.location}` : ""}

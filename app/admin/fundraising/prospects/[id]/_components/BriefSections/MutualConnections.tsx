@@ -1,4 +1,5 @@
 import type { BriefContent } from "@/lib/agents/funder-research/types";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export default function MutualConnections({
   data,
@@ -29,7 +30,7 @@ export default function MutualConnections({
                 key={i}
                 className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-3"
               >
-                <div className="font-medium text-ink-1 text-sm">{c.name}</div>
+                <div className={`font-medium ${TYPE.body}`}>{c.name}</div>
                 <div className="text-xs text-ink-2 mt-1">
                   {c.how_connected}
                 </div>

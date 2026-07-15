@@ -266,7 +266,7 @@ export default function UploadClient() {
                 setPreview(null);
                 setError(null);
               }}
-              className="px-4 py-2 rounded-lg text-ink-1 hover:text-ink-1 text-sm"
+              className={`px-4 py-2 rounded-lg text-ink-1 hover:${TYPE.body}`}
             >
               Cancel
             </button>

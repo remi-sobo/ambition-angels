@@ -147,7 +147,7 @@ export default async function GrantsPage() {
               <h2 className={TYPE.cardTitle}>Upcoming Deadlines</h2>
             </div>
             {requirements.length === 0 ? (
-              <p className="p-6 text-ink-2 text-sm">
+              <p className={`p-6 ${TYPE.bodyMuted}`}>
                 No open deadlines. Every grant&apos;s LOIs, applications, and reports belong here —
                 add them from the grant&apos;s page.
               </p>

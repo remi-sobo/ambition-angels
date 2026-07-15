@@ -78,7 +78,7 @@ export default async function RecurringPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {sorted.length === 0 ? (
-            <p className="p-8 text-ink-2 text-sm">
+            <p className={`p-8 ${TYPE.bodyMuted}`}>
               No recurring plans yet. Stripe monthly donations create plans automatically; use
               &ldquo;Manual plan&rdquo; for offline standing gifts.
             </p>

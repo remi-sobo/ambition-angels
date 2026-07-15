@@ -132,7 +132,7 @@ export default async function PledgesPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {rows.length === 0 ? (
-            <p className="p-8 text-ink-2 text-sm">
+            <p className={`p-8 ${TYPE.bodyMuted}`}>
               No pledges yet. Create one to track a multi-installment commitment; installments
               become real gifts as they&apos;re paid.
             </p>

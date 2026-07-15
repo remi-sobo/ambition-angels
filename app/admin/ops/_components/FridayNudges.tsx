@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getNeedsYou } from "@/lib/admin/rail/needs-you";
 import { countStaleKpis } from "@/lib/admin/ops/nudges";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Step of the Friday Close: log the touches + check the numbers (light). The
@@ -19,7 +20,7 @@ export default async function FridayNudges({ orgId }: { orgId: string | null }) 
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6 space-y-4">
       <div>
-        <h2 className="text-xs uppercase tracking-wider text-ink-2">Touches &amp; numbers</h2>
+        <h2 className={TYPE.sectionHeader}>Touches &amp; numbers</h2>
         <p className="text-sm text-ink-2 mt-1">A quick look before you close — act where it matters.</p>
       </div>
 

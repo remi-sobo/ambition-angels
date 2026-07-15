@@ -12,6 +12,7 @@ import MutualConnections from "./BriefSections/MutualConnections";
 import MeetingPlaybook from "./BriefSections/MeetingPlaybook";
 import SourceNotesAndGaps from "./BriefSections/SourceNotesAndGaps";
 import RawResearchNotes from "./BriefSections/RawResearchNotes";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Wrapper around the 9 brief sections. Owns the "Generate / Regenerate"
@@ -183,7 +184,7 @@ export default function BriefPanel({
       <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="text-xs uppercase tracking-wider text-ink-2">
+            <h2 className={TYPE.sectionHeader}>
               Research brief
             </h2>
             <p className="mt-1 text-sm text-ink-2">No research brief yet.</p>

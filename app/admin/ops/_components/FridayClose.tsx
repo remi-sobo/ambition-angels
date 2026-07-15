@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * The last step of the Friday Close: close out. A short checklist + a note to
@@ -66,7 +67,7 @@ export default function FridayClose({
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6 space-y-4">
       <div>
-        <h2 className="text-xs uppercase tracking-wider text-ink-2">Close out</h2>
+        <h2 className={TYPE.sectionHeader}>Close out</h2>
         <p className="text-sm text-ink-2 mt-1">Put the week down.</p>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * "Seed starter tasks" prompt for a grant whose project has no tasks yet.
@@ -36,7 +37,7 @@ export default function GrantSeedTasks({ grantId }: { grantId: string }) {
   return (
     <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 flex flex-col sm:flex-row sm:items-center gap-3">
       <div className="min-w-0 flex-1">
-        <h3 className="font-heading font-bold text-ink-1 text-sm">Start the workspace</h3>
+        <h3 className={TYPE.cardTitle}>Start the workspace</h3>
         <p className="text-xs text-ink-2 mt-0.5">
           Seed the grant lifecycle — LOI, budget, narrative, review, submit, report —
           as tasks you can work and reorder.

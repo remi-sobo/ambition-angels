@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type Parsed = { headers: string[]; rows: string[][] };
 
@@ -118,7 +119,7 @@ export default function ImportWizard() {
   if (result) {
     return (
       <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6 space-y-3">
-        <h2 className="font-heading font-bold text-ink-1 text-sm">Import complete</h2>
+        <h2 className={TYPE.cardTitle}>Import complete</h2>
         <p className="text-sm text-ink-2">
           <strong className="text-ink-1">{result.created}</strong> created ·{" "}
           <strong className="text-ink-1">{result.matched}</strong> matched existing ·{" "}
@@ -142,7 +143,7 @@ export default function ImportWizard() {
     return (
       <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6 space-y-4">
         <div>
-          <h2 className="font-heading font-bold text-ink-1 text-sm mb-1">Upload a CSV</h2>
+          <h2 className={`${TYPE.cardTitle} mb-1`}>Upload a CSV</h2>
           <p className="text-[11px] text-ink-3">First row = headers. Donors dedupe by email; an amount + date column adds a gift per row.</p>
         </div>
         <input type="file" accept=".csv,text/csv" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} className="text-sm text-ink-2" />
@@ -165,7 +166,7 @@ export default function ImportWizard() {
     <div className="space-y-4">
       <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-heading font-bold text-ink-1 text-sm">Map columns · {parsed.rows.length} rows</h2>
+          <h2 className={TYPE.cardTitle}>Map columns · {parsed.rows.length} rows</h2>
           <button onClick={() => setParsed(null)} className="text-[11px] text-ink-3 hover:text-ink-1">Start over</button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

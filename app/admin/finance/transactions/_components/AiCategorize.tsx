@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // "Suggest categories (AI)" — asks the server for Claude's category suggestions
 // for the uncategorized transactions, then lets the user review, toggle which
@@ -116,7 +117,7 @@ export default function AiCategorize({ uncategorizedCount }: { uncategorizedCoun
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Suggested categories</h2>
+              <h2 className={TYPE.cardTitle}>Suggested categories</h2>
               <button onClick={() => setOpen(false)} disabled={busy !== "idle"} className="text-ink-2 hover:text-ink-1 text-sm disabled:opacity-40">
                 ✕
               </button>

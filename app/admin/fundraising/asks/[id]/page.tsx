@@ -116,7 +116,7 @@ export default async function AskDetailPage({ params }: { params: { id: string }
 
             {(grant || opportunity) && (
               <div className="border-t border-outline pt-3 space-y-2">
-                <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Linked to</div>
+                <div className={TYPE.sectionHeader}>Linked to</div>
                 {grant && (
                   <Link href={`/admin/fundraising/grants/${grant.id}`} className="block text-sm text-orange hover:text-orange-dark transition-colors">
                     Grant · {grant.name}
@@ -137,7 +137,7 @@ export default async function AskDetailPage({ params }: { params: { id: string }
 
           <section className="lg:col-span-7 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline flex items-center justify-between">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Documents</h2>
+              <h2 className={TYPE.cardTitle}>Documents</h2>
               <span className="text-[11px] text-ink-3">{documents.length} file{documents.length === 1 ? "" : "s"}</span>
             </div>
             <AskDocuments askId={ask.id} documents={documents} />

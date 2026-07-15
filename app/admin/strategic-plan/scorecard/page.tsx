@@ -4,6 +4,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../_components/PageHeader";
 import { RefreshMetricsButton } from "../_components/PlanControls";
 import ScorecardCard, { type ScorecardKpi } from "./_components/ScorecardCard";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // KPI Scorecard (BloomOS Strategy) — the owner-segmented view: each person's
 // KPIs as cards with progress-to-target, paced status, and a growth sparkline.
@@ -135,7 +136,7 @@ export default async function ScorecardPage() {
                   <span className="w-8 h-8 rounded-full bg-orange/15 text-orange flex items-center justify-center font-bold text-sm">
                     {owner.charAt(0).toUpperCase()}
                   </span>
-                  <h2 className="font-heading font-bold text-ink-1 text-lg">{owner}</h2>
+                  <h2 className={TYPE.sectionTitle}>{owner}</h2>
                   <span className="text-[11px] text-ink-2">{cards.length} measures</span>
                   <div className="ml-auto flex items-center gap-2 text-[11px]">
                     <span className="rounded-full bg-revenue-bg text-revenue px-2 py-0.5 font-semibold">{on} on track</span>

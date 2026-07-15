@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ReedMark } from "../../../_components/reed/ReedPanel";
 import { ANGLE_BADGES, ANGLE_TONES } from "@/lib/admin/strategy/angle-fields";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Reed-led wizard for a new framing angle. Step 1: describe the angle in a
 // sentence. Step 2: Reed drafts the full angle (hook → ask) and you edit every
@@ -111,7 +112,7 @@ export default function ReedAngleWizard() {
       <div className="bg-tile border-[1.5px] border-outline rounded-card-lg p-5 w-full max-w-2xl mt-10 space-y-4 shadow-tile" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2">
           <ReedMark className="w-4 h-4 text-orange" />
-          <h2 className="font-heading font-bold text-ink-1 text-sm flex-1">
+          <h2 className={`${TYPE.cardTitle} flex-1`}>
             {stage === "brief" ? "Draft a framing angle with Reed" : "Review Reed's draft"}
           </h2>
           <button type="button" onClick={reset} disabled={busy} className="text-xs font-semibold text-ink-3 hover:text-ink-1 disabled:opacity-60">Close</button>

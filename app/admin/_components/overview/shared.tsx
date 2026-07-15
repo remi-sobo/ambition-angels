@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Shared chrome for the overview widgets. Every CEO/Ops widget is a
 // self-contained component that renders inside this <Widget> shell, so the two
@@ -21,7 +22,7 @@ export function Widget({
   return (
     <section className={`bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden ${className ?? ""}`}>
       <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
-        <h2 className="font-heading font-bold text-ink-1 text-sm">{title}</h2>
+        <h2 className={TYPE.cardTitle}>{title}</h2>
         {href && (
           <Link href={href} className="text-xs font-semibold text-orange hover:text-orange-mid transition-colors whitespace-nowrap">
             {hrefLabel ?? "View"} →

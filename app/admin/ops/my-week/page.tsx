@@ -4,6 +4,7 @@ import { buildMondayStatus, buildFridayStatus, type WeekStatus } from "@/lib/adm
 import { formatWeekHeader, formatDayLabel, todayInTZ } from "@/lib/admin/ops/week";
 import WeekStatusLine from "../_components/WeekStatusLine";
 import PageHeader from "../../_components/PageHeader";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +37,8 @@ function Door({
       <div className="flex items-center justify-between">
         <span
           className={[
-            "text-[10px] uppercase tracking-[0.14em] font-semibold",
-            active ? "text-orange-dark" : "text-ink-2",
+            TYPE.sectionHeader,
+            active ? "!text-orange-dark" : "!text-ink-2",
           ].join(" ")}
         >
           {eyebrow}

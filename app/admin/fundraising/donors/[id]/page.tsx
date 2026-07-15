@@ -356,7 +356,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         <Link href="/admin/fundraising/donors" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
           ← Donors
         </Link>
-        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base truncate">{name}</span>
+        <span className={`${TYPE.cardTitle} sm:text-base truncate`}>{name}</span>
         {activePlan && (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">
             Monthly · {money(Number(activePlan.amount))}
@@ -460,7 +460,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
             <div className="flex items-start justify-between gap-2 mb-1">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Profile</h2>
+              <h2 className={TYPE.cardTitle}>Profile</h2>
               <EditDonorButton
                 donor={{
                   id: c.id,
@@ -505,7 +505,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
 
           <section className="lg:col-span-8 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Activity</h2>
+              <h2 className={TYPE.cardTitle}>Activity</h2>
               <div className="flex items-center gap-2">
                 <LogThankYou
                   subjectType="constituent"
@@ -659,7 +659,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Recurring</h2>
+              <h2 className={TYPE.cardTitle}>Recurring</h2>
               {activePlan && (
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">
                   {money(Number(activePlan.amount))}/{activePlan.frequency.slice(0, 2)} active
@@ -698,7 +698,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
           {hubspotId && (
             <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
               <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
-                <h2 className="font-heading font-bold text-ink-1 text-sm">Pledges</h2>
+                <h2 className={TYPE.cardTitle}>Pledges</h2>
                 <span className="text-[10px] uppercase tracking-wider text-ink-3">from HubSpot</span>
               </div>
               {hsPledgesError ? (
@@ -728,7 +728,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         {hubspotId && (
           <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Comms</h2>
+              <h2 className={TYPE.cardTitle}>Comms</h2>
               <span className="text-[10px] uppercase tracking-wider text-ink-3">from HubSpot</span>
             </div>
             {hsCommsError ? (
@@ -765,7 +765,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">
+            <h2 className={TYPE.cardTitle}>
               Household{household ? ` · ${household.name}` : ""}
             </h2>
           </div>

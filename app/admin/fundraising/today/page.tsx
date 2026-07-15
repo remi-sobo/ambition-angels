@@ -8,6 +8,7 @@ import { todayISO } from "../../ops/_types/ops";
 import GmailSyncButton from "../_components/GmailSyncButton";
 import SuggestedMoves from "../_components/SuggestedMoves";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Today's Fundraising Moves (Phase 2) — the operator home screen. Answers "who
 // needs me today," assembled deterministically from the spine (opportunities +
@@ -232,7 +233,7 @@ function QueueShell({
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
       <div className="px-5 py-3 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="font-heading font-bold text-ink-1 text-sm">
+          <h2 className={TYPE.cardTitle}>
             {title} <span className="text-ink-3 font-normal">· {count}</span>
           </h2>
           <p className="text-[11px] text-ink-3">{hint}</p>

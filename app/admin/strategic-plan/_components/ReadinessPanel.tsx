@@ -37,7 +37,7 @@ export default function ReadinessPanel({ data }: { data: Readiness }) {
       <div className="flex items-center gap-3 flex-wrap">
         <div>
           <div className={TYPE.cardLabel}>Funder readiness</div>
-          <div className="font-heading font-bold text-ink-1 text-lg leading-tight">
+          <div className={`${TYPE.sectionTitle} leading-tight`}>
             {clean ? "Ready to present" : `${data.blockerCount} blocker${data.blockerCount === 1 ? "" : "s"} to clear`}
             {openAdvisories > 0 && <span className="text-ink-3 font-normal text-sm"> · {openAdvisories} advisor{openAdvisories === 1 ? "y" : "ies"}</span>}
           </div>

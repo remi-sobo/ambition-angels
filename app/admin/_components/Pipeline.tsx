@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // BloomOS shared pipeline board (design-system §4.3: "the same horizontal
 // funnel/Kanban component" for fundraising stages, grants, student journey).
@@ -45,7 +46,7 @@ export default function Pipeline<T>({
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
       {title != null && (
         <div className="px-5 py-4 border-b border-outline">
-          <h2 className="font-heading font-bold text-ink-1 text-sm">{title}</h2>
+          <h2 className={TYPE.cardTitle}>{title}</h2>
         </div>
       )}
       <div className="overflow-x-auto">

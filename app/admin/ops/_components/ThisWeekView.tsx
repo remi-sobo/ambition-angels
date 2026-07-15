@@ -1,5 +1,6 @@
 import TaskRow from "./TaskRow";
 import type { OpsTask } from "../_types/ops";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * This Week section. Tasks where pinned_for_this_week AND status != 'done'.
@@ -26,7 +27,7 @@ export default function ThisWeekView({
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
       <header className="flex items-baseline justify-between mb-4">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2">This Week</h2>
+        <h2 className={TYPE.sectionHeader}>This Week</h2>
         <span className="text-[10px] uppercase tracking-wider text-ink-2">
           {tasks.length} pinned
         </span>

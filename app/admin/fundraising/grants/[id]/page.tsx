@@ -152,7 +152,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
 
           <section className="lg:col-span-7 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Requirements Calendar</h2>
+              <h2 className={TYPE.cardTitle}>Requirements Calendar</h2>
             </div>
             {requirements.length === 0 ? (
               <p className="px-5 py-6 text-ink-2 text-sm">
@@ -173,7 +173,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
         {/* ── Asks: the solicitations behind this grant + their PDFs ── */}
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">Asks</h2>
+            <h2 className={TYPE.cardTitle}>Asks</h2>
             {g.funder?.id && (
               <NewAskForm
                 grantId={g.id}

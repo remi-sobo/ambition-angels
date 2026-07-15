@@ -57,7 +57,7 @@ export default function RhythmWizard({
       {/* ── Chrome: title + back to hub ─────────────────────────────────── */}
       <header className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.14em] font-semibold text-orange-dark">
+          <div className={`${TYPE.sectionHeader} !text-orange-dark`}>
             {eyebrow}
           </div>
           <h1 className={`mt-1 ${TYPE.displayTitle}`}>

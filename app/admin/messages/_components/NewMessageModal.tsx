@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Button from "../../_components/Button";
 import { Avatar } from "./Avatar";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type Person = { userId: string; name: string };
 
@@ -91,7 +92,7 @@ export default function NewMessageModal({
         </div>
 
         <div className="px-5 py-3 overflow-y-auto">
-          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-2">
+          <div className={`${TYPE.cardLabel} mb-2`}>
             To
           </div>
           {people.length === 0 ? (
@@ -136,7 +137,7 @@ export default function NewMessageModal({
 
           {isGroup && (
             <div className="mt-4">
-              <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-2">
+              <div className={`${TYPE.cardLabel} mb-2`}>
                 Group name <span className="text-ink-3/70 normal-case tracking-normal">(optional)</span>
               </div>
               <input

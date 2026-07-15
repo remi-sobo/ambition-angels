@@ -2,6 +2,7 @@ import type { MoneySummary } from "@/lib/admin/strategy/narrative";
 import { FINANCE } from "@/lib/admin/thresholds";
 import type { Status } from "@/lib/admin/status";
 import { formatUsd, MovementHeader, StatBig } from "./shared";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Movement 2 — What We Need to Raise. Targets (floor, ceiling) come from the
@@ -63,7 +64,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
       {floor != null && (
         <div className="mb-8 rounded-card-lg border border-hairline bg-surface p-5">
           <div className="flex items-baseline justify-between mb-2">
-            <span className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3">
+            <span className={TYPE.cardLabel}>
               Toward the committed floor
             </span>
             <span className="text-sm tabular-nums text-ink-2">
@@ -88,7 +89,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
           place, with the residual named honestly as coverage still to develop. */}
       {floor != null && (
         <div className="mb-8 rounded-card-lg border border-hairline bg-surface p-5">
-          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-3">
+          <div className={`${TYPE.cardLabel} mb-3`}>
             The bridge to the floor
           </div>
           <div className="space-y-2 text-sm">
@@ -142,7 +143,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
       {/* Near-term runway bridge — the urgent ask, separate from the annual floor. */}
       {runwayBridge > 0 && (
         <div className="mb-8 rounded-card-lg border border-status-critical/30 bg-status-critical-bg px-5 py-4">
-          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-status-critical-text mb-1">
+          <div className={`${TYPE.cardLabel} !text-status-critical-text mb-1`}>
             Near-term runway bridge
           </div>
           <div className="font-display text-3xl sm:text-4xl leading-none tabular-nums text-ink-1">
@@ -169,7 +170,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
       {/* How the floor is RAISED FROM — channel targets summing to the floor. */}
       {sources.length > 0 && (
         <div className="mb-8 rounded-card-lg border border-hairline bg-surface p-5">
-          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-3">
+          <div className={`${TYPE.cardLabel} mb-3`}>
             How the committed floor is sourced
           </div>
           <div className="space-y-1">
@@ -190,7 +191,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
       {/* Where the floor goes — fin_budget by category group. */}
       {bars.length > 0 && (
         <div className="rounded-card-lg border border-hairline bg-surface p-5">
-          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-3">
+          <div className={`${TYPE.cardLabel} mb-3`}>
             Where the committed floor goes
           </div>
           <div className="space-y-2.5">

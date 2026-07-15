@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Narrative } from "@/lib/admin/briefing/narrate";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // The hero of the morning brief: the AI-written synthesis, with a deterministic
 // "if you do one thing" CTA derived from the top item. Regenerate forces a fresh
@@ -48,12 +49,12 @@ export default function NarrativeHero({ narrative }: { narrative: Narrative }) {
               unavailable / no key) is not Reed's voice, so it keeps the plain
               eyebrow rather than borrowing his name. */}
           {narrative.source === "ai" ? (
-            <span className="flex items-center gap-1.5 text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange">
+            <span className={`flex items-center gap-1.5 ${TYPE.sectionHeader} !text-orange`}>
               <ReedMark className="w-3.5 h-3.5" />
               Reed
             </span>
           ) : (
-            <span className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange">
+            <span className={`${TYPE.sectionHeader} !text-orange`}>
               Morning Brief
             </span>
           )}

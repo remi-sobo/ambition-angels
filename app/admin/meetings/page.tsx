@@ -6,6 +6,7 @@ import { meetingFollowUpGaps } from "@/lib/meetings/coverage";
 import { MatchCluster, StatusPill, SectionTitle } from "./_ui";
 import SyncMeetingsButton from "./SyncMeetingsButton";
 import MeetingAgendaButton from "./_components/MeetingAgendaButton";
+import FollowUpQuickActions from "./_components/FollowUpQuickActions";
 
 export const dynamic = "force-dynamic";
 
@@ -34,19 +35,20 @@ function fmtPastDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { timeZone: ORG_TZ, month: "short", day: "numeric" });
 }
 
-// A past meeting: matched entity leads, status on the right. The whole row links in.
+// A past meeting: matched entity leads, status (or quick actions) on the
+// right. The row body links in; actions sit outside the link so clearing a
+// personal event never requires opening the record.
 function PastRow({ item, emphasize = false }: { item: MeetingListItem; emphasize?: boolean }) {
   const { record, matched } = item;
   return (
-    <Link
-      href={`/admin/meetings/${record.id}`}
+    <div
       className={`group flex items-center gap-3 px-4 py-3 rounded-card border transition-all ${
         emphasize
           ? "border-status-watch/40 bg-status-watch-bg/50 hover:bg-status-watch-bg shadow-panel"
           : "border-outline bg-surface shadow-panel hover:bg-[#EFE6D4]"
       }`}
     >
-      <div className="flex-1 min-w-0">
+      <Link href={`/admin/meetings/${record.id}`} className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-[14px] text-ink-1 group-hover:text-orange font-medium truncate transition-colors">
             {record.title ?? "Untitled meeting"}
@@ -57,9 +59,13 @@ function PastRow({ item, emphasize = false }: { item: MeetingListItem; emphasize
           <span className="text-ink-3">·</span>
           <span className="text-[11px] text-ink-3 font-mono shrink-0">{fmtPastDate(record.occurred_at)}</span>
         </div>
-      </div>
-      <StatusPill status={record.follow_up_status} />
-    </Link>
+      </Link>
+      {emphasize ? (
+        <FollowUpQuickActions recordId={record.id} />
+      ) : (
+        <StatusPill status={record.follow_up_status} />
+      )}
+    </div>
   );
 }
 
@@ -72,7 +78,12 @@ export default async function MeetingsPage() {
     : { gapCount: 0, total: 0, windowDays: 14 };
 
   const needs = past.filter((m) => m.record.follow_up_status === "needs_follow_up");
-  const handled = past.filter((m) => m.record.follow_up_status !== "needs_follow_up");
+  // Dismissed = "not a business meeting, get it out of my view" — kept out of
+  // Recent, reachable (and undoable) via the collapsed section at the bottom.
+  const handled = past.filter(
+    (m) => m.record.follow_up_status !== "needs_follow_up" && m.record.follow_up_status !== "dismissed"
+  );
+  const dismissed = past.filter((m) => m.record.follow_up_status === "dismissed");
 
   // Group upcoming by day, in order.
   const todayKey = laDayKey(now.toISOString());
@@ -153,6 +164,24 @@ export default async function MeetingsPage() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Dismissed — collapsed so personal events stay out of the way but can
+          still be reopened if one was dismissed by mistake. */}
+      {dismissed.length > 0 && (
+        <details className="group">
+          <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-[12px] text-ink-3 hover:text-ink-1 transition-colors">
+            <svg viewBox="0 0 16 16" className="w-3 h-3 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Dismissed ({dismissed.length})
+          </summary>
+          <div className="mt-3 space-y-2">
+            {dismissed.map((m) => (
+              <PastRow key={m.record.id} item={m} />
+            ))}
+          </div>
+        </details>
       )}
 
       {past.length === 0 && (

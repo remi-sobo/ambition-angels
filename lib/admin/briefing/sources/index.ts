@@ -373,7 +373,7 @@ export function followupsSource(input: FollowupsInput, ctx: SourceCtx): Briefing
 
 // ── Meetings (follow-up coverage) ───────────────────────────────────────────
 // Deterministic: a past meeting with no follow-up task and no "none needed"
-// verdict is a gap. The count is the verdict line — it never hallucinates.
+// wording is a gap. The count IS the status line — it never hallucinates.
 
 export type MeetingsInput = { gapCount: number; total: number; windowDays: number };
 

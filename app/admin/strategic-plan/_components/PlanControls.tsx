@@ -54,6 +54,7 @@ export type PlanKpi = {
   metric_key: string | null;
   status: string;
   cadence: string | null;
+  notes: string | null;
   last_updated_at: string | null;
 };
 
@@ -70,6 +71,27 @@ export type PlanInitiative = {
 
 // Phase 2 cascade: rolled-up work from ops projects attached to an initiative.
 export type InitiativeRollup = { projects: number; tasksDone: number; tasksTotal: number };
+
+// Objective-level notes and tasks (Monthly OGSM review).
+export type PlanObjectiveNote = {
+  id: string;
+  objective_id: string;
+  body: string;
+  author: string | null;
+  created_at: string;
+};
+
+export type PlanObjectiveTask = {
+  id: string;
+  objective_id: string;
+  title: string;
+  assignee: string | null;
+  status: string; // 'todo' | 'done'
+  due_date: string | null;
+};
+
+// An internal team member (active `staff` row) offered in assignee dropdowns.
+export type TeamMember = { id: string; full_name: string };
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -198,6 +220,121 @@ function EditableText({
     >
       {has ? value : <span className="text-ink-3 font-normal italic">{placeholder}</span>}
     </button>
+  );
+}
+
+// ── Delete confirmation dialog ─────────────────────────────────────────────
+// Every destructive action on the plan routes through this warning dialog
+// (replacing bare window.confirm), so a delete is always a deliberate,
+// two-step act. Esc or a backdrop click cancels.
+function ConfirmDialog({
+  message,
+  onConfirm,
+  onCancel,
+}: {
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Confirm delete"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-sm bg-surface border-[1.5px] border-outline rounded-card shadow-panel p-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="font-heading font-semibold text-ink-1 text-sm">Delete permanently?</h3>
+        <p className="text-sm text-ink-2 mt-2">{message}</p>
+        <div className="flex justify-end gap-2 mt-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-xs font-semibold text-ink-2 hover:text-ink-1 px-3 py-2"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            autoFocus
+            onClick={onConfirm}
+            className="text-xs font-semibold text-white bg-expense hover:opacity-90 px-4 py-2 rounded-full transition-opacity"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Per-card confirm state: call confirmDelete(message, run) from a delete
+// button, render {confirmEl} anywhere in the card's tree.
+function useConfirmDialog() {
+  const [pending, setPending] = useState<{ message: string; run: () => void } | null>(null);
+  const confirmDelete = (message: string, run: () => void | Promise<void>) =>
+    setPending({ message, run: () => void run() });
+  const confirmEl = pending ? (
+    <ConfirmDialog
+      message={pending.message}
+      onCancel={() => setPending(null)}
+      onConfirm={() => {
+        const { run } = pending;
+        setPending(null);
+        run();
+      }}
+    />
+  ) : null;
+  return { confirmDelete, confirmEl };
+}
+
+// ── Assignee select (internal team members) ────────────────────────────────
+// Offers the active staff roster; the stored value stays the person's display
+// name (the house text-owner convention — see owner_uuid_promotion.sql). A
+// legacy value that isn't on the roster is kept as an extra option so it
+// still renders and can be reassigned.
+function AssigneeSelect({
+  value,
+  team,
+  onChange,
+  ariaLabel,
+}: {
+  value: string | null;
+  team: TeamMember[];
+  onChange: (next: string | null) => void;
+  ariaLabel: string;
+}) {
+  const names = team.map((t) => t.full_name);
+  const current = value?.trim() ?? "";
+  const legacy = current && !names.includes(current) ? [current] : [];
+  return (
+    <select
+      value={current}
+      onChange={(e) => onChange(e.target.value || null)}
+      aria-label={ariaLabel}
+      title="Assign to a team member"
+      className="text-[10px] font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer bg-tile text-ink-2 max-w-[140px]"
+    >
+      <option value="">Unassigned</option>
+      {legacy.map((n) => (
+        <option key={n} value={n} className="bg-surface text-ink-1">{n}</option>
+      ))}
+      {names.map((n) => (
+        <option key={n} value={n} className="bg-surface text-ink-1">{n}</option>
+      ))}
+    </select>
   );
 }
 
@@ -477,6 +614,9 @@ export function ObjectiveCard({
   initiativesByGoal,
   rollups = {},
   objectiveOptions,
+  team,
+  notes,
+  tasks,
 }: {
   objective: PlanObjective;
   goals: PlanGoal[];
@@ -485,9 +625,16 @@ export function ObjectiveCard({
   rollups?: Record<string, InitiativeRollup>;
   /** When passed, goals under this objective get a re-parent dropdown. */
   objectiveOptions?: { id: string; title: string }[];
+  /** When passed, the owner becomes an assign-to-team-member dropdown. */
+  team?: TeamMember[];
+  /** When passed, the card shows the objective's notes section. */
+  notes?: PlanObjectiveNote[];
+  /** When passed, the card shows the objective's tasks section. */
+  tasks?: PlanObjectiveTask[];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const { confirmDelete, confirmEl } = useConfirmDialog();
 
   const patch = async (fields: Record<string, unknown>) => {
     setBusy(true);
@@ -498,7 +645,6 @@ export function ObjectiveCard({
     }
   };
   const remove = async () => {
-    if (!confirm(`Delete objective “${objective.title}”? Its goals are kept but unlinked.`)) return;
     setBusy(true);
     try {
       await api(`/api/admin/plan/objectives/${objective.id}`, "DELETE");
@@ -528,14 +674,33 @@ export function ObjectiveCard({
           computed={deriveHealth(goals.flatMap((g) => (kpisByGoal[g.id] ?? []).map((k) => k.status)))}
           stored={objective.status}
         />
-        <EditableText
-          value={objective.owner}
-          onSave={(v) => patch({ owner: v })}
-          placeholder="+ owner"
-          ariaLabel="Objective owner"
-          className="text-[11px] text-ink-2"
-        />
-        <button onClick={() => void remove()} className="text-[11px] text-ink-2 hover:text-expense px-1">Delete</button>
+        {team ? (
+          <AssigneeSelect
+            value={objective.owner}
+            team={team}
+            onChange={(v) => void patch({ owner: v })}
+            ariaLabel="Objective owner"
+          />
+        ) : (
+          <EditableText
+            value={objective.owner}
+            onSave={(v) => patch({ owner: v })}
+            placeholder="+ owner"
+            ariaLabel="Objective owner"
+            className="text-[11px] text-ink-2"
+          />
+        )}
+        <button
+          onClick={() =>
+            confirmDelete(
+              `Objective “${objective.title}” will be permanently deleted. Its goals are kept but unlinked; its notes and tasks are removed. This cannot be undone.`,
+              remove
+            )
+          }
+          className="text-[11px] text-ink-2 hover:text-expense px-1"
+        >
+          Delete
+        </button>
       </div>
       <p className="text-xs text-ink-2 italic mt-1">
         <span className="not-italic text-ink-3">3-year · </span>
@@ -549,6 +714,13 @@ export function ObjectiveCard({
           inputClassName={`${inputCls} w-full mt-1 not-italic`}
         />
       </p>
+
+      {(tasks || notes) && (
+        <div className="mt-4 bg-surface border-[1.5px] border-outline rounded-card p-4 grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-4">
+          {tasks && <ObjectiveTasks objectiveId={objective.id} tasks={tasks} team={team ?? []} />}
+          {notes && <ObjectiveNotes objectiveId={objective.id} notes={notes} />}
+        </div>
+      )}
 
       <div className="space-y-3 mt-4">
         {goals.map((g) => (
@@ -564,7 +736,212 @@ export function ObjectiveCard({
         {goals.length === 0 && <p className="text-xs text-ink-3">No goals under this objective yet.</p>}
         <NewGoalForm objectiveId={objective.id} compact />
       </div>
+      {confirmEl}
     </section>
+  );
+}
+
+// ── Objective tasks (Monthly OGSM review) ──────────────────────────────────
+// Follow-ups that live on the objective itself: checkable, assignable to a
+// team member, dated, and permanent in plan_objective_tasks.
+function ObjectiveTasks({
+  objectiveId,
+  tasks,
+  team,
+}: {
+  objectiveId: string;
+  tasks: PlanObjectiveTask[];
+  team: TeamMember[];
+}) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const { confirmDelete, confirmEl } = useConfirmDialog();
+
+  const add = async () => {
+    if (!newTitle.trim()) return;
+    setBusy(true);
+    try {
+      if (await api("/api/admin/plan/objective-tasks", "POST", { objective_id: objectiveId, title: newTitle.trim() })) {
+        setNewTitle("");
+        router.refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+  const patchTask = async (t: PlanObjectiveTask, fields: Record<string, unknown>) => {
+    setBusy(true);
+    try {
+      if (await api(`/api/admin/plan/objective-tasks/${t.id}`, "PATCH", fields)) router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+  const removeTask = (t: PlanObjectiveTask) =>
+    confirmDelete(`Task “${t.title}” will be permanently deleted. This cannot be undone.`, async () => {
+      setBusy(true);
+      try {
+        if (await api(`/api/admin/plan/objective-tasks/${t.id}`, "DELETE")) router.refresh();
+      } finally {
+        setBusy(false);
+      }
+    });
+
+  return (
+    <div className={busy ? "opacity-60" : ""}>
+      <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-1.5">Tasks</div>
+      {tasks.length > 0 ? (
+        <ul className="space-y-1.5">
+          {tasks.map((t) => {
+            const done = t.status === "done";
+            return (
+              <li key={t.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                <button
+                  onClick={() => void patchTask(t, { status: done ? "todo" : "done" })}
+                  disabled={busy}
+                  className={`w-4 h-4 rounded-full border flex items-center justify-center text-[10px] shrink-0 ${
+                    done ? "bg-orange border-orange text-white" : "border-outline text-transparent hover:border-orange/60"
+                  }`}
+                  aria-label={done ? "Mark not done" : "Mark done"}
+                >✓</button>
+                <EditableText
+                  value={t.title}
+                  onSave={(v) => { if (v) void patchTask(t, { title: v }); }}
+                  ariaLabel="Task title"
+                  className={`flex-1 min-w-[160px] ${done ? "text-ink-2 line-through" : "text-ink-1"}`}
+                />
+                <AssigneeSelect
+                  value={t.assignee}
+                  team={team}
+                  onChange={(v) => void patchTask(t, { assignee: v })}
+                  ariaLabel="Task assignee"
+                />
+                <input
+                  type="date"
+                  value={t.due_date ?? ""}
+                  onChange={(e) => void patchTask(t, { due_date: e.target.value || null })}
+                  aria-label="Task due date"
+                  className="bg-transparent text-[11px] text-ink-2 cursor-pointer focus:outline-none shrink-0"
+                />
+                <button
+                  onClick={() => removeTask(t)}
+                  disabled={busy}
+                  className="text-ink-3 hover:text-expense text-sm px-1 shrink-0"
+                  aria-label="Delete task"
+                >×</button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="text-xs text-ink-3">No tasks on this objective yet.</p>
+      )}
+      <div className="flex gap-2 mt-2">
+        <input
+          className={`${inputCls} flex-1 !py-1.5 !text-xs`}
+          placeholder="Add task…"
+          value={newTitle}
+          onChange={(e) => setNewTitle(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void add(); } }}
+        />
+        <button onClick={() => void add()} disabled={busy} className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 rounded-lg">Add</button>
+      </div>
+      {confirmEl}
+    </div>
+  );
+}
+
+// ── Objective notes (Monthly OGSM review) ──────────────────────────────────
+// Permanent, timestamped commentary saved to plan_objective_notes.
+function ObjectiveNotes({ objectiveId, notes }: { objectiveId: string; notes: PlanObjectiveNote[] }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [draft, setDraft] = useState("");
+  const { confirmDelete, confirmEl } = useConfirmDialog();
+
+  const fmtNoteDate = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-US", {
+      timeZone: "America/Los_Angeles",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+  const add = async () => {
+    if (!draft.trim()) return;
+    setBusy(true);
+    try {
+      if (await api("/api/admin/plan/objective-notes", "POST", { objective_id: objectiveId, body: draft.trim() })) {
+        setDraft("");
+        router.refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+  const patchNote = async (n: PlanObjectiveNote, body: string) => {
+    setBusy(true);
+    try {
+      if (await api(`/api/admin/plan/objective-notes/${n.id}`, "PATCH", { body })) router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+  const removeNote = (n: PlanObjectiveNote) =>
+    confirmDelete("This note will be permanently deleted. This cannot be undone.", async () => {
+      setBusy(true);
+      try {
+        if (await api(`/api/admin/plan/objective-notes/${n.id}`, "DELETE")) router.refresh();
+      } finally {
+        setBusy(false);
+      }
+    });
+
+  return (
+    <div className={busy ? "opacity-60" : ""}>
+      <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-1.5">Notes</div>
+      {notes.length > 0 ? (
+        <ul className="space-y-2">
+          {notes.map((n) => (
+            <li key={n.id} className="text-sm">
+              <div className="flex items-start gap-2">
+                <EditableText
+                  value={n.body}
+                  onSave={(v) => { if (v) void patchNote(n, v); }}
+                  multiline
+                  ariaLabel="Note"
+                  className="text-ink-1 flex-1 min-w-0 whitespace-pre-wrap"
+                  inputClassName={`${inputCls} w-full !py-1 !px-1.5 !text-xs`}
+                />
+                <button
+                  onClick={() => removeNote(n)}
+                  disabled={busy}
+                  className="text-ink-3 hover:text-expense text-sm px-1 shrink-0"
+                  aria-label="Delete note"
+                >×</button>
+              </div>
+              <div className="text-[10px] text-ink-3 mt-0.5">
+                {n.author ? `${n.author} · ` : ""}{fmtNoteDate(n.created_at)}
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-ink-3">No notes on this objective yet.</p>
+      )}
+      <div className="flex gap-2 mt-2 items-start">
+        <textarea
+          className={`${inputCls} flex-1 !py-1.5 !text-xs`}
+          rows={2}
+          placeholder="Add a note…"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+        />
+        <button onClick={() => void add()} disabled={busy} className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 py-1.5 rounded-lg">Add</button>
+      </div>
+      {confirmEl}
+    </div>
   );
 }
 
@@ -637,6 +1014,7 @@ export function GoalCard({
 }) {
   const router = useRouter();
   const { isLeaving, complete } = useTaskComplete();
+  const { confirmDelete, confirmEl } = useConfirmDialog();
   const [busy, setBusy] = useState(false);
   const [newInit, setNewInit] = useState("");
   const [showDoneInits, setShowDoneInits] = useState(false);
@@ -666,13 +1044,13 @@ export function GoalCard({
       if (await api(`/api/admin/plan/initiatives/${init.id}`, "PATCH", fields)) router.refresh();
     } finally { setBusy(false); }
   };
-  const removeInit = async (init: PlanInitiative) => {
-    if (!confirm(`Delete initiative “${init.title}”?`)) return;
-    setBusy(true);
-    try {
-      if (await api(`/api/admin/plan/initiatives/${init.id}`, "DELETE")) router.refresh();
-    } finally { setBusy(false); }
-  };
+  const removeInit = (init: PlanInitiative) =>
+    confirmDelete(`Initiative “${init.title}” will be permanently deleted. This cannot be undone.`, async () => {
+      setBusy(true);
+      try {
+        if (await api(`/api/admin/plan/initiatives/${init.id}`, "DELETE")) router.refresh();
+      } finally { setBusy(false); }
+    });
   const runToggleInit = async (init: PlanInitiative, status: "todo" | "done") => {
     setBusy(true);
     try {
@@ -686,12 +1064,12 @@ export function GoalCard({
     if (init.status === "done") void runToggleInit(init, "todo");
     else complete(init.id, () => runToggleInit(init, "done"));
   };
-  const removeGoal = async () => {
-    if (!confirm(`Delete goal “${goal.title}” and its initiatives?`)) return;
-    setBusy(true);
-    try { await api(`/api/admin/plan/goals/${goal.id}`, "DELETE"); router.refresh(); }
-    finally { setBusy(false); }
-  };
+  const removeGoal = () =>
+    confirmDelete(`Goal “${goal.title}” and its initiatives will be permanently deleted. This cannot be undone.`, async () => {
+      setBusy(true);
+      try { await api(`/api/admin/plan/goals/${goal.id}`, "DELETE"); router.refresh(); }
+      finally { setBusy(false); }
+    });
 
   return (
     <section className={`bg-surface border-[1.5px] border-outline rounded-card p-5 ${busy ? "opacity-60" : ""}`}>
@@ -859,6 +1237,7 @@ export function GoalCard({
         />
         <button onClick={() => void addInitiative()} disabled={busy} className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 rounded-lg">Add</button>
       </div>
+      {confirmEl}
     </section>
   );
 }
@@ -866,6 +1245,7 @@ export function GoalCard({
 // ── KPI row (inline current value + status) ────────────────────────────────
 function KpiRow({ kpi }: { kpi: PlanKpi }) {
   const router = useRouter();
+  const { confirmDelete, confirmEl } = useConfirmDialog();
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(kpi.current?.toString() ?? "");
@@ -904,12 +1284,12 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
     setEditingBaseline(false);
     await patch({ baseline: n });
   };
-  const remove = async () => {
-    if (!confirm(`Delete KPI “${kpi.title}”?`)) return;
-    setBusy(true);
-    try { await api(`/api/admin/plan/kpis/${kpi.id}`, "DELETE"); router.refresh(); }
-    finally { setBusy(false); }
-  };
+  const remove = () =>
+    confirmDelete(`Measure “${kpi.title}” will be permanently deleted. This cannot be undone.`, async () => {
+      setBusy(true);
+      try { await api(`/api/admin/plan/kpis/${kpi.id}`, "DELETE"); router.refresh(); }
+      finally { setBusy(false); }
+    });
 
   // Trust cue: a measure you can't date is one you don't trust. Auto measures
   // refresh from the spine; manual ones go stale-styled past their cadence.
@@ -1013,12 +1393,13 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
       <button
         onClick={() => setShowDetails((v) => !v)}
         className={`text-sm leading-none ${showDetails ? "text-orange" : "text-ink-3 hover:text-orange"}`}
-        aria-label="Edit unit, owner, cadence"
+        aria-label="Edit unit, owner, cadence, note"
         aria-expanded={showDetails}
-        title="Unit · owner · cadence"
+        title="Unit · owner · cadence · note"
       >⋯</button>
-      <button onClick={() => void remove()} className="text-ink-3 hover:text-expense">×</button>
+      <button onClick={() => remove()} aria-label="Delete measure" className="text-ink-3 hover:text-expense">×</button>
     </div>
+    {confirmEl}
     {showDetails && (
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 pb-2 pt-1.5 text-[11px] text-ink-3 border-t border-hairline">
         <span className="flex items-center gap-1">Unit
@@ -1049,6 +1430,17 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
             ariaLabel="Measure cadence"
             className="text-ink-1"
             inputClassName={`${inputCls} !py-0.5 !px-1.5 !text-xs w-24`}
+          />
+        </span>
+        <span className="flex items-start gap-1 w-full">Note
+          <EditableText
+            value={kpi.notes}
+            onSave={(v) => patch({ notes: v })}
+            placeholder="+ what's behind this number?"
+            multiline
+            ariaLabel="Measure note"
+            className="text-ink-1 flex-1 min-w-0 whitespace-pre-wrap"
+            inputClassName={`${inputCls} w-full !py-1 !px-1.5 !text-xs`}
           />
         </span>
       </div>

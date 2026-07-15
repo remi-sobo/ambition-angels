@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { TASK_PRIORITIES, priorityFlagClass, type OpsTask, type TaskPriority } from "../ops/_types/ops";
+import { TASK_PRIORITIES, priorityFlagClass, taskHasAssignee, type OpsTask, type TaskPriority } from "../ops/_types/ops";
 import { useTaskComplete } from "../_lib/useTaskComplete";
 
 const inputCls =
@@ -25,7 +25,9 @@ export function EntityTasks({
   entityLabel,
   defaultCategory,
 }: {
-  entityType: "partner" | "constituent";
+  // Any registry entity type the ops_tasks link CHECK accepts
+  // (partner, constituent, cohort, student, grant, …).
+  entityType: string;
   entityId: string;
   entityLabel: string;
   defaultCategory: string;
@@ -41,6 +43,7 @@ export function EntityTasks({
   const [due, setDue] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [assignee, setAssignee] = useState("");
+  const [assigneeError, setAssigneeError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const params = new URLSearchParams({
@@ -59,6 +62,13 @@ export function EntityTasks({
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    // Category comes from the entity context (a real department today), so
+    // this only fires if a call site ever passes a non-department category.
+    if (!taskHasAssignee(assignee, defaultCategory)) {
+      setAssigneeError("Every task needs an owner — pick a team member to assign this to.");
+      return;
+    }
+    setAssigneeError(null);
     setBusy(true);
     try {
       const res = await fetch("/api/admin/ops/tasks", {
@@ -144,13 +154,14 @@ export function EntityTasks({
           </label>
           <label className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1">
             Owner
-            <select value={assignee} onChange={(e) => setAssignee(e.target.value)} className={inputCls}>
+            <select value={assignee} onChange={(e) => { setAssignee(e.target.value); setAssigneeError(null); }} className={inputCls}>
               {ASSIGNEES.map((a) => <option key={a.value} value={a.value} className="bg-surface">{a.label}</option>)}
             </select>
           </label>
           <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full disabled:opacity-50">
             {busy ? "Adding…" : "Add task"}
           </button>
+          {assigneeError && <p className="w-full text-expense text-xs">{assigneeError}</p>}
         </form>
       )}
 

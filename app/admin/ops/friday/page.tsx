@@ -372,7 +372,7 @@ export default async function FridayClosePage() {
         </>
       }
       steps={[
-        { key: "verdict", label: "Verdict", content: <FridayOrient /> },
+        { key: "status", label: "Status", content: <FridayOrient /> },
         { key: "truth", label: "Truth", content: truth },
         { key: "recap", label: "Recap", content: <MeetingRecap meetings={recapMeetings} /> },
         { key: "nudges", label: "Nudges", content: <FridayNudges orgId={me?.orgId ?? null} /> },

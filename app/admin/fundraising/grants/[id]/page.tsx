@@ -15,6 +15,7 @@ import {
 import GrantSeedTasks from "../_components/GrantSeedTasks";
 import { STAGE_LABELS } from "../_lib/stages";
 import PageHeader from "../../../_components/PageHeader";
+import { EntityDocuments } from "../../../_components/EntityDocuments";
 import { money } from "../../../finance/_components/charts";
 import { ASK_FORM_LABELS } from "@/lib/fundraising/asks";
 import { NewAskForm, StatusChip } from "../../asks/_components/AskControls";
@@ -212,6 +213,9 @@ export default async function GrantDetailPage({ params }: { params: { id: string
             </ul>
           )}
         </section>
+
+        {/* ── Documents: award letter, narrative, reports — linked here ── */}
+        <EntityDocuments entityType="grant" entityId={g.id} entityLabel={g.name} />
 
         {project ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">

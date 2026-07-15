@@ -19,10 +19,19 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "student_id is required" }, { status: 400 });
   }
 
-  const { data, error } = await getSupabaseAdmin()
+  // Enrollment lives in its cohort's org — derive, never default.
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data: cohort } = await supabaseAdmin
+    .from("cohorts")
+    .select("org_id")
+    .eq("id", params.id)
+    .maybeSingle();
+  if (!cohort) return NextResponse.json({ error: "Cohort not found" }, { status: 404 });
+
+  const { data, error } = await supabaseAdmin
     .from("cohort_members")
     .upsert(
-      { cohort_id: params.id, student_id: body!.student_id, status: "enrolled" },
+      { org_id: cohort.org_id, cohort_id: params.id, student_id: body!.student_id, status: "enrolled" },
       { onConflict: "cohort_id,student_id" }
     )
     .select("id")

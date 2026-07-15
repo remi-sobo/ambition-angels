@@ -1,4 +1,5 @@
-import { getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
+import { createServerSupabase } from "@/lib/supabase/server";
 import LoginScreen from "./_components/LoginScreen";
 import CommandCenter from "./_components/CommandCenter";
 
@@ -9,8 +10,25 @@ import CommandCenter from "./_components/CommandCenter";
 // move into their module pages.
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage() {
-  const user = await getAdminUser();
-  if (!user) return <LoginScreen />;
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams?: { auth_error?: string };
+}) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    // Distinguish "no session" from "session without a membership" (e.g. a
+    // Google account outside the allowlist) so the latter gets an explicit
+    // dead-end message instead of silently looping back to the form.
+    const {
+      data: { user: sessionUser },
+    } = await createServerSupabase().auth.getUser();
+    return (
+      <LoginScreen
+        sessionEmail={sessionUser?.email ?? null}
+        authError={searchParams?.auth_error === "1"}
+      />
+    );
+  }
   return <CommandCenter />;
 }

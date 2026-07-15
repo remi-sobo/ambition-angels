@@ -1,110 +1,168 @@
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { computeKpis, formatKpi } from "@/lib/kpis";
-import { TargetEditor } from "./_components/KpiControls";
+import { getMetricCatalog, staleAfter, type CatalogMetric } from "@/lib/admin/metrics/catalog";
+import { fmtMetricValue as fmtValue } from "@/lib/admin/metrics/format";
+import { getDisplayNames } from "@/lib/admin/profile";
 import PageHeader from "../_components/PageHeader";
+import StatCard from "../_components/StatCard";
+import FilterTabs from "../fundraising/_components/FilterTabs";
+import Spark from "./_components/Spark";
+import MetricUpdateForm from "./_components/MetricUpdateForm";
 
-// KPI scorecard (Ring 4, modules/07-governance.md): 12-ish indicators
-// computed live from the spine, with targets, RAG status, and a trend vs
-// the snapshot from ~4 weeks ago (the Monday cron writes snapshots).
 export const dynamic = "force-dynamic";
 
-export default async function KpisPage() {
-  const supabase = getSupabaseAdmin();
-  const cutoff = new Date(Date.now() - 21 * 86400_000).toISOString().slice(0, 10);
+// /admin/kpis — the Metric Catalog hub (spec #3, Phase 4). One place that
+// says: this metric exists, this is its number and target, this person owns
+// it, and it was last updated N days ago. Reads through the session client
+// (metrics.read RLS — board_viewer included, open decision D). Manual metrics
+// get an inline update flow; computed ones are captured by the daily cron and
+// read-only here. This page replaced the kpi_settings/kpi_snapshots
+// scorecard, retired in Phase 5.
 
-  const [kpis, settingsRes, snapshotsRes] = await Promise.all([
-    computeKpis(supabase),
-    supabase.from("kpi_settings").select("metric_key, target, owner, active"),
-    supabase
-      .from("kpi_snapshots")
-      .select("metric_key, captured_on, value")
-      .lte("captured_on", cutoff)
-      .order("captured_on", { ascending: false })
-      .limit(500),
-  ]);
+const DEPARTMENTS = ["finance", "fundraising", "program", "ops", "strategy"] as const;
 
-  const settings = new Map(
-    ((settingsRes.data ?? []) as Array<{
-      metric_key: string; target: number | null; owner: string | null; active: boolean;
-    }>).map((s) => [s.metric_key, s])
-  );
-  // Most recent snapshot at least ~3 weeks old per metric = the trend base.
-  const oldSnap = new Map<string, number>();
-  for (const s of (snapshotsRes.data ?? []) as Array<{ metric_key: string; value: number }>) {
-    if (!oldSnap.has(s.metric_key)) oldSnap.set(s.metric_key, Number(s.value));
+function ageDays(capturedOn: string): number {
+  return Math.max(0, Math.floor((Date.now() - new Date(capturedOn + "T00:00:00Z").getTime()) / 86_400_000));
+}
+
+function FreshnessBadge({ m }: { m: CatalogMetric }) {
+  if (!m.latest) {
+    return (
+      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense whitespace-nowrap">
+        Never updated
+      </span>
+    );
   }
+  const age = ageDays(m.latest.captured_on);
+  if (m.stale) {
+    return (
+      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense whitespace-nowrap">
+        Stale · {age}d
+      </span>
+    );
+  }
+  return (
+    <span
+      className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-revenue-bg text-revenue whitespace-nowrap"
+      title={`${m.cadence} cadence — due after ${staleAfter(m.cadence)} days`}
+    >
+      {age === 0 ? "Today" : `${age}d ago`}
+    </span>
+  );
+}
 
-  const rows = kpis
-    .filter((k) => settings.get(k.key)?.active !== false)
-    .map((k) => {
-      const s = settings.get(k.key);
-      const target = s?.target != null ? Number(s.target) : null;
-      let rag: "green" | "amber" | "red" | "none" = "none";
-      if (target != null && target > 0) {
-        const ratio = k.direction === "up" ? k.value / target : target === 0 ? 1 : k.value / target;
-        if (k.direction === "up") rag = ratio >= 1 ? "green" : ratio >= 0.9 ? "amber" : "red";
-        else rag = k.value <= target ? "green" : k.value <= target * 1.25 ? "amber" : "red";
-      } else if (k.direction === "down") {
-        // Sensible default for "lower is better" counts: zero is green.
-        rag = k.value === 0 ? "green" : "amber";
-      }
-      const prev = oldSnap.get(k.key);
-      const trend =
-        prev == null || prev === k.value ? "flat" : k.value > prev ? "up" : "down";
-      const trendGood =
-        trend === "flat" ? null : (trend === "up") === (k.direction === "up");
-      return { k, target, owner: s?.owner ?? null, rag, trend, trendGood, prev };
-    });
+function TargetCell({ m }: { m: CatalogMetric }) {
+  if (m.target == null) return <span className="text-ink-3">—</span>;
+  const v = m.latest?.value ?? null;
+  const met = v != null && (m.direction === "up" ? v >= m.target : v <= m.target);
+  return (
+    <span className={met ? "text-revenue font-semibold" : "text-ink-2"}>
+      {fmtValue(m.unit, m.target)}
+      {met && " ✓"}
+    </span>
+  );
+}
 
-  const RAG: Record<string, string> = {
-    green: "bg-revenue-bg text-revenue",
-    amber: "bg-[#F4E8D0] text-[#A56A1B]",
-    red: "bg-expense-bg text-expense",
-    none: "bg-tile text-ink-2",
-  };
+export default async function KpisPage({
+  searchParams,
+}: {
+  searchParams?: { dept?: string; view?: string };
+}) {
+  const catalog = await getMetricCatalog();
+  const dept = searchParams?.dept ?? "all";
+  const view = searchParams?.view === "stale" ? "stale" : "all";
+
+  const active = catalog.filter((m) => m.active);
+  const staleCount = active.filter((m) => m.stale).length;
+  const computedCount = active.filter((m) => m.source_kind === "computed").length;
+
+  let rows = active;
+  if (dept !== "all") rows = rows.filter((m) => m.department === dept);
+  if (view === "stale") rows = rows.filter((m) => m.stale);
+
+  const names = await getDisplayNames(
+    Array.from(new Set(rows.map((m) => m.owner_id).filter(Boolean))) as string[],
+  );
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1200px]">
       <PageHeader
-        title="KPIs"
-        subtitle="Computed live from the spine — set targets, watch the trend. Snapshots write every Monday; trends compare to ~4 weeks ago."
+        title="Metric Catalog"
+        subtitle="Every number the org runs on — one definition, one source, one owner, freshness enforced"
       />
 
-      <div className="space-y-2">
-        {rows.map(({ k, target, owner, rag, trend, trendGood, prev }) => (
-          <article
-            key={k.key}
-            className="bg-surface border-[1.5px] border-outline rounded-xl p-3 flex flex-wrap items-center gap-3"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="font-semibold text-ink-1 text-sm">{k.label}</div>
-              {k.hint && <div className="text-[11px] text-ink-2">{k.hint}</div>}
-            </div>
-            <div className="text-right">
-              <div className="text-lg font-bold text-ink-1 tabular-nums">
-                {formatKpi(k, k.value)}
-              </div>
-              {prev != null && trend !== "flat" && (
-                <div
-                  className={`text-[11px] tabular-nums ${
-                    trendGood ? "text-revenue" : "text-expense"
-                  }`}
-                >
-                  {trend === "up" ? "↑" : "↓"} from {formatKpi(k, prev)}
-                </div>
-              )}
-            </div>
-            <span className={`text-[10px] font-semibold px-2 py-1 rounded-full uppercase tracking-wider ${RAG[rag]}`}>
-              {target != null
-                ? `target ${formatKpi(k, target)}`
-                : k.direction === "down"
-                ? "lower is better"
-                : "no target"}
-            </span>
-            <TargetEditor metricKey={k.key} target={target} owner={owner} />
-          </article>
-        ))}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+        <StatCard label="Active metrics" value={active.length} />
+        <StatCard label="Stale (need an update)" value={staleCount} muted={staleCount === 0} />
+        <StatCard label="Computed automatically" value={computedCount} sub="daily capture cron" />
       </div>
+
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <FilterTabs
+          options={[
+            { value: "all", label: "All" },
+            { value: "stale", label: `Stale (${staleCount})` },
+          ]}
+          current={view}
+          paramKey="view"
+          basePath="/admin/kpis"
+          extraParams={dept !== "all" ? { dept } : {}}
+        />
+        <FilterTabs
+          options={[{ value: "all", label: "All departments" }].concat(
+            DEPARTMENTS.map((d) => ({ value: d, label: d.charAt(0).toUpperCase() + d.slice(1) })),
+          )}
+          current={dept}
+          paramKey="dept"
+          basePath="/admin/kpis"
+          extraParams={view !== "all" ? { view } : {}}
+          size="sm"
+        />
+      </div>
+
+      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+        {rows.length === 0 ? (
+          <p className="p-5 text-sm text-ink-2">
+            {view === "stale" ? "Nothing is stale — every metric is inside its cadence." : "No metrics match."}
+          </p>
+        ) : (
+          <ul className="divide-y divide-hairline">
+            {rows.map((m) => (
+              <li key={m.id} className="px-5 py-3 flex items-center gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-ink-1 truncate" title={m.description ?? undefined}>
+                      {m.name}
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-3 whitespace-nowrap">
+                      {m.department ?? "—"} · {m.source_kind === "computed" ? "auto" : "manual"}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-ink-3">
+                    {m.owner_id ? (names[m.owner_id] ?? "—") : "No owner"} · {m.cadence}
+                  </div>
+                </div>
+                <Spark values={m.history.map((h) => h.value)} className="hidden sm:block shrink-0" />
+                <span className="text-sm font-semibold text-ink-1 tabular-nums whitespace-nowrap w-24 text-right">
+                  {m.latest ? fmtValue(m.unit, m.latest.value) : "—"}
+                </span>
+                <span className="text-[12px] tabular-nums whitespace-nowrap w-24 text-right hidden md:inline">
+                  <TargetCell m={m} />
+                </span>
+                <FreshnessBadge m={m} />
+                {m.source_kind === "manual" ? (
+                  <MetricUpdateForm metricId={m.id} />
+                ) : (
+                  <span
+                    className="text-[11px] text-ink-3 whitespace-nowrap w-[4.5rem] text-right"
+                    title="Captured by the daily cron"
+                  >
+                    auto
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

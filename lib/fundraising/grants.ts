@@ -1,6 +1,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
+ * Grant stages where the pursuit is finished — the money either landed and the
+ * grant is fully wrapped up ('closed') or it isn't coming ('declined'). The
+ * grant's workspace project has no remaining work in these stages, so it is
+ * created as / moved to 'done' rather than 'active'. 'awarded' and 'active'
+ * are NOT terminal: reporting and stewardship work is still live.
+ */
+export const TERMINAL_GRANT_STAGES = ["declined", "closed"] as const;
+
+export const isTerminalGrantStage = (stage: string | null | undefined): boolean =>
+  TERMINAL_GRANT_STAGES.includes(stage as (typeof TERMINAL_GRANT_STAGES)[number]);
+
+/**
  * Resolve a funder name to a constituent id, creating the organization
  * constituent if no case-insensitive name match exists. The funder is always
  * an organization constituent (a shared record with its people). Shared by
@@ -47,7 +59,7 @@ export async function findOrCreateFunder(
  */
 export async function ensureGrantProject(
   supabase: SupabaseClient,
-  grant: { id: string; org_id: string; name: string },
+  grant: { id: string; org_id: string; name: string; stage: string },
   operator: string
 ): Promise<Record<string, unknown> | null> {
   const existing = await supabase
@@ -57,6 +69,10 @@ export async function ensureGrantProject(
     .maybeSingle();
   if (existing.data) return existing.data;
 
+  // A project self-healed for an already-declined/closed grant is born 'done' —
+  // otherwise merely opening an old grant's page would resurrect it onto the
+  // ops "Active Projects" surface.
+  const terminal = isTerminalGrantStage(grant.stage);
   const created = await supabase
     .from("ops_projects")
     .insert({
@@ -65,7 +81,8 @@ export async function ensureGrantProject(
       title: grant.name,
       category: "fundraising",
       created_by: operator,
-      status: "active",
+      status: terminal ? "done" : "active",
+      ...(terminal ? { completed_at: new Date().toISOString() } : {}),
     })
     .select("*")
     .maybeSingle();
@@ -111,4 +128,29 @@ export async function autoPlotFinalReport(
     return false;
   }
   return true;
+}
+
+/**
+ * Keep the grant's workspace project off the ops "Active Projects" surface
+ * once the grant itself is finished: when a grant moves to a terminal stage
+ * ('declined'/'closed'), mark its still-active project done. Close-only on
+ * purpose — reopening a grant is rare and a project may have been marked done
+ * by hand for its own reasons, so un-doing is left to the human (project
+ * status is editable on /admin/ops/projects/:id). Best-effort: a failure here
+ * must not fail the stage change itself.
+ */
+export async function syncGrantProjectStatus(
+  supabase: SupabaseClient,
+  grantId: string,
+  stage: string
+): Promise<void> {
+  if (!isTerminalGrantStage(stage)) return;
+  const { error } = await supabase
+    .from("ops_projects")
+    .update({ status: "done", completed_at: new Date().toISOString() })
+    .eq("grant_id", grantId)
+    .eq("status", "active");
+  if (error) {
+    console.error("[grants] project status sync failed:", error.message);
+  }
 }

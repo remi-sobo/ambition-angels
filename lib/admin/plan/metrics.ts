@@ -7,6 +7,7 @@ import {
   computeCorporateRaisedFy,
   computeRunwayMonths,
 } from "@/lib/admin/strategy/money";
+import { getEngagedStageKeys } from "@/lib/admin/program/stages";
 
 /**
  * BloomOS Strategy, Phase 3 — the auto-metric registry (specs/bloomos-strategy.md).
@@ -32,7 +33,7 @@ export type PlanMetricFn = (supabase: SupabaseClient, orgId: string) => Promise<
 
 export const PLAN_METRICS: Record<string, PlanMetricFn> = {
   // Grant dollars secured this year — grants that reached an awarded/active/
-  // closed stage. Mirrors lib/kpis.ts `grants_awarded_ytd`.
+  // closed stage.
   dollars_raised_grants_ytd: async (s, org) => {
     const { data } = await s
       .from("grants")
@@ -46,7 +47,7 @@ export const PLAN_METRICS: Record<string, PlanMetricFn> = {
 
   // Grant applications submitted this year — any grant that reached the
   // submitted stage or beyond. No submitted_at column exists, so updated_at
-  // within the year is the proxy (same approximation lib/kpis.ts uses).
+  // within the year is the proxy.
   grants_submitted_ytd: async (s, org) => {
     const { count } = await s
       .from("grants")
@@ -96,14 +97,17 @@ export const PLAN_METRICS: Record<string, PlanMetricFn> = {
     return count ?? 0;
   },
 
-  // Active teens — students in an engaged journey stage (excludes discover =
-  // not-yet-active prospects, plus alumni and withdrawn).
+  // Active participants — students in an engaged journey stage. Which stages
+  // count as "engaged" is per-org DATA (participant_stages, program spine
+  // spec #4), not a hardcoded list; getEngagedStageKeys falls back to the
+  // starter template if an org has no rows.
   active_teens: async (s, org) => {
+    const engaged = await getEngagedStageKeys(s, org);
     const { count } = await s
       .from("students")
       .select("id", { count: "exact", head: true })
       .eq("org_id", org)
-      .in("stage", ["learn", "practice", "connect", "launch"]);
+      .in("stage", engaged);
     return count ?? 0;
   },
 
@@ -170,13 +174,13 @@ export async function refreshOrgPlanMetrics(
 ): Promise<RefreshResult> {
   const { data: kpis } = await supabase
     .from("plan_kpis")
-    .select("id, metric_key, target")
+    .select("id, metric_key, target, metric_id")
     .eq("org_id", orgId)
     .eq("source", "auto")
     .not("metric_key", "is", null);
 
   const results: { key: string; value: number }[] = [];
-  for (const k of (kpis ?? []) as { id: string; metric_key: string; target: number | null }[]) {
+  for (const k of (kpis ?? []) as { id: string; metric_key: string; target: number | null; metric_id: string | null }[]) {
     const fn = PLAN_METRICS[k.metric_key];
     if (!fn) continue;
     const value = await fn(supabase, orgId);
@@ -199,6 +203,18 @@ export async function refreshOrgPlanMetrics(
           { org_id: orgId, kpi_id: k.id, captured_on: new Date().toISOString().slice(0, 10), value },
           { onConflict: "kpi_id,captured_on" }
         );
+      // Mirror into the Metric Catalog's one history table. This function is
+      // the single writer for both sides of a plan-linked metric, so
+      // plan_kpis.current and the catalog's latest snapshot cannot diverge
+      // (the spec's transition failure mode).
+      if (k.metric_id) {
+        await supabase
+          .from("metric_snapshots")
+          .upsert(
+            { org_id: orgId, metric_id: k.metric_id, captured_on: new Date().toISOString().slice(0, 10), value },
+            { onConflict: "metric_id,captured_on" }
+          );
+      }
     }
   }
   return { updated: results.length, results };

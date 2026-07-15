@@ -3,6 +3,18 @@
 -- item filed rolls the date forward and resets it (handled in the API).
 -- Seeded with a US 501(c)(3) template calendar — dates are templates, the
 -- notes say to verify against actual filings.
+--
+-- Where compliance items come from (this answers "where does the Action
+-- Queue compliance list get its rows?"):
+--   1. This one-time seed below (template 501(c)(3) calendar).
+--   2. Manual entry: the "New item" form on /admin/compliance
+--      (POST /api/admin/compliance).
+--   3. Nothing else — no third-party feed, no generated schedule.
+-- A recurring filing is ONE row showing only its NEXT due date; "Mark filed"
+-- rolls it forward one period (PATCH /api/admin/compliance/[id]). So a
+-- quarterly item never shows Q2 + Q3 + Q4 at once — the next quarter appears
+-- when the current one is filed. Titles must therefore stay period-agnostic
+-- (no "Q2"/"FY2025" baked in), or they go stale after the first roll.
 
 create or replace function set_updated_at()
 returns trigger
@@ -70,6 +82,14 @@ end $$;
 
 -- ── Seed template calendar (idempotent by title) ─────────────────────────
 
+-- Rename pass for already-seeded databases: the 941 row originally shipped
+-- with "Q2" baked into the title, which goes wrong the moment the rolling
+-- engine advances the due date to Q3. Runs before the seed so re-applying
+-- this file never creates a duplicate under the new title.
+update compliance_items
+  set title = 'Form 941 — quarterly payroll taxes'
+  where title = 'Form 941 — Q2 payroll taxes';
+
 insert into compliance_items (kind, title, jurisdiction, due_date, recur, notes)
 select v.kind, v.title, v.jurisdiction, v.due_date::date, v.recur, v.notes
 from (values
@@ -79,8 +99,8 @@ from (values
    'Due 4 months 15 days after FYE; IRS extension honored. Template date — verify.'),
   ('corporate_report','CA Statement of Information (SI-100)','CA','2026-12-31','biennial',
    'Biennial for nonprofits, due in the registration anniversary month. Template date — verify your month.'),
-  ('employment_tax','Form 941 — Q2 payroll taxes','IRS','2026-07-31','quarterly',
-   'Quarterly: Apr 30 / Jul 31 / Oct 31 / Jan 31.'),
+  ('employment_tax','Form 941 — quarterly payroll taxes','IRS','2026-07-31','quarterly',
+   'Quarterly: Apr 30 / Jul 31 / Oct 31 / Jan 31. One row — the date rolls to the next quarter when marked filed.'),
   ('employment_tax','W-2 + 1099-NEC filings (TY2026)','IRS','2027-01-31','annual',
    '1099-NEC threshold is $2,000 for payments made in 2026. Recipient + IRS/SSA copies due Jan 31.'),
   ('insurance','GL + D&O insurance renewal','—','2026-12-31','annual',

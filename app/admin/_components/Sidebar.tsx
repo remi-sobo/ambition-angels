@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import type { AdminUser } from "@/lib/admin/auth";
+import type { FeatureKey } from "@/lib/admin/entitlements";
 import SearchTrigger from "./search/SearchTrigger";
 import { useAdminBadges } from "./AdminBadges";
 
@@ -11,6 +12,11 @@ import { useAdminBadges } from "./AdminBadges";
 // Seven sections mapped over the pages that exist today. Items without a
 // page yet render as muted "Soon" rows — the sidebar is the product's table
 // of contents, so the full IA is visible even before every module ships.
+//
+// `feature` is THE mapping from nav item to entitlement key (core fence spec
+// §6b): items whose org lacks the key are filtered out, and the matching
+// module layout gates the routes themselves. Items without a `feature`
+// (Overview, Inbox, Settings) are platform surfaces every tenant gets.
 
 type IconName =
   | "overview" | "briefing" | "inbox" | "messages"
@@ -21,7 +27,13 @@ type IconName =
   | "week" | "tasks" | "monday" | "friday" | "projects" | "meetings" | "team" | "documents"
   | "board" | "compliance" | "kpis" | "strategy";
 
-type NavItem = { label: string; icon: IconName; href?: string; soon?: boolean };
+type NavItem = {
+  label: string;
+  icon: IconName;
+  href?: string;
+  soon?: boolean;
+  feature?: FeatureKey;
+};
 type NavSection = { label: string; items: NavItem[] };
 
 const NAV_SECTIONS: NavSection[] = [
@@ -30,75 +42,75 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Overview", icon: "overview", href: "/admin" },
       { label: "Inbox", icon: "inbox", href: "/admin/inbox" },
-      { label: "Messages", icon: "messages", href: "/admin/messages" },
-      { label: "Strategy", icon: "strategy", href: "/admin/strategic-plan" },
-      { label: "Executive Briefing", icon: "briefing", href: "/admin/briefing" },
+      { label: "Messages", icon: "messages", href: "/admin/messages", feature: "modules.messages" },
+      { label: "Strategy", icon: "strategy", href: "/admin/strategic-plan", feature: "modules.strategy" },
+      { label: "Executive Briefing", icon: "briefing", href: "/admin/briefing", feature: "modules.ops" },
     ],
   },
   {
     label: "Operations",
     items: [
-      { label: "My Week", icon: "week", href: "/admin/ops/my-week" },
-      { label: "Tasks", icon: "tasks", href: "/admin/ops" },
-      { label: "Projects", icon: "projects", href: "/admin/ops/projects" },
-      { label: "Meetings", icon: "meetings", href: "/admin/meetings" },
-      { label: "Booking page", icon: "events", href: "/admin/meet" },
-      { label: "Staff", icon: "team", href: "/admin/staff" },
-      { label: "Documents", icon: "documents", soon: true },
+      { label: "My Week", icon: "week", href: "/admin/ops/my-week", feature: "modules.ops" },
+      { label: "Tasks", icon: "tasks", href: "/admin/ops", feature: "modules.ops" },
+      { label: "Projects", icon: "projects", href: "/admin/ops/projects", feature: "modules.ops" },
+      { label: "Meetings", icon: "meetings", href: "/admin/meetings", feature: "modules.meetings" },
+      { label: "Booking page", icon: "events", href: "/admin/meet", feature: "modules.meetings" },
+      { label: "Staff", icon: "team", href: "/admin/staff", feature: "modules.staff" },
+      { label: "Documents", icon: "documents", href: "/admin/documents", feature: "modules.documents" },
     ],
   },
   {
     label: "Fundraising",
     items: [
-      { label: "Today's Moves", icon: "tasks", href: "/admin/fundraising/today" },
-      { label: "Donors", icon: "donors", href: "/admin/fundraising/donors" },
-      { label: "Pipeline", icon: "majorgifts", href: "/admin/fundraising" },
-      { label: "Strategy", icon: "strategy", href: "/admin/fundraising/strategy" },
-      { label: "Prospects", icon: "events", href: "/admin/fundraising/prospects" },
-      { label: "Grants", icon: "grants", href: "/admin/fundraising/grants" },
-      { label: "Ask Log", icon: "documents", href: "/admin/fundraising/asks" },
-      { label: "Campaigns", icon: "campaigns", href: "/admin/fundraising/campaigns" },
-      { label: "Events", icon: "events", soon: true },
+      { label: "Today's Moves", icon: "tasks", href: "/admin/fundraising/today", feature: "modules.fundraising" },
+      { label: "Donors", icon: "donors", href: "/admin/fundraising/donors", feature: "modules.fundraising" },
+      { label: "Pipeline", icon: "majorgifts", href: "/admin/fundraising", feature: "modules.fundraising" },
+      { label: "Strategy", icon: "strategy", href: "/admin/fundraising/strategy", feature: "modules.fundraising" },
+      { label: "Prospects", icon: "events", href: "/admin/fundraising/prospects", feature: "ai.prospect_research" },
+      { label: "Grants", icon: "grants", href: "/admin/fundraising/grants", feature: "modules.fundraising" },
+      { label: "Ask Log", icon: "documents", href: "/admin/fundraising/asks", feature: "modules.fundraising" },
+      { label: "Campaigns", icon: "campaigns", href: "/admin/fundraising/campaigns", feature: "modules.fundraising" },
+      { label: "Events", icon: "events", soon: true, feature: "modules.fundraising" },
     ],
   },
   {
     label: "Program",
     items: [
-      { label: "Students", icon: "students", href: "/admin/students" },
-      { label: "Cohorts", icon: "cohorts", href: "/admin/cohorts" },
-      { label: "Intake", icon: "intake", href: "/admin/intake" },
-      { label: "Demo Day", icon: "demoday", href: "/admin/demoday" },
-      { label: "YGB Camp", icon: "camp", href: "/admin/ygb" },
-      { label: "Schools & Partners", icon: "schools", href: "/admin/partners" },
-      { label: "Ambition App", icon: "app", soon: true },
-      { label: "Internships", icon: "internships", soon: true },
-      { label: "Career Readiness", icon: "career", soon: true },
+      { label: "Students", icon: "students", href: "/admin/students", feature: "modules.program" },
+      { label: "Cohorts", icon: "cohorts", href: "/admin/cohorts", feature: "modules.program" },
+      { label: "Intake", icon: "intake", href: "/admin/intake", feature: "modules.program" },
+      { label: "Demo Day", icon: "demoday", href: "/admin/demoday", feature: "aa.demoday" },
+      { label: "YGB Camp", icon: "camp", href: "/admin/ygb", feature: "aa.ygb" },
+      { label: "Schools & Partners", icon: "schools", href: "/admin/partners", feature: "modules.partners" },
+      { label: "Ambition App", icon: "app", soon: true, feature: "modules.program" },
+      { label: "Internships", icon: "internships", soon: true, feature: "modules.program" },
+      { label: "Career Library", icon: "career", href: "/admin/careers", feature: "aa.quiz" },
     ],
   },
   {
     label: "Finance",
     items: [
-      { label: "Overview", icon: "finance", href: "/admin/finance" },
-      { label: "Revenue", icon: "revenue", href: "/admin/finance/revenue" },
-      { label: "Expenses", icon: "expenses", href: "/admin/finance/transactions" },
-      { label: "Budget vs Actual", icon: "budget", href: "/admin/finance/budget" },
-      { label: "Cash Flow", icon: "cashflow", soon: true },
+      { label: "Overview", icon: "finance", href: "/admin/finance", feature: "modules.finance" },
+      { label: "Revenue", icon: "revenue", href: "/admin/finance/revenue", feature: "modules.finance" },
+      { label: "Expenses", icon: "expenses", href: "/admin/finance/transactions", feature: "modules.finance" },
+      { label: "Budget vs Actual", icon: "budget", href: "/admin/finance/budget", feature: "modules.finance" },
+      { label: "Cash Flow", icon: "cashflow", soon: true, feature: "modules.finance" },
     ],
   },
   {
     label: "Data",
     items: [
-      { label: "Website Analytics", icon: "webanalytics", href: "/admin/analytics" },
-      { label: "App Analytics", icon: "appanalytics", soon: true },
-      { label: "Student Analytics", icon: "studentanalytics", soon: true },
-      { label: "Surveys", icon: "surveys", soon: true },
+      { label: "Website Analytics", icon: "webanalytics", href: "/admin/analytics", feature: "aa.site_analytics" },
+      { label: "App Analytics", icon: "appanalytics", soon: true, feature: "aa.site_analytics" },
+      { label: "Student Analytics", icon: "studentanalytics", soon: true, feature: "modules.program" },
+      { label: "Surveys", icon: "surveys", soon: true, feature: "modules.program" },
     ],
   },
   {
     label: "Governance",
     items: [
-      { label: "Board", icon: "board", href: "/admin/board" },
-      { label: "Compliance", icon: "compliance", href: "/admin/compliance" },
+      { label: "Board", icon: "board", href: "/admin/board", feature: "modules.board" },
+      { label: "Compliance", icon: "compliance", href: "/admin/compliance", feature: "modules.compliance" },
     ],
   },
 ];
@@ -373,9 +385,20 @@ function activeSectionLabel(pathname: string): string {
 export default function Sidebar({
   currentUser,
   staffLabel,
+  orgName,
+  features,
 }: {
   currentUser: AdminUser | null;
   staffLabel?: string | null;
+  /** From ctx.orgName (the orgs row). Null pre-auth — the tagline must stay
+   *  generic then; a shared host can't name a tenant before sign-in. */
+  orgName?: string | null;
+  /**
+   * Enabled entitlement keys for the session org (from getEntitlements).
+   * null = no session yet (login screen) — show the full IA rather than a
+   * stripped nav; B2 de-AAs the pre-auth shell.
+   */
+  features?: string[] | null;
 }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -413,6 +436,15 @@ export default function Sidebar({
 
   const active = activeHref(pathname);
 
+  // Entitlement filter: drop items whose org lacks the key, then sections
+  // left empty. Unknown keys are off by design (core fence spec §6b).
+  const sections = features
+    ? NAV_SECTIONS.map((section) => ({
+        ...section,
+        items: section.items.filter((item) => !item.feature || features.includes(item.feature)),
+      })).filter((section) => section.items.length > 0)
+    : NAV_SECTIONS;
+
   const navPanel = (
     <>
       <div className="px-5 py-5 border-b border-white/10">
@@ -437,7 +469,7 @@ export default function Sidebar({
           </div>
         </Link>
         <div className="text-[11px] tracking-wide text-cream/50 mt-1.5">
-          Operating System for Ambition Angels
+          {orgName ? `Operating System for ${orgName}` : "The operating system for nonprofits"}
         </div>
       </div>
 
@@ -448,7 +480,7 @@ export default function Sidebar({
       )}
 
       <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
-        {NAV_SECTIONS.map((section) => (
+        {sections.map((section) => (
           <div key={section.label}>
             <div className="px-3 mb-1.5 flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93]">
               <span className="w-[3px] h-3 rounded-full bg-orange" aria-hidden />

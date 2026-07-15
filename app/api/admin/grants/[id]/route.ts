@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
-import { autoPlotFinalReport, findOrCreateFunder } from "@/lib/fundraising/grants";
+import {
+  autoPlotFinalReport,
+  findOrCreateFunder,
+  syncGrantProjectStatus,
+} from "@/lib/fundraising/grants";
 
 const STAGES = [
   "prospect", "qualified", "loi", "proposal", "submitted",
@@ -111,6 +115,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   // Auto-plot the final report when an award lands.
   if (update.stage === "awarded") {
     await autoPlotFinalReport(supabase, params.id, data.period_end);
+  }
+
+  // A grant reaching declined/closed retires its workspace project so it drops
+  // off the ops "Active Projects" surface (reported by Shannon — closed grants
+  // were lingering there forever).
+  if (typeof update.stage === "string") {
+    await syncGrantProjectStatus(supabase, params.id, update.stage);
   }
 
   await audit(req, {

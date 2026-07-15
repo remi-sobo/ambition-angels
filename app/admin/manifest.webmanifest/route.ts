@@ -16,7 +16,7 @@ const manifest = {
   name: "BloomOS",
   short_name: "BloomOS",
   description:
-    "BloomOS — operating system for Ambition Angels. Fundraising, ops, finance, board, program.",
+    "BloomOS — the operating system for your nonprofit. Fundraising, ops, finance, board, program.",
   id: "/admin",
   start_url: "/admin",
   scope: "/admin",

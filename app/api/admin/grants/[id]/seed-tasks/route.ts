@@ -23,7 +23,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const { data: grant, error: gErr } = await supabase
     .from("grants")
-    .select("id, org_id, name")
+    .select("id, org_id, name, stage")
     .eq("id", params.id)
     .maybeSingle();
   if (gErr) return NextResponse.json({ error: gErr.message }, { status: 500 });
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const project = await ensureGrantProject(
     supabase,
-    grant as { id: string; org_id: string; name: string },
+    grant as { id: string; org_id: string; name: string; stage: string },
     operator
   );
   if (!project) {

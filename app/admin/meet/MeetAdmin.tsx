@@ -6,6 +6,7 @@ import type { OpsTask } from "@/app/admin/ops/_types/ops";
 import ConnectionsBacklog from "./ConnectionsBacklog";
 import NewConnectionForm from "./NewConnectionForm";
 import CandidatesQueue, { type Candidate } from "./CandidatesQueue";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type BookingWithType = Booking & { meeting_type: MeetingType };
 
@@ -49,7 +50,7 @@ export default function MeetAdmin({ initial }: { initial: InitialData }) {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8">
       <header>
-        <h1 className="text-3xl font-semibold">Meet</h1>
+        <h1 className={TYPE.pageTitle}>Meet</h1>
         <p className="mt-2 text-zinc-400">
           Bookings, meeting types, blackouts.
         </p>

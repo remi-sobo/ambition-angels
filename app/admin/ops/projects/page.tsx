@@ -15,6 +15,7 @@ import {
   type OpsProject,
   type ProjectStatus,
 } from "../_types/ops";
+import PageHeader from "../../_components/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -143,21 +144,21 @@ export default async function ProjectsListPage({
 
   return (
     <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8">
-      <header className="flex items-baseline justify-between gap-4 mb-6 flex-wrap">
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
-          Projects
-        </h1>
-        <div className="text-xs text-ink-2">
-          {totalCount > 0 ? (
-            <>
-              Showing <span className="text-ink-1">{fromIdx}–{toIdx}</span> of{" "}
-              <span className="text-ink-1">{totalCount}</span>
-            </>
-          ) : (
-            "No matching projects"
-          )}
-        </div>
-      </header>
+      <PageHeader
+        title="Projects"
+        actions={
+          <div className="text-xs text-ink-2">
+            {totalCount > 0 ? (
+              <>
+                Showing <span className="text-ink-1">{fromIdx}–{toIdx}</span> of{" "}
+                <span className="text-ink-1">{totalCount}</span>
+              </>
+            ) : (
+              "No matching projects"
+            )}
+          </div>
+        }
+      />
 
       <ProjectListControls
         status={status ?? ""}

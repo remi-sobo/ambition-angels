@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import PageHeader from "../../../_components/PageHeader";
 
 type MatchedRow = {
   account: string;
@@ -147,22 +148,24 @@ export default function QbBudgetImportPage() {
 
   return (
     <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8">
-      <header className="mb-6">
+      <header>
         <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
           <Link href={`/admin/finance/budget?year=${year}`} className="hover:text-ink-1">
             ← Budget
           </Link>
         </div>
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
-          Import budget from QuickBooks
-        </h1>
-        <p className="mt-2 text-sm text-ink-2 max-w-2xl">
-          Drop a CSV exported from QuickBooks Budget Overview (or any CSV
-          with an Account column and a Total column). We match account names
-          to your categories, show what we&apos;ll write, and let you fix any
-          unmatched rows before commit. Only <span className="text-ink-1">base_amount</span> changes —
-          contingency tiers stay where they were.
-        </p>
+        <PageHeader
+          title="Import budget from QuickBooks"
+          subtitle={
+            <span className="block max-w-2xl">
+              Drop a CSV exported from QuickBooks Budget Overview (or any CSV
+              with an Account column and a Total column). We match account names
+              to your categories, show what we&apos;ll write, and let you fix any
+              unmatched rows before commit. Only <span className="text-ink-1">base_amount</span> changes —
+              contingency tiers stay where they were.
+            </span>
+          }
+        />
       </header>
 
       <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 mb-6">

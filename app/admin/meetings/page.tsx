@@ -7,6 +7,7 @@ import { MatchCluster, StatusPill, SectionTitle } from "./_ui";
 import SyncMeetingsButton from "./SyncMeetingsButton";
 import MeetingAgendaButton from "./_components/MeetingAgendaButton";
 import FollowUpQuickActions from "./_components/FollowUpQuickActions";
+import PageHeader from "../_components/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -98,17 +99,11 @@ export default async function MeetingsPage() {
 
   return (
     <div className="max-w-5xl px-4 lg:px-8 py-6 lg:py-8 space-y-8">
-      <header className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-4xl sm:text-5xl leading-none">
-            Meetings
-          </h1>
-          <p className="mt-2 text-sm text-ink-2">
-            Your meetings, matched to the donors and partners they concern.
-          </p>
-        </div>
-        <SyncMeetingsButton />
-      </header>
+      <PageHeader
+        title="Meetings"
+        subtitle="Your meetings, matched to the donors and partners they concern."
+        actions={<SyncMeetingsButton />}
+      />
 
       {/* Coverage hero — the load-bearing signal, not a footnote. */}
       {coverage.gapCount > 0 ? (

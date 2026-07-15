@@ -59,3 +59,19 @@ describe("ingestTask tenancy", () => {
     expect(captured.insert).toBeNull();
   });
 });
+
+describe("ingestTask pinning", () => {
+  // Auto-pinning every ingested task duplicated it on /admin/ops: once in the
+  // priority-grouped list, once in the Today section (Shannon's bug report).
+  test("tasks are NOT pinned for today by default", async () => {
+    const captured = { insert: null as Record<string, unknown> | null };
+    await ingestTask(fakeSupabase(null, captured), null, { title: "Test task" });
+    expect(captured.insert?.pinned_for_today).toBe(false);
+  });
+
+  test("an explicit pin_today: true still pins", async () => {
+    const captured = { insert: null as Record<string, unknown> | null };
+    await ingestTask(fakeSupabase(null, captured), null, { title: "Test task", pin_today: true });
+    expect(captured.insert?.pinned_for_today).toBe(true);
+  });
+});

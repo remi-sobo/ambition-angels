@@ -110,8 +110,9 @@ export default async function ScorecardPage() {
           <>
             Every measure, by who owns it — progress, pacing, and where each number comes from. Update
             manual values, status, owner, and notes right here; changes flow to the{" "}
-            <Link href="/admin/strategic-plan" className="text-orange hover:underline">plan</Link> and the{" "}
-            <Link href="/admin/strategic-plan/narrative" className="text-orange hover:underline">narrative</Link>.
+            <Link href="/admin/strategic-plan/narrative" className="text-orange hover:underline">narrative</Link>{" "}
+            · back to the{" "}
+            <Link href="/admin/strategic-plan" className="text-orange hover:underline">full plan</Link>
           </>
         }
         actions={<RefreshMetricsButton />}

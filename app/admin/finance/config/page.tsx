@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import ConfigEditor, { type FinConfig } from "./_components/ConfigEditor";
+import PageHeader from "../../_components/PageHeader";
 
 // Read live every request so the form always seeds from the latest saved row
 // (the service-role read otherwise risks Next's Data Cache). Matches the rest
@@ -50,20 +51,22 @@ export default async function ConfigPage() {
 
   return (
     <div className="max-w-3xl px-4 lg:px-8 py-6 lg:py-8">
-      <header className="mb-8">
+      <header className="mb-2">
         <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
           <Link href="/admin/finance" className="hover:text-ink-1">
             ← Finance
           </Link>
         </div>
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
-          Configuration
-        </h1>
-        <p className="mt-2 text-sm text-ink-2 max-w-2xl">
-          Global settings that the dashboard uses for runway, budget rollups,
-          and fundraising progress. You probably set these once at the start
-          of each fiscal year and rarely touch them again.
-        </p>
+        <PageHeader
+          title="Configuration"
+          subtitle={
+            <span className="block max-w-2xl">
+              Global settings that the dashboard uses for runway, budget rollups,
+              and fundraising progress. You probably set these once at the start
+              of each fiscal year and rarely touch them again.
+            </span>
+          }
+        />
       </header>
 
       <ConfigEditor initial={initial} />

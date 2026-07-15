@@ -6,6 +6,7 @@ import CategoryPicker from "./_components/CategoryPicker";
 import RestrictedToggle from "./_components/RestrictedToggle";
 import ExcludeFromRunwayToggle from "./_components/ExcludeFromRunwayToggle";
 import AiCategorize from "./_components/AiCategorize";
+import PageHeader from "../../_components/PageHeader";
 
 type SearchParams = {
   q?: string;
@@ -116,34 +117,34 @@ export default async function TransactionsPage({
 
   return (
     <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8">
-      <header className="flex items-baseline justify-between gap-4 mb-6 flex-wrap">
-        <div>
-          <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
-            <Link href="/admin/finance" className="hover:text-ink-1">
-              ← Finance
-            </Link>
-          </div>
-          <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
-            Transactions
-          </h1>
-        </div>
-        <div className="flex items-center gap-4 text-xs">
-          {uncategorizedCount && uncategorizedCount > 0 ? (
-            <Link
-              href="/admin/finance/transactions?category=uncategorized"
-              className="rounded-full border border-[#D9BE86] bg-[#F4E8D0] text-amber-200 px-3 py-1 hover:bg-[#F4E8D0]"
-            >
-              {uncategorizedCount} uncategorized →
-            </Link>
-          ) : null}
-          <AiCategorize uncategorizedCount={uncategorizedCount ?? 0} />
-          <Link
-            href="/admin/finance/upload"
-            className="rounded-full bg-orange hover:bg-orange-dark text-white px-3 py-1"
-          >
-            + Import CSV
+      <header>
+        <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
+          <Link href="/admin/finance" className="hover:text-ink-1">
+            ← Finance
           </Link>
         </div>
+        <PageHeader
+          title="Transactions"
+          actions={
+            <div className="flex items-center gap-4 text-xs">
+              {uncategorizedCount && uncategorizedCount > 0 ? (
+                <Link
+                  href="/admin/finance/transactions?category=uncategorized"
+                  className="rounded-full border border-[#D9BE86] bg-[#F4E8D0] text-amber-200 px-3 py-1 hover:bg-[#F4E8D0]"
+                >
+                  {uncategorizedCount} uncategorized →
+                </Link>
+              ) : null}
+              <AiCategorize uncategorizedCount={uncategorizedCount ?? 0} />
+              <Link
+                href="/admin/finance/upload"
+                className="rounded-full bg-orange hover:bg-orange-dark text-white px-3 py-1"
+              >
+                + Import CSV
+              </Link>
+            </div>
+          }
+        />
       </header>
 
       <TransactionFilters categories={categories} />

@@ -1,5 +1,7 @@
 "use client";
 
+import { TYPE } from "@/lib/admin/typeScale";
+
 // Daypart + date are computed in the viewer's timezone, so this must be a
 // client component — the server renders in UTC. suppressHydrationWarning
 // covers the rare mismatch when the page is server-rendered near a daypart
@@ -23,7 +25,7 @@ export default function Greeting({ name, org }: { name: string; org: string }) {
         {date}
       </div>
       <h1
-        className="font-heading font-bold text-ink-1 text-2xl sm:text-3xl tracking-tight"
+        className={`${TYPE.pageTitle} sm:text-3xl tracking-tight`}
         suppressHydrationWarning
       >
         Good {part}, {name}.

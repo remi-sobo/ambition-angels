@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { loadRevenueSchedule } from "@/lib/finance/schedule";
 import { constituentName } from "@/lib/fundraising/display";
 import RevenueManager, { type Commitment, type ReceivedGift } from "./_components/RevenueManager";
+import PageHeader from "../../_components/PageHeader";
 
 type SearchParams = { year?: string };
 
@@ -74,36 +75,38 @@ export default async function RevenuePage({
 
   return (
     <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8">
-      <header className="mb-6 flex items-baseline justify-between gap-4 flex-wrap">
-        <div>
-          <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
-            <Link href="/admin/finance" className="hover:text-ink-1">
-              ← Finance
-            </Link>
-          </div>
-          <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
-            Revenue · {year}
-          </h1>
-          <p className="mt-2 text-sm text-ink-2 max-w-2xl">
-            What&apos;s come in and what&apos;s still expected this year. Committed = signed but not yet
-            in the bank. Projected = pipeline, weighted by probability. Received = money landed.
-          </p>
+      <header>
+        <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
+          <Link href="/admin/finance" className="hover:text-ink-1">
+            ← Finance
+          </Link>
         </div>
-        <div className="flex items-center gap-2 text-xs">
-          {years.map((y) => (
-            <Link
-              key={y}
-              href={`/admin/finance/revenue?year=${y}`}
-              className={`px-3 py-1 rounded-full border ${
-                y === year
-                  ? "border-orange/60 bg-orange/15 text-orange"
-                  : "border-outline text-ink-2 hover:text-ink-1"
-              }`}
-            >
-              {y}
-            </Link>
-          ))}
-        </div>
+        <PageHeader
+          title={<>Revenue · {year}</>}
+          subtitle={
+            <span className="block max-w-2xl">
+              What&apos;s come in and what&apos;s still expected this year. Committed = signed but not yet
+              in the bank. Projected = pipeline, weighted by probability. Received = money landed.
+            </span>
+          }
+          actions={
+            <div className="flex items-center gap-2 text-xs">
+              {years.map((y) => (
+                <Link
+                  key={y}
+                  href={`/admin/finance/revenue?year=${y}`}
+                  className={`px-3 py-1 rounded-full border ${
+                    y === year
+                      ? "border-orange/60 bg-orange/15 text-orange"
+                      : "border-outline text-ink-2 hover:text-ink-1"
+                  }`}
+                >
+                  {y}
+                </Link>
+              ))}
+            </div>
+          }
+        />
       </header>
 
       <RevenueManager

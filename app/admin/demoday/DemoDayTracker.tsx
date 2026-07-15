@@ -8,6 +8,7 @@ import {
   TYPE_COLORS,
   type DemoDayAttendee,
 } from "@/lib/demoday/attendees";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -218,7 +219,7 @@ export default function DemoDayTracker() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold">Demo Day</h1>
+          <h1 className={TYPE.pageTitle}>Demo Day</h1>
           <p className="mt-2 text-zinc-400">
             Fast Forward demo-day contacts — note, star, and track the people to
             look out for.

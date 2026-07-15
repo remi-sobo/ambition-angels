@@ -1,4 +1,6 @@
+import Link from "next/link";
 import TaskRow from "./TaskRow";
+import type { StuckProjectContext } from "@/lib/admin/ops/stuck-context";
 import {
   TASK_CATEGORIES,
   categoryLabel,
@@ -19,6 +21,12 @@ import {
  * Rows render as full TaskRow, so opening one from the rollup gives Shannon
  * the four-verb forcing prompt directly. roll_count (the punt signal) rides
  * along on each row but is kept distinct from the stuck read.
+ *
+ * Beneath each row, a context line identifies the work: the project (linked
+ * to its page) plus the fundraising identifiers derived for it — donor,
+ * partnership — with empty fields simply omitted (lib/admin/ops/
+ * stuck-context.ts). A task with no project gets a muted nudge instead,
+ * since "unidentifiable" is usually part of why it's stuck.
  */
 
 // Assignee buckets in display order; null assignee falls into "Unassigned".
@@ -31,9 +39,11 @@ const ASSIGNEE_ORDER: Array<{ key: AdminUserId | "unassigned"; label: string }> 
 export default function StuckWorkRollup({
   tasks,
   projectNames,
+  projectContext = {},
 }: {
   tasks: OpsTask[];
   projectNames: Record<string, string>;
+  projectContext?: Record<string, StuckProjectContext>;
 }) {
   if (tasks.length === 0) return null;
 
@@ -94,11 +104,28 @@ export default function StuckWorkRollup({
                     </h4>
                     <div className="space-y-1.5">
                       {(byCategory.get(cat) ?? []).map((t) => (
-                        <TaskRow
-                          key={t.id}
-                          task={t}
-                          projectName={t.project_id ? projectNames[t.project_id] ?? null : null}
-                        />
+                        <div key={t.id}>
+                          {/* The context line below carries the project link,
+                              so the row's inline #project pill is hidden to
+                              avoid saying it twice. */}
+                          <TaskRow task={t} hideProjectLink />
+                          <ProjectContextLine
+                            context={
+                              t.project_id
+                                ? projectContext[t.project_id] ?? {
+                                    // Loader miss (shouldn't happen — service
+                                    // client, FK-backed id): still link the
+                                    // project by name rather than lying that
+                                    // there isn't one.
+                                    id: t.project_id,
+                                    title: projectNames[t.project_id] ?? "Untitled project",
+                                    donors: [],
+                                    partnerships: [],
+                                  }
+                                : null
+                            }
+                          />
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -109,5 +136,61 @@ export default function StuckWorkRollup({
         })}
       </div>
     </section>
+  );
+}
+
+/**
+ * One compact labeled line under a stuck TaskRow: the project (linked to its
+ * BloomOS page) and whichever identifiers exist for it. Empty fields are
+ * omitted, never rendered as blank labels. Sits outside the TaskRow's
+ * interactive surface, so clicking the link can't toggle/edit/delete the task.
+ * Left padding lines the text up under the row's title (row px-3 + checkbox
+ * w-5 + gap-3 = 44px = pl-11).
+ */
+function ProjectContextLine({
+  context,
+}: {
+  context: StuckProjectContext | null;
+}) {
+  if (!context) {
+    return (
+      <p
+        className="pl-11 pt-1 text-[11px] italic text-ink-3"
+        title="Click the task title to open it and attach a project"
+      >
+        No linked project
+      </p>
+    );
+  }
+
+  const fields: Array<{ label: string; value: string }> = [];
+  if (context.donors.length > 0)
+    fields.push({ label: "Donor", value: context.donors.join(", ") });
+  if (context.partnerships.length > 0)
+    fields.push({ label: "Partnership", value: context.partnerships.join(", ") });
+
+  return (
+    <div className="pl-11 pt-1 flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-[11px]">
+      <span className="inline-flex items-baseline gap-1.5 min-w-0">
+        <span className="uppercase tracking-wider text-[10px] text-ink-3">
+          Project
+        </span>
+        <Link
+          href={`/admin/ops/projects/${context.id}`}
+          className="text-orange/80 hover:text-orange hover:underline truncate max-w-[280px]"
+          title={`Open project: ${context.title}`}
+        >
+          {context.title} →
+        </Link>
+      </span>
+      {fields.map((f) => (
+        <span key={f.label} className="inline-flex items-baseline gap-1.5 min-w-0">
+          <span className="uppercase tracking-wider text-[10px] text-ink-3">
+            {f.label}
+          </span>
+          <span className="text-ink-2 truncate max-w-[280px]">{f.value}</span>
+        </span>
+      ))}
+    </div>
   );
 }

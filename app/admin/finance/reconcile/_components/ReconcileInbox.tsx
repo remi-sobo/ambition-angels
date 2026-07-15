@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type ReconItem = {
   id: string;
@@ -114,7 +115,7 @@ export default function ReconcileInbox({ pending, resolved }: { pending: ReconIt
     <div className="space-y-6">
       <section>
         <div className="flex items-center justify-between mb-2.5">
-          <h2 className="font-heading font-bold text-ink-1 text-sm">
+          <h2 className={TYPE.cardTitle}>
             To review <span className="text-ink-3 font-normal">· {items.length}</span>
           </h2>
         </div>
@@ -136,7 +137,7 @@ export default function ReconcileInbox({ pending, resolved }: { pending: ReconIt
 
       {resolved.length > 0 && (
         <section>
-          <h2 className="font-heading font-bold text-ink-1 text-sm mb-2.5">Recently resolved</h2>
+          <h2 className={`${TYPE.cardTitle} mb-2.5`}>Recently resolved</h2>
           <div className="rounded-card border-[1.5px] border-outline bg-surface divide-y divide-hairline">
             {resolved.map((it) => (
               <div key={it.id} className="px-4 py-2.5 flex items-center justify-between gap-3 text-xs">

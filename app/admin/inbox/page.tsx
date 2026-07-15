@@ -3,6 +3,7 @@ import PageHeader from "../_components/PageHeader";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import InboxList, { type InboxItem } from "./InboxList";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Per-user notification inbox. RLS scopes every read to the current user
 // (recipient_id = auth.uid() AND notifications.read), so the query carries no
@@ -74,7 +75,7 @@ export default async function InboxPage() {
   if (!ctx) {
     return (
       <Shell>
-        <p className="text-ink-2 text-sm">Sign in to see your notifications.</p>
+        <p className={`${TYPE.bodyMuted}`}>Sign in to see your notifications.</p>
       </Shell>
     );
   }

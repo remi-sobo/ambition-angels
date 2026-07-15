@@ -22,6 +22,7 @@ import { CommentThread } from "../../../_components/CommentThread";
 import { RailEntity } from "../../../_components/rail/RailEntityContext";
 import ConstituentDangerZone from "../_components/ConstituentDangerZone";
 import { mapStage, type HubSpotPledgeStatus } from "@/lib/finance/hubspot-pledges";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
 export const dynamic = "force-dynamic";
@@ -86,7 +87,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   if (cRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Donors</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Donors</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_fundraising_core.sql</code> via Actions → Apply DB
@@ -355,7 +356,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         <Link href="/admin/fundraising/donors" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
           ← Donors
         </Link>
-        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base truncate">{name}</span>
+        <span className={`${TYPE.cardTitle} sm:text-base truncate`}>{name}</span>
         {activePlan && (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">
             Monthly · {money(Number(activePlan.amount))}
@@ -459,7 +460,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
             <div className="flex items-start justify-between gap-2 mb-1">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Profile</h2>
+              <h2 className={TYPE.cardTitle}>Profile</h2>
               <EditDonorButton
                 donor={{
                   id: c.id,
@@ -504,7 +505,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
 
           <section className="lg:col-span-8 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Activity</h2>
+              <h2 className={TYPE.cardTitle}>Activity</h2>
               <div className="flex items-center gap-2">
                 <LogThankYou
                   subjectType="constituent"
@@ -522,7 +523,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
               </div>
             </div>
             {activity.length === 0 ? (
-              <p className="p-6 text-ink-2 text-sm">
+              <p className={`p-6 ${TYPE.bodyMuted}`}>
                 No activity yet. Gifts, logged calls/emails/meetings, and thank-yous appear here.
               </p>
             ) : (
@@ -631,7 +632,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                           ) : (
                             <>
                               {i.logged_by && <div className="text-xs text-ink-3">{i.logged_by}</div>}
-                              {i.notes && <p className="text-ink-1 text-sm mt-0.5">{i.notes}</p>}
+                              {i.notes && <p className={`${TYPE.body} mt-0.5`}>{i.notes}</p>}
                             </>
                           )}
                         </div>
@@ -658,7 +659,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Recurring</h2>
+              <h2 className={TYPE.cardTitle}>Recurring</h2>
               {activePlan && (
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">
                   {money(Number(activePlan.amount))}/{activePlan.frequency.slice(0, 2)} active
@@ -666,7 +667,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
               )}
             </div>
             {plans.length === 0 ? (
-              <p className="p-6 text-ink-2 text-sm">
+              <p className={`p-6 ${TYPE.bodyMuted}`}>
                 No recurring plans. Stripe monthly donations create plans automatically; add a manual
                 plan on the Recurring page for offline standing gifts.
               </p>
@@ -697,13 +698,13 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
           {hubspotId && (
             <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
               <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
-                <h2 className="font-heading font-bold text-ink-1 text-sm">Pledges</h2>
+                <h2 className={TYPE.cardTitle}>Pledges</h2>
                 <span className="text-[10px] uppercase tracking-wider text-ink-3">from HubSpot</span>
               </div>
               {hsPledgesError ? (
-                <p className="p-6 text-ink-2 text-sm">HubSpot deals are unavailable right now. Try a sync, then reload.</p>
+                <p className={`p-6 ${TYPE.bodyMuted}`}>HubSpot deals are unavailable right now. Try a sync, then reload.</p>
               ) : hsPledges.length === 0 ? (
-                <p className="p-6 text-ink-2 text-sm">No HubSpot deals linked to this donor.</p>
+                <p className={`p-6 ${TYPE.bodyMuted}`}>No HubSpot deals linked to this donor.</p>
               ) : (
                 <ul className="divide-y divide-hairline">
                   {hsPledges.map((p) => (
@@ -727,13 +728,13 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         {hubspotId && (
           <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Comms</h2>
+              <h2 className={TYPE.cardTitle}>Comms</h2>
               <span className="text-[10px] uppercase tracking-wider text-ink-3">from HubSpot</span>
             </div>
             {hsCommsError ? (
-              <p className="p-6 text-ink-2 text-sm">HubSpot communications are unavailable right now. Try a sync, then reload.</p>
+              <p className={`p-6 ${TYPE.bodyMuted}`}>HubSpot communications are unavailable right now. Try a sync, then reload.</p>
             ) : hsComms.length === 0 ? (
-              <p className="p-6 text-ink-2 text-sm">No HubSpot emails, calls, meetings, or notes linked to this donor.</p>
+              <p className={`p-6 ${TYPE.bodyMuted}`}>No HubSpot emails, calls, meetings, or notes linked to this donor.</p>
             ) : (
               <ul className="divide-y divide-hairline">
                 {hsComms.map((e) => (
@@ -764,13 +765,13 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">
+            <h2 className={TYPE.cardTitle}>
               Household{household ? ` · ${household.name}` : ""}
             </h2>
           </div>
           <div className="px-5 py-4 space-y-3">
             {!household && (
-              <p className="text-ink-2 text-sm">
+              <p className={`${TYPE.bodyMuted}`}>
                 Not in a household. Create one to roll up giving for spouses or family, or join an
                 existing household.
               </p>

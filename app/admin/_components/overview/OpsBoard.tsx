@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Phase 4 — light tuning for Shannon's own view: reorder and hide cards, no full
 // customizer. Each Ops widget is rendered server-side and passed in as a node;
@@ -143,7 +144,7 @@ export default function OpsBoard({ widgets }: { widgets: OpsWidget[] }) {
           })}
         </ul>
       ) : visible.length === 0 ? (
-        <p className="text-ink-2 text-sm">Every card is hidden — use “Edit layout” to bring some back.</p>
+        <p className={`${TYPE.bodyMuted}`}>Every card is hidden — use “Edit layout” to bring some back.</p>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
           {visible.map((key) => (

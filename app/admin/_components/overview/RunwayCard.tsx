@@ -1,5 +1,6 @@
 import { getFinance } from "@/lib/admin/overview/sources";
 import { money, Sparkline } from "../../finance/_components/charts";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Runway hero — the one number that should dominate the CEO's screen. The
 // headline is the cash tier (bank net of this month's remaining spend, over the
@@ -36,12 +37,12 @@ export default async function RunwayCard() {
   return (
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
       <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
-        <h2 className="font-heading font-bold text-ink-1 text-sm">Runway &amp; cash</h2>
+        <h2 className={TYPE.cardTitle}>Runway &amp; cash</h2>
         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${t.chip} ${t.chipText}`}>{label}</span>
       </div>
       <div className="p-5 grid grid-cols-1 lg:grid-cols-[auto,1fr] gap-6 items-center">
         <div>
-          <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-1">Cash runway · months beyond now</div>
+          <div className={`${TYPE.sectionHeader} mb-1`}>Cash runway · months beyond now</div>
           <div className={`font-heading font-bold text-5xl [font-variant-numeric:tabular-nums] ${t.value}`}>
             {fmtMo(cash.months)}
           </div>
@@ -64,11 +65,11 @@ export default async function RunwayCard() {
           </div>
         </div>
         <div className="min-w-0">
-          <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-2">Ending balance trend</div>
+          <div className={`${TYPE.sectionHeader} mb-2`}>Ending balance trend</div>
           {spark.length > 1 ? (
             <Sparkline values={spark} width={420} height={64} />
           ) : (
-            <p className="text-ink-2 text-sm">Import finance transactions to see the trend.</p>
+            <p className={`${TYPE.bodyMuted}`}>Import finance transactions to see the trend.</p>
           )}
         </div>
       </div>

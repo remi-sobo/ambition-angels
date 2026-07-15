@@ -15,6 +15,7 @@ import {
   type OpsTask,
   type TaskPriority,
 } from "../../../_types/ops";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Ordered task list for a project, with native HTML5 drag-and-drop for
@@ -206,7 +207,7 @@ export default function ProjectTaskList({
   return (
     <>
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-      <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
+      <h2 className={`${TYPE.sectionHeader} mb-4`}>
         Tasks{" "}
         <span className="text-ink-3">
           ({tasks.length}{tasks.length > 0 ? `, ${tasks.filter((t) => t.status !== "done").length} open` : ""})

@@ -1,6 +1,7 @@
 import { loadRhythmSnapshot } from "@/lib/admin/ops/rhythm";
 import { buildMondayStatus } from "@/lib/admin/ops/statusLine";
 import WeekStatusLine from "./WeekStatusLine";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Step 1 of the Monday Plan: orient. The deterministic, role-weighted status —
@@ -17,7 +18,7 @@ export default async function MondayOrient() {
 
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6 space-y-3">
-      <h2 className="text-xs uppercase tracking-wider text-ink-2">Orient</h2>
+      <h2 className={TYPE.sectionHeader}>Orient</h2>
       {status ? (
         <>
           <WeekStatusLine status={status} />

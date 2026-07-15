@@ -7,6 +7,7 @@ import PageHeader from "../../../_components/PageHeader";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "../../../ops/_types/ops";
 import { PledgeStatusSelect, PaymentActions } from "../_components/PledgeControls";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export default async function PledgeDetailPage({ params }: { params: { id: strin
   if (pRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Pledges</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Pledges</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The pledges tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_pledges.sql</code>, then reload.
@@ -92,7 +93,7 @@ export default async function PledgeDetailPage({ params }: { params: { id: strin
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
-            <h2 className="font-heading font-bold text-ink-1 text-sm mb-1">Pledge</h2>
+            <h2 className={`${TYPE.cardTitle} mb-1`}>Pledge</h2>
             {facts.map(([label, value]) => (
               <div key={label} className="flex gap-3 text-xs">
                 <span className="text-ink-3 w-20 flex-shrink-0 uppercase tracking-wider font-semibold pt-px">{label}</span>
@@ -104,10 +105,10 @@ export default async function PledgeDetailPage({ params }: { params: { id: strin
 
           <section className="lg:col-span-8 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Installments</h2>
+              <h2 className={TYPE.cardTitle}>Installments</h2>
             </div>
             {payments.length === 0 ? (
-              <p className="p-6 text-ink-2 text-sm">No installments scheduled.</p>
+              <p className={`p-6 ${TYPE.bodyMuted}`}>No installments scheduled.</p>
             ) : (
               <ul className="divide-y divide-hairline">
                 {payments.map((x) => {

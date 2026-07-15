@@ -7,6 +7,7 @@ import { getSupabaseBrowser } from "@/lib/supabase/browser";
 import Button from "../../_components/Button";
 import NewMessageModal from "./NewMessageModal";
 import { AvatarStack, dayLabel, relTime, sameDay, shortTime } from "./Avatar";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type Person = { userId: string; name: string };
 type LocalMessage = ChatMessage & { pending?: boolean };
@@ -419,7 +420,7 @@ export default function MessagesView({
                 Inbox notification feed (which only gets a pointer per unread
                 conversation — the chat itself lives here). */}
             <div className="min-w-0">
-              <h1 className="font-heading font-bold text-lg text-ink-1 leading-tight">Messages</h1>
+              <h1 className={`${TYPE.sectionTitle} leading-tight`}>Messages</h1>
               <p className="text-[11px] text-ink-3 truncate">
                 Chat with your team — alerts &amp; mentions live in Inbox
               </p>

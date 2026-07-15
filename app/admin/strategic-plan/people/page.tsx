@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../_components/PageHeader";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Per-person views — the Performance Agreement (BloomOS Strategy, Phase 5).
 // Each owner's slice of the plan: their objectives, goals, measures, and
@@ -96,7 +97,7 @@ export default async function StrategyPeoplePage() {
             return (
               <section key={person} className="bg-surface border-[1.5px] border-outline rounded-card-lg p-5">
                 <div className="flex flex-wrap items-baseline gap-2 mb-3">
-                  <h2 className="font-heading font-bold text-ink-1 text-lg">{person}</h2>
+                  <h2 className={TYPE.sectionTitle}>{person}</h2>
                   <span className="text-[11px] text-ink-2">
                     {p.objectives.length} obj · {p.goals.length} goals · {p.kpis.length} measures · {p.initiatives.length} initiatives
                   </span>
@@ -104,7 +105,7 @@ export default async function StrategyPeoplePage() {
 
                 {nextMoves.length > 0 && (
                   <div className="mb-4">
-                    <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-1.5">Next moves</div>
+                    <div className={`${TYPE.sectionHeader} mb-1.5`}>Next moves</div>
                     <ul className="space-y-1">
                       {nextMoves.slice(0, 8).map((m) => (
                         <li key={`${m.kind}-${m.id}`} className="flex items-center gap-2 text-sm">
@@ -165,7 +166,7 @@ function PersonList({
 }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-1">{label}</div>
+      <div className={`${TYPE.sectionHeader} mb-1`}>{label}</div>
       <ul className="space-y-1">
         {rows.map((r) => (
           <li key={r.id} className="flex items-center gap-2">

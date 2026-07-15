@@ -3,6 +3,7 @@ import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { NewCampaignForm, CampaignActions } from "./_components/CommsControls";
 import { SettingsCard, type CommsSettings } from "./_components/SettingsCard";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Epic I — donor communications: compose campaigns against saved segments,
 // test, and send (DNC/unsubscribe honored by the send path).
@@ -43,7 +44,7 @@ export default async function CommsPage() {
   if (campaignsRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Comms</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Comms</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The comms tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_email_campaigns.sql</code>, then reload.
@@ -82,7 +83,7 @@ export default async function CommsPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {campaigns.length === 0 ? (
-            <p className="p-8 text-ink-2 text-sm">
+            <p className={`p-8 ${TYPE.bodyMuted}`}>
               No campaigns yet. Create one, attach a saved segment, send a test to yourself, then send.
             </p>
           ) : (

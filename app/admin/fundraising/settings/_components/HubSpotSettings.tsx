@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type Flags = { sync_out: boolean; sync_in: boolean; sync_gifts_as_deals: boolean };
 
@@ -65,7 +66,7 @@ export default function HubSpotSettings({
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
       <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
         <div>
-          <h2 className="font-heading font-bold text-ink-1 text-sm">HubSpot</h2>
+          <h2 className={TYPE.cardTitle}>HubSpot</h2>
           <p className="text-[11px] text-ink-3">Two-way CRM sync for orgs that run HubSpot</p>
         </div>
         <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider ${connected ? "bg-revenue/15 text-revenue" : "bg-tile text-ink-3 border border-outline"}`}>

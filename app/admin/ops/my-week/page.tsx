@@ -3,6 +3,8 @@ import { loadRhythmSnapshot, rhythmModeForToday } from "@/lib/admin/ops/rhythm";
 import { buildMondayStatus, buildFridayStatus, type WeekStatus } from "@/lib/admin/ops/statusLine";
 import { formatWeekHeader, formatDayLabel, todayInTZ } from "@/lib/admin/ops/week";
 import WeekStatusLine from "../_components/WeekStatusLine";
+import PageHeader from "../../_components/PageHeader";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export const dynamic = "force-dynamic";
 
@@ -35,8 +37,8 @@ function Door({
       <div className="flex items-center justify-between">
         <span
           className={[
-            "text-[10px] uppercase tracking-[0.14em] font-semibold",
-            active ? "text-orange-dark" : "text-ink-2",
+            TYPE.sectionHeader,
+            active ? "!text-orange-dark" : "!text-ink-2",
           ].join(" ")}
         >
           {eyebrow}
@@ -83,22 +85,22 @@ export default async function MyWeekHubPage() {
 
   return (
     <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-      <header>
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
-          My Week
-        </h1>
-        <div className="mt-2 flex items-baseline gap-3 flex-wrap text-sm">
-          {weekOf && <span className="text-ink-2">Week of {formatWeekHeader(weekOf)}</span>}
-          <span className="text-ink-3">·</span>
-          <span className="text-ink-2">{formatDayLabel(todayInTZ())}</span>
-          {snapshot && (
-            <>
-              <span className="text-ink-3">·</span>
-              <span className="text-ink-2">as {cap(snapshot.who.handle)}</span>
-            </>
-          )}
-        </div>
-      </header>
+      <PageHeader
+        title="My Week"
+        subtitle={
+          <span className="flex items-baseline gap-3 flex-wrap">
+            {weekOf && <span className="text-ink-2">Week of {formatWeekHeader(weekOf)}</span>}
+            <span className="text-ink-3">·</span>
+            <span className="text-ink-2">{formatDayLabel(todayInTZ())}</span>
+            {snapshot && (
+              <>
+                <span className="text-ink-3">·</span>
+                <span className="text-ink-2">as {cap(snapshot.who.handle)}</span>
+              </>
+            )}
+          </span>
+        }
+      />
 
       {/* ── WeekStatus ─────────────────────────────────────────────────────── */}
       <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">

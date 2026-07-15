@@ -15,6 +15,7 @@ import { type ScoreFactors } from "../_lib/rubric";
 import { EntityTasks } from "../../_components/EntityTasks";
 import { EntityDocuments } from "../../_components/EntityDocuments";
 import { RailEntity } from "../../_components/rail/RailEntityContext";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Partner org profile + contacts directory + activity timeline (Ring 3).
 export const dynamic = "force-dynamic";
@@ -80,7 +81,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
         <Link href="/admin/partners" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
           ← Partners
         </Link>
-        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base truncate">{p.name}</span>
+        <span className={`${TYPE.cardTitle} sm:text-base truncate`}>{p.name}</span>
         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[p.status]}`}>
           {STATUS_LABELS[p.status] ?? p.status}
         </span>
@@ -111,7 +112,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
           {/* Profile */}
           <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
             <div className="flex items-start justify-between gap-2 mb-1">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Profile</h2>
+              <h2 className={TYPE.cardTitle}>Profile</h2>
               <EditPartnerButton partner={{
                 id: p.id, name: p.name, kind: p.kind, status: p.status,
                 city: p.city, region: p.region, domain: p.domain,
@@ -143,7 +144,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
             </div>
 
             <div className="border-t border-outline pt-3">
-              <h3 className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-2">Agreements</h3>
+              <h3 className={`${TYPE.sectionHeader} mb-2`}>Agreements</h3>
               <MouControls partner={{
                 id: p.id, mou_status: p.mou_status, mou_end: p.mou_end,
                 data_agreement_signed: p.data_agreement_signed,
@@ -163,7 +164,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
 
             <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <h2 className="font-heading font-bold text-ink-1 text-sm">
+                <h2 className={TYPE.cardTitle}>
                   Contacts {contacts.length > 0 && <span className="text-ink-3 font-normal">· {contacts.length}</span>}
                 </h2>
                 <AddContactForm partnerId={p.id} />
@@ -179,7 +180,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
 
             <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
               <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-heading font-bold text-ink-1 text-sm">Activity</h2>
+                <h2 className={TYPE.cardTitle}>Activity</h2>
                 <LogPartnerInteraction
                   partnerId={p.id}
                   contacts={contacts.map((c) => ({
@@ -188,7 +189,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
                 />
               </div>
               {interactions.length === 0 ? (
-                <p className="p-6 text-ink-2 text-sm">No touches logged yet. Calls, emails, and meetings appear here.</p>
+                <p className={`p-6 ${TYPE.bodyMuted}`}>No touches logged yet. Calls, emails, and meetings appear here.</p>
               ) : (
                 <ul className="divide-y divide-hairline">
                   {interactions.map((i) => (
@@ -201,7 +202,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
                         {i.contact_id && contactName(i.contact_id) && (
                           <div className="text-xs text-ink-3">with {contactName(i.contact_id)}</div>
                         )}
-                        {i.notes && <p className="text-ink-1 text-sm mt-0.5 whitespace-pre-wrap">{i.notes}</p>}
+                        {i.notes && <p className={`${TYPE.body} mt-0.5 whitespace-pre-wrap`}>{i.notes}</p>}
                         {i.logged_by && <div className="text-[10px] text-ink-3 mt-0.5">logged by {i.logged_by}</div>}
                       </div>
                     </li>

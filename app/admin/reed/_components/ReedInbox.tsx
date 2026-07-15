@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useReedLauncher } from "@/app/admin/_components/reed/ReedLauncherProvider";
 import { ReedMark } from "@/app/admin/_components/reed/ReedPanel";
+import { TYPE } from "@/lib/admin/typeScale";
+import SectionHeading from "../../_components/SectionHeading";
 
 type Draft = { id: string; kind: string; title: string | null; body: string; status: string; created_at: string };
 type HistoryMessage = { id: string; role: "user" | "assistant"; content: string };
@@ -66,7 +68,7 @@ export default function ReedInbox({
     <div className="px-4 lg:px-8 py-6 max-w-3xl">
       <header className="mb-6 flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-heading font-bold text-cream text-2xl">Reed</h1>
+          <h1 className={`${TYPE.pageTitle} !text-cream`}>Reed</h1>
           <p className="text-sm text-ink-3 mt-1">
             Review what Reed drafted and proposed. Approving a draft moves it to your ready-to-send queue — you
             send or use it from there. Reed never sends or executes anything itself.
@@ -83,9 +85,9 @@ export default function ReedInbox({
       </header>
 
       <section className="mb-8">
-        <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-3">
+        <SectionHeading className="!text-orange mb-3">
           Drafts to review
-        </h2>
+        </SectionHeading>
         {drafts.length === 0 ? (
           <Empty>No drafts waiting. Ask Reed to draft a grant narrative or acknowledgment.</Empty>
         ) : (
@@ -99,9 +101,9 @@ export default function ReedInbox({
 
       {approved.length > 0 && (
         <section className="mb-8">
-          <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-3">
+          <SectionHeading className="!text-orange mb-3">
             Approved — ready to send / use
-          </h2>
+          </SectionHeading>
           <div className="flex flex-col gap-3">
             {approved.map((d) => (
               <ApprovedCard key={d.id} draft={d} />
@@ -111,9 +113,9 @@ export default function ReedInbox({
       )}
 
       <section>
-        <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-3">
+        <SectionHeading className="!text-orange mb-3">
           Suggested next actions
-        </h2>
+        </SectionHeading>
         {suggestions.length === 0 ? (
           <Empty>No open suggestions. Ask Reed what to do next in a module.</Empty>
         ) : (
@@ -127,9 +129,9 @@ export default function ReedInbox({
 
       {proposals.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-1">
+          <SectionHeading className="!text-orange mb-1">
             Strategy proposals
-          </h2>
+          </SectionHeading>
           <p className="text-[12px] text-ink-3 mb-3">
             Reed&apos;s proposed plan elements. Accepting adds the element to your plan; dismissing discards it.
           </p>
@@ -142,9 +144,9 @@ export default function ReedInbox({
       )}
 
       <section className="mt-8">
-        <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-1">
+        <SectionHeading className="!text-orange mb-1">
           Conversation history
-        </h2>
+        </SectionHeading>
         <p className="text-[12px] text-ink-3 mb-3">
           Every question you&apos;ve asked Reed and his answer, saved permanently. Newest first.
         </p>
@@ -234,7 +236,7 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
           {PROPOSED_TYPE_LABEL[proposal.proposed_type] ?? proposal.proposed_type}
         </span>
       </div>
-      <h3 className="font-heading font-semibold text-ink-1 text-sm">{title}</h3>
+      <h3 className={`font-heading font-semibold ${TYPE.body}`}>{title}</h3>
       {detail && <p className="mt-0.5 text-[12px] text-ink-3">{detail}</p>}
       {proposal.rationale && <p className="mt-1 text-[13px] text-ink-2 leading-relaxed">{proposal.rationale}</p>}
       <div className="mt-3 flex items-center gap-2">
@@ -283,7 +285,7 @@ function DraftCard({ draft }: { draft: Draft }) {
           <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-ink-3">
             {KIND_LABEL[draft.kind] ?? draft.kind}
           </span>
-          <h3 className="font-heading font-semibold text-ink-1 text-sm mt-0.5">{draft.title ?? "Untitled draft"}</h3>
+          <h3 className={`font-heading font-semibold ${TYPE.body} mt-0.5`}>{draft.title ?? "Untitled draft"}</h3>
         </div>
         <button onClick={() => setOpen((o) => !o)} className="text-xs font-semibold text-ink-2 hover:text-orange shrink-0">
           {open ? "Hide" : "Read"}
@@ -346,7 +348,7 @@ function ApprovedCard({ draft }: { draft: Draft }) {
           <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-ink-3">
             {KIND_LABEL[draft.kind] ?? draft.kind}
           </span>
-          <h3 className="font-heading font-semibold text-ink-1 text-sm mt-0.5">{draft.title ?? "Untitled draft"}</h3>
+          <h3 className={`font-heading font-semibold ${TYPE.body} mt-0.5`}>{draft.title ?? "Untitled draft"}</h3>
         </div>
       </div>
       <p className="mt-3 text-[13px] text-ink-2 leading-relaxed whitespace-pre-wrap">{draft.body}</p>
@@ -421,7 +423,7 @@ function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
           {suggestion.priority}
         </span>
       </div>
-      <h3 className="font-heading font-semibold text-ink-1 text-sm">{suggestion.title}</h3>
+      <h3 className={`font-heading font-semibold ${TYPE.body}`}>{suggestion.title}</h3>
       {suggestion.rationale && <p className="mt-1 text-[13px] text-ink-2 leading-relaxed">{suggestion.rationale}</p>}
       {extraction && (
         <p className={`mt-1.5 text-xs leading-relaxed ${extraction.unknown ? "text-ink-3 font-mono break-all" : "text-ink-2 font-semibold"}`}>

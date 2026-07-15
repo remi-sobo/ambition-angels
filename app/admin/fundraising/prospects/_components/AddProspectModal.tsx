@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Manually add a prospect to the bench. The simplest intake — someone you know
 // is worth tracking, no HubSpot record needed. POSTs to /prospects/add.
@@ -75,7 +76,7 @@ export default function AddProspectModal({ onClose }: { onClose: () => void }) {
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <form onSubmit={submit} className="p-5 sm:p-6 space-y-4">
-          <h2 className="text-lg font-display font-bold uppercase tracking-tight text-ink-1">Add prospect</h2>
+          <h2 className={TYPE.modalTitle}>Add prospect</h2>
 
           <label className="block">
             <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">Name <span className="text-orange">*</span></div>

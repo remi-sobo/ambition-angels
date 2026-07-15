@@ -1,6 +1,7 @@
 "use client";
 
 import AnalyticsView from "../AnalyticsView";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Website Analytics gets its own route (Data › Website Analytics in the
 // BloomOS sidebar). The same view also remains reachable from the
@@ -10,7 +11,7 @@ export default function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-ink">
       <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30">
-        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Website Analytics</span>
+        <span className={`${TYPE.cardTitle} sm:text-base`}>Website Analytics</span>
       </div>
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8">
         <AnalyticsView />

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import PageHeader from "../../_components/PageHeader";
 import HubSpotSettings from "./_components/HubSpotSettings";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // X7 — fundraising integrations / settings. Reads the service-only connections
 // row directly (RLS deny-all → must use the service-role client server-side).
@@ -43,7 +44,7 @@ export default async function FundraisingSettingsPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">Data hygiene</h2>
+            <h2 className={TYPE.cardTitle}>Data hygiene</h2>
             <p className="text-[11px] text-ink-3">Keep the constituent list clean</p>
           </div>
           <div className="px-5 py-4 space-y-3">

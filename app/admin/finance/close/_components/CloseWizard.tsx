@@ -6,6 +6,7 @@ import Link from "next/link";
 import { money } from "../../_components/charts";
 import RunwayTiers from "../../_components/RunwayTiers";
 import type { RunwayPledge } from "@/lib/finance/runway";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type Horizon = 3 | 6 | 12;
 
@@ -174,7 +175,7 @@ function Step({
           >
             {n}
           </span>
-          <h2 className="font-heading font-bold text-ink-1 text-sm">{title}</h2>
+          <h2 className={TYPE.cardTitle}>{title}</h2>
         </div>
         {status}
       </div>

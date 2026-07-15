@@ -31,6 +31,7 @@ import {
   type PlanInitiative,
   type InitiativeRollup,
 } from "./_components/PlanControls";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Strategic plan (BloomOS Strategy — specs/bloomos-strategy-command-center.md):
 // one spine, three lenses. Org = the glance (status line + grid, B1). Area = the
@@ -379,7 +380,7 @@ export default async function StrategicPlanPage({
 
               {treeOrphans.length > 0 && (
                 <section className="border-[1.5px] border-dashed border-outline rounded-card-lg p-5">
-                  <h2 className="font-heading font-semibold text-ink-2 text-sm mb-3">Goals without an objective</h2>
+                  <h2 className={`font-heading font-semibold ${TYPE.bodyMuted} mb-3`}>Goals without an objective</h2>
                   <div className="space-y-3">
                     {treeOrphans.map((g) => (
                       <GoalCard

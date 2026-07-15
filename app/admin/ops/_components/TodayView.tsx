@@ -1,5 +1,6 @@
 import TaskRow from "./TaskRow";
 import type { OpsTask } from "../_types/ops";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Today section of the Ops landing.
@@ -22,7 +23,7 @@ export default function TodayView({
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
       <header className="flex items-baseline justify-between mb-4">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2">Today</h2>
+        <h2 className={TYPE.sectionHeader}>Today</h2>
         <span className="text-[10px] uppercase tracking-wider text-ink-2">
           {dueToday.length + pinnedToday.length} open
         </span>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { Readiness, ReadinessCheck } from "@/lib/admin/strategy/readiness";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Funder-readiness summary (B2-5): a score, the open blockers, and the
@@ -35,8 +36,8 @@ export default function ReadinessPanel({ data }: { data: Readiness }) {
     <section className={`mb-8 rounded-card border-[1.5px] p-5 ${clean ? "border-revenue/30 bg-revenue-bg" : "border-expense/30 bg-expense-bg"}`}>
       <div className="flex items-center gap-3 flex-wrap">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.12em] font-semibold text-ink-3">Funder readiness</div>
-          <div className="font-heading font-bold text-ink-1 text-lg leading-tight">
+          <div className={TYPE.cardLabel}>Funder readiness</div>
+          <div className={`${TYPE.sectionTitle} leading-tight`}>
             {clean ? "Ready to present" : `${data.blockerCount} blocker${data.blockerCount === 1 ? "" : "s"} to clear`}
             {openAdvisories > 0 && <span className="text-ink-3 font-normal text-sm"> · {openAdvisories} advisor{openAdvisories === 1 ? "y" : "ies"}</span>}
           </div>

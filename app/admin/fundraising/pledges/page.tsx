@@ -6,6 +6,7 @@ import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "../../ops/_types/ops";
 import { NewPledgeForm, ConvertOpportunityForm, type WonOpportunity } from "./_components/PledgeControls";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Epic F — pledges list: outstanding balances, overdue installments, status.
 export const dynamic = "force-dynamic";
@@ -46,7 +47,7 @@ export default async function PledgesPage() {
   if (pledgesRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Pledges</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Pledges</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The pledges tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_pledges.sql</code>, then reload.
@@ -131,7 +132,7 @@ export default async function PledgesPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {rows.length === 0 ? (
-            <p className="p-8 text-ink-2 text-sm">
+            <p className={`p-8 ${TYPE.bodyMuted}`}>
               No pledges yet. Create one to track a multi-installment commitment; installments
               become real gifts as they&apos;re paid.
             </p>

@@ -5,6 +5,7 @@ import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import GiftReportFilters from "./_components/GiftReportFilters";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Epic E — reporting. A Gifts report (filter by date range / campaign / fund /
 // method, with KPIs, a group-by-campaign breakdown, and CSV export), plus the
@@ -59,7 +60,7 @@ export default async function ReportsPage({
   if (giftsRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Reports</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Reports</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_fundraising_core.sql</code>, then reload.
@@ -127,10 +128,10 @@ export default async function ReportsPage({
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">By campaign</h2>
+            <h2 className={TYPE.cardTitle}>By campaign</h2>
           </div>
           {groups.length === 0 ? (
-            <p className="p-6 text-ink-2 text-sm">No gifts match these filters.</p>
+            <p className={`p-6 ${TYPE.bodyMuted}`}>No gifts match these filters.</p>
           ) : (
             <ul className="divide-y divide-hairline">
               {groups.map((g) => (
@@ -146,10 +147,10 @@ export default async function ReportsPage({
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">Recent gifts in range</h2>
+            <h2 className={TYPE.cardTitle}>Recent gifts in range</h2>
           </div>
           {gifts.length === 0 ? (
-            <p className="p-6 text-ink-2 text-sm">No gifts match these filters.</p>
+            <p className={`p-6 ${TYPE.bodyMuted}`}>No gifts match these filters.</p>
           ) : (
             <ul className="divide-y divide-hairline">
               {gifts.slice(0, 50).map((g, i) => (
@@ -171,10 +172,10 @@ export default async function ReportsPage({
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">Saved donor segments</h2>
+            <h2 className={TYPE.cardTitle}>Saved donor segments</h2>
           </div>
           {segments.length === 0 ? (
-            <p className="p-6 text-ink-2 text-sm">
+            <p className={`p-6 ${TYPE.bodyMuted}`}>
               No saved segments yet. Build and save one from the Donors page (Segments &amp; export).
             </p>
           ) : (

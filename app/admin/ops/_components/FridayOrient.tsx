@@ -1,6 +1,7 @@
 import { loadRhythmSnapshot } from "@/lib/admin/ops/rhythm";
 import { buildFridayStatus } from "@/lib/admin/ops/statusLine";
 import WeekStatusLine from "./WeekStatusLine";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Step 1 of the Friday Close: the status. What's true now, and what didn't
@@ -15,7 +16,7 @@ export default async function FridayOrient() {
 
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6 space-y-3">
-      <h2 className="text-xs uppercase tracking-wider text-ink-2">Status</h2>
+      <h2 className={TYPE.sectionHeader}>Status</h2>
       {status ? (
         <>
           <WeekStatusLine status={status} />

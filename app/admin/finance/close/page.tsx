@@ -4,6 +4,7 @@ import { getFinanceSnapshot } from "@/lib/admin/finance";
 import { endOfMonthISO } from "@/lib/finance/runway";
 import { loadRevenueSchedule, scheduleToRunwayPledges } from "@/lib/finance/schedule";
 import CloseWizard from "./_components/CloseWizard";
+import PageHeader from "../../_components/PageHeader";
 
 // The Friday close. A guided, sequenced sweep that gets cash, transactions,
 // categories, pledges, balance, and baseline all current at once, then stamps
@@ -40,18 +41,20 @@ export default async function FinanceClosePage() {
 
   return (
     <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8">
-      <header className="mb-6">
+      <header>
         <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
           <Link href="/admin/finance" className="hover:text-ink-1">← Finance</Link>
         </div>
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
-          Friday close
-        </h1>
-        <p className="mt-2 text-sm text-ink-2 max-w-2xl">
-          Work top to bottom: import the week&apos;s bank CSV, clear uncategorized, sync and confirm
-          pledges, set the balance, confirm the burn baseline, then review the three runway tiers and
-          stamp the close. Monday starts on numbers everyone trusts.
-        </p>
+        <PageHeader
+          title="Friday close"
+          subtitle={
+            <span className="block max-w-2xl">
+              Work top to bottom: import the week&apos;s bank CSV, clear uncategorized, sync and confirm
+              pledges, set the balance, confirm the burn baseline, then review the three runway tiers and
+              stamp the close. Monday starts on numbers everyone trusts.
+            </span>
+          }
+        />
       </header>
 
       <CloseWizard

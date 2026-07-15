@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { deriveHealth } from "@/lib/admin/plan/health";
 import { measureFreshness } from "@/lib/admin/plan/freshness";
 import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // ── Types (mirror the plan_* tables) ──────────────────────────────────────
 export type PlanFoundation = {
@@ -256,7 +257,7 @@ function ConfirmDialog({
         className="w-full max-w-sm bg-surface border-[1.5px] border-outline rounded-card shadow-panel p-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="font-heading font-semibold text-ink-1 text-sm">Delete permanently?</h3>
+        <h3 className={`font-heading font-semibold ${TYPE.body}`}>Delete permanently?</h3>
         <p className="text-sm text-ink-2 mt-2">{message}</p>
         <div className="flex justify-end gap-2 mt-4">
           <button

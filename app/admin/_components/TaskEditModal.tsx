@@ -18,6 +18,7 @@ import {
   type TaskPriority,
 } from "@/app/admin/ops/_types/ops";
 import { useIsOwner } from "./AdminUserContext";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /** Pull any report screenshot URLs out of a task description for inline preview. */
 function extractImageUrls(text: string | null): string[] {
@@ -313,7 +314,7 @@ export default function TaskEditModal({
         className="w-full max-w-lg rounded-card border-[1.5px] border-outline bg-ink shadow-2xl max-h-[90vh] overflow-y-auto"
       >
         <form onSubmit={submit} className="p-6 space-y-4">
-          <h2 className="text-lg font-display font-bold uppercase tracking-tight text-ink-1">
+          <h2 className={TYPE.modalTitle}>
             Edit task
           </h2>
 
@@ -329,7 +330,7 @@ export default function TaskEditModal({
                 <button
                   type="button"
                   onClick={() => setPromptDismissed(true)}
-                  className="shrink-0 text-ink-3 hover:text-ink-1 text-sm leading-none"
+                  className={`shrink-0 text-ink-3 hover:${TYPE.body} leading-none`}
                   aria-label="Dismiss"
                 >
                   ✕

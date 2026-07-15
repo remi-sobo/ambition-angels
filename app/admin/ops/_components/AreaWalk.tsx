@@ -7,6 +7,7 @@ import {
   formatRelative,
   type OpsTask,
 } from "../_types/ops";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Step 3 of the Monday Plan: walk the areas. For each `category` with live work,
@@ -37,7 +38,7 @@ export default async function AreaWalk({
   if (areas.length === 0) {
     return (
       <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-2">Walk the areas</h2>
+        <h2 className={`${TYPE.sectionHeader} mb-2`}>Walk the areas</h2>
         <p className="text-sm text-ink-2 italic">
           No active work in any area yet. Add a project or a task and it&apos;ll show up here.
         </p>
@@ -48,7 +49,7 @@ export default async function AreaWalk({
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6 space-y-4">
       <div>
-        <h2 className="text-xs uppercase tracking-wider text-ink-2">Walk the areas</h2>
+        <h2 className={TYPE.sectionHeader}>Walk the areas</h2>
         <p className="text-sm text-ink-2 mt-1">
           For each area, decide the few things that must move and pin them. Each project shows the
           initiative it serves.

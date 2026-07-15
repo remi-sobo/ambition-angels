@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 const BADGES = [
   ["", "No badge"],
@@ -77,7 +78,7 @@ export default function NewAngleForm() {
         className="bg-tile border-[1.5px] border-outline rounded-card-lg p-5 w-full max-w-lg mt-12 space-y-3 shadow-tile"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="font-heading font-bold text-ink-1 text-sm">New funding angle</h2>
+        <h2 className={TYPE.cardTitle}>New funding angle</h2>
         <input className={input} placeholder="Name *" value={f.name} onChange={set("name")} />
         <select className={input} value={f.status_badge} onChange={set("status_badge")}>
           {BADGES.map(([v, label]) => (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Scenario forecast. Projects cash month-by-month from today's cash at the
 // current burn, then layers user "levers" (one-time or recurring income/
@@ -144,7 +145,7 @@ export default function ForecastBoard({
 
       {/* Chart */}
       <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
-        <h2 className="font-heading font-bold text-ink-1 text-sm mb-1">Projected cash · 24 months</h2>
+        <h2 className={`${TYPE.cardTitle} mb-1`}>Projected cash · 24 months</h2>
         <p className="text-xs text-ink-2 mb-4">
           Solid = your scenario. Faint = baseline (burn only, no income). Where a line crosses zero is when you run out.
         </p>
@@ -154,7 +155,7 @@ export default function ForecastBoard({
       {/* Levers */}
       <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <h2 className="font-heading font-bold text-ink-1 text-sm">What-ifs</h2>
+          <h2 className={TYPE.cardTitle}>What-ifs</h2>
           <div className="flex items-center gap-2 text-[11px]">
             <button onClick={() => add("expense", "monthly")} className="rounded-full bg-tile border-[1.5px] border-outline px-2.5 py-1 hover:bg-[#EFE6D4] text-ink-1">+ Hire / recurring cost</button>
             <button onClick={() => add("income", "one_time")} className="rounded-full bg-tile border-[1.5px] border-outline px-2.5 py-1 hover:bg-[#EFE6D4] text-ink-1">+ Expected gift</button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type HsEngagement = {
   hubspot_id: string;
@@ -107,7 +108,7 @@ export default function EngagementTimeline({
 }) {
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-      <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
+      <h2 className={`${TYPE.sectionHeader} mb-4`}>
         Recent Engagement{" "}
         <span className="text-ink-3">
           ({engagements.length}

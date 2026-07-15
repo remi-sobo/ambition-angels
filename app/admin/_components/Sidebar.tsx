@@ -7,6 +7,7 @@ import type { AdminUser } from "@/lib/admin/auth";
 import type { FeatureKey } from "@/lib/admin/entitlements";
 import SearchTrigger from "./search/SearchTrigger";
 import { useAdminBadges } from "./AdminBadges";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // ── BloomOS IA (docs/bloomos/06-design-system.md §1) ────────────────────────
 // Seven sections mapped over the pages that exist today. Items without a
@@ -482,7 +483,7 @@ export default function Sidebar({
       <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
         {sections.map((section) => (
           <div key={section.label}>
-            <div className="px-3 mb-1.5 flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93]">
+            <div className={`px-3 mb-1.5 flex items-center gap-2 ${TYPE.sectionHeader} !text-[#bfae93]`}>
               <span className="w-[3px] h-3 rounded-full bg-orange" aria-hidden />
               {section.label}
             </div>

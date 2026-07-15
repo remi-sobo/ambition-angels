@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getNeedsYou, type NeedsYouTask, type NeedsYouTouch } from "@/lib/admin/rail/needs-you";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Needs-you shelf: the compact action twin. Overdue tasks, due-today, and the
@@ -19,7 +20,7 @@ export default async function NeedsYouShelf() {
 
   return (
     <section className="px-5 py-5 border-t border-white/[0.07]">
-      <h2 className="flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93] mb-2">
+      <h2 className={`flex items-center gap-2 ${TYPE.sectionHeader} !text-[#bfae93] mb-2`}>
         <span className="w-[3px] h-3 rounded-full bg-orange" aria-hidden />
         Needs you
       </h2>

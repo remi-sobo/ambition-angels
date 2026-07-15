@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { MentionTextarea, type Mentionable } from "./MentionTextarea";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type CommentEntityType = "constituent" | "fr_prospects";
 
@@ -181,7 +182,7 @@ export function CommentThread({
                 placeholder={`Reply to ${c.authorName}…  (@ to mention)`}
                 rows={2}
                 autoFocus
-                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y"
+                className={`w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y`}
               />
               <div>
                 <button
@@ -203,7 +204,7 @@ export function CommentThread({
   return (
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
       <div className="px-5 py-4 border-b border-outline">
-        <h2 className="font-heading font-bold text-ink-1 text-sm">
+        <h2 className={TYPE.cardTitle}>
           Comments {comments.length > 0 && <span className="text-ink-3 font-normal">· {comments.length}</span>}
         </h2>
       </div>
@@ -223,7 +224,7 @@ export function CommentThread({
             members={members}
             placeholder={`Leave a note about ${entityLabel} for the team…  (@ to mention)`}
             rows={2}
-            className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y"
+            className={`w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y`}
           />
           <div>
             <button
@@ -240,7 +241,7 @@ export function CommentThread({
       {loading ? (
         <p className="px-5 py-5 text-ink-3 text-sm">Loading comments…</p>
       ) : topLevel.length === 0 ? (
-        <p className="px-5 py-5 text-ink-2 text-sm">No comments yet. Start the thread above.</p>
+        <p className={`px-5 py-5 ${TYPE.bodyMuted}`}>No comments yet. Start the thread above.</p>
       ) : (
         <div className="px-5 py-2 divide-y divide-hairline">
           {topLevel.map((c) => <Row key={c.id} c={c} isReply={false} />)}

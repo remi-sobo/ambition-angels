@@ -4,6 +4,7 @@ import { getUpcomingMeetingDetail, type UpcomingMeetingDetail } from "@/lib/meet
 import type { ConstituentDossier, PartnerDossier } from "@/lib/meetings/dossier";
 import { SectionTitle } from "../../_ui";
 import MeetingAgendaButton from "../../_components/MeetingAgendaButton";
+import PageHeader from "../../../_components/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -135,14 +136,10 @@ export default async function UpcomingMeetingDetailPage({ params }: { params: { 
         <Link href="/admin/meetings" className="text-xs text-ink-2 hover:text-ink-1 inline-flex items-center gap-1 mb-3">
           ← Meetings
         </Link>
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="min-w-0">
-            <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
-              {brief.title ?? "Untitled meeting"}
-            </h1>
-            <p className="mt-2 text-sm text-ink-2">{fmtDateTime(brief.start)} · Upcoming</p>
-          </div>
-          <div className="pt-1">
+        <PageHeader
+          title={brief.title ?? "Untitled meeting"}
+          subtitle={<>{fmtDateTime(brief.start)} · Upcoming</>}
+          actions={
             <MeetingAgendaButton
               eventId={brief.event_id}
               title={brief.title}
@@ -150,8 +147,8 @@ export default async function UpcomingMeetingDetailPage({ params }: { params: { 
               size="md"
               label={agenda ? "Regenerate with Reed" : "Prep with Reed"}
             />
-          </div>
-        </div>
+          }
+        />
       </header>
 
       {/* Who it's with — dossiers inline. */}

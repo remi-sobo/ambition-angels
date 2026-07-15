@@ -25,6 +25,7 @@ import RhythmWizard from "../_components/RhythmWizard";
 import MondayOrient from "../_components/MondayOrient";
 import AreaWalk from "../_components/AreaWalk";
 import MondayCommit from "../_components/MondayCommit";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export const dynamic = "force-dynamic";
 
@@ -272,7 +273,7 @@ export default async function MondayPlanPage() {
   // ── Step content (rendered on the server, handed to the wizard shell) ───────
   const carryover = (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-      <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-1">
+      <h2 className={`${TYPE.sectionHeader} mb-1`}>
         Clear the carryover
       </h2>
       {slippedRaw.length === 0 ? (

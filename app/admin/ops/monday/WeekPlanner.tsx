@@ -9,6 +9,7 @@ import {
   type OpsTask,
 } from "../_types/ops";
 import type { OpenBlock } from "@/lib/admin/ops/open-blocks";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Monday Plan, the day-by-day board (BloomOS weekly rhythm, Phase 2).
@@ -213,7 +214,7 @@ export default function WeekPlanner({
 
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-      <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
+      <h2 className={`${TYPE.sectionHeader} mb-4`}>
         This Week, by day
       </h2>
 

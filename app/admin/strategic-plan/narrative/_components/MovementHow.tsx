@@ -1,6 +1,7 @@
 import type { HowMovement } from "@/lib/admin/strategy/narrative";
 import { StatusChip } from "../../../_components/StatusChip";
 import { formatUsd, MovementHeader, STATUS_LABEL } from "./shared";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Movement 3 — How We Raise It. The funding doors (strategy_angles) with their
@@ -61,7 +62,7 @@ export default function MovementHow({ how }: { how: HowMovement }) {
       {/* Live pipeline by stage. */}
       {pipelineByStage.length > 0 && (
         <div className="rounded-card-lg border border-hairline bg-surface p-5 mb-8">
-          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-4">
+          <div className={`${TYPE.cardLabel} mb-4`}>
             Live pipeline by stage
           </div>
           <div className="space-y-3">
@@ -92,7 +93,7 @@ export default function MovementHow({ how }: { how: HowMovement }) {
       {/* Channel progress. */}
       {channels.length > 0 && (
         <div className="rounded-card-lg border border-hairline bg-surface p-5">
-          <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-3">
+          <div className={`${TYPE.cardLabel} mb-3`}>
             Channel progress
           </div>
           <div className="space-y-1">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Which strategy angles this prospect is on, plus add-to-angle. A prospect can
 // belong to several angles (many-to-many) — this is the prospect side of the
@@ -48,7 +49,7 @@ export default function ProspectAngles({
 
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-      <h2 className="font-heading font-bold text-ink-1 text-sm mb-3">Strategy angles</h2>
+      <h2 className={`${TYPE.cardTitle} mb-3`}>Strategy angles</h2>
 
       {onAngles.length === 0 ? (
         <p className="text-sm text-ink-3 mb-3">Not on any angle yet.</p>

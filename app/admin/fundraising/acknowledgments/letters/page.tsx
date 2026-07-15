@@ -4,6 +4,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import { complianceBlock, requiresSubstantiation, type ReceiptGift } from "@/lib/fundraising/receipt";
 import PrintButton from "../_components/PrintButton";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Print-ready batch of letter thank-yous: every pending gift that needs a
 // written receipt, laid out one letter per page. Print to PDF from the browser
@@ -65,7 +66,7 @@ export default async function BatchLettersPage() {
         <Link href="/admin/fundraising/acknowledgments" className="text-xs font-semibold text-ink-2 hover:text-ink-1">
           ← Acknowledgments
         </Link>
-        <span className="font-heading font-bold text-ink-1 text-sm">Receipt letters ({letters.length})</span>
+        <span className={TYPE.cardTitle}>Receipt letters ({letters.length})</span>
         <span className="ml-auto">
           <PrintButton label="Print letters" />
         </span>

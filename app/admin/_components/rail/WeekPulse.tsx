@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getWeekPulse, type PulseDay } from "@/lib/admin/rail/week-pulse";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * "This week" pulse shelf: a compact 7-day load ribbon (calendar events +
@@ -37,7 +38,7 @@ export default async function WeekPulse() {
   return (
     <section className="px-5 py-5 border-t border-white/[0.07]">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93]">
+        <h2 className={`flex items-center gap-2 ${TYPE.sectionHeader} !text-[#bfae93]`}>
           <span className="w-[3px] h-3 rounded-full bg-orange" aria-hidden />
           This week
         </h2>

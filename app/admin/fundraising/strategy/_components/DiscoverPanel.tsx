@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // AI prospect discovery for a strategy angle. Enter a target type → the agent
 // web-searches for net-new prospects that fit the angle → review and accept
@@ -92,7 +93,7 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
       <div className="px-5 py-3 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="font-heading font-bold text-ink-1 text-sm">
+          <h2 className={TYPE.cardTitle}>
             Find prospects <span className="text-ink-3 font-normal">· AI</span>
           </h2>
           <p className="text-[11px] text-ink-3">

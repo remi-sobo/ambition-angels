@@ -21,6 +21,7 @@ import {
 } from "../_lib/rollups";
 import { EntityTasks } from "../../_components/EntityTasks";
 import { EntityDocuments } from "../../_components/EntityDocuments";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Cohort dashboard: enrollment vs capacity, sessions, per-member dosage
 // (modules/02-program.md "Cohorts" + "Attendance & dosage").
@@ -122,7 +123,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
         ← All cohorts
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3 mt-2 mb-1">
-        <h1 className="font-heading font-bold text-2xl text-ink-1">{cohort.name}</h1>
+        <h1 className={TYPE.pageTitle}>{cohort.name}</h1>
         <CohortHeaderControls
           cohortId={cohort.id}
           status={cohort.status}
@@ -130,7 +131,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
           acceptingApplications={Boolean(cohort.accepting_applications)}
         />
       </div>
-      <p className="text-ink-2 text-sm mb-6">
+      <p className={`${TYPE.bodyMuted} mb-6`}>
         {[cohort.program, cohort.term, cohort.location].filter(Boolean).join(" · ") || "—"}
         {cohort.start_date && (
           <span className="ml-1.5">

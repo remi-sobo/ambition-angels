@@ -10,6 +10,7 @@ import FilterTabs from "../fundraising/_components/FilterTabs";
 import EntityChip from "../_components/EntityChip";
 import DocumentActions from "./_components/DocumentActions";
 import UploadDocumentButton from "./_components/UploadDocumentButton";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export const dynamic = "force-dynamic";
 
@@ -262,7 +263,7 @@ export default async function DocumentsHubPage({
       {askDocs.length > 0 && (
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">Ask files (fundraising)</h2>
+            <h2 className={TYPE.cardTitle}>Ask files (fundraising)</h2>
             <p className="text-xs text-ink-2 mt-0.5">
               Managed on their asks — shown here so the org&apos;s files read as one list. Consolidation into the hub is
               a tracked follow-on.

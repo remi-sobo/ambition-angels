@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { STAGES, STAGE_LABELS } from "../_lib/stages";
 import FunderPicker, { type FunderChoice } from "../../_components/FunderPicker";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Turn a FunderPicker choice into the grant API's funder fields. A picked
 // funder sends funder_id; a typed name sends funder_name (find-or-created).
@@ -242,7 +243,7 @@ export function EditableGrantDetails({ grant }: { grant: GrantDetails }) {
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="font-heading font-bold text-ink-1 text-sm">Details</h2>
+          <h2 className={TYPE.cardTitle}>Details</h2>
           <button
             onClick={startEdit}
             className="text-[11px] font-semibold text-orange hover:text-orange-dark transition-colors"
@@ -265,7 +266,7 @@ export function EditableGrantDetails({ grant }: { grant: GrantDetails }) {
   return (
     <form onSubmit={save} className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="font-heading font-bold text-ink-1 text-sm">Edit details</h2>
+        <h2 className={TYPE.cardTitle}>Edit details</h2>
       </div>
       <label className={fieldLabel}>
         Grant name *

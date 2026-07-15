@@ -2,6 +2,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { NewJourneyForm, JourneyActions } from "./_components/JourneyControls";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Epic J — journey automation: triggered, multi-step email sequences that act
 // on the retention signals BloomOS already computes. The hourly cron enrolls
@@ -25,7 +26,7 @@ export default async function JourneysPage() {
   if (journeysRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Journeys</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Journeys</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The journeys tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_journeys.sql</code>, then reload.
@@ -65,7 +66,7 @@ export default async function JourneysPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {journeys.length === 0 ? (
-            <p className="p-8 text-ink-2 text-sm">
+            <p className={`p-8 ${TYPE.bodyMuted}`}>
               No journeys yet. Create a first-gift welcome series or a lapsed-donor re-engagement —
               the hourly cron enrolls and sends automatically (do-not-contact always honored).
             </p>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSpeechRecognition } from "@/lib/hooks/useSpeechRecognition";
 import { useIsOwner } from "./AdminUserContext";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Report-an-issue sheet, opened from the + FAB / rail dock.
@@ -216,7 +217,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
 
         <div className="p-5 sm:p-6 space-y-4">
           <div>
-            <h2 className="text-lg font-display font-bold uppercase tracking-tight text-ink-1">
+            <h2 className={TYPE.modalTitle}>
               Report an issue
             </h2>
             <p className="text-xs text-ink-2 mt-0.5">
@@ -271,7 +272,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                   </button>
                 </>
               ) : (
-                <p className="text-ink-2 text-sm">Sending to Remi…</p>
+                <p className={`${TYPE.bodyMuted}`}>Sending to Remi…</p>
               )}
             </div>
           )}
@@ -392,7 +393,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                     type="button"
                     onClick={() => fileReport({ debugPrompt: prompt, title: promptTitle })}
                     disabled={saving}
-                    className="flex-1 border-[1.5px] border-outline bg-tile hover:text-ink-1 text-ink-2 text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                    className={`flex-1 border-[1.5px] border-outline bg-tile hover:text-ink-1 ${TYPE.bodyMuted} font-semibold px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50`}
                   >
                     {saving ? "Saving…" : "Save as task"}
                   </button>
@@ -483,7 +484,7 @@ function PhotoPicker({
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-lg border-[1.5px] border-dashed border-outline bg-tile text-ink-2 hover:text-ink-1 text-sm font-medium transition-colors"
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg border-[1.5px] border-dashed border-outline bg-tile text-ink-2 hover:${TYPE.body} font-medium transition-colors`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden>
             <rect x="3" y="6" width="18" height="14" rx="2" />

@@ -5,6 +5,7 @@ import SectionSummary from "../_components/SectionSummary";
 import { NewCohortForm } from "./_components/CohortControls";
 import { COHORT_STATUS_LABELS } from "./_lib/constants";
 import { pct } from "./_lib/rollups";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Cohorts & attendance (Ring 3, modules/02-program.md "Cohorts"):
 // program × term × site groupings with capacity, sessions, and dosage
@@ -89,7 +90,7 @@ export default async function CohortsPage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="font-heading font-bold text-2xl text-ink-1">Cohorts</h1>
+          <h1 className={TYPE.pageTitle}>Cohorts</h1>
           <p className="text-ink-2 text-sm mt-0.5">
             Program × term groups · sessions, roster-tap attendance, dosage
           </p>

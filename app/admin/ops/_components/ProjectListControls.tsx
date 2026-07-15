@@ -8,6 +8,7 @@ import {
   categoryLabel,
   type Category,
 } from "../_types/ops";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Filter chips + search + "New project" button for the projects list.
@@ -206,7 +207,7 @@ function NewProjectModal({
         className="w-full max-w-md rounded-card border-[1.5px] border-outline bg-ink shadow-2xl"
       >
         <form onSubmit={submit} className="p-6 space-y-4">
-          <h2 className="text-lg font-display font-bold uppercase tracking-tight text-ink-1">
+          <h2 className={TYPE.modalTitle}>
             New Project
           </h2>
 

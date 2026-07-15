@@ -11,6 +11,7 @@ import {
   DeleteAskButton,
   type AskDocument,
 } from "../_components/AskControls";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Ask detail: the facts, the status control, the linked grant/opportunity, and
 // the document store (proposal PDF, cover letter, budget).
@@ -51,7 +52,7 @@ export default async function AskDetailPage({ params }: { params: { id: string }
   if (error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Ask Log</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Ask Log</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The ask log tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_asks_log.sql</code>, then reload.
@@ -115,7 +116,7 @@ export default async function AskDetailPage({ params }: { params: { id: string }
 
             {(grant || opportunity) && (
               <div className="border-t border-outline pt-3 space-y-2">
-                <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Linked to</div>
+                <div className={TYPE.sectionHeader}>Linked to</div>
                 {grant && (
                   <Link href={`/admin/fundraising/grants/${grant.id}`} className="block text-sm text-orange hover:text-orange-dark transition-colors">
                     Grant · {grant.name}
@@ -136,7 +137,7 @@ export default async function AskDetailPage({ params }: { params: { id: string }
 
           <section className="lg:col-span-7 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline flex items-center justify-between">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Documents</h2>
+              <h2 className={TYPE.cardTitle}>Documents</h2>
               <span className="text-[11px] text-ink-3">{documents.length} file{documents.length === 1 ? "" : "s"}</span>
             </div>
             <AskDocuments askId={ask.id} documents={documents} />

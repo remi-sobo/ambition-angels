@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { BankFormat, ImportPreview } from "@/lib/finance/types";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type CommitResult = {
   ok: true;
@@ -94,7 +95,7 @@ export default function UploadClient() {
     <div className="space-y-6">
       {/* Form */}
       <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-6">
-        <h2 className="font-heading font-bold text-ink-1 text-sm mb-1">Bank transactions (CSV)</h2>
+        <h2 className={`${TYPE.cardTitle} mb-1`}>Bank transactions (CSV)</h2>
         <p className="text-xs text-ink-2 mb-4 max-w-2xl">
           Pick a CSV exported from your bank and click <span className="text-ink-1">Upload</span>. We parse it, dedupe
           against existing transactions, and show a preview — nothing is written until you click{" "}
@@ -265,7 +266,7 @@ export default function UploadClient() {
                 setPreview(null);
                 setError(null);
               }}
-              className="px-4 py-2 rounded-lg text-ink-1 hover:text-ink-1 text-sm"
+              className={`px-4 py-2 rounded-lg text-ink-1 hover:${TYPE.body}`}
             >
               Cancel
             </button>

@@ -27,6 +27,7 @@ import MeetingRecap, {
   type RecapSuggestion,
 } from "../_components/MeetingRecap";
 import FridayNudges from "../_components/FridayNudges";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export const dynamic = "force-dynamic";
 
@@ -219,7 +220,7 @@ export default async function FridayClosePage() {
       {/* The week, day by day */}
       <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
         <header className="flex items-baseline justify-between mb-4 gap-4 flex-wrap">
-          <h2 className="text-xs uppercase tracking-wider text-ink-2">The week, day by day</h2>
+          <h2 className={TYPE.sectionHeader}>The week, day by day</h2>
           <div>
             <span className="font-display font-black text-revenue text-3xl leading-none">
               {shipped.length}
@@ -316,7 +317,7 @@ export default async function FridayClosePage() {
 
       {/* Still open — roll forward */}
       <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
+        <h2 className={`${TYPE.sectionHeader} mb-4`}>
           Still open — truth it <span className="text-ink-3">({stillPinned.length})</span>
         </h2>
         {stillPinned.length === 0 ? (
@@ -338,7 +339,7 @@ export default async function FridayClosePage() {
       {/* Slipped by category (only if non-zero) */}
       {slippedRows.length > 0 && (
         <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-          <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-1">Slipped categories</h2>
+          <h2 className={`${TYPE.sectionHeader} mb-1`}>Slipped categories</h2>
           <p className="text-xs text-ink-2 mb-4">Visibility only — patterns in what got pushed.</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {slippedRows.map(([cat, count]) => (

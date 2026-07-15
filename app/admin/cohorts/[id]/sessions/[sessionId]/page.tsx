@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import AttendanceSheet, { type RosterEntry } from "./_components/AttendanceSheet";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Session check-in: the roster-tap attendance screen for one session.
 export const dynamic = "force-dynamic";
@@ -61,10 +62,10 @@ export default async function SessionAttendancePage({
       <Link href={`/admin/cohorts/${params.id}`} className="text-[11px] text-ink-2 hover:text-ink-1">
         ← {cohortName}
       </Link>
-      <h1 className="font-heading font-bold text-2xl text-ink-1 mt-2">
+      <h1 className={`${TYPE.pageTitle} mt-2`}>
         {session.title || "Session"}
       </h1>
-      <p className="text-ink-2 text-sm mt-0.5 mb-6 tabular-nums">
+      <p className={`${TYPE.bodyMuted} mt-0.5 mb-6 tabular-nums`}>
         {session.session_date}
         {time ? ` · ${time}` : ""}
         {session.location ? ` · ${session.location}` : ""}

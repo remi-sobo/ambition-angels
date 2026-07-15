@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FollowupLite } from "@/lib/admin/briefing/sources";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Email follow-ups section — the Cowork/Gmail 24h list, surfaced so they're
 // never missed. Each row shows a live SLA countdown off when it landed, the
@@ -72,7 +73,7 @@ export default function FollowUps({ followups }: { followups: FollowupLite[] }) 
   return (
     <section className="mb-6">
       <div className="flex items-center justify-between mb-2.5">
-        <h2 className="font-heading font-bold text-ink-1 text-sm">
+        <h2 className={TYPE.cardTitle}>
           Email follow-ups <span className="text-ink-3 font-normal">· {visible.length}</span>
         </h2>
         <span className="text-[11px] text-ink-3">reply within {SLA_HOURS}h</span>

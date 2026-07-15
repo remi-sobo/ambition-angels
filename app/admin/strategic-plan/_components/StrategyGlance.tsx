@@ -5,6 +5,7 @@ import { planHealthToStatus, type Status } from "@/lib/admin/status";
 import { StatusChip } from "@/app/admin/_components/StatusChip";
 import OwnerChip from "./OwnerChip";
 import type { StrategyHeadlineKpi } from "@/lib/admin/overview/sources";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // The Org-lens glance (Phase B1): a deterministic statusLine line, the "Needs
 // attention" exception list, and the objective grid — the three-second "are we
@@ -88,7 +89,7 @@ export default async function StrategyGlance() {
               className={`block rounded-card-lg border-[1.5px] p-4 transition-colors hover:border-orange/40 ${TILE_ACCENT[status]}`}
             >
               <div className="flex items-start justify-between gap-2 mb-1.5">
-                <h3 className="font-heading font-semibold text-ink-1 text-sm leading-tight min-w-0">{o.title}</h3>
+                <h3 className={`font-heading font-semibold ${TYPE.body} leading-tight min-w-0`}>{o.title}</h3>
                 <StatusChip status={status} className="shrink-0">{healthLabel(o.health)}</StatusChip>
               </div>
               {o.owner && <div className="mb-1.5"><OwnerChip owner={o.owner} /></div>}

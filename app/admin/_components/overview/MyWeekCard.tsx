@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { rhythmModeForToday } from "@/lib/admin/ops/rhythm";
 import { formatDayLabel, todayInTZ } from "@/lib/admin/ops/week";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * The summon. A time-aware Command Center card that drops the user straight into
@@ -34,7 +35,7 @@ export default function MyWeekCard() {
         </svg>
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] uppercase tracking-[0.14em] font-semibold text-cream/40">
+        <div className={`${TYPE.sectionHeader} !text-cream/40`}>
           {formatDayLabel(todayInTZ())} · My Week
         </div>
         <div className="mt-0.5 font-heading font-semibold text-cream text-lg leading-tight truncate">

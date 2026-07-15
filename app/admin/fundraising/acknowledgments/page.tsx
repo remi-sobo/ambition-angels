@@ -16,6 +16,7 @@ import { type AckChannel } from "@/lib/fundraising/ack-channels";
 import AckComposer, { type AckTemplateLite } from "./_components/AckComposer";
 import ThankathonButton from "./_components/ThankathonButton";
 import LogAckButton from "./_components/LogAckButton";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // The acknowledgments queue: every gift awaiting a thank-you, oldest first.
 // In v2 each pending thank-you is also a real `ops_task` (label `sys:ack`), so
@@ -64,7 +65,7 @@ export default async function AcknowledgmentsPage() {
         <Link href="/admin/fundraising/donors" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
           ← Donors
         </Link>
-        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Acknowledgments</span>
+        <span className={`${TYPE.cardTitle} sm:text-base`}>Acknowledgments</span>
         <div className="ml-auto flex items-center gap-4">
           <LogAckButton />
           <ThankathonButton count={pending.length} />
@@ -106,7 +107,7 @@ export default async function AcknowledgmentsPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {pending.length === 0 ? (
-            <p className="p-8 text-ink-2 text-sm">
+            <p className={`p-8 ${TYPE.bodyMuted}`}>
               Every gift has been thanked. New Stripe donations of $250+ will appear here
               automatically; smaller gifts are marked not-required but can still be thanked from
               the donor&apos;s profile.

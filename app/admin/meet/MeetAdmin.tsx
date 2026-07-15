@@ -6,6 +6,7 @@ import type { OpsTask } from "@/app/admin/ops/_types/ops";
 import ConnectionsBacklog from "./ConnectionsBacklog";
 import NewConnectionForm from "./NewConnectionForm";
 import CandidatesQueue, { type Candidate } from "./CandidatesQueue";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type BookingWithType = Booking & { meeting_type: MeetingType };
 
@@ -49,7 +50,7 @@ export default function MeetAdmin({ initial }: { initial: InitialData }) {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8">
       <header>
-        <h1 className="text-3xl font-semibold">Meet</h1>
+        <h1 className={TYPE.pageTitle}>Meet</h1>
         <p className="mt-2 text-zinc-400">
           Bookings, meeting types, blackouts.
         </p>
@@ -166,7 +167,7 @@ function BookingsTab({
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="text-lg font-semibold mb-4">Upcoming</h2>
+        <h2 className={`${TYPE.sectionTitle} mb-4`}>Upcoming</h2>
         {upcoming.length === 0 ? (
           <p className="text-zinc-500 text-sm">Nothing on the books.</p>
         ) : (
@@ -624,7 +625,7 @@ function BlackoutsTab({
   return (
     <div className="space-y-6">
       <div className="rounded-lg border-[1.5px] border-outline bg-tile p-5">
-        <h2 className="text-lg font-semibold mb-4">Add a blackout</h2>
+        <h2 className={`${TYPE.sectionTitle} mb-4`}>Add a blackout</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Start date">
             <input
@@ -699,7 +700,7 @@ function BlackoutsTab({
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-4">Current blackouts</h2>
+        <h2 className={`${TYPE.sectionTitle} mb-4`}>Current blackouts</h2>
         {blackouts.length === 0 ? (
           <p className="text-zinc-500 text-sm">No blackouts set.</p>
         ) : (

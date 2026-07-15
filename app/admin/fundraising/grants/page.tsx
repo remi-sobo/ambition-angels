@@ -7,6 +7,7 @@ import { todayISO } from "../../ops/_types/ops";
 import { NewGrantForm } from "./_components/GrantControls";
 import GrantsBoard, { type GrantCard } from "./_components/GrantsBoard";
 import { STAGES, BOARD_STAGES } from "./_lib/stages";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Grants pipeline + requirements calendar (Ring 2,
 // modules/03-fundraising.md "Grants"). Pipeline columns mirror the spec
@@ -61,7 +62,7 @@ export default async function GrantsPage() {
   if (grantsRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Grants</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Grants</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The grants tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_grants.sql</code> via Actions → Apply DB migration,
@@ -143,10 +144,10 @@ export default async function GrantsPage() {
           {/* ── Requirements calendar ── */}
           <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Upcoming Deadlines</h2>
+              <h2 className={TYPE.cardTitle}>Upcoming Deadlines</h2>
             </div>
             {requirements.length === 0 ? (
-              <p className="p-6 text-ink-2 text-sm">
+              <p className={`p-6 ${TYPE.bodyMuted}`}>
                 No open deadlines. Every grant&apos;s LOIs, applications, and reports belong here —
                 add them from the grant&apos;s page.
               </p>

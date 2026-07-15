@@ -38,7 +38,7 @@ export default function PageHeader({
         ) : null}
         <h1 className={TYPE.pageTitle}>{title}</h1>
         {subtitle ? (
-          <p className="text-ink-2 text-sm mt-0.5">{subtitle}</p>
+          <p className={`${TYPE.bodyMuted} mt-0.5`}>{subtitle}</p>
         ) : null}
       </div>
       {actions}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import PageHeader from "../_components/PageHeader";
 import SectionHeading from "../_components/SectionHeading";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // A plain-language guide to BloomOS — every section, module, and what it
 // does. Mirrors the sidebar IA (Sidebar.tsx) so the table of contents and
@@ -389,7 +390,7 @@ export default function HowToPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {GLOBALS.map((g) => (
             <div key={g.title} className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-4">
-              <h3 className="font-heading font-bold text-ink-1 text-sm mb-1">{g.title}</h3>
+              <h3 className={`${TYPE.cardTitle} mb-1`}>{g.title}</h3>
               <p className="text-[13px] text-ink-2 leading-relaxed">{g.body}</p>
             </div>
           ))}

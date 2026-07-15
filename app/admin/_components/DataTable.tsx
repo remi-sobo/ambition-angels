@@ -24,6 +24,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type Column<Row> = {
   key: string;
@@ -269,7 +270,7 @@ export default function DataTable<Row>({
             setPage(0);
           }}
           placeholder={searchPlaceholder}
-          className="bg-cream/5 border-[1.5px] border-outline rounded-lg px-3 py-1.5 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 min-w-[180px] flex-1 max-w-xs"
+          className={`bg-cream/5 border-[1.5px] border-outline rounded-lg px-3 py-1.5 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 min-w-[180px] flex-1 max-w-xs`}
         />
 
         {/* Column picker */}
@@ -344,7 +345,7 @@ export default function DataTable<Row>({
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <div className="p-8 text-ink-2 text-sm">{emptyMessage}</div>
+        <div className={`p-8 ${TYPE.bodyMuted}`}>{emptyMessage}</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

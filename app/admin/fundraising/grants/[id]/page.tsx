@@ -19,6 +19,7 @@ import { EntityDocuments } from "../../../_components/EntityDocuments";
 import { money } from "../../../finance/_components/charts";
 import { ASK_FORM_LABELS } from "@/lib/fundraising/asks";
 import { NewAskForm, StatusChip } from "../../asks/_components/AskControls";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Grant detail: award facts, stage control, and the requirements calendar.
 // Requirement-row rendering (incl. inline edit) lives in GrantControls.
@@ -44,7 +45,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
   if (gRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Grants</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Grants</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The grants tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_grants.sql</code> via Actions → Apply DB migration,
@@ -151,10 +152,10 @@ export default async function GrantDetailPage({ params }: { params: { id: string
 
           <section className="lg:col-span-7 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Requirements Calendar</h2>
+              <h2 className={TYPE.cardTitle}>Requirements Calendar</h2>
             </div>
             {requirements.length === 0 ? (
-              <p className="px-5 py-6 text-ink-2 text-sm">
+              <p className={`px-5 py-6 ${TYPE.bodyMuted}`}>
                 No deadlines yet — add the application, reports, and anything else the funder
                 expects. Awarded grants auto-plot a final report at the period end.
               </p>
@@ -172,7 +173,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
         {/* ── Asks: the solicitations behind this grant + their PDFs ── */}
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">Asks</h2>
+            <h2 className={TYPE.cardTitle}>Asks</h2>
             {g.funder?.id && (
               <NewAskForm
                 grantId={g.id}
@@ -181,7 +182,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
             )}
           </div>
           {asks.length === 0 ? (
-            <p className="px-5 py-6 text-ink-2 text-sm">
+            <p className={`px-5 py-6 ${TYPE.bodyMuted}`}>
               No asks logged for this grant yet. Log the proposal or LOI you submitted and attach the
               PDF — it lands in the Ask Log too.
             </p>

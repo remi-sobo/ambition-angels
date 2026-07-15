@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * The shared stepper for the weekly rhythm (Operating Rhythm v2). One shell,
@@ -56,10 +57,10 @@ export default function RhythmWizard({
       {/* ── Chrome: title + back to hub ─────────────────────────────────── */}
       <header className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.14em] font-semibold text-orange-dark">
+          <div className={`${TYPE.sectionHeader} !text-orange-dark`}>
             {eyebrow}
           </div>
-          <h1 className="mt-1 font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
+          <h1 className={`mt-1 ${TYPE.pageTitle}`}>
             {title}
           </h1>
           {subtitle && (

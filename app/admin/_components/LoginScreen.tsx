@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // BloomOS sign-in, split-screen: brand panel on the left (the "are we
 // winning" pitch from bloomos.org, synthetic numbers only), the form on the
@@ -157,10 +158,10 @@ export default function LoginScreen({
 
           {sessionEmail ? (
             <div>
-              <h2 className="font-heading font-bold text-ink-1 text-2xl tracking-tight">
+              <h2 className={`${TYPE.pageTitle} tracking-tight`}>
                 No workspace yet
               </h2>
-              <p className="text-ink-2 text-sm leading-relaxed mt-3">
+              <p className={`${TYPE.bodyMuted} leading-relaxed mt-3`}>
                 You&apos;re signed in as{" "}
                 <span className="font-semibold text-ink-1">{sessionEmail}</span>,
                 but that account doesn&apos;t belong to an organization on
@@ -178,10 +179,10 @@ export default function LoginScreen({
             </div>
           ) : magicSent ? (
             <div>
-              <h2 className="font-heading font-bold text-ink-1 text-2xl tracking-tight">
+              <h2 className={`${TYPE.pageTitle} tracking-tight`}>
                 Check your email
               </h2>
-              <p className="text-ink-2 text-sm leading-relaxed mt-3">
+              <p className={`${TYPE.bodyMuted} leading-relaxed mt-3`}>
                 We sent a one-time sign-in link to{" "}
                 <span className="font-semibold text-ink-1">{email}</span>.
               </p>
@@ -195,10 +196,10 @@ export default function LoginScreen({
             </div>
           ) : (
             <>
-              <h2 className="font-heading font-bold text-ink-1 text-2xl tracking-tight">
+              <h2 className={`${TYPE.pageTitle} tracking-tight`}>
                 Welcome back
               </h2>
-              <p className="text-ink-2 text-sm mt-1 mb-7">
+              <p className={`${TYPE.bodyMuted} mt-1 mb-7`}>
                 Sign in to your organization&apos;s BloomOS.
               </p>
 
@@ -242,7 +243,7 @@ export default function LoginScreen({
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
                   autoComplete="email"
-                  className="bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50"
+                  className={`bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/50`}
                   autoFocus
                 />
                 <div className="relative">
@@ -252,7 +253,7 @@ export default function LoginScreen({
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
                     autoComplete="current-password"
-                    className="w-full bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 pr-12 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50"
+                    className={`w-full bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 pr-12 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/50`}
                   />
                   <button
                     type="button"

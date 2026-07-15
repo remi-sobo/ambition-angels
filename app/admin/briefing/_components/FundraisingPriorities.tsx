@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { money } from "../../finance/_components/charts";
 import type { FundraisingMove } from "@/lib/admin/briefing/fundraising";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Today's fundraising priorities — the top AI-prioritized moves (with a
 // deterministic fallback). Read-only: each row links to the donor to act; the
@@ -24,7 +25,7 @@ export default function FundraisingPriorities({ moves }: { moves: FundraisingMov
   return (
     <section className="mb-6">
       <div className="flex items-center justify-between mb-2.5">
-        <h2 className="font-heading font-bold text-ink-1 text-sm">
+        <h2 className={TYPE.cardTitle}>
           Today&apos;s fundraising moves
           <span className="text-ink-3 font-normal"> · {hasAi ? "AI-ranked" : "from your queue"}</span>
         </h2>

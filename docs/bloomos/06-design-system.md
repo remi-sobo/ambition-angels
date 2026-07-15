@@ -46,7 +46,26 @@ Extend the existing Tailwind system (keep brand tokens; add product tokens):
 | Status | green `#1E8E5A` / amber `#D97706` / red `#DC2626` | deltas, RAG status, alerts |
 | Radii / cards | existing `rounded-card` (1.25rem), white cards, `shadow-sm`, 1px `gray-light` border | All dashboard widgets |
 
-Typography: keep Poppins (`font-heading`) for UI labels + section headings, DM Sans (`font-body`) for content, Big Shoulders (`font-display`) reserved for marketing — the admin product uses Poppins/DM Sans only. Numbers in dashboards use tabular-nums.
+Typography: inside `.admin-shell` both `--font-heading` and `--font-display` resolve to **Space Grotesk** (`--font-grotesk`, see `app/layout.tsx` + `globals.css`) — the BloomOS product voice — with **DM Sans** (`font-body`) for body text. `.font-display` additionally forces uppercase, so it reads as "shouty Space Grotesk", not a different face; per `specs/bloomos-typography.md` D2/D3 the `font-display font-black` voice is retired from admin titles (page titles render via `PageHeader`, modals via `TYPE.modalTitle`). Poppins and Big Shoulders belong to the marketing site only. Numbers in dashboards use tabular-nums.
+
+### Type scale
+
+The one canonical type scale is the ten-role `TYPE` in `lib/admin/typeScale.ts` (`specs/bloomos-typography.md` §2, "bloomos-to-ten"). Sizes/weights/tracking are **never typed inline** — consume `TYPE` or a primitive (`PageHeader` / `SectionHeading` / `StatCard`). `tests/type-drift.test.ts` gates this across `app/admin/**`, and `tests/design-tokens.test.ts` freezes the values: changing a role updates the freeze and this table in the same commit.
+
+| Role | Classes | Use |
+|---|---|---|
+| `pageTitle` | `font-heading font-bold text-2xl text-ink-1` | Page name — one per page, rendered only via `PageHeader` |
+| `sectionHeader` | `font-heading font-semibold text-[11px] uppercase tracking-[0.14em] text-ink-3` | Small uppercase eyebrow above a group of rows/cards (`SectionHeading`) |
+| `sectionTitle` | `font-heading font-bold text-lg text-ink-1` | Visible mid-weight section title inside a page |
+| `cardTitle` | `font-heading font-bold text-sm text-ink-1` | Title of a card / panel |
+| `modalTitle` | `font-heading font-bold text-lg text-ink-1` | Title of a modal / sheet |
+| `cardMetric` | `font-heading font-semibold text-[28px] leading-none tracking-tight tabular-nums text-ink-1` | The big number on a stat card |
+| `cardLabel` | `text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3` | Uppercase label above a metric |
+| `body` | `text-sm text-ink-1` | Primary reading text |
+| `bodyMuted` | `text-sm text-ink-2` | Supporting / descriptive text — the de-facto admin default |
+| `metadata` | `text-[11px] text-ink-2` | Dates, owners, hints |
+
+`sectionTitle` and `modalTitle` are intentionally identical strings today — separate roles so they can diverge without a migration. Margins/layout utilities are never part of the scale (append them: `` className={`${TYPE.cardTitle} mb-2`} ``). Roles carry their ink color; on dark/accent surfaces keep the role and append an important override (`!text-orange`, `!text-cream`) rather than forking the scale. Deliberate exemptions (D5): `LoginScreen`, the strategic-plan narrative deck, `Greeting.tsx` (starts from `TYPE.pageTitle`, appends `sm:text-3xl tracking-tight`), and `font-mono` for timestamps/amounts.
 
 Component library: **shadcn/ui** (copy-owned) themed with these tokens — buttons, tables, dialogs, command palette, forms (react-hook-form + Zod), toasts, charts. Replaces ad-hoc admin components incrementally.
 

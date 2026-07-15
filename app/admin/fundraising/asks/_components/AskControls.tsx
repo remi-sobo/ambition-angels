@@ -13,6 +13,7 @@ import {
   ASK_STATUS_LABELS,
   askStatusTone,
 } from "@/lib/fundraising/asks";
+import { TYPE } from "@/lib/admin/typeScale";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -300,7 +301,7 @@ export function EditableAskDetails({ ask }: { ask: AskDetails }) {
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="font-heading font-bold text-ink-1 text-sm">Details</h2>
+          <h2 className={TYPE.cardTitle}>Details</h2>
           <button onClick={startEdit} className="text-[11px] font-semibold text-orange hover:text-orange-dark transition-colors">
             Edit
           </button>
@@ -318,7 +319,7 @@ export function EditableAskDetails({ ask }: { ask: AskDetails }) {
 
   return (
     <form onSubmit={save} className="space-y-3">
-      <h2 className="font-heading font-bold text-ink-1 text-sm">Edit ask</h2>
+      <h2 className={TYPE.cardTitle}>Edit ask</h2>
       <label className={fieldLabel}>
         Funder *
         <FunderPicker value={funder} onChange={setFunder} placeholder="Foundation or person" />
@@ -432,7 +433,7 @@ export function AskDocuments({ askId, documents }: { askId: string; documents: A
   return (
     <div>
       {documents.length === 0 ? (
-        <p className="px-5 py-6 text-ink-2 text-sm">
+        <p className={`px-5 py-6 ${TYPE.bodyMuted}`}>
           No documents yet. Upload the proposal PDF, cover letter, or budget — the paper trail for
           this ask lives here.
         </p>

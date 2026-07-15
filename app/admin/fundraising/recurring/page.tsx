@@ -5,6 +5,7 @@ import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import { NewRecurringForm, RecurringActions } from "./_components/RecurringControls";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Epic G — recurring giving: active plans, monthly run-rate, failed-payment
 // follow-up, and manual plan management.
@@ -44,7 +45,7 @@ export default async function RecurringPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Recurring</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Recurring</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet, or{" "}
           <code className="text-orange">add_recurring_plan_health.sql</code> hasn&apos;t been applied. Apply it, then reload.
@@ -77,7 +78,7 @@ export default async function RecurringPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {sorted.length === 0 ? (
-            <p className="p-8 text-ink-2 text-sm">
+            <p className={`p-8 ${TYPE.bodyMuted}`}>
               No recurring plans yet. Stripe monthly donations create plans automatically; use
               &ldquo;Manual plan&rdquo; for offline standing gifts.
             </p>

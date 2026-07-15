@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 const RAIL_W = 336; // matches the open width below
 const COMMIT_PX = 90; // horizontal travel needed to commit an open/close
@@ -110,7 +111,7 @@ export default function RailShell({
           }}
         >
           <header className="h-12 flex items-center justify-between px-5 border-b border-white/[0.07] flex-shrink-0">
-            <span className="flex items-center gap-2 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-[#bfae93]">
+            <span className={`flex items-center gap-2 ${TYPE.sectionHeader} !text-[#bfae93]`}>
               <span className="w-[3px] h-3 rounded-full bg-orange" aria-hidden />
               Today
             </span>

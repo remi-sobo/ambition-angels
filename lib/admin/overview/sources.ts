@@ -22,6 +22,12 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { deriveHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO, priorityRank, type TaskPriority } from "@/app/admin/ops/_types/ops";
+import {
+  OPEN_COMPLIANCE_STATUSES,
+  complianceQueueHorizon,
+  complianceQueueEntry,
+  type ComplianceQueueSource,
+} from "@/lib/admin/overview/complianceQueue";
 import { getDataAge } from "@/lib/admin/dataAge";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import {
@@ -596,6 +602,8 @@ export type QueueTask = {
   due: string | null;
   pinnedToday: boolean;
   priority: TaskPriority;
+  /** Detail link for non-ops rows (compliance items); ops tasks use the widget default. */
+  href?: string;
 };
 
 type QueueRow = QueueTask & { updatedAt: string };
@@ -639,7 +647,8 @@ function compareQueue(a: QueueRow, b: QueueRow, today: string): number {
 
 export const getQueueTasks = cache(async (assignee: "remi" | "shannon"): Promise<{ tasks: QueueTask[]; total: number }> => {
   const sb = getSupabaseAdmin();
-  const [res, countRes] = await Promise.all([
+  const today = todayISO();
+  const [res, countRes, complianceRes] = await Promise.all([
     sb
       .from("ops_tasks")
       .select("id, title, category, due_date, pinned_for_today, priority, updated_at")
@@ -655,17 +664,31 @@ export const getQueueTasks = cache(async (assignee: "remi" | "shannon"): Promise
       .eq("assigned_to", assignee)
       .neq("status", "done")
       .is("archived_at", null),
+    // Compliance items assigned to this person surface here once their due
+    // date is ≤30 days out (see lib/admin/overview/complianceQueue.ts).
+    // ilike = case-insensitive match, tolerant of legacy 'Remi'-cased text.
+    sb
+      .from("compliance_items")
+      .select("id, title, assigned_to, status, due_date, updated_at")
+      .ilike("assigned_to", assignee)
+      .in("status", [...OPEN_COMPLIANCE_STATUSES])
+      .lte("due_date", complianceQueueHorizon(today))
+      .limit(20),
   ]);
-  const today = todayISO();
-  const rows: QueueRow[] = (res.data ?? []).map((t) => ({
-    id: t.id as string,
-    title: t.title as string,
-    category: (t.category as string | null) ?? null,
-    due: (t.due_date as string | null) ?? null,
-    pinnedToday: Boolean(t.pinned_for_today),
-    priority: (t.priority as TaskPriority) ?? "medium",
-    updatedAt: (t.updated_at as string | null) ?? "",
-  }));
+  const complianceRows: QueueRow[] = ((complianceRes.data ?? []) as ComplianceQueueSource[]).map(
+    complianceQueueEntry
+  );
+  const rows: QueueRow[] = (res.data ?? [])
+    .map((t) => ({
+      id: t.id as string,
+      title: t.title as string,
+      category: (t.category as string | null) ?? null,
+      due: (t.due_date as string | null) ?? null,
+      pinnedToday: Boolean(t.pinned_for_today),
+      priority: (t.priority as TaskPriority) ?? "medium",
+      updatedAt: (t.updated_at as string | null) ?? "",
+    }))
+    .concat(complianceRows);
   rows.sort((a, b) => compareQueue(a, b, today));
   const tasks: QueueTask[] = rows.slice(0, 12).map((t) => ({
     id: t.id,
@@ -674,8 +697,9 @@ export const getQueueTasks = cache(async (assignee: "remi" | "shannon"): Promise
     due: t.due,
     pinnedToday: t.pinnedToday,
     priority: t.priority,
+    href: t.href,
   }));
-  return { tasks, total: countRes.count ?? 0 };
+  return { tasks, total: (countRes.count ?? 0) + complianceRows.length };
 });
 
 // ── Acknowledgments due: pending thank-yous, oldest first, IRS-flagged ────────

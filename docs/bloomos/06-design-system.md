@@ -46,7 +46,26 @@ Extend the existing Tailwind system (keep brand tokens; add product tokens):
 | Status | green `#1E8E5A` / amber `#D97706` / red `#DC2626` | deltas, RAG status, alerts |
 | Radii / cards | existing `rounded-card` (1.25rem), white cards, `shadow-sm`, 1px `gray-light` border | All dashboard widgets |
 
-Typography: keep Poppins (`font-heading`) for UI labels + section headings, DM Sans (`font-body`) for content, Big Shoulders (`font-display`) reserved for marketing — the admin product uses Poppins/DM Sans only. Numbers in dashboards use tabular-nums.
+Typography: Poppins (`font-heading`) for UI labels + section headings, DM Sans (`font-body`) for content. The display face (`font-display`) is allowed in the admin only through the two `displayTitle` roles below — the editorial page voice shipped across Finance, Meetings, and Ops. Numbers in dashboards use tabular-nums.
+
+### Type scale
+
+The one canonical type scale lives in `lib/admin/typeScale.ts` (`TYPE`, ten roles) per `specs/bloomos-typography.md`. Call sites render through `PageHeader` / `SectionHeading` / `StatCard` or compose `TYPE.<role>` — scale strings are never retyped inline (`tests/type-drift.test.ts` gates this in `app/admin/**`, and `tests/design-tokens.test.ts` freezes the values; changing a role updates the freeze and this table in the same commit).
+
+| Role | Classes | Use |
+|---|---|---|
+| `pageTitle` | `font-heading font-bold text-2xl text-ink-1` | Page name, one per module page |
+| `displayTitle` | `font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none` | Editorial page voice (detail pages) |
+| `displayTitleLg` | `font-display font-black uppercase tracking-tight text-ink-1 text-4xl sm:text-5xl leading-none` | Editorial voice, module landing hero |
+| `pageSubtitle` | `text-sm text-ink-2` | One-liner under a page title |
+| `eyebrow` | `text-[10px] uppercase tracking-[0.25em] text-orange/80` | Small kicker above a title |
+| `sectionHeader` | `font-heading font-semibold text-[11px] uppercase tracking-[0.14em] text-ink-3` | Label above a group of cards/rows |
+| `cardMetric` | `font-heading font-semibold text-[28px] leading-none tracking-tight tabular-nums text-ink-1` | The big number on a stat card |
+| `cardLabel` | `text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3` | Uppercase label above a metric |
+| `body` | `text-sm text-ink-1` | Default reading text |
+| `metadata` | `text-[11px] text-ink-2` | Dates, owners, hints |
+
+Roles carry their ink color; on dark/accent surfaces keep the role and append an important override (`!text-cream`, `!text-orange`) rather than forking the scale.
 
 Component library: **shadcn/ui** (copy-owned) themed with these tokens — buttons, tables, dialogs, command palette, forms (react-hook-form + Zod), toasts, charts. Replaces ad-hoc admin components incrementally.
 

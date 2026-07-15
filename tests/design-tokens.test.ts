@@ -44,19 +44,17 @@ const FROZEN_CSS_TOKENS = [
   "--font-heading: var(--font-grotesk);",
 ];
 
-// The one canonical type scale (lib/admin/typeScale.ts, specs/bloomos-typography.md §3).
+// The one canonical type scale (lib/admin/typeScale.ts, specs/bloomos-typography.md §2).
 const FROZEN_TYPE_SCALE = {
   pageTitle: "font-heading font-bold text-2xl text-ink-1",
-  displayTitle:
-    "font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none",
-  displayTitleLg:
-    "font-display font-black uppercase tracking-tight text-ink-1 text-4xl sm:text-5xl leading-none",
-  pageSubtitle: "text-sm text-ink-2",
-  eyebrow: "text-[10px] uppercase tracking-[0.25em] text-orange/80",
   sectionHeader: "font-heading font-semibold text-[11px] uppercase tracking-[0.14em] text-ink-3",
+  sectionTitle: "font-heading font-bold text-lg text-ink-1",
+  cardTitle: "font-heading font-bold text-sm text-ink-1",
+  modalTitle: "font-heading font-bold text-lg text-ink-1",
   cardMetric: "font-heading font-semibold text-[28px] leading-none tracking-tight tabular-nums text-ink-1",
   cardLabel: "text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3",
   body: "text-sm text-ink-1",
+  bodyMuted: "text-sm text-ink-2",
   metadata: "text-[11px] text-ink-2",
 };
 

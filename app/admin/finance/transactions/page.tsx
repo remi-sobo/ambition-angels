@@ -6,7 +6,6 @@ import CategoryPicker from "./_components/CategoryPicker";
 import RestrictedToggle from "./_components/RestrictedToggle";
 import ExcludeFromRunwayToggle from "./_components/ExcludeFromRunwayToggle";
 import AiCategorize from "./_components/AiCategorize";
-import { TYPE } from "@/lib/admin/typeScale";
 
 type SearchParams = {
   q?: string;
@@ -124,7 +123,7 @@ export default async function TransactionsPage({
               ← Finance
             </Link>
           </div>
-          <h1 className={TYPE.displayTitle}>
+          <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
             Transactions
           </h1>
         </div>

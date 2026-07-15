@@ -60,7 +60,7 @@ export default function RhythmWizard({
           <div className={`${TYPE.sectionHeader} !text-orange-dark`}>
             {eyebrow}
           </div>
-          <h1 className={`mt-1 ${TYPE.displayTitle}`}>
+          <h1 className="mt-1 font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
             {title}
           </h1>
           {subtitle && (

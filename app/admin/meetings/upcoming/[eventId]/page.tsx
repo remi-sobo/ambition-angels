@@ -4,7 +4,6 @@ import { getUpcomingMeetingDetail, type UpcomingMeetingDetail } from "@/lib/meet
 import type { ConstituentDossier, PartnerDossier } from "@/lib/meetings/dossier";
 import { SectionTitle } from "../../_ui";
 import MeetingAgendaButton from "../../_components/MeetingAgendaButton";
-import { TYPE } from "@/lib/admin/typeScale";
 
 export const dynamic = "force-dynamic";
 
@@ -138,7 +137,7 @@ export default async function UpcomingMeetingDetailPage({ params }: { params: { 
         </Link>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="min-w-0">
-            <h1 className={TYPE.displayTitle}>
+            <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
               {brief.title ?? "Untitled meeting"}
             </h1>
             <p className="mt-2 text-sm text-ink-2">{fmtDateTime(brief.start)} · Upcoming</p>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSpeechRecognition } from "@/lib/hooks/useSpeechRecognition";
 import { useIsOwner } from "./AdminUserContext";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Report-an-issue sheet, opened from the + FAB / rail dock.
@@ -216,7 +217,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
 
         <div className="p-5 sm:p-6 space-y-4">
           <div>
-            <h2 className="text-lg font-display font-bold uppercase tracking-tight text-ink-1">
+            <h2 className={TYPE.modalTitle}>
               Report an issue
             </h2>
             <p className="text-xs text-ink-2 mt-0.5">

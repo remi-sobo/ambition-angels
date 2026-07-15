@@ -116,7 +116,7 @@ export function StatBig({
 export function MovementHeader({ n, title, lead }: { n: number; title: string; lead?: ReactNode }) {
   return (
     <header className="mb-8">
-      <div className={`${TYPE.eyebrow} mb-2`}>
+      <div className="text-[10px] uppercase tracking-[0.25em] text-orange/80 mb-2">
         Strategy Narrative · Movement {n} of 3
       </div>
       <h1 className="font-display text-5xl sm:text-6xl text-ink-1 leading-[0.95] mb-4">{title}</h1>

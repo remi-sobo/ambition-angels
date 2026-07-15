@@ -8,7 +8,6 @@ import EngagementTimeline, { type HsEngagement } from "./_components/EngagementT
 import BriefPanel, { type ExistingBrief } from "./_components/BriefPanel";
 import ProspectAngles, { type OnAngle } from "./_components/ProspectAngles";
 import { CommentThread } from "../../../_components/CommentThread";
-import { TYPE } from "@/lib/admin/typeScale";
 
 // Prospect detail — keyed by the bench entity (fr_prospects.id), so it works for
 // HubSpot-sourced, manually-added, and AI-discovered prospects alike. HubSpot
@@ -151,7 +150,7 @@ export default async function ProspectDetailPage({ params }: { params: { id: str
       <header className="rounded-card border-[1.5px] border-outline bg-surface p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className={TYPE.displayTitle}>
+            <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
               {prospect.name}
             </h1>
             <div className="mt-1.5 flex items-center gap-2 text-[11px] text-ink-2">

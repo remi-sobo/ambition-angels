@@ -13,6 +13,7 @@ import {
   type TaskCategory,
   type TaskPriority,
 } from "@/app/admin/ops/_types/ops";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Quick-add modal. Mounted by QuickAddButton on click. Fetches the list
@@ -143,7 +144,7 @@ export default function QuickAddModal({
         </div>
 
         <form onSubmit={submit} className="p-5 sm:p-6 space-y-4">
-          <h2 className="text-lg font-display font-bold uppercase tracking-tight text-ink-1">
+          <h2 className={TYPE.modalTitle}>
             Quick add task
           </h2>
 

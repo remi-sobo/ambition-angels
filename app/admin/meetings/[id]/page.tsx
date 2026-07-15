@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { getMeetingDetail } from "@/lib/meetings/read";
 import { StatusPill } from "../_ui";
 import MeetingDetailClient from "./MeetingDetailClient";
-import { TYPE } from "@/lib/admin/typeScale";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +36,7 @@ export default async function MeetingDetailPage({ params }: { params: { id: stri
         </Link>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="min-w-0">
-            <h1 className={TYPE.displayTitle}>
+            <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
               {record.title ?? "Untitled meeting"}
             </h1>
             <p className="mt-2 text-sm text-ink-2">{fmtDateTime(record.occurred_at)}</p>

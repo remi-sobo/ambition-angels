@@ -1,6 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import ReconcileInbox, { type ReconItem } from "./_components/ReconcileInbox";
-import { TYPE } from "@/lib/admin/typeScale";
 
 // Reconcile tab — the Cowork reconciliation inbox. The weekly sweep (HubSpot +
 // Gmail) drops proposed ledger entries here; Shannon works the queue so the
@@ -28,7 +27,7 @@ export default async function ReconcilePage() {
   return (
     <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8">
       <div className="mb-5">
-        <h1 className={TYPE.displayTitle}>
+        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
           Reconcile
         </h1>
         <p className="mt-2 text-sm text-ink-2 max-w-2xl">

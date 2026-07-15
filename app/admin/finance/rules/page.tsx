@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { FinCategory } from "@/lib/finance/types";
 import RulesEditor from "./_components/RulesEditor";
-import { TYPE } from "@/lib/admin/typeScale";
 
 type Rule = {
   id: string;
@@ -42,7 +41,7 @@ export default async function RulesPage() {
             ← Finance
           </Link>
         </div>
-        <h1 className={TYPE.displayTitle}>
+        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
           Category rules
         </h1>
         <p className="mt-2 text-sm text-ink-2 max-w-2xl">

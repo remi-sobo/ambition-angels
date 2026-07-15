@@ -80,7 +80,10 @@ export async function ingestTask(
       created_by: assignee,
       due_date,
       labels,
-      pinned_for_today: t.pin_today === undefined ? true : t.pin_today === true,
+      // Pin only on explicit request. Auto-pinning every ingested task made the
+      // ops-landing Today section a permanent copy of the task list (pins never
+      // expire), so each undated ingested task rendered twice on /admin/ops.
+      pinned_for_today: t.pin_today === true,
     };
 
     const { data, error } = await supabase.from("ops_tasks").insert(insert).select("id").single();

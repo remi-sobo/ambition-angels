@@ -6,8 +6,9 @@ import { Widget, Empty } from "./shared";
 
 // Open tasks for one person, pinned-for-today first, then soonest due. Used as
 // Shannon's "My queue" on the Ops panel and Remi's "My to-dos" on the cockpit.
-// (Connection backlog + email-triage candidates fold in here as those sources
-// are wired; for now this is the task plate.)
+// Compliance items assigned to the person fold in once due ≤30 days out and
+// link back to /admin/compliance. (Connection backlog + email-triage
+// candidates fold in here as those sources are wired.)
 
 export default async function MyQueueWidget({
   assignee = "shannon",
@@ -35,7 +36,7 @@ export default async function MyQueueWidget({
             return (
               <li key={t.id} className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <Link href={href} className="text-sm text-ink-1 font-medium truncate flex items-center gap-1 hover:text-orange transition-colors">
+                  <Link href={t.href ?? href} className="text-sm text-ink-1 font-medium truncate flex items-center gap-1 hover:text-orange transition-colors">
                     {t.pinnedToday && <span className="text-orange" aria-label="pinned for today">★</span>}
                     {t.priority === "urgent" && (
                       <span aria-label="urgent">

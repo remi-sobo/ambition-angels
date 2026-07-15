@@ -42,6 +42,27 @@ const RECUR_OPTIONS: Array<[string, string]> = [
   ["none", "One-time"],
 ];
 
+// Same hardcoded person set as ops tasks (TaskEditModal / TasksSurface); the
+// stored lowercase value is what the daily-queue assignee filter matches on.
+const ASSIGNEE_OPTIONS: Array<[string, string]> = [
+  ["", "Unassigned"],
+  ["remi", "Remi"],
+  ["shannon", "Shannon"],
+];
+
+// Map stored text (possibly legacy free text like "Remi Sobo") onto a dropdown
+// value by first-name match; unknown names fall back to Unassigned.
+function normalizeAssignee(v: string | null): string {
+  if (!v) return "";
+  const first = v.trim().split(/\s+/)[0].toLowerCase();
+  return ASSIGNEE_OPTIONS.some(([val]) => val === first) ? first : "";
+}
+
+function assigneeLabel(v: string): string {
+  const match = ASSIGNEE_OPTIONS.find(([val]) => val === normalizeAssignee(v));
+  return match && match[0] ? match[1] : v;
+}
+
 export function ComplianceRow({ item }: { item: ComplianceItem }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -53,6 +74,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
   const [eDue, setEDue] = useState(item.due_date);
   const [eRecur, setERecur] = useState(item.recur);
   const [eJurisdiction, setEJurisdiction] = useState(item.jurisdiction ?? "");
+  const [eAssignee, setEAssignee] = useState(normalizeAssignee(item.assigned_to));
 
   const startEdit = () => {
     setETitle(item.title);
@@ -60,6 +82,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
     setEDue(item.due_date);
     setERecur(item.recur);
     setEJurisdiction(item.jurisdiction ?? "");
+    setEAssignee(normalizeAssignee(item.assigned_to));
     setEditError("");
     setEditing(true);
   };
@@ -82,6 +105,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
           due_date: eDue,
           recur: eRecur,
           jurisdiction: eJurisdiction.trim() || null,
+          assigned_to: eAssignee || null,
         }),
       });
       if (!res.ok) {
@@ -166,6 +190,14 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
             <input className={`${inputCls} w-full mt-1`} value={eJurisdiction} placeholder="IRS / CA / —"
               onChange={(e) => setEJurisdiction(e.target.value)} />
           </label>
+          <label className="text-xs text-ink-2">
+            Assigned to
+            <select className={`${inputCls} w-full mt-1`} value={eAssignee} onChange={(e) => setEAssignee(e.target.value)}>
+              {ASSIGNEE_OPTIONS.map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+          </label>
           <div className="col-span-full flex gap-2 items-center">
             <button type="submit" disabled={busy}
               className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
@@ -195,6 +227,11 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
         <span className="font-semibold text-ink-1">{item.title}</span>
         {item.jurisdiction && item.jurisdiction !== "—" && (
           <span className="text-[11px] text-ink-2">{item.jurisdiction}</span>
+        )}
+        {item.assigned_to && (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/10 text-orange">
+            {assigneeLabel(item.assigned_to)}
+          </span>
         )}
         <span
           className={`ml-auto text-[12px] tabular-nums ${
@@ -292,6 +329,7 @@ export function NewComplianceForm() {
   const [dueDate, setDueDate] = useState("");
   const [recur, setRecur] = useState("annual");
   const [jurisdiction, setJurisdiction] = useState("");
+  const [assignee, setAssignee] = useState("");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -307,13 +345,14 @@ export function NewComplianceForm() {
           due_date: dueDate,
           recur,
           jurisdiction: jurisdiction || undefined,
+          assigned_to: assignee || undefined,
         }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error ?? `HTTP ${res.status}`);
       }
-      setTitle(""); setDueDate(""); setJurisdiction("");
+      setTitle(""); setDueDate(""); setJurisdiction(""); setAssignee("");
       setOpen(false);
       router.refresh();
     } catch (err) {
@@ -370,6 +409,14 @@ export function NewComplianceForm() {
         Jurisdiction
         <input className={`${inputCls} w-full mt-1`} value={jurisdiction} placeholder="IRS / CA / —"
           onChange={(e) => setJurisdiction(e.target.value)} />
+      </label>
+      <label className="text-xs text-ink-2">
+        Assigned to
+        <select className={`${inputCls} w-full mt-1`} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+          {ASSIGNEE_OPTIONS.map(([v, l]) => (
+            <option key={v} value={v}>{l}</option>
+          ))}
+        </select>
       </label>
       <div className="col-span-full flex gap-2">
         <button type="submit" disabled={busy}

@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // Shared section navigation for every Strategic Plan sub-page, rendered from
-// the section layout so new sub-pages get it for free. Mirrors the chip row on
-// the landing page's header: a back chip to the full plan, then one chip per
-// section with the current page highlighted. The landing page renders its own
-// (richer) chip row in PageHeader actions, so the nav hides itself there.
+// the section layout so new sub-pages get it for free: a back chip to the full
+// plan, then one chip per section with the current page highlighted. The
+// landing page links each sub-page from its labeled sub-section instead
+// (Org lens), so the nav hides itself there.
 // Presenter mode (narrative?present=1) is a fixed full-screen overlay and
 // simply covers this bar.
 

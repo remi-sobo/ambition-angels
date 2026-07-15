@@ -19,6 +19,7 @@ import { EntityDocuments } from "../../../_components/EntityDocuments";
 import { money } from "../../../finance/_components/charts";
 import { ASK_FORM_LABELS } from "@/lib/fundraising/asks";
 import { NewAskForm, StatusChip } from "../../asks/_components/AskControls";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Grant detail: award facts, stage control, and the requirements calendar.
 // Requirement-row rendering (incl. inline edit) lives in GrantControls.
@@ -44,7 +45,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
   if (gRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Grants</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Grants</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The grants tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_grants.sql</code> via Actions → Apply DB migration,

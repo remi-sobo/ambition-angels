@@ -7,6 +7,7 @@ import PageHeader from "../../../_components/PageHeader";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "../../../ops/_types/ops";
 import { PledgeStatusSelect, PaymentActions } from "../_components/PledgeControls";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export default async function PledgeDetailPage({ params }: { params: { id: strin
   if (pRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Pledges</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Pledges</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The pledges tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_pledges.sql</code>, then reload.

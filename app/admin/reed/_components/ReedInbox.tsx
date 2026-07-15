@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useReedLauncher } from "@/app/admin/_components/reed/ReedLauncherProvider";
 import { ReedMark } from "@/app/admin/_components/reed/ReedPanel";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type Draft = { id: string; kind: string; title: string | null; body: string; status: string; created_at: string };
 type HistoryMessage = { id: string; role: "user" | "assistant"; content: string };
@@ -66,7 +67,7 @@ export default function ReedInbox({
     <div className="px-4 lg:px-8 py-6 max-w-3xl">
       <header className="mb-6 flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-heading font-bold text-cream text-2xl">Reed</h1>
+          <h1 className={`${TYPE.pageTitle} !text-cream`}>Reed</h1>
           <p className="text-sm text-ink-3 mt-1">
             Review what Reed drafted and proposed. Approving a draft moves it to your ready-to-send queue — you
             send or use it from there. Reed never sends or executes anything itself.

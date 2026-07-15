@@ -1,4 +1,5 @@
 import { loadFinanceModel } from "@/lib/google/finance-sheet";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * /admin/finance/model — live KPIs from the founder finance model.
@@ -47,10 +48,10 @@ export default async function FinanceModelPage() {
   return (
     <div className="max-w-5xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       <header>
-        <div className="text-[10px] uppercase tracking-[0.25em] text-orange/80 mb-1">
+        <div className={`${TYPE.eyebrow} mb-1`}>
           Live from the founder model
         </div>
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-4xl sm:text-5xl leading-none">
+        <h1 className={TYPE.displayTitleLg}>
           Model
         </h1>
         <p className="mt-2 text-sm text-ink-2 max-w-2xl">

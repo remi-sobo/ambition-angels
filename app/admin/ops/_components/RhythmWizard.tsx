@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * The shared stepper for the weekly rhythm (Operating Rhythm v2). One shell,
@@ -59,7 +60,7 @@ export default function RhythmWizard({
           <div className="text-[11px] uppercase tracking-[0.14em] font-semibold text-orange-dark">
             {eyebrow}
           </div>
-          <h1 className="mt-1 font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
+          <h1 className={`mt-1 ${TYPE.displayTitle}`}>
             {title}
           </h1>
           {subtitle && (

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type MatchedRow = {
   account: string;
@@ -153,7 +154,7 @@ export default function QbBudgetImportPage() {
             ← Budget
           </Link>
         </div>
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
+        <h1 className={TYPE.displayTitle}>
           Import budget from QuickBooks
         </h1>
         <p className="mt-2 text-sm text-ink-2 max-w-2xl">

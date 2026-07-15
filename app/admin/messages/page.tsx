@@ -10,6 +10,7 @@ import {
   type ThreadSummary,
 } from "@/lib/messaging/threads";
 import MessagesView from "./_components/MessagesView";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Team messaging. Server-rendered (RLS/service-role scoped to the org); the
 // client view layers polling + optimistic send on top. ?t=<threadId> selects
@@ -25,7 +26,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 function Centered({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-[900px] px-4 lg:px-8 py-8">
-      <h1 className="font-heading font-bold text-2xl text-ink-1 mb-2">Messages</h1>
+      <h1 className={`${TYPE.pageTitle} mb-2`}>Messages</h1>
       {children}
     </div>
   );

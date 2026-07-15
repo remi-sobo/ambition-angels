@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { loadRevenueSchedule } from "@/lib/finance/schedule";
 import { constituentName } from "@/lib/fundraising/display";
 import RevenueManager, { type Commitment, type ReceivedGift } from "./_components/RevenueManager";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type SearchParams = { year?: string };
 
@@ -81,7 +82,7 @@ export default async function RevenuePage({
               ← Finance
             </Link>
           </div>
-          <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
+          <h1 className={TYPE.displayTitle}>
             Revenue · {year}
           </h1>
           <p className="mt-2 text-sm text-ink-2 max-w-2xl">

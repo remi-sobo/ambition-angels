@@ -7,6 +7,7 @@ import { todayISO } from "../../ops/_types/ops";
 import { NewGrantForm } from "./_components/GrantControls";
 import GrantsBoard, { type GrantCard } from "./_components/GrantsBoard";
 import { STAGES, BOARD_STAGES } from "./_lib/stages";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Grants pipeline + requirements calendar (Ring 2,
 // modules/03-fundraising.md "Grants"). Pipeline columns mirror the spec
@@ -61,7 +62,7 @@ export default async function GrantsPage() {
   if (grantsRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Grants</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Grants</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The grants tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_grants.sql</code> via Actions → Apply DB migration,

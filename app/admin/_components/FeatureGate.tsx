@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getEntitlements, hasFeature, type FeatureKey } from "@/lib/admin/entitlements";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Server-side module gate (core fence B1). Wraps a module's route group from
@@ -29,7 +30,7 @@ export default async function FeatureGate({
     return (
       <div className="px-4 lg:px-8 py-20 flex justify-center">
         <div className="max-w-md text-center">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-orange/80 mb-3">{label}</div>
+          <div className={`${TYPE.eyebrow} mb-3`}>{label}</div>
           <h1 className="text-lg font-heading font-semibold mb-2">
             This module isn&rsquo;t enabled
           </h1>

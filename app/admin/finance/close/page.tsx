@@ -4,6 +4,7 @@ import { getFinanceSnapshot } from "@/lib/admin/finance";
 import { endOfMonthISO } from "@/lib/finance/runway";
 import { loadRevenueSchedule, scheduleToRunwayPledges } from "@/lib/finance/schedule";
 import CloseWizard from "./_components/CloseWizard";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // The Friday close. A guided, sequenced sweep that gets cash, transactions,
 // categories, pledges, balance, and baseline all current at once, then stamps
@@ -44,7 +45,7 @@ export default async function FinanceClosePage() {
         <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
           <Link href="/admin/finance" className="hover:text-ink-1">← Finance</Link>
         </div>
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
+        <h1 className={TYPE.displayTitle}>
           Friday close
         </h1>
         <p className="mt-2 text-sm text-ink-2 max-w-2xl">

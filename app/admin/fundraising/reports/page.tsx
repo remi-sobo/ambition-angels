@@ -5,6 +5,7 @@ import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import GiftReportFilters from "./_components/GiftReportFilters";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Epic E — reporting. A Gifts report (filter by date range / campaign / fund /
 // method, with KPIs, a group-by-campaign breakdown, and CSV export), plus the
@@ -59,7 +60,7 @@ export default async function ReportsPage({
   if (giftsRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Reports</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Reports</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_fundraising_core.sql</code>, then reload.

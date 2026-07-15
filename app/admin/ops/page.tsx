@@ -144,7 +144,7 @@ export default async function OpsLandingPage({
   return (
     <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       <PageHeader
-        title="Ops"
+        title="Tasks"
         subtitle="Today, this week, projects, categories. Anchor for the day."
       />
 

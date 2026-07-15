@@ -169,6 +169,7 @@ ordered=(
   create_ms_deliveries.sql
   create_ms_rooms.sql
   create_meeting_exclusions.sql
+  bloomos_strategy_objective_notes_tasks.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

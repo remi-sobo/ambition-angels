@@ -7,6 +7,7 @@ import { orgMonthlyCapUsd } from "@/lib/ai/cap";
 import PageHeader from "../_components/PageHeader";
 import { DisplayNameForm, ConnectCalendarControls, ChangePasswordForm, SignOutAllButton } from "./_components/AccountControls";
 import HubspotSyncPanel from "./_components/HubspotSyncPanel";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // BloomOS account settings. Centerpiece is a password change that requires the
 // current password; plus account info and session controls an admin expects.
@@ -89,7 +90,7 @@ export default async function SettingsPage({
           description="What the org has spent on AI features so far this month, across every assistant and agent."
         >
           <div className="flex items-baseline gap-2 mb-3">
-            <span className="font-heading font-semibold text-[28px] leading-none tabular-nums text-ink-1">
+            <span className={TYPE.cardMetric}>
               {usd(spend.totalUsd)}
             </span>
             <span className="text-xs text-ink-2">of {usd(aiCapUsd)} this month</span>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useReedLauncher } from "@/app/admin/_components/reed/ReedLauncherProvider";
 import { ReedMark } from "@/app/admin/_components/reed/ReedPanel";
 import { TYPE } from "@/lib/admin/typeScale";
+import SectionHeading from "../../_components/SectionHeading";
 
 type Draft = { id: string; kind: string; title: string | null; body: string; status: string; created_at: string };
 type HistoryMessage = { id: string; role: "user" | "assistant"; content: string };
@@ -84,9 +85,9 @@ export default function ReedInbox({
       </header>
 
       <section className="mb-8">
-        <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-3">
+        <SectionHeading className="!text-orange mb-3">
           Drafts to review
-        </h2>
+        </SectionHeading>
         {drafts.length === 0 ? (
           <Empty>No drafts waiting. Ask Reed to draft a grant narrative or acknowledgment.</Empty>
         ) : (
@@ -100,9 +101,9 @@ export default function ReedInbox({
 
       {approved.length > 0 && (
         <section className="mb-8">
-          <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-3">
+          <SectionHeading className="!text-orange mb-3">
             Approved — ready to send / use
-          </h2>
+          </SectionHeading>
           <div className="flex flex-col gap-3">
             {approved.map((d) => (
               <ApprovedCard key={d.id} draft={d} />
@@ -112,9 +113,9 @@ export default function ReedInbox({
       )}
 
       <section>
-        <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-3">
+        <SectionHeading className="!text-orange mb-3">
           Suggested next actions
-        </h2>
+        </SectionHeading>
         {suggestions.length === 0 ? (
           <Empty>No open suggestions. Ask Reed what to do next in a module.</Empty>
         ) : (
@@ -128,9 +129,9 @@ export default function ReedInbox({
 
       {proposals.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-1">
+          <SectionHeading className="!text-orange mb-1">
             Strategy proposals
-          </h2>
+          </SectionHeading>
           <p className="text-[12px] text-ink-3 mb-3">
             Reed&apos;s proposed plan elements. Accepting adds the element to your plan; dismissing discards it.
           </p>
@@ -143,9 +144,9 @@ export default function ReedInbox({
       )}
 
       <section className="mt-8">
-        <h2 className="text-[11px] font-heading font-semibold uppercase tracking-[0.14em] text-orange mb-1">
+        <SectionHeading className="!text-orange mb-1">
           Conversation history
-        </h2>
+        </SectionHeading>
         <p className="text-[12px] text-ink-3 mb-3">
           Every question you&apos;ve asked Reed and his answer, saved permanently. Newest first.
         </p>

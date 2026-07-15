@@ -98,7 +98,7 @@ export function StatBig({
 }) {
   return (
     <div className={`rounded-card-lg border p-5 ${accent ? "border-orange/30 bg-orange-light" : "border-hairline bg-surface"}`}>
-      <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-1.5">
+      <div className={`${TYPE.cardLabel} mb-1.5`}>
         {label}
       </div>
       <div className="font-display text-3xl sm:text-4xl leading-none tabular-nums text-ink-1">{value}</div>

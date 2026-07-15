@@ -1,6 +1,7 @@
 import { StatusChip } from "../../../_components/StatusChip";
 import type { PlanMovement, NarrativeObjective } from "@/lib/admin/strategy/narrative";
 import { MeasureRow, MovementHeader, STATUS_LABEL, INITIATIVE_STATUS, DOT_BG } from "./shared";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Movement 1 — The Plan. The OGSM tree straight from plan_*: the frame
@@ -48,7 +49,7 @@ function ObjectiveBlock({ objective, index }: { objective: NarrativeObjective; i
             <div className="grid sm:grid-cols-2 gap-x-8 gap-y-4">
               {goal.initiatives.length > 0 && (
                 <div>
-                  <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-1.5">
+                  <div className={`${TYPE.cardLabel} mb-1.5`}>
                     Strategies
                   </div>
                   <ul className="space-y-1">
@@ -67,7 +68,7 @@ function ObjectiveBlock({ objective, index }: { objective: NarrativeObjective; i
 
               {goal.kpis.length > 0 && (
                 <div>
-                  <div className="text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-1.5">
+                  <div className={`${TYPE.cardLabel} mb-1.5`}>
                     Measures
                   </div>
                   <div>

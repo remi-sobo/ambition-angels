@@ -330,7 +330,7 @@ export default function TaskEditModal({
                 <button
                   type="button"
                   onClick={() => setPromptDismissed(true)}
-                  className="shrink-0 text-ink-3 hover:text-ink-1 text-sm leading-none"
+                  className={`shrink-0 text-ink-3 hover:${TYPE.body} leading-none`}
                   aria-label="Dismiss"
                 >
                   ✕

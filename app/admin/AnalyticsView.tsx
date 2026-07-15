@@ -366,9 +366,9 @@ export default function AnalyticsView() {
         {/* Mobile cards */}
         <div className="md:hidden divide-y divide-hairline">
           {loading ? (
-            <p className="px-4 py-6 text-ink-2 text-sm">Loading…</p>
+            <p className={`px-4 py-6 ${TYPE.bodyMuted}`}>Loading…</p>
           ) : topPages.length === 0 ? (
-            <p className="px-4 py-6 text-ink-2 text-sm">No page views in this period yet.</p>
+            <p className={`px-4 py-6 ${TYPE.bodyMuted}`}>No page views in this period yet.</p>
           ) : (
             topPages.map((p) => (
               <div key={p.page} className="px-4 py-3">
@@ -395,9 +395,9 @@ export default function AnalyticsView() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={4} className="px-4 py-6 text-ink-2 text-sm">Loading…</td></tr>
+                <tr><td colSpan={4} className={`px-4 py-6 ${TYPE.bodyMuted}`}>Loading…</td></tr>
               ) : topPages.length === 0 ? (
-                <tr><td colSpan={4} className="px-4 py-6 text-ink-2 text-sm">No page views in this period yet.</td></tr>
+                <tr><td colSpan={4} className={`px-4 py-6 ${TYPE.bodyMuted}`}>No page views in this period yet.</td></tr>
               ) : (
                 topPages.map((p) => (
                   <tr key={p.page} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
@@ -420,7 +420,7 @@ export default function AnalyticsView() {
             {deviceBreakdown.map((d) => (
               <div key={d.device} className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 flex-1">
-                  <span className="text-ink-1 text-sm font-semibold w-20">{d.device}</span>
+                  <span className={`${TYPE.body} font-semibold w-20`}>{d.device}</span>
                   <div className="flex-1 h-2 bg-tile rounded-full overflow-hidden">
                     <div
                       className="h-full bg-orange/60"
@@ -428,7 +428,7 @@ export default function AnalyticsView() {
                     />
                   </div>
                 </div>
-                <span className="text-ink-1 text-sm font-mono whitespace-nowrap">
+                <span className={`${TYPE.body} font-mono whitespace-nowrap`}>
                   {d.count.toLocaleString()} <span className="text-ink-2">· {d.pct.toFixed(0)}%</span>
                 </span>
               </div>
@@ -439,16 +439,16 @@ export default function AnalyticsView() {
         <Section title="Traffic Sources" subtitle="Top 5 + Direct">
           <div className="px-6 pb-6 flex flex-col gap-3">
             {loading ? (
-              <p className="text-ink-2 text-sm">Loading…</p>
+              <p className={`${TYPE.bodyMuted}`}>Loading…</p>
             ) : traffic.length === 0 ? (
-              <p className="text-ink-2 text-sm">No traffic in this period yet.</p>
+              <p className={`${TYPE.bodyMuted}`}>No traffic in this period yet.</p>
             ) : (
               traffic.map((t) => (
                 <div key={t.src} className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className="text-ink-1 text-sm font-medium truncate flex-1">{t.src}</span>
+                    <span className={`${TYPE.body} font-medium truncate flex-1`}>{t.src}</span>
                   </div>
-                  <span className="text-ink-1 text-sm font-mono whitespace-nowrap">
+                  <span className={`${TYPE.body} font-mono whitespace-nowrap`}>
                     {t.count.toLocaleString()} <span className="text-ink-2">· {t.pct.toFixed(0)}%</span>
                   </span>
                 </div>
@@ -463,9 +463,9 @@ export default function AnalyticsView() {
         {/* Mobile cards */}
         <div className="md:hidden divide-y divide-hairline">
           {loading ? (
-            <p className="px-4 py-6 text-ink-2 text-sm">Loading…</p>
+            <p className={`px-4 py-6 ${TYPE.bodyMuted}`}>Loading…</p>
           ) : eventCounts.length === 0 ? (
-            <p className="px-4 py-6 text-ink-2 text-sm">No events in this period yet.</p>
+            <p className={`px-4 py-6 ${TYPE.bodyMuted}`}>No events in this period yet.</p>
           ) : (
             eventCounts.map((e) => (
               <div key={e.event_name} className="px-4 py-3 flex items-center justify-between gap-3">
@@ -492,9 +492,9 @@ export default function AnalyticsView() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={3} className="px-4 py-6 text-ink-2 text-sm">Loading…</td></tr>
+                <tr><td colSpan={3} className={`px-4 py-6 ${TYPE.bodyMuted}`}>Loading…</td></tr>
               ) : eventCounts.length === 0 ? (
-                <tr><td colSpan={3} className="px-4 py-6 text-ink-2 text-sm">No events in this period yet.</td></tr>
+                <tr><td colSpan={3} className={`px-4 py-6 ${TYPE.bodyMuted}`}>No events in this period yet.</td></tr>
               ) : (
                 eventCounts.map((e) => (
                   <tr key={e.event_name} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
@@ -535,9 +535,9 @@ export default function AnalyticsView() {
         {/* Mobile cards */}
         <div className="md:hidden divide-y divide-hairline">
           {loading ? (
-            <p className="px-4 py-6 text-ink-2 text-sm">Loading…</p>
+            <p className={`px-4 py-6 ${TYPE.bodyMuted}`}>Loading…</p>
           ) : recentActivity.length === 0 ? (
-            <p className="px-4 py-6 text-ink-2 text-sm">No page views yet.</p>
+            <p className={`px-4 py-6 ${TYPE.bodyMuted}`}>No page views yet.</p>
           ) : (
             recentActivity.map((v) => (
               <div key={String(v.id)} className="px-4 py-3">
@@ -574,9 +574,9 @@ export default function AnalyticsView() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} className="px-4 py-6 text-ink-2 text-sm">Loading…</td></tr>
+                <tr><td colSpan={5} className={`px-4 py-6 ${TYPE.bodyMuted}`}>Loading…</td></tr>
               ) : recentActivity.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-6 text-ink-2 text-sm">No page views yet.</td></tr>
+                <tr><td colSpan={5} className={`px-4 py-6 ${TYPE.bodyMuted}`}>No page views yet.</td></tr>
               ) : (
                 recentActivity.map((v) => (
                   <tr key={String(v.id)} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
@@ -607,7 +607,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
       <div className="font-display font-black text-3xl lg:text-4xl text-orange tracking-tight leading-none mb-2 truncate">
         {value}
       </div>
-      <div className="text-ink-1 text-sm font-medium">{label}</div>
+      <div className={`${TYPE.body} font-medium`}>{label}</div>
       {sub && <div className="text-ink-3 text-xs mt-1">{sub}</div>}
     </div>
   );

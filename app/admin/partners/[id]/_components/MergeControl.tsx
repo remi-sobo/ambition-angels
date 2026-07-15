@@ -5,6 +5,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type Candidate = { id: string; name: string; kind: string; city: string | null; status: string };
 
@@ -60,7 +61,7 @@ export function MergeControl({ keepId, keepName, candidates }: {
         value={picked ? picked.name : q}
         onChange={(e) => { setPicked(null); setQ(e.target.value); }}
         placeholder="Search the org to merge in…"
-        className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 w-full"
+        className={`bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 w-full`}
         autoFocus
       />
       {!picked && matches.length > 0 && (

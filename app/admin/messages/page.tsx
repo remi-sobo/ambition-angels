@@ -42,7 +42,7 @@ export default async function MessagesPage({
     return (
       <Shell>
         <Centered>
-          <p className="text-ink-2 text-sm">Sign in to message your team.</p>
+          <p className={`${TYPE.bodyMuted}`}>Sign in to message your team.</p>
         </Centered>
       </Shell>
     );

@@ -15,6 +15,7 @@ import {
   type TeamMember,
 } from "../_components/PlanControls";
 import ReviewComplete from "./_components/ReviewComplete";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Monthly OGSM review mode (BloomOS Strategy, Phase 4). Walk the four
 // objectives, refresh the auto numbers, update the manual KPIs and statuses
@@ -111,7 +112,7 @@ export default async function StrategyReviewPage() {
 
           {orphanGoals.length > 0 && (
             <section className="border-[1.5px] border-dashed border-outline rounded-card-lg p-5">
-              <h2 className="font-heading font-semibold text-ink-2 text-sm mb-3">Goals without an objective</h2>
+              <h2 className={`font-heading font-semibold ${TYPE.bodyMuted} mb-3`}>Goals without an objective</h2>
               <div className="space-y-3">
                 {orphanGoals.map((g) => (
                   <GoalCard key={g.id} goal={g} kpis={kpisByGoal[g.id] ?? []} initiatives={initiativesByGoal[g.id] ?? []} />
@@ -124,7 +125,7 @@ export default async function StrategyReviewPage() {
 
           {reviews.length > 0 && (
             <section className="border-[1.5px] border-outline rounded-card-lg p-5">
-              <h2 className="font-heading font-semibold text-ink-1 text-sm mb-3">Review history</h2>
+              <h2 className={`font-heading font-semibold ${TYPE.body} mb-3`}>Review history</h2>
               <ul className="space-y-3">
                 {reviews.map((r) => (
                   <li key={r.id} className="text-sm border-b border-outline last:border-0 pb-3 last:pb-0">

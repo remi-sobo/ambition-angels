@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ACK_CHANNELS, CHANNEL_LABEL, type AckChannel } from "@/lib/fundraising/ack-channels";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Manually log a thank-you that has NO gift behind it — a proactive donor note,
 // a foundation/DAF grant acknowledgment, a volunteer or board thank-you, a
@@ -128,7 +129,7 @@ export default function LogAckButton() {
       <div className="w-full max-w-lg mt-16 bg-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-4 shadow-tile">
         <div className="flex items-center justify-between">
           <h2 className="font-heading font-bold text-ink-1 text-base">Log a thank-you</h2>
-          <button onClick={close} className="text-ink-2 hover:text-ink-1 text-sm">
+          <button onClick={close} className={`text-ink-2 hover:${TYPE.body}`}>
             Close
           </button>
         </div>
@@ -176,7 +177,7 @@ export default function LogAckButton() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search a donor by name or org…"
-              className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40"
+              className={`w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} focus:outline-none focus:border-orange/40`}
             />
             {(searching || results.length > 0) && (
               <ul className="absolute z-10 mt-1 w-full bg-tile border-[1.5px] border-outline rounded-lg overflow-hidden shadow-tile max-h-56 overflow-y-auto">
@@ -226,7 +227,7 @@ export default function LogAckButton() {
           onChange={(e) => setNote(e.target.value)}
           rows={3}
           placeholder="What you said, or a short note for the record (optional)."
-          className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40"
+          className={`w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40`}
         />
 
         {/* Follow-up task */}

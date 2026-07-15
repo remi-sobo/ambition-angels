@@ -236,7 +236,7 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
           {PROPOSED_TYPE_LABEL[proposal.proposed_type] ?? proposal.proposed_type}
         </span>
       </div>
-      <h3 className="font-heading font-semibold text-ink-1 text-sm">{title}</h3>
+      <h3 className={`font-heading font-semibold ${TYPE.body}`}>{title}</h3>
       {detail && <p className="mt-0.5 text-[12px] text-ink-3">{detail}</p>}
       {proposal.rationale && <p className="mt-1 text-[13px] text-ink-2 leading-relaxed">{proposal.rationale}</p>}
       <div className="mt-3 flex items-center gap-2">
@@ -285,7 +285,7 @@ function DraftCard({ draft }: { draft: Draft }) {
           <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-ink-3">
             {KIND_LABEL[draft.kind] ?? draft.kind}
           </span>
-          <h3 className="font-heading font-semibold text-ink-1 text-sm mt-0.5">{draft.title ?? "Untitled draft"}</h3>
+          <h3 className={`font-heading font-semibold ${TYPE.body} mt-0.5`}>{draft.title ?? "Untitled draft"}</h3>
         </div>
         <button onClick={() => setOpen((o) => !o)} className="text-xs font-semibold text-ink-2 hover:text-orange shrink-0">
           {open ? "Hide" : "Read"}
@@ -348,7 +348,7 @@ function ApprovedCard({ draft }: { draft: Draft }) {
           <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-ink-3">
             {KIND_LABEL[draft.kind] ?? draft.kind}
           </span>
-          <h3 className="font-heading font-semibold text-ink-1 text-sm mt-0.5">{draft.title ?? "Untitled draft"}</h3>
+          <h3 className={`font-heading font-semibold ${TYPE.body} mt-0.5`}>{draft.title ?? "Untitled draft"}</h3>
         </div>
       </div>
       <p className="mt-3 text-[13px] text-ink-2 leading-relaxed whitespace-pre-wrap">{draft.body}</p>
@@ -423,7 +423,7 @@ function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
           {suggestion.priority}
         </span>
       </div>
-      <h3 className="font-heading font-semibold text-ink-1 text-sm">{suggestion.title}</h3>
+      <h3 className={`font-heading font-semibold ${TYPE.body}`}>{suggestion.title}</h3>
       {suggestion.rationale && <p className="mt-1 text-[13px] text-ink-2 leading-relaxed">{suggestion.rationale}</p>}
       {extraction && (
         <p className={`mt-1.5 text-xs leading-relaxed ${extraction.unknown ? "text-ink-3 font-mono break-all" : "text-ink-2 font-semibold"}`}>

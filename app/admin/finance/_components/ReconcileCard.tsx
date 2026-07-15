@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import InfoTip from "./InfoTip";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // "Set current balance" / reconcile. Lets the user anchor cash to a real,
 // bank-verified number in one field: type today's actual balance, see how far
@@ -174,7 +175,7 @@ export default function ReconcileCard({
                 setOpen(false);
                 setErr(null);
               }}
-              className="px-4 py-2 rounded-lg text-ink-2 hover:text-ink-1 text-sm"
+              className={`px-4 py-2 rounded-lg text-ink-2 hover:${TYPE.body}`}
             >
               Cancel
             </button>

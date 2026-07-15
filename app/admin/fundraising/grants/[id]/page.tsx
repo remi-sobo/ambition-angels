@@ -155,7 +155,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
               <h2 className={TYPE.cardTitle}>Requirements Calendar</h2>
             </div>
             {requirements.length === 0 ? (
-              <p className="px-5 py-6 text-ink-2 text-sm">
+              <p className={`px-5 py-6 ${TYPE.bodyMuted}`}>
                 No deadlines yet — add the application, reports, and anything else the funder
                 expects. Awarded grants auto-plot a final report at the period end.
               </p>
@@ -182,7 +182,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
             )}
           </div>
           {asks.length === 0 ? (
-            <p className="px-5 py-6 text-ink-2 text-sm">
+            <p className={`px-5 py-6 ${TYPE.bodyMuted}`}>
               No asks logged for this grant yet. Log the proposal or LOI you submitted and attach the
               PDF — it lands in the Ask Log too.
             </p>

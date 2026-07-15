@@ -523,7 +523,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
               </div>
             </div>
             {activity.length === 0 ? (
-              <p className="p-6 text-ink-2 text-sm">
+              <p className={`p-6 ${TYPE.bodyMuted}`}>
                 No activity yet. Gifts, logged calls/emails/meetings, and thank-yous appear here.
               </p>
             ) : (
@@ -632,7 +632,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                           ) : (
                             <>
                               {i.logged_by && <div className="text-xs text-ink-3">{i.logged_by}</div>}
-                              {i.notes && <p className="text-ink-1 text-sm mt-0.5">{i.notes}</p>}
+                              {i.notes && <p className={`${TYPE.body} mt-0.5`}>{i.notes}</p>}
                             </>
                           )}
                         </div>
@@ -667,7 +667,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
               )}
             </div>
             {plans.length === 0 ? (
-              <p className="p-6 text-ink-2 text-sm">
+              <p className={`p-6 ${TYPE.bodyMuted}`}>
                 No recurring plans. Stripe monthly donations create plans automatically; add a manual
                 plan on the Recurring page for offline standing gifts.
               </p>
@@ -702,9 +702,9 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                 <span className="text-[10px] uppercase tracking-wider text-ink-3">from HubSpot</span>
               </div>
               {hsPledgesError ? (
-                <p className="p-6 text-ink-2 text-sm">HubSpot deals are unavailable right now. Try a sync, then reload.</p>
+                <p className={`p-6 ${TYPE.bodyMuted}`}>HubSpot deals are unavailable right now. Try a sync, then reload.</p>
               ) : hsPledges.length === 0 ? (
-                <p className="p-6 text-ink-2 text-sm">No HubSpot deals linked to this donor.</p>
+                <p className={`p-6 ${TYPE.bodyMuted}`}>No HubSpot deals linked to this donor.</p>
               ) : (
                 <ul className="divide-y divide-hairline">
                   {hsPledges.map((p) => (
@@ -732,9 +732,9 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
               <span className="text-[10px] uppercase tracking-wider text-ink-3">from HubSpot</span>
             </div>
             {hsCommsError ? (
-              <p className="p-6 text-ink-2 text-sm">HubSpot communications are unavailable right now. Try a sync, then reload.</p>
+              <p className={`p-6 ${TYPE.bodyMuted}`}>HubSpot communications are unavailable right now. Try a sync, then reload.</p>
             ) : hsComms.length === 0 ? (
-              <p className="p-6 text-ink-2 text-sm">No HubSpot emails, calls, meetings, or notes linked to this donor.</p>
+              <p className={`p-6 ${TYPE.bodyMuted}`}>No HubSpot emails, calls, meetings, or notes linked to this donor.</p>
             ) : (
               <ul className="divide-y divide-hairline">
                 {hsComms.map((e) => (
@@ -771,7 +771,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
           </div>
           <div className="px-5 py-4 space-y-3">
             {!household && (
-              <p className="text-ink-2 text-sm">
+              <p className={`${TYPE.bodyMuted}`}>
                 Not in a household. Create one to roll up giving for spouses or family, or join an
                 existing household.
               </p>

@@ -8,6 +8,7 @@ import {
   CHANNEL_LABEL,
   SUBJECT_TYPE_LABEL,
 } from "@/lib/fundraising/ack-channels";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type AckTemplate = {
   id: string;
@@ -207,7 +208,7 @@ export default function TemplateManager({ initial }: { initial: AckTemplate[] })
 
       <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
         {initial.length === 0 ? (
-          <p className="p-8 text-ink-2 text-sm">
+          <p className={`p-8 ${TYPE.bodyMuted}`}>
             No templates yet. Create one to give every thank-you a consistent, on-brand starting point.
           </p>
         ) : (

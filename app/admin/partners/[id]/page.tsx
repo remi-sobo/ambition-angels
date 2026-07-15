@@ -189,7 +189,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
                 />
               </div>
               {interactions.length === 0 ? (
-                <p className="p-6 text-ink-2 text-sm">No touches logged yet. Calls, emails, and meetings appear here.</p>
+                <p className={`p-6 ${TYPE.bodyMuted}`}>No touches logged yet. Calls, emails, and meetings appear here.</p>
               ) : (
                 <ul className="divide-y divide-hairline">
                   {interactions.map((i) => (
@@ -202,7 +202,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
                         {i.contact_id && contactName(i.contact_id) && (
                           <div className="text-xs text-ink-3">with {contactName(i.contact_id)}</div>
                         )}
-                        {i.notes && <p className="text-ink-1 text-sm mt-0.5 whitespace-pre-wrap">{i.notes}</p>}
+                        {i.notes && <p className={`${TYPE.body} mt-0.5 whitespace-pre-wrap`}>{i.notes}</p>}
                         {i.logged_by && <div className="text-[10px] text-ink-3 mt-0.5">logged by {i.logged_by}</div>}
                       </div>
                     </li>

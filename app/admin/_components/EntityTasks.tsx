@@ -169,7 +169,7 @@ export function EntityTasks({
       {loading ? (
         <p className="px-5 py-5 text-ink-3 text-sm">Loading tasks…</p>
       ) : openTasks.length === 0 && doneTasks.length === 0 ? (
-        <p className="px-5 py-5 text-ink-2 text-sm">No tasks yet. Add one to track the next move with {entityLabel}.</p>
+        <p className={`px-5 py-5 ${TYPE.bodyMuted}`}>No tasks yet. Add one to track the next move with {entityLabel}.</p>
       ) : (
         <ul className="divide-y divide-hairline">
           {openTasks.map((t) => (

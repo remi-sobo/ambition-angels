@@ -108,7 +108,7 @@ export default async function PledgeDetailPage({ params }: { params: { id: strin
               <h2 className={TYPE.cardTitle}>Installments</h2>
             </div>
             {payments.length === 0 ? (
-              <p className="p-6 text-ink-2 text-sm">No installments scheduled.</p>
+              <p className={`p-6 ${TYPE.bodyMuted}`}>No installments scheduled.</p>
             ) : (
               <ul className="divide-y divide-hairline">
                 {payments.map((x) => {

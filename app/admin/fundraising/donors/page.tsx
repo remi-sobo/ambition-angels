@@ -394,7 +394,7 @@ export default async function DonorsPage({
             </div>
           </div>
           {flagsByDonor.size === 0 ? (
-            <p className="px-5 py-5 text-ink-2 text-sm">
+            <p className={`px-5 py-5 ${TYPE.bodyMuted}`}>
               No retention flags — every donor is on their usual rhythm.
             </p>
           ) : (
@@ -433,7 +433,7 @@ export default async function DonorsPage({
 
         {donors.length === 0 ? (
           <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-            <p className="p-8 text-ink-2 text-sm">
+            <p className={`p-8 ${TYPE.bodyMuted}`}>
               No donors match this filter{year === "all" ? "" : ` for ${yearLabel}`}. Try a different
               year or segment.
             </p>

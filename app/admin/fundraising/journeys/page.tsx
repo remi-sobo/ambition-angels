@@ -66,7 +66,7 @@ export default async function JourneysPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {journeys.length === 0 ? (
-            <p className="p-8 text-ink-2 text-sm">
+            <p className={`p-8 ${TYPE.bodyMuted}`}>
               No journeys yet. Create a first-gift welcome series or a lapsed-donor re-engagement —
               the hourly cron enrolls and sends automatically (do-not-contact always honored).
             </p>

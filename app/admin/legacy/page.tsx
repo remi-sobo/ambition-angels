@@ -455,9 +455,9 @@ export default function AdminPage() {
       >
         <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
           <div className="font-display font-black text-3xl text-ink-1 mb-1 tracking-tight uppercase">BloomOS</div>
-          <div className="text-ink-2 text-sm mb-8">The operating system for nonprofits</div>
+          <div className={`${TYPE.bodyMuted} mb-8`}>The operating system for nonprofits</div>
           {magicSent ? (
-            <div className="text-ink-1 text-sm leading-relaxed">
+            <div className={`${TYPE.body} leading-relaxed`}>
               Check your email — we sent a one-time sign-in link to{" "}
               <span className="text-ink-1 font-semibold">{email}</span>.
             </div>
@@ -469,7 +469,7 @@ export default function AdminPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email"
                 autoComplete="email"
-                className="bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50"
+                className={`bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/50`}
                 autoFocus
               />
               <input
@@ -478,7 +478,7 @@ export default function AdminPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
                 autoComplete="current-password"
-                className="bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50"
+                className={`bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/50`}
               />
               {loginError && <p className="text-expense text-xs">{loginError}</p>}
               <button
@@ -594,7 +594,7 @@ export default function AdminPage() {
               ) : (
                 <>
                   <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">{stats.thisMonth}</div>
-                  <div className="text-ink-2 text-sm font-medium">Submissions this month</div>
+                  <div className={`${TYPE.bodyMuted} font-medium`}>Submissions this month</div>
                   <div className="text-ink-3 text-xs mt-1">{stats.allTime} all time</div>
                 </>
               )}
@@ -606,7 +606,7 @@ export default function AdminPage() {
               ) : (
                 <>
                   <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">{stats.emailRate}%</div>
-                  <div className="text-ink-2 text-sm font-medium">Email capture rate</div>
+                  <div className={`${TYPE.bodyMuted} font-medium`}>Email capture rate</div>
                   <div className="text-ink-3 text-xs mt-1">{stats.withEmail} of {stats.allTime} left email</div>
                 </>
               )}
@@ -620,7 +620,7 @@ export default function AdminPage() {
                   <div className="font-display font-black text-3xl text-orange tracking-tight leading-none mb-2">
                     {teenPct}%<span className="text-ink-3 text-2xl mx-1">·</span>{adultPct}%
                   </div>
-                  <div className="text-ink-2 text-sm font-medium">Quiz audience split</div>
+                  <div className={`${TYPE.bodyMuted} font-medium`}>Quiz audience split</div>
                   <div className="text-ink-3 text-xs mt-1">teens · adults</div>
                 </>
               )}
@@ -632,7 +632,7 @@ export default function AdminPage() {
               ) : (
                 <>
                   <div className="font-heading font-bold text-xl text-ink-1 leading-tight mb-2 min-h-[3rem] flex items-center">{stats.topCareer}</div>
-                  <div className="text-ink-2 text-sm font-medium">Most matched career</div>
+                  <div className={`${TYPE.bodyMuted} font-medium`}>Most matched career</div>
                 </>
               )}
             </div>
@@ -652,7 +652,7 @@ export default function AdminPage() {
                   <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-2">
                     {fmtMoney(donationStats.totalRaised)}
                   </div>
-                  <div className="text-ink-2 text-sm font-medium">Total raised</div>
+                  <div className={`${TYPE.bodyMuted} font-medium`}>Total raised</div>
                   <div className="text-ink-3 text-xs mt-1">{fmtMoney(donationStats.thisMonthRaised)} this month</div>
                 </>
               )}
@@ -666,7 +666,7 @@ export default function AdminPage() {
                   <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">
                     {donationStats.donorsThisMonth}
                   </div>
-                  <div className="text-ink-2 text-sm font-medium">Donors this month</div>
+                  <div className={`${TYPE.bodyMuted} font-medium`}>Donors this month</div>
                   <div className="text-ink-3 text-xs mt-1">{donationStats.donorCount} total unique</div>
                 </>
               )}
@@ -680,7 +680,7 @@ export default function AdminPage() {
                   <div className="font-display font-black text-5xl text-orange tracking-tight leading-none mb-2">
                     {donationStats.recurringDonors}
                   </div>
-                  <div className="text-ink-2 text-sm font-medium">Recurring donors</div>
+                  <div className={`${TYPE.bodyMuted} font-medium`}>Recurring donors</div>
                   <div className="text-ink-3 text-xs mt-1">Monthly givers</div>
                 </>
               )}
@@ -694,7 +694,7 @@ export default function AdminPage() {
                   <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-2">
                     {fmtMoney(donationStats.avgGift)}
                   </div>
-                  <div className="text-ink-2 text-sm font-medium">Average gift size</div>
+                  <div className={`${TYPE.bodyMuted} font-medium`}>Average gift size</div>
                 </>
               )}
             </div>
@@ -737,7 +737,7 @@ export default function AdminPage() {
                 <div key={i} className="px-4 py-4"><Skeleton className="h-16 w-full" /></div>
               ))
             ) : paginated.length === 0 ? (
-              <p className="px-4 py-10 text-center text-ink-2 text-sm">No submissions found.</p>
+              <p className={`px-4 py-10 text-center ${TYPE.bodyMuted}`}>No submissions found.</p>
             ) : (
               paginated.map((s) => {
                 const open = expandedId === s.id;
@@ -750,7 +750,7 @@ export default function AdminPage() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-ink-1 text-sm truncate">{s.teen_name || "Anonymous"}</span>
+                          <span className={`font-semibold ${TYPE.body} truncate`}>{s.teen_name || "Anonymous"}</span>
                           {s.audience && (
                             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>{s.audience}</span>
                           )}
@@ -957,7 +957,7 @@ export default function AdminPage() {
               ))}
             </div>
           ) : stats.careerBreakdown.length === 0 ? (
-            <p className="text-ink-2 text-sm">No career match data yet.</p>
+            <p className={`${TYPE.bodyMuted}`}>No career match data yet.</p>
           ) : (
             <div className="space-y-3 mb-8">
               {stats.careerBreakdown.map(({ title, count }) => {
@@ -984,7 +984,7 @@ export default function AdminPage() {
               ].map((item) => (
                 <div key={item.label}>
                   <div className="text-xs text-ink-3 uppercase tracking-widest font-semibold mb-1">{item.label}</div>
-                  <div className="font-heading font-semibold text-ink-1 text-sm truncate">{item.value || "N/A"}</div>
+                  <div className={`font-heading font-semibold ${TYPE.body} truncate`}>{item.value || "N/A"}</div>
                 </div>
               ))}
             </div>
@@ -1030,7 +1030,7 @@ export default function AdminPage() {
                   {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
                 </div>
               ) : !donationStats || donationStats.donations.length === 0 ? (
-                <p className="text-ink-2 text-sm">No donations recorded yet.</p>
+                <p className={`${TYPE.bodyMuted}`}>No donations recorded yet.</p>
               ) : (
                 <div className="space-y-1">
                   {donationStats.donations.slice(0, 20).map((d) => (
@@ -1040,7 +1040,7 @@ export default function AdminPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-ink-1 text-sm">{donorDisplayName(d)}</span>
+                          <span className={`font-semibold ${TYPE.body}`}>{donorDisplayName(d)}</span>
                           {d.recurring && (
                             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
                           )}
@@ -1081,7 +1081,7 @@ export default function AdminPage() {
                     <div key={i} className="px-4 py-3"><Skeleton className="h-12 w-full" /></div>
                   ))
                 ) : paginatedDonations.length === 0 ? (
-                  <p className="px-4 py-10 text-center text-ink-2 text-sm">No donations found.</p>
+                  <p className={`px-4 py-10 text-center ${TYPE.bodyMuted}`}>No donations found.</p>
                 ) : (
                   paginatedDonations.map((d) => (
                     <div key={d.id} className="px-4 py-3 flex items-center gap-3">
@@ -1090,7 +1090,7 @@ export default function AdminPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-ink-1 text-sm truncate">{donorDisplayName(d)}</span>
+                          <span className={`font-medium ${TYPE.body} truncate`}>{donorDisplayName(d)}</span>
                           {d.recurring && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
                           )}
@@ -1100,7 +1100,7 @@ export default function AdminPage() {
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <div className="font-bold text-ink-1 text-sm">{fmtMoney(d.amount)}</div>
+                        <div className={`font-bold ${TYPE.body}`}>{fmtMoney(d.amount)}</div>
                         {d.status && d.status !== "succeeded" && (
                           <div className="text-[10px] text-expense capitalize">{d.status}</div>
                         )}
@@ -1178,7 +1178,7 @@ export default function AdminPage() {
                   {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
                 </div>
               ) : !donationStats || donationStats.donorProfiles.length === 0 ? (
-                <p className="text-ink-2 text-sm">No donor data yet.</p>
+                <p className={`${TYPE.bodyMuted}`}>No donor data yet.</p>
               ) : (
                 <>
                 <div className="md:hidden divide-y divide-hairline -mx-6">
@@ -1191,7 +1191,7 @@ export default function AdminPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-ink-1 text-sm truncate">
+                          <span className={`font-medium ${TYPE.body} truncate`}>
                             {[p.firstName, p.lastName].filter(Boolean).join(" ") || "Anonymous"}
                           </span>
                           {p.recurring && (
@@ -1226,14 +1226,14 @@ export default function AdminPage() {
                                   {(p.firstName?.[0] ?? p.email?.[0] ?? "$").toUpperCase()}
                                 </span>
                               </div>
-                              <span className="font-medium text-ink-1 text-sm whitespace-nowrap">
+                              <span className={`font-medium ${TYPE.body} whitespace-nowrap`}>
                                 {[p.firstName, p.lastName].filter(Boolean).join(" ") || "Anonymous"}
                               </span>
                             </div>
                           </td>
                           <td className="px-4 py-3 text-ink-2 text-xs">{p.email !== "Anonymous" ? p.email : "—"}</td>
                           <td className="px-4 py-3 font-bold text-orange text-sm">{fmtMoney(p.totalGiven)}</td>
-                          <td className="px-4 py-3 text-ink-2 text-sm">{p.donationCount}</td>
+                          <td className={`px-4 py-3 ${TYPE.bodyMuted}`}>{p.donationCount}</td>
                           <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{fmtDate(p.firstDonation)}</td>
                           <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{fmtDate(p.lastDonation)}</td>
                           <td className="px-4 py-3">
@@ -1268,7 +1268,7 @@ export default function AdminPage() {
               ))}
             </div>
           ) : recentTen.length === 0 ? (
-            <p className="text-ink-2 text-sm">No submissions yet.</p>
+            <p className={`${TYPE.bodyMuted}`}>No submissions yet.</p>
           ) : (
             <div className="space-y-1">
               {recentTen.map((s) => (
@@ -1278,7 +1278,7 @@ export default function AdminPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-ink-1 text-sm">{s.teen_name || "Anonymous"}</span>
+                      <span className={`font-semibold ${TYPE.body}`}>{s.teen_name || "Anonymous"}</span>
                       {s.location && <span className="text-ink-2 text-xs">· {s.location}</span>}
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>
                         {s.audience || "unknown"}
@@ -1321,7 +1321,7 @@ export default function AdminPage() {
                 {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
               </div>
             ) : partnerData.signups.length === 0 ? (
-              <p className="text-ink-2 text-sm">No signups yet.</p>
+              <p className={`${TYPE.bodyMuted}`}>No signups yet.</p>
             ) : (
               <>
                 {/* Count + role breakdown */}
@@ -1330,12 +1330,12 @@ export default function AdminPage() {
                     <div className="font-display font-black text-6xl text-orange tracking-tight leading-none">
                       {partnerData.signups.length}
                     </div>
-                    <div className="text-ink-2 text-sm mt-1">total waitlist signups</div>
+                    <div className={`${TYPE.bodyMuted} mt-1`}>total waitlist signups</div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {partnerData.roleBreakdown.map(({ role, count }) => (
                       <div key={role} className="bg-tile border-[1.5px] border-outline rounded-full px-4 py-1.5 flex items-center gap-2">
-                        <span className="text-ink-1 text-sm font-semibold">{count}</span>
+                        <span className={`${TYPE.body} font-semibold`}>{count}</span>
                         <span className="text-ink-2 text-xs">{role}</span>
                       </div>
                     ))}
@@ -1347,7 +1347,7 @@ export default function AdminPage() {
                   {partnerData.signups.map((s) => (
                     <div key={s.id} className="px-6 py-3">
                       <div className="flex items-center justify-between gap-3">
-                        <span className="font-medium text-ink-1 text-sm truncate">{s.first_name} {s.last_name}</span>
+                        <span className={`font-medium ${TYPE.body} truncate`}>{s.first_name} {s.last_name}</span>
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange flex-shrink-0">{s.role}</span>
                       </div>
                       <div className="text-[11px] text-ink-2 mt-0.5 truncate">{s.email}</div>
@@ -1411,7 +1411,7 @@ export default function AdminPage() {
                 {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
               </div>
             ) : programData.signups.length === 0 ? (
-              <p className="text-ink-2 text-sm">No program partner signups yet.</p>
+              <p className={`${TYPE.bodyMuted}`}>No program partner signups yet.</p>
             ) : (
               <>
                 {/* Count + type breakdown */}
@@ -1420,12 +1420,12 @@ export default function AdminPage() {
                     <div className="font-display font-black text-6xl text-orange tracking-tight leading-none">
                       {programData.signups.length}
                     </div>
-                    <div className="text-ink-2 text-sm mt-1">program partner signups</div>
+                    <div className={`${TYPE.bodyMuted} mt-1`}>program partner signups</div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {programData.typeBreakdown.map(({ type, count }) => (
                       <div key={type} className="bg-tile border-[1.5px] border-outline rounded-full px-4 py-1.5 flex items-center gap-2">
-                        <span className="text-ink-1 text-sm font-semibold">{count}</span>
+                        <span className={`${TYPE.body} font-semibold`}>{count}</span>
                         <span className="text-ink-2 text-xs">{type}</span>
                       </div>
                     ))}
@@ -1437,7 +1437,7 @@ export default function AdminPage() {
                   {programData.signups.map((s) => (
                     <div key={s.id} className="px-6 py-3">
                       <div className="flex items-center justify-between gap-3">
-                        <span className="font-medium text-ink-1 text-sm truncate">{s.org_name}</span>
+                        <span className={`font-medium ${TYPE.body} truncate`}>{s.org_name}</span>
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange flex-shrink-0">{s.program_type}</span>
                       </div>
                       <div className="text-[11px] text-ink-2 mt-0.5 truncate">
@@ -1466,7 +1466,7 @@ export default function AdminPage() {
                       {programData.signups.map((s) => (
                         <tr key={s.id} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
                           <td className="px-4 py-3 font-medium text-ink-1 whitespace-nowrap">{s.org_name}</td>
-                          <td className="px-4 py-3 text-ink-2 text-sm whitespace-nowrap">
+                          <td className={`px-4 py-3 ${TYPE.bodyMuted} whitespace-nowrap`}>
                             {s.first_name} {s.last_name}
                           </td>
                           <td className="px-4 py-3 text-ink-2 text-xs">{s.email}</td>

@@ -35,7 +35,7 @@ export function Widget({
 }
 
 export const Empty = ({ children }: { children: ReactNode }) => (
-  <p className="text-ink-2 text-sm">{children}</p>
+  <p className={`${TYPE.bodyMuted}`}>{children}</p>
 );
 
 export const timeAgo = (iso: string) => {

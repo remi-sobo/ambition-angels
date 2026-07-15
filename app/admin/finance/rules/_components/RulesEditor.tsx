@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FinCategory } from "@/lib/finance/types";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type Rule = {
   id: string;
@@ -279,7 +280,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
             type="button"
             disabled={busy}
             onClick={applyAll}
-            className="px-3 py-1.5 rounded-lg border-[1.5px] border-outline bg-tile hover:bg-[#EFE6D4] text-ink-1 text-sm disabled:opacity-40"
+            className={`px-3 py-1.5 rounded-lg border-[1.5px] border-outline bg-tile hover:bg-[#EFE6D4] ${TYPE.body} disabled:opacity-40`}
           >
             {busy ? "Working…" : "Apply to uncategorized"}
           </button>

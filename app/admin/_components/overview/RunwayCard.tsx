@@ -69,7 +69,7 @@ export default async function RunwayCard() {
           {spark.length > 1 ? (
             <Sparkline values={spark} width={420} height={64} />
           ) : (
-            <p className="text-ink-2 text-sm">Import finance transactions to see the trend.</p>
+            <p className={`${TYPE.bodyMuted}`}>Import finance transactions to see the trend.</p>
           )}
         </div>
       </div>

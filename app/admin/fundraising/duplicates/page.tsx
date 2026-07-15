@@ -86,7 +86,7 @@ export default async function DuplicatesPage() {
 
         {groups.length === 0 ? (
           <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-8">
-            <p className="text-ink-2 text-sm">No email-based duplicates found. Records sharing an email address will surface here for merging.</p>
+            <p className={`${TYPE.bodyMuted}`}>No email-based duplicates found. Records sharing an email address will surface here for merging.</p>
           </section>
         ) : (
           <div className="space-y-3">

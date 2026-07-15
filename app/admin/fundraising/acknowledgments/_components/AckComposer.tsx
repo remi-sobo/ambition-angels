@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ACK_CHANNELS, CHANNEL_LABEL, type AckChannel } from "@/lib/fundraising/ack-channels";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type AckTemplateLite = {
   id: string;
@@ -177,7 +178,7 @@ export default function AckComposer({
           <input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="flex-1 min-w-[260px] bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40"
+            className={`flex-1 min-w-[260px] bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} focus:outline-none focus:border-orange/40`}
             placeholder="Subject"
           />
           <button
@@ -199,7 +200,7 @@ export default function AckComposer({
             ? "The personal note — write it yourself or draft with AI, then edit freely. Review before sending."
             : `What you said when you ${CHANNEL_LABEL[channel].toLowerCase()}ed (optional — a short script or note for the record).`
         }
-        className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40"
+        className={`w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40`}
       />
 
       {showCompliance && (

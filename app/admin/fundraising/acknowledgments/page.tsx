@@ -107,7 +107,7 @@ export default async function AcknowledgmentsPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {pending.length === 0 ? (
-            <p className="p-8 text-ink-2 text-sm">
+            <p className={`p-8 ${TYPE.bodyMuted}`}>
               Every gift has been thanked. New Stripe donations of $250+ will appear here
               automatically; smaller gifts are marked not-required but can still be thanked from
               the donor&apos;s profile.

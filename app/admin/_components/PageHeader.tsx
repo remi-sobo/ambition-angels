@@ -32,13 +32,11 @@ export default function PageHeader({
     <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
       <div>
         {eyebrow ? (
-          <div className="text-[10px] uppercase tracking-[0.25em] text-orange/80 mb-1">
-            {eyebrow}
-          </div>
+          <div className={`${TYPE.eyebrow} mb-1`}>{eyebrow}</div>
         ) : null}
         <h1 className={TYPE.pageTitle}>{title}</h1>
         {subtitle ? (
-          <p className="text-ink-2 text-sm mt-0.5">{subtitle}</p>
+          <p className={`${TYPE.pageSubtitle} mt-0.5`}>{subtitle}</p>
         ) : null}
       </div>
       {actions}

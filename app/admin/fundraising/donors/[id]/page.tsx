@@ -22,6 +22,7 @@ import { CommentThread } from "../../../_components/CommentThread";
 import { RailEntity } from "../../../_components/rail/RailEntityContext";
 import ConstituentDangerZone from "../_components/ConstituentDangerZone";
 import { mapStage, type HubSpotPledgeStatus } from "@/lib/finance/hubspot-pledges";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
 export const dynamic = "force-dynamic";
@@ -86,7 +87,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   if (cRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Donors</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Donors</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_fundraising_core.sql</code> via Actions → Apply DB

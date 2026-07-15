@@ -3,6 +3,7 @@ import { loadRhythmSnapshot, rhythmModeForToday } from "@/lib/admin/ops/rhythm";
 import { buildMondayStatus, buildFridayStatus, type WeekStatus } from "@/lib/admin/ops/statusLine";
 import { formatWeekHeader, formatDayLabel, todayInTZ } from "@/lib/admin/ops/week";
 import WeekStatusLine from "../_components/WeekStatusLine";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export const dynamic = "force-dynamic";
 
@@ -84,7 +85,7 @@ export default async function MyWeekHubPage() {
   return (
     <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       <header>
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
+        <h1 className={TYPE.displayTitle}>
           My Week
         </h1>
         <div className="mt-2 flex items-baseline gap-3 flex-wrap text-sm">

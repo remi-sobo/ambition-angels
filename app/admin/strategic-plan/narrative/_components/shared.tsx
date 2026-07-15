@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { StatusChip } from "../../../_components/StatusChip";
 import type { Status } from "@/lib/admin/status";
 import type { NarrativeKpi } from "@/lib/admin/strategy/narrative";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Shared presentation primitives for the Strategy Narrative movements.
@@ -115,7 +116,7 @@ export function StatBig({
 export function MovementHeader({ n, title, lead }: { n: number; title: string; lead?: ReactNode }) {
   return (
     <header className="mb-8">
-      <div className="text-[10px] uppercase tracking-[0.25em] text-orange/80 mb-2">
+      <div className={`${TYPE.eyebrow} mb-2`}>
         Strategy Narrative · Movement {n} of 3
       </div>
       <h1 className="font-display text-5xl sm:text-6xl text-ink-1 leading-[0.95] mb-4">{title}</h1>

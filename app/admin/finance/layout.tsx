@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import SubNav from "./_components/SubNav";
 import FeatureGate from "@/app/admin/_components/FeatureGate";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Section layout for /admin/finance/*. The sub-nav lives here (not on the
 // individual pages) so the tabs persist across navigation and the active
@@ -16,7 +17,7 @@ export default function FinanceLayout({ children }: { children: ReactNode }) {
           className="sticky admin-sticky-top z-30 bg-ink/95 backdrop-blur-sm border-b border-hairline"
         >
           <div className="max-w-7xl px-4 lg:px-8 py-3 flex items-center justify-between gap-3 flex-wrap">
-            <span className="text-[10px] uppercase tracking-[0.25em] text-orange/80">
+            <span className={TYPE.eyebrow}>
               Finance
             </span>
             <SubNav />

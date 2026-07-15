@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // BloomOS sign-in, split-screen: brand panel on the left (the "are we
 // winning" pitch from bloomos.org, synthetic numbers only), the form on the
@@ -157,7 +158,7 @@ export default function LoginScreen({
 
           {sessionEmail ? (
             <div>
-              <h2 className="font-heading font-bold text-ink-1 text-2xl tracking-tight">
+              <h2 className={`${TYPE.pageTitle} tracking-tight`}>
                 No workspace yet
               </h2>
               <p className="text-ink-2 text-sm leading-relaxed mt-3">
@@ -178,7 +179,7 @@ export default function LoginScreen({
             </div>
           ) : magicSent ? (
             <div>
-              <h2 className="font-heading font-bold text-ink-1 text-2xl tracking-tight">
+              <h2 className={`${TYPE.pageTitle} tracking-tight`}>
                 Check your email
               </h2>
               <p className="text-ink-2 text-sm leading-relaxed mt-3">
@@ -195,7 +196,7 @@ export default function LoginScreen({
             </div>
           ) : (
             <>
-              <h2 className="font-heading font-bold text-ink-1 text-2xl tracking-tight">
+              <h2 className={`${TYPE.pageTitle} tracking-tight`}>
                 Welcome back
               </h2>
               <p className="text-ink-2 text-sm mt-1 mb-7">

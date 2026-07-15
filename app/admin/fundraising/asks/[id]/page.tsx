@@ -11,6 +11,7 @@ import {
   DeleteAskButton,
   type AskDocument,
 } from "../_components/AskControls";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Ask detail: the facts, the status control, the linked grant/opportunity, and
 // the document store (proposal PDF, cover letter, budget).
@@ -51,7 +52,7 @@ export default async function AskDetailPage({ params }: { params: { id: string }
   if (error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Ask Log</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Ask Log</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The ask log tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_asks_log.sql</code>, then reload.

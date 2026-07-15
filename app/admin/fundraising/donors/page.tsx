@@ -12,6 +12,7 @@ import { constituentName } from "@/lib/fundraising/display";
 import { analyzeDonor, retentionRate, FLAG_LABELS, FLAG_HELP, type RetentionFlag } from "@/lib/fundraising/retention";
 import { scoreDonor } from "@/lib/fundraising/engagement";
 import { todayISO } from "../../ops/_types/ops";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Donors v1 (Ring 2): constituent list with giving rollups, fed by the
 // fundraising core schema. Gift ingestion is automatic (Stripe trigger);
@@ -101,7 +102,7 @@ export default async function DonorsPage({
   if (giftsError || allGifts === null) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className="font-heading font-bold text-ink-1 text-2xl mb-4">Donors</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Donors</h1>
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_fundraising_core.sql</code> via Actions → Apply DB

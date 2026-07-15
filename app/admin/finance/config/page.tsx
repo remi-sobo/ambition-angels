@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import ConfigEditor, { type FinConfig } from "./_components/ConfigEditor";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Read live every request so the form always seeds from the latest saved row
 // (the service-role read otherwise risks Next's Data Cache). Matches the rest
@@ -56,7 +57,7 @@ export default async function ConfigPage() {
             ← Finance
           </Link>
         </div>
-        <h1 className="font-display font-black uppercase tracking-tight text-ink-1 text-3xl sm:text-4xl leading-none">
+        <h1 className={TYPE.displayTitle}>
           Configuration
         </h1>
         <p className="mt-2 text-sm text-ink-2 max-w-2xl">

@@ -5,6 +5,7 @@ import type { FinCategory } from "@/lib/finance/types";
 import { loadRevenueSchedule, loadReceivedTotal, scheduleTotals } from "@/lib/finance/schedule";
 import { CashFlowChart, Donut, money, type DonutSeg } from "../_components/charts";
 import PrintButton from "./_components/PrintButton";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Board financial report — a print/PDF-ready one-pager pulling the
 // board-meeting essentials from the same canonical sources as the dashboard, so
@@ -121,7 +122,7 @@ export default async function FinanceReportPage() {
         {/* Title */}
         <header className="border-b border-outline pb-4">
           <div className="text-[11px] uppercase tracking-widest text-ink-2">{orgName} · Board Financial Report</div>
-          <h1 className="font-heading font-bold text-2xl text-ink-1 mt-1">Fiscal Year {cfg.year}</h1>
+          <h1 className={`${TYPE.pageTitle} mt-1`}>Fiscal Year {cfg.year}</h1>
           <div className="text-xs text-ink-2 mt-1">As of {asOf} · {reconciledTxt}</div>
         </header>
 

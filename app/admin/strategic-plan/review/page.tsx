@@ -10,6 +10,9 @@ import {
   type PlanGoal,
   type PlanKpi,
   type PlanInitiative,
+  type PlanObjectiveNote,
+  type PlanObjectiveTask,
+  type TeamMember,
 } from "../_components/PlanControls";
 import ReviewComplete from "./_components/ReviewComplete";
 
@@ -28,13 +31,18 @@ export default async function StrategyReviewPage() {
   const orgId = ctx.orgId;
   const sb = getSupabaseAdmin();
 
-  const [objectivesRes, goalsRes, kpisRes, initiativesRes, reviewsRes] = await Promise.all([
+  const [objectivesRes, goalsRes, kpisRes, initiativesRes, reviewsRes, notesRes, tasksRes, staffRes] = await Promise.all([
     sb.from("plan_objectives").select("*").eq("org_id", orgId).order("sort_order").order("created_at"),
     sb.from("plan_goals").select("*").eq("org_id", orgId).order("sort_order").order("created_at").limit(200),
     sb.from("plan_kpis").select("*").eq("org_id", orgId).order("created_at").limit(500),
     sb.from("plan_initiatives").select("*").eq("org_id", orgId).order("sort_order").order("created_at").limit(1000),
     // Resilient if plan_reviews isn't migrated yet (error → data null).
     sb.from("plan_reviews").select("*").eq("org_id", orgId).order("conducted_at", { ascending: false }).limit(6),
+    // Objective-level notes + tasks (resilient if not migrated yet).
+    sb.from("plan_objective_notes").select("*").eq("org_id", orgId).order("created_at", { ascending: false }).limit(500),
+    sb.from("plan_objective_tasks").select("*").eq("org_id", orgId).order("sort_order").order("created_at").limit(500),
+    // Active internal team members for the assignee dropdowns.
+    sb.from("staff").select("id, full_name").eq("org_id", orgId).eq("status", "active").order("sort_order").order("full_name"),
   ]);
 
   const objectives = (objectivesRes.data ?? []) as PlanObjective[];
@@ -42,6 +50,9 @@ export default async function StrategyReviewPage() {
   const kpis = (kpisRes.data ?? []) as PlanKpi[];
   const initiatives = (initiativesRes.data ?? []) as PlanInitiative[];
   const reviews = (reviewsRes.data ?? []) as ReviewRow[];
+  const objectiveNotes = (notesRes.data ?? []) as PlanObjectiveNote[];
+  const objectiveTasks = (tasksRes.data ?? []) as PlanObjectiveTask[];
+  const team = (staffRes.data ?? []) as TeamMember[];
 
   const goalsByObjective: Record<string, PlanGoal[]> = {};
   const orphanGoals: PlanGoal[] = [];
@@ -53,6 +64,10 @@ export default async function StrategyReviewPage() {
   for (const k of kpis) if (k.goal_id) (kpisByGoal[k.goal_id] ??= []).push(k);
   const initiativesByGoal: Record<string, PlanInitiative[]> = {};
   for (const i of initiatives) (initiativesByGoal[i.goal_id] ??= []).push(i);
+  const notesByObjective: Record<string, PlanObjectiveNote[]> = {};
+  for (const n of objectiveNotes) (notesByObjective[n.objective_id] ??= []).push(n);
+  const tasksByObjective: Record<string, PlanObjectiveTask[]> = {};
+  for (const t of objectiveTasks) (tasksByObjective[t.objective_id] ??= []).push(t);
 
   const fmtDate = (iso: string) =>
     new Date(iso).toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", year: "numeric", month: "short", day: "numeric" });
@@ -88,6 +103,9 @@ export default async function StrategyReviewPage() {
               goals={goalsByObjective[o.id] ?? []}
               kpisByGoal={kpisByGoal}
               initiativesByGoal={initiativesByGoal}
+              team={team}
+              notes={notesByObjective[o.id] ?? []}
+              tasks={tasksByObjective[o.id] ?? []}
             />
           ))}
 

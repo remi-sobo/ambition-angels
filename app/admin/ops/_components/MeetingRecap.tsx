@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Step of the Friday Close: recap the meetings. This-week meetings still at
@@ -24,7 +25,7 @@ export default function MeetingRecap({ meetings }: { meetings: RecapMeeting[] })
   if (meetings.length === 0) {
     return (
       <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-2">Recap the meetings</h2>
+        <h2 className={`${TYPE.sectionHeader} mb-2`}>Recap the meetings</h2>
         <p className="text-sm text-revenue">
           No meetings need follow-up this week. Nothing leaked.
         </p>
@@ -35,7 +36,7 @@ export default function MeetingRecap({ meetings }: { meetings: RecapMeeting[] })
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6 space-y-4">
       <div>
-        <h2 className="text-xs uppercase tracking-wider text-ink-2">Recap the meetings</h2>
+        <h2 className={TYPE.sectionHeader}>Recap the meetings</h2>
         <p className="text-sm text-ink-2 mt-1">
           {meetings.length} meeting{meetings.length === 1 ? "" : "s"} from this week still need a
           follow-up call. Accept the tasks worth doing, dismiss the rest, then mark each recapped.

@@ -7,6 +7,7 @@ import TaskListView, { type GroupBy } from "./TaskListView";
 import TaskBoardView from "./TaskBoardView";
 import TaskRow from "./TaskRow";
 import type { OpsTask } from "../_types/ops";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type View = "list" | "board";
 type Scope = "active" | "archived";
@@ -123,7 +124,7 @@ export default function TasksSurface({
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
       <header className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
-          <h2 className="text-xs uppercase tracking-wider text-ink-2">Tasks</h2>
+          <h2 className={TYPE.sectionHeader}>Tasks</h2>
 
           <div className="inline-flex rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-1">
             {(["active", "archived"] as Scope[]).map((s) => (

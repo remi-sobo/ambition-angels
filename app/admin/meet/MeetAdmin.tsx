@@ -167,7 +167,7 @@ function BookingsTab({
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="text-lg font-semibold mb-4">Upcoming</h2>
+        <h2 className={`${TYPE.sectionTitle} mb-4`}>Upcoming</h2>
         {upcoming.length === 0 ? (
           <p className="text-zinc-500 text-sm">Nothing on the books.</p>
         ) : (
@@ -625,7 +625,7 @@ function BlackoutsTab({
   return (
     <div className="space-y-6">
       <div className="rounded-lg border-[1.5px] border-outline bg-tile p-5">
-        <h2 className="text-lg font-semibold mb-4">Add a blackout</h2>
+        <h2 className={`${TYPE.sectionTitle} mb-4`}>Add a blackout</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Start date">
             <input
@@ -700,7 +700,7 @@ function BlackoutsTab({
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-4">Current blackouts</h2>
+        <h2 className={`${TYPE.sectionTitle} mb-4`}>Current blackouts</h2>
         {blackouts.length === 0 ? (
           <p className="text-zinc-500 text-sm">No blackouts set.</p>
         ) : (

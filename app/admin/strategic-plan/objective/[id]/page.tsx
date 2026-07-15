@@ -13,6 +13,7 @@ import {
   type PlanInitiative,
   type InitiativeRollup,
 } from "../../_components/PlanControls";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Objective detail (drill-in from the Strategy Org grid): a full page for one
 // objective. The editable tree (objective status/owner, goals, measures, and
@@ -148,7 +149,7 @@ export default async function ObjectiveDetailPage({ params }: { params: { id: st
       />
 
       {/* The actual tasks doing the work, by initiative. Edited on the ops project page. */}
-      <h2 className="font-heading font-bold text-ink-1 text-lg mt-8 mb-3">Tasks</h2>
+      <h2 className={`${TYPE.sectionTitle} mt-8 mb-3`}>Tasks</h2>
       {initsWithWork.length === 0 ? (
         <p className="text-sm text-ink-2">
           No tasks yet — attach a project to an initiative on the{" "}

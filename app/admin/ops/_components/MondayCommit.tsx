@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Step 5 of the Monday Plan: commit. Shows the week-ahead summary and writes the
@@ -56,7 +57,7 @@ export default function MondayCommit({
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6 space-y-4">
       <div>
-        <h2 className="text-xs uppercase tracking-wider text-ink-2">Commit</h2>
+        <h2 className={TYPE.sectionHeader}>Commit</h2>
         <p className="text-sm text-ink-2 mt-1">
           Here&apos;s the week you&apos;re taking on. Commit it to mark the plan done and record the
           run.

@@ -144,7 +144,7 @@ export default async function GrantsPage() {
           {/* ── Requirements calendar ── */}
           <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Upcoming Deadlines</h2>
+              <h2 className={TYPE.cardTitle}>Upcoming Deadlines</h2>
             </div>
             {requirements.length === 0 ? (
               <p className="p-6 text-ink-2 text-sm">

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Fragment, useState, useTransition, type ReactNode } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Project description with view/edit toggle.
@@ -175,7 +176,7 @@ export default function ProjectDescription({
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
       <div className="flex items-baseline justify-between gap-2 mb-3">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2">
+        <h2 className={TYPE.sectionHeader}>
           Description
         </h2>
         {!editing ? (

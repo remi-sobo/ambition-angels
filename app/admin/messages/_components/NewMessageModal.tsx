@@ -78,7 +78,7 @@ export default function NewMessageModal({
       />
       <div className="relative w-full sm:max-w-md bg-surface rounded-t-card-lg sm:rounded-card-lg border border-hairline shadow-tile max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-hairline">
-          <h2 className="font-heading font-bold text-lg text-ink-1">New message</h2>
+          <h2 className={TYPE.sectionTitle}>New message</h2>
           <button
             type="button"
             onClick={onClose}

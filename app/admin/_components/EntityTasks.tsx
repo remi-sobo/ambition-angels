@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { TASK_PRIORITIES, priorityFlagClass, taskHasAssignee, type OpsTask, type TaskPriority } from "../ops/_types/ops";
 import { useTaskComplete } from "../_lib/useTaskComplete";
+import { TYPE } from "@/lib/admin/typeScale";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -125,7 +126,7 @@ export function EntityTasks({
   return (
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
       <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="font-heading font-bold text-ink-1 text-sm">
+        <h2 className={TYPE.cardTitle}>
           Tasks {openTasks.length > 0 && <span className="text-ink-3 font-normal">· {openTasks.length} open</span>}
         </h2>
         <div className="flex items-center gap-2">
@@ -138,21 +139,21 @@ export function EntityTasks({
 
       {open && (
         <form onSubmit={add} className="px-5 py-4 border-b border-outline bg-surface flex flex-wrap items-end gap-3">
-          <label className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1 flex-1 min-w-[16rem]">
+          <label className={`${TYPE.sectionHeader} flex flex-col gap-1 flex-1 min-w-[16rem]`}>
             Task
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={`e.g. Follow up with ${entityLabel}`} className={inputCls + " w-full"} autoFocus />
           </label>
-          <label className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1">
+          <label className={`${TYPE.sectionHeader} flex flex-col gap-1`}>
             Due
             <input type="date" value={due} onChange={(e) => setDue(e.target.value)} className={inputCls + " w-40"} />
           </label>
-          <label className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1">
+          <label className={`${TYPE.sectionHeader} flex flex-col gap-1`}>
             Priority
             <select value={priority} onChange={(e) => setPriority(e.target.value as TaskPriority)} className={inputCls}>
               {TASK_PRIORITIES.map((p) => <option key={p} value={p} className="bg-surface capitalize">{p}</option>)}
             </select>
           </label>
-          <label className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1">
+          <label className={`${TYPE.sectionHeader} flex flex-col gap-1`}>
             Owner
             <select value={assignee} onChange={(e) => { setAssignee(e.target.value); setAssigneeError(null); }} className={inputCls}>
               {ASSIGNEES.map((a) => <option key={a.value} value={a.value} className="bg-surface">{a.label}</option>)}

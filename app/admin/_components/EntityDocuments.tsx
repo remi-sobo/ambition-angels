@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { DOC_TYPES, DOC_TYPE_LABEL } from "@/lib/documents/config";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type DocRow = {
   id: string;
@@ -102,7 +103,7 @@ export function EntityDocuments({
   return (
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
       <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
-        <h2 className="font-heading font-bold text-ink-1 text-sm">
+        <h2 className={TYPE.cardTitle}>
           Documents
           {docs.length > 0 && <span className="ml-2 text-xs font-semibold text-ink-2">{docs.length}</span>}
         </h2>

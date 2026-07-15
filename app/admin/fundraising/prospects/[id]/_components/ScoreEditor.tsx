@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type ProspectScore = {
   hubspot_contact_id: string;
@@ -168,7 +169,7 @@ export default function ScoreEditor({
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
       <div className="flex items-baseline justify-between gap-4 mb-4 flex-wrap">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2">
+        <h2 className={TYPE.sectionHeader}>
           Prospect Score
         </h2>
         {lastSaved && lastSaved.scored_at && (

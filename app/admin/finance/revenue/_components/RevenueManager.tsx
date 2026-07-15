@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { RevenueScheduleRow } from "@/lib/finance/schedule";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type Commitment = {
   id: string;
@@ -248,7 +249,7 @@ export default function RevenueManager({
       {/* ── Expected inflows ───────────────────────────────────────────── */}
       <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
         <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
-          <h2 className="font-heading font-bold text-ink-1 text-lg">Expected inflows</h2>
+          <h2 className={TYPE.sectionTitle}>Expected inflows</h2>
           {!formOpen && (
             <button onClick={startAdd} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors">
               + Add commitment
@@ -336,7 +337,7 @@ export default function RevenueManager({
       {/* ── Received this year ─────────────────────────────────────────── */}
       <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
         <div className="flex items-baseline justify-between gap-3 mb-1">
-          <h2 className="font-heading font-bold text-ink-1 text-lg">Received this year</h2>
+          <h2 className={TYPE.sectionTitle}>Received this year</h2>
           <span className="text-xs font-mono text-revenue [font-variant-numeric:tabular-nums]">{money(totalReceived)}</span>
         </div>
         <p className="text-xs text-ink-2 mb-4">

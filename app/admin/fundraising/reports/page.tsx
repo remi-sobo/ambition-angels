@@ -128,7 +128,7 @@ export default async function ReportsPage({
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">By campaign</h2>
+            <h2 className={TYPE.cardTitle}>By campaign</h2>
           </div>
           {groups.length === 0 ? (
             <p className="p-6 text-ink-2 text-sm">No gifts match these filters.</p>
@@ -147,7 +147,7 @@ export default async function ReportsPage({
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">Recent gifts in range</h2>
+            <h2 className={TYPE.cardTitle}>Recent gifts in range</h2>
           </div>
           {gifts.length === 0 ? (
             <p className="p-6 text-ink-2 text-sm">No gifts match these filters.</p>
@@ -172,7 +172,7 @@ export default async function ReportsPage({
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">Saved donor segments</h2>
+            <h2 className={TYPE.cardTitle}>Saved donor segments</h2>
           </div>
           {segments.length === 0 ? (
             <p className="p-6 text-ink-2 text-sm">

@@ -93,7 +93,7 @@ export default async function PledgeDetailPage({ params }: { params: { id: strin
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
-            <h2 className="font-heading font-bold text-ink-1 text-sm mb-1">Pledge</h2>
+            <h2 className={`${TYPE.cardTitle} mb-1`}>Pledge</h2>
             {facts.map(([label, value]) => (
               <div key={label} className="flex gap-3 text-xs">
                 <span className="text-ink-3 w-20 flex-shrink-0 uppercase tracking-wider font-semibold pt-px">{label}</span>
@@ -105,7 +105,7 @@ export default async function PledgeDetailPage({ params }: { params: { id: strin
 
           <section className="lg:col-span-8 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
             <div className="px-5 py-4 border-b border-outline">
-              <h2 className="font-heading font-bold text-ink-1 text-sm">Installments</h2>
+              <h2 className={TYPE.cardTitle}>Installments</h2>
             </div>
             {payments.length === 0 ? (
               <p className="p-6 text-ink-2 text-sm">No installments scheduled.</p>

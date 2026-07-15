@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import TemplateManager, { type AckTemplate } from "./_components/TemplateManager";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // The acknowledgment template library: named, channel-specific thank-you
 // templates with a {{first_name}} merge token and one default per channel. The
@@ -27,7 +28,7 @@ export default async function AckTemplatesPage() {
         >
           ← Acknowledgments
         </Link>
-        <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Thank-you templates</span>
+        <span className={`${TYPE.cardTitle} sm:text-base`}>Thank-you templates</span>
       </div>
 
       <div className="max-w-[900px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Editor for the Strategy Room's presentation copy — the hero (eyebrow,
 // headline, accent, subtitle), the stat chips, and the "what we're doing this
@@ -66,7 +67,7 @@ export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
         aria-expanded={open}
       >
         <div>
-          <h2 className="font-heading font-bold text-ink-1 text-sm">Strategy Room presentation</h2>
+          <h2 className={TYPE.cardTitle}>Strategy Room presentation</h2>
           <p className="text-[11px] text-ink-3 mt-0.5">The hero, the stat chips, and the “this year” block at the top of the public deck.</p>
         </div>
         <span className="text-ink-3 text-sm shrink-0">{open ? "Hide" : "Edit"}</span>

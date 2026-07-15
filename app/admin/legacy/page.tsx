@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import AnalyticsView from "../AnalyticsView";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -515,7 +516,7 @@ export default function AdminPage() {
       {/* ── HEADER ── */}
       <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3 sticky admin-sticky-top z-30 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="font-heading font-bold text-ink-1 text-sm sm:text-base">Admin Dashboard</span>
+          <span className={`${TYPE.cardTitle} sm:text-base`}>Admin Dashboard</span>
           {lastUpdated && (
             <span className="text-xs text-ink-2 hidden md:block">
               · Updated {fmtLastUpdated(lastUpdated)}
@@ -704,7 +705,7 @@ export default function AdminPage() {
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-6 py-5 border-b border-outline flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
-              <h2 className="font-heading font-bold text-ink-1 text-lg">Career Quiz Submissions</h2>
+              <h2 className={TYPE.sectionTitle}>Career Quiz Submissions</h2>
               <p className="text-ink-2 text-xs mt-0.5">{filtered.length} result{filtered.length !== 1 ? "s" : ""} · {totalPages} page{totalPages !== 1 ? "s" : ""}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -944,7 +945,7 @@ export default function AdminPage() {
 
         {/* ── ROW 3: CAREER ANALYTICS ── */}
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
-          <h2 className="font-heading font-bold text-ink-1 text-lg mb-6">Career Match Breakdown</h2>
+          <h2 className={`${TYPE.sectionTitle} mb-6`}>Career Match Breakdown</h2>
           {loading || !stats ? (
             <div className="space-y-3">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -995,7 +996,7 @@ export default function AdminPage() {
           {/* Header + tab bar */}
           <div className="px-6 py-5 border-b border-outline flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
-              <h2 className="font-heading font-bold text-ink-1 text-lg">Donations</h2>
+              <h2 className={TYPE.sectionTitle}>Donations</h2>
               <p className="text-ink-2 text-xs mt-0.5">Powered by Stripe</p>
             </div>
             <div className="flex items-center gap-3">
@@ -1253,7 +1254,7 @@ export default function AdminPage() {
 
         {/* ── ROW 5: RECENT ACTIVITY FEED ── */}
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
-          <h2 className="font-heading font-bold text-ink-1 text-lg mb-6">Recent Quiz Activity</h2>
+          <h2 className={`${TYPE.sectionTitle} mb-6`}>Recent Quiz Activity</h2>
           {loading ? (
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -1307,7 +1308,7 @@ export default function AdminPage() {
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-6 py-5 border-b border-outline flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
-              <h2 className="font-heading font-bold text-ink-1 text-lg">Partner Waitlist</h2>
+              <h2 className={TYPE.sectionTitle}>Partner Waitlist</h2>
               <p className="text-ink-2 text-xs mt-0.5">
                 {partnerData ? `${partnerData.signups.length} total signup${partnerData.signups.length !== 1 ? "s" : ""}` : "Guides waiting for access"}
               </p>
@@ -1397,7 +1398,7 @@ export default function AdminPage() {
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-6 py-5 border-b border-outline flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
-              <h2 className="font-heading font-bold text-ink-1 text-lg">Program Partners</h2>
+              <h2 className={TYPE.sectionTitle}>Program Partners</h2>
               <p className="text-ink-2 text-xs mt-0.5">
                 {programData ? `${programData.signups.length} total signup${programData.signups.length !== 1 ? "s" : ""}` : "Organizations signed up for access"}
               </p>

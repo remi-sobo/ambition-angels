@@ -6,6 +6,7 @@ import {
   formatDueLabel,
   type OpsProject,
 } from "../_types/ops";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export default function ActiveProjectsList({
   projects,
@@ -17,7 +18,7 @@ export default function ActiveProjectsList({
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
       <header className="flex items-baseline justify-between mb-4">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2">
+        <h2 className={TYPE.sectionHeader}>
           Active Projects
         </h2>
         <Link

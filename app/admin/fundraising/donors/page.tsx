@@ -379,7 +379,7 @@ export default async function DonorsPage({
         {/* ── Retention intelligence (always year-over-year) ── */}
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="font-heading font-bold text-ink-1 text-sm">Retention Intelligence</h2>
+            <h2 className={TYPE.cardTitle}>Retention Intelligence</h2>
             <div className="text-xs text-ink-2">
               {retention.rate !== null ? (
                 <>

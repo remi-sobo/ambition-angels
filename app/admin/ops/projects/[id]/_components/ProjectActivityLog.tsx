@@ -1,4 +1,5 @@
 import type { OpsProject, OpsTask } from "../../../_types/ops";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Derived activity feed for a project.
@@ -88,7 +89,7 @@ export default function ProjectActivityLog({
   if (events.length === 0) {
     return (
       <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-        <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-3">
+        <h2 className={`${TYPE.sectionHeader} mb-3`}>
           Activity
         </h2>
         <p className="text-sm text-ink-2 italic">No activity yet.</p>
@@ -108,7 +109,7 @@ export default function ProjectActivityLog({
 
   return (
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
-      <h2 className="text-xs uppercase tracking-wider text-ink-2 mb-4">
+      <h2 className={`${TYPE.sectionHeader} mb-4`}>
         Activity
       </h2>
       <div className="space-y-5">

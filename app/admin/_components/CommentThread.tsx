@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { MentionTextarea, type Mentionable } from "./MentionTextarea";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type CommentEntityType = "constituent" | "fr_prospects";
 
@@ -203,7 +204,7 @@ export function CommentThread({
   return (
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
       <div className="px-5 py-4 border-b border-outline">
-        <h2 className="font-heading font-bold text-ink-1 text-sm">
+        <h2 className={TYPE.cardTitle}>
           Comments {comments.length > 0 && <span className="text-ink-3 font-normal">· {comments.length}</span>}
         </h2>
       </div>

@@ -225,7 +225,7 @@ function Kpi({ label, value, sub }: { label: string; value: string; sub?: string
   return (
     <div className="border border-outline rounded-card p-3">
       <div className="text-[10px] uppercase tracking-widest text-ink-2">{label}</div>
-      <div className="font-heading font-bold text-lg text-ink-1 mt-0.5 [font-variant-numeric:tabular-nums]">{value}</div>
+      <div className={`${TYPE.sectionTitle} mt-0.5 [font-variant-numeric:tabular-nums]`}>{value}</div>
       {sub && <div className="text-[11px] text-ink-2 mt-0.5">{sub}</div>}
     </div>
   );

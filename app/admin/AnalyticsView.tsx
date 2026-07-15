@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -624,7 +625,7 @@ function Section({
   return (
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
       <div className="px-6 py-5 border-b border-outline">
-        <h2 className="font-heading font-bold text-ink-1 text-lg">{title}</h2>
+        <h2 className={TYPE.sectionTitle}>{title}</h2>
         {subtitle && <p className="text-ink-2 text-xs mt-0.5">{subtitle}</p>}
       </div>
       {children}

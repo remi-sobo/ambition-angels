@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import ConfigEditor, { type FinConfig } from "./_components/ConfigEditor";
 import PageHeader from "../../_components/PageHeader";
 
@@ -9,14 +10,17 @@ import PageHeader from "../../_components/PageHeader";
 export const dynamic = "force-dynamic";
 
 export default async function ConfigPage() {
+  const ctx = await getOrgContext();
   const supabase = getSupabaseAdmin();
-  const { data } = await supabase
-    .from("fin_config")
-    .select(
-      "current_year, fiscal_year_start_month, fundraising_goal, contingency_unlock_threshold, cash_starting_balance, cash_starting_date, monthly_burn_baseline, forward_horizon_months, runway_target_months"
-    )
-    .eq("id", 1)
-    .maybeSingle();
+  const { data } = ctx
+    ? await supabase
+        .from("fin_config")
+        .select(
+          "current_year, fiscal_year_start_month, fundraising_goal, contingency_unlock_threshold, cash_starting_balance, cash_starting_date, monthly_burn_baseline, forward_horizon_months, runway_target_months"
+        )
+        .eq("org_id", ctx.orgId)
+        .maybeSingle()
+    : { data: null };
 
   // Fall back to sane defaults if the singleton isn't seeded yet (shouldn't
   // happen — the migration seeds it — but defensive for fresh databases).

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // PATCH /api/admin/finance/reconciliation/[id] — { action: 'accept' | 'dismiss' }
@@ -13,7 +13,8 @@ const STATUSES = ["secured", "projected", "received"] as const;
 const isISODate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await getOrgContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const user = await getAdminUser();
   const body = (await req.json().catch(() => null)) as { action?: unknown } | null;
   const action = body?.action === "accept" || body?.action === "dismiss" ? body.action : "";
@@ -42,6 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: "Proposed commitment is incomplete — edit it on the Pledges tab instead." }, { status: 422 });
     }
     const insert: Record<string, unknown> = {
+      org_id: ctx.orgId,
       year,
       source_type,
       source_name,

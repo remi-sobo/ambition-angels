@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
+import { upsertFinConfig } from "@/lib/admin/finance";
 import { audit } from "@/lib/audit";
 
 function isISODate(v: unknown): v is string {
@@ -16,7 +16,8 @@ function isISODate(v: unknown): v is string {
 // Cash on hand is then (this balance) + (transactions dated after `as_of`), so
 // the displayed number is always anchored to a number the user confirmed.
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -39,18 +40,12 @@ export async function POST(req: NextRequest) {
   }
 
   const update = {
-    id: 1,
     cash_starting_balance: Math.round(balance * 100) / 100,
     cash_starting_date: asOfDate,
     cash_reconciled_at: new Date().toISOString(),
   };
 
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("fin_config")
-    .upsert(update, { onConflict: "id" })
-    .select("*")
-    .single();
+  const { data, error } = await upsertFinConfig(ctx.orgId, update);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   await audit(req, {

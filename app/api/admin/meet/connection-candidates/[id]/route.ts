@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import {
   SCHEDULING_LABEL,
@@ -22,7 +22,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const adminUser = await getAdminUser();
@@ -101,6 +102,7 @@ export async function PATCH(
   const { data: task, error: taskErr } = await supabase
     .from("ops_tasks")
     .insert({
+      org_id: ctx.orgId,
       title,
       description: `From email intro · ${gmailThreadUrl(cand.thread_id)}`,
       category: SCHEDULING_TASK_CATEGORY,

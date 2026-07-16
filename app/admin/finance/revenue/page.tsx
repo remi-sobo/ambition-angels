@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import { loadRevenueSchedule } from "@/lib/finance/schedule";
 import { constituentName } from "@/lib/fundraising/display";
 import RevenueManager, { type Commitment, type ReceivedGift } from "./_components/RevenueManager";
@@ -16,11 +17,14 @@ export default async function RevenuePage({
 }) {
   const supabase = getSupabaseAdmin();
 
-  const { data: cfg } = await supabase
-    .from("fin_config")
-    .select("current_year, fundraising_goal")
-    .eq("id", 1)
-    .maybeSingle();
+  const ctx = await getOrgContext();
+  const { data: cfg } = ctx
+    ? await supabase
+        .from("fin_config")
+        .select("current_year, fundraising_goal")
+        .eq("org_id", ctx.orgId)
+        .maybeSingle()
+    : { data: null };
   const configYear = typeof cfg?.current_year === "number" ? cfg.current_year : new Date().getFullYear();
   const requested = parseInt(searchParams.year ?? "", 10);
   const year =

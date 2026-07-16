@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import type { FinCategory } from "@/lib/finance/types";
 import BudgetEditor, { type BudgetRow } from "./_components/BudgetEditor";
 import PageHeader from "../../_components/PageHeader";
@@ -16,11 +17,10 @@ export default async function BudgetPage({
   // Year resolution: ?year=N overrides; otherwise the singleton fin_config
   // row tells us the active fiscal year; otherwise default to the current
   // calendar year. Clamp to a reasonable range.
-  const { data: cfg } = await supabase
-    .from("fin_config")
-    .select("current_year")
-    .eq("id", 1)
-    .maybeSingle();
+  const ctx = await getOrgContext();
+  const { data: cfg } = ctx
+    ? await supabase.from("fin_config").select("current_year").eq("org_id", ctx.orgId).maybeSingle()
+    : { data: null };
   const configYear =
     typeof cfg?.current_year === "number" ? cfg.current_year : new Date().getFullYear();
   const requested = parseInt(searchParams.year ?? "", 10);

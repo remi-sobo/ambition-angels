@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { parseCsv } from "@/lib/finance/parsers";
 import { batchDedupHashes, fileHash } from "@/lib/finance/dedup";
@@ -26,7 +26,8 @@ const ALLOWED_FORMATS: BankFormat[] = [
 // Preview is free; commit writes. The client always previews first, then
 // submits the same file with the user's confirmation.
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const user = await getAdminUser();
@@ -178,6 +179,7 @@ export async function POST(req: NextRequest) {
   }
 
   const insertRows = newRows.map((r) => ({
+    org_id: ctx.orgId,
     txn_date: r.txn_date,
     description: r.description,
     amount: r.amount,
@@ -199,6 +201,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { error: impErr } = await supabase.from("fin_imports").insert({
+    org_id: ctx.orgId,
     filename: file.name,
     file_hash: fHash,
     bank_format: format,

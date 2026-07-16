@@ -77,13 +77,13 @@ const deny = (perm: string): Denied => ({
   message: `The asking user does not have ${perm} access, so this data can't be shown.`,
 });
 
-async function loadFinConfig(sb: SupabaseClient) {
+async function loadFinConfig(sb: SupabaseClient, orgId: string) {
   const { data } = await sb
     .from("fin_config")
     .select(
       "current_year, fiscal_year_start_month, fundraising_goal, cash_starting_balance, cash_starting_date, cash_reconciled_at, monthly_burn_baseline, forward_horizon_months",
     )
-    .eq("id", 1)
+    .eq("org_id", orgId)
     .maybeSingle();
   return {
     year: typeof data?.current_year === "number" ? data.current_year : new Date().getFullYear(),
@@ -174,7 +174,7 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
       input_schema: { type: "object", properties: {}, additionalProperties: false },
       run: async () => {
         if (!(await hasPermission(sb, orgId, "finance.read"))) return deny("finance.read");
-        const cfg = await loadFinConfig(sb);
+        const cfg = await loadFinConfig(sb, orgId);
         const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
         const now = new Date();
@@ -275,7 +275,7 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
       input_schema: { type: "object", properties: {}, additionalProperties: false },
       run: async () => {
         if (!(await hasPermission(sb, orgId, "fundraising.read"))) return deny("fundraising.read");
-        const cfg = await loadFinConfig(sb);
+        const cfg = await loadFinConfig(sb, orgId);
         const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
         const [giftsRes, oppsRes] = await Promise.all([

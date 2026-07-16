@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // POST /api/admin/finance/budget
@@ -15,7 +15,8 @@ import { audit } from "@/lib/audit";
 // update). Idempotent for the same (year, category_id) — used by the
 // inline editor on /admin/finance/budget.
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     return Math.round(v * 100) / 100;
   }
 
-  const update: Record<string, unknown> = { year, category_id };
+  const update: Record<string, unknown> = { org_id: ctx.orgId, year, category_id };
   const base = num("base_amount");
   const t1 = num("contingency_t1");
   const t2 = num("contingency_t2");

@@ -25,7 +25,8 @@ Supabase project id: `kzzdtibbwsucloaoqpqa`.
 3. **Safety checks before writing:**
    - You must have a clearly-labeled WF balance **and** a date. If not confident,
      **do not update** — just report what you saw.
-   - `select cash_starting_balance, cash_starting_date from fin_config where id=1`.
+   - `select cash_starting_balance, cash_starting_date from fin_config
+      where org_id = (select id from orgs where slug = 'ambition-angels')`.
      Only update if the alert date is **newer** than `cash_starting_date` (never move
      the anchor backwards).
    - Sanity: balance is non-negative and below `$10,000,000`. If wildly off, skip + report.
@@ -37,8 +38,9 @@ Supabase project id: `kzzdtibbwsucloaoqpqa`.
          cash_starting_date = '<YYYY-MM-DD>',
          cash_reconciled_at = now(),
          updated_at = now()
-   where id = 1;
+   where org_id = (select id from orgs where slug = 'ambition-angels');
    ```
+   (fin_config is one row per org — core fence C2; never address it by `id`.)
    This is the cash anchor — the dashboard computes
    **Cash on hand = anchor + transactions logged after the anchor date**, so it is the
    correct single source of truth.

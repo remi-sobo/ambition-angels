@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const SOURCE_TYPES = [
@@ -20,7 +20,8 @@ function isISODate(v: unknown): v is string {
 
 // POST /api/admin/finance/revenue — create a pledge / grant / commitment.
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const user = await getAdminUser();
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
   if (!status) return NextResponse.json({ error: "status is invalid" }, { status: 400 });
 
   const insert: Record<string, unknown> = {
+    org_id: ctx.orgId,
     year,
     source_type,
     source_name,

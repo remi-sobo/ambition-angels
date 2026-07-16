@@ -13,6 +13,9 @@ vi.mock("react", async (importOriginal) => {
 // that Reed's tools hand their output through VERBATIM (no recompute, no
 // re-rank — the "second opinions" failure mode in spec #6), and mocking the
 // modules also keeps their server-only/cookie imports out of the test.
+// finance.ts (on the plan-metrics import path) resolves its org via
+// lib/admin/orgs.ts, which is server-only.
+vi.mock("server-only", () => ({}));
 vi.mock("@/lib/admin/statusLine", () => ({ getStatusLine: vi.fn() }));
 vi.mock("@/lib/admin/outlookRead", () => ({ getOutlook: vi.fn() }));
 vi.mock("@/lib/admin/actionQueue", () => ({ getActionQueue: vi.fn() }));

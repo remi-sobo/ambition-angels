@@ -17,6 +17,8 @@
  */
 import { cache } from "react";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 import {
   computeRunway,
   endOfMonthISO,
@@ -106,12 +108,15 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
   const sb = getSupabaseAdmin();
   const now = new Date();
 
+  // fin_config is one row per org (C2): the session's active org, or the
+  // resident org for sessionless contexts (briefing cron, metrics resolvers).
+  const orgId = (await getOrgContext())?.orgId ?? (await getResidentOrgId());
   const cfgRes = await sb
     .from("fin_config")
     .select(
       "current_year, fiscal_year_start_month, fundraising_goal, cash_starting_balance, cash_starting_date, cash_reconciled_at, monthly_burn_baseline, forward_horizon_months, last_reconciled_at"
     )
-    .eq("id", 1)
+    .eq("org_id", orgId)
     .maybeSingle();
   const cfg: FinanceConfig = {
     year: typeof cfgRes.data?.current_year === "number" ? cfgRes.data.current_year : now.getFullYear(),
@@ -237,3 +242,34 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
     netYTD: revenueYTD - expenseYTD,
   };
 });
+
+/**
+ * Org-scoped fin_config write (core fence C2), safe in BOTH schema shapes —
+ * before and after the Appendix-3 restructure (id=1 singleton → org_id PK).
+ * Neither upsert shape works on both sides (onConflict:"id" breaks when the
+ * column drops; onConflict:"org_id" needs the unique constraint the
+ * restructure adds), so: UPDATE by org_id first — the org's row exists in
+ * both shapes — and INSERT only when the org has no row yet. Pre-restructure
+ * that insert is possible only for a second org and fails loudly on the id=1
+ * singleton PK, which is the correct signal during the deploy window.
+ */
+export async function upsertFinConfig(
+  orgId: string,
+  fields: Record<string, unknown>,
+): Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }> {
+  const sb = getSupabaseAdmin();
+  const updated = await sb
+    .from("fin_config")
+    .update(fields)
+    .eq("org_id", orgId)
+    .select("*")
+    .maybeSingle();
+  if (updated.error) return { data: null, error: updated.error };
+  if (updated.data) return { data: updated.data, error: null };
+  const inserted = await sb
+    .from("fin_config")
+    .insert({ ...fields, org_id: orgId })
+    .select("*")
+    .single();
+  return { data: inserted.data, error: inserted.error };
+}

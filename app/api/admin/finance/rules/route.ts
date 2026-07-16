@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const PATTERN_TYPES = ["contains", "starts_with", "regex"] as const;
@@ -8,7 +8,8 @@ type PatternType = (typeof PATTERN_TYPES)[number];
 
 // POST /api/admin/finance/rules — create a new category rule.
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("fin_category_rules")
-    .insert({ pattern, pattern_type, category_id, restricted, priority })
+    .insert({ org_id: ctx.orgId, pattern, pattern_type, category_id, restricted, priority })
     .select("*")
     .single();
   if (error) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { parseQbBudget, matchAccounts, type MatchInput } from "@/lib/finance/qb-budget";
 
@@ -21,7 +21,8 @@ import { parseQbBudget, matchAccounts, type MatchInput } from "@/lib/finance/qb-
 //   - Re-running for the same year overwrites base_amount for matched
 //     rows. That's intentional — the QB export IS the source of truth.
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -133,6 +134,7 @@ export async function POST(req: NextRequest) {
   // Upsert each (year, category_id) row. We could batch via .upsert(rows)
   // but supabase-js handles the array case fine.
   const rows = Array.from(upserts.entries()).map(([category_id, base_amount]) => ({
+    org_id: ctx.orgId,
     year,
     category_id,
     base_amount,

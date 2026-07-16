@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 
 const getSupabase = () =>
   createClient(
@@ -103,6 +104,9 @@ export async function POST(req: NextRequest) {
   // legacy program_partners table never existed in production, so this
   // form was silently failing before.
   const { error: dbError } = await supabase.from("partners").insert({
+    // Public route, no session — org comes from the resident org, never the
+    // column default (survives the Phase C default drop).
+    org_id: await getResidentOrgId(),
     name: org_name,
     kind: "nonprofit",
     status: "prospect",

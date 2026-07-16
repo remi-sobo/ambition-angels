@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { SNOOZE } from "@/lib/admin/thresholds";
 
@@ -19,7 +19,8 @@ type Body = {
 };
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
   const { error } = await sb
     .from("bloomos_briefing_state")
     .upsert(
-      { item_id: itemId, decision, hidden_until, updated_at: new Date().toISOString() },
+      { org_id: ctx.orgId, item_id: itemId, decision, hidden_until, updated_at: new Date().toISOString() },
       { onConflict: "item_id" },
     );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

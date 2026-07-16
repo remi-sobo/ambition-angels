@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 
 const createSchema = z.object({
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -11,7 +11,8 @@ const createSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   let body: unknown;
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase
     .from("blackouts")
     .insert({
+      org_id: ctx.orgId,
       start_date: parsed.data.start_date,
       end_date: parsed.data.end_date,
       reason: parsed.data.reason ?? null,

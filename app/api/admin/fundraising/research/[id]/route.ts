@@ -231,6 +231,7 @@ async function runResearch(rc: RunCtx): Promise<void> {
     const { data: briefRow, error: briefErr } = await admin
       .from("fr_prospect_briefs")
       .insert({
+        org_id: rc.orgId,
         prospect_id: rc.prospectId,
         hubspot_contact_id: rc.hubspotId,
         content: result.brief,
@@ -245,6 +246,7 @@ async function runResearch(rc: RunCtx): Promise<void> {
     if (briefErr) {
       console.error("[research] failed to persist brief:", { code: briefErr.code, message: briefErr.message });
       await admin.from("fr_agent_activity_log").insert({
+        org_id: rc.orgId,
         created_by: "agent",
         triggered_by: rc.currentUser,
         action_type: ACTION_TYPE,
@@ -268,6 +270,7 @@ async function runResearch(rc: RunCtx): Promise<void> {
     }
 
     await admin.from("fr_agent_activity_log").insert({
+      org_id: rc.orgId,
       created_by: "agent",
       triggered_by: rc.currentUser,
       action_type: ACTION_TYPE,
@@ -313,6 +316,7 @@ async function runResearch(rc: RunCtx): Promise<void> {
     if (err instanceof AgentResultError) {
       console.error("[research] tool extraction failed:", { message: err.message });
       await admin.from("fr_agent_activity_log").insert({
+        org_id: rc.orgId,
         created_by: "agent",
         triggered_by: rc.currentUser,
         action_type: ACTION_TYPE,
@@ -341,6 +345,7 @@ async function runResearch(rc: RunCtx): Promise<void> {
 
     console.error("[research] agent failure (api or unknown):", { message });
     await admin.from("fr_agent_activity_log").insert({
+      org_id: rc.orgId,
       created_by: "agent",
       triggered_by: rc.currentUser,
       action_type: ACTION_TYPE,

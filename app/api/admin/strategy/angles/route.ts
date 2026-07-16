@@ -7,7 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import {
   ANGLE_BADGES,
@@ -21,7 +21,8 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -49,6 +50,7 @@ export async function POST(req: NextRequest) {
   const sortOrder = ((last?.sort_order as number | undefined) ?? 0) + 1;
 
   const insert: Record<string, unknown> = {
+    org_id: ctx.orgId,
     key,
     name,
     status_badge: badge,

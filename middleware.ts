@@ -218,6 +218,19 @@ export async function middleware(req: NextRequest) {
     if (!isAppHostPath(pathname)) return appHostNotFound();
   }
 
+  // ── Session-backed API routes ─────────────────────────────────────────
+  // /api/admin/* and /api/reed/* authenticate via the Supabase session
+  // (getOrgContext). Refresh the token here and forward the fresh cookies so
+  // a long-open tab re-auths transparently instead of the handler seeing an
+  // expired token and returning 401 (page loads already refresh via the gate
+  // below; API calls didn't, so an aged tab's fetch would fail). No page
+  // gates or redirects for API paths — the handler does its own authz, and an
+  // unauthenticated API call must get its own JSON 401, never an HTML bounce.
+  if (pathname.startsWith("/api/")) {
+    const { response } = await updateSession(req);
+    return response;
+  }
+
   // Paths matched only for the app-host guard (the broad matcher entry) pass
   // straight through on every other host — marketing behavior is unchanged,
   // and updateSession() never runs where it didn't before this guard existed.
@@ -270,6 +283,11 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path+",
+    // Session-backed API surfaces: refreshed (not gated) so a long-open tab's
+    // fetch re-auths instead of 401ing on an expired token. Cron API routes
+    // authenticate with a secret, not a session, so they're deliberately out.
+    "/api/admin/:path*",
+    "/api/reed/:path*",
     "/demoday",
     "/demoday/index.html",
     "/strategy",

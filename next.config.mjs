@@ -1,5 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    // Cutover (migration runbook step 14): the admin now lives at
+    // app.bloomos.org. Old links, bookmarks, and installed PWAs on the AA
+    // host land there via a permanent (308) redirect — method-preserving, so
+    // in-flight POSTs from a stale PWA shell survive the hop. Host-matched:
+    // the app host itself, previews, and localhost are untouched. This stays
+    // forever (links in sent email never die).
+    return ["www.ambitionangels.org", "ambitionangels.org"].map((host) => ({
+      source: "/admin/:path*",
+      has: [{ type: "host", value: host }],
+      destination: "https://app.bloomos.org/admin/:path*",
+      permanent: true,
+    }));
+  },
   async rewrites() {
     return [
       // Serve the self-contained Fast Forward demo-day lookbook (a static

@@ -156,7 +156,7 @@ export default function ConfigEditor({ initial }: Props) {
 
       <Section
         title="Runway model"
-        hint="Drives the forward runway. The burn baseline is the monthly spend the runway divides by — set it to a number you can defend (AA: $50,000, a touch above the actual average for cushion). Leave it blank to fall back to the trailing 3-month average. The horizon is how many months ahead the projected runway counts pledges that haven't landed yet."
+        hint="Drives the forward runway. The burn baseline is the monthly spend the runway divides by — set it to a number you can defend, a touch above your actual average for cushion. Leave it blank to fall back to the trailing 3-month average. The horizon is how many months ahead the projected runway counts pledges that haven't landed yet."
       >
         <Field label="Monthly burn baseline ($)">
           <input

@@ -8,7 +8,7 @@ import { getOrgContext, type OrgContext } from "@/lib/admin/auth";
  * Entitlements are the per-tenant switchboard: module keys decide which parts
  * of BloomOS an org sees, feature/tier keys mark paid capabilities ('ai.reed'
  * separates Bloom from Bloom Grow, 'coaching' marks Bloom Flourish), and aa.*
- * flags fence Ambition Angels' website-coupled surfaces off from every other
+ * flags fence the resident org's website-coupled surfaces off from every other
  * tenant. They live in org_entitlements, one enabled row per (org, feature);
  * the plan -> entitlement mapping is billing's job (later). These helpers only
  * answer "does this org hold this key, right now."

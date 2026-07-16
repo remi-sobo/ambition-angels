@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import type { AdminUser } from "@/lib/admin/auth";
 import type { FeatureKey } from "@/lib/admin/entitlements";
+import OrgSwitcher from "./OrgSwitcher";
 import SearchTrigger from "./search/SearchTrigger";
 import { useAdminBadges } from "./AdminBadges";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -398,12 +399,18 @@ export default function Sidebar({
   terms,
   orgName,
   features,
+  orgs,
+  activeOrgId,
 }: {
   currentUser: AdminUser | null;
   /** Resolved terminology labels for term-driven nav items (term key →
    *  display label, plural pre-applied), from getNavTermLabels(). Null
    *  pre-auth — terminology is tenant data. */
   terms?: Record<string, string> | null;
+  /** The user's orgs (from getUserOrgs) — the footer switcher renders only
+   *  when there are 2+. */
+  orgs?: { orgId: string; orgName: string }[] | null;
+  activeOrgId?: string | null;
   /** From ctx.orgName (the orgs row). Null pre-auth — the tagline must stay
    *  generic then; a shared host can't name a tenant before sign-in. */
   orgName?: string | null;
@@ -556,6 +563,10 @@ export default function Sidebar({
 
       {currentUser && (
         <div className="px-4 py-4 border-t border-white/[0.07] space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {orgs && orgs.length >= 2 && activeOrgId && (
+            <OrgSwitcher orgs={orgs} activeOrgId={activeOrgId} />
+          )}
+
           {/* Account block: avatar + name + role, with log out tucked to the side. */}
           <div className="flex items-center gap-2.5">
             <span className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-light text-orange-dark text-[12px] font-bold uppercase">

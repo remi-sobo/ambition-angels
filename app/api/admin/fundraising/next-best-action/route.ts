@@ -16,6 +16,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "@/app/admin/ops/_types/ops";
 import { runNextBestAction, estimateNbaCostUsd } from "@/lib/agents/next-best-action/agent";
@@ -306,6 +307,7 @@ export async function POST() {
   // Record spend on the shared agent wallet (drives the budget cap above).
   const costUsd = estimateNbaCostUsd(result.tokensInput, result.tokensOutput);
   await supabase.from("fr_agent_activity_log").insert({
+    org_id: ctx?.orgId ?? (await getResidentOrgId()),
     created_by: "agent",
     triggered_by: currentUser,
     action_type: "other",

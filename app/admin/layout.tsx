@@ -13,7 +13,7 @@ import { AdminUserProvider } from "./_components/AdminUserContext";
 import { AdminBadgesProvider } from "./_components/AdminBadges";
 import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { getNavTermLabels } from "@/lib/admin/terminology";
 
 export const metadata: Metadata = {
   title: {
@@ -68,18 +68,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // (Phase 4), so hiding it here is an affordance, not the security boundary.
   const reedEnabled = !!ents && hasFeature(ents, "ai.reed");
 
-  // Per-tenant label for the Staff module (Phase 4 org_terminology), so the nav
-  // reads "Team"/"People" when an org has renamed it. Falls back to "Staff".
-  let staffLabel: string | null = null;
-  if (orgId) {
-    const { data } = await createServerSupabase()
-      .from("org_terminology")
-      .select("label")
-      .eq("org_id", orgId)
-      .eq("term_key", "staff")
-      .maybeSingle();
-    staffLabel = (data as { label: string } | null)?.label ?? null;
-  }
+  // Per-tenant vocabulary for the term-driven nav items (core fence spec B3):
+  // org_terminology override → entity_types.display_name → code default, so
+  // the nav reads "Scholars"/"Chapters"/"Team" when an org has renamed terms.
+  const terms = authed && orgId ? await getNavTermLabels() : null;
 
   // The shell (sidebar + main column) renders on every /admin/* visit,
   // including the unauthed login screen at /admin. Earlier this layout
@@ -96,7 +88,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <AdminPWA />
       <Sidebar
         currentUser={user}
-        staffLabel={staffLabel}
+        terms={terms}
         orgName={ctx?.orgName ?? null}
         features={features}
       />

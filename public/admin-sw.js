@@ -12,7 +12,7 @@
  * Scope is set to "/admin/" at registration time (see AdminPWA.tsx).
  */
 
-const CACHE = "aa-admin-v7";
+const CACHE = "aa-admin-v8";
 const CORE = ["/admin"];
 
 self.addEventListener("install", (event) => {
@@ -77,8 +77,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets under /admin/ (icons, manifest): cache-first.
-  if (url.pathname.startsWith("/admin/")) {
+  // Static assets under /admin/ (icons, manifest): cache-first. ONLY real
+  // files (extension in the path) qualify — Next.js RSC payload fetches for
+  // client-side navigations (`RSC: 1` header) are also non-navigate GETs
+  // under /admin/, and cache-firsting those froze server-rendered sections
+  // at their first-fetched state (e.g. the ops "Pinned for today" group
+  // kept showing everyone's tasks after the ?assignee= filter changed).
+  // Anything dynamic must fall through to the network untouched.
+  const isStaticFile = /\.[a-z0-9]+$/i.test(url.pathname);
+  if (url.pathname.startsWith("/admin/") && isStaticFile && !req.headers.get("RSC")) {
     event.respondWith(
       (async () => {
         const cached = await caches.match(req);

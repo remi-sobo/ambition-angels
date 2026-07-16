@@ -189,8 +189,11 @@ export default async function FinanceDashboardPage() {
     .sort((a, b) => b.value - a.value);
 
   // ── Fundraising summary (from the canonical schedule + actual gifts) ─────
-  // Received = real money landed (gifts this fiscal year). Secured = committed
-  // schedule (pledges + awarded grants + manual secured, full value, restricted
+  // Received = real money landed (gifts this fiscal year — HubSpot closed-won
+  // deals and manual/payment gifts). This alone is the "Raised YTD" headline:
+  // committed/pledged deals are money we don't have yet, so they never inflate
+  // the YTD total. Secured = committed schedule (pledges + awarded grants +
+  // manual secured + committed AIG/Pledged deals, full value, restricted
   // included — restricted money still counts toward the goal). No hs_deals.
   const securedTotal = schedTotals.committed;
   const receivedTotal = receivedYTD;
@@ -256,6 +259,7 @@ export default async function FinanceDashboardPage() {
     }>;
 
   const goalPct = cfg.goal > 0 ? raisedHard / cfg.goal : 0;
+  const receivedPct = cfg.goal > 0 ? receivedTotal / cfg.goal : 0;
   const budgetPct = totalBudget > 0 ? expenseYTD / totalBudget : 0;
 
   // ── Forward-runway tiers ─────────────────────────────────────────────────
@@ -305,27 +309,27 @@ export default async function FinanceDashboardPage() {
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Hero
           label="Raised YTD"
-          value={money(raisedHard)}
+          value={money(receivedTotal)}
           href="/admin/finance/revenue"
           hrefLabel="View revenue"
           info={
             <InfoTip heading="Raised YTD">
-              Hard money toward the goal this fiscal year: <b>received + secured</b>.{" "}
-              <b>Received</b> is gifts that have landed (the <code>gifts</code> ledger);{" "}
-              <b>secured</b> is committed-but-not-yet-received money in the revenue
-              schedule (scheduled pledge installments, awarded grants, committed
-              AIG/Pledged deals). Projected pipeline is <b>not</b> included here.
+              Money actually <b>received</b> this fiscal year: gifts that have landed
+              (the <code>gifts</code> ledger — HubSpot <b>Closed Won</b> deals and
+              manual gifts). Committed or pledged deals that haven&apos;t been received
+              are <b>not</b> counted here — they appear as <b>Secured</b> in the pledge
+              pipeline below. Projected pipeline is not included either.
             </InfoTip>
           }
           sub={
             cfg.goal > 0
-              ? `${Math.round(goalPct * 100)}% of ${money(cfg.goal)} goal`
+              ? `${Math.round(receivedPct * 100)}% of ${money(cfg.goal)} goal`
               : "set a goal in Config"
           }
         >
           <CircleGauge
-            pct={goalPct}
-            value={`${Math.round(goalPct * 100)}%`}
+            pct={receivedPct}
+            value={`${Math.round(receivedPct * 100)}%`}
             label="goal"
             color="#2F7D5B"
           />
@@ -495,7 +499,7 @@ export default async function FinanceDashboardPage() {
             who it came from. Projected pipeline shown separately below.
           </p>
           {sourceSegs.length > 0 ? (
-            <Donut segments={sourceSegs} centerValue={money(raisedHard)} centerLabel="RAISED" />
+            <Donut segments={sourceSegs} centerValue={money(receivedTotal)} centerLabel="RAISED" />
           ) : (
             <Empty>
               Record received pledges or upload a revenue CSV to see the

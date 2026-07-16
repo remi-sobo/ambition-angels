@@ -11,7 +11,7 @@ import { ReedLauncherProvider } from "./_components/reed/ReedLauncherProvider";
 import AdminPWA from "./_components/AdminPWA";
 import { AdminUserProvider } from "./_components/AdminUserContext";
 import { AdminBadgesProvider } from "./_components/AdminBadges";
-import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
+import { getAdminUser, getOrgContext, getUserOrgs } from "@/lib/admin/auth";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
 import { getNavTermLabels } from "@/lib/admin/terminology";
 
@@ -73,6 +73,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // the nav reads "Scholars"/"Chapters"/"Team" when an org has renamed terms.
   const terms = authed && orgId ? await getNavTermLabels() : null;
 
+  // The user's orgs feed the sidebar-footer switcher (C1) — it only renders
+  // with 2+ memberships, so single-org users never see it.
+  const orgs = authed ? await getUserOrgs() : [];
+
   // The shell (sidebar + main column) renders on every /admin/* visit,
   // including the unauthed login screen at /admin. Earlier this layout
   // skipped the shell when unauthed — but that meant logged-in users
@@ -91,6 +95,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         terms={terms}
         orgName={ctx?.orgName ?? null}
         features={features}
+        orgs={orgs}
+        activeOrgId={orgId}
       />
       {/* One Reed launcher shared by the rail (desktop capture-to-Reed) and the
           FAB (mobile), so there's a single Reed drawer regardless of entry. */}

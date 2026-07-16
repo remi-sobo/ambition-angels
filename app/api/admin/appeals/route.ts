@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "name and campaign_id are required" }, { status: 400 });
   }
 
-  const insert: Record<string, unknown> = { name, campaign_id: campaignId };
+  const insert: Record<string, unknown> = { org_id: ctx.orgId, name, campaign_id: campaignId };
   if (typeof body?.source_code === "string" && body.source_code.trim())
     insert.source_code = body.source_code.trim().slice(0, 60);
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext, isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { findOrCreateFunder } from "@/lib/fundraising/grants";
 import { isAskForm, isAskStatus } from "@/lib/fundraising/asks";
@@ -14,7 +14,8 @@ const isUuid = (v: unknown): v is string =>
 // links an existing constituent, a name find-or-creates one, but it can never
 // be cleared.
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!isUuid(params.id)) {
@@ -77,7 +78,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   } else if ("funder_name" in body) {
     const funderName = typeof body.funder_name === "string" ? body.funder_name.trim() : "";
     if (funderName) {
-      const funder = await findOrCreateFunder(supabase, funderName);
+      const funder = await findOrCreateFunder(supabase, ctx.orgId, funderName);
       if ("error" in funder) return NextResponse.json({ error: funder.error }, { status: 500 });
       update.funder_id = funder.id;
     }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import {
   autoPlotFinalReport,
@@ -20,7 +20,8 @@ const isISODate = (v: unknown): v is string =>
 // organization constituent: pass funder_id to link an existing one, or
 // funder_name and we find-or-create it (case-insensitive name match).
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const user = await getAdminUser();
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
   if (typeof body.funder_id === "string" && /^[0-9a-f-]{36}$/i.test(body.funder_id)) {
     funderId = body.funder_id;
   } else if (typeof body.funder_name === "string" && body.funder_name.trim()) {
-    const funder = await findOrCreateFunder(supabase, body.funder_name);
+    const funder = await findOrCreateFunder(supabase, ctx.orgId, body.funder_name);
     if ("error" in funder) return NextResponse.json({ error: funder.error }, { status: 500 });
     funderId = funder.id;
   }
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "A funder is required for every grant." }, { status: 400 });
   }
 
-  const insert: Record<string, unknown> = { name, stage, funder_id: funderId, owner: user };
+  const insert: Record<string, unknown> = { org_id: ctx.orgId, name, stage, funder_id: funderId, owner: user };
   if (typeof body.amount_requested === "number" && body.amount_requested >= 0)
     insert.amount_requested = Math.round(body.amount_requested * 100) / 100;
   if (typeof body.amount_awarded === "number" && body.amount_awarded >= 0)
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
   let warning: string | undefined;
   if (isISODate(body.first_deadline)) {
     const { error: reqErr } = await supabase.from("grant_requirements").insert({
+      org_id: ctx.orgId,
       grant_id: data.id,
       kind: typeof body.first_deadline_kind === "string" &&
         ["loi", "application", "interim_report", "final_report", "financial_report", "other"].includes(body.first_deadline_kind)
@@ -112,7 +114,7 @@ export async function POST(req: NextRequest) {
 
   // Same award behavior as the PATCH stage-advance path.
   if (stage === "awarded") {
-    await autoPlotFinalReport(supabase, data.id, data.period_end);
+    await autoPlotFinalReport(supabase, ctx.orgId, data.id, data.period_end);
   }
 
   await audit(req, {

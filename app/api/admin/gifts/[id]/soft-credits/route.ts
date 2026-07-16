@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext, isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // Epic D2 — soft credits: recognition for someone other than the hard-credit
@@ -19,7 +19,8 @@ const money = (v: unknown): number | null =>
  * person). Amount defaults to the gift's full amount.
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await getOrgContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!isUuid(params.id)) return NextResponse.json({ error: "Bad gift id" }, { status: 400 });
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     } else {
       const { data: created, error: cErr } = await supabase
         .from("constituents")
-        .insert({ type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
+        .insert({ org_id: ctx.orgId, type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
         .select("id")
         .single();
       if (cErr || !created) return NextResponse.json({ error: "Could not create constituent" }, { status: 500 });
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const amount = money(body.amount) ?? Number(gift.amount);
-  const insert = { gift_id: gift.id, constituent_id: constituentId, type: body.type, amount };
+  const insert = { org_id: ctx.orgId, gift_id: gift.id, constituent_id: constituentId, type: body.type, amount };
   const { data, error } = await supabase.from("soft_credits").insert(insert).select("id").single();
   if (error || !data) {
     console.error("[soft_credits] create failed:", error?.message);

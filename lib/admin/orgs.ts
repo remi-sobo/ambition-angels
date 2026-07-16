@@ -13,7 +13,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
  * program_spine_schema.sql). A future multi-tenant public site passes the
  * org through the form instead; this helper is the single seam to change.
  *
- * Configurable via RESIDENT_ORG_SLUG; defaults to the Ambition Angels slug
+ * Configurable via RESIDENT_ORG_SLUG; defaults to the resident org slug
  * the leak-test bootstrap also uses.
  */
 export const getResidentOrgId = cache(async (): Promise<string> => {

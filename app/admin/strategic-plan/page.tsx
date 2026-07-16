@@ -296,7 +296,7 @@ export default async function StrategicPlanPage({
             {!isEmpty && <ReedReviewButton />}
             {!isEmpty && <ReedDesignButton />}
             {isEmpty && <ReedStartButton />}
-            {isEmpty ? <SeedButton /> : <RefreshMetricsButton />}
+            {isEmpty ? <SeedButton orgName={ctx.orgName} /> : <RefreshMetricsButton />}
             <NewObjectiveForm />
           </div>
         }
@@ -306,7 +306,7 @@ export default async function StrategicPlanPage({
         <>
           <FoundationPanel foundation={foundation} />
           <p className="text-sm text-ink-2">
-            No strategy yet — click <strong>Load AA strategy</strong> to bring in the foundation, four objectives,
+            No strategy yet — click <strong>Load starter strategy</strong> to bring in the foundation, four objectives,
             goals, and KPIs from the OGSM, or add an objective to build it from scratch.
           </p>
         </>

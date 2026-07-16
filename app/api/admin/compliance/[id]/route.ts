@@ -12,6 +12,21 @@ const RECURS = ["annual", "quarterly", "biennial", "none"] as const;
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
+// Checklist lives as jsonb [{id, text, done}] on the item (details panel on
+// /admin/compliance). The client always sends the full replacement array.
+function parseChecklist(v: unknown): Array<{ id: string; text: string; done: boolean }> | null {
+  if (!Array.isArray(v) || v.length > 100) return null;
+  const out: Array<{ id: string; text: string; done: boolean }> = [];
+  for (const raw of v) {
+    if (typeof raw !== "object" || raw === null) return null;
+    const { id, text, done } = raw as Record<string, unknown>;
+    if (typeof id !== "string" || typeof text !== "string" || typeof done !== "boolean") return null;
+    if (!text.trim()) continue;
+    out.push({ id: id.slice(0, 40), text: text.trim().slice(0, 300), done });
+  }
+  return out;
+}
+
 function rollForward(due: string, recur: string): string {
   const d = new Date(`${due}T00:00:00Z`);
   if (recur === "quarterly") d.setUTCMonth(d.getUTCMonth() + 3);
@@ -85,6 +100,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         ? body.notes.slice(0, 2000)
         : undefined;
   if (update.notes === undefined) delete update.notes;
+  if ("checklist" in body) {
+    const checklist = parseChecklist(body.checklist);
+    if (checklist === null) {
+      return NextResponse.json({ error: "Invalid checklist" }, { status: 400 });
+    }
+    update.checklist = checklist;
+  }
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "No valid fields" }, { status: 400 });

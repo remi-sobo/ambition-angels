@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 /**
@@ -18,6 +19,12 @@ import { createServerSupabase } from "@/lib/supabase/server";
 
 export type AdminUser = "remi" | "shannon";
 
+/** Cookie naming the user's active org (core fence spec §6c, C1). Written
+ *  ONLY by /api/admin/org/switch after validating membership — server
+ *  components can't set cookies, so reads here ignore an invalid value
+ *  instead of clearing it (the deterministic fallback makes that harmless). */
+export const ACTIVE_ORG_COOKIE = "bloom_active_org";
+
 export type OrgContext = {
   userId: string;
   email: string;
@@ -29,44 +36,91 @@ export type OrgContext = {
   role: "owner" | "admin" | "staff" | "finance" | "board_viewer";
 };
 
+type MembershipRow = {
+  org_id: string;
+  role: OrgContext["role"];
+  orgs: { name: string } | { name: string }[] | null;
+};
+
+// Many-to-one embed; supabase-js without generated types may hand back an
+// object or a one-element array depending on inference.
+function embeddedOrgName(row: MembershipRow): string {
+  const org = row.orgs;
+  return (Array.isArray(org) ? org[0]?.name : org?.name) || "your organization";
+}
+
+/** Session user + ALL their memberships, oldest first. RLS on memberships
+ *  lets a user read only rows in orgs they belong to, so any row coming back
+ *  proves membership; the orgs embed rides the same proof ("members read
+ *  org" policy). React-cached — context, switcher, and pages share one read. */
+const getSessionMemberships = cache(
+  async (): Promise<{ userId: string; email: string; memberships: MembershipRow[] } | null> => {
+    const supabase = createServerSupabase();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data } = await supabase
+      .from("memberships")
+      .select("org_id, role, orgs(name)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
+    return {
+      userId: user.id,
+      email: user.email ?? "",
+      memberships: (data ?? []) as MembershipRow[],
+    };
+  },
+);
+
+/** Active-org resolution rule (core fence spec §6c), pure for testability:
+ *  a cookie naming an org the user belongs to wins; otherwise (no cookie,
+ *  or a stale/foreign value) fall back to the oldest membership. */
+export function resolveActiveMembership<T extends { org_id: string }>(
+  memberships: readonly T[],
+  cookieOrgId: string | null | undefined,
+): T | null {
+  if (memberships.length === 0) return null;
+  if (cookieOrgId) {
+    const match = memberships.find((m) => m.org_id === cookieOrgId);
+    if (match) return match;
+  }
+  return memberships[0];
+}
+
 /** Session + membership context, or null when unauthenticated/unprovisioned.
  *  React-cached so layout + page can both call it in one request. */
 export const getOrgContext = cache(async (): Promise<OrgContext | null> => {
-  const supabase = createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  const session = await getSessionMemberships();
+  if (!session) return null;
 
-  // RLS on memberships lets a user read only rows in orgs they belong to,
-  // so any row coming back proves membership. The orgs embed rides the same
-  // proof ("members read org" policy).
-  const { data: membership } = await supabase
-    .from("memberships")
-    .select("org_id, role, orgs(name)")
-    .eq("user_id", user.id)
-    // Deterministic pick when a user holds several memberships: oldest wins.
-    // Interim fix — the real resolution is the bloom_active_org cookie +
-    // switcher (core fence spec §6c, Phase C1).
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  const cookieOrgId = cookies().get(ACTIVE_ORG_COOKIE)?.value ?? null;
+  const membership = resolveActiveMembership(session.memberships, cookieOrgId);
   if (!membership) return null;
 
-  // Many-to-one embed; supabase-js without generated types may hand back an
-  // object or a one-element array depending on inference.
-  const orgRow = membership.orgs as { name: string } | { name: string }[] | null;
-  const orgName =
-    (Array.isArray(orgRow) ? orgRow[0]?.name : orgRow?.name) || "your organization";
-
   return {
-    userId: user.id,
-    email: user.email ?? "",
+    userId: session.userId,
+    email: session.email,
     orgId: membership.org_id,
-    orgName,
+    orgName: embeddedOrgName(membership),
     role: membership.role,
   };
 });
+
+export type UserOrg = { orgId: string; orgName: string; role: OrgContext["role"] };
+
+/** The session user's orgs (oldest membership first) — feeds the sidebar
+ *  org switcher, which only renders with 2+ entries. */
+export async function getUserOrgs(): Promise<UserOrg[]> {
+  const session = await getSessionMemberships();
+  if (!session) return [];
+  return session.memberships.map((m) => ({
+    orgId: m.org_id,
+    orgName: embeddedOrgName(m),
+    role: m.role,
+  }));
+}
 
 export async function isAuthed(): Promise<boolean> {
   return (await getOrgContext()) !== null;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { isAuthed, getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import {
   isCategory,
   isProjectStatus,
@@ -14,7 +14,8 @@ function isISODate(v: unknown): v is string {
 // ── POST /api/admin/ops/projects ───────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const createdBy = await getAdminUser();
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
   }
 
   const insert = {
+    org_id: ctx.orgId,
     title,
     category: body.category,
     description: typeof body.description === "string" ? body.description : null,

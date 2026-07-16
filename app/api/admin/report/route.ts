@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { sendOperatorEmail, operatorEmailShell } from "@/lib/email/operator";
 import { adminUrl } from "@/lib/origins";
 
@@ -40,7 +40,8 @@ const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const reporter = await getAdminUser();
@@ -121,6 +122,7 @@ export async function POST(req: NextRequest) {
     const { data: created, error: projErr } = await sb
       .from("ops_projects")
       .insert({
+        org_id: ctx.orgId,
         // 'product' is valid for tasks but NOT for ops_projects (its category
         // check is fundraising/admin/board/recruitment/program/finance/
         // compliance/other) — use 'other' so the project actually gets created.
@@ -181,6 +183,7 @@ export async function POST(req: NextRequest) {
   const { data: task, error: taskErr } = await sb
     .from("ops_tasks")
     .insert({
+      org_id: ctx.orgId,
       title,
       description: taskDescription,
       category: "product",

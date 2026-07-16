@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getOrgContext } from "@/lib/admin/auth";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 import { fmtMetricValue } from "@/lib/admin/metrics/format";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 
@@ -199,7 +201,10 @@ export async function generateBriefing(
   const ai = await narrate(data);
   const result: BriefingResult = { ...ai, data, model: ai.narrative ? MODEL : null };
 
+  // Session org when a user triggered it; resident org on the cron path.
+  const orgId = (await getOrgContext())?.orgId ?? (await getResidentOrgId());
   const { error } = await supabase.from("briefings").insert({
+    org_id: orgId,
     kind,
     headline: result.headline,
     narrative: result.narrative,

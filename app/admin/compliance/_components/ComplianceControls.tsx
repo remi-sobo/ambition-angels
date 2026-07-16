@@ -7,6 +7,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+export type ChecklistItem = { id: string; text: string; done: boolean };
+
 export type ComplianceItem = {
   id: string;
   kind: string;
@@ -17,6 +19,7 @@ export type ComplianceItem = {
   status: string;
   assigned_to: string | null;
   notes: string | null;
+  checklist: ChecklistItem[] | null;
   last_filed_at: string | null;
 };
 
@@ -66,7 +69,14 @@ function assigneeLabel(v: string): string {
 export function ComplianceRow({ item }: { item: ComplianceItem }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [showNotes, setShowNotes] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [notesDraft, setNotesDraft] = useState(item.notes ?? "");
+  const [newCheckText, setNewCheckText] = useState("");
+  // Optimistic local copy: consecutive edits (add two items back-to-back,
+  // quick toggles) must each build on the latest array, not on a server prop
+  // that router.refresh() hasn't delivered yet — otherwise the second edit
+  // silently drops the first.
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(item.checklist ?? []);
   const [editing, setEditing] = useState(false);
   const [editError, setEditError] = useState("");
   const [eTitle, setETitle] = useState(item.title);
@@ -138,6 +148,28 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
       setBusy(false);
     }
   };
+
+  // Checklist edits always send the full replacement array.
+  const saveChecklist = (next: ChecklistItem[]) => {
+    setChecklist(next);
+    void patch({ checklist: next });
+  };
+
+  const newCheckId = () =>
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2, 10);
+
+  const addCheckItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = newCheckText.trim();
+    if (!text) return;
+    setNewCheckText("");
+    saveChecklist([...checklist, { id: newCheckId(), text, done: false }]);
+  };
+
+  const notesDirty = notesDraft !== (item.notes ?? "");
+  const checkedCount = checklist.filter((c) => c.done).length;
 
   const remove = async () => {
     if (!confirm(`Delete “${item.title}”?`)) return;
@@ -284,14 +316,15 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
             Reopen
           </button>
         )}
-        {item.notes && (
-          <button
-            onClick={() => setShowNotes((v) => !v)}
-            className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
-          >
-            {showNotes ? "Hide notes" : "Notes"}
-          </button>
-        )}
+        <button
+          onClick={() => setShowDetails((v) => !v)}
+          className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
+        >
+          {showDetails ? "Hide details" : "Details"}
+          {!showDetails && checklist.length > 0 && (
+            <span className="tabular-nums"> · {checkedCount}/{checklist.length}</span>
+          )}
+        </button>
         <button
           onClick={startEdit}
           disabled={busy}
@@ -307,13 +340,97 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
           Delete
         </button>
       </div>
-      {showNotes && item.notes && (
-        <p className="mt-2 text-[12px] text-ink-2 leading-relaxed border-t border-outline pt-2">
-          {item.notes}
-          {item.last_filed_at && (
-            <span className="block mt-1">Last filed {item.last_filed_at.slice(0, 10)}.</span>
+      {showDetails && (
+        <div className="mt-2 border-t border-outline pt-3 space-y-3">
+          <label className="block text-xs text-ink-2">
+            Notes
+            <textarea
+              className={`${inputCls} w-full mt-1 leading-relaxed`}
+              rows={3}
+              value={notesDraft}
+              placeholder="What needs to go along with this filing, contacts, portal links…"
+              onChange={(e) => setNotesDraft(e.target.value)}
+            />
+          </label>
+          {notesDirty && (
+            <div className="flex gap-2 items-center -mt-1">
+              <button
+                onClick={() => {
+                  const v = notesDraft.trim();
+                  setNotesDraft(v);
+                  void patch({ notes: v || null });
+                }}
+                disabled={busy}
+                className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+              >
+                Save notes
+              </button>
+              <button
+                onClick={() => setNotesDraft(item.notes ?? "")}
+                className="text-[11px] text-ink-2 hover:text-ink-1 px-1"
+              >
+                Discard
+              </button>
+            </div>
           )}
-        </p>
+          <div>
+            <p className="text-xs text-ink-2 mb-1">Checklist</p>
+            {checklist.length > 0 && (
+              <ul className="space-y-1 mb-2">
+                {checklist.map((c) => (
+                  <li key={c.id} className="flex items-center gap-2 group">
+                    <input
+                      type="checkbox"
+                      checked={c.done}
+                      disabled={busy}
+                      onChange={() =>
+                        saveChecklist(
+                          checklist.map((x) => (x.id === c.id ? { ...x, done: !x.done } : x))
+                        )
+                      }
+                      className="accent-orange w-3.5 h-3.5 shrink-0"
+                    />
+                    <span
+                      className={`text-[12px] leading-relaxed ${
+                        c.done ? "line-through text-ink-3" : "text-ink-1"
+                      }`}
+                    >
+                      {c.text}
+                    </span>
+                    <button
+                      onClick={() => saveChecklist(checklist.filter((x) => x.id !== c.id))}
+                      disabled={busy}
+                      aria-label={`Delete "${c.text}"`}
+                      className="ml-auto px-1.5 text-[13px] leading-none text-ink-3 hover:text-expense opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <form onSubmit={addCheckItem} className="flex gap-2">
+              <input
+                className={`${inputCls} flex-1 !py-1.5 text-[12px]`}
+                value={newCheckText}
+                placeholder="Add checklist item"
+                onChange={(e) => setNewCheckText(e.target.value)}
+              />
+              <button
+                type="submit"
+                disabled={busy || !newCheckText.trim()}
+                className="text-[11px] font-semibold px-3 rounded-md bg-tile hover:bg-[#EFE6D4] text-ink-2 disabled:opacity-50"
+              >
+                Add
+              </button>
+            </form>
+          </div>
+          {item.last_filed_at && (
+            <p className="text-[12px] text-ink-2">
+              Last filed {item.last_filed_at.slice(0, 10)}.
+            </p>
+          )}
+        </div>
       )}
     </article>
   );

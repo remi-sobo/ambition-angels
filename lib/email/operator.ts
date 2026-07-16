@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { adminUrl } from "@/lib/origins";
 
 /**
  * Email to the org's operators (the allowlist is the recipient roster —
@@ -67,8 +68,8 @@ export function operatorEmailShell(title: string, bodyHtml: string): string {
       ${bodyHtml}
     </div>
     <p style="font-size:11px;color:#6B6960;margin-top:16px;">
-      Operating system for Ambition Angels ·
-      <a href="https://www.ambitionangels.org/admin" style="color:#E8500A;">Open BloomOS</a>
+      The operating system for nonprofits ·
+      <a href="${adminUrl()}" style="color:#E8500A;">Open BloomOS</a>
     </p>
   </div>
 </body></html>`;

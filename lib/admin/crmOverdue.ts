@@ -1,5 +1,6 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { appOrigin } from "@/lib/origins";
 
 // Overdue tasks across the CRM — open ops_tasks linked to a partner org or a
 // constituent (donor) whose due date has passed. Powers the weekly digest
@@ -24,15 +25,13 @@ export type CrmOverdue = {
   total: number;
 };
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ambitionangels.org";
-
 // Absolute (email) / relative (in-app) profile link for an overdue task.
 export function crmTaskHref(t: CrmOverdueTask, absolute = false): string {
   const path =
     t.entityType === "partner"
       ? `/admin/partners/${t.entityId}`
       : `/admin/fundraising/donors/${t.entityId}`;
-  return absolute ? `${SITE}${path}` : path;
+  return absolute ? `${appOrigin()}${path}` : path;
 }
 
 // Map an operator email to an admin user id, so the Monday digest can scope

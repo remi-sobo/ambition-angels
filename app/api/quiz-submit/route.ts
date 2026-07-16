@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { adminUrl } from "@/lib/origins";
 
 const getSupabase = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -204,7 +205,7 @@ export async function POST(req: NextRequest) {
             <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Location</td><td style="padding:6px 0;color:#0E0E0E;">${answers.location || "—"}</td></tr>
             <tr><td style="padding:6px 12px 6px 0;color:#6B7280;vertical-align:top;">Top 3 matches</td><td style="padding:6px 0;color:#0E0E0E;">${topThree}</td></tr>
           </table>
-          <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="https://www.ambitionangels.org/admin" style="color:#E8500A;">admin</a></p>
+          <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="${adminUrl()}" style="color:#E8500A;">admin</a></p>
         </div>
       `,
     });

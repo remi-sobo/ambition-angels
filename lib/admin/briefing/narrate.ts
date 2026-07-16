@@ -16,6 +16,8 @@ import { createHash } from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 import { cleanVoiceText } from "@/lib/ai/voice";
 import type { Briefing } from "./engine";
 import type { Pulse } from "./pulse";
@@ -305,6 +307,8 @@ export async function generateNarrativeNow(
     .from("bloomos_briefing_narrative")
     .upsert(
       {
+        // Session org when user-triggered; resident org on the cron path.
+        org_id: (await getOrgContext())?.orgId ?? (await getResidentOrgId()),
         brief_date: today,
         headline,
         narrative,

@@ -69,6 +69,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "meeting type not found" }, { status: 404 });
   }
   const mtRaw = meetingType as MeetingType;
+  // Booking tenancy follows the meeting type's org (parent row), never the
+  // column default — this is a public route with no session to read.
+  const mtOrgId = (meetingType as Record<string, unknown>).org_id as string;
 
   // Resolve effective duration. When the type has duration_options, the
   // caller must pass durationMinutes and it must be in the allow-list.
@@ -164,6 +167,7 @@ export async function POST(req: NextRequest) {
   const { data: inserted, error: insertErr } = await supabase
     .from("bookings")
     .insert({
+      org_id: mtOrgId,
       meeting_type_id: mt.id,
       start_time: start.toISOString(),
       end_time: end.toISOString(),

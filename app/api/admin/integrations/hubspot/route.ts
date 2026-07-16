@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext, isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // X7 — HubSpot connection management. `connections` is service-path only
@@ -38,7 +38,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await getOrgContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const action = body.action;
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     if (row) {
       await admin.from("connections").update({ status }).eq("id", row.id);
     } else if (action === "connect") {
-      await admin.from("connections").insert({ provider: "hubspot", status: "active", meta: {} });
+      await admin.from("connections").insert({ org_id: ctx.orgId, provider: "hubspot", status: "active", meta: {} });
     }
     await audit(req, { action: `fundraising.hubspot.${action}`, entityType: "connections", entityId: row?.id ?? null });
     return NextResponse.json({ ok: true });

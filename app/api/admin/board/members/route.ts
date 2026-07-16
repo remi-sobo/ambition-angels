@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const ROLES = ["chair", "vice_chair", "secretary", "treasurer", "member"] as const;
@@ -12,7 +12,8 @@ const isISODate = (v: unknown): v is string =>
  * constituent record so giving status reads real gifts.
  */
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
   if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
 
   const supabase = getSupabaseAdmin();
-  const insert: Record<string, unknown> = { name };
+  const insert: Record<string, unknown> = { org_id: ctx.orgId, name };
   const email =
     typeof body?.email === "string" && body.email.includes("@")
       ? body.email.trim().toLowerCase()

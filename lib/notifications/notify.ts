@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendOperatorEmailTo, operatorEmailShell } from "@/lib/email/operator";
+import { appOrigin } from "@/lib/origins";
 
 /**
  * The notifications spine's single write path. Every emitter (research runs,
@@ -21,10 +22,6 @@ import { sendOperatorEmailTo, operatorEmailShell } from "@/lib/email/operator";
 // won't see an in-app badge. Everything else is in-app only until a
 // per-type preferences UI exists.
 export const EMAIL_TYPES = new Set<string>(["research.completed", "research.failed"]);
-
-// Absolute base for links rendered into emails (relative /admin/* paths are
-// useless in a mail client). Mirrors the origin used in operatorEmailShell.
-const SITE_ORIGIN = "https://www.ambitionangels.org";
 
 export type NotifyInput = {
   orgId: string;
@@ -117,9 +114,11 @@ async function emailRecipient(row: NotificationRow): Promise<void> {
     return;
   }
 
+  // Relative /admin/* paths are useless in a mail client — absolutize
+  // against the admin host (APP_ORIGIN).
   const href = row.url
     ? row.url.startsWith("/")
-      ? SITE_ORIGIN + row.url
+      ? appOrigin() + row.url
       : row.url
     : null;
   const linkHtml = href

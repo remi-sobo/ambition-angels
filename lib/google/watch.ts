@@ -1,5 +1,6 @@
 import "server-only";
 import { randomUUID } from "crypto";
+import { configuredAppOrigin } from "@/lib/origins";
 import {
   listActiveCalendarConnections,
   calendarClientFromRefreshToken,
@@ -21,10 +22,11 @@ import {
 const RENEW_LEAD_MS = 2 * 86_400_000; // renew when under 2 days of life remain
 
 function webhookUrl(): string | null {
-  const base =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
-  return base ? `${base.replace(/\/$/, "")}/api/google/calendar-webhook` : null;
+  // The webhook base must equal whichever host owns /api/google/calendar-
+  // webhook — the admin host (APP_ORIGIN). configuredAppOrigin() stays null
+  // when nothing is set, so a dev machine never registers a prod channel.
+  const base = configuredAppOrigin();
+  return base ? `${base}/api/google/calendar-webhook` : null;
 }
 
 /** Register a push channel for one connection. Null when no webhook URL is set. */

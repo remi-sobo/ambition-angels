@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed, getAdminUser } from "@/lib/admin/auth";
 import { sendOperatorEmail, operatorEmailShell } from "@/lib/email/operator";
+import { adminUrl } from "@/lib/origins";
 
 /**
  * In-app issue reporter (the FAB "Report" action). Shannon or Remi snap a photo
@@ -202,8 +203,8 @@ export async function POST(req: NextRequest) {
 
   // 4. Email both operators (best-effort — never block the report on it).
   const projectLink = projectId
-    ? `https://www.ambitionangels.org/admin/ops/projects/${projectId}`
-    : "https://www.ambitionangels.org/admin/ops";
+    ? adminUrl(`/admin/ops/projects/${projectId}`)
+    : adminUrl("/admin/ops");
   const promptBlock = debugPrompt
     ? `<p style="margin:8px 0 4px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B6960;">Claude Code prompt (copy into Claude Code)</p>
        <pre style="white-space:pre-wrap;margin:0;padding:14px;background:#0E0E0E;color:#FAFAF8;border-radius:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5;">${esc(debugPrompt)}</pre>`

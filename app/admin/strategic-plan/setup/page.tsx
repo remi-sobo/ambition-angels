@@ -12,8 +12,8 @@ import SetupWizard, {
 // Setup / refresh wizard (BloomOS Strategy, Phase 5). Helps a tenant turn loose
 // intentions into a measurable plan: it shapes and measures, it never authors
 // strategy and never gates direct creation. Deterministic — no AI writes
-// objectives or mission (a stated non-goal in the spec). AA can skip this; it's
-// for a brand-new org landing on an empty plan.
+// objectives or mission (a stated non-goal in the spec). An org whose plan was
+// already seeded can skip this; it's for a brand-new org landing on an empty plan.
 export const dynamic = "force-dynamic";
 
 export default async function StrategySetupPage() {

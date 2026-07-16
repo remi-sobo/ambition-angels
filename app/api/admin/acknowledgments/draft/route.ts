@@ -73,6 +73,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Tenant identity is hardcoded here until agent prompts are parameterized by
+  // org (name + mission from orgs.settings — core fence spec §6d, later PR).
   const prompt = `Write a short personal thank-you note (2-4 sentences) from Ambition Angels — a nonprofit helping teens from under-resourced communities discover real career paths — to a donor.
 
 Donor first name: ${donorFirstName}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { DEFAULT_RULES } from "@/lib/finance/default-rules";
 
@@ -12,7 +12,8 @@ import { DEFAULT_RULES } from "@/lib/finance/default-rules";
 // transactions on its own; the user follows with "Apply to uncategorized"
 // to backfill.
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getSupabaseAdmin();
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
   const toInsert = DEFAULT_RULES.filter(
     (r) => !existingSet.has(`${r.pattern}|${r.category_id}`)
   ).map((r) => ({
+    org_id: ctx.orgId,
     pattern: r.pattern,
     pattern_type: r.pattern_type,
     category_id: r.category_id,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 type ApplyItem = { id: string; category_id: string; create_rule?: boolean; pattern?: string };
@@ -12,7 +12,8 @@ type ApplyItem = { id: string; category_id: string; create_rule?: boolean; patte
 // the merchant pattern so future imports auto-categorize. Rules are de-duped
 // (same lowercased pattern + category) so re-running never spams the rule list.
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as { items?: unknown } | null;
@@ -65,12 +66,12 @@ export async function POST(req: NextRequest) {
 
     // One rule per unique (pattern, category) that doesn't already exist.
     const seen = new Set<string>();
-    const toInsert: Array<{ pattern: string; pattern_type: string; category_id: string; priority: number }> = [];
+    const toInsert: Array<{ org_id: string; pattern: string; pattern_type: string; category_id: string; priority: number }> = [];
     for (const it of ruleCandidates) {
       const key = `${it.pattern}::${it.category_id}`;
       if (existingKey.has(key) || seen.has(key)) continue;
       seen.add(key);
-      toInsert.push({ pattern: it.pattern!, pattern_type: "contains", category_id: it.category_id, priority: 0 });
+      toInsert.push({ org_id: ctx.orgId, pattern: it.pattern!, pattern_type: "contains", category_id: it.category_id, priority: 0 });
     }
     if (toInsert.length > 0) {
       const { data, error } = await supabase.from("fin_category_rules").insert(toInsert).select("id");

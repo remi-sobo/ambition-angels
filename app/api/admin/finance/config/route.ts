@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
+import { upsertFinConfig } from "@/lib/admin/finance";
 import { audit } from "@/lib/audit";
 
 function isISODate(v: unknown): v is string {
@@ -10,19 +10,19 @@ function isISODate(v: unknown): v is string {
 
 // POST /api/admin/finance/config
 //
-// Updates the singleton row (id=1). All fields optional — sending one
+// Updates the org's fin_config row. All fields optional — sending one
 // updates that one. Server validates ranges (year in [2000..2100], month
 // 1..12, threshold > 0, amounts non-negative). The row is guaranteed to
-// exist (seeded in the migration); if for some reason it doesn't, we
-// upsert.
+// exist (seeded); if for some reason it doesn't, we insert.
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
-  const update: Record<string, unknown> = { id: 1 };
+  const update: Record<string, unknown> = {};
 
   if ("current_year" in body) {
     const v = body.current_year;
@@ -91,16 +91,11 @@ export async function POST(req: NextRequest) {
     else update.runway_target_months = v;
   }
 
-  if (Object.keys(update).length <= 1) {
+  if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("fin_config")
-    .upsert(update, { onConflict: "id" })
-    .select("*")
-    .single();
+  const { data, error } = await upsertFinConfig(ctx.orgId, update);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   await audit(req, {
     action: "finance.config.update",

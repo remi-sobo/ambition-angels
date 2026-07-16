@@ -9,6 +9,8 @@ vi.mock("react", async (importOriginal) => {
   const mod = await importOriginal<typeof import("react")>();
   return { ...mod, cache: (mod as { cache?: unknown }).cache ?? (<T,>(fn: T) => fn) };
 });
+// finance.ts resolves its org via lib/admin/orgs.ts, which is server-only.
+vi.mock("server-only", () => ({}));
 import { STALE_AFTER_DAYS, staleAfter, isStale } from "@/lib/admin/metrics/staleness";
 import { METRIC_RESOLVERS } from "@/lib/admin/metrics/resolvers";
 import { PLAN_METRICS } from "@/lib/admin/plan/metrics";

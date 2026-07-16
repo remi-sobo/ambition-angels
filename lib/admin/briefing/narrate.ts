@@ -112,6 +112,8 @@ function factSheet(briefing: Briefing, pulse: Pulse, followups: FollowupsSummary
 
 type FactSheet = ReturnType<typeof factSheet>;
 
+// Tenant identity is hardcoded here until agent prompts are parameterized by
+// org (name + mission from orgs.settings — core fence spec §6d, later PR).
 const SYSTEM_PROMPT = `You are the chief of staff to the CEO of Ambition Angels, a fast-growing nonprofit that builds future-orientation in under-resourced teens. Every morning you hand the CEO a short, sharp brief.
 
 Voice: warm but direct, executive, confident — a trusted, McKinsey-trained chief of staff. Plain English. No hype, no filler, no emoji, no exclamation marks.

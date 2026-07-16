@@ -15,6 +15,8 @@ import { ANGLE_BADGES, ANGLE_TONES, angleStr } from "@/lib/admin/strategy/angle-
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+// Tenant identity is hardcoded here until agent prompts are parameterized by
+// org (name + mission from orgs.settings — core fence spec §6d, later PR).
 const SYSTEM = [
   "You are Reed, Ambition Angels' in-house strategist. Ambition Angels gives low-income teens",
   "career exposure, a trusted-adult layer, and coaching so they can picture and reach an",

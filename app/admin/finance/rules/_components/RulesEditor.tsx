@@ -169,8 +169,8 @@ export default function RulesEditor({ initialRules, categories }: Props) {
   }
 
   // Seed defaults — inserts ~60 starter rules derived from real Wells
-  // Fargo descriptions on Ambition Angels' Checking.csv. Idempotent:
-  // skips patterns already present.
+  // Fargo checking-account descriptions. Idempotent: skips patterns
+  // already present.
   async function seedDefaults() {
     setBusy(true);
     setError(null);
@@ -254,9 +254,9 @@ export default function RulesEditor({ initialRules, categories }: Props) {
               Seed default rules
             </div>
             <div className="text-xs text-ink-2 mt-0.5">
-              ~60 starter rules derived from real Ambition Angels CSV
-              descriptions (Gusto, Paychex, Anthropic, OpenAI, Givebutter,
-              etc.). Skips patterns you already have.
+              ~60 starter rules derived from real bank CSV descriptions
+              (Gusto, Paychex, Anthropic, OpenAI, Givebutter, etc.).
+              Skips patterns you already have.
             </div>
           </div>
           <button

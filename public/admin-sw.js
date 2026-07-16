@@ -1,4 +1,4 @@
-/* AA Admin service worker — minimal install-target SW.
+/* BloomOS admin service worker — minimal install-target SW.
  *
  * Goals:
  *   1. Satisfy installability requirements (Android/Chrome wants a

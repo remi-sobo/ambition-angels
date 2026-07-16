@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
   const subject =
     typeof body?.subject === "string" && body.subject.trim()
       ? body.subject.trim().slice(0, 150)
-      : "Thank you for supporting Ambition Angels";
+      : `Thank you for supporting ${ctx.orgName}`;
   const text = receiptEmailText(personalNote, receiptGift);
   const html = receiptEmailHtml(personalNote, receiptGift);
   const sentAt = new Date().toISOString();
@@ -109,6 +109,8 @@ export async function POST(req: NextRequest) {
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
     sendResult = await resend.emails.send({
+      // The from-address must stay on the Resend-verified sending domain;
+      // per-org sender identity arrives with org_comms_settings (later PR).
       from: "Ambition Angels <careers@mail.ambitionangels.org>",
       to: toEmail,
       subject,

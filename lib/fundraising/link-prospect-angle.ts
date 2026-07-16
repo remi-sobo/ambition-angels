@@ -17,6 +17,7 @@ export type LinkResult =
 
 export async function linkProspectToAngle(
   supabase: SupabaseClient,
+  orgId: string,
   prospectId: string,
   angleId: string,
   createdBy: string | null
@@ -30,7 +31,7 @@ export async function linkProspectToAngle(
 
   let constituentId = (p.constituent_id as string | null) ?? null;
   if (!constituentId) {
-    const resolved = await resolveConstituent(supabase, { name: p.name as string });
+    const resolved = await resolveConstituent(supabase, orgId, { name: p.name as string });
     if ("error" in resolved) return { error: resolved.error, status: resolved.status };
     constituentId = resolved.constituentId;
     await supabase.from("fr_prospects").update({ constituent_id: constituentId }).eq("id", prospectId);
@@ -49,7 +50,7 @@ export async function linkProspectToAngle(
 
   const { data, error } = await supabase
     .from("funder_angles")
-    .insert({ angle_id: angleId, constituent_id: constituentId, prospect_id: prospectId, stage: "shortlist", created_by: createdBy })
+    .insert({ org_id: orgId, angle_id: angleId, constituent_id: constituentId, prospect_id: prospectId, stage: "shortlist", created_by: createdBy })
     .select("id")
     .single();
   if (error || !data) {

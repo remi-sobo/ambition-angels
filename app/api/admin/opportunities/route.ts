@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushOpportunityToHubSpot } from "@/lib/hubspot/sync-out";
 import { resolveConstituent } from "@/lib/fundraising/constituent-resolve";
@@ -21,14 +21,15 @@ const isISODate = (v: unknown): v is string =>
  * no match creates a new person constituent and says so in `warning`.
  */
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
   const supabase = createServerSupabase();
-  const resolved = await resolveConstituent(supabase, {
+  const resolved = await resolveConstituent(supabase, ctx.orgId, {
     constituentId: body.constituent_id,
     name: body.constituent_name,
   });
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
   const constituentId = resolved.constituentId;
   const warning = resolved.warning;
 
-  const insert: Record<string, unknown> = { constituent_id: constituentId };
+  const insert: Record<string, unknown> = { org_id: ctx.orgId, constituent_id: constituentId };
   if (typeof body.name === "string" && body.name.trim()) insert.name = body.name.trim();
   if (STAGES.includes(body.stage as (typeof STAGES)[number])) insert.stage = body.stage;
   if (typeof body.ask_amount === "number" && body.ask_amount >= 0)

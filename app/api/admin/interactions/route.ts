@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushInteractionToHubSpot } from "@/lib/hubspot/sync-out";
 
@@ -16,7 +16,8 @@ const isWhen = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2})?/.test(v);
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   const insert: Record<string, unknown> = {
+    org_id: ctx.orgId,
     constituent_id: body.constituent_id,
     kind: body.kind,
     logged_by: (await getAdminUser()) ?? null,

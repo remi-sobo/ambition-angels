@@ -22,6 +22,7 @@ export const isTerminalGrantStage = (stage: string | null | undefined): boolean 
  */
 export async function findOrCreateFunder(
   supabase: SupabaseClient,
+  orgId: string,
   funderName: string
 ): Promise<{ id: string } | { error: string }> {
   const name = funderName.trim();
@@ -36,7 +37,7 @@ export async function findOrCreateFunder(
 
   const { data: created, error } = await supabase
     .from("constituents")
-    .insert({ type: "organization", org_name: name, source: "manual" })
+    .insert({ org_id: orgId, type: "organization", org_name: name, source: "manual" })
     .select("id")
     .single();
   if (error) return { error: error.message };
@@ -107,6 +108,7 @@ export async function ensureGrantProject(
  */
 export async function autoPlotFinalReport(
   supabase: SupabaseClient,
+  orgId: string,
   grantId: string,
   periodEnd: string | null | undefined
 ): Promise<boolean> {
@@ -118,6 +120,7 @@ export async function autoPlotFinalReport(
     .in("kind", ["interim_report", "final_report", "financial_report"]);
   if ((count ?? 0) > 0) return false;
   const { error } = await supabase.from("grant_requirements").insert({
+    org_id: orgId,
     grant_id: grantId,
     kind: "final_report",
     due_date: periodEnd,

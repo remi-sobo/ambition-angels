@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // Epic J — create a journey with its ordered email steps in one shot.
@@ -9,7 +9,8 @@ const TRIGGERS = ["first_gift", "lapsed", "manual"] as const;
 type StepIn = { subject?: unknown; body?: unknown; delay_days?: unknown };
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await getOrgContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServerSupabase();
   const { data: journey, error } = await supabase
     .from("journeys")
-    .insert({ name, trigger, status: "active", created_by: (await getAdminUser()) ?? null })
+    .insert({ org_id: ctx.orgId, name, trigger, status: "active", created_by: (await getAdminUser()) ?? null })
     .select("id")
     .single();
   if (error || !journey) {
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { error: sErr } = await supabase.from("journey_steps").insert(
-    steps.map((s, i) => ({ journey_id: journey.id, step_order: i, delay_days: s.delay_days, subject: s.subject, body: s.body.slice(0, 20000) }))
+    steps.map((s, i) => ({ org_id: ctx.orgId, journey_id: journey.id, step_order: i, delay_days: s.delay_days, subject: s.subject, body: s.body.slice(0, 20000) }))
   );
   let warning: string | undefined;
   if (sErr) {

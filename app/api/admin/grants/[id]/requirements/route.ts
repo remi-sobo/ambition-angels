@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const KINDS = ["loi", "application", "interim_report", "final_report", "financial_report", "other"] as const;
@@ -10,7 +10,8 @@ const isISODate = (v: unknown): v is string =>
 
 // POST /api/admin/grants/:id/requirements — add a deadline to the calendar.
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
@@ -26,6 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const insert: Record<string, unknown> = {
+    org_id: ctx.orgId,
     grant_id: params.id,
     kind,
     due_date: body.due_date,

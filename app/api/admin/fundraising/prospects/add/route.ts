@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   // Optionally attach the new prospect to a strategy angle (used by AI discovery
   // so accepted candidates land on the angle board too). Best-effort.
   if (isUuid(body.angle_id)) {
-    await linkProspectToAngle(supabase, data.id as string, body.angle_id, await getAdminUser()).catch((e) =>
+    await linkProspectToAngle(supabase, ctx.orgId, data.id as string, body.angle_id, await getAdminUser()).catch((e) =>
       console.error("[prospects/add] angle link failed:", e)
     );
   }

@@ -8,7 +8,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { resolveConstituent } from "@/lib/fundraising/constituent-resolve";
 import { promoteHsContact } from "@/lib/fundraising/promote-hs-contact";
@@ -20,7 +20,8 @@ const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
 
   // Bench prospect → angle (the unified path): ensure a constituent + link.
   if (isUuid(body.prospect_id)) {
-    const r = await linkProspectToAngle(supabase, body.prospect_id, body.angle_id, (await getAdminUser()) ?? null);
+    const r = await linkProspectToAngle(supabase, ctx.orgId, body.prospect_id, body.angle_id, (await getAdminUser()) ?? null);
     if ("error" in r) return NextResponse.json({ error: r.error }, { status: r.status });
     if ("skipped" in r) return NextResponse.json({ error: "Already on this angle." }, { status: 409 });
     return NextResponse.json({ id: r.id });
@@ -43,13 +44,13 @@ export async function POST(req: NextRequest) {
   let constituentId: string;
   let warning: string | undefined;
   if (typeof body.hubspot_id === "string" && body.hubspot_id.trim()) {
-    const promoted = await promoteHsContact(supabase, body.hubspot_id);
+    const promoted = await promoteHsContact(supabase, ctx.orgId, body.hubspot_id);
     if ("error" in promoted) {
       return NextResponse.json({ error: promoted.error }, { status: promoted.status });
     }
     constituentId = promoted.constituentId;
   } else {
-    const resolved = await resolveConstituent(supabase, {
+    const resolved = await resolveConstituent(supabase, ctx.orgId, {
       constituentId: body.constituent_id,
       name: body.constituent_name,
     });
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase
     .from("funder_angles")
     .insert({
+      org_id: ctx.orgId,
       angle_id: body.angle_id,
       constituent_id: constituentId,
       stage: "shortlist",

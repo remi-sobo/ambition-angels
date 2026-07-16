@@ -211,28 +211,34 @@ select 'aa39cd02-b813-4e75-aa36-52adadf5d2fe', id, 'owner' from new_org;
 
 ## Appendix 3 — fin_config restructure (apply immediately after C2 deploys)
 
+Corrected 2026-07-16 against the live schema. Two fixes vs. the original draft:
+the singleton CHECK is now dropped explicitly, and the RLS block is removed —
+fin_config's live policies (`members read/write fin_config`) are already
+org-scoped on `private.has_permission`, so re-stating them with
+`public.has_permission` would only create mismatched duplicates. Verified: the
+single row is AA, and no code reads `fin_config.id` (all access is org_id-based).
+
 ```sql
 begin;
+
+-- org_id already exists (NOT NULL, backfilled to AA on the one row). These
+-- three are idempotent no-ops on the live schema — kept so the block is
+-- self-contained if ever re-run on a fresh copy.
 alter table public.fin_config add column if not exists org_id uuid references public.orgs(id);
-update public.fin_config
-  set org_id = '17c75da8-082d-4c8f-b00b-a4100fb2eb22'
-  where org_id is null;
+update public.fin_config set org_id = '17c75da8-082d-4c8f-b00b-a4100fb2eb22' where org_id is null;
 alter table public.fin_config alter column org_id set not null;
 
--- Verify the current PK name before running; expected fin_config_pkey:
--- select conname from pg_constraint where conrelid='public.fin_config'::regclass and contype='p';
-alter table public.fin_config drop constraint fin_config_pkey;
+-- Restructure the id=1 singleton into one row per org.
+alter table public.fin_config drop constraint if exists fin_config_singleton;  -- the check (id = 1)
+alter table public.fin_config drop constraint fin_config_pkey;                 -- PK on id
 alter table public.fin_config add primary key (org_id);
 alter table public.fin_config drop column id;
 
--- RLS (table already has RLS enabled; policies re-stated to the org pattern):
-drop policy if exists fin_config_read on public.fin_config;
-drop policy if exists fin_config_write on public.fin_config;
-create policy fin_config_read on public.fin_config
-  for select using (public.has_permission(org_id, 'finance.read'));
-create policy fin_config_write on public.fin_config
-  for all using (public.has_permission(org_id, 'finance.write'))
-  with check (public.has_permission(org_id, 'finance.write'));
+-- RLS: NO changes needed. The live policies are already org-scoped:
+--   "members read fin_config"  → private.has_permission(org_id, 'finance.read')
+--   "members write fin_config" → private.has_permission(org_id, 'finance.write')
+-- (The org_id default is left in place here; Appendix 4b drops it with the rest.)
+
 commit;
 ```
 
@@ -247,7 +253,16 @@ where table_schema = 'public'
 order by table_name;
 ```
 
-## Appendix 4b — drop the 48 product-table defaults
+## Appendix 4b — drop the 50 product-table defaults
+
+All 50 insert paths now set org_id explicitly (C2–C5, the last gaps —
+prospect-research `fr_*`, `strategy_angles`, `partners`, and the meet
+connection-book `interactions` — closed 2026-07-16). Of the 50, 43 have code
+insert paths (all verified) and 7 have no runtime write at all (`fin_categories`,
+`meeting_types`, `funds`, `relationships`, `fr_touches`, `fr_email_drafts`,
+`fr_funding_opportunities` — seed/migration data or unwired features), so the
+drop is safe across the board. Any missed path still fails loud (NOT NULL), never
+silent, and Appendix 4c restores in one shot.
 
 ```sql
 begin;

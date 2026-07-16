@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser, getOrgContext } from "@/lib/admin/auth";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 import { logAICall } from "@/lib/ai/ledger";
 import { orgOverAICap } from "@/lib/ai/cap";
 import {
@@ -116,6 +117,7 @@ export async function POST(req: NextRequest) {
 
   const costUsd = estimateDiscoveryCostUsd(result.tokens_input, result.tokens_output);
   await supabase.from("fr_agent_activity_log").insert({
+    org_id: ctx?.orgId ?? (await getResidentOrgId()),
     created_by: "agent",
     triggered_by: currentUser,
     action_type: "other",

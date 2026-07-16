@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const KINDS = ["school", "district", "nonprofit", "company", "other"] as const;
 const STATUSES = ["prospect", "outreach", "pilot", "active", "anchor", "lapsed"] as const;
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const name = body && typeof body.name === "string" ? body.name.trim().slice(0, 200) : "";
   if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
 
-  const insert: Record<string, unknown> = { name };
+  const insert: Record<string, unknown> = { org_id: ctx.orgId, name };
   if (KINDS.includes(body?.kind as (typeof KINDS)[number])) insert.kind = body!.kind;
   if (STATUSES.includes(body?.status as (typeof STATUSES)[number])) insert.status = body!.status;
   for (const f of ["city", "region", "domain"] as const) {

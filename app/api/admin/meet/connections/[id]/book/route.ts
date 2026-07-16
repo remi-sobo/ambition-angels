@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 
 // Mark a connection booked (Phase 5 — close the loop). "Booked" is a status
 // outcome: the task goes to done. Optionally link the /meet booking that
@@ -13,7 +13,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const adminUser = await getAdminUser();
@@ -74,6 +75,7 @@ export async function POST(
       const typeName = b.meeting_type?.name ?? "Meeting";
       const { error: intErr } = await supabase.from("interactions").upsert(
         {
+          org_id: ctx.orgId,
           constituent_id: t.linked_entity_id,
           kind: "meeting",
           occurred_at: b.start_time,

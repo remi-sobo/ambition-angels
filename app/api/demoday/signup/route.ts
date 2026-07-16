@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { adminUrl } from "@/lib/origins";
 
 // Postgres "relation does not exist" — surfaced if the create_demoday_signups
 // migration hasn't been applied. Treated as a clean 503 so the form shows a
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
               <div style="font-size:11px;font-weight:700;color:#E8500A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Note</div>
               <div style="font-size:14px;color:#0E0E0E;line-height:1.6;white-space:pre-wrap;">${escapeHTML(row.note)}</div>
             </div>` : ""}
-            <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="https://www.ambitionangels.org/admin/demoday" style="color:#E8500A;">admin → Demo Day</a></p>
+            <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="${adminUrl("/admin/demoday")}" style="color:#E8500A;">admin → Demo Day</a></p>
           </div>
         `,
       });

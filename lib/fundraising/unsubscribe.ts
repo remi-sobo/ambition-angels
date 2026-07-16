@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { marketingOrigin } from "@/lib/origins";
 
 // Signed unsubscribe tokens so the public /api/unsubscribe link can opt a
 // constituent out without exposing a guessable id-only URL.
@@ -37,7 +38,6 @@ export function verifyUnsubscribe(constituentId: string, token: string): boolean
 // campaign that triggered it; it is not part of the signed token, so links
 // delivered before Phase 1 keep verifying.
 export function unsubscribeUrl(constituentId: string, campaignId?: string | null): string {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://ambitionangels.org";
   const c = campaignId ? `&c=${campaignId}` : "";
-  return `${base}/api/unsubscribe?c_id=${constituentId}&t=${unsubscribeToken(constituentId)}${c}`;
+  return `${marketingOrigin()}/api/unsubscribe?c_id=${constituentId}&t=${unsubscribeToken(constituentId)}${c}`;
 }

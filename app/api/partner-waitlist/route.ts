@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { adminUrl } from "@/lib/origins";
 
 const getSupabase = () =>
   createClient(
@@ -173,7 +174,7 @@ export async function POST(req: NextRequest) {
             <div style="font-size:11px;font-weight:700;color:#E8500A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">What they want to solve</div>
             <div style="font-size:14px;color:#0E0E0E;line-height:1.6;white-space:pre-wrap;">${escapeHTML(String(problem_to_solve))}</div>
           </div>` : ""}
-          <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="https://www.ambitionangels.org/admin" style="color:#E8500A;">admin</a></p>
+          <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="${adminUrl()}" style="color:#E8500A;">admin</a></p>
         </div>
       `,
     });

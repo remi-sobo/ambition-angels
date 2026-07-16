@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { adminUrl } from "@/lib/origins";
 
 const getSupabase = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +32,7 @@ function buildDonationNotifyHTML(params: {
         <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Cadence</td><td style="padding:6px 0;color:#0E0E0E;">${cadence}</td></tr>
         <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Stripe ID</td><td style="padding:6px 0;color:#6B7280;font-family:monospace;font-size:12px;">${params.stripePaymentId}</td></tr>
       </table>
-      <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="https://www.ambitionangels.org/admin" style="color:#E8500A;">admin</a> · <a href="https://dashboard.stripe.com" style="color:#E8500A;">Stripe</a></p>
+      <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="${adminUrl()}" style="color:#E8500A;">admin</a> · <a href="https://dashboard.stripe.com" style="color:#E8500A;">Stripe</a></p>
     </div>
   `;
 }

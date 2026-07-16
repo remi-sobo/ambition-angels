@@ -34,6 +34,10 @@ type NavItem = {
   href?: string;
   soon?: boolean;
   feature?: FeatureKey;
+  /** Terminology key (core fence spec B3): when the org has renamed this term
+   *  (org_terminology → entity_types fallback, resolved server-side in the
+   *  admin layout), the resolved label replaces `label`. */
+  term?: string;
 };
 type NavSection = { label: string; items: NavItem[] };
 
@@ -56,7 +60,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Projects", icon: "projects", href: "/admin/ops/projects", feature: "modules.ops" },
       { label: "Meetings", icon: "meetings", href: "/admin/meetings", feature: "modules.meetings" },
       { label: "Booking page", icon: "events", href: "/admin/meet", feature: "modules.meetings" },
-      { label: "Staff", icon: "team", href: "/admin/staff", feature: "modules.staff" },
+      { label: "Staff", icon: "team", href: "/admin/staff", feature: "modules.staff", term: "staff" },
       { label: "Documents", icon: "documents", href: "/admin/documents", feature: "modules.documents" },
     ],
   },
@@ -77,8 +81,8 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Program",
     items: [
-      { label: "Students", icon: "students", href: "/admin/students", feature: "modules.program" },
-      { label: "Cohorts", icon: "cohorts", href: "/admin/cohorts", feature: "modules.program" },
+      { label: "Students", icon: "students", href: "/admin/students", feature: "modules.program", term: "student" },
+      { label: "Cohorts", icon: "cohorts", href: "/admin/cohorts", feature: "modules.program", term: "cohort" },
       { label: "Intake", icon: "intake", href: "/admin/intake", feature: "modules.program" },
       { label: "Demo Day", icon: "demoday", href: "/admin/demoday", feature: "aa.demoday" },
       { label: "YGB Camp", icon: "camp", href: "/admin/ygb", feature: "aa.ygb" },
@@ -371,13 +375,19 @@ function activeHref(pathname: string): string | null {
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+// A nav item's display label: the org's terminology when the item is
+// term-driven and a resolved label was passed down, else the code default.
+function itemLabel(item: NavItem, terms?: Record<string, string> | null): string {
+  return (item.term && terms?.[item.term]) || item.label;
+}
+
 // Short label shown next to the hamburger on the mobile top bar.
-function activeSectionLabel(pathname: string): string {
+function activeSectionLabel(pathname: string, terms?: Record<string, string> | null): string {
   const href = activeHref(pathname);
   if (href) {
     for (const section of NAV_SECTIONS) {
       const item = section.items.find((i) => i.href === href);
-      if (item) return item.label;
+      if (item) return itemLabel(item, terms);
     }
   }
   return "BloomOS";
@@ -385,12 +395,15 @@ function activeSectionLabel(pathname: string): string {
 
 export default function Sidebar({
   currentUser,
-  staffLabel,
+  terms,
   orgName,
   features,
 }: {
   currentUser: AdminUser | null;
-  staffLabel?: string | null;
+  /** Resolved terminology labels for term-driven nav items (term key →
+   *  display label, plural pre-applied), from getNavTermLabels(). Null
+   *  pre-auth — terminology is tenant data. */
+  terms?: Record<string, string> | null;
   /** From ctx.orgName (the orgs row). Null pre-auth — the tagline must stay
    *  generic then; a shared host can't name a tenant before sign-in. */
   orgName?: string | null;
@@ -504,9 +517,7 @@ export default function Sidebar({
                       name={item.icon}
                       className={`w-4 h-4 shrink-0 ${active === item.href ? "text-[#F47840]" : "opacity-70"}`}
                     />
-                    <span className="truncate">
-                      {item.href === "/admin/staff" && staffLabel ? staffLabel : item.label}
-                    </span>
+                    <span className="truncate">{itemLabel(item, terms)}</span>
                     {item.href === "/admin/inbox" && unread > 0 && (
                       <span
                         className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-[10px] font-bold leading-none"
@@ -622,7 +633,7 @@ export default function Sidebar({
           </svg>
         </button>
         <div className="font-display font-black uppercase tracking-tight text-cream text-base leading-none">
-          {activeSectionLabel(pathname)}
+          {activeSectionLabel(pathname, terms)}
         </div>
       </div>
 

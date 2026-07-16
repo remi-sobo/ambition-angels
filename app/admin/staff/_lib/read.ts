@@ -2,6 +2,7 @@ import "server-only";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { hasPermission } from "@/lib/admin/permissions";
+import { getTermLabel } from "@/lib/admin/terminology";
 
 /**
  * Staff module reads — session client only.
@@ -109,16 +110,7 @@ export async function getStaffOptions(): Promise<{ id: string; full_name: string
 
 /** The tenant's label for the Staff module ("Staff" default, or a renamed term). */
 export async function getStaffLabel(): Promise<string> {
-  const ctx = await getOrgContext();
-  if (!ctx) return "Staff";
-  const supabase = createServerSupabase();
-  const { data } = await supabase
-    .from("org_terminology")
-    .select("label")
-    .eq("org_id", ctx.orgId)
-    .eq("term_key", "staff")
-    .maybeSingle();
-  return (data as { label: string } | null)?.label?.trim() || "Staff";
+  return getTermLabel("staff", "Staff");
 }
 
 /**

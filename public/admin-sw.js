@@ -12,7 +12,10 @@
  * Scope is set to "/admin/" at registration time (see AdminPWA.tsx).
  */
 
-const CACHE = "aa-admin-v8";
+// v9: host cutover to app.bloomos.org — the version bump makes PWAs installed
+// on the old host fetch a fresh shell (and hit the 308) instead of serving a
+// stale cached copy forever.
+const CACHE = "bloomos-admin-v9";
 const CORE = ["/admin"];
 
 self.addEventListener("install", (event) => {

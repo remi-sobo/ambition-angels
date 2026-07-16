@@ -17,6 +17,7 @@ const isUuid = (v: unknown): v is string =>
 
 export async function resolveConstituent(
   supabase: SupabaseClient,
+  orgId: string,
   input: { constituentId?: unknown; name?: unknown }
 ): Promise<ResolveResult> {
   if (isUuid(input.constituentId)) return { constituentId: input.constituentId };
@@ -69,7 +70,7 @@ export async function resolveConstituent(
 
   const { data: created, error } = await supabase
     .from("constituents")
-    .insert({ type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
+    .insert({ org_id: orgId, type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
     .select("id")
     .single();
   if (error || !created) {

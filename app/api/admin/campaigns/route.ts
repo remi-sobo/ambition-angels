@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const name = body && typeof body.name === "string" ? body.name.trim().slice(0, 200) : "";
   if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
 
-  const insert: Record<string, unknown> = { name };
+  const insert: Record<string, unknown> = { org_id: ctx.orgId, name };
   if (typeof body?.goal === "number" && body.goal >= 0)
     insert.goal = Math.round(body.goal * 100) / 100;
   if (isISODate(body?.starts_on)) insert.starts_on = body!.starts_on;

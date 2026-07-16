@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   if (isUuid(body.funder_id)) {
     funderId = body.funder_id;
   } else if (typeof body.funder_name === "string" && body.funder_name.trim()) {
-    const funder = await findOrCreateFunder(supabase, body.funder_name);
+    const funder = await findOrCreateFunder(supabase, ctx.orgId, body.funder_name);
     if ("error" in funder) return NextResponse.json({ error: funder.error }, { status: 500 });
     funderId = funder.id;
   }

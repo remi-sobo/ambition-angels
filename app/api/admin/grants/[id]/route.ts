@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext, isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import {
   autoPlotFinalReport,
@@ -22,7 +22,8 @@ const isISODate = (v: unknown): v is string =>
 // grants auto-plot their reporting schedule" — v1 plots the one deadline
 // every funder has; interim cadences get added by hand or a later ring).
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
@@ -90,7 +91,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!funderName) {
       return NextResponse.json({ error: "A funder is required for every grant." }, { status: 400 });
     }
-    const funder = await findOrCreateFunder(supabase, funderName);
+    const funder = await findOrCreateFunder(supabase, ctx.orgId, funderName);
     if ("error" in funder) return NextResponse.json({ error: funder.error }, { status: 500 });
     update.funder_id = funder.id;
   }
@@ -114,7 +115,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   // Auto-plot the final report when an award lands.
   if (update.stage === "awarded") {
-    await autoPlotFinalReport(supabase, params.id, data.period_end);
+    await autoPlotFinalReport(supabase, ctx.orgId, params.id, data.period_end);
   }
 
   // A grant reaching declined/closed retires its workspace project so it drops

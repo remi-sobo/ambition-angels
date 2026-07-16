@@ -11,7 +11,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { resolveConstituent } from "@/lib/fundraising/constituent-resolve";
 import { pushOpportunityToHubSpot } from "@/lib/hubspot/sync-out";
 import { audit } from "@/lib/audit";
@@ -27,7 +27,8 @@ type ProspectRow = {
 };
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    const resolved = await resolveConstituent(supabase, {
+    const resolved = await resolveConstituent(supabase, ctx.orgId, {
       constituentId: p.constituent_id ?? undefined,
       name: p.name,
     });
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
 
     const { data: opp, error: oppErr } = await supabase
       .from("opportunities")
-      .insert({ constituent_id: constituentId, stage: "identify", owner: by ?? null })
+      .insert({ org_id: ctx.orgId, constituent_id: constituentId, stage: "identify", owner: by ?? null })
       .select("id")
       .single();
     if (oppErr || !opp) {

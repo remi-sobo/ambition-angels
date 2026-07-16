@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { buildSchedule, type PledgeFrequency } from "@/lib/fundraising/pledges";
 
@@ -11,7 +11,8 @@ const isUuid = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]
 const isISODate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await getOrgContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
     } else {
       const { data: created, error: cErr } = await supabase
         .from("constituents")
-        .insert({ type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
+        .insert({ org_id: ctx.orgId, type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
         .select("id")
         .single();
       if (cErr || !created) return NextResponse.json({ error: "Could not create constituent" }, { status: 500 });
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
   }
 
   const insert: Record<string, unknown> = {
+    org_id: ctx.orgId,
     constituent_id: constituentId,
     total_amount: total,
     installment_count: count,
@@ -81,7 +83,7 @@ export async function POST(req: NextRequest) {
   const schedule = buildSchedule({ total, count, frequency, startDate: body.start_date });
   const { error: pErr } = await supabase
     .from("pledge_payments")
-    .insert(schedule.map((s) => ({ pledge_id: pledge.id, due_date: s.due_date, expected_amount: s.expected_amount })));
+    .insert(schedule.map((s) => ({ org_id: ctx.orgId, pledge_id: pledge.id, due_date: s.due_date, expected_amount: s.expected_amount })));
   if (pErr) {
     console.error("[pledges] schedule insert failed:", pErr.message);
     warning = "Pledge created, but the schedule could not be generated — recreate it.";

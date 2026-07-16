@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // Epic G — manually record a recurring plan for an offline monthly donor
@@ -11,7 +11,8 @@ const FREQS = ["weekly", "monthly", "quarterly", "annually"] as const;
 const isUuid = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await getOrgContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     } else {
       const { data: created, error: cErr } = await supabase
         .from("constituents")
-        .insert({ type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
+        .insert({ org_id: ctx.orgId, type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
         .select("id")
         .single();
       if (cErr || !created) return NextResponse.json({ error: "Could not create constituent" }, { status: 500 });
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
   }
 
   const insert = {
+    org_id: ctx.orgId,
     constituent_id: constituentId,
     amount,
     frequency,

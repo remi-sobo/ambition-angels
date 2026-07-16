@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushConstituentToHubSpot } from "@/lib/hubspot/sync-out";
 
@@ -20,14 +20,15 @@ const str = (v: unknown): string | undefined =>
  * A person needs a first or last name; an organization needs org_name.
  */
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
   const type = body.type === "organization" ? "organization" : "person";
-  const insert: Record<string, unknown> = { type, source: "manual" };
+  const insert: Record<string, unknown> = { org_id: ctx.orgId, type, source: "manual" };
 
   if (type === "organization") {
     const orgName = str(body.org_name);

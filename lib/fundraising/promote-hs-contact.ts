@@ -12,6 +12,7 @@ export type PromoteResult = { constituentId: string } | { error: string; status:
 
 export async function promoteHsContact(
   supabase: SupabaseClient,
+  orgId: string,
   hubspotId: string
 ): Promise<PromoteResult> {
   const id = typeof hubspotId === "string" ? hubspotId.trim() : "";
@@ -55,6 +56,7 @@ export async function promoteHsContact(
   const { data: created, error } = await supabase
     .from("constituents")
     .insert({
+      org_id: orgId,
       type: "person",
       first_name: hs.first_name ?? null,
       last_name: hs.last_name ?? null,

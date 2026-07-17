@@ -179,6 +179,10 @@ ordered=(
   cohort_members_continuous.sql
   angel_connectors_pipeline_stages.sql
   drop_students_legacy_columns.sql
+  close_projects_of_terminal_grants.sql
+  compliance_notes_checklist.sql
+  plan_kpis_notes.sql
+  create_import_layer.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

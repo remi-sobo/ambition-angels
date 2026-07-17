@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
+import { getFieldDefs, validateAndMerge } from "@/lib/admin/customFields";
 import { audit } from "@/lib/audit";
 
 const STAGES = [
@@ -28,6 +29,16 @@ export async function POST(req: NextRequest) {
   }
   if (typeof body?.guardian_email === "string" && body.guardian_email.includes("@"))
     insert.guardian_email = body.guardian_email.trim().toLowerCase();
+
+  // Per-org custom fields (spec #4 D1): validated against this org's registry.
+  // requireAll on create so a required field can't be skipped. Empty registry
+  // (AA today) + no incoming = no-op.
+  if ("custom_fields" in (body ?? {})) {
+    const defs = await getFieldDefs(ctx.orgId, "student");
+    const merged = validateAndMerge(defs, {}, body!.custom_fields as Record<string, unknown>, { requireAll: true });
+    if (!merged.ok) return NextResponse.json({ error: merged.error }, { status: 400 });
+    insert.custom_fields = merged.value;
+  }
 
   const { data, error } = await getSupabaseAdmin()
     .from("students")

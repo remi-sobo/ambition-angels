@@ -3,6 +3,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { getResidentOrgId } from "@/lib/admin/orgs";
 import { fmtMetricValue } from "@/lib/admin/metrics/format";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
+import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 
 /**
  * The AI Executive Briefing (modules/01-command-center.md).
@@ -62,7 +63,7 @@ export async function gatherBriefingData(supabase: SupabaseClient): Promise<Brie
         .eq("acknowledgment_status", "pending"),
       supabase.from("opportunities").select("id", { count: "exact", head: true })
         .lt("next_step_due", today).not("next_step_due", "is", null)
-        .not("stage", "in", "(steward,lost)").or(EXCLUDE_PARTNERSHIP_OPPS),
+        .in("stage", OPEN_STAGE_LIST).or(EXCLUDE_PARTNERSHIP_OPPS),
       supabase.from("compliance_items").select("id", { count: "exact", head: true })
         .in("status", ["upcoming", "in_progress"]).lt("due_date", today),
       supabase.from("grant_requirements").select("kind, label, due_date, grant:grants(name)")

@@ -31,9 +31,9 @@ export const TOOL_FIELD_GLOSSARY: Record<string, string> = {
     "Reconciled starting balance + the sum of all ledger transactions dated after the anchor date.",
   raised_ytd:
     "Sum of gifts dated within the current fiscal year. The fundraising (gift) view, not the bank ledger.",
-  committed: "Raised this FY + stewardship-stage asks (treated as committed).",
+  committed: "Raised this FY + won-stage asks (steward / closed won — treated as committed).",
   weighted_open:
-    "Σ(ask_amount × probability) over open stages (identify/qualify/cultivate/solicit); probability defaults to 50% when blank.",
+    "Σ(ask_amount × probability) over open stages (identified → pledged on the Sales pipeline; identify/qualify/cultivate/solicit on legacy pipelines); probability defaults to 50% when blank.",
   forecast: "Committed + weighted-open pipeline. Deliberately not total pipeline.",
   gap_to_goal: "Fundraising goal − forecast.",
 };

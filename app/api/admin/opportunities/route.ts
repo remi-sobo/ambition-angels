@@ -4,10 +4,11 @@ import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushOpportunityToHubSpot } from "@/lib/hubspot/sync-out";
 import { resolveConstituent } from "@/lib/fundraising/constituent-resolve";
-
-const STAGES = [
-  "identify", "qualify", "cultivate", "solicit", "steward", "lost",
-] as const;
+import {
+  loadPipelineConfig,
+  stagesForPipeline,
+  firstOpenStageKey,
+} from "@/lib/fundraising/stages";
 
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -39,9 +40,21 @@ export async function POST(req: NextRequest) {
   const constituentId = resolved.constituentId;
   const warning = resolved.warning;
 
-  const insert: Record<string, unknown> = { org_id: ctx.orgId, constituent_id: constituentId };
+  // New asks open on the Sales pipeline; stage validity and the entry stage
+  // come from per-org config (the stage column has no DB default anymore).
+  const config = await loadPipelineConfig(supabase, ctx.orgId);
+  const stages = stagesForPipeline(config, "default");
+
+  const insert: Record<string, unknown> = {
+    org_id: ctx.orgId,
+    constituent_id: constituentId,
+    pipeline: "default",
+    stage:
+      typeof body.stage === "string" && stages.some((s) => s.key === body.stage)
+        ? body.stage
+        : firstOpenStageKey(stages),
+  };
   if (typeof body.name === "string" && body.name.trim()) insert.name = body.name.trim();
-  if (STAGES.includes(body.stage as (typeof STAGES)[number])) insert.stage = body.stage;
   if (typeof body.ask_amount === "number" && body.ask_amount >= 0)
     insert.ask_amount = Math.round(body.ask_amount * 100) / 100;
   if (isISODate(body.expected_close)) insert.expected_close = body.expected_close;

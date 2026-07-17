@@ -3,10 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushOpportunityToHubSpot } from "@/lib/hubspot/sync-out";
-
-const STAGES = [
-  "identify", "qualify", "cultivate", "solicit", "steward", "lost",
-] as const;
+import { loadPipelineConfig, stagesForPipeline } from "@/lib/fundraising/stages";
 
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -23,9 +20,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
+  const supabase = createServerSupabase();
+  const { data: before } = await supabase
+    .from("opportunities")
+    .select("*")
+    .eq("id", params.id)
+    .maybeSingle();
+  if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   const update: Record<string, unknown> = {};
-  if ("stage" in body && STAGES.includes(body.stage as (typeof STAGES)[number]))
-    update.stage = body.stage;
+  if ("stage" in body && typeof body.stage === "string") {
+    // A stage move is valid iff the key exists in this opportunity's pipeline
+    // config (per-org `pipeline_stages`; legacy funnel fallback pre-migration).
+    const config = await loadPipelineConfig(supabase, before.org_id as string);
+    const stages = stagesForPipeline(config, (before.pipeline as string | null) ?? "default");
+    if (stages.some((s) => s.key === body.stage)) update.stage = body.stage;
+  }
   if ("name" in body)
     update.name =
       body.name === null || body.name === ""
@@ -97,14 +107,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "No valid fields" }, { status: 400 });
   }
-
-  const supabase = createServerSupabase();
-  const { data: before } = await supabase
-    .from("opportunities")
-    .select("*")
-    .eq("id", params.id)
-    .maybeSingle();
-  if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const { error } = await supabase.from("opportunities").update(update).eq("id", params.id);
   if (error) {

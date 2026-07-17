@@ -3,7 +3,8 @@
  * bench (fr_prospects) into the major-gift pipeline.
  *
  * For each prospect: resolve (or create) an internal constituent, open an
- * opportunity at the `identify` stage, and flip the bench row to
+ * opportunity at the Sales pipeline's first stage (per-org config), and flip
+ * the bench row to
  * status='promoted' (recording the constituent + opportunity). The Prospects
  * list shows only active rows, so promoted ones "move" into the pipeline.
  *
@@ -13,6 +14,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { resolveConstituent } from "@/lib/fundraising/constituent-resolve";
+import {
+  loadPipelineConfig,
+  stagesForPipeline,
+  firstOpenStageKey,
+} from "@/lib/fundraising/stages";
 import { pushOpportunityToHubSpot } from "@/lib/hubspot/sync-out";
 import { audit } from "@/lib/audit";
 
@@ -45,6 +51,10 @@ export async function POST(req: NextRequest) {
   const supabase = createServerSupabase();
   const by = await getAdminUser();
 
+  // Promoted prospects open at the Sales pipeline's first stage, from config.
+  const config = await loadPipelineConfig(supabase, ctx.orgId);
+  const entryStage = firstOpenStageKey(stagesForPipeline(config, "default"));
+
   const { data: prospects } = await supabase
     .from("fr_prospects")
     .select("id, name, status, constituent_id, opportunity_id")
@@ -71,7 +81,13 @@ export async function POST(req: NextRequest) {
 
     const { data: opp, error: oppErr } = await supabase
       .from("opportunities")
-      .insert({ org_id: ctx.orgId, constituent_id: constituentId, stage: "identify", owner: by ?? null })
+      .insert({
+        org_id: ctx.orgId,
+        constituent_id: constituentId,
+        stage: entryStage,
+        pipeline: "default",
+        owner: by ?? null,
+      })
       .select("id")
       .single();
     if (oppErr || !opp) {
@@ -94,7 +110,7 @@ export async function POST(req: NextRequest) {
       action: "fundraising.prospect.promote",
       entityType: "opportunity",
       entityId: opp.id,
-      after: { prospect_id: p.id, constituent_id: constituentId, stage: "identify" },
+      after: { prospect_id: p.id, constituent_id: constituentId, stage: entryStage },
     });
     await pushOpportunityToHubSpot(opp.id).catch(() => {});
 

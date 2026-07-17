@@ -8,7 +8,19 @@ import { NewOpportunityForm } from "./_components/PipelineBoard";
 import OpportunitiesBoard from "./_components/OpportunitiesBoard";
 import { type OpportunityRow } from "./_components/pipeline-stages";
 import FilterTabs from "./_components/FilterTabs";
-import { HUBSPOT_PIPELINES, FUNDRAISING_PIPELINE_ID, EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
+import {
+  HUBSPOT_PIPELINES,
+  FUNDRAISING_PIPELINE_ID,
+  EXCLUDE_PARTNERSHIP_OPPS,
+  PARTNERSHIP_PIPELINE_ID,
+  ARCHIVED_PARTNERSHIP_PIPELINE_ID,
+} from "@/lib/hubspot/stage-map";
+import {
+  loadPipelineConfig,
+  stagesForPipeline,
+  stageByKey,
+  stageKeysOfType,
+} from "@/lib/fundraising/stages";
 
 // Major Gifts — the moves-management pipeline (modules/03-fundraising.md
 // "Major Gifts"). /admin/fundraising is the pipeline home; the HubSpot
@@ -51,6 +63,10 @@ export default async function MajorGiftsPage({
   searchParams?: { pipeline?: string; year?: string };
 }) {
   const supabase = createServerSupabase();
+  // Stage columns + forecast buckets come from per-org config
+  // (pipeline_stages); falls back to the legacy five-stage funnel until the
+  // config migration is applied.
+  const configPromise = loadPipelineConfig(supabase);
   const { data } = await supabase
     .from("opportunities")
     .select(
@@ -86,44 +102,67 @@ export default async function MajorGiftsPage({
     nextStepDue: o.next_step_due,
   }));
 
+  const config = await configPromise;
+
+  // Pipeline tabs come from config (minus the retired/archived partnership
+  // pipelines, which live in /admin/partners). Boards render one pipeline at a
+  // time — with per-pipeline stage taxonomies there is no coherent "all
+  // pipelines" column set.
+  const pipelineOptions = (
+    config.fromConfig
+      ? config.pipelines
+          .filter(
+            (p) =>
+              p.key !== PARTNERSHIP_PIPELINE_ID &&
+              p.key !== ARCHIVED_PARTNERSHIP_PIPELINE_ID
+          )
+          .map((p) => ({ value: p.key, label: p.label }))
+      : Object.entries(HUBSPOT_PIPELINES).map(([value, label]) => ({ value, label }))
+  );
+
   // Filters (URL-driven): pipeline defaults to the fundraising (Sales)
   // pipeline so Major Gifts is money-only; year is the calendar fiscal year
   // and drives the close forecast (expected_close).
-  const pipelineFilter = searchParams?.pipeline ?? FUNDRAISING_PIPELINE_ID;
+  const requestedPipeline = searchParams?.pipeline ?? FUNDRAISING_PIPELINE_ID;
+  const pipelineFilter = pipelineOptions.some((p) => p.value === requestedPipeline)
+    ? requestedPipeline
+    : FUNDRAISING_PIPELINE_ID;
   const currentYear = new Date().getFullYear();
   const year = searchParams?.year ?? String(currentYear);
-  const opps =
-    pipelineFilter === "all"
-      ? allOpps
-      : allOpps.filter((o) => (o.pipeline ?? "default") === pipelineFilter);
+  const opps = allOpps.filter((o) => (o.pipeline ?? "default") === pipelineFilter);
 
-  const pipelineOptions = [
-    { value: "all", label: "All pipelines" },
-    { value: "default", label: HUBSPOT_PIPELINES["default"] },
-    { value: "727459407", label: HUBSPOT_PIPELINES["727459407"] },
-  ];
   const yearOptions = [
     { value: String(currentYear), label: "This year" },
     { value: String(currentYear - 1), label: "Last year" },
     { value: "all", label: "All time" },
   ];
 
-  // Open stages carry weighted pipeline value; steward = committed.
-  const openStages = ["identify", "qualify", "cultivate", "solicit"];
-  const open = opps.filter((o) => openStages.includes(o.stage));
+  // Stage columns + forecast buckets for the selected pipeline, from config:
+  // `open` carries weighted pipeline value, `won` is committed, `lost` and
+  // `on_hold` are excluded from both.
+  const stages = stagesForPipeline(config, pipelineFilter);
+  const openKeys = stageKeysOfType(stages, "open");
+  const wonKeys = stageKeysOfType(stages, "won");
+  const lostKeys = stageKeysOfType(stages, "lost");
+  const open = opps.filter((o) => openKeys.includes(o.stage));
 
-  // Stewardship (closed-won) accumulates forever, so scope that column to the
-  // selected year by close date — "This year" shows this year's wins, not the
-  // all-time pile. Open asks are live work and always show; steward entries
-  // with no close date (AIG members, established partnerships) aren't dated
-  // wins, so they stay visible too.
-  const stewardInYear = (o: OpportunityRow) =>
+  // Won/lost columns accumulate forever, so scope them to the selected year by
+  // close date — "This year" shows this year's outcomes, not the all-time
+  // pile. Open asks are live work and always show; terminal entries with no
+  // close date aren't dated outcomes, so they stay visible too.
+  const terminalInYear = (o: OpportunityRow) =>
     year === "all" || !o.expectedClose || o.expectedClose.slice(0, 4) === year;
-  const boardOpps = opps.filter((o) => o.stage !== "steward" || stewardInYear(o));
-  const committed = boardOpps.filter((o) => o.stage === "steward");
+  const boardOpps = opps.filter(
+    (o) =>
+      (!wonKeys.includes(o.stage) && !lostKeys.includes(o.stage)) || terminalInYear(o)
+  );
+  const committed = boardOpps.filter((o) => wonKeys.includes(o.stage));
+  // Weighted value: per-ask probability, else the stage's config default.
+  const probabilityOf = (o: OpportunityRow) =>
+    o.probability ?? stageByKey(stages, o.stage)?.probabilityDefault ?? 50;
   const pipelineValue = open.reduce((s, o) => s + (o.askAmount ?? 0), 0);
   const weightedValue = open.reduce(
-    (s, o) => s + ((o.askAmount ?? 0) * (o.probability ?? 50)) / 100,
+    (s, o) => s + ((o.askAmount ?? 0) * probabilityOf(o)) / 100,
     0
   );
   const committedValue = committed.reduce((s, o) => s + (o.askAmount ?? 0), 0);
@@ -136,16 +175,24 @@ export default async function MajorGiftsPage({
   );
   const closingValue = closing.reduce((s, o) => s + (o.askAmount ?? 0), 0);
   const closingWeighted = closing.reduce(
-    (s, o) => s + ((o.askAmount ?? 0) * (o.probability ?? 50)) / 100,
+    (s, o) => s + ((o.askAmount ?? 0) * probabilityOf(o)) / 100,
     0
   );
   const closingLabel = year === "all" ? "Closing (all open)" : `Closing ${year}`;
+
+  // "Identified → Closed Won" (first stage → won stage) for the header.
+  const funnelSpan =
+    stages.length > 0
+      ? `${stages[0].label} → ${
+          stages.find((s) => s.stageType === "won")?.label ?? stages[stages.length - 1].label
+        }`
+      : "";
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1400px]">
       <PageHeader
         title="Pipeline"
-        subtitle="Moves-management pipeline · Identification → Stewardship"
+        subtitle={`Moves-management pipeline · ${funnelSpan}`}
         actions={
           <div className="flex items-center gap-3">
             <Link
@@ -197,11 +244,11 @@ export default async function MajorGiftsPage({
         <StatCard
           label="Committed"
           value={money(committedValue)}
-          sub={`${committed.length} in stewardship`}
+          sub={`${committed.length} closed won`}
         />
       </div>
 
-      <OpportunitiesBoard opps={boardOpps} />
+      <OpportunitiesBoard opps={boardOpps} stages={stages} />
     </div>
   );
 }

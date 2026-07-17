@@ -2,6 +2,7 @@ import type { HowMovement } from "@/lib/admin/strategy/narrative";
 import { StatusChip } from "../../../_components/StatusChip";
 import { formatUsd, MovementHeader, STATUS_LABEL } from "./shared";
 import { TYPE } from "@/lib/admin/typeScale";
+import { STAGE_KEY_LABELS } from "@/lib/fundraising/stage-sets";
 
 /**
  * Movement 3 — How We Raise It. The funding doors (strategy_angles) with their
@@ -10,13 +11,8 @@ import { TYPE } from "@/lib/admin/typeScale";
  * live; the doors and the pipeline never disagree with the CRM.
  */
 
-const STAGE_LABEL: Record<string, string> = {
-  identify: "Identify",
-  qualify: "Qualify",
-  cultivate: "Cultivate",
-  solicit: "Solicit",
-  steward: "Steward",
-};
+// Covers both taxonomies (legacy funnel + ten-stage Sales pipeline).
+const STAGE_LABEL: Record<string, string> = STAGE_KEY_LABELS;
 
 export default function MovementHow({ how }: { how: HowMovement }) {
   const { angles, pipelineByStage, channels } = how;

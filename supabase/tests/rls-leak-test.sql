@@ -636,6 +636,22 @@ begin
   insert into custom_field_defs (org_id, entity_type, key, label, field_type)
   values (t2, 'student', 'leak_cf', 'Leak CF', 'text')
   on conflict (org_id, entity_type, key) do nothing;
+
+  -- Import layer (spec #5 E1): one run + one staged row + one ledger entry
+  -- per org. Participant imports ride program.* permissions.
+  insert into imports (org_id, entity_type, source, filename)
+  values (aa, 'student', 'csv', 'leak-aa.csv');
+  insert into imports (org_id, entity_type, source, filename)
+  values (t2, 'student', 'csv', 'leak-t2.csv');
+  insert into import_rows (org_id, import_id, row_num, raw)
+  select org_id, id, 1, '{"first_name":"Leak"}'::jsonb
+  from imports where filename in ('leak-aa.csv', 'leak-t2.csv');
+  insert into external_refs (org_id, entity_type, entity_id, source, external_id)
+  values (aa, 'student', gen_random_uuid(), 'csv', 'leak-ref')
+  on conflict (org_id, entity_type, source, external_id) do nothing;
+  insert into external_refs (org_id, entity_type, entity_id, source, external_id)
+  values (t2, 'student', gen_random_uuid(), 'csv', 'leak-ref')
+  on conflict (org_id, entity_type, source, external_id) do nothing;
 end $$;
 
 set role authenticated;
@@ -662,6 +678,24 @@ begin
   if (select count(*) from custom_field_defs where org_id = t2) <> 0 then
     raise exception 'LEAK: AA owner reads tenant-two custom field defs';
   end if;
+  if (select count(*) from imports where filename = 'leak-aa.csv') <> 1 then
+    raise exception 'AA owner cannot read its own import runs';
+  end if;
+  if (select count(*) from imports where org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two import runs';
+  end if;
+  if (select count(*) from import_rows) <> 1 then
+    raise exception 'AA owner cannot read its own import rows (or sees another org''s)';
+  end if;
+  if (select count(*) from import_rows where org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two import rows';
+  end if;
+  if (select count(*) from external_refs where external_id = 'leak-ref') <> 1 then
+    raise exception 'AA owner cannot read its own external refs (or sees another org''s)';
+  end if;
+  if (select count(*) from external_refs where org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two external refs';
+  end if;
   if (select count(*) from v_action_items where source = 'application_pending' and title like '%Leaky%') = 0 then
     raise exception 'pending application did not surface in the queue';
   end if;
@@ -682,6 +716,18 @@ begin
   if (select count(*) from custom_field_defs where org_id = aa) <> 0 then
     raise exception 'LEAK: tenant-two reads AA custom field defs';
   end if;
+  if (select count(*) from imports where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA import runs';
+  end if;
+  if (select count(*) from import_rows where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA import rows';
+  end if;
+  if (select count(*) from external_refs where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA external refs';
+  end if;
+  if (select count(*) from imports where filename = 'leak-t2.csv') <> 1 then
+    raise exception 'tenant-two owner cannot read its OWN import runs';
+  end if;
   if (select count(*) from v_action_items where source = 'application_pending' and title like '%Tenant Applicant%') = 0 then
     raise exception 'tenant-two owner cannot see its OWN pending application';
   end if;
@@ -701,6 +747,15 @@ do $$ begin
   end if;
   if (select count(*) from custom_field_defs) <> 0 then
     raise exception 'LEAK: non-member reads custom field defs';
+  end if;
+  if (select count(*) from imports) <> 0 then
+    raise exception 'LEAK: non-member reads import runs';
+  end if;
+  if (select count(*) from import_rows) <> 0 then
+    raise exception 'LEAK: non-member reads import rows';
+  end if;
+  if (select count(*) from external_refs) <> 0 then
+    raise exception 'LEAK: non-member reads external refs';
   end if;
 end $$;
 

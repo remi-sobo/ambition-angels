@@ -6,6 +6,8 @@ import { audit } from "@/lib/audit";
 const MEMBER_STATUSES = ["enrolled", "completed", "dropped"] as const;
 const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
+const isISODate = (v: unknown): v is string =>
+  typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   if (!(await isAuthed())) {
@@ -71,9 +73,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     .maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // Membership is continuous (D4): leaving a group stamps ended_on, rejoining
+  // clears it. A caller may override with an explicit date; enrolled forces null.
+  const status = body!.status as (typeof MEMBER_STATUSES)[number];
+  const update: Record<string, unknown> = { status };
+  if (isISODate(body?.ended_on)) {
+    update.ended_on = status === "enrolled" ? null : body!.ended_on;
+  } else if (body?.ended_on === null) {
+    update.ended_on = null;
+  } else if (status === "enrolled") {
+    update.ended_on = null;
+  } else if (!before.ended_on) {
+    update.ended_on = new Date().toISOString().slice(0, 10);
+  }
+
   const { error } = await supabase
     .from("cohort_members")
-    .update({ status: body!.status })
+    .update(update)
     .eq("id", before.id);
   if (error) {
     console.error("Update cohort member failed:", error.message);
@@ -84,7 +100,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     entityType: "cohort_member",
     entityId: before.id,
     before,
-    after: { status: body!.status },
+    after: update,
   });
   return NextResponse.json({ ok: true });
 }

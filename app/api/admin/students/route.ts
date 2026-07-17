@@ -2,12 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getFieldDefs, validateAndMerge } from "@/lib/admin/customFields";
+import { getParticipantStages } from "@/lib/admin/program/stages";
 import { LEGACY_STUDENT_FIELD_KEYS } from "@/lib/admin/program/legacyFields";
 import { audit } from "@/lib/audit";
-
-const STAGES = [
-  "discover", "learn", "practice", "connect", "launch", "alumni", "withdrawn",
-] as const;
 
 export async function POST(req: NextRequest) {
   const ctx = await getOrgContext();
@@ -22,7 +19,10 @@ export async function POST(req: NextRequest) {
   // org from session, never a column default. Universal identity is columns;
   // grade / school / guardian_* / dob are registry fields (custom_fields) now.
   const insert: Record<string, unknown> = { first_name: firstName, org_id: ctx.orgId };
-  if (STAGES.includes(body?.stage as (typeof STAGES)[number])) insert.stage = body!.stage;
+  // Stage must be one of THIS org's participant_stages (per-org, not a hardcoded
+  // list) — else omit and let the column default apply.
+  const stageKeys = new Set((await getParticipantStages()).map((s) => s.stage_key));
+  if (typeof body?.stage === "string" && stageKeys.has(body.stage)) insert.stage = body.stage;
   if (typeof body?.email === "string" && body.email.includes("@"))
     insert.email = body.email.trim().toLowerCase();
   if (typeof body?.last_name === "string" && body.last_name.trim())

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
+import { findOrCreateProgram } from "@/lib/admin/program/programs";
 import { audit } from "@/lib/audit";
 
 const STATUSES = ["planning", "active", "completed", "archived"] as const;
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
   // org from session, never a column default (the program-domain defaults are gone).
   const insert: Record<string, unknown> = { name, org_id: ctx.orgId };
   if (STATUSES.includes(body?.status as (typeof STATUSES)[number])) insert.status = body!.status;
-  for (const f of ["program", "term", "location"] as const) {
+  for (const f of ["term", "location"] as const) {
     if (typeof body?.[f] === "string" && (body[f] as string).trim())
       insert[f] = (body[f] as string).trim().slice(0, 160);
   }
@@ -29,7 +30,19 @@ export async function POST(req: NextRequest) {
   const capacity = Number(body?.capacity);
   if (Number.isInteger(capacity) && capacity > 0 && capacity <= 10_000) insert.capacity = capacity;
 
-  const { data, error } = await getSupabaseAdmin()
+  const supabase = getSupabaseAdmin();
+  // Program is a real parent entity now (D4): resolve the name to a program_id
+  // (find-or-create), and dual-write the free-text `program` = the program's
+  // name so unmigrated readers (cohort lists, rollups) render unchanged.
+  if (typeof body?.program === "string" && body.program.trim()) {
+    const program = await findOrCreateProgram(supabase, ctx.orgId, body.program);
+    if (program) {
+      insert.program_id = program.id;
+      insert.program = program.name;
+    }
+  }
+
+  const { data, error } = await supabase
     .from("cohorts")
     .insert(insert)
     .select("id")

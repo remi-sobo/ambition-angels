@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
-export function NewCohortForm() {
+export function NewCohortForm({ programs = [] }: { programs?: string[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -68,8 +68,13 @@ export function NewCohortForm() {
       </label>
       <label className="text-xs text-ink-2">
         Program
-        <input className={`${inputCls} w-full mt-1`} value={program}
+        <input className={`${inputCls} w-full mt-1`} value={program} list="cohort-programs"
           placeholder="YGB Creators Camp" onChange={(e) => setProgram(e.target.value)} />
+        {programs.length > 0 && (
+          <datalist id="cohort-programs">
+            {programs.map((p) => <option key={p} value={p} />)}
+          </datalist>
+        )}
       </label>
       <label className="text-xs text-ink-2">
         Term

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { findOrCreateProgram } from "@/lib/admin/program/programs";
 import { audit } from "@/lib/audit";
 
 const STATUSES = ["planning", "active", "completed", "archived"] as const;
@@ -53,6 +54,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { data: before } = await supabase
     .from("cohorts").select("*").eq("id", params.id).maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Program name → program_id (D4), scoped to the cohort's org. Clearing the
+  // text clears the link; dual-write the resolved name for unmigrated readers.
+  if ("program" in body) {
+    if (update.program === null || update.program === undefined) {
+      update.program_id = null;
+    } else if (typeof update.program === "string") {
+      const program = await findOrCreateProgram(supabase, (before as { org_id: string }).org_id, update.program);
+      if (program) { update.program_id = program.id; update.program = program.name; }
+    }
+  }
 
   const { error } = await supabase.from("cohorts").update(update).eq("id", params.id);
   if (error) {

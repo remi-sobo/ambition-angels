@@ -18,6 +18,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { DOCUMENTS_BUCKET } from "@/lib/documents/config";
 import { FINANCE_FORMULA_OVERLAY, METRIC_KEY_ALIASES, TOOL_FIELD_GLOSSARY } from "./metricGlossary";
 import { EXTRACTION_DOMAIN, parseExtractionPayload } from "./extraction";
+import { OPEN_STAGE_LIST, isWonStage } from "@/lib/fundraising/stage-sets";
 
 /**
  * Reed's read-only tool set (Phase 4).
@@ -66,8 +67,6 @@ function fiscalYearBounds(year: number, startMonth: number): { start: string; en
   const em = String(startMonth - 1).padStart(2, "0");
   return { start: `${year - 1}-${sm}-01`, end: `${year}-${em}-${String(lastDay).padStart(2, "0")}` };
 }
-
-const OPEN_STAGES = ["identify", "qualify", "cultivate", "solicit"];
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -289,9 +288,9 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         let openAskCount = 0;
         for (const o of oppsRes.data ?? []) {
           const ask = Number(o.ask_amount ?? 0);
-          if (o.stage === "steward") {
+          if (isWonStage(o.stage as string)) {
             committedSteward += ask;
-          } else if (OPEN_STAGES.includes(o.stage as string)) {
+          } else if (OPEN_STAGE_LIST.includes(o.stage as string)) {
             openAskCount += 1;
             const p = o.probability == null ? 50 : Number(o.probability);
             weightedOpen += ask * (p / 100);

@@ -23,6 +23,7 @@ import { runNextBestAction, estimateNbaCostUsd } from "@/lib/agents/next-best-ac
 import { logAICall } from "@/lib/ai/ledger";
 import { orgOverAICap } from "@/lib/ai/cap";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
+import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 
 // Shared monthly agent wallet (same cap as the research route) + a rate limit,
 // so "Suggest next moves" can't run uncapped.
@@ -40,7 +41,6 @@ import type {
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const OPEN_STAGES = ["identify", "qualify", "cultivate", "solicit"];
 const MAX_CANDIDATES = 25;
 const DAY = 86_400_000;
 const daysSince = (iso: string | null): number | null =>
@@ -210,7 +210,7 @@ export async function POST() {
       `id, stage, ask_amount, expected_close, next_step, next_step_due, capacity_rating, updated_at,
        constituent:constituents ( id, type, first_name, last_name, org_name )`
     )
-    .in("stage", OPEN_STAGES)
+    .in("stage", OPEN_STAGE_LIST)
     .or(EXCLUDE_PARTNERSHIP_OPPS)
     .limit(150);
   if (oppErr) {

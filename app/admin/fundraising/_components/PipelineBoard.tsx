@@ -10,6 +10,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { type OpportunityRow } from "./pipeline-stages";
+import {
+  firstOpenStageKey,
+  stageKeysOfType,
+  type PipelineStage,
+} from "@/lib/fundraising/stages";
+import { isLostStage, isWonStage } from "@/lib/fundraising/stage-sets";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -175,10 +181,25 @@ function CapacityDots({ rating }: { rating: number }) {
   );
 }
 
-export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
+export function OpportunityCard({
+  opp,
+  stages,
+}: {
+  opp: OpportunityRow;
+  /** The card's pipeline config (drives the Lost / Reopen actions). */
+  stages: PipelineStage[];
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
+
+  // Stage semantics come from config; fall back to the cross-taxonomy sets for
+  // a card whose stage key isn't in this pipeline's config (stale data).
+  const stageType =
+    stages.find((s) => s.key === opp.stage)?.stageType ??
+    (isWonStage(opp.stage) ? "won" : isLostStage(opp.stage) ? "lost" : "open");
+  const lostKey = stageKeysOfType(stages, "lost")[0] ?? null;
+  const reopenKey = firstOpenStageKey(stages);
 
   const patch = async (fields: Record<string, unknown>) => {
     setBusy(true);
@@ -200,8 +221,7 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
 
   const overdue =
     !!opp.nextStepDue &&
-    opp.stage !== "steward" &&
-    opp.stage !== "lost" &&
+    stageType === "open" &&
     opp.nextStepDue < new Date().toISOString().slice(0, 10);
 
   return (
@@ -256,9 +276,9 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
       )}
 
       <div className="flex items-center gap-1 mt-3">
-        {opp.stage === "lost" && (
+        {stageType === "lost" && (
           <button
-            onClick={() => patch({ stage: "identify" })}
+            onClick={() => patch({ stage: reopenKey })}
             disabled={busy}
             className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
           >
@@ -271,10 +291,10 @@ export function OpportunityCard({ opp }: { opp: OpportunityRow }) {
         >
           Edit
         </button>
-        {opp.stage !== "lost" && opp.stage !== "steward" && (
+        {stageType !== "lost" && stageType !== "won" && lostKey && (
           <button
             onClick={() => {
-              if (confirm("Mark this ask as lost?")) void patch({ stage: "lost" });
+              if (confirm("Mark this ask as lost?")) void patch({ stage: lostKey });
             }}
             disabled={busy}
             className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"

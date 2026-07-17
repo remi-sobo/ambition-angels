@@ -8,6 +8,7 @@ import {
   computeRunwayMonths,
 } from "@/lib/admin/strategy/money";
 import { getEngagedStageKeys } from "@/lib/admin/program/stages";
+import { WON_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 
 /**
  * BloomOS Strategy, Phase 3 — the auto-metric registry (specs/bloomos-strategy.md).
@@ -59,7 +60,7 @@ export const PLAN_METRICS: Record<string, PlanMetricFn> = {
   },
 
   // Corporate dollars secured this year — major-gift opportunities that reached
-  // stewardship (i.e. closed/secured) whose constituent is an organization.
+  // a won stage (steward / closed_won) whose constituent is an organization.
   // opportunities has no type column, so we resolve "corporate" through the
   // org-type constituent. (Honest best-effort; revisit if AA wants a dedicated
   // corporate flag.)
@@ -76,7 +77,7 @@ export const PLAN_METRICS: Record<string, PlanMetricFn> = {
       .from("opportunities")
       .select("ask_amount")
       .eq("org_id", org)
-      .eq("stage", "steward")
+      .in("stage", WON_STAGE_LIST)
       .in("constituent_id", ids)
       .gte("updated_at", yearStartTs)
       .or(EXCLUDE_PARTNERSHIP_OPPS)

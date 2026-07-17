@@ -13,8 +13,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getFinanceSnapshot, fiscalYearBounds } from "@/lib/admin/finance";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
+import { OPEN_STAGE_KEYS } from "@/lib/fundraising/stage-sets";
 
-export const MONEY_OPEN_STAGES = ["identify", "qualify", "cultivate", "solicit"] as const;
+/** Open stages across both taxonomies (legacy funnel + ten-stage Sales). */
+export const MONEY_OPEN_STAGES = OPEN_STAGE_KEYS;
 
 /** Fiscal-year bounds for an org, from its fin_config (defaults to calendar). */
 async function fyBounds(sb: SupabaseClient, orgId: string): Promise<{ start: string; end: string }> {

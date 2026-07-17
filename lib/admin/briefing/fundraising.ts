@@ -13,8 +13,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { constituentName } from "@/lib/fundraising/display";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
+import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 
-const OPEN_STAGES = ["identify", "qualify", "cultivate", "solicit"];
 const DAY = 86_400_000;
 
 export type FundraisingMove = {
@@ -110,7 +110,7 @@ async function readAutoMoves(
     sb
       .from("opportunities")
       .select(sel)
-      .in("stage", OPEN_STAGES)
+      .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step", "is", null)
       .lt("next_step_due", today)
@@ -119,7 +119,7 @@ async function readAutoMoves(
     sb
       .from("opportunities")
       .select(sel)
-      .in("stage", OPEN_STAGES)
+      .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .gte("expected_close", today)
       .lte("expected_close", soon)

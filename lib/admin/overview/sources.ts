@@ -30,6 +30,7 @@ import {
 } from "@/lib/admin/overview/complianceQueue";
 import { getDataAge } from "@/lib/admin/dataAge";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
+import { OPEN_STAGE_LIST, isWonStage } from "@/lib/fundraising/stage-sets";
 import {
   getFinanceSnapshot,
   fiscalYearBounds,
@@ -311,7 +312,6 @@ export const getPipeline = cache(async (): Promise<PipelineData> => {
 
 // ── Fundraising spine helpers (user-session client, RLS, org-scoped) ──────────
 
-const OPEN_STAGES = ["identify", "qualify", "cultivate", "solicit"];
 
 const addDays = (iso: string, n: number) => {
   const d = new Date(iso + "T00:00:00");
@@ -364,9 +364,9 @@ export const getForecast = cache(async (): Promise<ForecastData> => {
   let committedSteward = 0;
   for (const o of oppsRes.data ?? []) {
     const ask = Number(o.ask_amount ?? 0);
-    if (o.stage === "steward") {
+    if (isWonStage(o.stage as string)) {
       committedSteward += ask;
-    } else if (OPEN_STAGES.includes(o.stage as string)) {
+    } else if (OPEN_STAGE_LIST.includes(o.stage as string)) {
       const p = o.probability == null ? 50 : Number(o.probability);
       weightedOpen += ask * (p / 100);
     }
@@ -406,7 +406,7 @@ export const getMoves = cache(async (): Promise<MoveRow[]> => {
       "id, name, stage, ask_amount, owner, next_step, next_step_due, " +
         "constituent:constituents ( id, type, first_name, last_name, org_name )",
     )
-    .in("stage", OPEN_STAGES)
+    .in("stage", OPEN_STAGE_LIST)
     .or(EXCLUDE_PARTNERSHIP_OPPS)
     .or("owner.ilike.remi,ask_amount.gte.10000")
     .order("ask_amount", { ascending: false, nullsFirst: false })
@@ -501,7 +501,7 @@ export const getFires = cache(async (): Promise<FireItem[]> => {
     sb
       .from("opportunities")
       .select("id, name, ask_amount, next_step_due, constituent:constituents ( id, type, first_name, last_name, org_name )")
-      .in("stage", OPEN_STAGES)
+      .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step_due", "is", null)
       .lt("next_step_due", today)
@@ -510,7 +510,7 @@ export const getFires = cache(async (): Promise<FireItem[]> => {
     sb
       .from("opportunities")
       .select("ask_amount, constituent:constituents ( id, type, first_name, last_name, org_name )")
-      .in("stage", OPEN_STAGES)
+      .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .gte("ask_amount", 10000)
       .limit(100),
@@ -933,11 +933,11 @@ export const getFollowThrough = cache(async (): Promise<FollowThrough> => {
     sb
       .from("opportunities")
       .select("id", { count: "exact", head: true })
-      .in("stage", OPEN_STAGES)
+      .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step_due", "is", null)
       .lt("next_step_due", today),
-    sb.from("opportunities").select("id", { count: "exact", head: true }).in("stage", OPEN_STAGES).or(EXCLUDE_PARTNERSHIP_OPPS).is("owner", null),
+    sb.from("opportunities").select("id", { count: "exact", head: true }).in("stage", OPEN_STAGE_LIST).or(EXCLUDE_PARTNERSHIP_OPPS).is("owner", null),
     sb.from("gifts").select("amount").gte("gift_date", since14),
   ]);
 

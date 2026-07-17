@@ -205,8 +205,9 @@ export async function pushInteractionToHubSpot(interactionId: string): Promise<v
 
 const DEAL_TO_CONTACT = 3;
 
-// Our moves-management stages → HubSpot default-pipeline deal stages. Orgs on
-// a custom pipeline can remap later; "default" is HubSpot's out-of-the-box id.
+// Legacy moves-management stages → HubSpot's out-of-the-box default-pipeline
+// deal stages. LAST-RESORT fallback only: the real mapping is per-org config
+// (pipeline_stages.external_stage_id, looked up by dealstageFor below).
 const OPP_STAGE_TO_DEALSTAGE: Record<string, string> = {
   identify: "appointmentscheduled",
   qualify: "qualifiedtobuy",
@@ -215,6 +216,32 @@ const OPP_STAGE_TO_DEALSTAGE: Record<string, string> = {
   steward: "closedwon",
   lost: "closedlost",
 };
+
+// Translate a Bloom stage key to the HubSpot dealstage internal id via the
+// org's pipeline_stages config. Null when the stage has no HubSpot counterpart
+// (e.g. a config row with external_stage_id unset) — callers must no-op on
+// null rather than push a wrong stage.
+async function dealstageFor(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  orgId: string,
+  pipeline: string,
+  stageKey: string
+): Promise<string | null> {
+  try {
+    const { data } = await admin
+      .from("pipeline_stages")
+      .select("external_stage_id")
+      .eq("org_id", orgId)
+      .eq("pipeline", pipeline)
+      .eq("key", stageKey)
+      .maybeSingle();
+    return typeof data?.external_stage_id === "string" && data.external_stage_id !== ""
+      ? data.external_stage_id
+      : null;
+  } catch {
+    return null; // config tables absent → treat as unmapped
+  }
+}
 
 // Resolve a constituent's HubSpot contact id, creating the contact first if it
 // doesn't exist yet so the deal has something to associate to.
@@ -277,29 +304,56 @@ export async function pushGiftToHubSpot(giftId: string): Promise<void> {
 }
 
 /**
- * An opportunity → a Deal, kept in sync across stage moves. The deal id is
- * stored in opportunities.external_ids.hubspot_deal so later pushes PATCH the
- * same deal instead of creating duplicates. Gated by hubspotWriteEnabled.
+ * An opportunity → a Deal. Gated by hubspotWriteEnabled (connections.meta
+ * sync_out). Two shapes:
+ *
+ *   * HUBSPOT-LINKED deal (external_source='hubspot', external_id set — it
+ *     came in via the inbound sync): the push is deliberately NARROW — one
+ *     deal, one field. We translate the Bloom stage key to the HubSpot
+ *     dealstage id via pipeline_stages config and PATCH only `dealstage`;
+ *     amount/close/owner keep flowing inbound as before. A stage with no
+ *     external_stage_id (e.g. Identified/Researched before their ids were
+ *     confirmed) no-ops rather than pushing a wrong stage.
+ *
+ *   * BLOOM-NATIVE opportunity: first push creates the remote deal (id stored
+ *     in external_ids.hubspot_deal), later pushes PATCH it — the pre-existing
+ *     flow, now with the dealstage looked up from config first.
  */
 export async function pushOpportunityToHubSpot(opportunityId: string): Promise<void> {
   if (!(await hubspotWriteEnabled())) return;
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from("opportunities")
-    .select("id, constituent_id, name, stage, ask_amount, expected_close, external_ids")
+    .select(
+      "id, org_id, constituent_id, name, stage, pipeline, ask_amount, expected_close, external_source, external_id, external_ids"
+    )
     .eq("id", opportunityId)
     .maybeSingle();
   if (error || !data) return;
   const o = data as {
-    id: string; constituent_id: string; name: string | null; stage: string;
+    id: string; org_id: string; constituent_id: string; name: string | null;
+    stage: string; pipeline: string | null;
     ask_amount: number | null; expected_close: string | null;
+    external_source: string | null; external_id: string | null;
     external_ids: Record<string, unknown> | null;
   };
+  const pipeline = o.pipeline ?? "default";
 
   try {
+    // HubSpot-linked deal → narrow stage-only push.
+    if (o.external_source === "hubspot" && o.external_id) {
+      const dealstage = await dealstageFor(admin, o.org_id, pipeline, o.stage);
+      if (!dealstage) return; // unmapped stage → no-op, never guess
+      await hubspotPatch(`/crm/v3/objects/deals/${o.external_id}`, {
+        properties: { dealstage },
+      });
+      return;
+    }
+
+    const configStage = await dealstageFor(admin, o.org_id, pipeline, o.stage);
     const properties: Record<string, string> = {
       dealname: o.name || "Major-gift opportunity",
-      dealstage: OPP_STAGE_TO_DEALSTAGE[o.stage] ?? "appointmentscheduled",
+      dealstage: configStage ?? OPP_STAGE_TO_DEALSTAGE[o.stage] ?? "appointmentscheduled",
       pipeline: "default",
     };
     if (o.ask_amount != null) properties.amount = String(o.ask_amount);

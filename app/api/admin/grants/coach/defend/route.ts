@@ -1,12 +1,13 @@
 /**
- * POST /api/admin/grants/coach — run one Grant Coach prompt (assessment or a
- * deep dive) over the proposal draft: pasted text, or a PDF/text file already
- * attached to the grant or one of its asks (sent to the model as a native
- * document block — no server-side parsing). Text-in / text-out through the
- * shared AI gateway on the deep tier (this is judgment work), logged to the
- * unified spend ledger and guarded by the org-wide monthly cap. Nothing is
- * persisted — the result renders in the panel and the operator acts on it in
- * the draft.
+ * POST /api/admin/grants/coach/defend — one turn of the Grant Coach's
+ * interactive "defend the draft" interrogation. Stateless: the client sends
+ * the visible chat history back each turn; the server rebuilds the full
+ * conversation (opening user turn = defend instructions + draft, then the
+ * history) and returns the reviewer's next reply. Same guards as the one-shot
+ * route: auth, org AI cap, spend ledger (surface: grant_coach).
+ *
+ * An empty history starts the session — the reviewer opens with three
+ * rejection reasons and question 1 of 5.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -14,16 +15,40 @@ import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { generateText, AIKeyMissingError } from "@/lib/ai/gateway";
 import { logAICall } from "@/lib/ai/ledger";
 import { orgOverAICap } from "@/lib/ai/cap";
-import { getCoachPrompt, COACH_SYSTEM, MAX_FUNDER_CHARS } from "@/lib/fundraising/grantCoach";
+import { DEFEND_DRAFT, COACH_SYSTEM, MAX_FUNDER_CHARS } from "@/lib/fundraising/grantCoach";
 import { resolveDraftFromBody, buildCoachOpeningMessage } from "@/lib/fundraising/grantCoachDocs";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+// 5 questions + pushback re-asks fit comfortably; the cap is a runaway guard.
+const MAX_TURNS = 30;
+const MAX_TURN_CHARS = 4000;
+
 function str(v: unknown, max: number): string | null {
   if (typeof v !== "string") return null;
   const t = v.trim();
   return t ? t.slice(0, max) : null;
+}
+
+type Turn = { role: "user" | "assistant"; content: string };
+
+function parseHistory(v: unknown): Turn[] | null {
+  if (v == null) return [];
+  if (!Array.isArray(v) || v.length > MAX_TURNS) return null;
+  const out: Turn[] = [];
+  for (const t of v) {
+    const role = (t as Record<string, unknown>)?.role;
+    const content = str((t as Record<string, unknown>)?.content, MAX_TURN_CHARS);
+    if ((role !== "user" && role !== "assistant") || !content) return null;
+    out.push({ role, content });
+  }
+  // The opening turn is server-built, so a valid history starts with the
+  // reviewer's reply and ends with the applicant's latest answer (or is empty).
+  if (out.length > 0 && (out[0].role !== "assistant" || out[out.length - 1].role !== "user")) {
+    return null;
+  }
+  return out;
 }
 
 export async function POST(req: NextRequest) {
@@ -32,13 +57,11 @@ export async function POST(req: NextRequest) {
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
 
-  const promptId = str(body?.promptId, 60);
-  const coachPrompt = promptId ? getCoachPrompt(promptId) : null;
-  if (!coachPrompt) {
-    return NextResponse.json({ error: "Unknown coach prompt" }, { status: 400 });
+  const history = parseHistory(body?.history);
+  if (!history) {
+    return NextResponse.json({ error: "Invalid chat history" }, { status: 400 });
   }
   const funderMaterials = str(body?.funderMaterials, MAX_FUNDER_CHARS);
-  // Optional, for the spend ledger only — the run itself is stateless.
   const grantId = str(body?.grantId, 36);
 
   const supabase = createServerSupabase();
@@ -64,23 +87,22 @@ export async function POST(req: NextRequest) {
       system: COACH_SYSTEM,
       messages: [
         buildCoachOpeningMessage({
-          instructions: coachPrompt.instructions,
+          instructions: DEFEND_DRAFT.instructions,
           source: draft.source,
           funderMaterials,
         }),
+        ...history,
       ],
       tier: "deep",
-      maxTokens: 3500,
-      // The coach's output formats are load-bearing (bold labels, exact lines);
-      // keep them untouched.
+      maxTokens: 1200,
       voice: false,
     });
   } catch (e) {
     if (e instanceof AIKeyMissingError) {
       return NextResponse.json({ error: "ANTHROPIC_API_KEY is not configured" }, { status: 503 });
     }
-    console.error("[grants/coach] generation failed:", e instanceof Error ? e.message : e);
-    return NextResponse.json({ error: "The coach run failed — try again." }, { status: 502 });
+    console.error("[grants/coach/defend] generation failed:", e instanceof Error ? e.message : e);
+    return NextResponse.json({ error: "The reviewer stalled — try again." }, { status: 502 });
   }
 
   if (ctx?.orgId) {
@@ -94,13 +116,14 @@ export async function POST(req: NextRequest) {
       triggeredBy: (await getAdminUser()) ?? null,
       status: "success",
       metadata: {
-        promptId: coachPrompt.id,
+        promptId: DEFEND_DRAFT.id,
         grantId,
         hadFunderMaterials: !!funderMaterials,
         draftSource: draft.source.type,
+        turn: history.length,
       },
     });
   }
 
-  return NextResponse.json({ text: result.text, promptId: coachPrompt.id, label: coachPrompt.label });
+  return NextResponse.json({ text: result.text });
 }

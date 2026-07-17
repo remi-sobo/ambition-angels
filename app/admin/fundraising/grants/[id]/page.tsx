@@ -18,7 +18,9 @@ import {
   COACH_PROMPTS,
   COACH_ATTRIBUTION,
   COACH_ATTRIBUTION_URL,
+  DEFEND_DRAFT,
 } from "@/lib/fundraising/grantCoach";
+import { listCoachDocuments } from "@/lib/fundraising/grantCoachDocs";
 import { STAGE_LABELS } from "../_lib/stages";
 import PageHeader from "../../../_components/PageHeader";
 import { EntityDocuments } from "../../../_components/EntityDocuments";
@@ -228,6 +230,12 @@ export default async function GrantDetailPage({ params }: { params: { id: string
         <GrantCoach
           grantId={g.id}
           prompts={COACH_PROMPTS.map(({ id, label, blurb }) => ({ id, label, blurb }))}
+          documents={(await listCoachDocuments(supabase, g.id)).map(({ kind, id, label }) => ({
+            kind,
+            id,
+            label,
+          }))}
+          defend={{ label: DEFEND_DRAFT.label, blurb: DEFEND_DRAFT.blurb }}
           attribution={COACH_ATTRIBUTION}
           attributionUrl={COACH_ATTRIBUTION_URL}
         />

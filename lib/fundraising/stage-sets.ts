@@ -35,10 +35,17 @@ export const OPEN_STAGE_KEYS = [
   "meeting_complete",
   "ask_made",
   "pledged",
+  // Angel Connectors pipeline (activation stages after Committed are live work)
+  "pitched",
+  "big_3_idd",
+  "linkedin_mined",
+  "outreach_sent",
+  "meetings_scheduled",
 ] as const;
 
-/** Won: money closed. Legacy `steward` doubled as closed-won. */
-export const WON_STAGE_KEYS = ["steward", "closed_won"] as const;
+/** Won: money closed — or, on Angel Connectors, the connector committed.
+ *  Legacy `steward` doubled as closed-won. */
+export const WON_STAGE_KEYS = ["steward", "closed_won", "committed"] as const;
 
 /** Lost in either taxonomy. */
 export const LOST_STAGE_KEYS = ["lost", "closed_lost"] as const;
@@ -76,6 +83,13 @@ export const STAGE_FUNNEL_ORDER = [
   "solicit",
   "ask_made",
   "pledged",
+  // Angel Connectors flow
+  "pitched",
+  "committed",
+  "big_3_idd",
+  "linkedin_mined",
+  "outreach_sent",
+  "meetings_scheduled",
   "steward",
   "closed_won",
   "on_hold",
@@ -102,6 +116,12 @@ export const STAGE_KEY_LABELS: Record<string, string> = {
   closed_won: "Closed Won",
   closed_lost: "Closed Lost",
   on_hold: "On Hold",
+  pitched: "Pitched",
+  committed: "Committed",
+  big_3_idd: "Big 3 ID'd",
+  linkedin_mined: "LinkedIn Mined",
+  outreach_sent: "Outreach Sent",
+  meetings_scheduled: "Meetings Scheduled",
 };
 
 /**

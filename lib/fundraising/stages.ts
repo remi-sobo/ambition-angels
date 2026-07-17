@@ -136,3 +136,18 @@ export function stageByKey(stages: PipelineStage[], key: string): PipelineStage 
 export function stageKeysOfType(stages: PipelineStage[], type: StageType): string[] {
   return stages.filter((s) => s.stageType === type).map((s) => s.key);
 }
+
+/**
+ * Derive a stable stage key from a display label ("Needs Appointment" →
+ * "needs_appointment"). Keys are permanent once created (opportunities
+ * reference them via FK); only the label is renameable in the editor.
+ */
+export function stageKeyFromLabel(label: string): string {
+  return (
+    label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 40) || "stage"
+  );
+}

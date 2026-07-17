@@ -5,6 +5,7 @@ import {
   stagesForPipeline,
   firstOpenStageKey,
   stageKeysOfType,
+  stageKeyFromLabel,
   type PipelineConfig,
   type PipelineStage,
 } from "@/lib/fundraising/stages";
@@ -79,6 +80,14 @@ describe("stage-sets: semantic unions cover both taxonomies", () => {
     expect(isOpenStage("pledged")).toBe(true);
     expect(isTerminalStage("pledged")).toBe(false);
   });
+
+  test("Angel Connectors stages land in the right sets", () => {
+    // Committed is that pipeline's won; activation stages after it stay open.
+    expect(isTerminalStage("committed")).toBe(true);
+    for (const k of ["pitched", "big_3_idd", "linkedin_mined", "outreach_sent", "meetings_scheduled"]) {
+      expect(isOpenStage(k), `${k} should be open`).toBe(true);
+    }
+  });
 });
 
 describe("stagesForPipeline", () => {
@@ -128,6 +137,21 @@ describe("stageKeysOfType", () => {
     expect(stageKeysOfType(stages, "lost")).toEqual(["closed_lost"]);
     expect(stageKeysOfType(stages, "on_hold")).toEqual(["on_hold"]);
     expect(stageKeysOfType(stages, "open")).toHaveLength(7);
+  });
+});
+
+describe("stageKeyFromLabel", () => {
+  test("slugifies labels into permanent keys", () => {
+    expect(stageKeyFromLabel("Needs Appointment")).toBe("needs_appointment");
+    expect(stageKeyFromLabel("Meeting Complete / Ready for Ask")).toBe(
+      "meeting_complete_ready_for_ask"
+    );
+    expect(stageKeyFromLabel("  Big 3 ID'd!  ")).toBe("big_3_id_d");
+  });
+
+  test("never returns an empty key and caps length", () => {
+    expect(stageKeyFromLabel("!!!")).toBe("stage");
+    expect(stageKeyFromLabel("x".repeat(80)).length).toBeLessThanOrEqual(40);
   });
 });
 

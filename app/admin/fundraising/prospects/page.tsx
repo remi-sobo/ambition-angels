@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import PageHeader from "../../_components/PageHeader";
 import ProspectsTable, { type ProspectRow } from "./_components/ProspectsTable";
+import { todayISO } from "../../ops/_types/ops";
 
 // Prospects — the curated bench (fr_prospects), not the raw HubSpot mirror. Rows
 // come from the bench; HubSpot-sourced ones are enriched with live mirror fields
@@ -52,6 +54,28 @@ export default async function FundraisingProspectsPage({
       supabase.from("fr_prospects").select("id", { count: "exact", head: true }).eq("status", "promoted"),
     ]);
 
+  // Open tasks linked to prospects — the "Tasks" column. Same pattern as the
+  // donors list: ops_tasks has RLS disabled, so read via the service-role
+  // client while everything else stays on the session client.
+  const today = todayISO();
+  const openTaskCount = new Map<string, number>();
+  const overdueTaskCount = new Map<string, number>();
+  {
+    const { data: taskRows } = await getSupabaseAdmin()
+      .from("ops_tasks")
+      .select("linked_entity_id, due_date")
+      .eq("linked_entity_type", "fr_prospects")
+      .neq("status", "done")
+      .limit(5000);
+    for (const t of (taskRows ?? []) as Array<{ linked_entity_id: string | null; due_date: string | null }>) {
+      if (!t.linked_entity_id) continue;
+      openTaskCount.set(t.linked_entity_id, (openTaskCount.get(t.linked_entity_id) ?? 0) + 1);
+      if (t.due_date && t.due_date < today) {
+        overdueTaskCount.set(t.linked_entity_id, (overdueTaskCount.get(t.linked_entity_id) ?? 0) + 1);
+      }
+    }
+  }
+
   const hsMap = new Map(
     (contacts ?? []).map((c) => [
       c.hubspot_id as string,
@@ -76,6 +100,8 @@ export default async function FundraisingProspectsPage({
       owner_id: hs?.owner_id ?? null,
       last_activity_at: hs?.last_activity_at ?? null,
       score_total: b.hubspot_contact_id ? scoreMap.get(b.hubspot_contact_id) ?? null : null,
+      openTasks: openTaskCount.get(b.id) ?? 0,
+      overdueTasks: overdueTaskCount.get(b.id) ?? 0,
     };
   });
 

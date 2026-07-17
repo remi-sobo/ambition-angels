@@ -6,8 +6,10 @@
 // cell rendering, and bulk actions.
 
 import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import DataTable, { type Column, type BulkAction } from "../../../_components/DataTable";
+import TaskComposer, { type TaskTarget } from "../../_components/TaskComposer";
 import { money } from "../../../finance/_components/charts";
 import { FLAG_LABELS, FLAG_HELP, type RetentionFlag } from "@/lib/fundraising/retention";
 import { BAND_LABEL, type EngagementBand } from "@/lib/fundraising/engagement";
@@ -50,8 +52,24 @@ const fmtDate = (iso: string) =>
     year: "numeric",
   });
 
-export default function DonorsTable({ rows }: { rows: DonorRow[] }) {
+export default function DonorsTable({
+  rows,
+  taskContext,
+}: {
+  rows: DonorRow[];
+  /** Active retention segment label (e.g. "LYBUNT") — seeds task titles. */
+  taskContext?: string;
+}) {
   const router = useRouter();
+  const [taskTargets, setTaskTargets] = useState<TaskTarget[] | null>(null);
+  const defaultTaskTitle = (targets: TaskTarget[]) =>
+    targets.length === 1
+      ? taskContext
+        ? `Reengage ${targets[0].name} (${taskContext})`
+        : `Follow up with ${targets[0].name}`
+      : taskContext
+      ? `Reengage (${taskContext})`
+      : "Follow up";
   const bulkConstituents = (ids: string[], action: "archive" | "unarchive" | "delete") =>
     fetch("/api/admin/constituents/bulk", {
       method: "POST",
@@ -157,14 +175,27 @@ export default function DonorsTable({ rows }: { rows: DonorRow[] }) {
       csv: false,
       alwaysVisible: true,
       render: (r) => (
-        <Link href={`/admin/fundraising/donors/${r.id}`} className="text-xs font-semibold text-orange hover:text-orange-mid">
-          Profile →
-        </Link>
+        <span className="flex items-center justify-end gap-3 whitespace-nowrap">
+          <button
+            onClick={() => setTaskTargets([{ id: r.id, name: r.name }])}
+            title={`Create a follow-up task linked to ${r.name}`}
+            className="text-xs font-semibold text-ink-2 hover:text-orange transition-colors"
+          >
+            + Task
+          </button>
+          <Link href={`/admin/fundraising/donors/${r.id}`} className="text-xs font-semibold text-orange hover:text-orange-mid">
+            Profile →
+          </Link>
+        </span>
       ),
     },
   ];
 
   const bulkActions: BulkAction<DonorRow>[] = [
+    {
+      label: "Add follow-up task…",
+      run: (selected) => setTaskTargets(selected.map((r) => ({ id: r.id, name: r.name }))),
+    },
     {
       label: "Copy emails",
       run: (selected) => {
@@ -215,16 +246,29 @@ export default function DonorsTable({ rows }: { rows: DonorRow[] }) {
   ];
 
   return (
-    <DataTable
-      rows={rows}
-      columns={columns}
-      getRowId={(r) => r.id}
-      initialSort={{ key: "total", dir: "desc" }}
-      bulkActions={bulkActions}
-      csvFilename="donors.csv"
-      viewsKey="donors"
-      searchPlaceholder="Search donors by name or email…"
-      emptyMessage="No donors match this view."
-    />
+    <>
+      <DataTable
+        rows={rows}
+        columns={columns}
+        getRowId={(r) => r.id}
+        initialSort={{ key: "total", dir: "desc" }}
+        bulkActions={bulkActions}
+        csvFilename="donors.csv"
+        viewsKey="donors"
+        searchPlaceholder="Search donors by name or email…"
+        emptyMessage="No donors match this view."
+      />
+      {taskTargets && (
+        <TaskComposer
+          targets={taskTargets}
+          entityType="constituent"
+          defaultTitle={defaultTaskTitle(taskTargets)}
+          onClose={(created) => {
+            setTaskTargets(null);
+            if (created > 0) router.refresh();
+          }}
+        />
+      )}
+    </>
   );
 }

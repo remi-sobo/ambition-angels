@@ -83,7 +83,23 @@ async function fetchActivePlans(supabase: ReturnType<typeof createServerSupabase
 const chunk = <T,>(arr: T[], n: number): T[][] =>
   Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, (i + 1) * n));
 
-type SegmentKey = "all" | "individual" | "organization" | "major" | "lapsed" | "archived";
+// Retention flags double as URL segments so the intelligence tiles are
+// clickable: ?segment=lybunt shows exactly the donors behind the count.
+const RETENTION_SEGMENTS: readonly RetentionFlag[] = [
+  "lybunt",
+  "cadence_lapsed",
+  "second_gift_watch",
+  "sybunt",
+];
+
+type SegmentKey =
+  | "all"
+  | "individual"
+  | "organization"
+  | "major"
+  | "lapsed"
+  | "archived"
+  | RetentionFlag;
 
 export default async function DonorsPage({
   searchParams,
@@ -121,6 +137,9 @@ export default async function DonorsPage({
   const currentYear = new Date().getFullYear();
   const year = searchParams?.year ?? String(currentYear);
   const segment = (searchParams?.segment ?? "all") as SegmentKey;
+  const retentionSegment = (RETENTION_SEGMENTS as readonly string[]).includes(segment)
+    ? (segment as RetentionFlag)
+    : null;
   const inYear = (iso: string) => year === "all" || iso.slice(0, 4) === year;
 
   type Rollup = {
@@ -166,12 +185,17 @@ export default async function DonorsPage({
   }
 
   // The rollup map that drives the visible list: period when a year is
-  // selected, lifetime when "all time".
-  const displayRollups = year === "all" ? null : periodRollups;
-  const donorIds = Array.from((displayRollups ?? rollupsAll).keys());
+  // selected, lifetime when "all time". Retention segments always run on
+  // lifetime — a LYBUNT donor has no gifts this year by definition, so the
+  // period map would render them invisible (exactly the bug the clickable
+  // tiles exist to fix).
+  const displayRollups = year === "all" || retentionSegment ? null : periodRollups;
 
-  // Fetch exactly the constituents that have gifts, by id — no arbitrary
-  // list cap can drop a donor whose gifts we counted.
+  // Fetch constituents for every donor with a gift EVER (not just the
+  // selected period): retention tiles and segments must be able to name
+  // donors whose whole point is that they haven't given recently. No
+  // arbitrary list cap can drop a donor whose gifts we counted.
+  const donorIds = Array.from(rollupsAll.keys());
   const constituents: Constituent[] = [];
   let constituentFetchFailed = false;
   for (const ids of chunk(donorIds, 200)) {
@@ -213,6 +237,11 @@ export default async function DonorsPage({
       case "organization": return c.type === "organization";
       case "major": return (rollupsAll.get(c.id)?.total ?? 0) >= MAJOR_DONOR_THRESHOLD;
       case "lapsed": return isLapsed(c.id);
+      case "lybunt":
+      case "sybunt":
+      case "cadence_lapsed":
+      case "second_gift_watch":
+        return (flagsByDonor.get(c.id) ?? []).includes(segment);
       default: return true;
     }
   };
@@ -265,7 +294,9 @@ export default async function DonorsPage({
     { value: "lapsed", label: "Lapsed" },
     { value: "archived", label: "Archived" },
   ];
-  const segmentLabel = segmentOptions.find((s) => s.value === segment)?.label ?? "All";
+  const segmentLabel = retentionSegment
+    ? FLAG_LABELS[retentionSegment]
+    : segmentOptions.find((s) => s.value === segment)?.label ?? "All";
 
   // Open tasks linked to donors — for the "Tasks" column. ops_tasks has RLS
   // disabled, so read it with the service-role client (the page otherwise
@@ -316,11 +347,18 @@ export default async function DonorsPage({
     cadence_lapsed: "bg-expense-bg text-expense",
     second_gift_watch: "bg-blue-500/15 text-blue-400",
   };
-  const RETENTION_BUCKETS: RetentionFlag[] = ["lybunt", "cadence_lapsed", "second_gift_watch", "sybunt"];
-  const bucket = (flag: RetentionFlag) => ({
-    members: donors.filter(({ c }) => flagsByDonor.get(c.id)?.includes(flag)),
-    trueCount: Array.from(flagsByDonor.values()).filter((fl) => fl.includes(flag)).length,
-  });
+  // Tile membership comes from the all-time flag map, NOT the year-filtered
+  // list — under "This year" a LYBUNT donor has no period gifts, and the old
+  // donors-list scan rendered a bare count with nobody behind it.
+  const constituentById = new Map(constituents.map((c) => [c.id, c]));
+  const bucket = (flag: RetentionFlag) =>
+    Array.from(flagsByDonor.entries())
+      .filter(([, fl]) => fl.includes(flag))
+      .map(([id]) => ({ c: constituentById.get(id), r: rollupsAll.get(id) }))
+      .filter((m): m is { c: Constituent; r: Rollup } => !!m.c && !m.c.archived_at && !!m.r)
+      .sort((a, b) => b.r.total - a.r.total);
+  const segmentHref = (seg: string) =>
+    `/admin/fundraising/donors?year=${encodeURIComponent(year)}&segment=${encodeURIComponent(seg)}`;
 
   return (
     <div className="min-h-screen bg-ink">
@@ -399,29 +437,40 @@ export default async function DonorsPage({
             </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-outline">
-              {RETENTION_BUCKETS.map((flag) => {
-                const { members, trueCount } = bucket(flag);
+              {RETENTION_SEGMENTS.map((flag) => {
+                const members = bucket(flag);
+                const active = retentionSegment === flag;
                 return (
-                  <div key={flag} className="px-5 py-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${FLAG_STYLES[flag]}`}>
+                  <div key={flag} className={`px-5 py-4 ${active ? "bg-orange/5" : ""}`}>
+                    <Link
+                      href={active ? segmentHref("all") : segmentHref(flag)}
+                      title={active ? "Clear this filter" : `Show all ${members.length} in the table below`}
+                      className="group flex items-center gap-2 mb-2"
+                    >
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${FLAG_STYLES[flag]} ${active ? "ring-1 ring-orange" : ""}`}>
                         {FLAG_LABELS[flag]}
                       </span>
-                      <span className="text-xs text-ink-2 [font-variant-numeric:tabular-nums]">{trueCount}</span>
-                    </div>
+                      <span className="text-xs text-ink-2 [font-variant-numeric:tabular-nums]">{members.length}</span>
+                      <span className="ml-auto text-[11px] font-semibold text-orange opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                        {active ? "Clear ✕" : "View all →"}
+                      </span>
+                    </Link>
                     <p className="text-[11px] text-ink-3 mb-2 leading-snug">{FLAG_HELP[flag]}</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {members.slice(0, 6).map(({ c }) => (
+                      {members.slice(0, 6).map(({ c, r }) => (
                         <Link
                           key={c.id}
                           href={`/admin/fundraising/donors/${c.id}`}
+                          title={`${money(r.total)} lifetime · last gift ${r.last}`}
                           className="text-[11px] text-ink-2 hover:text-orange bg-tile border-[1.5px] border-outline rounded-full px-2 py-0.5 transition-colors truncate max-w-[150px]"
                         >
                           {constituentName(c)}
                         </Link>
                       ))}
                       {members.length > 6 && (
-                        <span className="text-[11px] text-ink-3 px-1 py-0.5">+{members.length - 6} more</span>
+                        <Link href={segmentHref(flag)} className="text-[11px] text-ink-3 hover:text-orange px-1 py-0.5">
+                          +{members.length - 6} more →
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -430,6 +479,25 @@ export default async function DonorsPage({
             </div>
           )}
         </section>
+
+        {/* ── Active retention filter banner ── */}
+        {retentionSegment && (
+          <div className="bg-orange/10 border border-orange/30 rounded-xl px-5 py-3 flex items-center gap-3 flex-wrap">
+            <span className="text-sm text-ink-1">
+              Showing <span className="font-bold">{donors.length}</span>{" "}
+              <span className="font-bold uppercase">{FLAG_LABELS[retentionSegment]}</span>{" "}
+              donor{donors.length === 1 ? "" : "s"} — {FLAG_HELP[retentionSegment].toLowerCase()}.
+              Totals below are lifetime giving. Open a profile, or select rows to create follow-up
+              tasks in bulk.
+            </span>
+            <Link
+              href={segmentHref("all")}
+              className="ml-auto text-xs font-semibold text-orange hover:text-orange-dark whitespace-nowrap"
+            >
+              Clear filter ✕
+            </Link>
+          </div>
+        )}
 
         {donors.length === 0 ? (
           <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
@@ -440,7 +508,10 @@ export default async function DonorsPage({
           </section>
         ) : (
           <>
-            <DonorsTable rows={donorRows} />
+            <DonorsTable
+              rows={donorRows}
+              taskContext={retentionSegment ? FLAG_LABELS[retentionSegment] : undefined}
+            />
             {segment === "all" && anonCount > 0 && (
               <p className="text-xs text-ink-3 px-1">
                 Plus {anonCount} anonymous gift{anonCount === 1 ? "" : "s"} totaling{" "}

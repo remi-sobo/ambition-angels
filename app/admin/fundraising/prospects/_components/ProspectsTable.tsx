@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import DataTable, { type Column, type BulkAction } from "../../../_components/DataTable";
+import TaskComposer, { type TaskTarget } from "../../_components/TaskComposer";
 import { CategoryTag, ScoreBadge } from "@/app/admin/_components/StatusChip";
 import AddProspectModal from "./AddProspectModal";
 
@@ -28,6 +29,8 @@ export type ProspectRow = {
   owner_id: string | null;
   last_activity_at: string | null;
   score_total: number | null;
+  openTasks: number;
+  overdueTasks: number;
 };
 
 const selectCls =
@@ -70,6 +73,7 @@ export default function ProspectsTable({
   const [scored, setScored] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [identifying, setIdentifying] = useState<string | null>(null);
+  const [taskTargets, setTaskTargets] = useState<TaskTarget[] | null>(null);
 
   // Promote a single prospect into the pipeline at the Identify stage. Shared by
   // the "Promote to pipeline" bulk action and the per-row "No lifecycle" cell —
@@ -177,9 +181,48 @@ export default function ProspectsTable({
       value: (r) => r.score_total,
       render: (r) => <ScoreBadge score={r.score_total} />,
     },
+    {
+      key: "tasks",
+      header: "Tasks",
+      align: "right",
+      value: (r) => r.openTasks,
+      render: (r) =>
+        r.openTasks > 0 ? (
+          <span
+            title={r.overdueTasks ? `${r.overdueTasks} overdue` : "open tasks"}
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full [font-variant-numeric:tabular-nums] ${
+              r.overdueTasks ? "bg-expense-bg text-expense" : "bg-orange/15 text-orange"
+            }`}
+          >
+            {r.openTasks}{r.overdueTasks ? ` · ${r.overdueTasks} overdue` : ""}
+          </span>
+        ) : (
+          <span className="text-ink-3 text-xs">—</span>
+        ),
+    },
+    {
+      key: "actions",
+      header: "",
+      align: "right",
+      csv: false,
+      alwaysVisible: true,
+      render: (r) => (
+        <button
+          onClick={() => setTaskTargets([{ id: r.id, name: displayName(r) }])}
+          title={`Create a follow-up task linked to ${displayName(r)}`}
+          className="text-xs font-semibold text-ink-2 hover:text-orange transition-colors whitespace-nowrap"
+        >
+          + Task
+        </button>
+      ),
+    },
   ];
 
   const bulkActions: BulkAction<ProspectRow>[] = [
+    {
+      label: "Add follow-up task…",
+      run: (selected) => setTaskTargets(selected.map((r) => ({ id: r.id, name: displayName(r) }))),
+    },
     {
       label: "Copy emails",
       run: (selected) => {
@@ -291,6 +334,16 @@ export default function ProspectsTable({
       />
 
       {addOpen && <AddProspectModal onClose={() => setAddOpen(false)} />}
+      {taskTargets && (
+        <TaskComposer
+          targets={taskTargets}
+          entityType="fr_prospects"
+          onClose={(created) => {
+            setTaskTargets(null);
+            if (created > 0) router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

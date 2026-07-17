@@ -171,6 +171,7 @@ ordered=(
   create_meeting_exclusions.sql
   bloomos_strategy_objective_notes_tasks.sql
   participant_custom_fields.sql
+  prospect_task_links.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

@@ -18,7 +18,9 @@ export type OpportunityRow = {
   expectedClose: string | null;
   probability: number | null;
   capacityRating: number | null;
+  affinityRating: number | null;
   owner: string | null;
   nextStep: string | null;
   nextStepDue: string | null;
+  notes: string | null;
 };

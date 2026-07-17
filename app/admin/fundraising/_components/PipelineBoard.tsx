@@ -16,6 +16,7 @@ import {
   type PipelineStage,
 } from "@/lib/fundraising/stages";
 import { isLostStage, isWonStage } from "@/lib/fundraising/stage-sets";
+import OpportunityEditModal from "./OpportunityEditModal";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -315,75 +316,9 @@ export function OpportunityCard({
         )}
       </div>
 
-      {editing && <InlineEdit opp={opp} onDone={() => setEditing(false)} patch={patch} />}
+      {editing && (
+        <OpportunityEditModal opp={opp} stages={stages} onClose={() => setEditing(false)} />
+      )}
     </article>
-  );
-}
-
-function InlineEdit({
-  opp,
-  onDone,
-  patch,
-}: {
-  opp: OpportunityRow;
-  onDone: () => void;
-  patch: (fields: Record<string, unknown>) => Promise<void>;
-}) {
-  const [ask, setAsk] = useState(opp.askAmount?.toString() ?? "");
-  const [probability, setProbability] = useState(opp.probability?.toString() ?? "");
-  const [capacity, setCapacity] = useState(opp.capacityRating?.toString() ?? "");
-  const [nextStep, setNextStep] = useState(opp.nextStep ?? "");
-  const [nextStepDue, setNextStepDue] = useState(opp.nextStepDue ?? "");
-
-  const save = async () => {
-    await patch({
-      ask_amount: ask === "" ? null : Number(ask),
-      probability: probability === "" ? null : Number(probability),
-      capacity_rating: capacity === "" ? null : Number(capacity),
-      next_step: nextStep || null,
-      next_step_due: nextStepDue || null,
-    });
-    onDone();
-  };
-
-  return (
-    <div className="mt-3 pt-3 border-t border-outline grid grid-cols-3 gap-2">
-      <label className="text-[10px] text-ink-2">
-        Ask
-        <input className={`${inputCls} w-full mt-0.5 !px-2 !py-1 !text-xs`} type="number" min="0"
-          value={ask} onChange={(e) => setAsk(e.target.value)} />
-      </label>
-      <label className="text-[10px] text-ink-2">
-        Prob %
-        <input className={`${inputCls} w-full mt-0.5 !px-2 !py-1 !text-xs`} type="number" min="0" max="100"
-          value={probability} onChange={(e) => setProbability(e.target.value)} />
-      </label>
-      <label className="text-[10px] text-ink-2">
-        Capacity
-        <input className={`${inputCls} w-full mt-0.5 !px-2 !py-1 !text-xs`} type="number" min="1" max="5"
-          value={capacity} onChange={(e) => setCapacity(e.target.value)} />
-      </label>
-      <label className="col-span-2 text-[10px] text-ink-2">
-        Next move
-        <input className={`${inputCls} w-full mt-0.5 !px-2 !py-1 !text-xs`}
-          value={nextStep} onChange={(e) => setNextStep(e.target.value)} />
-      </label>
-      <label className="text-[10px] text-ink-2">
-        Due
-        <input className={`${inputCls} w-full mt-0.5 !px-2 !py-1 !text-xs`} type="date"
-          value={nextStepDue} onChange={(e) => setNextStepDue(e.target.value)} />
-      </label>
-      <div className="col-span-3 flex gap-2 justify-end">
-        <button onClick={onDone} className="text-[11px] text-ink-2 hover:text-ink-1 px-2 py-1">
-          Cancel
-        </button>
-        <button
-          onClick={() => void save()}
-          className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full"
-        >
-          Save
-        </button>
-      </div>
-    </div>
   );
 }

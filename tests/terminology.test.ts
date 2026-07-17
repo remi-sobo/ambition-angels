@@ -24,6 +24,7 @@ import {
   pluralizeTerm,
   getTermLabel,
   getNavTermLabels,
+  getProgramTerms,
 } from "@/lib/admin/terminology";
 
 beforeEach(() => {
@@ -99,5 +100,33 @@ describe("getNavTermLabels", () => {
   test("staff is never pluralized", async () => {
     state.overrides.set("staff", "Team");
     expect((await getNavTermLabels()).staff).toBe("Team");
+  });
+});
+
+describe("getProgramTerms", () => {
+  test("empty org_terminology renders the code defaults (AA unchanged)", async () => {
+    // session/stage have no entity_types row → code fallback; student/cohort
+    // come from the registry; program has a registry row in prod but the test
+    // registry omits it, so it falls back to the code default 'Program'.
+    expect(await getProgramTerms()).toEqual({
+      student: "Student", students: "Students",
+      cohort: "Cohort", cohorts: "Cohorts",
+      program: "Program", programs: "Programs",
+      session: "Session", sessions: "Sessions",
+      stage: "Stage", stages: "Stages",
+    });
+  });
+
+  test("a seeded tenant renames the whole program vocabulary", async () => {
+    state.overrides.set("student", "Student leader");
+    state.overrides.set("cohort", "Chapter");
+    state.overrides.set("program", "Initiative");
+    const t = await getProgramTerms();
+    expect(t.students).toBe("Student leaders");
+    expect(t.cohort).toBe("Chapter");
+    expect(t.cohorts).toBe("Chapters");
+    expect(t.programs).toBe("Initiatives");
+    // an un-overridden key still shows its default
+    expect(t.sessions).toBe("Sessions");
   });
 });

@@ -36,9 +36,11 @@ type DbOpportunity = {
   expected_close: string | null;
   probability: number | null;
   capacity_rating: number | null;
+  affinity_rating: number | null;
   owner: string | null;
   next_step: string | null;
   next_step_due: string | null;
+  notes: string | null;
   constituent:
     | {
         id: string;
@@ -71,7 +73,7 @@ export default async function MajorGiftsPage({
     .from("opportunities")
     .select(
       `id, name, stage, pipeline, ask_amount, expected_close, probability,
-       capacity_rating, owner, next_step, next_step_due,
+       capacity_rating, affinity_rating, owner, next_step, next_step_due, notes,
        constituent:constituents ( id, type, first_name, last_name, org_name, external_ids )`
     )
     // Fundraising is money-only: the partnership pipeline now lives in /admin/partners.
@@ -97,9 +99,11 @@ export default async function MajorGiftsPage({
     expectedClose: o.expected_close,
     probability: o.probability,
     capacityRating: o.capacity_rating,
+    affinityRating: o.affinity_rating,
     owner: o.owner,
     nextStep: o.next_step,
     nextStepDue: o.next_step_due,
+    notes: o.notes,
   }));
 
   const config = await configPromise;

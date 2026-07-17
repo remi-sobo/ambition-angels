@@ -2,12 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
 import { getFieldDefs, validateAndMerge } from "@/lib/admin/customFields";
+import { getParticipantStages } from "@/lib/admin/program/stages";
 import { LEGACY_STUDENT_FIELD_KEYS } from "@/lib/admin/program/legacyFields";
 import { audit } from "@/lib/audit";
 
-const STAGES = [
-  "discover", "learn", "practice", "connect", "launch", "alumni", "withdrawn",
-] as const;
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
@@ -24,7 +22,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   // Universal identity columns only; grade / school / guardian_* / dob are
   // registry fields (custom_fields), handled below.
   const update: Record<string, unknown> = {};
-  if (STAGES.includes(body.stage as (typeof STAGES)[number])) update.stage = body.stage;
+  if (typeof body.stage === "string") {
+    const stageKeys = new Set((await getParticipantStages()).map((s) => s.stage_key));
+    if (stageKeys.has(body.stage)) update.stage = body.stage;
+  }
   if ("last_activity_at" in body) {
     if (body.last_activity_at === null || body.last_activity_at === "") update.last_activity_at = null;
     else if (isISODate(body.last_activity_at)) update.last_activity_at = body.last_activity_at;

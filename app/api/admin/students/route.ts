@@ -3,7 +3,6 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getFieldDefs, validateAndMerge } from "@/lib/admin/customFields";
 import { getParticipantStages } from "@/lib/admin/program/stages";
-import { LEGACY_STUDENT_FIELD_KEYS } from "@/lib/admin/program/legacyFields";
 import { audit } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
@@ -36,11 +35,6 @@ export async function POST(req: NextRequest) {
     const merged = validateAndMerge(defs, {}, body!.custom_fields as Record<string, unknown>, { requireAll: true });
     if (!merged.ok) return NextResponse.json({ error: merged.error }, { status: 400 });
     insert.custom_fields = merged.value;
-    // Dual-write shim (D2→D5): mirror registry values back to the legacy
-    // columns so unmigrated readers stay current until D5 drops them.
-    for (const k of LEGACY_STUDENT_FIELD_KEYS) {
-      if (k in merged.value) insert[k] = merged.value[k];
-    }
   }
 
   const { data, error } = await getSupabaseAdmin()

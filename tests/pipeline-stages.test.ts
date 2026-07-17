@@ -5,6 +5,7 @@ import {
   stagesForPipeline,
   firstOpenStageKey,
   stageKeysOfType,
+  stageKeyFromLabel,
   type PipelineConfig,
   type PipelineStage,
 } from "@/lib/fundraising/stages";
@@ -128,6 +129,21 @@ describe("stageKeysOfType", () => {
     expect(stageKeysOfType(stages, "lost")).toEqual(["closed_lost"]);
     expect(stageKeysOfType(stages, "on_hold")).toEqual(["on_hold"]);
     expect(stageKeysOfType(stages, "open")).toHaveLength(7);
+  });
+});
+
+describe("stageKeyFromLabel", () => {
+  test("slugifies labels into permanent keys", () => {
+    expect(stageKeyFromLabel("Needs Appointment")).toBe("needs_appointment");
+    expect(stageKeyFromLabel("Meeting Complete / Ready for Ask")).toBe(
+      "meeting_complete_ready_for_ask"
+    );
+    expect(stageKeyFromLabel("  Big 3 ID'd!  ")).toBe("big_3_id_d");
+  });
+
+  test("never returns an empty key and caps length", () => {
+    expect(stageKeyFromLabel("!!!")).toBe("stage");
+    expect(stageKeyFromLabel("x".repeat(80)).length).toBeLessThanOrEqual(40);
   });
 });
 

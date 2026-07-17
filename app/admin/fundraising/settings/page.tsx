@@ -44,6 +44,19 @@ export default async function FundraisingSettingsPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline">
+            <h2 className={TYPE.cardTitle}>Pipeline</h2>
+            <p className="text-[11px] text-ink-3">Stages are per-org configuration, not code</p>
+          </div>
+          <div className="px-5 py-4">
+            <Link href="/admin/fundraising/settings/stages" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
+              Edit pipeline stages →
+            </Link>
+            <p className="text-[11px] text-ink-3 mt-1">Add, rename, reorder, and retype board columns; set default probabilities and HubSpot stage mapping.</p>
+          </div>
+        </section>
+
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-outline">
             <h2 className={TYPE.cardTitle}>Data hygiene</h2>
             <p className="text-[11px] text-ink-3">Keep the constituent list clean</p>
           </div>

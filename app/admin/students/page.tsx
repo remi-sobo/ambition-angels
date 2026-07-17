@@ -42,7 +42,13 @@ export default async function StudentsPage() {
   const newThisMonth = students.filter(
     (x) => x.last_activity_at && x.last_activity_at >= monthAgo
   );
-  const missingGuardian = engaged.filter((x) => !x.guardian_email && !x.guardian_phone);
+  // Guardian contact is a registry field now — read custom_fields with a
+  // legacy-column fallback for the D2→D5 transition.
+  const guardian = (x: Student, k: "guardian_email" | "guardian_phone") =>
+    (x.custom_fields?.[k] as string | undefined) || (x as Record<string, unknown>)[k] || "";
+  const missingGuardian = engaged.filter(
+    (x) => !guardian(x, "guardian_email") && !guardian(x, "guardian_phone")
+  );
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">

@@ -4,21 +4,24 @@ import { useRef, useState, type ReactNode } from "react";
 import { TYPE } from "@/lib/admin/typeScale";
 
 /**
- * Grant Coach panel: point the coach at the proposal draft — pasted text, or
- * a PDF/text file already attached to the grant or its asks — then run the
- * assessment, the deep-dive prompts, or the interactive "defend the draft"
- * interrogation. One-shot results stack newest-first; the defend session is a
- * turn-by-turn chat. Everything is session-only — nothing is persisted.
+ * Reed's Proposal Review panel (spec: specs/reeds-proposal-review.md): pick
+ * who will read the ask (the audience lens, defaulted from the funder's
+ * record), point Reed at the draft — pasted text, or a PDF/text file already
+ * attached to the grant or its asks — then run the assessment, the deep-dive
+ * prompts, or the interactive "defend the draft" interrogation. One-shot
+ * results stack newest-first; the defend session is a turn-by-turn chat.
+ * Everything is session-only — nothing is persisted.
  *
  * The prompt texts stay server-side (lib/fundraising/grantCoach.ts); the
- * server page passes only {id, label, blurb} plus the attached-document list,
- * so the library never ships in the client bundle. Input ceilings mirror
- * MAX_PROPOSAL_CHARS/MAX_FUNDER_CHARS there — the route clamps anyway, so
- * these are UX, not enforcement.
+ * server page passes only {id, label, blurb} plus the lens list and the
+ * attached-document list, so the library never ships in the client bundle.
+ * Input ceilings mirror MAX_PROPOSAL_CHARS/MAX_FUNDER_CHARS there — the route
+ * clamps anyway, so these are UX, not enforcement.
  */
 
 export type CoachPromptMeta = { id: string; label: string; blurb: string };
 export type CoachDocOption = { kind: "grant_doc" | "ask_doc"; id: string; label: string };
+export type CoachLensOption = { id: string; label: string };
 
 type CoachRun = { key: number; label: string; text: string };
 type ChatTurn = { role: "user" | "assistant"; content: string };
@@ -62,6 +65,8 @@ export default function GrantCoach({
   grantId,
   prompts,
   documents,
+  lenses,
+  defaultLens,
   defend,
   attribution,
   attributionUrl,
@@ -69,6 +74,8 @@ export default function GrantCoach({
   grantId: string;
   prompts: CoachPromptMeta[];
   documents: CoachDocOption[];
+  lenses: CoachLensOption[];
+  defaultLens: string;
   defend: { label: string; blurb: string };
   attribution: string;
   attributionUrl: string;
@@ -78,6 +85,7 @@ export default function GrantCoach({
   const [showFunder, setShowFunder] = useState(false);
   // "paste" or "<kind>:<id>" of an attached document.
   const [source, setSource] = useState("paste");
+  const [lens, setLens] = useState(defaultLens);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [runs, setRuns] = useState<CoachRun[]>([]);
@@ -117,6 +125,7 @@ export default function GrantCoach({
         body: JSON.stringify({
           promptId,
           grantId,
+          lens,
           ...draftBody(),
           funderMaterials: funderMaterials.trim() || null,
         }),
@@ -152,6 +161,7 @@ export default function GrantCoach({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           grantId,
+          lens,
           ...draftBody(),
           funderMaterials: funderMaterials.trim() || null,
           history,
@@ -175,14 +185,36 @@ export default function GrantCoach({
   return (
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
       <div className="px-5 py-4 border-b border-outline">
-        <h2 className={TYPE.cardTitle}>Grant Coach</h2>
+        <h2 className={TYPE.cardTitle}>Reed&apos;s Proposal Review</h2>
         <p className="text-xs text-ink-2 mt-0.5">
-          Stress-test the proposal draft with the lens a funder uses — it names gaps and the
-          evidence to close them; it won&apos;t write the proposal for you.
+          Reed reads your draft the way the actual audience will — naming the gaps and the
+          evidence to close them; he won&apos;t write the proposal for you.
         </p>
       </div>
 
       <div className="p-5 space-y-4">
+        <div>
+          <label htmlFor={`coach-lens-${grantId}`} className={`${TYPE.cardLabel} block mb-1.5`}>
+            Who will read this?
+          </label>
+          <select
+            id={`coach-lens-${grantId}`}
+            value={lens}
+            onChange={(e) => setLens(e.target.value)}
+            className="bg-ink/40 border border-outline rounded-lg px-3 py-2 text-sm text-ink-1 focus:outline-none focus:border-orange/60 max-w-full"
+          >
+            {lenses.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+          <p className={`${TYPE.metadata} mt-1`}>
+            Defaulted from the funder&apos;s record — change it if that&apos;s not who&apos;s
+            reading.
+          </p>
+        </div>
+
         {documents.length > 0 && (
           <div>
             <label htmlFor={`coach-source-${grantId}`} className={`${TYPE.cardLabel} block mb-1.5`}>
@@ -319,7 +351,7 @@ export default function GrantCoach({
                   </p>
                 )
               )}
-              {defendBusy && <p className={TYPE.metadata}>The reviewer is thinking…</p>}
+              {defendBusy && <p className={TYPE.metadata}>The reader is thinking…</p>}
             </div>
             {defendHistory.length > 0 && (
               <form
@@ -334,7 +366,7 @@ export default function GrantCoach({
                   value={defendInput}
                   onChange={(e) => setDefendInput(e.target.value)}
                   maxLength={4000}
-                  placeholder="Answer the reviewer…"
+                  placeholder="Answer the reader…"
                   className="flex-1 bg-ink/40 border border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60"
                 />
                 <button

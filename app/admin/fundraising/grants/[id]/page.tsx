@@ -16,11 +16,12 @@ import GrantSeedTasks from "../_components/GrantSeedTasks";
 import GrantCoach from "../_components/GrantCoach";
 import {
   COACH_PROMPTS,
+  COACH_LENSES,
   COACH_ATTRIBUTION,
   COACH_ATTRIBUTION_URL,
   DEFEND_DRAFT,
 } from "@/lib/fundraising/grantCoach";
-import { listCoachDocuments } from "@/lib/fundraising/grantCoachDocs";
+import { listCoachDocuments, resolveDefaultLens } from "@/lib/fundraising/grantCoachDocs";
 import { STAGE_LABELS } from "../_lib/stages";
 import PageHeader from "../../../_components/PageHeader";
 import { EntityDocuments } from "../../../_components/EntityDocuments";
@@ -226,7 +227,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
         {/* ── Documents: award letter, narrative, reports — linked here ── */}
         <EntityDocuments entityType="grant" entityId={g.id} entityLabel={g.name} />
 
-        {/* ── Grant Coach: AI stress-test of the proposal draft ── */}
+        {/* ── Reed's Proposal Review: audience-aware stress-test of the draft ── */}
         <GrantCoach
           grantId={g.id}
           prompts={COACH_PROMPTS.map(({ id, label, blurb }) => ({ id, label, blurb }))}
@@ -235,6 +236,8 @@ export default async function GrantDetailPage({ params }: { params: { id: string
             id,
             label,
           }))}
+          lenses={COACH_LENSES.map(({ id, label }) => ({ id, label }))}
+          defaultLens={await resolveDefaultLens(supabase, g.funder?.id ?? null)}
           defend={{ label: DEFEND_DRAFT.label, blurb: DEFEND_DRAFT.blurb }}
           attribution={COACH_ATTRIBUTION}
           attributionUrl={COACH_ATTRIBUTION_URL}

@@ -15,7 +15,13 @@ import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { generateText, AIKeyMissingError } from "@/lib/ai/gateway";
 import { logAICall } from "@/lib/ai/ledger";
 import { orgOverAICap } from "@/lib/ai/cap";
-import { DEFEND_DRAFT, COACH_SYSTEM, MAX_FUNDER_CHARS } from "@/lib/fundraising/grantCoach";
+import {
+  DEFEND_DRAFT,
+  getCoachLens,
+  DEFAULT_LENS_ID,
+  COACH_SYSTEM,
+  MAX_FUNDER_CHARS,
+} from "@/lib/fundraising/grantCoach";
 import { resolveDraftFromBody, buildCoachOpeningMessage } from "@/lib/fundraising/grantCoachDocs";
 
 export const dynamic = "force-dynamic";
@@ -61,6 +67,11 @@ export async function POST(req: NextRequest) {
   if (!history) {
     return NextResponse.json({ error: "Invalid chat history" }, { status: 400 });
   }
+  // Missing lens defaults; a present-but-unknown value is a client bug — 400.
+  const lens = getCoachLens(str(body?.lens, 40) ?? DEFAULT_LENS_ID);
+  if (!lens) {
+    return NextResponse.json({ error: "Unknown audience lens" }, { status: 400 });
+  }
   const funderMaterials = str(body?.funderMaterials, MAX_FUNDER_CHARS);
   const grantId = str(body?.grantId, 36);
 
@@ -88,6 +99,7 @@ export async function POST(req: NextRequest) {
       messages: [
         buildCoachOpeningMessage({
           instructions: DEFEND_DRAFT.instructions,
+          lens,
           source: draft.source,
           funderMaterials,
         }),
@@ -118,6 +130,7 @@ export async function POST(req: NextRequest) {
       metadata: {
         promptId: DEFEND_DRAFT.id,
         grantId,
+        lens: lens.id,
         hadFunderMaterials: !!funderMaterials,
         draftSource: draft.source.type,
         turn: history.length,

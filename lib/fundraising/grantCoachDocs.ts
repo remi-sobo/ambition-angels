@@ -18,7 +18,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type Anthropic from "@anthropic-ai/sdk";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { DOCUMENTS_BUCKET } from "@/lib/documents/config";
-import { MAX_PROPOSAL_CHARS, buildCoachUserPrompt } from "./grantCoach";
+import {
+  MAX_PROPOSAL_CHARS,
+  buildCoachUserPrompt,
+  DEFAULT_LENS_ID,
+  type CoachLens,
+  type CoachLensId,
+} from "./grantCoach";
 
 const ASKS_BUCKET = "bloomos-asks";
 
@@ -210,12 +216,14 @@ export async function resolveDraftFromBody(
 }
 
 /**
- * The opening user turn for a coach conversation: instructions + fenced draft
- * for pasted text, or a native PDF document block ahead of the instructions.
- * The PDF's context line marks it untrusted data, same as Reed's reader.
+ * The opening user turn for a review conversation: audience lens +
+ * instructions + fenced draft for pasted text, or a native PDF document block
+ * ahead of the instructions. The PDF's context line marks it untrusted data,
+ * same as Reed's reader.
  */
 export function buildCoachOpeningMessage(opts: {
   instructions: string;
+  lens: CoachLens;
   source: CoachDraftSource;
   funderMaterials?: string | null;
 }): Anthropic.MessageParam {
@@ -224,6 +232,7 @@ export function buildCoachOpeningMessage(opts: {
       role: "user",
       content: buildCoachUserPrompt({
         instructions: opts.instructions,
+        lens: opts.lens,
         proposal: opts.source.text,
         funderMaterials: opts.funderMaterials,
       }),
@@ -243,10 +252,54 @@ export function buildCoachOpeningMessage(opts: {
         type: "text",
         text: buildCoachUserPrompt({
           instructions: opts.instructions,
+          lens: opts.lens,
           attachedPdf: true,
           funderMaterials: opts.funderMaterials,
         }),
       },
     ],
   };
+}
+
+/**
+ * Best-effort default audience lens for a grant's funder, from what Bloom
+ * already knows (spec: reeds-proposal-review.md). Always overridable in the
+ * panel; fails open to the institutional-foundation default on any miss.
+ *
+ *   1. funder constituent type 'person'            → individual donor
+ *   2. fr_prospects.type via constituent_id:
+ *        'corporate' → corporation, 'individual'   → individual donor
+ *   3. org_name matching family/charitable-trust   → family foundation
+ *   4. fallback                                    → institutional foundation
+ */
+export async function resolveDefaultLens(
+  supabase: SupabaseClient,
+  funderConstituentId: string | null | undefined
+): Promise<CoachLensId> {
+  if (!funderConstituentId) return DEFAULT_LENS_ID;
+  try {
+    const { data: c } = await supabase
+      .from("constituents")
+      .select("type, org_name")
+      .eq("id", funderConstituentId)
+      .maybeSingle();
+    if (!c) return DEFAULT_LENS_ID;
+    if (c.type === "person") return "individual_donor";
+
+    const { data: p } = await supabase
+      .from("fr_prospects")
+      .select("type")
+      .eq("constituent_id", funderConstituentId)
+      .limit(1)
+      .maybeSingle();
+    if (p?.type === "corporate") return "corporation";
+    if (p?.type === "individual") return "individual_donor";
+
+    if (/\bfamily\b|charitable trust/i.test((c.org_name as string | null) ?? "")) {
+      return "family_foundation";
+    }
+  } catch (e) {
+    console.error("[grants/coach] lens default lookup failed:", e instanceof Error ? e.message : e);
+  }
+  return DEFAULT_LENS_ID;
 }

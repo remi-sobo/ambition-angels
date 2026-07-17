@@ -21,6 +21,7 @@ import {
 } from "../_lib/rollups";
 import { EntityTasks } from "../../_components/EntityTasks";
 import { EntityDocuments } from "../../_components/EntityDocuments";
+import { getProgramTerms } from "@/lib/admin/terminology";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // Cohort dashboard: enrollment vs capacity, sessions, per-member dosage
@@ -34,6 +35,8 @@ export default async function CohortPage({ params }: { params: { id: string } })
   const { data: cohort } = await supabase
     .from("cohorts").select("*").eq("id", params.id).maybeSingle();
   if (!cohort) notFound();
+
+  const terms = await getProgramTerms();
 
   const [{ data: membersData }, { data: sessionsData }, { data: studentsData }] =
     await Promise.all([
@@ -123,7 +126,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <Link href="/admin/cohorts" className="text-[11px] text-ink-2 hover:text-ink-1">
-        ← All cohorts
+        ← All {terms.cohorts.toLowerCase()}
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3 mt-2 mb-1">
         <h1 className={TYPE.pageTitle}>{cohort.name}</h1>
@@ -162,7 +165,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
       <section className="mb-8">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           <SectionHeading>
-            Sessions ({sessionViews.length})
+            {terms.sessions} ({sessionViews.length})
           </SectionHeading>
           <NewSessionForm cohortId={cohort.id} />
         </div>
@@ -171,7 +174,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
             <SessionRow key={s.id} cohortId={cohort.id} session={s} enrolled={enrolled.length} />
           ))}
           {sessionViews.length === 0 && (
-            <p className="text-sm text-ink-2">No sessions scheduled yet.</p>
+            <p className="text-sm text-ink-2">No {terms.sessions.toLowerCase()} scheduled yet.</p>
           )}
         </div>
       </section>
@@ -189,7 +192,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
           ))}
           {memberViews.length === 0 && (
             <p className="text-sm text-ink-2">
-              No students enrolled yet — pick one from the roster above.
+              No {terms.students.toLowerCase()} enrolled yet — pick one from the roster above.
             </p>
           )}
         </div>

@@ -6,6 +6,7 @@ import { NewCohortForm } from "./_components/CohortControls";
 import { COHORT_STATUS_LABELS } from "./_lib/constants";
 import { pct } from "./_lib/rollups";
 import { getSessionPrograms } from "@/lib/admin/program/programs";
+import { getProgramTerms } from "@/lib/admin/terminology";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // Cohorts & attendance (Ring 3, modules/02-program.md "Cohorts"):
@@ -34,7 +35,7 @@ const STATUS_CHIP: Record<string, string> = {
 
 export default async function CohortsPage() {
   const supabase = getSupabaseAdmin();
-  const [{ data: cohortsData }, { data: membersData }, { data: sessionsData }, { data: marksData }, programs] =
+  const [{ data: cohortsData }, { data: membersData }, { data: sessionsData }, { data: marksData }, programs, terms] =
     await Promise.all([
       supabase.from("cohorts").select("*")
         .order("start_date", { ascending: false, nullsFirst: false }),
@@ -42,6 +43,7 @@ export default async function CohortsPage() {
       supabase.from("cohort_sessions").select("id, cohort_id, session_date, status"),
       supabase.from("attendance").select("session_id, status"),
       getSessionPrograms(),
+      getProgramTerms(),
     ]);
   const cohorts = (cohortsData ?? []) as Cohort[];
   const members = membersData ?? [];
@@ -92,9 +94,9 @@ export default async function CohortsPage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className={TYPE.pageTitle}>Cohorts</h1>
+          <h1 className={TYPE.pageTitle}>{terms.cohorts}</h1>
           <p className="text-ink-2 text-sm mt-0.5">
-            Program × term groups · sessions, roster-tap attendance, dosage
+            {terms.program} × term groups · {terms.sessions.toLowerCase()}, roster-tap attendance, dosage
           </p>
         </div>
         <NewCohortForm programs={programs.map((p) => p.name)} />
@@ -103,8 +105,8 @@ export default async function CohortsPage() {
       <SectionSummary section="cohorts" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatCard label="Active cohorts" value={active.length} sub={`${cohorts.length} total`} />
-        <StatCard label="Students enrolled" value={enrolledStudents.size} sub="across cohorts" />
+        <StatCard label={`Active ${terms.cohorts.toLowerCase()}`} value={active.length} sub={`${cohorts.length} total`} />
+        <StatCard label={`${terms.students} enrolled`} value={enrolledStudents.size} sub={`across ${terms.cohorts.toLowerCase()}`} />
         <StatCard label="Sessions held" value={heldTotal} muted={heldTotal === 0} />
         <StatCard
           label="Attendance rate"
@@ -161,8 +163,8 @@ export default async function CohortsPage() {
         })}
         {cohorts.length === 0 && (
           <p className="text-sm text-ink-2 col-span-full">
-            No cohorts yet — create one above, or run the create_cohorts_attendance migration to
-            fold in YGB Creators Camp.
+            No {terms.cohorts.toLowerCase()} yet — create one above, or run the
+            create_cohorts_attendance migration to fold in YGB Creators Camp.
           </p>
         )}
       </div>

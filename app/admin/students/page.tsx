@@ -7,6 +7,7 @@ import { StudentRow, NewStudentForm, type Student } from "./_components/StudentC
 import { getParticipantStages } from "@/lib/admin/program/stages";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getFieldDefs } from "@/lib/admin/customFields";
+import { getProgramTerms } from "@/lib/admin/terminology";
 
 // Participant roster (program spine, spec #4): one roster across programs,
 // organized by the org's journey stages. The stage vocabulary is per-org
@@ -17,7 +18,7 @@ export const dynamic = "force-dynamic";
 export default async function StudentsPage() {
   const supabase = getSupabaseAdmin();
   const ctx = await getOrgContext();
-  const [{ data }, stages, customFieldDefs] = await Promise.all([
+  const [{ data }, stages, customFieldDefs, terms] = await Promise.all([
     supabase
       .from("students")
       .select("*")
@@ -27,6 +28,7 @@ export default async function StudentsPage() {
     // Per-org participant custom fields (empty for AA — the forms render as
     // before until an org seeds defs).
     ctx ? getFieldDefs(ctx.orgId, "student") : Promise.resolve([]),
+    getProgramTerms(),
   ]);
   const students = (data ?? []) as Student[];
 
@@ -55,8 +57,8 @@ export default async function StudentsPage() {
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <PageHeader
-        title="Students"
-        subtitle="One roster across programs · journey from discover to launch"
+        title={terms.students}
+        subtitle={`One roster across ${terms.programs.toLowerCase()} · organized by ${terms.stage.toLowerCase()}`}
         actions={<NewStudentForm customFieldDefs={customFieldDefs} stages={stageOptions} />}
       />
 
@@ -124,8 +126,8 @@ export default async function StudentsPage() {
         })}
         {students.length === 0 && (
           <p className="text-sm text-ink-2">
-            No students yet — add one above, or run the create_students migration to import YGB
-            campers and career-quiz teens.
+            No {terms.students.toLowerCase()} yet — add one above, or run the create_students
+            migration to import YGB campers and career-quiz teens.
           </p>
         )}
       </div>

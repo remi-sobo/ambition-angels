@@ -70,3 +70,41 @@ export async function getNavTermLabels(): Promise<Record<string, string>> {
     staff: label("staff", "Staff"),
   };
 }
+
+/** The program module's vocabulary (participant spine spec #4 §6d). */
+export type ProgramTerms = {
+  student: string; students: string;
+  cohort: string; cohorts: string;
+  program: string; programs: string;
+  session: string; sessions: string;
+  stage: string; stages: string;
+};
+
+/**
+ * Program-module labels (participant / group / program / session / stage),
+ * singular and plural, resolved once per request. AA leaves org_terminology
+ * empty so these are Student/Cohort/Program/Session/Stage; a seeded tenant
+ * (Safespace) reads Student leader/Chapter/… with no code change. `session`
+ * and `stage` have no entity_types row, so they fall back to the code default
+ * until an org overrides them — the override still wins.
+ */
+export async function getProgramTerms(): Promise<ProgramTerms> {
+  const [overrides, registry] = await Promise.all([getTerminology(), getEntityTypes()]);
+  const registryNames = new Map(
+    Array.from(registry, ([key, row]) => [key, row.display_name] as const),
+  );
+  const one = (key: string, fallback: string) =>
+    resolveTermLabel(key, fallback, overrides, registryNames);
+  const student = one("student", "Student");
+  const cohort = one("cohort", "Cohort");
+  const program = one("program", "Program");
+  const session = one("session", "Session");
+  const stage = one("stage", "Stage");
+  return {
+    student, students: pluralizeTerm(student),
+    cohort, cohorts: pluralizeTerm(cohort),
+    program, programs: pluralizeTerm(program),
+    session, sessions: pluralizeTerm(session),
+    stage, stages: pluralizeTerm(stage),
+  };
+}

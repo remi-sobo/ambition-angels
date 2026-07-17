@@ -98,7 +98,7 @@ import_rows (
 external_refs (
   id uuid pk, org_id uuid not null,
   entity_type text not null, entity_id uuid not null,
-  source text not null, external_id text not null,   -- csv: '<import_id>:<row_num>'
+  source text not null, external_id text not null,   -- csv: content hash of the raw row (E2 amendment: an import-id-scoped ref could never match on re-upload, breaking DoD #2)
   created_at,
   unique (org_id, entity_type, source, external_id)
 )

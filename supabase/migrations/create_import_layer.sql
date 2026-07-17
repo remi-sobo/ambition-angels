@@ -57,7 +57,7 @@ create table if not exists public.external_refs (
   entity_type text not null,
   entity_id   uuid not null,
   source      text not null,
-  external_id text not null,                 -- csv: '<import_id>:<row_num>'
+  external_id text not null,                 -- csv: content hash of the raw row
   created_at  timestamptz not null default now()
 );
 create unique index if not exists external_refs_source_idx

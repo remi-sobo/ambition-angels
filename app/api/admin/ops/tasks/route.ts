@@ -17,6 +17,15 @@ function isISODate(v: unknown): v is string {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 }
 
+// Entity-link vocabulary — mirrors the DB CHECK
+// (ops_tasks_linked_entity_type_check, last widened by
+// prospect_task_links.sql to match the spine registry).
+const LINK_TYPES = [
+  "partner", "constituent", "opportunity", "volunteer", "milestone",
+  "student", "cohort", "application", "program", "grant", "document", "metric",
+  "fr_prospects",
+] as const;
+
 function isLabelArray(v: unknown): v is string[] {
   return Array.isArray(v) && v.every((x) => typeof x === "string");
 }
@@ -80,13 +89,6 @@ export async function POST(req: NextRequest) {
   if (body.project_id !== undefined && body.project_id !== null && typeof body.project_id !== "string") {
     return NextResponse.json({ error: "project_id must be a string" }, { status: 400 });
   }
-  // Optional entity link — set together. Vocabulary mirrors the DB CHECK
-  // (ops_tasks_linked_entity_type_check, widened by program_spine_schema.sql
-  // to match the spine registry).
-  const LINK_TYPES = [
-    "partner", "constituent", "opportunity", "volunteer", "milestone",
-    "student", "cohort", "application", "program", "grant", "document", "metric",
-  ] as const;
   const linkType = body.linked_entity_type;
   if (
     linkType !== undefined &&
@@ -185,9 +187,11 @@ export async function GET(req: NextRequest) {
   if (projectId === "none") q = q.is("project_id", null);
   else if (projectId) q = q.eq("project_id", projectId);
 
-  // CRM-linked filter (partner / constituent profile task lists).
+  // CRM-linked filter (partner / constituent / prospect profile task lists).
   const linkType = url.searchParams.get("linked_entity_type");
-  if (linkType === "partner" || linkType === "constituent") q = q.eq("linked_entity_type", linkType);
+  if (linkType && LINK_TYPES.includes(linkType as (typeof LINK_TYPES)[number])) {
+    q = q.eq("linked_entity_type", linkType);
+  }
   const linkId = url.searchParams.get("linked_entity_id");
   if (linkId && /^[0-9a-f-]{36}$/i.test(linkId)) q = q.eq("linked_entity_id", linkId);
 

@@ -8,6 +8,7 @@ import EngagementTimeline, { type HsEngagement } from "./_components/EngagementT
 import BriefPanel, { type ExistingBrief } from "./_components/BriefPanel";
 import ProspectAngles, { type OnAngle } from "./_components/ProspectAngles";
 import { CommentThread } from "../../../_components/CommentThread";
+import { EntityTasks } from "../../../_components/EntityTasks";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // Prospect detail — keyed by the bench entity (fr_prospects.id), so it works for
@@ -196,6 +197,13 @@ export default async function ProspectDetailPage({ params }: { params: { id: str
         prospectId={prospect.id}
         prospectLabel={prospect.org_name || prospect.name}
         brief={brief}
+      />
+
+      <EntityTasks
+        entityType="fr_prospects"
+        entityId={prospect.id}
+        entityLabel={prospect.org_name || prospect.name}
+        defaultCategory="fundraising"
       />
 
       <CommentThread

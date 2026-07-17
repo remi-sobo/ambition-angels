@@ -7,6 +7,7 @@ import { generateBriefing } from "@/lib/briefing";
 import {
   gatherCrmOverdue, groupOverdue, assigneeFromEmail, crmTaskHref, type CrmOverdue,
 } from "@/lib/admin/crmOverdue";
+import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 
 /**
  * The Monday digest — Executive Briefing v0 (data-grounded, no model):
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
         .select("id", { count: "exact", head: true })
         .lt("next_step_due", today)
         .not("next_step_due", "is", null)
-        .not("stage", "in", "(steward,lost)")
+        .in("stage", OPEN_STAGE_LIST)
         .or(EXCLUDE_PARTNERSHIP_OPPS),
     ]);
 

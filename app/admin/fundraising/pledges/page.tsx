@@ -7,6 +7,7 @@ import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "../../ops/_types/ops";
 import { NewPledgeForm, ConvertOpportunityForm, type WonOpportunity } from "./_components/PledgeControls";
 import { TYPE } from "@/lib/admin/typeScale";
+import { WON_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 
 // Epic F — pledges list: outstanding balances, overdue installments, status.
 export const dynamic = "force-dynamic";
@@ -33,12 +34,13 @@ export default async function PledgesPage() {
     supabase.from("pledge_payments").select("pledge_id, expected_amount, status, due_date").limit(10000),
     supabase.from("campaigns").select("id, name").order("name"),
     supabase.from("funds").select("id, name").order("name"),
-    // Won asks (steward stage) with a real amount + donor — convertible into a
-    // dated pledge schedule that feeds runway.
+    // Won or pledged asks with a real amount + donor — convertible into a
+    // dated pledge schedule that feeds runway. ("pledged" is an open Sales
+    // stage, but the donor has committed — exactly what a pledge schedule is.)
     supabase
       .from("opportunities")
       .select("id, name, ask_amount, constituent:constituents ( id, type, first_name, last_name, org_name )")
-      .eq("stage", "steward")
+      .in("stage", [...WON_STAGE_LIST, "pledged"])
       .gt("ask_amount", 0)
       .order("ask_amount", { ascending: false })
       .limit(50),

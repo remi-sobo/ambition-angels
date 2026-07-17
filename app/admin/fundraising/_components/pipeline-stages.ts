@@ -1,18 +1,10 @@
 // Shared between the server page and the client board — no "use client",
 // so the server component can iterate these directly.
-
-export const PIPELINE_STAGES = [
-  "identify", "qualify", "cultivate", "solicit", "steward",
-] as const;
-
-export const STAGE_LABELS: Record<string, string> = {
-  identify: "Identification",
-  qualify: "Qualification",
-  cultivate: "Cultivation",
-  solicit: "Solicitation",
-  steward: "Stewardship",
-  lost: "Lost",
-};
+//
+// Stage columns are no longer hardcoded here: the board renders whatever
+// `pipeline_stages` config the server page loads via
+// lib/fundraising/stages.ts (per-org, per-pipeline; ten HubSpot-mirrored
+// stages for the Sales pipeline, the legacy five for the others).
 
 export type OpportunityRow = {
   id: string;

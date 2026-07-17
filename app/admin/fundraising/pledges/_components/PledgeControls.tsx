@@ -134,7 +134,7 @@ export type WonOpportunity = {
   constituentId: string;
 };
 
-// Turn a won ask (a "steward"-stage opportunity) into a dated pledge with a
+// Turn a won or pledged ask into a dated pledge with a
 // generated installment schedule, so committed money that lived only in the
 // pipeline becomes a real schedule that feeds runway and can be marked paid.
 // Reuses POST /api/admin/pledges — same create + installment-generation path as

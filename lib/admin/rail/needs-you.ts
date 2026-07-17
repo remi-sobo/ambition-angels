@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getAdminUser } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
+import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 
 /**
  * Needs-you shelf data for the BloomOS right rail.
@@ -19,7 +20,6 @@ import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
  */
 
 const ORG_TZ = "America/Los_Angeles";
-const OPEN_STAGES = ["identify", "qualify", "cultivate", "solicit"];
 
 export type NeedsYouTask = {
   id: string;
@@ -96,7 +96,7 @@ export async function getNeedsYou(): Promise<NeedsYouData> {
       .select(
         "id, next_step, next_step_due, constituent:constituents ( id, type, first_name, last_name, org_name )"
       )
-      .in("stage", OPEN_STAGES)
+      .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step", "is", null)
       .not("next_step_due", "is", null)

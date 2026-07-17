@@ -174,6 +174,8 @@ ordered=(
   prospect_task_links.sql
   program_stage_tenant_neutral.sql
   create_reed_next_moves.sql
+  fundraising_pipeline_config.sql
+  fundraising_pipeline_remap.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

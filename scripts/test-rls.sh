@@ -178,6 +178,7 @@ ordered=(
   fundraising_pipeline_remap.sql
   cohort_members_continuous.sql
   angel_connectors_pipeline_stages.sql
+  drop_students_legacy_columns.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

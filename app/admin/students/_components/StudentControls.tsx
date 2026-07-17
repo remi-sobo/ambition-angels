@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS, STAGE_DESCRIPTIONS } from "../_lib/stages";
 import CustomFields, { type CustomValues } from "./CustomFields";
 import type { CustomFieldDef } from "@/lib/admin/customFields";
-import { LEGACY_STUDENT_FIELD_KEYS } from "@/lib/admin/program/legacyFields";
 
 // Per-org stage vocabulary (participant_stages, program spine spec #4),
 // passed down from the server page. The static constants above remain only
@@ -28,17 +27,14 @@ export type Student = {
   last_name: string | null;
   email: string | null;
   phone: string | null;
-  dob: string | null;
-  grade: string | null;
-  school: string | null;
   location: string | null;
   stage: string;
-  guardian_name: string | null;
-  guardian_email: string | null;
-  guardian_phone: string | null;
   notes: string | null;
   last_activity_at: string | null;
   external_source: string | null;
+  // Participant fields (grade / school / guardian_* / dob) live here now — the
+  // AA-specific columns were dropped in D5. The registry (custom_field_defs)
+  // defines which keys an org shows.
   custom_fields: Record<string, unknown> | null;
 };
 
@@ -55,14 +51,11 @@ export function fullName(s: Pick<Student, "first_name" | "last_name">) {
   return [s.first_name, s.last_name].filter(Boolean).join(" ");
 }
 
-// Transitional read (spec #4 D2→D5): prefer the value in custom_fields, fall
-// back to the same-named legacy column. After the D2 backfill both hold the
-// value; D5 drops the columns and this collapses to the JSON read.
+// Registry value read (spec #4): participant fields live in custom_fields,
+// keyed by the def's `key`. Returns "" for an unset field.
 export function cf(s: Student, key: string): string {
   const v = (s.custom_fields ?? {})[key];
-  if (v !== null && v !== undefined && v !== "") return String(v);
-  const legacy = (s as unknown as Record<string, unknown>)[key];
-  return legacy === null || legacy === undefined ? "" : String(legacy);
+  return v === null || v === undefined ? "" : String(v);
 }
 
 export function StudentRow({
@@ -223,17 +216,7 @@ function InlineEdit({
   // …) are registry-driven, rendered by <CustomFields> below.
   const [email, setEmail] = useState(student.email ?? "");
   const [phone, setPhone] = useState(student.phone ?? "");
-  // Seed registry values from custom_fields, falling back to the legacy column
-  // so a record whose value only lives in the column (e.g. intake-accept) shows
-  // and isn't lost on save (D2→D5 transitional).
-  const [custom, setCustom] = useState<CustomValues>(() => {
-    const base: CustomValues = { ...(student.custom_fields ?? {}) };
-    for (const k of LEGACY_STUDENT_FIELD_KEYS) {
-      const legacy = (student as unknown as Record<string, unknown>)[k];
-      if ((base[k] === undefined || base[k] === null || base[k] === "") && legacy != null) base[k] = legacy;
-    }
-    return base;
-  });
+  const [custom, setCustom] = useState<CustomValues>(() => ({ ...(student.custom_fields ?? {}) }));
 
   const save = async () => {
     await patch({

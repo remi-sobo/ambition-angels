@@ -9,6 +9,7 @@ import BriefPanel, { type ExistingBrief } from "./_components/BriefPanel";
 import ProspectAngles, { type OnAngle } from "./_components/ProspectAngles";
 import { CommentThread } from "../../../_components/CommentThread";
 import { EntityTasks } from "../../../_components/EntityTasks";
+import NextMovePanel from "../../_components/NextMovePanel";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // Prospect detail — keyed by the bench entity (fr_prospects.id), so it works for
@@ -190,6 +191,13 @@ export default async function ProspectDetailPage({ params }: { params: { id: str
           </div>
         )}
       </header>
+
+      <NextMovePanel
+        entityType="fr_prospects"
+        entityId={prospect.id}
+        entityLabel={prospect.org_name || prospect.name}
+        email={prospect.email}
+      />
 
       <ProspectAngles prospectId={prospect.id} onAngles={onAngles} allAngles={allAngles} />
 

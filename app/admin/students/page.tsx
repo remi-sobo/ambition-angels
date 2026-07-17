@@ -59,7 +59,15 @@ export default async function StudentsPage() {
       <PageHeader
         title={terms.students}
         subtitle={`One roster across ${terms.programs.toLowerCase()} · organized by ${terms.stage.toLowerCase()}`}
-        actions={<NewStudentForm customFieldDefs={customFieldDefs} stages={stageOptions} />}
+        actions={
+          <>
+            <a href="/admin/imports"
+              className="text-xs font-semibold text-ink-2 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors">
+              Import CSV
+            </a>
+            <NewStudentForm customFieldDefs={customFieldDefs} stages={stageOptions} />
+          </>
+        }
       />
 
       <SectionSummary section="students" />

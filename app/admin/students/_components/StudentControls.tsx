@@ -42,6 +42,8 @@ export type Student = {
 const SOURCE_LABELS: Record<string, string> = {
   ygb: "YGB Camp",
   career_quiz: "Career Quiz",
+  application: "Applied",
+  import: "Imported",
 };
 
 const inputCls =

@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS } from "../_lib/stages";
 import CustomFields, { type CustomValues } from "./CustomFields";
 import type { CustomFieldDef } from "@/lib/admin/customFields";
+import { LEGACY_STUDENT_FIELD_KEYS } from "@/lib/admin/program/legacyFields";
 
 // Per-org stage vocabulary (participant_stages, program spine spec #4),
 // passed down from the server page. The static constants above remain only
@@ -53,6 +54,16 @@ export function fullName(s: Pick<Student, "first_name" | "last_name">) {
   return [s.first_name, s.last_name].filter(Boolean).join(" ");
 }
 
+// Transitional read (spec #4 D2→D5): prefer the value in custom_fields, fall
+// back to the same-named legacy column. After the D2 backfill both hold the
+// value; D5 drops the columns and this collapses to the JSON read.
+export function cf(s: Student, key: string): string {
+  const v = (s.custom_fields ?? {})[key];
+  if (v !== null && v !== undefined && v !== "") return String(v);
+  const legacy = (s as unknown as Record<string, unknown>)[key];
+  return legacy === null || legacy === undefined ? "" : String(legacy);
+}
+
 export function StudentRow({
   student,
   stages = FALLBACK_STAGES,
@@ -96,7 +107,14 @@ export function StudentRow({
     }
   };
 
-  const contactEmail = student.email ?? student.guardian_email;
+  // Participant fields (grade / school / guardian_*) read from the registry
+  // (custom_fields) with a legacy-column fallback — the org describes them now.
+  const grade = cf(student, "grade");
+  const school = cf(student, "school");
+  const guardianName = cf(student, "guardian_name");
+  const guardianEmail = cf(student, "guardian_email");
+  const guardianPhone = cf(student, "guardian_phone");
+  const contactEmail = student.email || guardianEmail;
   // "Advance" walks the org's non-terminal journey in order.
   const journey = stages.filter((s) => !s.terminal);
   const stageIdx = journey.findIndex((s) => s.stage_key === student.stage);
@@ -109,8 +127,8 @@ export function StudentRow({
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-semibold text-ink-1">{fullName(student)}</span>
-        {student.grade && <span className="text-[11px] text-ink-2">Grade {student.grade}</span>}
-        {student.school && <span className="text-[11px] text-ink-2">· {student.school}</span>}
+        {grade && <span className="text-[11px] text-ink-2">Grade {grade}</span>}
+        {school && <span className="text-[11px] text-ink-2">· {school}</span>}
         {student.external_source && (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
             {SOURCE_LABELS[student.external_source] ?? student.external_source}
@@ -121,15 +139,15 @@ export function StudentRow({
         </span>
       </div>
 
-      {(student.guardian_name || contactEmail) && (
+      {(guardianName || contactEmail) && (
         <p className="text-[12px] text-ink-2 mt-1">
-          {student.guardian_name ? `Guardian: ${student.guardian_name}` : "Contact:"}
+          {guardianName ? `Guardian: ${guardianName}` : "Contact:"}
           {contactEmail && (
             <a href={`mailto:${contactEmail}`} className="text-orange/80 hover:text-orange ml-1.5">
               {contactEmail}
             </a>
           )}
-          {student.guardian_phone ? ` · ${student.guardian_phone}` : ""}
+          {guardianPhone ? ` · ${guardianPhone}` : ""}
         </p>
       )}
 
@@ -196,24 +214,26 @@ function InlineEdit({
   defs: CustomFieldDef[];
   onDone: () => void;
 }) {
-  const [grade, setGrade] = useState(student.grade ?? "");
-  const [school, setSchool] = useState(student.school ?? "");
+  // Universal identity stays as columns; participant fields (grade / guardian /
+  // …) are registry-driven, rendered by <CustomFields> below.
   const [email, setEmail] = useState(student.email ?? "");
-  const [guardianName, setGuardianName] = useState(student.guardian_name ?? "");
-  const [guardianEmail, setGuardianEmail] = useState(student.guardian_email ?? "");
-  const [guardianPhone, setGuardianPhone] = useState(student.guardian_phone ?? "");
-  const [custom, setCustom] = useState<CustomValues>(student.custom_fields ?? {});
+  const [phone, setPhone] = useState(student.phone ?? "");
+  // Seed registry values from custom_fields, falling back to the legacy column
+  // so a record whose value only lives in the column (e.g. intake-accept) shows
+  // and isn't lost on save (D2→D5 transitional).
+  const [custom, setCustom] = useState<CustomValues>(() => {
+    const base: CustomValues = { ...(student.custom_fields ?? {}) };
+    for (const k of LEGACY_STUDENT_FIELD_KEYS) {
+      const legacy = (student as unknown as Record<string, unknown>)[k];
+      if ((base[k] === undefined || base[k] === null || base[k] === "") && legacy != null) base[k] = legacy;
+    }
+    return base;
+  });
 
   const save = async () => {
     await patch({
-      grade: grade || null,
-      school: school || null,
       email: email || null,
-      guardian_name: guardianName || null,
-      guardian_email: guardianEmail || null,
-      guardian_phone: guardianPhone || null,
-      // Only send custom_fields when the org actually has fields — keeps AA's
-      // request identical to before.
+      phone: phone || null,
       ...(defs.length ? { custom_fields: custom } : {}),
     });
     onDone();
@@ -222,34 +242,14 @@ function InlineEdit({
   return (
     <div className="mt-3 pt-3 border-t border-outline grid grid-cols-2 lg:grid-cols-6 gap-2 items-end">
       <label className="text-[10px] text-ink-2">
-        Grade
-        <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={grade}
-          onChange={(e) => setGrade(e.target.value)} />
-      </label>
-      <label className="text-[10px] text-ink-2">
-        School
-        <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={school}
-          onChange={(e) => setSchool(e.target.value)} />
-      </label>
-      <label className="text-[10px] text-ink-2">
         Student email
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={email}
           onChange={(e) => setEmail(e.target.value)} />
       </label>
       <label className="text-[10px] text-ink-2">
-        Guardian
-        <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={guardianName}
-          onChange={(e) => setGuardianName(e.target.value)} />
-      </label>
-      <label className="text-[10px] text-ink-2">
-        Guardian email
-        <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={guardianEmail}
-          onChange={(e) => setGuardianEmail(e.target.value)} />
-      </label>
-      <label className="text-[10px] text-ink-2">
-        Guardian phone
-        <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={guardianPhone}
-          onChange={(e) => setGuardianPhone(e.target.value)} />
+        Phone
+        <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={phone}
+          onChange={(e) => setPhone(e.target.value)} />
       </label>
       <CustomFields defs={defs} values={custom} onChange={setCustom} compact />
       <div className="col-span-full flex justify-end gap-2">
@@ -271,9 +271,7 @@ export function NewStudentForm({ customFieldDefs = [] }: { customFieldDefs?: Cus
   const [busy, setBusy] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [grade, setGrade] = useState("");
   const [stage, setStage] = useState("discover");
-  const [guardianEmail, setGuardianEmail] = useState("");
   const [custom, setCustom] = useState<CustomValues>({});
 
   const submit = async (e: React.FormEvent) => {
@@ -286,9 +284,7 @@ export function NewStudentForm({ customFieldDefs = [] }: { customFieldDefs?: Cus
         body: JSON.stringify({
           first_name: firstName,
           last_name: lastName || undefined,
-          grade: grade || undefined,
           stage,
-          guardian_email: guardianEmail || undefined,
           ...(customFieldDefs.length ? { custom_fields: custom } : {}),
         }),
       });
@@ -297,7 +293,7 @@ export function NewStudentForm({ customFieldDefs = [] }: { customFieldDefs?: Cus
         alert(j.error ?? `HTTP ${res.status}`);
         return;
       }
-      setFirstName(""); setLastName(""); setGrade(""); setGuardianEmail(""); setCustom({});
+      setFirstName(""); setLastName(""); setCustom({});
       setOpen(false);
       router.refresh();
     } finally {
@@ -328,22 +324,12 @@ export function NewStudentForm({ customFieldDefs = [] }: { customFieldDefs?: Cus
           onChange={(e) => setLastName(e.target.value)} />
       </label>
       <label className="text-xs text-ink-2">
-        Grade
-        <input className={`${inputCls} w-full mt-1`} value={grade} placeholder="8"
-          onChange={(e) => setGrade(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
         Stage
         <select className={`${inputCls} w-full mt-1`} value={stage} onChange={(e) => setStage(e.target.value)}>
           {STAGE_ORDER.map((s) => (
             <option key={s} value={s} className="bg-surface">{STAGE_LABELS[s]}</option>
           ))}
         </select>
-      </label>
-      <label className="text-xs text-ink-2">
-        Guardian email
-        <input className={`${inputCls} w-full mt-1`} type="email" value={guardianEmail}
-          onChange={(e) => setGuardianEmail(e.target.value)} />
       </label>
       <CustomFields defs={customFieldDefs} values={custom} onChange={setCustom} />
       <div className="flex gap-2">

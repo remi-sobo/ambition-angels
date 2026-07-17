@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
 import { getFieldDefs, validateAndMerge } from "@/lib/admin/customFields";
+import { LEGACY_STUDENT_FIELD_KEYS } from "@/lib/admin/program/legacyFields";
 import { audit } from "@/lib/audit";
 
 const STAGES = [
@@ -20,19 +21,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
+  // Universal identity columns only; grade / school / guardian_* / dob are
+  // registry fields (custom_fields), handled below.
   const update: Record<string, unknown> = {};
   if (STAGES.includes(body.stage as (typeof STAGES)[number])) update.stage = body.stage;
-  for (const f of ["dob", "last_activity_at"] as const) {
-    if (f in body) {
-      if (body[f] === null || body[f] === "") update[f] = null;
-      else if (isISODate(body[f])) update[f] = body[f];
-    }
+  if ("last_activity_at" in body) {
+    if (body.last_activity_at === null || body.last_activity_at === "") update.last_activity_at = null;
+    else if (isISODate(body.last_activity_at)) update.last_activity_at = body.last_activity_at;
   }
   if (body.touch === true) update.last_activity_at = new Date().toISOString().slice(0, 10);
-  for (const f of [
-    "first_name", "last_name", "email", "phone", "grade", "school", "location",
-    "guardian_name", "guardian_email", "guardian_phone", "notes",
-  ] as const) {
+  for (const f of ["first_name", "last_name", "email", "phone", "location", "notes"] as const) {
     if (f in body) {
       if (body[f] === null || body[f] === "") {
         if (f !== "first_name") update[f] = null;
@@ -42,8 +40,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
   }
   if (typeof update.email === "string") update.email = update.email.toLowerCase();
-  if (typeof update.guardian_email === "string")
-    update.guardian_email = (update.guardian_email as string).toLowerCase();
 
   const hasCustom = "custom_fields" in body;
   if (Object.keys(update).length === 0 && !hasCustom) {
@@ -68,6 +64,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     );
     if (!merged.ok) return NextResponse.json({ error: merged.error }, { status: 400 });
     update.custom_fields = merged.value;
+    // Dual-write shim (D2→D5): keep the legacy columns in lockstep with the
+    // registry so unmigrated readers stay current; a cleared key nulls its
+    // column too. Dropped in D5.
+    for (const k of LEGACY_STUDENT_FIELD_KEYS) {
+      update[k] = k in merged.value ? merged.value[k] : null;
+    }
   }
 
   const { error } = await supabase.from("students").update(update).eq("id", params.id);

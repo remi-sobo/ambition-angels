@@ -6,6 +6,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS } from "../_lib/stages";
+import CustomFields, { type CustomValues } from "./CustomFields";
+import type { CustomFieldDef } from "@/lib/admin/customFields";
 
 // Per-org stage vocabulary (participant_stages, program spine spec #4),
 // passed down from the server page. The static constants above remain only
@@ -35,6 +37,7 @@ export type Student = {
   notes: string | null;
   last_activity_at: string | null;
   external_source: string | null;
+  custom_fields: Record<string, unknown> | null;
 };
 
 
@@ -53,9 +56,12 @@ export function fullName(s: Pick<Student, "first_name" | "last_name">) {
 export function StudentRow({
   student,
   stages = FALLBACK_STAGES,
+  customFieldDefs = [],
 }: {
   student: Student;
   stages?: StageOption[];
+  /** Per-org custom field defs (empty for AA — renders nothing). */
+  customFieldDefs?: CustomFieldDef[];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -172,7 +178,9 @@ export function StudentRow({
         </button>
       </div>
 
-      {editing && <InlineEdit student={student} patch={patch} onDone={() => setEditing(false)} />}
+      {editing && (
+        <InlineEdit student={student} patch={patch} defs={customFieldDefs} onDone={() => setEditing(false)} />
+      )}
     </article>
   );
 }
@@ -180,10 +188,12 @@ export function StudentRow({
 function InlineEdit({
   student,
   patch,
+  defs,
   onDone,
 }: {
   student: Student;
   patch: (fields: Record<string, unknown>) => Promise<void>;
+  defs: CustomFieldDef[];
   onDone: () => void;
 }) {
   const [grade, setGrade] = useState(student.grade ?? "");
@@ -192,6 +202,7 @@ function InlineEdit({
   const [guardianName, setGuardianName] = useState(student.guardian_name ?? "");
   const [guardianEmail, setGuardianEmail] = useState(student.guardian_email ?? "");
   const [guardianPhone, setGuardianPhone] = useState(student.guardian_phone ?? "");
+  const [custom, setCustom] = useState<CustomValues>(student.custom_fields ?? {});
 
   const save = async () => {
     await patch({
@@ -201,6 +212,9 @@ function InlineEdit({
       guardian_name: guardianName || null,
       guardian_email: guardianEmail || null,
       guardian_phone: guardianPhone || null,
+      // Only send custom_fields when the org actually has fields — keeps AA's
+      // request identical to before.
+      ...(defs.length ? { custom_fields: custom } : {}),
     });
     onDone();
   };
@@ -237,6 +251,7 @@ function InlineEdit({
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={guardianPhone}
           onChange={(e) => setGuardianPhone(e.target.value)} />
       </label>
+      <CustomFields defs={defs} values={custom} onChange={setCustom} compact />
       <div className="col-span-full flex justify-end gap-2">
         <button onClick={onDone} className="text-[11px] text-ink-2 hover:text-ink-1 px-2 py-1">
           Cancel
@@ -250,7 +265,7 @@ function InlineEdit({
   );
 }
 
-export function NewStudentForm() {
+export function NewStudentForm({ customFieldDefs = [] }: { customFieldDefs?: CustomFieldDef[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -259,6 +274,7 @@ export function NewStudentForm() {
   const [grade, setGrade] = useState("");
   const [stage, setStage] = useState("discover");
   const [guardianEmail, setGuardianEmail] = useState("");
+  const [custom, setCustom] = useState<CustomValues>({});
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,13 +289,15 @@ export function NewStudentForm() {
           grade: grade || undefined,
           stage,
           guardian_email: guardianEmail || undefined,
+          ...(customFieldDefs.length ? { custom_fields: custom } : {}),
         }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         alert(j.error ?? `HTTP ${res.status}`);
+        return;
       }
-      setFirstName(""); setLastName(""); setGrade(""); setGuardianEmail("");
+      setFirstName(""); setLastName(""); setGrade(""); setGuardianEmail(""); setCustom({});
       setOpen(false);
       router.refresh();
     } finally {
@@ -327,6 +345,7 @@ export function NewStudentForm() {
         <input className={`${inputCls} w-full mt-1`} type="email" value={guardianEmail}
           onChange={(e) => setGuardianEmail(e.target.value)} />
       </label>
+      <CustomFields defs={customFieldDefs} values={custom} onChange={setCustom} />
       <div className="flex gap-2">
         <button type="submit" disabled={busy}
           className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">

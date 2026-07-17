@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
+import { getFieldDefs, validateAndMerge } from "@/lib/admin/customFields";
 import { audit } from "@/lib/audit";
 
 const STAGES = [
@@ -44,7 +45,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (typeof update.guardian_email === "string")
     update.guardian_email = (update.guardian_email as string).toLowerCase();
 
-  if (Object.keys(update).length === 0) {
+  const hasCustom = "custom_fields" in body;
+  if (Object.keys(update).length === 0 && !hasCustom) {
     return NextResponse.json({ error: "No valid fields" }, { status: 400 });
   }
 
@@ -52,6 +54,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { data: before } = await supabase
     .from("students").select("*").eq("id", params.id).maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Per-org custom fields (spec #4 D1): merge incoming onto the row's current
+  // values, validated against this org's registry (org from the row, not the
+  // request). No requireAll on edit — a newly-required field isn't forced onto
+  // an old record (spec §10 #4).
+  if (hasCustom) {
+    const defs = await getFieldDefs((before as { org_id: string }).org_id, "student");
+    const merged = validateAndMerge(
+      defs,
+      ((before as { custom_fields?: Record<string, unknown> }).custom_fields) ?? {},
+      body.custom_fields as Record<string, unknown>,
+    );
+    if (!merged.ok) return NextResponse.json({ error: merged.error }, { status: 400 });
+    update.custom_fields = merged.value;
+  }
 
   const { error } = await supabase.from("students").update(update).eq("id", params.id);
   if (error) {

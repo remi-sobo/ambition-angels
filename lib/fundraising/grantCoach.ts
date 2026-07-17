@@ -405,26 +405,63 @@ export function getCoachPrompt(id: string): CoachPrompt | null {
 }
 
 /**
+ * "Defend the draft" — the coach's one interactive prompt, deliberately kept
+ * OUT of COACH_PROMPTS: it runs as a turn-by-turn chat (its own route and
+ * panel section), not a one-shot button. Adapted from the original's FEEDBACK
+ * 03 with an explicit one-question-per-reply cadence and a closing verdict,
+ * since a stateless chat route has no "waiting for our answer" affordance.
+ */
+export const DEFEND_DRAFT = {
+  id: "defend-draft",
+  label: "Defend the draft",
+  blurb:
+    "A live interrogation: the reviewer gives three reasons to reject, then grills you with five tough questions, one at a time.",
+  instructions: `Pretend you're the application reviewer who's about to recommend rejection. This is a live, turn-by-turn interrogation of our proposal.
+
+In your FIRST reply: tell us the three strongest reasons you'd give for why you can't fund this, numbered 1-3, then ask the first of five tough follow-up questions, labeled "**Question 1 of 5:**".
+
+In every later reply: react to our latest answer first, then ask the next question — exactly one question per reply, labeled "**Question N of 5:**". Push back on any answer that:
+- is vague or non-committal ("we hope to," "we plan to explore")
+- doesn't actually address the question you asked
+- contradicts something in our proposal
+- introduces new claims or assumptions without evidence
+- relies on credentials or aspiration instead of specifics
+If an answer deserves pushback, say so and press the same question again instead of moving on — a pressed question still counts as the same question number.
+
+After we answer the fifth question, close the session: name what moved you, what still wouldn't survive review, and the one thing to fix in the draft before submitting. Do not ask further questions after closing.
+
+Be direct and specific. Your job is to give the kind of honest feedback a program officer would give off the record — focused on what the proposal needs, not on making the team feel good or bad about the work they've done.`,
+} as const;
+
+/**
  * Assemble the user message for one run: the prompt's instructions, then the
  * draft and (optionally) funder materials in clearly-fenced blocks. The
  * explicit "no funder materials" marker keeps the assessment's criteria-source
  * line honest when only a draft is pasted.
+ *
+ * When the draft rides along as a native PDF document block instead of pasted
+ * text, pass `attachedPdf: true` (and no `proposal`) — the draft section then
+ * points at the attachment rather than fencing text.
  */
 export function buildCoachUserPrompt(opts: {
   instructions: string;
-  proposal: string;
+  proposal?: string | null;
+  attachedPdf?: boolean;
   funderMaterials?: string | null;
 }): string {
   const funder = opts.funderMaterials?.trim();
+  const proposal = opts.proposal?.trim();
+  if (!proposal && !opts.attachedPdf) {
+    throw new Error("buildCoachUserPrompt needs a proposal or an attached PDF");
+  }
   return [
     opts.instructions,
     "",
     "---",
     "",
-    "PROPOSAL DRAFT:",
-    '"""',
-    opts.proposal.trim(),
-    '"""',
+    ...(proposal
+      ? ["PROPOSAL DRAFT:", '"""', proposal, '"""']
+      : ["PROPOSAL DRAFT: attached to this message as a PDF document."]),
     "",
     ...(funder
       ? ["FUNDER MATERIALS:", '"""', funder, '"""']

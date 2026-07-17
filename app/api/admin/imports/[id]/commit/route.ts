@@ -72,6 +72,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const supabase = getSupabaseAdmin();
   const { data: run } = await supabase.from("imports").select("*").eq("id", params.id).maybeSingle();
   if (!run || run.org_id !== ctx.orgId) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // Connector runs (source 'hubspot', E6) have no staged rows — a commit here
+  // would find zero valid rows and wrongly close a LIVE sync as 'done'.
+  if (run.source !== "csv") {
+    return NextResponse.json({ error: "Only file imports can be committed here" }, { status: 409 });
+  }
   if (run.status !== "staged" && run.status !== "committing") {
     return NextResponse.json({ error: `Cannot commit a ${run.status} import` }, { status: 409 });
   }

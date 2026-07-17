@@ -115,6 +115,7 @@ function appendSoftFailure(
 
 export type JobRow = {
   id: string;
+  org_id: string;
   started_at: string;
   finished_at: string | null;
   status: "running" | "completed" | "failed" | "partial";
@@ -212,6 +213,7 @@ export async function createJob(triggeredBy: AdminUser | null): Promise<JobRow> 
     .select("*")
     .single();
   if (error) throw new Error(`create job: ${error.message}`);
+  await mirrorImportRun(data as JobRow);
   return data as JobRow;
 }
 
@@ -231,7 +233,40 @@ async function saveJob(job: JobRow): Promise<JobRow> {
     .select("*")
     .single();
   if (error) throw new Error(`save job: ${error.message}`);
+  await mirrorImportRun(data as JobRow);
   return data as JobRow;
+}
+
+/**
+ * Connector seam (import layer, spec #5 E6): every sync job doubles as an
+ * `imports` run — SAME id, source 'hubspot' — so sync status and counts show
+ * up in /admin/imports next to file imports. Upsert keeps it correct whether
+ * the run started before or after this landed; best-effort so a mirror
+ * hiccup can never break the sync itself. Status map: running → committing;
+ * completed → done; partial/failed → failed (a hard failure means the spine
+ * wasn't fully refreshed — the honest signal in a list someone acts on).
+ */
+async function mirrorImportRun(job: JobRow): Promise<void> {
+  const status =
+    job.status === "running" ? "committing" : job.status === "completed" ? "done" : "failed";
+  const { error } = await supabase()
+    .from("imports")
+    .upsert(
+      {
+        id: job.id,
+        org_id: job.org_id,
+        entity_type: "constituent",
+        source: "hubspot",
+        status,
+        counts: {
+          ...job.counts,
+          ...(job.errors.length > 0 ? { errors: job.errors.length } : {}),
+        },
+        finished_at: job.finished_at,
+      },
+      { onConflict: "id" },
+    );
+  if (error) console.error("[sync] import-run mirror failed:", error.message);
 }
 
 // ── Spine projection ───────────────────────────────────────────────────────

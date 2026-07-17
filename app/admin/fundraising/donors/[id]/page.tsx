@@ -16,6 +16,7 @@ import { type AckChannel } from "@/lib/fundraising/ack-channels";
 import { HouseholdControls } from "../_components/HouseholdControls";
 import { AddSoftCredit, SoftCreditChip, SC_TYPE_LABEL } from "../_components/SoftCreditControls";
 import EmailActions from "../_components/EmailActions";
+import NextMovePanel from "../../_components/NextMovePanel";
 import { EntityTasks } from "../../../_components/EntityTasks";
 import { EntityDocuments } from "../../../_components/EntityDocuments";
 import { CommentThread } from "../../../_components/CommentThread";
@@ -421,6 +422,13 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
             sub={pendingAcks > 0 ? "gifts awaiting a thank-you" : "all caught up"}
           />
         </div>
+
+        <NextMovePanel
+          entityType="constituent"
+          entityId={c.id}
+          entityLabel={name}
+          email={((c.emails as string[]) ?? [])[0] ?? null}
+        />
 
         {openOpps.length > 0 && (
           <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg px-5 py-4 flex items-center gap-4 flex-wrap">

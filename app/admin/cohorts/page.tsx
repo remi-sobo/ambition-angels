@@ -5,6 +5,7 @@ import SectionSummary from "../_components/SectionSummary";
 import { NewCohortForm } from "./_components/CohortControls";
 import { COHORT_STATUS_LABELS } from "./_lib/constants";
 import { pct } from "./_lib/rollups";
+import { getSessionPrograms } from "@/lib/admin/program/programs";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // Cohorts & attendance (Ring 3, modules/02-program.md "Cohorts"):
@@ -33,13 +34,14 @@ const STATUS_CHIP: Record<string, string> = {
 
 export default async function CohortsPage() {
   const supabase = getSupabaseAdmin();
-  const [{ data: cohortsData }, { data: membersData }, { data: sessionsData }, { data: marksData }] =
+  const [{ data: cohortsData }, { data: membersData }, { data: sessionsData }, { data: marksData }, programs] =
     await Promise.all([
       supabase.from("cohorts").select("*")
         .order("start_date", { ascending: false, nullsFirst: false }),
       supabase.from("cohort_members").select("cohort_id, student_id, status"),
       supabase.from("cohort_sessions").select("id, cohort_id, session_date, status"),
       supabase.from("attendance").select("session_id, status"),
+      getSessionPrograms(),
     ]);
   const cohorts = (cohortsData ?? []) as Cohort[];
   const members = membersData ?? [];
@@ -95,7 +97,7 @@ export default async function CohortsPage() {
             Program × term groups · sessions, roster-tap attendance, dosage
           </p>
         </div>
-        <NewCohortForm />
+        <NewCohortForm programs={programs.map((p) => p.name)} />
       </div>
 
       <SectionSummary section="cohorts" />

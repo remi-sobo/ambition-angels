@@ -628,6 +628,14 @@ begin
   values (aa, 'Leaky', 'Applicant', 'new');
   insert into applications (org_id, first_name, last_name, status)
   values (t2, 'Tenant', 'Applicant', 'offered');
+
+  -- Participant custom-field registry (spec #4 D1): one def per org.
+  insert into custom_field_defs (org_id, entity_type, key, label, field_type)
+  values (aa, 'student', 'leak_cf', 'Leak CF', 'text')
+  on conflict (org_id, entity_type, key) do nothing;
+  insert into custom_field_defs (org_id, entity_type, key, label, field_type)
+  values (t2, 'student', 'leak_cf', 'Leak CF', 'text')
+  on conflict (org_id, entity_type, key) do nothing;
 end $$;
 
 set role authenticated;
@@ -648,6 +656,12 @@ begin
   if (select count(*) from participant_stages where stage_key = 'leak_test_stage') <> 1 then
     raise exception 'AA owner cannot read its own participant stages';
   end if;
+  if (select count(*) from custom_field_defs) <> 1 then
+    raise exception 'AA owner cannot read its own custom field defs (or sees another org''s)';
+  end if;
+  if (select count(*) from custom_field_defs where org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two custom field defs';
+  end if;
   if (select count(*) from v_action_items where source = 'application_pending' and title like '%Leaky%') = 0 then
     raise exception 'pending application did not surface in the queue';
   end if;
@@ -665,6 +679,9 @@ begin
   if (select count(*) from programs where org_id = aa) <> 0 then
     raise exception 'LEAK: tenant-two reads AA programs';
   end if;
+  if (select count(*) from custom_field_defs where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA custom field defs';
+  end if;
   if (select count(*) from v_action_items where source = 'application_pending' and title like '%Tenant Applicant%') = 0 then
     raise exception 'tenant-two owner cannot see its OWN pending application';
   end if;
@@ -681,6 +698,9 @@ do $$ begin
   end if;
   if (select count(*) from participant_stages) <> 0 then
     raise exception 'LEAK: non-member reads participant stages';
+  end if;
+  if (select count(*) from custom_field_defs) <> 0 then
+    raise exception 'LEAK: non-member reads custom field defs';
   end if;
 end $$;
 

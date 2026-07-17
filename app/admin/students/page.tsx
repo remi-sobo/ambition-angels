@@ -5,6 +5,8 @@ import PageHeader from "../_components/PageHeader";
 import SectionSummary from "../_components/SectionSummary";
 import { StudentRow, NewStudentForm, type Student } from "./_components/StudentControls";
 import { getParticipantStages } from "@/lib/admin/program/stages";
+import { getOrgContext } from "@/lib/admin/auth";
+import { getFieldDefs } from "@/lib/admin/customFields";
 
 // Participant roster (program spine, spec #4): one roster across programs,
 // organized by the org's journey stages. The stage vocabulary is per-org
@@ -14,13 +16,17 @@ export const dynamic = "force-dynamic";
 
 export default async function StudentsPage() {
   const supabase = getSupabaseAdmin();
-  const [{ data }, stages] = await Promise.all([
+  const ctx = await getOrgContext();
+  const [{ data }, stages, customFieldDefs] = await Promise.all([
     supabase
       .from("students")
       .select("*")
       .order("last_activity_at", { ascending: false, nullsFirst: false })
       .limit(500),
     getParticipantStages(),
+    // Per-org participant custom fields (empty for AA — the forms render as
+    // before until an org seeds defs).
+    ctx ? getFieldDefs(ctx.orgId, "student") : Promise.resolve([]),
   ]);
   const students = (data ?? []) as Student[];
 
@@ -43,7 +49,7 @@ export default async function StudentsPage() {
       <PageHeader
         title="Students"
         subtitle="One roster across programs · journey from discover to launch"
-        actions={<NewStudentForm />}
+        actions={<NewStudentForm customFieldDefs={customFieldDefs} />}
       />
 
       <SectionSummary section="students" />
@@ -101,7 +107,7 @@ export default async function StudentsPage() {
               </SectionHeading>
               <div className="space-y-2">
                 {rows.map((s) => (
-                  <StudentRow key={s.id} student={s} stages={stageOptions} />
+                  <StudentRow key={s.id} student={s} stages={stageOptions} customFieldDefs={customFieldDefs} />
                 ))}
               </div>
             </section>

@@ -3,6 +3,7 @@ import {
   COACH_PROMPTS,
   COACH_SYSTEM,
   COACH_ATTRIBUTION,
+  DEFEND_DRAFT,
   getCoachPrompt,
   buildCoachUserPrompt,
 } from "@/lib/fundraising/grantCoach";
@@ -33,8 +34,17 @@ describe("grant coach prompt registry", () => {
 
   it("resolves known ids and rejects unknown ones", () => {
     expect(getCoachPrompt("reviewer-questions")?.label).toBe("Reviewer questions");
-    expect(getCoachPrompt("defend-draft")).toBeNull(); // interactive-only, deliberately omitted
+    // Interactive-only: lives on its own chat route, not in the one-shot registry.
+    expect(getCoachPrompt("defend-draft")).toBeNull();
     expect(getCoachPrompt("")).toBeNull();
+  });
+
+  it("keeps defend-the-draft out of the registry but complete", () => {
+    expect(DEFEND_DRAFT.id).toBe("defend-draft");
+    expect(COACH_PROMPTS.some((p) => p.id === DEFEND_DRAFT.id)).toBe(false);
+    // The one-question-per-reply cadence is what makes the stateless chat work.
+    expect(DEFEND_DRAFT.instructions).toContain("exactly one question per reply");
+    expect(DEFEND_DRAFT.instructions).toContain("Question 1 of 5");
   });
 
   it("keeps the safety rules in the shared system prompt", () => {
@@ -69,5 +79,16 @@ describe("buildCoachUserPrompt", () => {
       expect(out).toContain("No funder materials provided.");
       expect(out).not.toContain("FUNDER MATERIALS:");
     }
+  });
+
+  it("points at the attached PDF when the draft rides as a document block", () => {
+    const out = buildCoachUserPrompt({ instructions: "x", attachedPdf: true });
+    expect(out).toContain("PROPOSAL DRAFT: attached to this message as a PDF document.");
+    expect(out).not.toContain('"""');
+  });
+
+  it("refuses a run with no draft at all", () => {
+    expect(() => buildCoachUserPrompt({ instructions: "x" })).toThrow();
+    expect(() => buildCoachUserPrompt({ instructions: "x", proposal: "  " })).toThrow();
   });
 });

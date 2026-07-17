@@ -4,25 +4,24 @@ import { useRef, useState, type ReactNode } from "react";
 import { TYPE } from "@/lib/admin/typeScale";
 
 /**
- * Grant Coach panel: paste the proposal draft (plus, optionally, the funder's
- * RFP or "What We Fund" page), run the assessment, then run deep-dive prompts
- * against the same paste. Results are session-only — newest first, kept in
- * state so an assessment isn't clobbered by a deep dive. Nothing is persisted;
- * the draft itself stays wherever it lives (usually the ask's PDF or a doc).
+ * Grant Coach panel: point the coach at the proposal draft — pasted text, or
+ * a PDF/text file already attached to the grant or its asks — then run the
+ * assessment, the deep-dive prompts, or the interactive "defend the draft"
+ * interrogation. One-shot results stack newest-first; the defend session is a
+ * turn-by-turn chat. Everything is session-only — nothing is persisted.
  *
  * The prompt texts stay server-side (lib/fundraising/grantCoach.ts); the
- * server page passes only {id, label, blurb} so the library never ships in
- * the client bundle. Input ceilings mirror MAX_PROPOSAL_CHARS/MAX_FUNDER_CHARS
- * there — the route clamps anyway, so these are UX, not enforcement.
+ * server page passes only {id, label, blurb} plus the attached-document list,
+ * so the library never ships in the client bundle. Input ceilings mirror
+ * MAX_PROPOSAL_CHARS/MAX_FUNDER_CHARS there — the route clamps anyway, so
+ * these are UX, not enforcement.
  */
 
 export type CoachPromptMeta = { id: string; label: string; blurb: string };
+export type CoachDocOption = { kind: "grant_doc" | "ask_doc"; id: string; label: string };
 
-type CoachRun = {
-  key: number;
-  label: string;
-  text: string;
-};
+type CoachRun = { key: number; label: string; text: string };
+type ChatTurn = { role: "user" | "assistant"; content: string };
 
 // Coach output is prose lines with **bold** labels — render just that, via JSX
 // (no dangerouslySetInnerHTML), matching the ProjectDescription idiom.
@@ -45,19 +44,16 @@ function renderBold(text: string, baseKey: string): ReactNode[] {
   return out;
 }
 
-function CoachResult({ run }: { run: CoachRun }) {
+function CoachText({ text }: { text: string }) {
   return (
-    <div className="border-[1.5px] border-outline rounded-card p-4 bg-ink/40">
-      <p className={`${TYPE.cardLabel} mb-2`}>{run.label}</p>
-      <div className="space-y-1.5">
-        {run.text.split("\n").map((line, i) =>
-          line.trim() === "" ? null : (
-            <p key={i} className="text-sm text-ink-2 leading-relaxed">
-              {renderBold(line, `l-${i}`)}
-            </p>
-          )
-        )}
-      </div>
+    <div className="space-y-1.5">
+      {text.split("\n").map((line, i) =>
+        line.trim() === "" ? null : (
+          <p key={i} className="text-sm text-ink-2 leading-relaxed">
+            {renderBold(line, `l-${i}`)}
+          </p>
+        )
+      )}
     </div>
   );
 }
@@ -65,24 +61,51 @@ function CoachResult({ run }: { run: CoachRun }) {
 export default function GrantCoach({
   grantId,
   prompts,
+  documents,
+  defend,
   attribution,
   attributionUrl,
 }: {
   grantId: string;
   prompts: CoachPromptMeta[];
+  documents: CoachDocOption[];
+  defend: { label: string; blurb: string };
   attribution: string;
   attributionUrl: string;
 }) {
   const [proposal, setProposal] = useState("");
   const [funderMaterials, setFunderMaterials] = useState("");
   const [showFunder, setShowFunder] = useState(false);
+  // "paste" or "<kind>:<id>" of an attached document.
+  const [source, setSource] = useState("paste");
   const [runningId, setRunningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [runs, setRuns] = useState<CoachRun[]>([]);
   const nextKey = useRef(0);
 
+  // Defend-the-draft chat state.
+  const [defendOpen, setDefendOpen] = useState(false);
+  const [defendHistory, setDefendHistory] = useState<ChatTurn[]>([]);
+  const [defendInput, setDefendInput] = useState("");
+  const [defendBusy, setDefendBusy] = useState(false);
+
   const assessment = prompts.find((p) => p.id === "assessment") ?? prompts[0];
   const deepDives = prompts.filter((p) => p.id !== assessment.id);
+
+  const selectedDoc = (() => {
+    if (source === "paste") return null;
+    const [kind, id] = source.split(":");
+    return documents.find((d) => d.kind === kind && d.id === id) ?? null;
+  })();
+
+  function draftBody(): Record<string, unknown> {
+    return selectedDoc
+      ? { document: { kind: selectedDoc.kind, id: selectedDoc.id } }
+      : { proposal };
+  }
+
+  const draftReady = selectedDoc != null || proposal.trim().length >= 200;
+  const ready = draftReady && !runningId && !defendBusy;
 
   async function run(promptId: string) {
     setRunningId(promptId);
@@ -94,7 +117,7 @@ export default function GrantCoach({
         body: JSON.stringify({
           promptId,
           grantId,
-          proposal,
+          ...draftBody(),
           funderMaterials: funderMaterials.trim() || null,
         }),
       });
@@ -111,7 +134,43 @@ export default function GrantCoach({
     }
   }
 
-  const ready = proposal.trim().length >= 200 && !runningId;
+  // One defend turn: send the visible history (plus the pending answer, when
+  // there is one) and append the reviewer's reply.
+  async function defendTurn(answer: string | null) {
+    setDefendBusy(true);
+    setError(null);
+    const history: ChatTurn[] = answer
+      ? [...defendHistory, { role: "user", content: answer }]
+      : defendHistory;
+    if (answer) {
+      setDefendHistory(history);
+      setDefendInput("");
+    }
+    try {
+      const r = await fetch("/api/admin/grants/coach/defend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          grantId,
+          ...draftBody(),
+          funderMaterials: funderMaterials.trim() || null,
+          history,
+        }),
+      });
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(body?.error ?? `HTTP ${r.status}`);
+      setDefendHistory([...history, { role: "assistant", content: body.text ?? "" }]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "The reviewer stalled — try again.");
+    } finally {
+      setDefendBusy(false);
+    }
+  }
+
+  function openDefend() {
+    setDefendOpen(true);
+    if (defendHistory.length === 0) void defendTurn(null);
+  }
 
   return (
     <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
@@ -124,24 +183,47 @@ export default function GrantCoach({
       </div>
 
       <div className="p-5 space-y-4">
-        <div>
-          <label htmlFor={`coach-proposal-${grantId}`} className={`${TYPE.cardLabel} block mb-1.5`}>
-            Proposal draft
-          </label>
-          <textarea
-            id={`coach-proposal-${grantId}`}
-            value={proposal}
-            onChange={(e) => setProposal(e.target.value)}
-            maxLength={80_000}
-            rows={8}
-            placeholder="Paste the full proposal or LOI draft here…"
-            className="w-full bg-ink/40 border border-outline rounded-card p-3 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60 resize-y"
-          />
-          <p className={`${TYPE.metadata} mt-1`}>
-            Don&apos;t paste sensitive donor data, client identities, or unreleased financials —
-            anonymize first.
-          </p>
-        </div>
+        {documents.length > 0 && (
+          <div>
+            <label htmlFor={`coach-source-${grantId}`} className={`${TYPE.cardLabel} block mb-1.5`}>
+              Draft source
+            </label>
+            <select
+              id={`coach-source-${grantId}`}
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              className="bg-ink/40 border border-outline rounded-lg px-3 py-2 text-sm text-ink-1 focus:outline-none focus:border-orange/60 max-w-full"
+            >
+              <option value="paste">Pasted text</option>
+              {documents.map((d) => (
+                <option key={`${d.kind}:${d.id}`} value={`${d.kind}:${d.id}`}>
+                  Attached: {d.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {selectedDoc == null && (
+          <div>
+            <label htmlFor={`coach-proposal-${grantId}`} className={`${TYPE.cardLabel} block mb-1.5`}>
+              Proposal draft
+            </label>
+            <textarea
+              id={`coach-proposal-${grantId}`}
+              value={proposal}
+              onChange={(e) => setProposal(e.target.value)}
+              maxLength={80_000}
+              rows={8}
+              placeholder="Paste the full proposal or LOI draft here…"
+              className="w-full bg-ink/40 border border-outline rounded-card p-3 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60 resize-y"
+            />
+            <p className={`${TYPE.metadata} mt-1`}>
+              Don&apos;t paste sensitive donor data, client identities, or unreleased financials —
+              anonymize first.
+            </p>
+          </div>
+        )}
 
         {showFunder ? (
           <div>
@@ -178,8 +260,8 @@ export default function GrantCoach({
             {runningId === assessment.id ? "Assessing…" : assessment.label}
           </button>
           <span className={TYPE.metadata}>
-            {proposal.trim().length < 200
-              ? "Paste the draft to enable the coach."
+            {!draftReady
+              ? "Paste the draft (or pick an attached document) to enable the coach."
               : "Start with the assessment, then run the deep dives it points to."}
           </span>
         </div>
@@ -196,14 +278,84 @@ export default function GrantCoach({
               {runningId === p.id ? "Running…" : p.label}
             </button>
           ))}
+          {!defendOpen && (
+            <button
+              onClick={openDefend}
+              disabled={!ready}
+              title={defend.blurb}
+              className="text-xs font-semibold px-2.5 py-1.5 rounded-full border border-orange/50 text-orange hover:bg-orange/10 disabled:opacity-40 transition-colors"
+            >
+              {defend.label}
+            </button>
+          )}
         </div>
 
         {error && <p className="text-expense text-xs">{error}</p>}
 
+        {defendOpen && (
+          <div className="border-[1.5px] border-orange/40 rounded-card p-4 bg-ink/40 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className={TYPE.cardLabel}>{defend.label} — live interrogation</p>
+              <button
+                onClick={() => {
+                  setDefendOpen(false);
+                  setDefendHistory([]);
+                  setDefendInput("");
+                }}
+                className="text-[11px] text-ink-3 hover:text-ink-1"
+              >
+                End session
+              </button>
+            </div>
+            <div className="space-y-3">
+              {defendHistory.map((t, i) =>
+                t.role === "assistant" ? (
+                  <div key={i} className="border-l-2 border-orange/50 pl-3">
+                    <CoachText text={t.content} />
+                  </div>
+                ) : (
+                  <p key={i} className="text-sm text-ink-1 leading-relaxed pl-3 border-l-2 border-outline">
+                    {t.content}
+                  </p>
+                )
+              )}
+              {defendBusy && <p className={TYPE.metadata}>The reviewer is thinking…</p>}
+            </div>
+            {defendHistory.length > 0 && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const answer = defendInput.trim();
+                  if (answer && !defendBusy) void defendTurn(answer);
+                }}
+                className="flex gap-2"
+              >
+                <input
+                  value={defendInput}
+                  onChange={(e) => setDefendInput(e.target.value)}
+                  maxLength={4000}
+                  placeholder="Answer the reviewer…"
+                  className="flex-1 bg-ink/40 border border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60"
+                />
+                <button
+                  type="submit"
+                  disabled={defendBusy || !defendInput.trim()}
+                  className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg"
+                >
+                  Send
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+
         {runs.length > 0 && (
           <div className="space-y-3">
             {runs.map((r) => (
-              <CoachResult key={r.key} run={r} />
+              <div key={r.key} className="border-[1.5px] border-outline rounded-card p-4 bg-ink/40">
+                <p className={`${TYPE.cardLabel} mb-2`}>{r.label}</p>
+                <CoachText text={r.text} />
+              </div>
             ))}
           </div>
         )}

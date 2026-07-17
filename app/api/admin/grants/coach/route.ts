@@ -1,10 +1,12 @@
 /**
  * POST /api/admin/grants/coach — run one Grant Coach prompt (assessment or a
- * deep dive) over a pasted proposal draft, optionally with pasted funder
- * materials. Text-in / text-out through the shared AI gateway on the deep
- * tier (this is judgment work), logged to the unified spend ledger and
- * guarded by the org-wide monthly cap. Nothing is persisted — the result
- * renders in the panel and the operator acts on it in the draft.
+ * deep dive) over the proposal draft: pasted text, or a PDF/text file already
+ * attached to the grant or one of its asks (sent to the model as a native
+ * document block — no server-side parsing). Text-in / text-out through the
+ * shared AI gateway on the deep tier (this is judgment work), logged to the
+ * unified spend ledger and guarded by the org-wide monthly cap. Nothing is
+ * persisted — the result renders in the panel and the operator acts on it in
+ * the draft.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -12,13 +14,8 @@ import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { generateText, AIKeyMissingError } from "@/lib/ai/gateway";
 import { logAICall } from "@/lib/ai/ledger";
 import { orgOverAICap } from "@/lib/ai/cap";
-import {
-  getCoachPrompt,
-  buildCoachUserPrompt,
-  COACH_SYSTEM,
-  MAX_PROPOSAL_CHARS,
-  MAX_FUNDER_CHARS,
-} from "@/lib/fundraising/grantCoach";
+import { getCoachPrompt, COACH_SYSTEM, MAX_FUNDER_CHARS } from "@/lib/fundraising/grantCoach";
+import { resolveDraftFromBody, buildCoachOpeningMessage } from "@/lib/fundraising/grantCoachDocs";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -40,18 +37,16 @@ export async function POST(req: NextRequest) {
   if (!coachPrompt) {
     return NextResponse.json({ error: "Unknown coach prompt" }, { status: 400 });
   }
-  const proposal = str(body?.proposal, MAX_PROPOSAL_CHARS);
-  if (!proposal || proposal.length < 200) {
-    return NextResponse.json(
-      { error: "Paste the full proposal draft first (at least a few paragraphs)." },
-      { status: 400 }
-    );
-  }
   const funderMaterials = str(body?.funderMaterials, MAX_FUNDER_CHARS);
   // Optional, for the spend ledger only — the run itself is stateless.
   const grantId = str(body?.grantId, 36);
 
   const supabase = createServerSupabase();
+  const draft = await resolveDraftFromBody(supabase, body);
+  if (!draft.ok) {
+    return NextResponse.json({ error: draft.error }, { status: draft.status });
+  }
+
   const ctx = await getOrgContext();
   if (ctx?.orgId) {
     const cap = await orgOverAICap(supabase, ctx.orgId);
@@ -67,7 +62,13 @@ export async function POST(req: NextRequest) {
   try {
     result = await generateText({
       system: COACH_SYSTEM,
-      prompt: buildCoachUserPrompt({ instructions: coachPrompt.instructions, proposal, funderMaterials }),
+      messages: [
+        buildCoachOpeningMessage({
+          instructions: coachPrompt.instructions,
+          source: draft.source,
+          funderMaterials,
+        }),
+      ],
       tier: "deep",
       maxTokens: 3500,
       // The coach's output formats are load-bearing (bold labels, exact lines);
@@ -92,7 +93,12 @@ export async function POST(req: NextRequest) {
       costUsd: result.costUsd,
       triggeredBy: (await getAdminUser()) ?? null,
       status: "success",
-      metadata: { promptId: coachPrompt.id, grantId, hadFunderMaterials: !!funderMaterials },
+      metadata: {
+        promptId: coachPrompt.id,
+        grantId,
+        hadFunderMaterials: !!funderMaterials,
+        draftSource: draft.source.type,
+      },
     });
   }
 

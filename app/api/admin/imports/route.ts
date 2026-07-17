@@ -25,9 +25,10 @@ export async function POST(req: NextRequest) {
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
-  // E3 wires participants; E4 lifts this to SPINE_FIELDS' full key set.
-  if (body?.entity_type !== "student") {
-    return NextResponse.json({ error: "entity_type must be 'student' (constituents arrive in E4)" }, { status: 400 });
+  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  const entityType = body.entity_type as keyof typeof SPINE_FIELDS;
+  if (entityType !== "student" && entityType !== "constituent") {
+    return NextResponse.json({ error: "entity_type must be 'student' or 'constituent'" }, { status: 400 });
   }
   const csvText = typeof body.csv_text === "string" ? body.csv_text : "";
   if (!csvText.trim()) return NextResponse.json({ error: "csv_text is required" }, { status: 400 });
@@ -51,15 +52,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const defs = await getFieldDefs(ctx.orgId, "student");
-  const suggested = suggestMapping(header, "student", defs);
+  const defs = await getFieldDefs(ctx.orgId, entityType);
+  const suggested = suggestMapping(header, entityType, defs);
 
   const supabase = getSupabaseAdmin();
   const { data: run, error } = await supabase
     .from("imports")
     .insert({
       org_id: ctx.orgId, // session org, never a default
-      entity_type: "student",
+      entity_type: entityType,
       source: "csv",
       filename,
       status: "mapping",
@@ -89,10 +90,10 @@ export async function POST(req: NextRequest) {
   }
 
   await audit(req, {
-    action: "program.import.create",
+    action: `${entityType === "constituent" ? "fundraising" : "program"}.import.create`,
     entityType: "import",
     entityId: run.id,
-    after: { filename, rows: rows.length },
+    after: { filename, entity_type: entityType, rows: rows.length },
   });
   return NextResponse.json({
     id: run.id,
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
     total: rows.length,
     parse_errors: errors,
     fields: {
-      spine: SPINE_FIELDS.student.map(({ key, label, required }) => ({ key, label, required: !!required })),
+      spine: SPINE_FIELDS[entityType].map(({ key, label, required }) => ({ key, label, required: !!required })),
       custom: defs.map((d) => ({ key: d.key, label: d.label, required: d.required })),
     },
   });

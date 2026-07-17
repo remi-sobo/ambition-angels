@@ -19,13 +19,17 @@ export default async function FeatureGate({
   label,
   children,
 }: {
-  feature: FeatureKey;
+  /** One key, or several — any enabled key opens the gate (e.g. the import
+   *  wizard serves both the program and fundraising modules). */
+  feature: FeatureKey | FeatureKey[];
   /** Human module name shown on the panel, e.g. "Fundraising". */
   label: string;
   children: ReactNode;
 }) {
   const ctx = await getOrgContext();
-  const enabled = ctx ? hasFeature(await getEntitlements(ctx.orgId), feature) : false;
+  const keys = Array.isArray(feature) ? feature : [feature];
+  const ents = ctx ? await getEntitlements(ctx.orgId) : null;
+  const enabled = !!ents && keys.some((k) => hasFeature(ents, k));
   if (!enabled) {
     return (
       <div className="px-4 lg:px-8 py-20 flex justify-center">

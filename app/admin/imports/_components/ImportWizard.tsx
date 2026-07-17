@@ -13,6 +13,12 @@ type Counts = { total?: number; valid?: number; invalid?: number; skipped?: numb
 type RowResult = { row_num: number; status: string; verdict: string | null; error: string | null };
 
 type Step = "upload" | "map" | "preview" | "commit" | "done";
+type EntityType = "student" | "constituent";
+
+const ENTITY_CHOICES: { value: EntityType; label: string; hint: string }[] = [
+  { value: "student", label: "Participants", hint: "onto the program roster" },
+  { value: "constituent", label: "Donors & contacts", hint: "into fundraising" },
+];
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40";
@@ -23,6 +29,7 @@ const quietBtnCls = "text-xs text-ink-2 hover:text-ink-1 px-2 py-2";
 export default function ImportWizard({ resumeId }: { resumeId?: string | null }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(resumeId ? "commit" : "upload");
+  const [entity, setEntity] = useState<EntityType>("student");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [runId, setRunId] = useState<string | null>(resumeId ?? null);
@@ -45,7 +52,7 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
       const res = await fetch("/api/admin/imports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entity_type: "student", filename: file.name, csv_text: csvText }),
+        body: JSON.stringify({ entity_type: entity, filename: file.name, csv_text: csvText }),
       });
       if (!res.ok) return void (await fail(res));
       const j = await res.json();
@@ -119,7 +126,7 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
       }}
     >
       <option value="">— don&apos;t import —</option>
-      <optgroup label="Participant fields">
+      <optgroup label={entity === "constituent" ? "Contact fields" : "Participant fields"}>
         {fields.spine.map((f) => (
           <option key={f.key} value={f.key}>{f.label}{f.required ? " *" : ""}</option>
         ))}
@@ -143,9 +150,26 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
       {step === "upload" && (
         <div>
           <p className="text-sm text-ink-2 mb-3">
-            Upload a CSV of participants. The first row must be column headers; you&apos;ll map
-            columns to fields next. Nothing is written until you confirm the preview.
+            Upload a CSV. The first row must be column headers; you&apos;ll map columns to
+            fields next. Nothing is written until you confirm the preview.
           </p>
+          <div className="flex gap-2 mb-4">
+            {ENTITY_CHOICES.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => setEntity(c.value)}
+                className={`text-xs font-semibold px-4 py-2 rounded-full border-[1.5px] transition-colors ${
+                  entity === c.value
+                    ? "border-orange/50 bg-orange/10 text-orange"
+                    : "border-outline bg-tile text-ink-2 hover:text-ink-1"
+                }`}
+              >
+                {c.label}
+                <span className="font-normal opacity-70 ml-1.5">{c.hint}</span>
+              </button>
+            ))}
+          </div>
           <input
             type="file" accept=".csv,text/csv" disabled={busy}
             className="text-sm text-ink-2 file:mr-3 file:rounded-full file:border-0 file:bg-orange file:text-white file:text-xs file:font-semibold file:px-4 file:py-2 file:cursor-pointer"
@@ -206,7 +230,7 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
           <div className="flex gap-2 justify-end">
             <button className={quietBtnCls} onClick={() => setStep("map")}>Back to mapping</button>
             <button className={btnCls} disabled={busy || (counts.valid ?? 0) === 0} onClick={() => void commit()}>
-              {(counts.valid ?? 0) === 0 ? "Nothing to import" : `Import ${counts.valid} participants`}
+              {(counts.valid ?? 0) === 0 ? "Nothing to import" : `Import ${counts.valid} ${entity === "constituent" ? "contacts" : "participants"}`}
             </button>
           </div>
         </div>
@@ -231,7 +255,9 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
             {counts.created ?? 0} created · {counts.skipped ?? 0} skipped · {counts.invalid ?? 0} invalid
           </p>
           <div className="flex gap-2 mt-3">
-            <a href="/admin/students" className={btnCls}>View roster</a>
+            <a href={entity === "constituent" ? "/admin/fundraising/donors" : "/admin/students"} className={btnCls}>
+              {entity === "constituent" ? "View donors" : "View roster"}
+            </a>
             <button className={quietBtnCls} onClick={() => {
               setStep("upload"); setRunId(null); setCounts({}); setProblems([]); setError(null);
             }}>

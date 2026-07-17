@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS } from "../_lib/stages";
+import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS, STAGE_DESCRIPTIONS } from "../_lib/stages";
 import CustomFields, { type CustomValues } from "./CustomFields";
 import type { CustomFieldDef } from "@/lib/admin/customFields";
 import { LEGACY_STUDENT_FIELD_KEYS } from "@/lib/admin/program/legacyFields";
@@ -13,12 +13,13 @@ import { LEGACY_STUDENT_FIELD_KEYS } from "@/lib/admin/program/legacyFields";
 // Per-org stage vocabulary (participant_stages, program spine spec #4),
 // passed down from the server page. The static constants above remain only
 // as the default when no stages are provided.
-export type StageOption = { stage_key: string; label: string; terminal: boolean };
+export type StageOption = { stage_key: string; label: string; terminal: boolean; description?: string | null };
 
 const FALLBACK_STAGES: StageOption[] = STAGE_ORDER.map((s) => ({
   stage_key: s,
   label: STAGE_LABELS[s],
   terminal: !JOURNEY_STAGES.includes(s as (typeof JOURNEY_STAGES)[number]),
+  description: STAGE_DESCRIPTIONS[s] ?? null,
 }));
 
 export type Student = {
@@ -156,10 +157,13 @@ export function StudentRow({
           value={student.stage}
           disabled={busy}
           onChange={(e) => patch({ stage: e.target.value })}
+          title={stages.find((s) => s.stage_key === student.stage)?.description ?? undefined}
           className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1 text-ink-1 cursor-pointer"
         >
           {stages.map((s) => (
-            <option key={s.stage_key} value={s.stage_key} className="bg-surface">{s.label}</option>
+            <option key={s.stage_key} value={s.stage_key} className="bg-surface" title={s.description ?? undefined}>
+              {s.label}
+            </option>
           ))}
           {!stages.some((s) => s.stage_key === student.stage) && (
             <option value={student.stage} className="bg-surface">{labelOf(student.stage)}</option>
@@ -169,6 +173,7 @@ export function StudentRow({
           <button
             onClick={() => patch({ stage: next.stage_key, touch: true })}
             disabled={busy}
+            title={next.description ?? undefined}
             className="px-2 py-1 rounded-md text-[11px] font-semibold bg-orange/15 text-orange hover:bg-orange/25"
           >
             Advance → {next.label}
@@ -265,13 +270,20 @@ function InlineEdit({
   );
 }
 
-export function NewStudentForm({ customFieldDefs = [] }: { customFieldDefs?: CustomFieldDef[] }) {
+export function NewStudentForm({
+  customFieldDefs = [],
+  stages = FALLBACK_STAGES,
+}: {
+  customFieldDefs?: CustomFieldDef[];
+  stages?: StageOption[];
+}) {
   const router = useRouter();
+  const journeyStages = stages.filter((s) => !s.terminal);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [stage, setStage] = useState("discover");
+  const [stage, setStage] = useState(journeyStages[0]?.stage_key ?? "discover");
   const [custom, setCustom] = useState<CustomValues>({});
 
   const submit = async (e: React.FormEvent) => {
@@ -325,9 +337,16 @@ export function NewStudentForm({ customFieldDefs = [] }: { customFieldDefs?: Cus
       </label>
       <label className="text-xs text-ink-2">
         Stage
-        <select className={`${inputCls} w-full mt-1`} value={stage} onChange={(e) => setStage(e.target.value)}>
-          {STAGE_ORDER.map((s) => (
-            <option key={s} value={s} className="bg-surface">{STAGE_LABELS[s]}</option>
+        <select
+          className={`${inputCls} w-full mt-1`}
+          value={stage}
+          onChange={(e) => setStage(e.target.value)}
+          title={journeyStages.find((s) => s.stage_key === stage)?.description ?? undefined}
+        >
+          {journeyStages.map((s) => (
+            <option key={s.stage_key} value={s.stage_key} className="bg-surface" title={s.description ?? undefined}>
+              {s.label}
+            </option>
           ))}
         </select>
       </label>

@@ -10,12 +10,24 @@ export const STAGE_ORDER = [
   ...JOURNEY_STAGES, "alumni", "withdrawn",
 ] as const;
 
+// Labels + descriptions mirror the AA participant_stages seed. Client-safe
+// fallback only — the DB rows (per org, with descriptions) drive the live UI.
 export const STAGE_LABELS: Record<string, string> = {
-  discover: "Discover",
-  learn: "Learn",
-  practice: "Practice",
-  connect: "Connect",
-  launch: "Launch",
+  discover: "New",
+  learn: "Exploring",
+  practice: "Practicing",
+  connect: "Connecting",
+  launch: "Launched",
   alumni: "Alumni",
-  withdrawn: "Withdrawn",
+  withdrawn: "Inactive",
+};
+
+export const STAGE_DESCRIPTIONS: Record<string, string> = {
+  discover: "Just joined — getting oriented, not yet actively engaged.",
+  learn: "Exploring careers and building future-orientation through the app and sessions.",
+  practice: "Hands-on — practicing and applying real skills and tasks.",
+  connect: "Being matched with and meeting a trusted adult or mentor.",
+  launch: "Reached a real opportunity — an internship, program, or placement.",
+  alumni: "Completed the journey; part of the alumni community.",
+  withdrawn: "No longer participating — paused, left, or unreachable.",
 };

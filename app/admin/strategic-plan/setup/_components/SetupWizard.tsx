@@ -156,8 +156,77 @@ function AddMeasure({ goalId, onDone }: { goalId: string; onDone: () => void }) 
   );
 }
 
+export type WizFoundation = { mission: string; vision: string; values: string; behaviors: string };
+
+// Inline foundation editor (spec #6 F1): a brand-new org must not be sent away
+// at step 1 — mission/vision/values save right here via the existing PUT route.
+function FoundationForm({ initial, onSaved }: { initial: WizFoundation; onSaved: () => void }) {
+  const [mission, setMission] = useState(initial.mission);
+  const [vision, setVision] = useState(initial.vision);
+  const [values, setValues] = useState(initial.values);
+  const [behaviors, setBehaviors] = useState(initial.behaviors);
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/plan/foundation", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mission: mission.trim() || null,
+          vision: vision.trim() || null,
+          values,
+          behaviors,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert(j.error ?? `HTTP ${res.status}`);
+        return;
+      }
+      onSaved();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-[11px] text-ink-2">
+        Mission — why you exist, one sentence
+        <textarea className={`${inputCls} block w-full mt-1 !text-xs`} rows={2} value={mission}
+          placeholder="e.g. To empower young people with the skills and support to thrive."
+          onChange={(e) => setMission(e.target.value)} />
+      </label>
+      <label className="block text-[11px] text-ink-2">
+        Vision — the world if you succeed
+        <textarea className={`${inputCls} block w-full mt-1 !text-xs`} rows={2} value={vision}
+          onChange={(e) => setVision(e.target.value)} />
+      </label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <label className="block text-[11px] text-ink-2">
+          Values (comma-separated)
+          <input className={`${inputCls} block w-full mt-1 !text-xs`} value={values}
+            placeholder="Integrity, Learning, …" onChange={(e) => setValues(e.target.value)} />
+        </label>
+        <label className="block text-[11px] text-ink-2">
+          Behaviors (comma-separated)
+          <input className={`${inputCls} block w-full mt-1 !text-xs`} value={behaviors}
+            onChange={(e) => setBehaviors(e.target.value)} />
+        </label>
+      </div>
+      <button onClick={() => void save()} disabled={busy || !mission.trim()}
+        className="text-[11px] font-semibold bg-orange hover:bg-orange-dark text-white px-4 py-1.5 rounded-full disabled:opacity-50">
+        {busy ? "Saving…" : "Save foundation"}
+      </button>
+    </div>
+  );
+}
+
 export default function SetupWizard({
   foundationSet,
+  foundation,
   objectives,
   goals,
   kpis,
@@ -165,6 +234,7 @@ export default function SetupWizard({
   nextReviewAt,
 }: {
   foundationSet: boolean;
+  foundation: WizFoundation;
   objectives: WizObjective[];
   goals: WizGoal[];
   kpis: WizKpi[];
@@ -216,9 +286,7 @@ export default function SetupWizard({
 
       <StepCard n={1} title="Foundation" done={foundationSet}
         hint={foundationSet ? "Mission, vision, values, and behaviors are set." : "Add your mission, vision, values, and behaviors — the culture home."}>
-        {!foundationSet && (
-          <Link href="/admin/strategic-plan" className="text-xs font-semibold text-orange hover:underline">Edit foundation on the plan →</Link>
-        )}
+        {!foundationSet && <FoundationForm initial={foundation} onSaved={refresh} />}
       </StepCard>
 
       <StepCard n={2} title="Objectives have goals" done={objectives.length > 0 && objectivesNoGoals.length === 0}

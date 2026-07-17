@@ -184,6 +184,7 @@ ordered=(
   plan_kpis_notes.sql
   create_import_layer.sql
   constituent_custom_fields.sql
+  hubspot_projection_external_refs.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

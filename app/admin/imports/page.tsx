@@ -44,7 +44,7 @@ export default async function ImportsPage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[860px]">
       <PageHeader
         title="Import"
-        subtitle={`Bring existing ${terms.students.toLowerCase()} in from a CSV — map columns to your fields, preview, then commit`}
+        subtitle={`Bring existing ${terms.students.toLowerCase()} or donors in from a CSV — map columns to your fields, preview, then commit`}
       />
 
       <ImportWizard resumeId={resumable?.id ?? null} />
@@ -57,6 +57,9 @@ export default async function ImportsPage() {
               <div key={r.id}
                 className="bg-surface border-[1.5px] border-outline rounded-xl px-3 py-2 flex flex-wrap items-center gap-2 text-[12px]">
                 <span className="text-ink-1 font-semibold">{r.filename ?? "Untitled file"}</span>
+                <span className="text-[10px] text-ink-3 uppercase tracking-wider">
+                  {r.entity_type === "constituent" ? "Donors" : "Participants"}
+                </span>
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${STATUS_CHIP[r.status] ?? "bg-tile text-ink-2"}`}>
                   {r.status}
                 </span>

@@ -28,6 +28,42 @@ type StagedRow = {
   normalized: { fingerprint: string; spine: Record<string, unknown>; custom: Record<string, unknown> } | null;
 };
 
+/**
+ * The insert shape per target entity. Participants take the spine verbatim;
+ * constituents fold the single email/phone the file carries into their
+ * array columns. Both stamp source/provenance and the validated custom map.
+ */
+function entityInsert(
+  entity: "student" | "constituent",
+  orgId: string,
+  spine: Record<string, unknown>,
+  custom: Record<string, unknown>,
+  fingerprint: string,
+): { table: string; row: Record<string, unknown> } {
+  if (entity === "student") {
+    return {
+      table: "students",
+      row: {
+        org_id: orgId, ...spine, custom_fields: custom,
+        external_source: "import", external_id: fingerprint,
+      },
+    };
+  }
+  const { email, phone, ...rest } = spine;
+  return {
+    table: "constituents",
+    row: {
+      org_id: orgId,
+      type: rest.type ?? "person",
+      ...rest,
+      emails: typeof email === "string" && email ? [email] : [],
+      phones: typeof phone === "string" && phone ? [phone] : [],
+      custom_fields: custom,
+      source: "import",
+    },
+  };
+}
+
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const ctx = await getOrgContext();
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -62,7 +98,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .from("external_refs")
       .select("external_id")
       .eq("org_id", ctx.orgId)
-      .eq("entity_type", "student")
+      .eq("entity_type", run.entity_type)
       .eq("source", "csv")
       .in("external_id", fps);
     const alreadyImported = new Set((refData ?? []).map((r) => r.external_id));
@@ -84,18 +120,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             .eq("id", row.id);
           return;
         }
-        const { data: student, error: insErr } = await supabase
-          .from("students")
-          .insert({
-            org_id: ctx.orgId, // the run's org — never a column default
-            ...spine,
-            custom_fields: custom,
-            external_source: "import",
-            external_id: fingerprint,
-          })
+        // org from the run — never a column default.
+        const target = entityInsert(
+          run.entity_type as "student" | "constituent",
+          ctx.orgId, spine, custom, fingerprint,
+        );
+        const { data: entityRow, error: insErr } = await supabase
+          .from(target.table)
+          .insert(target.row)
           .select("id")
           .single();
-        if (insErr || !student) {
+        if (insErr || !entityRow) {
           failed++;
           await supabase.from("import_rows")
             .update({ status: "invalid", error: `Create failed: ${insErr?.message ?? "unknown"}` })
@@ -104,14 +139,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         }
         const { error: refErr } = await supabase.from("external_refs").insert({
           org_id: ctx.orgId,
-          entity_type: "student",
-          entity_id: student.id,
+          entity_type: run.entity_type,
+          entity_id: entityRow.id,
           source: "csv",
           external_id: fingerprint,
         });
         if (refErr) console.error("external_refs insert failed:", refErr.message);
         await supabase.from("import_rows")
-          .update({ status: "committed", created_entity_id: student.id, error: null })
+          .update({ status: "committed", created_entity_id: entityRow.id, error: null })
           .eq("id", row.id);
         created++;
       }),
@@ -146,7 +181,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .update({ raw: [] })
       .eq("import_id", params.id);
     await audit(req, {
-      action: "program.import.commit",
+      action: `${run.entity_type === "constituent" ? "fundraising" : "program"}.import.commit`,
       entityType: "import",
       entityId: params.id,
       after: counts,

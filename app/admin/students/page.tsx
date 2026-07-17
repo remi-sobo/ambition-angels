@@ -33,7 +33,9 @@ export default async function StudentsPage() {
   const journey = stages.filter((s) => !s.terminal);
   const engagedKeys = new Set(stages.filter((s) => s.engaged).map((s) => s.stage_key));
   const terminalKeys = new Set(stages.filter((s) => s.terminal).map((s) => s.stage_key));
-  const stageOptions = stages.map((s) => ({ stage_key: s.stage_key, label: s.label, terminal: s.terminal }));
+  const stageOptions = stages.map((s) => ({
+    stage_key: s.stage_key, label: s.label, terminal: s.terminal, description: s.description,
+  }));
 
   const byStage = (s: string) => students.filter((x) => x.stage === s);
   const active = students.filter((x) => !terminalKeys.has(x.stage));
@@ -55,7 +57,7 @@ export default async function StudentsPage() {
       <PageHeader
         title="Students"
         subtitle="One roster across programs · journey from discover to launch"
-        actions={<NewStudentForm customFieldDefs={customFieldDefs} />}
+        actions={<NewStudentForm customFieldDefs={customFieldDefs} stages={stageOptions} />}
       />
 
       <SectionSummary section="students" />
@@ -87,6 +89,7 @@ export default async function StudentsPage() {
           return (
             <div
               key={s.stage_key}
+              title={s.description ?? undefined}
               className={`rounded-lg border px-2 py-2.5 text-center ${
                 n > 0 ? "bg-orange/10 border-orange/30" : "bg-surface shadow-panel border-outline"
               }`}

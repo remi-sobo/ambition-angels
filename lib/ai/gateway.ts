@@ -44,8 +44,14 @@ export class AIKeyMissingError extends Error {
 }
 
 export type GenerateTextOptions = {
-  /** The user prompt. */
-  prompt: string;
+  /** The user prompt. Give exactly one of `prompt` or `messages`. */
+  prompt?: string;
+  /**
+   * Full message list, for multi-turn conversations or content-block inputs
+   * (e.g. a PDF document block). Overrides `prompt` when present; output is
+   * still plain text.
+   */
+  messages?: Anthropic.MessageParam[];
   /** Optional system prompt; cached ephemerally when present. */
   system?: string;
   /** Task tier; ignored when an explicit `model` is given. Defaults to "fast". */
@@ -88,13 +94,19 @@ export async function generateText(opts: GenerateTextOptions): Promise<GenerateT
   const client = new Anthropic({ apiKey: requireKey() });
   const model = opts.model ?? MODEL_BY_TIER[opts.tier ?? "fast"];
 
+  const messages =
+    opts.messages ?? (opts.prompt != null ? [{ role: "user" as const, content: opts.prompt }] : null);
+  if (!messages || messages.length === 0) {
+    throw new Error("generateText requires a prompt or a non-empty messages list");
+  }
+
   const resp = await client.messages.create({
     model,
     max_tokens: opts.maxTokens,
     ...(opts.system
       ? { system: [{ type: "text" as const, text: opts.system, cache_control: { type: "ephemeral" as const } }] }
       : {}),
-    messages: [{ role: "user", content: opts.prompt }],
+    messages,
   });
 
   const text = resp.content

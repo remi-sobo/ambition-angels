@@ -30,7 +30,7 @@ export default async function SessionAttendancePage({
   const [{ data: membersData }, { data: marksData }] = await Promise.all([
     supabase
       .from("cohort_members")
-      .select("student_id, status, students(first_name, last_name, grade)")
+      .select("student_id, status, students(first_name, last_name, custom_fields)")
       .eq("cohort_id", params.id)
       .eq("status", "enrolled"),
     supabase
@@ -43,11 +43,11 @@ export default async function SessionAttendancePage({
   const roster: RosterEntry[] = (membersData ?? [])
     .map((m) => {
       const s = m.students as unknown as
-        { first_name: string; last_name: string | null; grade: string | null } | null;
+        { first_name: string; last_name: string | null; custom_fields: Record<string, unknown> | null } | null;
       return {
         studentId: m.student_id,
         name: s ? [s.first_name, s.last_name].filter(Boolean).join(" ") : "Unknown",
-        grade: s?.grade ?? null,
+        grade: (s?.custom_fields?.grade as string | undefined) ?? null,
         status: markByStudent.get(m.student_id) ?? null,
       };
     })

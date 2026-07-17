@@ -39,7 +39,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
     await Promise.all([
       supabase
         .from("cohort_members")
-        .select("id, student_id, status, students(first_name, last_name, grade)")
+        .select("id, student_id, status, students(first_name, last_name, custom_fields)")
         .eq("cohort_id", params.id),
       supabase
         .from("cohort_sessions")
@@ -48,7 +48,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
         .order("session_date"),
       supabase
         .from("students")
-        .select("id, first_name, last_name, grade, stage")
+        .select("id, first_name, last_name, custom_fields, stage")
         .order("first_name"),
     ]);
   const members = membersData ?? [];
@@ -66,13 +66,13 @@ export default async function CohortPage({ params }: { params: { id: string } })
   const memberViews: MemberView[] = members
     .map((m) => {
       const s = m.students as unknown as
-        { first_name: string; last_name: string | null; grade: string | null } | null;
+        { first_name: string; last_name: string | null; custom_fields: Record<string, unknown> | null } | null;
       const d = dosageFor(m.student_id, sessions, marks);
       return {
         memberId: m.id,
         studentId: m.student_id,
         name: s ? [s.first_name, s.last_name].filter(Boolean).join(" ") : "Unknown",
-        grade: s?.grade ?? null,
+        grade: (s?.custom_fields?.grade as string | undefined) ?? null,
         status: m.status,
         attended: d.attended,
         absent: d.absent,
@@ -87,12 +87,15 @@ export default async function CohortPage({ params }: { params: { id: string } })
   const memberIds = new Set(members.map((m) => m.student_id));
   const candidates = (studentsData ?? [])
     .filter((s) => !memberIds.has(s.id) && s.stage !== "withdrawn")
-    .map((s) => ({
-      id: s.id,
-      label:
-        [s.first_name, s.last_name].filter(Boolean).join(" ") +
-        (s.grade ? ` (Grade ${s.grade})` : ""),
-    }));
+    .map((s) => {
+      const grade = (s.custom_fields as Record<string, unknown> | null)?.grade as string | undefined;
+      return {
+        id: s.id,
+        label:
+          [s.first_name, s.last_name].filter(Boolean).join(" ") +
+          (grade ? ` (Grade ${grade})` : ""),
+      };
+    });
 
   const sessionViews: SessionView[] = sessions.map((s) => {
     const sessionMarks = marks.filter((m) => m.session_id === s.id);

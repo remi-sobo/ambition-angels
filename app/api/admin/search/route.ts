@@ -66,7 +66,7 @@ type CommitmentRow = { id: string; source_name: string; amount: number | null; s
 type TaskRow = { id: string; title: string; status: string; priority: string | null; assigned_to: string | null };
 type ProjectRow = { id: string; title: string; status: string; category: string };
 type PartnerRow = { id: string; name: string; kind: string; status: string };
-type StudentRow = { id: string; first_name: string | null; last_name: string | null; school: string | null; stage: string };
+type StudentRow = { id: string; first_name: string | null; last_name: string | null; custom_fields: Record<string, unknown> | null; stage: string };
 type CohortRow = { id: string; name: string; term: string | null; status: string };
 type BookingRow = { id: string; attendee_name: string | null; attendee_email: string | null; start_time: string | null };
 type FuzzyRow = { id: string; kind: "constituent" | "prospect"; name: string | null; org_name: string | null; email: string | null; sim: number };
@@ -221,16 +221,18 @@ export async function GET(req: NextRequest) {
         })
       ),
 
-    // Students.
+    // Students. School is a per-org custom field now (D5), matched/read via the
+    // custom_fields JSONB (custom_fields->>school).
     supabase
       .from("students")
-      .select("id, first_name, last_name, school, stage")
-      .or(`first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},school.ilike.${like}`)
+      .select("id, first_name, last_name, custom_fields, stage")
+      .or(`first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},custom_fields->>school.ilike.${like}`)
       .limit(LIMIT)
       .then(({ data }) =>
         ((data ?? []) as StudentRow[]).map((s) => {
           const name = [s.first_name, s.last_name].filter(Boolean).join(" ") || "Unnamed student";
-          const sub = ["Student", s.school].filter(Boolean).join(" · ");
+          const school = s.custom_fields?.school;
+          const sub = ["Student", typeof school === "string" ? school : null].filter(Boolean).join(" · ");
           return mk("student", "program", s.id, name, `/admin/students`, sub, titleCase(s.stage));
         })
       ),

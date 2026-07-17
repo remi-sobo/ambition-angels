@@ -23,25 +23,41 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   // Link an existing student if the family is already on the roster
-  // (same dedupe rule as the career-quiz import: any email overlap).
+  // (same dedupe rule as the career-quiz import: any email overlap). Guardian
+  // email is a custom field now (D5), so match in JS over the org's roster
+  // rather than a fragile JSONB `.or()` filter — the table is small and a miss
+  // here would wrongly create a duplicate student.
   let studentId: string | null = app.student_id;
   if (!studentId) {
-    const emails = [app.email, app.guardian_email]
-      .filter((e): e is string => Boolean(e))
-      .map((e) => e.toLowerCase());
-    if (emails.length > 0) {
-      const list = emails.map((e) => `"${e}"`).join(",");
-      const { data: existing } = await supabase
+    const emails = new Set(
+      [app.email, app.guardian_email]
+        .filter((e): e is string => Boolean(e))
+        .map((e) => e.toLowerCase())
+    );
+    if (emails.size > 0) {
+      const { data: roster } = await supabase
         .from("students")
-        .select("id")
-        .or(`email.in.(${list}),guardian_email.in.(${list})`)
-        .limit(1)
-        .maybeSingle();
-      if (existing) studentId = existing.id;
+        .select("id, email, custom_fields")
+        .eq("org_id", app.org_id);
+      const match = (roster ?? []).find((r) => {
+        const rowEmail = typeof r.email === "string" ? r.email.toLowerCase() : null;
+        const guardian = (r.custom_fields as Record<string, unknown> | null)?.guardian_email;
+        const rowGuardian = typeof guardian === "string" ? guardian.toLowerCase() : null;
+        return (rowEmail && emails.has(rowEmail)) || (rowGuardian && emails.has(rowGuardian));
+      });
+      if (match) studentId = match.id;
     }
   }
 
   if (!studentId) {
+    // The application's AA-shaped participant fields map to the student's
+    // custom_fields registry keys (the AA defs seeded in D2); the AA-specific
+    // student columns were dropped in D5. Only carry keys that have a value.
+    const customFields: Record<string, unknown> = {};
+    for (const k of ["grade", "school", "dob", "guardian_name", "guardian_email", "guardian_phone"] as const) {
+      const v = (app as Record<string, unknown>)[k];
+      if (v !== null && v !== undefined && v !== "") customFields[k] = v;
+    }
     const { data: created, error: createErr } = await supabase
       .from("students")
       .insert({
@@ -50,14 +66,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         last_name: app.last_name,
         email: app.email,
         phone: app.phone,
-        dob: app.dob,
-        grade: app.grade,
-        school: app.school,
         location: app.location,
         stage: "learn",
-        guardian_name: app.guardian_name,
-        guardian_email: app.guardian_email,
-        guardian_phone: app.guardian_phone,
+        custom_fields: customFields,
         external_source: "application",
         external_id: app.id,
         last_activity_at: new Date().toISOString().slice(0, 10),

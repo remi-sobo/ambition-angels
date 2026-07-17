@@ -3,7 +3,6 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isAuthed } from "@/lib/admin/auth";
 import { getFieldDefs, validateAndMerge } from "@/lib/admin/customFields";
 import { getParticipantStages } from "@/lib/admin/program/stages";
-import { LEGACY_STUDENT_FIELD_KEYS } from "@/lib/admin/program/legacyFields";
 import { audit } from "@/lib/audit";
 
 const isISODate = (v: unknown): v is string =>
@@ -65,12 +64,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     );
     if (!merged.ok) return NextResponse.json({ error: merged.error }, { status: 400 });
     update.custom_fields = merged.value;
-    // Dual-write shim (D2→D5): keep the legacy columns in lockstep with the
-    // registry so unmigrated readers stay current; a cleared key nulls its
-    // column too. Dropped in D5.
-    for (const k of LEGACY_STUDENT_FIELD_KEYS) {
-      update[k] = k in merged.value ? merged.value[k] : null;
-    }
   }
 
   const { error } = await supabase.from("students").update(update).eq("id", params.id);

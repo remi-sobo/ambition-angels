@@ -339,34 +339,6 @@ function AssigneeSelect({
   );
 }
 
-// ── Seed button (one-time starter-strategy load) ───────────────────────────
-// `orgName` comes from ctx.orgName on the page — never hardcode a tenant.
-export function SeedButton({ orgName }: { orgName: string }) {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  return (
-    <button
-      disabled={busy}
-      onClick={async () => {
-        if (!confirm(`Load the starter strategy for ${orgName} (foundation, 4 objectives, goals, KPIs)? Safe to run once.`)) return;
-        setBusy(true);
-        try {
-          const res = await fetch("/api/admin/plan/seed", { method: "POST" });
-          const j = await res.json().catch(() => ({}));
-          if (!res.ok) alert(j.error ?? `HTTP ${res.status}`);
-          else if (j.seeded === false) alert("Strategy already seeded.");
-          router.refresh();
-        } finally {
-          setBusy(false);
-        }
-      }}
-      className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50"
-    >
-      {busy ? "Loading…" : "Load starter strategy"}
-    </button>
-  );
-}
-
 // ── Refresh auto metrics (Phase 3) ─────────────────────────────────────────
 export function RefreshMetricsButton() {
   const router = useRouter();

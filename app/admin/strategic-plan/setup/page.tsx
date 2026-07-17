@@ -33,6 +33,12 @@ export default async function StrategySetupPage() {
 
   const f = foundationRes.data as { mission: string | null; vision: string | null; values: unknown; behaviors: unknown } | null;
   const foundationSet = !!(f && (f.mission || f.vision || (Array.isArray(f.values) && f.values.length > 0)));
+  const foundation = {
+    mission: f?.mission ?? "",
+    vision: f?.vision ?? "",
+    values: Array.isArray(f?.values) ? (f!.values as string[]).join(", ") : "",
+    behaviors: Array.isArray(f?.behaviors) ? (f!.behaviors as string[]).join(", ") : "",
+  };
   const objectives = (objsRes.data ?? []) as WizObjective[];
   const goals = (goalsRes.data ?? []) as WizGoal[];
   const kpis = (kpisRes.data ?? []) as WizKpi[];
@@ -52,6 +58,7 @@ export default async function StrategySetupPage() {
       />
       <SetupWizard
         foundationSet={foundationSet}
+        foundation={foundation}
         objectives={objectives}
         goals={goals}
         kpis={kpis}

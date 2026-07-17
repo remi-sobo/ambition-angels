@@ -172,6 +172,7 @@ ordered=(
   bloomos_strategy_objective_notes_tasks.sql
   participant_custom_fields.sql
   prospect_task_links.sql
+  create_reed_next_moves.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

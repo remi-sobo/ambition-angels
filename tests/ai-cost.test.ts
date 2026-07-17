@@ -7,9 +7,9 @@ describe("estimateCostUsd", () => {
     expect(estimateCostUsd("claude-sonnet-4-6", 1_000_000, 1_000_000)).toBeCloseTo(18, 9);
   });
 
-  test("prices Opus at $15/M in, $75/M out (matches the prior funder numbers)", () => {
-    expect(estimateCostUsd("claude-opus-4-7", 1_000_000, 1_000_000)).toBeCloseTo(90, 9);
-    expect(estimateCostUsd("claude-opus-4-8", 1_000_000, 1_000_000)).toBeCloseTo(90, 9);
+  test("prices Opus at $5/M in, $25/M out (current list price)", () => {
+    expect(estimateCostUsd("claude-opus-4-7", 1_000_000, 1_000_000)).toBeCloseTo(30, 9);
+    expect(estimateCostUsd("claude-opus-4-8", 1_000_000, 1_000_000)).toBeCloseTo(30, 9);
   });
 
   test("reproduces a small real Reed-style estimate exactly", () => {

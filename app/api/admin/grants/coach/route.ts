@@ -14,7 +14,13 @@ import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { generateText, AIKeyMissingError } from "@/lib/ai/gateway";
 import { logAICall } from "@/lib/ai/ledger";
 import { orgOverAICap } from "@/lib/ai/cap";
-import { getCoachPrompt, COACH_SYSTEM, MAX_FUNDER_CHARS } from "@/lib/fundraising/grantCoach";
+import {
+  getCoachPrompt,
+  getCoachLens,
+  DEFAULT_LENS_ID,
+  COACH_SYSTEM,
+  MAX_FUNDER_CHARS,
+} from "@/lib/fundraising/grantCoach";
 import { resolveDraftFromBody, buildCoachOpeningMessage } from "@/lib/fundraising/grantCoachDocs";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +42,11 @@ export async function POST(req: NextRequest) {
   const coachPrompt = promptId ? getCoachPrompt(promptId) : null;
   if (!coachPrompt) {
     return NextResponse.json({ error: "Unknown coach prompt" }, { status: 400 });
+  }
+  // Missing lens defaults; a present-but-unknown value is a client bug — 400.
+  const lens = getCoachLens(str(body?.lens, 40) ?? DEFAULT_LENS_ID);
+  if (!lens) {
+    return NextResponse.json({ error: "Unknown audience lens" }, { status: 400 });
   }
   const funderMaterials = str(body?.funderMaterials, MAX_FUNDER_CHARS);
   // Optional, for the spend ledger only — the run itself is stateless.
@@ -65,6 +76,7 @@ export async function POST(req: NextRequest) {
       messages: [
         buildCoachOpeningMessage({
           instructions: coachPrompt.instructions,
+          lens,
           source: draft.source,
           funderMaterials,
         }),
@@ -96,6 +108,7 @@ export async function POST(req: NextRequest) {
       metadata: {
         promptId: coachPrompt.id,
         grantId,
+        lens: lens.id,
         hadFunderMaterials: !!funderMaterials,
         draftSource: draft.source.type,
       },

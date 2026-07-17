@@ -30,6 +30,7 @@ import { deriveHealth } from "@/lib/admin/plan/health";
 import { FINANCE } from "@/lib/admin/thresholds";
 import { computeSecuredFy, computeWeightedPipeline } from "@/lib/admin/strategy/money";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
+import { LOST_STAGE_LIST, STAGE_FUNNEL_ORDER } from "@/lib/fundraising/stage-sets";
 
 const ORG = (orgId: string) => orgId;
 
@@ -387,7 +388,7 @@ export async function getHowMovement(orgId: string): Promise<HowMovement> {
   const [anglesRes, funderRes, oppsRes, channelRes] = await Promise.all([
     sb.from("strategy_angles").select("id, key, name, hook, ask").eq("org_id", ORG(orgId)).order("sort_order"),
     sb.from("funder_angles").select("angle_id").eq("org_id", ORG(orgId)),
-    sb.from("opportunities").select("stage, ask_amount").eq("org_id", ORG(orgId)).neq("stage", "lost").or(EXCLUDE_PARTNERSHIP_OPPS),
+    sb.from("opportunities").select("stage, ask_amount").eq("org_id", ORG(orgId)).not("stage", "in", `(${LOST_STAGE_LIST.join(",")})`).or(EXCLUDE_PARTNERSHIP_OPPS),
     sb.from("plan_kpis").select("metric_key, title, target, current, unit, status").eq("org_id", ORG(orgId)).in("metric_key", [METRIC.corporate, METRIC.aigMultiyear]),
   ]);
 
@@ -414,10 +415,12 @@ export async function getHowMovement(orgId: string): Promise<HowMovement> {
     row.askTotal += Number(o.ask_amount ?? 0);
     stageMap.set(stage, row);
   }
-  // Order by the live fundraising funnel, unknown stages last.
-  const STAGE_ORDER = ["identify", "qualify", "cultivate", "solicit", "steward"];
+  // Order by the funnel (cross-taxonomy: legacy five + ten-stage Sales),
+  // unknown stages last.
   const pipelineByStage = Array.from(stageMap.values()).sort(
-    (a, b) => (STAGE_ORDER.indexOf(a.stage) + 1 || 99) - (STAGE_ORDER.indexOf(b.stage) + 1 || 99),
+    (a, b) =>
+      (STAGE_FUNNEL_ORDER.indexOf(a.stage) + 1 || 99) -
+      (STAGE_FUNNEL_ORDER.indexOf(b.stage) + 1 || 99),
   );
 
   const channels: ChannelProgress[] = (channelRes.data ?? []).map((c) => ({

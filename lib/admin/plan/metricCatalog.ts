@@ -29,7 +29,7 @@ export const AUTO_METRIC_CATALOG: MetricCatalogEntry[] = [
     key: "corporate_dollars_ytd",
     label: "Corporate dollars (YTD)",
     unit: "$",
-    description: "Secured corporate major gifts (steward stage) this year.",
+    description: "Secured corporate major gifts (won stage) this year.",
   },
   {
     key: "donor_updates_sent_ytd",

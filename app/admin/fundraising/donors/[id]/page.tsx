@@ -23,6 +23,7 @@ import { RailEntity } from "../../../_components/rail/RailEntityContext";
 import ConstituentDangerZone from "../_components/ConstituentDangerZone";
 import { mapStage, type HubSpotPledgeStatus } from "@/lib/finance/hubspot-pledges";
 import { TYPE } from "@/lib/admin/typeScale";
+import { isOpenStage } from "@/lib/fundraising/stage-sets";
 
 // Donor profile + giving timeline (Ring 2 Donors v1).
 export const dynamic = "force-dynamic";
@@ -117,8 +118,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
     next_step_due: string | null; ask_amount: number | null; expected_close: string | null;
   }>;
   // Next move: soonest-due open ask with a next step (Constituent 360 v1).
-  const OPEN_STAGES = ["identify", "qualify", "cultivate", "solicit"];
-  const openOpps = opps.filter((o) => OPEN_STAGES.includes(o.stage));
+  const openOpps = opps.filter((o) => isOpenStage(o.stage));
   const nextMove =
     openOpps
       .filter((o) => o.next_step)

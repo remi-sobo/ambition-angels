@@ -9,13 +9,12 @@ import GmailSyncButton from "../_components/GmailSyncButton";
 import SuggestedMoves from "../_components/SuggestedMoves";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { TYPE } from "@/lib/admin/typeScale";
+import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 
 // Today's Fundraising Moves (Phase 2) — the operator home screen. Answers "who
 // needs me today," assembled deterministically from the spine (opportunities +
 // gifts). The next-best-action agent layers on later; this is the queue.
 export const dynamic = "force-dynamic";
-
-const OPEN_STAGES = ["identify", "qualify", "cultivate", "solicit"];
 
 type ConstituentLite = {
   id: string;
@@ -78,7 +77,7 @@ export default async function TodaysMovesPage() {
     supabase
       .from("opportunities")
       .select(oppSelect)
-      .in("stage", OPEN_STAGES)
+      .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step", "is", null)
       .lt("next_step_due", today)
@@ -88,7 +87,7 @@ export default async function TodaysMovesPage() {
     supabase
       .from("opportunities")
       .select(oppSelect)
-      .in("stage", OPEN_STAGES)
+      .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .gte("expected_close", today)
       .lte("expected_close", soon)
@@ -98,7 +97,7 @@ export default async function TodaysMovesPage() {
     supabase
       .from("opportunities")
       .select(oppSelect)
-      .in("stage", OPEN_STAGES)
+      .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .is("owner", null)
       .order("ask_amount", { ascending: false, nullsFirst: false })

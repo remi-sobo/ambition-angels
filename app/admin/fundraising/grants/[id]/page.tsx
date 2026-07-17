@@ -13,6 +13,12 @@ import {
   EditableGrantDetails,
 } from "../_components/GrantControls";
 import GrantSeedTasks from "../_components/GrantSeedTasks";
+import GrantCoach from "../_components/GrantCoach";
+import {
+  COACH_PROMPTS,
+  COACH_ATTRIBUTION,
+  COACH_ATTRIBUTION_URL,
+} from "@/lib/fundraising/grantCoach";
 import { STAGE_LABELS } from "../_lib/stages";
 import PageHeader from "../../../_components/PageHeader";
 import { EntityDocuments } from "../../../_components/EntityDocuments";
@@ -217,6 +223,14 @@ export default async function GrantDetailPage({ params }: { params: { id: string
 
         {/* ── Documents: award letter, narrative, reports — linked here ── */}
         <EntityDocuments entityType="grant" entityId={g.id} entityLabel={g.name} />
+
+        {/* ── Grant Coach: AI stress-test of the proposal draft ── */}
+        <GrantCoach
+          grantId={g.id}
+          prompts={COACH_PROMPTS.map(({ id, label, blurb }) => ({ id, label, blurb }))}
+          attribution={COACH_ATTRIBUTION}
+          attributionUrl={COACH_ATTRIBUTION_URL}
+        />
 
         {project ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">

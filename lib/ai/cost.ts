@@ -20,10 +20,12 @@ export type ModelPricing = {
 
 // List prices, USD per million tokens. Keep in sync with the model tiers in
 // lib/ai/gateway.ts and the per-agent model constants.
+// Opus 4.7/4.8 list at $5/$25 (the old $15/$75 here was the Opus 4.1-era
+// price carried forward, which over-billed the ledger 3x on Opus surfaces).
 const PRICING: Record<string, ModelPricing> = {
   "claude-sonnet-4-6": { inputPerMillionUsd: 3, outputPerMillionUsd: 15 },
-  "claude-opus-4-7": { inputPerMillionUsd: 15, outputPerMillionUsd: 75 },
-  "claude-opus-4-8": { inputPerMillionUsd: 15, outputPerMillionUsd: 75 },
+  "claude-opus-4-7": { inputPerMillionUsd: 5, outputPerMillionUsd: 25 },
+  "claude-opus-4-8": { inputPerMillionUsd: 5, outputPerMillionUsd: 25 },
 };
 
 // Unknown models fall back to Sonnet pricing: the cheaper-of-the-pair, so an

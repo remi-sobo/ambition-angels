@@ -16,13 +16,13 @@ import SectionHeading from "../_components/SectionHeading";
 import StrategyGlance from "./_components/StrategyGlance";
 import StrategyControls, { type LensKey } from "./_components/StrategyControls";
 import UnassignedMetrics from "./_components/UnassignedMetrics";
+import { planCompleteness } from "@/lib/admin/plan/completeness";
 import {
   FoundationPanel,
   ObjectiveCard,
   GoalCard,
   NewObjectiveForm,
   NewGoalForm,
-  SeedButton,
   RefreshMetricsButton,
   type PlanFoundation,
   type PlanObjective,
@@ -296,20 +296,44 @@ export default async function StrategicPlanPage({
             {!isEmpty && <ReedReviewButton />}
             {!isEmpty && <ReedDesignButton />}
             {isEmpty && <ReedStartButton />}
-            {isEmpty ? <SeedButton orgName={ctx.orgName} /> : <RefreshMetricsButton />}
+            {!isEmpty && <RefreshMetricsButton />}
             <NewObjectiveForm />
           </div>
         }
       />
 
       {isEmpty ? (
-        <>
-          <FoundationPanel foundation={foundation} />
-          <p className="text-sm text-ink-2">
-            No strategy yet — click <strong>Load starter strategy</strong> to bring in the foundation, four objectives,
-            goals, and KPIs from the OGSM, or add an objective to build it from scratch.
-          </p>
-        </>
+        (() => {
+          // Build vs. finish (spec #6): the hero names exactly what a
+          // functioning strategy still needs, and the wizard is the one door.
+          const completeness = planCompleteness({
+            mission: foundation?.mission ?? null,
+            objectives: objectives.map((o) => ({ id: o.id, title: o.title })),
+            goals: goals.map((g) => ({ id: g.id, objective_id: g.objective_id })),
+            kpis: kpis.map((k) => ({ goal_id: k.goal_id })),
+          });
+          return (
+            <>
+              <div className="bg-surface border-[1.5px] border-outline rounded-card-lg p-6 mb-6">
+                <h2 className="font-heading font-semibold text-ink-1 text-lg">
+                  {completeness.empty ? "Build your strategy" : "Finish your strategy"}
+                </h2>
+                <p className="text-sm text-ink-2 mt-1 max-w-xl">
+                  {completeness.empty
+                    ? "Set your foundation, name 3–5 objectives, give each one measurable goals, and wire the measures to live data. The guided setup walks the whole shape."
+                    : `Still missing: ${completeness.gaps.join(", ")}.`}
+                </p>
+                <Link
+                  href="/admin/strategic-plan/setup"
+                  className="inline-block mt-4 text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-5 py-2.5 rounded-full transition-colors"
+                >
+                  {completeness.empty ? "Start the guided setup" : "Continue the guided setup"}
+                </Link>
+              </div>
+              <FoundationPanel foundation={foundation} />
+            </>
+          );
+        })()
       ) : (
         <>
           <StrategyControls

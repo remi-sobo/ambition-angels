@@ -80,6 +80,14 @@ describe("stage-sets: semantic unions cover both taxonomies", () => {
     expect(isOpenStage("pledged")).toBe(true);
     expect(isTerminalStage("pledged")).toBe(false);
   });
+
+  test("Angel Connectors stages land in the right sets", () => {
+    // Committed is that pipeline's won; activation stages after it stay open.
+    expect(isTerminalStage("committed")).toBe(true);
+    for (const k of ["pitched", "big_3_idd", "linkedin_mined", "outreach_sent", "meetings_scheduled"]) {
+      expect(isOpenStage(k), `${k} should be open`).toBe(true);
+    }
+  });
 });
 
 describe("stagesForPipeline", () => {

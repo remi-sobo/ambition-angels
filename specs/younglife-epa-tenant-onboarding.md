@@ -78,7 +78,7 @@ Seed skips the pipeline block: her first opportunity insert fails on the composi
 
 1. **Kid label: "Kid" vs "Young person."** Recommend **Kid** (her national reporting language), revisit after a month. One SQL update either way.
 2. **Module count.** Recommend **9**: fundraising, finance, program, partners, ops, board, compliance, documents, metrics. Meetings, messages, staff, strategy off until she asks. Metrics earns its slot: the monthly report is her hardest requirement.
-3. **Her stage names.** Contact → Club Kid → Campaigner → Graduated → Moved Away is a proposal — confirm with her before the seed; which count as *engaged* drives the roster's engaged-count tiles.
+3. **Her stage names.** RESOLVED 2026-07-18: Contact → Club Kid → Campaigner → Graduated → Moved Away confirmed (Club Kid and Campaigner are the engaged stages).
 4. **Gift mirroring cadence.** She logs gifts as pledged/received, reconciles against national monthly, same rhythm as her metric snapshots. National import stays out (no Salesforce access assumption).
 5. **Camp spec timing.** R1 contract deadline is January; write the camp spec in the fall so roster + contribution ledger exist before the headcount scramble. Payments stay out regardless.
 6. **YL EPA takes the tenant-2 slot ahead of Safespace.** Assumed by this spec; Safespace becomes run two of the paved pattern. Confirm.
@@ -86,14 +86,18 @@ Seed skips the pipeline block: her first opportunity insert fails on the composi
 ## Appendix A — YL EPA seed (Remi applies, one transaction)
 
 ```sql
--- BLANKS: her email domain, her email address. Confirm org display name and
--- stage names (open decision 3) before running.
+-- Blanks RESOLVED 2026-07-18: owner is kendrasobo@gmail.com; stage names
+-- confirmed. NO email_domain — deliberately. The membership bootstrap's
+-- domain rule auto-grants staff to ANY signup matching settings->>'email_domain';
+-- she is on a personal Gmail, so a domain rule would open her org to every
+-- gmail.com signup. Access is allowlist-only (exact email match), which is
+-- the correct shape for any personal-email tenant. Add future leaders /
+-- committee members to org_email_allowlist individually.
 begin;
 
 with new_org as (
   insert into public.orgs (name, slug, settings)
-  values ('Young Life EPA', 'young-life-epa',
-          jsonb_build_object('email_domain', '<her-email-domain>'))
+  values ('Young Life EPA', 'young-life-epa', '{}'::jsonb)
   returning id
 ),
 ents as (
@@ -196,7 +200,7 @@ mets as (
   returning org_id
 )
 insert into public.org_email_allowlist (email, org_id, role)
-select distinct '<her-email>', org_id, 'owner'::org_role from mets;
+select distinct 'kendrasobo@gmail.com', org_id, 'owner'::org_role from mets;
 
 commit;
 -- Column names, enum values (metric direction/cadence/source_kind, pipeline

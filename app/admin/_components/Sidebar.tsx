@@ -70,6 +70,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Today's Moves", icon: "tasks", href: "/admin/fundraising/today", feature: "modules.fundraising" },
       { label: "Donors", icon: "donors", href: "/admin/fundraising/donors", feature: "modules.fundraising" },
+      { label: "Volunteers", icon: "team", href: "/admin/fundraising/volunteers", feature: "modules.fundraising", term: "volunteer" },
       { label: "Pipeline", icon: "majorgifts", href: "/admin/fundraising", feature: "modules.fundraising" },
       { label: "Strategy", icon: "strategy", href: "/admin/fundraising/strategy", feature: "modules.fundraising" },
       { label: "Prospects", icon: "events", href: "/admin/fundraising/prospects", feature: "ai.prospect_research" },

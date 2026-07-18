@@ -33,6 +33,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const tags = strArr(body.tags);
   if (tags) update.tags = tags;
   if (typeof body.do_not_contact === "boolean") update.do_not_contact = body.do_not_contact;
+  // Volunteer (Leader) flag — flag/unflag from the Volunteers list.
+  if (typeof body.is_volunteer === "boolean") update.is_volunteer = body.is_volunteer;
   // Preferred stewardship channel: one of the ack channels, or null to clear.
   if (body.preferred_ack_channel === null) update.preferred_ack_channel = null;
   else if (

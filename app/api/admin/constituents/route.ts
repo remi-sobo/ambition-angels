@@ -55,6 +55,8 @@ export async function POST(req: NextRequest) {
     if (v) insert[f] = v;
   }
   if (typeof body.do_not_contact === "boolean") insert.do_not_contact = body.do_not_contact;
+  // Volunteer (Leader) flag — the Volunteers list creates records with it set.
+  if (typeof body.is_volunteer === "boolean") insert.is_volunteer = body.is_volunteer;
 
   const supabase = createServerSupabase();
   const { data, error } = await supabase.from("constituents").insert(insert).select("id").single();

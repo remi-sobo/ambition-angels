@@ -87,9 +87,15 @@ describe("getNavTermLabels", () => {
       student: "Students",
       cohort: "Cohorts",
       staff: "Staff",
+      volunteer: "Volunteers",
       partner: "Schools & Partners",
       board: "Board",
     });
+  });
+
+  test("volunteer follows standard precedence: Leader shows Leaders in the nav", async () => {
+    state.overrides.set("volunteer", "Leader");
+    expect((await getNavTermLabels()).volunteer).toBe("Leaders");
   });
 
   test("the runbook verify: student → Scholar shows Scholars in the nav", async () => {

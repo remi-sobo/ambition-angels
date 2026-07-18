@@ -74,6 +74,7 @@ export async function getNavTermLabels(): Promise<Record<string, string>> {
     student: pluralizeTerm(label("student", "Student")),
     cohort: pluralizeTerm(label("cohort", "Cohort")),
     staff: label("staff", "Staff"),
+    volunteer: pluralizeTerm(label("volunteer", "Volunteer")),
     partner: partnerOverride ? pluralizeTerm(partnerOverride) : "Schools & Partners",
     board: boardOverride || "Board",
   };

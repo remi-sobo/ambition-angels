@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AUTO_METRIC_CATALOG } from "@/lib/admin/plan/metricCatalog";
+import { STARTER_OBJECTIVES } from "@/lib/admin/plan/template";
 
 export type WizObjective = { id: string; title: string };
 export type WizGoal = { id: string; title: string; objective_id: string | null };
@@ -224,6 +225,88 @@ function FoundationForm({ initial, onSaved }: { initial: WizFoundation; onSaved:
   );
 }
 
+// Fuller objective authoring (spec #6 F2): title + optional 3-year statement,
+// available whether the org has zero objectives or is adding its fifth.
+function AddObjective({ onDone, autoOpen = false }: { onDone: () => void; autoOpen?: boolean }) {
+  const [open, setOpen] = useState(autoOpen);
+  const [title, setTitle] = useState("");
+  const [statement, setStatement] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="text-[11px] font-semibold text-orange hover:text-orange-dark">
+        + Add an objective
+      </button>
+    );
+  }
+  const submit = async () => {
+    if (!title.trim()) return;
+    setBusy(true);
+    try {
+      const ok = await api("/api/admin/plan/objectives", {
+        title: title.trim(),
+        three_year_statement: statement.trim() || undefined,
+      });
+      if (ok) { setTitle(""); setStatement(""); onDone(); }
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className={`space-y-2 ${busy ? "opacity-60" : ""}`}>
+      <input
+        className={`${inputCls} w-full !py-1.5 !text-xs`}
+        placeholder="Objective — a standing pillar (e.g. Execute an effective fundraising strategy)"
+        value={title} autoFocus onChange={(e) => setTitle(e.target.value)}
+      />
+      <textarea
+        className={`${inputCls} w-full !text-xs`} rows={2}
+        placeholder="3-year statement (optional) — what does success look like for this pillar?"
+        value={statement} onChange={(e) => setStatement(e.target.value)}
+      />
+      <div className="flex gap-2">
+        <button onClick={() => void submit()} disabled={busy || !title.trim()}
+          className="text-[11px] font-semibold bg-orange hover:bg-orange-dark text-white px-4 py-1.5 rounded-full disabled:opacity-50">
+          Add objective
+        </button>
+        {!autoOpen && (
+          <button onClick={() => setOpen(false)} className="text-[11px] text-ink-2 hover:text-ink-1 px-2">Cancel</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Starter-shape loader (spec #6 F3): four tenant-neutral pillars with
+// bracketed statement prompts, created through the same objectives route.
+function LoadTemplateButton({ onDone }: { onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const load = async () => {
+    setBusy(true);
+    try {
+      for (let i = 0; i < STARTER_OBJECTIVES.length; i++) {
+        const o = STARTER_OBJECTIVES[i];
+        const ok = await api("/api/admin/plan/objectives", {
+          title: o.title,
+          three_year_statement: o.statement,
+          sort_order: i,
+        });
+        if (!ok) return;
+      }
+      onDone();
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <button onClick={() => void load()} disabled={busy}
+      className="text-[11px] font-semibold text-ink-2 bg-tile hover:bg-[#EFE6D4] border border-outline px-3 py-1.5 rounded-full disabled:opacity-50">
+      {busy ? "Loading…" : "Load the starter shape (4 generic pillars you'll rename)"}
+    </button>
+  );
+}
+
 export default function SetupWizard({
   foundationSet,
   foundation,
@@ -298,8 +381,14 @@ export default function SetupWizard({
             : `${objectivesNoGoals.length} objective${objectivesNoGoals.length === 1 ? "" : "s"} need a goal.`
         }>
         {objectives.length === 0 ? (
-          <QuickAdd placeholder="New objective (e.g. Execute an effective fundraising strategy)" onAdd={async (title) => { if (await api("/api/admin/plan/objectives", { title })) refresh(); }} />
-        ) : objectivesNoGoals.length > 0 ? (
+          <div className="space-y-3">
+            <AddObjective onDone={refresh} autoOpen />
+            <div className="flex items-center gap-2 text-[11px] text-ink-3">
+              <span>or</span>
+              <LoadTemplateButton onDone={refresh} />
+            </div>
+          </div>
+        ) : (
           <div className="space-y-3">
             {objectivesNoGoals.map((o) => (
               <div key={o.id}>
@@ -307,8 +396,9 @@ export default function SetupWizard({
                 <QuickAdd placeholder="Add a SMART goal for this objective" onAdd={async (title) => { if (await api("/api/admin/plan/goals", { title, objective_id: o.id })) refresh(); }} />
               </div>
             ))}
+            <AddObjective onDone={refresh} />
           </div>
-        ) : null}
+        )}
       </StepCard>
 
       <StepCard n={3} title="Every goal has a measure" done={allMeasured}

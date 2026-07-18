@@ -87,7 +87,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Intake", icon: "intake", href: "/admin/intake", feature: "modules.program" },
       { label: "Demo Day", icon: "demoday", href: "/admin/demoday", feature: "aa.demoday" },
       { label: "YGB Camp", icon: "camp", href: "/admin/ygb", feature: "aa.ygb" },
-      { label: "Schools & Partners", icon: "schools", href: "/admin/partners", feature: "modules.partners" },
+      { label: "Schools & Partners", icon: "schools", href: "/admin/partners", feature: "modules.partners", term: "partner" },
       { label: "Ambition App", icon: "app", soon: true, feature: "modules.program" },
       { label: "Internships", icon: "internships", soon: true, feature: "modules.program" },
       { label: "Career Library", icon: "career", href: "/admin/careers", feature: "aa.quiz" },
@@ -115,7 +115,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Governance",
     items: [
-      { label: "Board", icon: "board", href: "/admin/board", feature: "modules.board" },
+      { label: "Board", icon: "board", href: "/admin/board", feature: "modules.board", term: "board" },
       { label: "Compliance", icon: "compliance", href: "/admin/compliance", feature: "modules.compliance" },
     ],
   },

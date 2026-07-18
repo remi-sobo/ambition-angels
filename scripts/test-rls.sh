@@ -186,6 +186,7 @@ ordered=(
   constituent_custom_fields.sql
   hubspot_projection_external_refs.sql
   add_constituents_is_volunteer.sql
+  add_students_leader_id.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

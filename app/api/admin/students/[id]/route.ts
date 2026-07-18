@@ -42,7 +42,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (typeof update.email === "string") update.email = update.email.toLowerCase();
 
   const hasCustom = "custom_fields" in body;
-  if (Object.keys(update).length === 0 && !hasCustom) {
+  const hasLeader = "leader_id" in body;
+  if (Object.keys(update).length === 0 && !hasCustom && !hasLeader) {
     return NextResponse.json({ error: "No valid fields" }, { status: 400 });
   }
 
@@ -50,6 +51,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { data: before } = await supabase
     .from("students").select("*").eq("id", params.id).maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Leader link: null clears; a uuid must be one of the row's org's
+  // volunteer-flagged constituents (service client bypasses RLS — the org
+  // fence is re-asserted here, org from the row like custom fields below).
+  if (hasLeader) {
+    if (body.leader_id === null || body.leader_id === "") {
+      update.leader_id = null;
+    } else if (typeof body.leader_id === "string" && /^[0-9a-f-]{36}$/i.test(body.leader_id)) {
+      const { data: leader } = await supabase
+        .from("constituents")
+        .select("id")
+        .eq("id", body.leader_id)
+        .eq("org_id", (before as { org_id: string }).org_id)
+        .eq("is_volunteer", true)
+        .maybeSingle();
+      if (!leader) return NextResponse.json({ error: "Unknown leader" }, { status: 400 });
+      update.leader_id = body.leader_id;
+    }
+  }
 
   // Per-org custom fields (spec #4 D1): merge incoming onto the row's current
   // values, validated against this org's registry (org from the row, not the

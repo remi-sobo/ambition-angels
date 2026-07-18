@@ -7,7 +7,7 @@ import { StudentRow, NewStudentForm, type Student } from "./_components/StudentC
 import { getParticipantStages } from "@/lib/admin/program/stages";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getFieldDefs } from "@/lib/admin/customFields";
-import { getProgramTerms } from "@/lib/admin/terminology";
+import { getProgramTerms, getTermLabel } from "@/lib/admin/terminology";
 
 // Participant roster (program spine, spec #4): one roster across programs,
 // organized by the org's journey stages. The stage vocabulary is per-org
@@ -18,19 +18,39 @@ export const dynamic = "force-dynamic";
 export default async function StudentsPage() {
   const supabase = getSupabaseAdmin();
   const ctx = await getOrgContext();
-  const [{ data }, stages, customFieldDefs, terms] = await Promise.all([
-    supabase
-      .from("students")
-      .select("*")
-      .order("last_activity_at", { ascending: false, nullsFirst: false })
-      .limit(500),
-    getParticipantStages(),
-    // Per-org participant custom fields (empty for AA — the forms render as
-    // before until an org seeds defs).
-    ctx ? getFieldDefs(ctx.orgId, "student") : Promise.resolve([]),
-    getProgramTerms(),
-  ]);
+  const [{ data }, stages, customFieldDefs, terms, volunteerTerm, { data: leaderRows }] =
+    await Promise.all([
+      supabase
+        .from("students")
+        .select("*")
+        .order("last_activity_at", { ascending: false, nullsFirst: false })
+        .limit(500),
+      getParticipantStages(),
+      // Per-org participant custom fields (empty for AA — the forms render as
+      // before until an org seeds defs).
+      ctx ? getFieldDefs(ctx.orgId, "student") : Promise.resolve([]),
+      getProgramTerms(),
+      getTermLabel("volunteer", "Volunteer"),
+      // Volunteer-flagged constituents feed the kid→leader picker; empty for
+      // orgs with no volunteers (the picker simply doesn't render).
+      ctx
+        ? supabase
+            .from("constituents")
+            .select("id, first_name, last_name, org_name")
+            .eq("org_id", ctx.orgId)
+            .eq("is_volunteer", true)
+            .is("archived_at", null)
+            .order("last_name", { ascending: true, nullsFirst: false })
+            .limit(200)
+        : Promise.resolve({ data: [] }),
+    ]);
   const students = (data ?? []) as Student[];
+  const leaders = ((leaderRows ?? []) as {
+    id: string; first_name: string | null; last_name: string | null; org_name: string | null;
+  }[]).map((l) => ({
+    id: l.id,
+    name: [l.first_name, l.last_name].filter(Boolean).join(" ") || l.org_name || "(no name)",
+  }));
 
   const journey = stages.filter((s) => !s.terminal);
   const engagedKeys = new Set(stages.filter((s) => s.engaged).map((s) => s.stage_key));
@@ -65,7 +85,8 @@ export default async function StudentsPage() {
               className="text-xs font-semibold text-ink-2 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors">
               Import CSV
             </a>
-            <NewStudentForm customFieldDefs={customFieldDefs} stages={stageOptions} term={terms.student} />
+            <NewStudentForm customFieldDefs={customFieldDefs} stages={stageOptions} term={terms.student}
+              leaders={leaders} volunteerTerm={volunteerTerm} />
           </>
         }
       />
@@ -126,7 +147,8 @@ export default async function StudentsPage() {
               </SectionHeading>
               <div className="space-y-2">
                 {rows.map((s) => (
-                  <StudentRow key={s.id} student={s} stages={stageOptions} customFieldDefs={customFieldDefs} term={terms.student} />
+                  <StudentRow key={s.id} student={s} stages={stageOptions} customFieldDefs={customFieldDefs}
+                    term={terms.student} leaders={leaders} volunteerTerm={volunteerTerm} />
                 ))}
               </div>
             </section>

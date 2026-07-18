@@ -26,6 +26,19 @@ export async function POST(req: NextRequest) {
     insert.email = body.email.trim().toLowerCase();
   if (typeof body?.last_name === "string" && body.last_name.trim())
     insert.last_name = body.last_name.trim().slice(0, 120);
+  // Leader link: must be one of THIS org's volunteer-flagged constituents —
+  // the service client bypasses RLS, so the org fence is re-asserted here.
+  if (typeof body?.leader_id === "string" && /^[0-9a-f-]{36}$/i.test(body.leader_id)) {
+    const { data: leader } = await getSupabaseAdmin()
+      .from("constituents")
+      .select("id")
+      .eq("id", body.leader_id)
+      .eq("org_id", ctx.orgId)
+      .eq("is_volunteer", true)
+      .maybeSingle();
+    if (!leader) return NextResponse.json({ error: "Unknown leader" }, { status: 400 });
+    insert.leader_id = body.leader_id;
+  }
 
   // Per-org custom fields (spec #4 D1): validated against this org's registry.
   // requireAll on create so a required field can't be skipped. Empty registry

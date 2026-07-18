@@ -1,6 +1,7 @@
 # BloomOS — Strategy builders: the OGSM creator (Phase F, spec #6)
 
-Status: draft for review, 2026-07-17
+Status: approved 2026-07-17; built (F1–F3) 2026-07-17.
+Build-time amendment: recon at F1 found a gap-driven setup wizard already live at `/admin/strategic-plan/setup` (objectives→goals→measures with the live-metric catalog→initiatives→review cadence) and Reed strategy facilitation already shipping ("Start with Reed" — propose/accept via the Reed inbox), both from the parallel strategy workstream. The phase therefore collapsed to: F1 = retire the AA seed + build/finish hero + inline foundation step + completeness lib; F2+F3 = multi-objective authoring with statements + the generic starter template. §7's F4 (a separate Reed draft route) is superseded by the existing facilitation and was not built.
 Depends on: Phase C complete (org-scoped writes); the strategy module's existing CRUD surface (`/admin/strategic-plan`, `app/api/admin/plan/*`); Phase E not required.
 Companion docs: `specs/bloomos-core-fence.md` (§5 names this: "tenant-facing OGSM setup UX; AA's plan was seeded by SQL, no second tenant can onboard without this"), `specs/bloomos-strategy.md` (the module's original build), `supabase/migrations/2026_ogsm_reseed.MANUAL.sql` (AA's live plan — the reference for "fully functioning").
 

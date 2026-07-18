@@ -264,6 +264,6 @@ describe("idempotent re-upload (the DoD #2 mechanism)", () => {
     const second = parseCsvText(file).rows.map(rowFingerprint);
     expect(second).toEqual(first);
     // …so every row of the second upload hits external_refs and skips.
-    expect(first.map((fp) => verdictFor(true, null).verdict)).toEqual(["skip", "skip"]);
+    expect(first.map(() => verdictFor(true, null).verdict)).toEqual(["skip", "skip"]);
   });
 });

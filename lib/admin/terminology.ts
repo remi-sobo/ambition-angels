@@ -64,10 +64,18 @@ export async function getNavTermLabels(): Promise<Record<string, string>> {
   );
   const label = (key: string, fallback: string) =>
     resolveTermLabel(key, fallback, overrides, registryNames);
+  // partner/board are override-only: their nav code defaults are compound
+  // ("Schools & Partners") or module names ("Board") that the registry's
+  // singular display_name must not replace — only an org's own rename does.
+  // 'board' is a collective noun like 'staff' and is never pluralized.
+  const partnerOverride = overrides.get("partner")?.trim();
+  const boardOverride = overrides.get("board")?.trim();
   return {
     student: pluralizeTerm(label("student", "Student")),
     cohort: pluralizeTerm(label("cohort", "Cohort")),
     staff: label("staff", "Staff"),
+    partner: partnerOverride ? pluralizeTerm(partnerOverride) : "Schools & Partners",
+    board: boardOverride || "Board",
   };
 }
 

@@ -64,11 +64,14 @@ export function StudentRow({
   student,
   stages = FALLBACK_STAGES,
   customFieldDefs = [],
+  term = "Student",
 }: {
   student: Student;
   stages?: StageOption[];
   /** Per-org custom field defs (empty for AA — renders nothing). */
   customFieldDefs?: CustomFieldDef[];
+  /** Org's singular participant term (org_terminology), e.g. "Kid". */
+  term?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -197,7 +200,7 @@ export function StudentRow({
       </div>
 
       {editing && (
-        <InlineEdit student={student} patch={patch} defs={customFieldDefs} onDone={() => setEditing(false)} />
+        <InlineEdit student={student} patch={patch} defs={customFieldDefs} term={term} onDone={() => setEditing(false)} />
       )}
     </article>
   );
@@ -207,11 +210,13 @@ function InlineEdit({
   student,
   patch,
   defs,
+  term = "Student",
   onDone,
 }: {
   student: Student;
   patch: (fields: Record<string, unknown>) => Promise<void>;
   defs: CustomFieldDef[];
+  term?: string;
   onDone: () => void;
 }) {
   // Universal identity stays as columns; participant fields (grade / guardian /
@@ -232,7 +237,7 @@ function InlineEdit({
   return (
     <div className="mt-3 pt-3 border-t border-outline grid grid-cols-2 lg:grid-cols-6 gap-2 items-end">
       <label className="text-[10px] text-ink-2">
-        Student email
+        {term} email
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={email}
           onChange={(e) => setEmail(e.target.value)} />
       </label>
@@ -258,9 +263,12 @@ function InlineEdit({
 export function NewStudentForm({
   customFieldDefs = [],
   stages = FALLBACK_STAGES,
+  term = "student",
 }: {
   customFieldDefs?: CustomFieldDef[];
   stages?: StageOption[];
+  /** Org's singular participant term (org_terminology), e.g. "Kid". */
+  term?: string;
 }) {
   const router = useRouter();
   const journeyStages = stages.filter((s) => !s.terminal);
@@ -302,7 +310,7 @@ export function NewStudentForm({
     return (
       <button onClick={() => setOpen(true)}
         className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors">
-        + Add student
+        + Add {term.toLowerCase()}
       </button>
     );
   }

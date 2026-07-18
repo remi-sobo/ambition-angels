@@ -87,12 +87,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${bigShoulders.variable} ${poppins.variable} ${dmSans.variable} ${spaceGrotesk.variable}`}>
       <body className="antialiased">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-        />
         <DonateModalProvider>
-          <SiteChrome nav={<Nav />} footer={<Footer />}>
+          {/* Org JSON-LD rides SiteChrome so standalone tenant surfaces
+              (/admin — a shared BloomOS host) don't carry AA identity. */}
+          <SiteChrome nav={<Nav />} footer={<Footer />} jsonLd={JSON.stringify(organizationSchema)}>
             {children}
           </SiteChrome>
         </DonateModalProvider>

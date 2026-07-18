@@ -7,10 +7,14 @@ import ScrollAnimations from "@/components/ScrollAnimations";
 export default function SiteChrome({
   nav,
   footer,
+  jsonLd,
   children,
 }: {
   nav: ReactNode;
   footer: ReactNode;
+  /** Serialized Organization JSON-LD — public pages only, so standalone
+   *  surfaces (/admin is a shared multi-tenant host) carry no AA identity. */
+  jsonLd?: string;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -30,6 +34,9 @@ export default function SiteChrome({
 
   return (
     <>
+      {!standalone && jsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+      )}
       {!standalone && nav}
       {!standalone && <ScrollAnimations />}
       <main>{children}</main>

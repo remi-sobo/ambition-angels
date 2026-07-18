@@ -65,7 +65,7 @@ export default async function StudentsPage() {
               className="text-xs font-semibold text-ink-2 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors">
               Import CSV
             </a>
-            <NewStudentForm customFieldDefs={customFieldDefs} stages={stageOptions} />
+            <NewStudentForm customFieldDefs={customFieldDefs} stages={stageOptions} term={terms.student} />
           </>
         }
       />
@@ -84,7 +84,7 @@ export default async function StudentsPage() {
         <StatCard
           label="Missing guardian contact"
           value={missingGuardian.length}
-          sub="engaged students"
+          sub={`engaged ${terms.students.toLowerCase()}`}
           muted={missingGuardian.length === 0}
         />
       </div>
@@ -126,7 +126,7 @@ export default async function StudentsPage() {
               </SectionHeading>
               <div className="space-y-2">
                 {rows.map((s) => (
-                  <StudentRow key={s.id} student={s} stages={stageOptions} customFieldDefs={customFieldDefs} />
+                  <StudentRow key={s.id} student={s} stages={stageOptions} customFieldDefs={customFieldDefs} term={terms.student} />
                 ))}
               </div>
             </section>

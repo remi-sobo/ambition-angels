@@ -17,10 +17,24 @@ import { getNavTermLabels } from "@/lib/admin/terminology";
 
 export const metadata: Metadata = {
   title: {
-    default: "BloomOS",
+    // absolute: escape the marketing site's "%s | Ambition Angels" template —
+    // a shared multi-tenant host must not carry tenant-one's name in its title.
+    absolute: "BloomOS",
     template: "%s · BloomOS",
   },
   description: "BloomOS — the operating system for your nonprofit.",
+  // Override the root layout's AA-branded social metadata for the same reason.
+  openGraph: {
+    title: "BloomOS",
+    siteName: "BloomOS",
+    description: "BloomOS — the operating system for your nonprofit.",
+    images: [],
+  },
+  twitter: {
+    title: "BloomOS",
+    description: "BloomOS — the operating system for your nonprofit.",
+    images: [],
+  },
   manifest: "/admin/manifest.webmanifest",
   applicationName: "BloomOS",
   appleWebApp: {

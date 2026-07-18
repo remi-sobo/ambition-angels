@@ -25,10 +25,18 @@ const CLEAR: Record<SectionKey, string> = {
   cohorts: "Sessions are logged and attendance is current.",
 };
 
-/** Pure: turn a section's items into one sentence + the worst severity. */
-export function summarize(section: SectionKey, items: BriefingItem[]): SectionSummary {
+/** Pure: turn a section's items into one sentence + the worst severity.
+ *  `clearLines` lets the server caller substitute term-aware all-clear copy
+ *  (e.g. "Kids are progressing" for an org that renamed Student). */
+export function summarize(
+  section: SectionKey,
+  items: BriefingItem[],
+  clearLines: Partial<Record<SectionKey, string>> = {},
+): SectionSummary {
   const relevant = items.filter((it) => SECTION_SOURCES[section].includes(it.source));
-  if (relevant.length === 0) return { sentence: CLEAR[section], severity: "clear" };
+  if (relevant.length === 0) {
+    return { sentence: clearLines[section] ?? CLEAR[section], severity: "clear" };
+  }
 
   const worst = relevant.reduce((a, b) =>
     SEVERITY_RANK[a.severity] <= SEVERITY_RANK[b.severity] ? a : b,
@@ -44,7 +52,14 @@ export async function getSectionSummary(section: SectionKey): Promise<SectionSum
   try {
     const { inputs, states, dataAge } = await gatherInputs();
     const briefing = buildBriefing(inputs, dataAge, states);
-    return summarize(section, briefing.items);
+    // Term-aware all-clear copy (nav-terminology fan-out): the participant
+    // noun is per-org vocabulary, so "Students are progressing" follows it.
+    const { getProgramTerms } = await import("@/lib/admin/terminology");
+    const terms = await getProgramTerms();
+    return summarize(section, briefing.items, {
+      students: `${terms.students} are progressing — no engagement gaps flagged.`,
+      cohorts: `${terms.sessions} are logged and attendance is current.`,
+    });
   } catch {
     // Never let a summary line break the page it sits on.
     return { sentence: CLEAR[section], severity: "clear" };

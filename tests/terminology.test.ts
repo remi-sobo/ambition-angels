@@ -87,6 +87,8 @@ describe("getNavTermLabels", () => {
       student: "Students",
       cohort: "Cohorts",
       staff: "Staff",
+      partner: "Schools & Partners",
+      board: "Board",
     });
   });
 
@@ -100,6 +102,21 @@ describe("getNavTermLabels", () => {
   test("staff is never pluralized", async () => {
     state.overrides.set("staff", "Team");
     expect((await getNavTermLabels()).staff).toBe("Team");
+  });
+
+  test("partner is override-only: registry display_name never replaces the compound default", async () => {
+    // The registry knows 'partner' → 'Partner', but with no org override the
+    // nav must keep its code label, not read "Partners".
+    state.registry.set("partner", { display_name: "Partner" });
+    expect((await getNavTermLabels()).partner).toBe("Schools & Partners");
+    state.overrides.set("partner", "School");
+    expect((await getNavTermLabels()).partner).toBe("Schools");
+  });
+
+  test("board is override-only and never pluralized", async () => {
+    expect((await getNavTermLabels()).board).toBe("Board");
+    state.overrides.set("board", "Committee");
+    expect((await getNavTermLabels()).board).toBe("Committee");
   });
 });
 

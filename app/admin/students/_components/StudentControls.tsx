@@ -36,7 +36,12 @@ export type Student = {
   // AA-specific columns were dropped in D5. The registry (custom_field_defs)
   // defines which keys an org shows.
   custom_fields: Record<string, unknown> | null;
+  // Assigned leader: a volunteer-flagged constituent of the same org.
+  leader_id: string | null;
 };
+
+/** Volunteer-flagged constituents of the org, for the leader picker. */
+export type LeaderOption = { id: string; name: string };
 
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -65,6 +70,8 @@ export function StudentRow({
   stages = FALLBACK_STAGES,
   customFieldDefs = [],
   term = "Student",
+  leaders = [],
+  volunteerTerm = "Leader",
 }: {
   student: Student;
   stages?: StageOption[];
@@ -72,6 +79,10 @@ export function StudentRow({
   customFieldDefs?: CustomFieldDef[];
   /** Org's singular participant term (org_terminology), e.g. "Kid". */
   term?: string;
+  /** Volunteer-flagged constituents for the leader picker (empty hides it). */
+  leaders?: LeaderOption[];
+  /** Org's singular volunteer term (org_terminology), e.g. "Leader". */
+  volunteerTerm?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -114,6 +125,9 @@ export function StudentRow({
   const guardianEmail = cf(student, "guardian_email");
   const guardianPhone = cf(student, "guardian_phone");
   const contactEmail = student.email || guardianEmail;
+  const leaderName = student.leader_id
+    ? leaders.find((l) => l.id === student.leader_id)?.name ?? null
+    : null;
   // "Advance" walks the org's non-terminal journey in order.
   const journey = stages.filter((s) => !s.terminal);
   const stageIdx = journey.findIndex((s) => s.stage_key === student.stage);
@@ -147,6 +161,12 @@ export function StudentRow({
             </a>
           )}
           {guardianPhone ? ` · ${guardianPhone}` : ""}
+        </p>
+      )}
+
+      {leaderName && (
+        <p className="text-[12px] text-ink-2 mt-1">
+          {volunteerTerm}: <span className="text-ink-1">{leaderName}</span>
         </p>
       )}
 
@@ -200,7 +220,8 @@ export function StudentRow({
       </div>
 
       {editing && (
-        <InlineEdit student={student} patch={patch} defs={customFieldDefs} term={term} onDone={() => setEditing(false)} />
+        <InlineEdit student={student} patch={patch} defs={customFieldDefs} term={term}
+          leaders={leaders} volunteerTerm={volunteerTerm} onDone={() => setEditing(false)} />
       )}
     </article>
   );
@@ -211,24 +232,30 @@ function InlineEdit({
   patch,
   defs,
   term = "Student",
+  leaders = [],
+  volunteerTerm = "Leader",
   onDone,
 }: {
   student: Student;
   patch: (fields: Record<string, unknown>) => Promise<void>;
   defs: CustomFieldDef[];
   term?: string;
+  leaders?: LeaderOption[];
+  volunteerTerm?: string;
   onDone: () => void;
 }) {
   // Universal identity stays as columns; participant fields (grade / guardian /
   // …) are registry-driven, rendered by <CustomFields> below.
   const [email, setEmail] = useState(student.email ?? "");
   const [phone, setPhone] = useState(student.phone ?? "");
+  const [leaderId, setLeaderId] = useState(student.leader_id ?? "");
   const [custom, setCustom] = useState<CustomValues>(() => ({ ...(student.custom_fields ?? {}) }));
 
   const save = async () => {
     await patch({
       email: email || null,
       phone: phone || null,
+      ...(leaders.length ? { leader_id: leaderId || null } : {}),
       ...(defs.length ? { custom_fields: custom } : {}),
     });
     onDone();
@@ -246,6 +273,18 @@ function InlineEdit({
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={phone}
           onChange={(e) => setPhone(e.target.value)} />
       </label>
+      {leaders.length > 0 && (
+        <label className="text-[10px] text-ink-2">
+          {volunteerTerm}
+          <select className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={leaderId}
+            onChange={(e) => setLeaderId(e.target.value)}>
+            <option value="">— none —</option>
+            {leaders.map((l) => (
+              <option key={l.id} value={l.id}>{l.name}</option>
+            ))}
+          </select>
+        </label>
+      )}
       <CustomFields defs={defs} values={custom} onChange={setCustom} compact />
       <div className="col-span-full flex justify-end gap-2">
         <button onClick={onDone} className="text-[11px] text-ink-2 hover:text-ink-1 px-2 py-1">
@@ -264,11 +303,16 @@ export function NewStudentForm({
   customFieldDefs = [],
   stages = FALLBACK_STAGES,
   term = "student",
+  leaders = [],
+  volunteerTerm = "Leader",
 }: {
   customFieldDefs?: CustomFieldDef[];
   stages?: StageOption[];
   /** Org's singular participant term (org_terminology), e.g. "Kid". */
   term?: string;
+  /** Volunteer-flagged constituents for the leader picker (empty hides it). */
+  leaders?: LeaderOption[];
+  volunteerTerm?: string;
 }) {
   const router = useRouter();
   const journeyStages = stages.filter((s) => !s.terminal);
@@ -277,6 +321,7 @@ export function NewStudentForm({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [stage, setStage] = useState(journeyStages[0]?.stage_key ?? "discover");
+  const [leaderId, setLeaderId] = useState("");
   const [custom, setCustom] = useState<CustomValues>({});
 
   const submit = async (e: React.FormEvent) => {
@@ -290,6 +335,7 @@ export function NewStudentForm({
           first_name: firstName,
           last_name: lastName || undefined,
           stage,
+          ...(leaderId ? { leader_id: leaderId } : {}),
           ...(customFieldDefs.length ? { custom_fields: custom } : {}),
         }),
       });
@@ -343,6 +389,18 @@ export function NewStudentForm({
           ))}
         </select>
       </label>
+      {leaders.length > 0 && (
+        <label className="text-xs text-ink-2">
+          {volunteerTerm}
+          <select className={`${inputCls} w-full mt-1`} value={leaderId}
+            onChange={(e) => setLeaderId(e.target.value)}>
+            <option value="">— none —</option>
+            {leaders.map((l) => (
+              <option key={l.id} value={l.id}>{l.name}</option>
+            ))}
+          </select>
+        </label>
+      )}
       <CustomFields defs={customFieldDefs} values={custom} onChange={setCustom} />
       <div className="flex gap-2">
         <button type="submit" disabled={busy}

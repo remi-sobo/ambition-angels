@@ -146,6 +146,7 @@ export default async function StrategicPlanPage({
     const { data: taskRows } = await supabase
       .from("ops_tasks")
       .select("project_id, status")
+      .eq("org_id", orgId)
       .in("project_id", attachedProjects.map((p) => p.id))
       .is("archived_at", null);
     for (const t of (taskRows ?? []) as { project_id: string | null; status: string }[]) {

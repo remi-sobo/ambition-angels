@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const isISODate = (v: unknown): v is string =>
@@ -9,7 +9,8 @@ const isTime = (v: unknown): v is string =>
   typeof v === "string" && /^\d{2}:\d{2}$/.test(v);
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
@@ -21,9 +22,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   // A session lives in its cohort's org — derive, never default.
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: cohort } = await getSupabaseAdmin()
     .from("cohorts")
     .select("org_id")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (!cohort) return NextResponse.json({ error: "Cohort not found" }, { status: 404 });

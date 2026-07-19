@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // Create a contact under a partner org (the "partner tag as a contact"
 // people — many per org). Mirrors the constituent create path.
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -39,8 +40,9 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabaseAdmin();
   // A partner's org_id scopes the contact (RLS). Pull it from the partner.
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: partner } = await supabase
-    .from("partners").select("org_id").eq("id", partnerId).maybeSingle();
+    .from("partners").select("org_id").eq("org_id", ctx.orgId).eq("id", partnerId).maybeSingle();
   if (!partner) return NextResponse.json({ error: "Partner not found" }, { status: 404 });
   insert.org_id = partner.org_id;
 

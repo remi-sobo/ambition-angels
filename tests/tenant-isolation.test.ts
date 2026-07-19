@@ -101,14 +101,25 @@ function serviceRoleFiles(): string[] {
 
 type Violation = { file: string; line: number; table: string; snippet: string };
 
-/** Identifiers bound to the service-role client in this file, e.g.
- *  `const supabase = getSupabaseAdmin()` → "supabase". */
-function serviceRoleVars(src: string): Set<string> {
+/** Identifiers bound to a given client factory in this file. */
+function varsBoundTo(src: string, factory: string): Set<string> {
   const vars = new Set<string>();
-  const re = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*getSupabaseAdmin\(\)/g;
+  const re = new RegExp(`(?:const|let|var)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*${factory}\\(\\)`, "g");
   let m: RegExpExecArray | null;
   while ((m = re.exec(src)) !== null) vars.add(m[1]);
   return vars;
+}
+
+/** Names that ARE the service-role client, minus any name that is ALSO bound to
+ *  the RLS session client elsewhere in the file (a per-function `const sb = …`
+ *  collision between a service-role POST and a session-client GET). Ambiguous
+ *  names are dropped to avoid false-positives on the session-client reads —
+ *  the guard's scope tracking is file-global, not per-function. */
+function serviceRoleVars(src: string): Set<string> {
+  const admin = varsBoundTo(src, "getSupabaseAdmin");
+  const session = varsBoundTo(src, "createServerSupabase");
+  for (const n of Array.from(session)) admin.delete(n);
+  return admin;
 }
 
 /** The receiver token immediately before a `.from(` at index `dot`. Returns

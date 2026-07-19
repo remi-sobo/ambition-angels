@@ -14,7 +14,8 @@ const isUuid = (v: unknown): v is string =>
 
 async function loadRun(id: string, orgId: string) {
   const supabase = getSupabaseAdmin();
-  const { data } = await supabase.from("imports").select("*").eq("id", id).maybeSingle();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
+  const { data } = await supabase.from("imports").select("*").eq("org_id", orgId).eq("id", id).maybeSingle();
   if (!data || (data as { org_id: string }).org_id !== orgId) return null;
   return data as Record<string, unknown> & { id: string; status: string; mapping: { header?: string[]; map?: Record<string, string> } };
 }
@@ -30,6 +31,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const { data: rows } = await getSupabaseAdmin()
     .from("import_rows")
     .select("row_num, status, verdict, error, matched_entity_id")
+    .eq("org_id", ctx.orgId)
     .eq("import_id", params.id)
     .order("row_num");
   return NextResponse.json({
@@ -68,6 +70,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { error } = await getSupabaseAdmin()
     .from("imports")
     .update({ mapping: { ...(run.mapping ?? {}), map }, status: "mapping" })
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id);
   if (error) {
     console.error("Update import mapping failed:", error.message);

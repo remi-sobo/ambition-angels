@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { cancelEvent } from "@/lib/google/calendar";
 import { sendEmail } from "@/lib/google/gmail";
 import { buildCancellationEmail } from "@/lib/email/templates/cancellation";
@@ -22,9 +22,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!await isAuthed()) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const ctx = await getOrgContext();
+  if (!ctx) { return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); }
   let body: unknown = {};
   try {
     if (req.headers.get("content-length") !== "0") body = await req.json();
@@ -40,9 +39,11 @@ export async function POST(
   }
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data, error } = await supabase
     .from("bookings")
     .select("*, meeting_type:meeting_types(*)")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (error) {
@@ -76,6 +77,7 @@ export async function POST(
       cancellation_reason: parsed.data.reason ?? "cancelled by admin",
       updated_at: new Date().toISOString(),
     })
+    .eq("org_id", ctx.orgId)
     .eq("id", booking.id);
   if (updateErr) {
     return NextResponse.json({ error: updateErr.message }, { status: 500 });

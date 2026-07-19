@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
     const { count } = await supabase
       .from("partner_contacts")
       .select("id", { count: "exact", head: true })
+      .eq("org_id", ctx.orgId)
       .eq("partner_id", partnerId);
     if ((count ?? 0) === 0) insert.is_primary = true;
   }

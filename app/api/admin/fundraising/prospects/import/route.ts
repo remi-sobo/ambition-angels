@@ -38,9 +38,10 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabaseAdmin();
 
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const [{ data: contacts }, { data: existing }] = await Promise.all([
-    supabase.from("hs_contacts").select("hubspot_id, first_name, last_name, email, company").in("hubspot_id", ids),
-    supabase.from("fr_prospects").select("hubspot_contact_id").in("hubspot_contact_id", ids),
+    supabase.from("hs_contacts").select("hubspot_id, first_name, last_name, email, company").eq("org_id", ctx.orgId).in("hubspot_id", ids),
+    supabase.from("fr_prospects").select("hubspot_contact_id").eq("org_id", ctx.orgId).in("hubspot_contact_id", ids),
   ]);
 
   const onBench = new Set((existing ?? []).map((r) => r.hubspot_contact_id as string));

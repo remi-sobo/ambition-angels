@@ -7,6 +7,7 @@ import { COHORT_STATUS_LABELS } from "./_lib/constants";
 import { pct } from "./_lib/rollups";
 import { getSessionPrograms } from "@/lib/admin/program/programs";
 import { getProgramTerms } from "@/lib/admin/terminology";
+import { getOrgContext } from "@/lib/admin/auth";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // Cohorts & attendance (Ring 3, modules/02-program.md "Cohorts"):
@@ -35,13 +36,26 @@ const STATUS_CHIP: Record<string, string> = {
 
 export default async function CohortsPage() {
   const supabase = getSupabaseAdmin();
+  // Org fence: the service-role client bypasses RLS, so every read is scoped to
+  // the active org. No session → empty.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <h1 className={TYPE.pageTitle}>Groups</h1>
+        <p className="text-ink-2 mt-1">Sign in to view your organization&apos;s groups.</p>
+      </div>
+    );
+  }
+  const orgId = ctx.orgId;
   const [{ data: cohortsData }, { data: membersData }, { data: sessionsData }, { data: marksData }, programs, terms] =
     await Promise.all([
       supabase.from("cohorts").select("*")
+        .eq("org_id", orgId)
         .order("start_date", { ascending: false, nullsFirst: false }),
-      supabase.from("cohort_members").select("cohort_id, student_id, status"),
-      supabase.from("cohort_sessions").select("id, cohort_id, session_date, status"),
-      supabase.from("attendance").select("session_id, status"),
+      supabase.from("cohort_members").select("cohort_id, student_id, status").eq("org_id", orgId),
+      supabase.from("cohort_sessions").select("id, cohort_id, session_date, status").eq("org_id", orgId),
+      supabase.from("attendance").select("session_id, status").eq("org_id", orgId),
       getSessionPrograms(),
       getProgramTerms(),
     ]);

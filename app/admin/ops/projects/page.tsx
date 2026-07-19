@@ -64,12 +64,24 @@ export default async function ProjectsListPage({
 }) {
   const { status, category, assignee, q, sort, dir, page, showGrants } =
     parseParams(searchParams);
-  const currentUser = (await resolveUserHandle())?.handle ?? null;
+  const me = await resolveUserHandle();
+  const currentUser = me?.handle ?? null;
   const resolvedAssignee = assignee === "me" ? currentUser : assignee;
 
   const supabase = getSupabaseAdmin();
 
-  let baseQuery = supabase.from("ops_projects").select("*", { count: "exact" });
+  // Org fence: service-role client bypasses RLS, so the list + its task-count
+  // lookup MUST filter by the active org. No org → empty list.
+  if (!me?.orgId) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Projects" subtitle="Sign in to view your organization's projects." />
+      </div>
+    );
+  }
+  const orgId = me.orgId;
+
+  let baseQuery = supabase.from("ops_projects").select("*", { count: "exact" }).eq("org_id", orgId);
   if (!showGrants) baseQuery = baseQuery.is("grant_id", null);
   if (status) baseQuery = baseQuery.eq("status", status);
   if (category) baseQuery = baseQuery.eq("category", category);
@@ -106,6 +118,7 @@ export default async function ProjectsListPage({
     const { data: taskRows } = await supabase
       .from("ops_tasks")
       .select("project_id, status")
+      .eq("org_id", orgId)
       .in("project_id", ids)
       .neq("status", "done");
     for (const r of (taskRows as Array<{ project_id: string }> | null) ?? []) {

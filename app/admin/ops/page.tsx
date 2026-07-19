@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import { loadStuckProjectContext } from "@/lib/admin/ops/stuck-context";
 import {
   readTaskHealth,
@@ -27,6 +27,17 @@ export default async function OpsLandingPage({
   const supabase = getSupabaseAdmin();
   const today = todayISO();
   const currentUser = await getAdminUser();
+  // Org fence: the service-role client bypasses RLS, so every read below MUST
+  // filter by the active org. Without a session there's no org — render empty.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Tasks" subtitle="Sign in to view your organization's work." />
+      </div>
+    );
+  }
+  const orgId = ctx.orgId;
 
   // Mirror the assignee filter that TasksSurface keeps in the URL (?assignee=),
   // so a person-filtered view scopes the whole landing — Today and This Week —
@@ -51,6 +62,7 @@ export default async function OpsLandingPage({
     supabase
       .from("ops_tasks")
       .select("*")
+      .eq("org_id", orgId)
       .order("display_order", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: true })
       .limit(1000),
@@ -63,6 +75,7 @@ export default async function OpsLandingPage({
     supabase
       .from("ops_projects")
       .select("*")
+      .eq("org_id", orgId)
       .eq("status", "active")
       .order("last_touched_at", { ascending: false })
       .limit(10),
@@ -103,6 +116,7 @@ export default async function OpsLandingPage({
     const { data: projRows } = await supabase
       .from("ops_projects")
       .select("id, title")
+      .eq("org_id", orgId)
       .in("id", missing);
     for (const r of (projRows as { id: string; title: string }[] | null) ?? []) {
       projectNames[r.id] = r.title;
@@ -124,7 +138,8 @@ export default async function OpsLandingPage({
   const stuckProjectContext = await loadStuckProjectContext(
     supabase,
     stuckTasks,
-    allTasks
+    allTasks,
+    orgId
   );
 
   // Open (not done, not archived) tasks — feeds the per-project counts and

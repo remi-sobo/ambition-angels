@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import PageHeader from "../../_components/PageHeader";
 import ProspectsTable, { type ProspectRow } from "./_components/ProspectsTable";
 import { todayISO } from "../../ops/_types/ops";
@@ -54,14 +53,14 @@ export default async function FundraisingProspectsPage({
       supabase.from("fr_prospects").select("id", { count: "exact", head: true }).eq("status", "promoted"),
     ]);
 
-  // Open tasks linked to prospects — the "Tasks" column. Same pattern as the
-  // donors list: ops_tasks has RLS disabled, so read via the service-role
-  // client while everything else stays on the session client.
+  // Open tasks linked to prospects — the "Tasks" column. Read on the SESSION
+  // client so RLS scopes ops_tasks to the caller's org (the service-role client
+  // bypasses RLS and would count every tenant's tasks).
   const today = todayISO();
   const openTaskCount = new Map<string, number>();
   const overdueTaskCount = new Map<string, number>();
   {
-    const { data: taskRows } = await getSupabaseAdmin()
+    const { data: taskRows } = await supabase
       .from("ops_tasks")
       .select("linked_entity_id, due_date")
       .eq("linked_entity_type", "fr_prospects")

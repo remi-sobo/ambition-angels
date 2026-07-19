@@ -50,8 +50,20 @@ function cap(s: string): string {
 
 export default async function FridayClosePage() {
   const me = await resolveUserHandle();
-  const currentUser = me?.handle ?? "remi";
   const supabase = getSupabaseAdmin();
+
+  // Org fence: the service-role client bypasses RLS, so every read below MUST
+  // filter by the active org. No org (no session) → nothing to close out.
+  if (!me?.orgId) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <h1 className={TYPE.pageTitle}>Friday close</h1>
+        <p className="text-ink-2 mt-1">Sign in to close out your week.</p>
+      </div>
+    );
+  }
+  const currentUser = me.handle;
+  const orgId = me.orgId;
 
   // This-week anchor (YYYY-MM-DD, LA) for planned_week; plus the matching
   // UTC instant for the timestamptz completed_at comparison.
@@ -65,6 +77,7 @@ export default async function FridayClosePage() {
     supabase
       .from("ops_tasks")
       .select("*")
+      .eq("org_id", orgId)
       .gte("completed_at", weekStartInstant)
       .or(mineFilter)
       .order("completed_at", { ascending: false }),
@@ -73,6 +86,7 @@ export default async function FridayClosePage() {
     supabase
       .from("ops_tasks")
       .select("*")
+      .eq("org_id", orgId)
       .eq("planned_week", mondayISO)
       .or(mineFilter),
   ]);
@@ -93,6 +107,7 @@ export default async function FridayClosePage() {
     const { data: projRows } = await supabase
       .from("ops_projects")
       .select("id, title")
+      .eq("org_id", orgId)
       .in("id", Array.from(referencedProjectIds));
     for (const r of (projRows as { id: string; title: string }[] | null) ?? []) {
       projectNames.set(r.id, r.title);

@@ -44,6 +44,17 @@ export default async function MondayPlanPage() {
   const orgId = me?.orgId ?? null;
   const supabase = getSupabaseAdmin();
 
+  // Org fence: the service-role client bypasses RLS, so every read below MUST
+  // filter by the active org. No org (no session) → nothing to plan.
+  if (!orgId) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <h1 className={TYPE.pageTitle}>Monday plan</h1>
+        <p className="text-ink-2 mt-1">Sign in to plan your week.</p>
+      </div>
+    );
+  }
+
   // This-week anchor as YYYY-MM-DD (LA), matched against the planned_week column.
   const mondayISO = thisMonday();
 
@@ -56,6 +67,7 @@ export default async function MondayPlanPage() {
     supabase
       .from("ops_tasks")
       .select("*")
+      .eq("org_id", orgId)
       .lt("planned_week", mondayISO)
       .neq("status", "done")
       .or(mineFilter)
@@ -65,6 +77,7 @@ export default async function MondayPlanPage() {
     supabase
       .from("ops_tasks")
       .select("*")
+      .eq("org_id", orgId)
       .eq("planned_week", mondayISO)
       .neq("status", "done")
       .or(mineFilter)
@@ -89,6 +102,7 @@ export default async function MondayPlanPage() {
     const { data: projRows } = await supabase
       .from("ops_projects")
       .select("id, title")
+      .eq("org_id", orgId)
       .in("id", Array.from(referencedProjectIds));
     for (const r of (projRows as { id: string; title: string }[] | null) ?? []) {
       projectNames.set(r.id, r.title);
@@ -110,6 +124,7 @@ export default async function MondayPlanPage() {
     const { data: blocks } = await supabase
       .from("calendar_events")
       .select("id, start_time, end_time")
+      .eq("org_id", orgId)
       .in("id", Array.from(linkedEventIds));
     for (const b of (blocks ?? []) as Array<{ id: string; start_time: string; end_time: string | null }>) {
       blockByEventId.set(b.id, { start: b.start_time, end: b.end_time ?? b.start_time });

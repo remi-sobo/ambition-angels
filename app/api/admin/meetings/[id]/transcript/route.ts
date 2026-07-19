@@ -26,6 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const storeTranscript = body?.store_transcript === true;
 
   const sb = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: rec } = await sb
     .from("meeting_records")
     .select("id, org_id, title, calendar_event_id")
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const { data: ev } = await sb
       .from("calendar_events")
       .select("attendees")
+      .eq("org_id", ctx.orgId)
       .eq("id", record.calendar_event_id)
       .maybeSingle();
     const attendees = ((ev as { attendees: Array<{ email?: string | null; displayName?: string | null }> | null } | null)?.attendees) ?? [];
@@ -81,6 +83,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   await sb
     .from("meeting_suggested_tasks")
     .delete()
+    .eq("org_id", ctx.orgId)
     .eq("meeting_record_id", record.id)
     .eq("status", "pending");
   if (result.suggestions.length) {

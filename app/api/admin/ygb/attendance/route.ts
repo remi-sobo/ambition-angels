@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 // GET /api/admin/ygb/attendance?date=YYYY-MM-DD → rows for that day
 export async function GET(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -17,9 +18,11 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data, error } = await supabase
     .from("ygb_attendance")
     .select("registration_id,checked_in")
+    .eq("org_id", ctx.orgId)
     .eq("attendance_date", date);
 
   if (error) {
@@ -32,7 +35,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/ygb/attendance → upsert a check-in for (registration, date)
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -47,9 +51,11 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabaseAdmin();
   // Check-in lives in its registration's org — derive, never default.
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: reg } = await supabase
     .from("ygb_registrations")
     .select("org_id")
+    .eq("org_id", ctx.orgId)
     .eq("id", registration_id)
     .maybeSingle();
   if (!reg) return NextResponse.json({ error: "Registration not found" }, { status: 404 });

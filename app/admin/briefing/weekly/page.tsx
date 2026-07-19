@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import SectionHeading from "../../_components/SectionHeading";
 import { GenerateButton } from "../_components/BriefingControls";
 import PageHeader from "../../_components/PageHeader";
@@ -17,10 +18,21 @@ const fmtUsd = (n: number) =>
 
 export default async function WeeklyBriefingPage() {
   const supabase = getSupabaseAdmin();
+  // Org fence: the service-role client bypasses RLS, so the briefings read is
+  // scoped to the active org (else "newest across all orgs" would leak).
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Weekly briefing" subtitle="Sign in to view the weekly briefing." />
+      </div>
+    );
+  }
   const [{ data }, crm] = await Promise.all([
     supabase
       .from("briefings")
       .select("*")
+      .eq("org_id", ctx.orgId)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),

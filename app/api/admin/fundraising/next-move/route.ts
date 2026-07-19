@@ -86,7 +86,7 @@ const MAX_GIFTS = 25;
 const MAX_INTERACTIONS = 20;
 const BRIEF_EXCERPT_CHARS = 1800;
 
-async function constituentDossier(supabase: Supabase, id: string): Promise<NextMoveDossier | null> {
+async function constituentDossier(supabase: Supabase, id: string, orgId: string): Promise<NextMoveDossier | null> {
   const [cRes, giftsRes, plansRes, interRes, acksRes, oppsRes] = await Promise.all([
     supabase
       .from("constituents")
@@ -171,9 +171,11 @@ async function constituentDossier(supabase: Supabase, id: string): Promise<NextM
 
   // Open linked tasks (ops_tasks has RLS disabled → service-role read, same as
   // the list pages).
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: taskRows } = await getSupabaseAdmin()
     .from("ops_tasks")
     .select("title, due_date")
+    .eq("org_id", orgId)
     .eq("linked_entity_type", "constituent")
     .eq("linked_entity_id", id)
     .neq("status", "done")
@@ -406,7 +408,7 @@ export async function POST(req: NextRequest) {
 
   const dossier =
     entityType === "constituent"
-      ? await constituentDossier(supabase, entityId)
+      ? await constituentDossier(supabase, entityId, ctx.orgId)
       : await prospectDossier(supabase, entityId);
   if (!dossier) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

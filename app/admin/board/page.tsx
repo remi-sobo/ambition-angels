@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import SectionHeading from "../_components/SectionHeading";
 import PageHeader from "../_components/PageHeader";
 import { EntityDocuments } from "../_components/EntityDocuments";
@@ -20,16 +21,29 @@ export const dynamic = "force-dynamic";
 
 export default async function BoardPage() {
   const supabase = getSupabaseAdmin();
+  // Org fence: the service-role client bypasses RLS, so every read is scoped to
+  // the active org. No session → empty.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Board" subtitle="Sign in to view your organization's board." />
+      </div>
+    );
+  }
+  const orgId = ctx.orgId;
   const [membersRes, meetingsRes] = await Promise.all([
     supabase
       .from("board_members")
       .select("*")
+      .eq("org_id", orgId)
       .order("status")
       .order("name")
       .limit(100),
     supabase
       .from("board_meetings")
       .select("*")
+      .eq("org_id", orgId)
       .order("meeting_date", { ascending: false })
       .limit(50),
   ]);
@@ -46,6 +60,7 @@ export default async function BoardPage() {
     const { data: gifts } = await supabase
       .from("gifts")
       .select("constituent_id")
+      .eq("org_id", orgId)
       .in("constituent_id", linked)
       .gte("gift_date", `${year}-01-01`)
       .limit(2000);

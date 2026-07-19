@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import type { FinCategory } from "@/lib/finance/types";
 import TransactionFilters from "./_components/TransactionFilters";
 import CategoryPicker from "./_components/CategoryPicker";
@@ -64,11 +65,24 @@ export default async function TransactionsPage({
 
   const supabase = getSupabaseAdmin();
 
+  // Org fence: the service-role client bypasses RLS, so every read below is
+  // scoped to the active org. No session → nothing to show.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Transactions" subtitle="Sign in to view transactions." />
+      </div>
+    );
+  }
+  const orgId = ctx.orgId;
+
   // Categories — needed for the picker, the filter dropdown, and the
   // category-id → display-name lookup in the table.
   const { data: catsRaw } = await supabase
     .from("fin_categories")
     .select("id, group_name, display_name, kind, functional_class, sort_order, enabled")
+    .eq("org_id", orgId)
     .eq("enabled", true)
     .order("sort_order");
   const categories = (catsRaw ?? []) as FinCategory[];
@@ -82,7 +96,8 @@ export default async function TransactionsPage({
     .select(
       "id, txn_date, description, amount, category_id, restricted, restricted_to, exclude_from_runway, source_file, notes",
       { count: "exact" }
-    );
+    )
+    .eq("org_id", orgId);
 
   const safeQ = sanitizeSearch(q);
   if (safeQ) qb = qb.ilike("description", `%${safeQ}%`);
@@ -113,6 +128,7 @@ export default async function TransactionsPage({
   const { count: uncategorizedCount } = await supabase
     .from("fin_transactions")
     .select("id", { count: "exact", head: true })
+    .eq("org_id", orgId)
     .is("category_id", null);
 
   return (

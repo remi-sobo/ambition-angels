@@ -42,6 +42,9 @@ export default async function FinanceDashboardPage() {
   const snap = await getFinanceSnapshot();
   const cfg = snap.cfg;
   const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
+  // Org fence: the service-role client bypasses RLS, so every read below is
+  // scoped to the snapshot's org (the same org fin_config was resolved for).
+  const orgId = snap.orgId;
 
   const [
     catsRes,
@@ -57,29 +60,35 @@ export default async function FinanceDashboardPage() {
     supabase
       .from("fin_categories")
       .select("id, group_name, display_name, kind, functional_class, sort_order, enabled")
+      .eq("org_id", orgId)
       .eq("enabled", true)
       .order("sort_order"),
     // Fiscal-year transactions with category — for YTD-by-category, donuts, budget.
     supabase
       .from("fin_transactions")
       .select("txn_date, amount, category_id, restricted")
+      .eq("org_id", orgId)
       .gte("txn_date", fy.start)
       .lte("txn_date", fy.end),
     supabase
       .from("fin_budget")
       .select("category_id, base_amount, contingency_t1, contingency_t2, activated_contingency")
+      .eq("org_id", orgId)
       .eq("year", cfg.year),
     supabase
       .from("fin_revenue_commitments")
       .select("source_type, amount, status, probability, expected_date, restricted, external_ref")
+      .eq("org_id", orgId)
       .eq("year", cfg.year),
     supabase
       .from("fin_transactions")
       .select("id", { count: "exact", head: true })
+      .eq("org_id", orgId)
       .is("category_id", null),
     supabase
       .from("fin_transactions")
       .select("id, txn_date, description, amount, category_id")
+      .eq("org_id", orgId)
       .order("txn_date", { ascending: false })
       .order("id", { ascending: false })
       .limit(10),
@@ -90,11 +99,12 @@ export default async function FinanceDashboardPage() {
     supabase
       .from("gifts")
       .select("id, amount, gift_date, method, constituent:constituents ( type, first_name, last_name, org_name )")
+      .eq("org_id", orgId)
       .order("gift_date", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(5),
-    loadRevenueSchedule(supabase),
-    loadReceivedTotal(supabase, fy.start, fy.end),
+    loadRevenueSchedule(supabase, orgId),
+    loadReceivedTotal(supabase, orgId, fy.start, fy.end),
   ]);
 
   // Canonical inflows from the revenue schedule (opportunities + grants +

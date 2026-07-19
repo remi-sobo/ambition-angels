@@ -17,12 +17,14 @@ export default async function FinanceClosePage() {
   const supabase = getSupabaseAdmin();
   const snap = await getFinanceSnapshot();
   const cfg = snap.cfg;
+  // Org fence: service-role client bypasses RLS; scope to the snapshot's org.
+  const orgId = snap.orgId;
 
   const [lastImportRes, lastSyncRes, uncatRes, scheduleRows] = await Promise.all([
-    supabase.from("fin_imports").select("uploaded_at").order("uploaded_at", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("hs_deals").select("synced_at").order("synced_at", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("fin_transactions").select("id", { count: "exact", head: true }).is("category_id", null),
-    loadRevenueSchedule(supabase),
+    supabase.from("fin_imports").select("uploaded_at").eq("org_id", orgId).order("uploaded_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("hs_deals").select("synced_at").eq("org_id", orgId).order("synced_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("fin_transactions").select("id", { count: "exact", head: true }).eq("org_id", orgId).is("category_id", null),
+    loadRevenueSchedule(supabase, orgId),
   ]);
 
   // Review tiers read the canonical schedule: committed at full value, open

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import type { FinCategory } from "@/lib/finance/types";
 import RulesEditor from "./_components/RulesEditor";
 import PageHeader from "../../_components/PageHeader";
@@ -18,15 +19,29 @@ type Rule = {
 export default async function RulesPage() {
   const supabase = getSupabaseAdmin();
 
+  // Org fence: the service-role client bypasses RLS, so every read below is
+  // scoped to the active org. No session → nothing to show.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Rules" subtitle="Sign in to view categorization rules." />
+      </div>
+    );
+  }
+  const orgId = ctx.orgId;
+
   const [{ data: catsRaw }, { data: rulesRaw }] = await Promise.all([
     supabase
       .from("fin_categories")
       .select("id, group_name, display_name, kind, functional_class, sort_order, enabled")
+      .eq("org_id", orgId)
       .eq("enabled", true)
       .order("sort_order"),
     supabase
       .from("fin_category_rules")
       .select("id, pattern, pattern_type, category_id, restricted, priority, enabled, hit_count")
+      .eq("org_id", orgId)
       .order("priority", { ascending: false })
       .order("created_at", { ascending: false }),
   ]);

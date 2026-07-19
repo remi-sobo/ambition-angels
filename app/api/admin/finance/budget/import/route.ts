@@ -60,15 +60,18 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabaseAdmin();
 
+  // Org fence: service-role client bypasses RLS; scope both reads to the org.
   const [catsRes, existingBudgetRes] = await Promise.all([
     supabase
       .from("fin_categories")
       .select("id, display_name, group_name, kind")
+      .eq("org_id", ctx.orgId)
       .eq("enabled", true)
       .order("sort_order"),
     supabase
       .from("fin_budget")
       .select("category_id, base_amount")
+      .eq("org_id", ctx.orgId)
       .eq("year", year),
   ]);
 

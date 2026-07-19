@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // Merge one partner org into another (dedupe the near-duplicates the import
@@ -15,7 +15,8 @@ const RANK: Record<string, number> = {
 };
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -29,8 +30,9 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: rows } = await supabase
-    .from("partners").select("*").in("id", [keepId, mergeId]);
+    .from("partners").select("*").eq("org_id", ctx.orgId).in("id", [keepId, mergeId]);
   const keep = (rows ?? []).find((r) => r.id === keepId);
   const merge = (rows ?? []).find((r) => r.id === mergeId);
   if (!keep || !merge) return NextResponse.json({ error: "Partner not found" }, { status: 404 });
@@ -38,13 +40,14 @@ export async function POST(req: NextRequest) {
   // 1) Move interactions wholesale.
   await supabase.from("partner_interactions")
     .update({ partner_id: keepId })
+    .eq("org_id", ctx.orgId)
     .eq("partner_id", mergeId);
 
   // 2) Move contacts, skipping ones whose email already exists on keep
   //    (their interactions stay with keep; the duplicate contact is dropped).
   const [{ data: keepContacts }, { data: mergeContacts }] = await Promise.all([
-    supabase.from("partner_contacts").select("email").eq("partner_id", keepId),
-    supabase.from("partner_contacts").select("id, email").eq("partner_id", mergeId),
+    supabase.from("partner_contacts").select("email").eq("org_id", ctx.orgId).eq("partner_id", keepId),
+    supabase.from("partner_contacts").select("id, email").eq("org_id", ctx.orgId).eq("partner_id", mergeId),
   ]);
   const keepEmails = new Set(
     (keepContacts ?? []).map((c) => (c.email ?? "").toLowerCase()).filter(Boolean)
@@ -52,10 +55,11 @@ export async function POST(req: NextRequest) {
   for (const c of (mergeContacts ?? []) as Array<{ id: string; email: string | null }>) {
     const email = (c.email ?? "").toLowerCase();
     if (email && keepEmails.has(email)) {
-      await supabase.from("partner_contacts").delete().eq("id", c.id);
+      await supabase.from("partner_contacts").delete().eq("org_id", ctx.orgId).eq("id", c.id);
     } else {
       await supabase.from("partner_contacts")
         .update({ partner_id: keepId, org_id: keep.org_id, is_primary: false })
+        .eq("org_id", ctx.orgId)
         .eq("id", c.id);
     }
   }
@@ -80,11 +84,11 @@ export async function POST(req: NextRequest) {
     update.last_touch_at = merge.last_touch_at;
   }
   if (Object.keys(update).length > 0) {
-    await supabase.from("partners").update(update).eq("id", keepId);
+    await supabase.from("partners").update(update).eq("org_id", ctx.orgId).eq("id", keepId);
   }
 
   // 4) Delete the absorbed org.
-  const { error: delErr } = await supabase.from("partners").delete().eq("id", mergeId);
+  const { error: delErr } = await supabase.from("partners").delete().eq("org_id", ctx.orgId).eq("id", mergeId);
   if (delErr) {
     console.error("Merge delete failed:", delErr.message);
     return NextResponse.json({ error: "Merge failed during cleanup" }, { status: 500 });

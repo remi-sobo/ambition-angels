@@ -41,18 +41,23 @@ export type RevenueScheduleRow = {
 const num = (v: unknown) => Number(v ?? 0);
 
 /**
- * Load the canonical schedule. `client` is whatever caller has — the
- * service-role admin client on the finance dashboard, or an RLS-scoped client
- * elsewhere; the view's security_invoker means each sees only its own rows.
+ * Load the canonical schedule for one org. `client` is whatever the caller has
+ * — the service-role admin client on the finance dashboard, or an RLS-scoped
+ * client elsewhere. The view carries `org_id`; because the service-role client
+ * bypasses RLS (security_invoker does NOT save us there), `orgId` is REQUIRED
+ * and filtered explicitly so a shared-host tenant never sees another org's
+ * inflows.
  */
 export async function loadRevenueSchedule(
-  client: SupabaseClient
+  client: SupabaseClient,
+  orgId: string
 ): Promise<RevenueScheduleRow[]> {
   const { data, error } = await client
     .from("v_revenue_schedule")
     .select(
       "source_type, source_id, parent_id, label, month, due_date, gross_amount, weighted_amount, confidence, restricted, restricted_to, status, needs_schedule"
-    );
+    )
+    .eq("org_id", orgId);
   if (error) {
     // Degrade gracefully — a finance page should still render if the view is
     // absent (migration not yet applied for this tenant).
@@ -136,12 +141,14 @@ export function scheduleTotals(rows: RevenueScheduleRow[]): ScheduleTotals {
  */
 export async function loadReceivedTotal(
   client: SupabaseClient,
+  orgId: string,
   startISO: string,
   endISO: string
 ): Promise<number> {
   const { data, error } = await client
     .from("gifts")
     .select("amount")
+    .eq("org_id", orgId)
     .gte("gift_date", startISO)
     .lte("gift_date", endISO);
   if (error) {

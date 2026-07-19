@@ -190,9 +190,11 @@ async function runResearch(rc: RunCtx): Promise<void> {
   const nowIso = () => new Date().toISOString();
 
   const markCompleted = async (briefId: string) => {
+    // Org fence: service-role client bypasses RLS — scope to the caller's org.
     await admin
       .from("research_runs")
       .update({ status: "completed", brief_id: briefId, finished_at: nowIso(), updated_at: nowIso() })
+      .eq("org_id", rc.orgId)
       .eq("id", rc.runId);
     await notify({
       orgId: rc.orgId,
@@ -211,6 +213,7 @@ async function runResearch(rc: RunCtx): Promise<void> {
     await admin
       .from("research_runs")
       .update({ status: "failed", error: reason.slice(0, 1000), finished_at: nowIso(), updated_at: nowIso() })
+      .eq("org_id", rc.orgId)
       .eq("id", rc.runId);
     await notify({
       orgId: rc.orgId,

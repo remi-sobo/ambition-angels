@@ -22,6 +22,7 @@ import {
 import { EntityTasks } from "../../_components/EntityTasks";
 import { EntityDocuments } from "../../_components/EntityDocuments";
 import { getProgramTerms } from "@/lib/admin/terminology";
+import { getOrgContext } from "@/lib/admin/auth";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // Cohort dashboard: enrollment vs capacity, sessions, per-member dosage
@@ -31,9 +32,16 @@ export const dynamic = "force-dynamic";
 export default async function CohortPage({ params }: { params: { id: string } }) {
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
   const supabase = getSupabaseAdmin();
+  // Org fence: the service-role client bypasses RLS. Scope the cohort read to
+  // the caller's org so a foreign cohort id reads as not-found (was an IDOR),
+  // and every child read (members, sessions, attendance, the student picker)
+  // is org-scoped so no other tenant's rows leak in.
+  const ctx = await getOrgContext();
+  if (!ctx) notFound();
+  const orgId = ctx.orgId;
 
   const { data: cohort } = await supabase
-    .from("cohorts").select("*").eq("id", params.id).maybeSingle();
+    .from("cohorts").select("*").eq("org_id", orgId).eq("id", params.id).maybeSingle();
   if (!cohort) notFound();
 
   const terms = await getProgramTerms();
@@ -43,15 +51,18 @@ export default async function CohortPage({ params }: { params: { id: string } })
       supabase
         .from("cohort_members")
         .select("id, student_id, status, students(first_name, last_name, custom_fields)")
+        .eq("org_id", orgId)
         .eq("cohort_id", params.id),
       supabase
         .from("cohort_sessions")
         .select("*")
+        .eq("org_id", orgId)
         .eq("cohort_id", params.id)
         .order("session_date"),
       supabase
         .from("students")
         .select("id, first_name, last_name, custom_fields, stage")
+        .eq("org_id", orgId)
         .order("first_name"),
     ]);
   const members = membersData ?? [];
@@ -62,6 +73,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
     ? await supabase
         .from("attendance")
         .select("session_id, student_id, status")
+        .eq("org_id", orgId)
         .in("session_id", sessionIds)
     : { data: [] };
   const marks = (marksData ?? []) as MarkLite[];

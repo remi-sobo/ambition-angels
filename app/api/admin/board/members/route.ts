@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
     const { data: match } = await supabase
       .from("constituents")
       .select("id")
+      .eq("org_id", ctx.orgId)
       .contains("emails", [email])
       .limit(1)
       .maybeSingle();

@@ -33,7 +33,8 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
   const supabase = getSupabaseAdmin();
-  const { data: run } = await supabase.from("imports").select("*").eq("id", params.id).maybeSingle();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
+  const { data: run } = await supabase.from("imports").select("*").eq("org_id", ctx.orgId).eq("id", params.id).maybeSingle();
   if (!run || run.org_id !== ctx.orgId) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (run.source !== "csv") {
     return NextResponse.json({ error: "Only file imports can be staged" }, { status: 409 });
@@ -57,6 +58,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   const { data: rowData } = await supabase
     .from("import_rows")
     .select("id, row_num, raw, status")
+    .eq("org_id", ctx.orgId)
     .eq("import_id", params.id)
     .order("row_num");
   const rows = (rowData ?? []) as { id: string; row_num: number; raw: string[]; status: string }[];
@@ -143,6 +145,6 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   const counts = {
     ...(run.counts ?? {}), total: rows.length, valid, invalid, skipped,
   };
-  await supabase.from("imports").update({ status: "staged", counts }).eq("id", params.id);
+  await supabase.from("imports").update({ status: "staged", counts }).eq("org_id", ctx.orgId).eq("id", params.id);
   return NextResponse.json({ ok: true, counts });
 }

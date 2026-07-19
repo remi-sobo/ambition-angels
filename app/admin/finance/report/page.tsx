@@ -28,13 +28,15 @@ export default async function FinanceReportPage() {
   const snap = await getFinanceSnapshot();
   const cfg = snap.cfg;
   const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
+  // Org fence: service-role client bypasses RLS; scope to the snapshot's org.
+  const orgId = snap.orgId;
 
   const [catsRes, txnsRes, budgetRes, scheduleRows, receivedYTD] = await Promise.all([
-    supabase.from("fin_categories").select("id, group_name, display_name, kind, functional_class, sort_order, enabled").eq("enabled", true).order("sort_order"),
-    supabase.from("fin_transactions").select("amount, category_id").gte("txn_date", fy.start).lte("txn_date", fy.end),
-    supabase.from("fin_budget").select("category_id, base_amount, activated_contingency").eq("year", cfg.year),
-    loadRevenueSchedule(supabase),
-    loadReceivedTotal(supabase, fy.start, fy.end),
+    supabase.from("fin_categories").select("id, group_name, display_name, kind, functional_class, sort_order, enabled").eq("org_id", orgId).eq("enabled", true).order("sort_order"),
+    supabase.from("fin_transactions").select("amount, category_id").eq("org_id", orgId).gte("txn_date", fy.start).lte("txn_date", fy.end),
+    supabase.from("fin_budget").select("category_id, base_amount, activated_contingency").eq("org_id", orgId).eq("year", cfg.year),
+    loadRevenueSchedule(supabase, orgId),
+    loadReceivedTotal(supabase, orgId, fy.start, fy.end),
   ]);
 
   const categories = (catsRes.data ?? []) as FinCategory[];

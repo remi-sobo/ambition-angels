@@ -19,6 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const sb = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: sugg } = await sb
     .from("meeting_suggested_tasks")
     .select("*")
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     await sb
       .from("meeting_suggested_tasks")
       .update({ status: "dismissed", updated_at: new Date().toISOString() })
+      .eq("org_id", ctx.orgId)
       .eq("id", s.id);
     return NextResponse.json({ ok: true });
   }
@@ -55,12 +57,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   let linkedLabel: string | null = null;
   if (s.suggested_entity_type && s.suggested_entity_id) {
     if (s.suggested_entity_type === "partner") {
-      const { data } = await sb.from("partners").select("name").eq("id", s.suggested_entity_id).maybeSingle();
+      const { data } = await sb.from("partners").select("name").eq("org_id", ctx.orgId).eq("id", s.suggested_entity_id).maybeSingle();
       linkedLabel = (data as { name: string | null } | null)?.name ?? null;
     } else {
       const { data } = await sb
         .from("constituents")
         .select("type, first_name, last_name, org_name")
+        .eq("org_id", ctx.orgId)
         .eq("id", s.suggested_entity_id)
         .maybeSingle();
       const c = data as { type: string; first_name: string | null; last_name: string | null; org_name: string | null } | null;
@@ -86,6 +89,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   await sb
     .from("meeting_suggested_tasks")
     .update({ status: "accepted", updated_at: new Date().toISOString() })
+    .eq("org_id", ctx.orgId)
     .eq("id", s.id);
   await sb
     .from("meeting_records")

@@ -20,11 +20,16 @@ export default async function StudentsPage() {
   const ctx = await getOrgContext();
   const [{ data }, stages, customFieldDefs, terms, volunteerTerm, { data: leaderRows }] =
     await Promise.all([
-      supabase
-        .from("students")
-        .select("*")
-        .order("last_activity_at", { ascending: false, nullsFirst: false })
-        .limit(500),
+      // Org fence: service-role client bypasses RLS, so the roster MUST filter
+      // by the active org. No session → no roster.
+      ctx
+        ? supabase
+            .from("students")
+            .select("*")
+            .eq("org_id", ctx.orgId)
+            .order("last_activity_at", { ascending: false, nullsFirst: false })
+            .limit(500)
+        : Promise.resolve({ data: [] }),
       getParticipantStages(),
       // Per-org participant custom fields (empty for AA — the forms render as
       // before until an org seeds defs).

@@ -78,6 +78,9 @@ export type FinanceConfig = {
 };
 
 export type FinanceSnapshot = {
+  /** The org this snapshot was computed for. Finance pages MUST scope their
+   *  own extra service-role reads to this id (the client bypasses RLS). */
+  orgId: string;
   cfg: FinanceConfig;
   cashOnHand: number;
   /** Trailing 3-active-month average monthly expense. */
@@ -135,21 +138,24 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
   };
   const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
+  // Org fence: the service-role client bypasses RLS, so every read below is
+  // constrained to `orgId` (the same org fin_config was read for).
   const [txnsRes, cashRes, scheduleRows] = await Promise.all([
     sb
       .from("fin_transactions")
       .select("txn_date, amount, exclude_from_runway")
+      .eq("org_id", orgId)
       .gte("txn_date", fy.start)
       .lte("txn_date", fy.end),
     cfg.startDate
-      ? sb.from("fin_transactions").select("amount").gt("txn_date", cfg.startDate)
+      ? sb.from("fin_transactions").select("amount").eq("org_id", orgId).gt("txn_date", cfg.startDate)
       : Promise.resolve({ data: [] as Array<{ amount: number }>, error: null }),
     // The canonical revenue schedule feeds the due/projected tiers: dated
     // committed pledges/grants/manual at full value, open pipeline weighted by
     // probability, restricted carved out by summarizePledges. This replaces the
     // old fin_revenue_commitments + raw-hs_deals merge — finance never reads
     // hs_deals anymore (pipeline comes from opportunities via the view).
-    loadRevenueSchedule(sb),
+    loadRevenueSchedule(sb, orgId),
   ]);
 
   const txns = (txnsRes.data ?? []).map((t) => ({
@@ -229,6 +235,7 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
   const runwayMonths = runway.cash.months;
 
   return {
+    orgId,
     cfg,
     cashOnHand,
     burn3mo,

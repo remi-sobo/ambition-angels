@@ -63,9 +63,13 @@ export async function POST(req: NextRequest) {
   // Short-circuit if the same file was already imported. We still return
   // the parsed rows so the UI can show what was in it, but flag the import
   // as already-applied so we don't double-write.
+  // Org fence: the service-role client bypasses RLS, so the dedup lookups and
+  // rule load below are scoped to the caller's org (a bare file_hash / dedup_
+  // hash match would otherwise be an existence oracle over other tenants' txns).
   const { data: priorImport } = await supabase
     .from("fin_imports")
     .select("*")
+    .eq("org_id", ctx.orgId)
     .eq("file_hash", fHash)
     .maybeSingle();
 
@@ -110,10 +114,11 @@ export async function POST(req: NextRequest) {
   const { data: existing } = await supabase
     .from("fin_transactions")
     .select("dedup_hash")
+    .eq("org_id", ctx.orgId)
     .in("dedup_hash", hashes);
   const existingSet = new Set((existing ?? []).map((r) => r.dedup_hash));
 
-  const rules = await loadRules(supabase);
+  const rules = await loadRules(supabase, ctx.orgId);
   const ruleHits = new Map<string, number>();
 
   const staged: StagedTxn[] = parsed.map((p, i) => {

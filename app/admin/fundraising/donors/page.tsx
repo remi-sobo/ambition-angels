@@ -4,7 +4,6 @@ import DonorsTable, { type DonorRow } from "./_components/DonorsTable";
 import { NewDonorForm } from "./_components/ConstituentControls";
 import FilterTabs from "../_components/FilterTabs";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { money } from "../../finance/_components/charts";
 import StatCard, { type Delta } from "../../_components/StatCard";
 import PageHeader from "../../_components/PageHeader";
@@ -298,13 +297,13 @@ export default async function DonorsPage({
     ? FLAG_LABELS[retentionSegment]
     : segmentOptions.find((s) => s.value === segment)?.label ?? "All";
 
-  // Open tasks linked to donors — for the "Tasks" column. ops_tasks has RLS
-  // disabled, so read it with the service-role client (the page otherwise
-  // uses the session client).
+  // Open tasks linked to donors — for the "Tasks" column. Read on the SESSION
+  // client so RLS scopes ops_tasks to the caller's org (the service-role client
+  // bypasses RLS and would count every tenant's tasks).
   const openTaskCount = new Map<string, number>();
   const overdueTaskCount = new Map<string, number>();
   {
-    const { data: taskRows } = await getSupabaseAdmin()
+    const { data: taskRows } = await supabase
       .from("ops_tasks")
       .select("linked_entity_id, due_date")
       .eq("linked_entity_type", "constituent")

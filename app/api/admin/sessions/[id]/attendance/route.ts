@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const STATUSES = ["present", "late", "excused", "absent"] as const;
@@ -13,7 +13,8 @@ const isUuid = (v: unknown): v is string =>
 // every still-unmarked enrolled member. Recording marks the session held
 // and bumps last_activity_at for students who showed up.
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!isUuid(params.id)) {
@@ -23,9 +24,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: session } = await supabase
     .from("cohort_sessions")
     .select("id, cohort_id, status, org_id")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -37,7 +40,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const markHeld = async () => {
     if (session.status !== "held") {
-      await supabase.from("cohort_sessions").update({ status: "held" }).eq("id", session.id);
+      await supabase.from("cohort_sessions").update({ status: "held" }).eq("org_id", ctx.orgId).eq("id", session.id);
     }
   };
   const touch = async (studentIds: string[]) => {
@@ -45,6 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     await supabase
       .from("students")
       .update({ last_activity_at: new Date().toISOString().slice(0, 10) })
+      .eq("org_id", ctx.orgId)
       .in("id", studentIds);
   };
 
@@ -52,11 +56,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const { data: members } = await supabase
       .from("cohort_members")
       .select("student_id")
+      .eq("org_id", ctx.orgId)
       .eq("cohort_id", session.cohort_id)
       .eq("status", "enrolled");
     const { data: marked } = await supabase
       .from("attendance")
       .select("student_id")
+      .eq("org_id", ctx.orgId)
       .eq("session_id", session.id);
     const done = new Set((marked ?? []).map((m) => m.student_id));
     const todo = (members ?? []).map((m) => m.student_id).filter((id) => !done.has(id));
@@ -96,6 +102,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const { error } = await supabase
       .from("attendance")
       .delete()
+      .eq("org_id", ctx.orgId)
       .eq("session_id", session.id)
       .eq("student_id", studentId);
     if (error) {

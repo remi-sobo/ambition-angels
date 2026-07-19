@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // Postgres error code for "relation does not exist" — surfaced when the
@@ -20,14 +20,17 @@ function isStatus(v: unknown): v is Status {
 // (lib/demoday/attendees.ts); this only carries the mutable note/star/status.
 
 export async function GET() {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data, error } = await supabase
     .from("demoday_notes")
-    .select("attendee_key, note, starred, status, updated_by, updated_at");
+    .select("attendee_key, note, starred, status, updated_by, updated_at")
+    .eq("org_id", ctx.orgId);
 
   if (error) {
     if (error.code === UNDEFINED_TABLE) {

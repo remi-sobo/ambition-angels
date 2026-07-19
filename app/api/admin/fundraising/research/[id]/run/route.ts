@@ -54,9 +54,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     status = "failed";
     errMsg = errMsg ?? "Run timed out.";
     // Persist the transition so it sticks (service role; RLS-exempt).
+    // Org fence: service-role client bypasses RLS — scope to the caller's org.
     await getSupabaseAdmin()
       .from("research_runs")
       .update({ status: "failed", error: errMsg, finished_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq("org_id", ctx.orgId)
       .eq("id", row.id)
       .eq("status", "running");
   }

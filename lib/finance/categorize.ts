@@ -41,11 +41,13 @@ export function matchRule(
 // Fetches enabled rules sorted by priority. Small enough table (dozens of
 // rows in steady state) that we don't paginate.
 export async function loadRules(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  orgId: string
 ): Promise<CategoryRule[]> {
   const { data, error } = await supabase
     .from("fin_category_rules")
     .select("id, pattern, pattern_type, category_id, restricted, priority, enabled")
+    .eq("org_id", orgId)
     .eq("enabled", true)
     .order("priority", { ascending: false });
   if (error) {

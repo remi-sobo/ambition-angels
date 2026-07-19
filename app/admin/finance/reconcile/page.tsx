@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import ReconcileInbox, { type ReconItem } from "./_components/ReconcileInbox";
 import PageHeader from "../../_components/PageHeader";
 
@@ -9,15 +10,28 @@ export const dynamic = "force-dynamic";
 
 export default async function ReconcilePage() {
   const supabase = getSupabaseAdmin();
+  // Org fence: the service-role client bypasses RLS, so both reads are scoped
+  // to the active org. No session → empty inbox.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Reconcile" subtitle="Sign in to view the reconciliation inbox." />
+      </div>
+    );
+  }
+  const orgId = ctx.orgId;
   const [pendingRes, resolvedRes] = await Promise.all([
     supabase
       .from("fin_reconciliation_items")
       .select("*")
+      .eq("org_id", orgId)
       .eq("status", "pending")
       .order("created_at", { ascending: false }),
     supabase
       .from("fin_reconciliation_items")
       .select("*")
+      .eq("org_id", orgId)
       .neq("status", "pending")
       .order("resolved_at", { ascending: false })
       .limit(8),

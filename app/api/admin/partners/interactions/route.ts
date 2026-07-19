@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const KINDS = ["call", "email", "meeting", "event", "note"] as const;
@@ -9,7 +9,8 @@ const KINDS = ["call", "email", "meeting", "event", "note"] as const;
 // org's last_touch_at so cadence health stays accurate — the same gesture
 // "Log touch" used to do, now with a typed, timelined record.
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -32,8 +33,9 @@ export async function POST(req: NextRequest) {
   insert.logged_by = (await getAdminUser()) ?? null;
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: partner } = await supabase
-    .from("partners").select("org_id").eq("id", partnerId).maybeSingle();
+    .from("partners").select("org_id").eq("org_id", ctx.orgId).eq("id", partnerId).maybeSingle();
   if (!partner) return NextResponse.json({ error: "Partner not found" }, { status: 404 });
   insert.org_id = partner.org_id;
 
@@ -49,6 +51,7 @@ export async function POST(req: NextRequest) {
   await supabase
     .from("partners")
     .update({ last_touch_at: day })
+    .eq("org_id", ctx.orgId)
     .eq("id", partnerId)
     .or(`last_touch_at.is.null,last_touch_at.lt.${day}`);
 

@@ -70,8 +70,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
   const supabase = getSupabaseAdmin();
-  const { data: run } = await supabase.from("imports").select("*").eq("id", params.id).maybeSingle();
-  if (!run || run.org_id !== ctx.orgId) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
+  const { data: run } = await supabase.from("imports").select("*").eq("org_id", ctx.orgId).eq("id", params.id).maybeSingle();
+  if (!run) return NextResponse.json({ error: "Not found" }, { status: 404 });
   // Connector runs (source 'hubspot', E6) have no staged rows — a commit here
   // would find zero valid rows and wrongly close a LIVE sync as 'done'.
   if (run.source !== "csv") {
@@ -81,12 +82,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: `Cannot commit a ${run.status} import` }, { status: 409 });
   }
   if (run.status !== "committing") {
-    await supabase.from("imports").update({ status: "committing" }).eq("id", params.id);
+    await supabase.from("imports").update({ status: "committing" }).eq("org_id", ctx.orgId).eq("id", params.id);
   }
 
   const { data: batchData } = await supabase
     .from("import_rows")
     .select("id, row_num, normalized")
+    .eq("org_id", ctx.orgId)
     .eq("import_id", params.id)
     .eq("status", "valid")
     .order("row_num")
@@ -114,6 +116,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           failed++;
           await supabase.from("import_rows")
             .update({ status: "invalid", error: "Row was not staged — re-run staging" })
+            .eq("org_id", ctx.orgId)
             .eq("id", row.id);
           return;
         }
@@ -122,6 +125,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           newlySkipped++;
           await supabase.from("import_rows")
             .update({ status: "skipped", verdict: "skip", error: "Already imported (identical row)" })
+            .eq("org_id", ctx.orgId)
             .eq("id", row.id);
           return;
         }
@@ -139,6 +143,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           failed++;
           await supabase.from("import_rows")
             .update({ status: "invalid", error: `Create failed: ${insErr?.message ?? "unknown"}` })
+            .eq("org_id", ctx.orgId)
             .eq("id", row.id);
           return;
         }
@@ -152,6 +157,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         if (refErr) console.error("external_refs insert failed:", refErr.message);
         await supabase.from("import_rows")
           .update({ status: "committed", created_entity_id: entityRow.id, error: null })
+          .eq("org_id", ctx.orgId)
           .eq("id", row.id);
         created++;
       }),
@@ -161,6 +167,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { count: remaining } = await supabase
     .from("import_rows")
     .select("id", { count: "exact", head: true })
+    .eq("org_id", ctx.orgId)
     .eq("import_id", params.id)
     .eq("status", "valid");
 
@@ -170,6 +177,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const { count } = await supabase
         .from("import_rows")
         .select("id", { count: "exact", head: true })
+        .eq("org_id", ctx.orgId)
         .eq("import_id", params.id)
         .eq("status", status);
       return count ?? 0;
@@ -180,10 +188,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const counts = { ...(run.counts ?? {}), created: committed, skipped, invalid };
     await supabase.from("imports")
       .update({ status: "done", counts, finished_at: new Date().toISOString() })
+      .eq("org_id", ctx.orgId)
       .eq("id", params.id);
     // PII retention (spec §10.3): the raw file rows served their purpose.
     await supabase.from("import_rows")
       .update({ raw: [] })
+      .eq("org_id", ctx.orgId)
       .eq("import_id", params.id);
     await audit(req, {
       action: `${run.entity_type === "constituent" ? "fundraising" : "program"}.import.commit`,

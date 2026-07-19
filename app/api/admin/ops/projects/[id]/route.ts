@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import {
   isCategory,
   isProjectStatus,
@@ -18,13 +18,16 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data, error } = await supabase
     .from("ops_projects")
     .select("*")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (error) {
@@ -44,7 +47,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -54,9 +58,11 @@ export async function PATCH(
   }
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: existing, error: readErr } = await supabase
     .from("ops_projects")
     .select("*")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (readErr) {
@@ -131,6 +137,7 @@ export async function PATCH(
   const { data: updated, error: updErr } = await supabase
     .from("ops_projects")
     .update(updates)
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .select("*")
     .single();
@@ -150,13 +157,19 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getSupabaseAdmin();
   // FK on ops_tasks.project_id is ON DELETE SET NULL — tasks survive,
   // they just lose their project association.
-  const { error } = await supabase.from("ops_projects").delete().eq("id", params.id);
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
+  const { error } = await supabase
+    .from("ops_projects")
+    .delete()
+    .eq("org_id", ctx.orgId)
+    .eq("id", params.id);
   if (error) {
     console.error("[/api/admin/ops/projects/:id DELETE] error:", {
       code: error.code,

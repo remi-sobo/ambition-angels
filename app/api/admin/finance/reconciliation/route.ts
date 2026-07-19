@@ -42,10 +42,13 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabaseAdmin();
 
   // Dedup: refresh an existing pending proposal for the same source item.
+  // Org fence: scope the lookup + update to the caller's org so a colliding
+  // source_ref can never overwrite another tenant's pending proposal.
   if (row.source_ref) {
     const { data: existing } = await supabase
       .from("fin_reconciliation_items")
       .select("id")
+      .eq("org_id", ctx.orgId)
       .eq("source", source)
       .eq("source_ref", row.source_ref)
       .eq("status", "pending")
@@ -54,6 +57,7 @@ export async function POST(req: NextRequest) {
       const { data, error } = await supabase
         .from("fin_reconciliation_items")
         .update({ kind, title, detail: row.detail, amount: row.amount, payload: row.payload, evidence_url: row.evidence_url, confidence: row.confidence })
+        .eq("org_id", ctx.orgId)
         .eq("id", (existing as { id: string }).id)
         .select("*")
         .single();

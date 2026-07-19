@@ -110,9 +110,12 @@ export async function POST(req: NextRequest) {
 
   // 2. Find or create the "BloomOS Upgrades" project.
   let projectId: string | null = null;
+  // Org fence: service-role client bypasses RLS — resolve/touch this org's
+  // Upgrades project, never another tenant's same-named one.
   const { data: existing } = await sb
     .from("ops_projects")
     .select("id")
+    .eq("org_id", ctx.orgId)
     .eq("title", UPGRADES_PROJECT)
     .limit(1)
     .maybeSingle();
@@ -201,7 +204,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not save the report" }, { status: 500 });
   }
   if (projectId) {
-    await sb.from("ops_projects").update({ last_touched_at: new Date().toISOString() }).eq("id", projectId);
+    await sb.from("ops_projects").update({ last_touched_at: new Date().toISOString() }).eq("org_id", ctx.orgId).eq("id", projectId);
   }
 
   // 4. Email both operators (best-effort — never block the report on it).

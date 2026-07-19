@@ -84,7 +84,8 @@ export async function POST(req: NextRequest) {
     const { error: rowErr } = await supabase.from("import_rows").insert(chunk);
     if (rowErr) {
       console.error("Import row insert failed:", rowErr.message);
-      await supabase.from("imports").update({ status: "failed" }).eq("id", run.id);
+      // Org fence: service-role client bypasses RLS — scope to the caller's org.
+      await supabase.from("imports").update({ status: "failed" }).eq("org_id", ctx.orgId).eq("id", run.id);
       return NextResponse.json({ error: "Could not store rows" }, { status: 500 });
     }
   }

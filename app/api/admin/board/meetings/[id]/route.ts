@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 /**
@@ -10,7 +10,8 @@ import { audit } from "@/lib/audit";
  * legal record (retention class: permanent).
  */
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
@@ -20,9 +21,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: before } = await supabase
     .from("board_meetings")
     .select("*")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -85,7 +88,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "No valid fields" }, { status: 400 });
   }
 
-  const { error } = await supabase.from("board_meetings").update(update).eq("id", params.id);
+  const { error } = await supabase.from("board_meetings").update(update).eq("org_id", ctx.orgId).eq("id", params.id);
   if (error) {
     console.error("Update board meeting failed:", error.message);
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
@@ -101,16 +104,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: before } = await supabase
     .from("board_meetings")
     .select("*")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -121,7 +127,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     );
   }
 
-  const { error } = await supabase.from("board_meetings").delete().eq("id", params.id);
+  const { error } = await supabase.from("board_meetings").delete().eq("org_id", ctx.orgId).eq("id", params.id);
   if (error) {
     console.error("Delete board meeting failed:", error.message);
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });

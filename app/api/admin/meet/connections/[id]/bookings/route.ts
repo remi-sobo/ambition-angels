@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 
 // Confirmed /meet bookings that could fulfil this connection — matched to the
 // task's linked constituent by attendee email (case-insensitive). Feeds the
@@ -13,14 +13,17 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getSupabaseAdmin();
 
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: task } = await supabase
     .from("ops_tasks")
     .select("id, linked_entity_type, linked_entity_id")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   const t = task as { linked_entity_type: string | null; linked_entity_id: string | null } | null;
@@ -31,6 +34,7 @@ export async function GET(
   const { data: con } = await supabase
     .from("constituents")
     .select("emails")
+    .eq("org_id", ctx.orgId)
     .eq("id", t.linked_entity_id)
     .maybeSingle();
   const emails = ((con as { emails: string[] | null } | null)?.emails ?? []).filter(Boolean);
@@ -41,6 +45,7 @@ export async function GET(
   const { data, error } = await supabase
     .from("bookings")
     .select("id, attendee_name, attendee_email, start_time, meeting_type:meeting_types(name)")
+    .eq("org_id", ctx.orgId)
     .eq("status", "confirmed")
     .or(or)
     .order("start_time", { ascending: false })

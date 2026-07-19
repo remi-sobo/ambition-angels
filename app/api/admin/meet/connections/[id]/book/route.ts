@@ -33,9 +33,11 @@ export async function POST(
 
   const supabase = getSupabaseAdmin();
 
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: task } = await supabase
     .from("ops_tasks")
     .select("id, linked_entity_type, linked_entity_id")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   const t = task as
@@ -50,6 +52,7 @@ export async function POST(
       completed_at: new Date().toISOString(),
       booking_id: bookingId,
     })
+    .eq("org_id", ctx.orgId)
     .eq("id", t.id);
   if (updErr) {
     console.error("[connections book] task update:", updErr.message);
@@ -61,6 +64,7 @@ export async function POST(
     const { data: booking } = await supabase
       .from("bookings")
       .select("start_time, attendee_name, attendee_message, meeting_type:meeting_types(name)")
+      .eq("org_id", ctx.orgId)
       .eq("id", bookingId)
       .maybeSingle();
     const b = booking as

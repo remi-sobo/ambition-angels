@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { getFieldDefs, validateAndMerge } from "@/lib/admin/customFields";
 import { getParticipantStages } from "@/lib/admin/program/stages";
 import { audit } from "@/lib/audit";
@@ -9,7 +9,10 @@ const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  // Org fence: service-role read+update by id must be constrained to the
+  // caller's org (a bare .eq("id") let any tenant edit another tenant's kid).
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
@@ -49,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const supabase = getSupabaseAdmin();
   const { data: before } = await supabase
-    .from("students").select("*").eq("id", params.id).maybeSingle();
+    .from("students").select("*").eq("org_id", ctx.orgId).eq("id", params.id).maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   // Leader link: null clears; a uuid must be one of the row's org's
@@ -86,7 +89,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     update.custom_fields = merged.value;
   }
 
-  const { error } = await supabase.from("students").update(update).eq("id", params.id);
+  const { error } = await supabase.from("students").update(update).eq("org_id", ctx.orgId).eq("id", params.id);
   if (error) {
     console.error("Update student failed:", error.message);
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
@@ -102,7 +105,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  // Org fence: service-role read+delete by id must be constrained to the org.
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
@@ -110,10 +115,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   }
   const supabase = getSupabaseAdmin();
   const { data: before } = await supabase
-    .from("students").select("*").eq("id", params.id).maybeSingle();
+    .from("students").select("*").eq("org_id", ctx.orgId).eq("id", params.id).maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { error } = await supabase.from("students").delete().eq("id", params.id);
+  const { error } = await supabase.from("students").delete().eq("org_id", ctx.orgId).eq("id", params.id);
   if (error) {
     console.error("Delete student failed:", error.message);
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });

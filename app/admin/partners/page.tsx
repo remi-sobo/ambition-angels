@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import StatCard from "../_components/StatCard";
 import PageHeader from "../_components/PageHeader";
 import { NewPartnerForm } from "./_components/PartnerControls";
@@ -15,20 +16,34 @@ export const dynamic = "force-dynamic";
 export default async function PartnersPage() {
   const today = new Date().toISOString().slice(0, 10);
   const supabase = getSupabaseAdmin();
+  // Org fence: the service-role client bypasses RLS, so every read is scoped to
+  // the active org. No session → empty.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Schools & Partners" subtitle="Sign in to view partners." />
+      </div>
+    );
+  }
+  const orgId = ctx.orgId;
   const [partnersRes, contactsRes, tasksRes] = await Promise.all([
     supabase
       .from("partners")
       .select("*")
+      .eq("org_id", orgId)
       .order("last_touch_at", { ascending: false, nullsFirst: false })
       .limit(500),
     supabase
       .from("partner_contacts")
       .select("partner_id, first_name, last_name, is_primary")
+      .eq("org_id", orgId)
       .limit(2000),
     // Open tasks linked to partner orgs — for the per-row "tasks due" chip.
     supabase
       .from("ops_tasks")
       .select("linked_entity_id, due_date")
+      .eq("org_id", orgId)
       .eq("linked_entity_type", "partner")
       .neq("status", "done")
       .limit(2000),

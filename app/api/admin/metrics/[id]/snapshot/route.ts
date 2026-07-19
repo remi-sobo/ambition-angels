@@ -75,6 +75,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .maybeSingle();
   if (newest?.captured_on === capturedOn) {
     const admin = getSupabaseAdmin();
+    // Org fence: service-role client bypasses RLS — scope to the caller's org.
     const { data: kpi } = await admin
       .from("plan_kpis")
       .select("id")
@@ -85,6 +86,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       await admin
         .from("plan_kpis")
         .update({ current: rounded, last_updated_at: new Date().toISOString() })
+        .eq("org_id", ctx.orgId)
         .eq("id", kpi.id);
       await admin
         .from("plan_kpi_snapshots")

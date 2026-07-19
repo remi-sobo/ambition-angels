@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const MEMBER_STATUSES = ["enrolled", "completed", "dropped"] as const;
@@ -10,7 +10,8 @@ const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!isUuid(params.id)) {
@@ -23,9 +24,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Enrollment lives in its cohort's org — derive, never default.
   const supabaseAdmin = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: cohort } = await supabaseAdmin
     .from("cohorts")
     .select("org_id")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (!cohort) return NextResponse.json({ error: "Cohort not found" }, { status: 404 });
@@ -52,7 +55,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!isUuid(params.id)) {
@@ -67,9 +71,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: before } = await supabase
     .from("cohort_members").select("*")
-    .eq("cohort_id", params.id).eq("student_id", body!.student_id as string)
+    .eq("org_id", ctx.orgId).eq("cohort_id", params.id).eq("student_id", body!.student_id as string)
     .maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -90,6 +95,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { error } = await supabase
     .from("cohort_members")
     .update(update)
+    .eq("org_id", ctx.orgId)
     .eq("id", before.id);
   if (error) {
     console.error("Update cohort member failed:", error.message);
@@ -106,7 +112,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!isUuid(params.id)) {
@@ -118,13 +125,14 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   }
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: before } = await supabase
     .from("cohort_members").select("*")
-    .eq("cohort_id", params.id).eq("student_id", body!.student_id as string)
+    .eq("org_id", ctx.orgId).eq("cohort_id", params.id).eq("student_id", body!.student_id as string)
     .maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { error } = await supabase.from("cohort_members").delete().eq("id", before.id);
+  const { error } = await supabase.from("cohort_members").delete().eq("org_id", ctx.orgId).eq("id", before.id);
   if (error) {
     console.error("Remove cohort member failed:", error.message);
     return NextResponse.json({ error: "Remove failed" }, { status: 500 });

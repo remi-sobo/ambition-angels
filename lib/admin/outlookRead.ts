@@ -1,6 +1,8 @@
 import "server-only";
 import { cache } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
 import { loadRevenueSchedule } from "@/lib/finance/schedule";
 import { getActionQueue } from "@/lib/admin/actionQueue";
@@ -19,9 +21,13 @@ import { buildOutlook, type Outlook } from "./outlook";
 export const getOutlook = cache(async (): Promise<Outlook | null> => {
   try {
     const supabase = createServerSupabase();
+    // Session client enforces RLS, but loadRevenueSchedule now requires an org;
+    // resolve it the same way the finance snapshot does (session org, or the
+    // resident org for sessionless contexts like the briefing cron).
+    const orgId = (await getOrgContext())?.orgId ?? (await getResidentOrgId());
     const [finance, schedule, queue, catalog] = await Promise.all([
       getFinanceSnapshot(),
-      loadRevenueSchedule(supabase),
+      loadRevenueSchedule(supabase, orgId),
       getActionQueue(),
       getMetricCatalog(),
     ]);

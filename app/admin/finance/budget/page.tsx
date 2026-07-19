@@ -17,10 +17,22 @@ export default async function BudgetPage({
   // Year resolution: ?year=N overrides; otherwise the singleton fin_config
   // row tells us the active fiscal year; otherwise default to the current
   // calendar year. Clamp to a reasonable range.
+  // Org fence: the service-role client bypasses RLS, so every read below is
+  // scoped to the active org. No session → nothing to show.
   const ctx = await getOrgContext();
-  const { data: cfg } = ctx
-    ? await supabase.from("fin_config").select("current_year").eq("org_id", ctx.orgId).maybeSingle()
-    : { data: null };
+  if (!ctx) {
+    return (
+      <div className="max-w-5xl px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Budget" subtitle="Sign in to view the budget." />
+      </div>
+    );
+  }
+  const orgId = ctx.orgId;
+  const { data: cfg } = await supabase
+    .from("fin_config")
+    .select("current_year")
+    .eq("org_id", orgId)
+    .maybeSingle();
   const configYear =
     typeof cfg?.current_year === "number" ? cfg.current_year : new Date().getFullYear();
   const requested = parseInt(searchParams.year ?? "", 10);
@@ -33,6 +45,7 @@ export default async function BudgetPage({
     supabase
       .from("fin_categories")
       .select("id, group_name, display_name, kind, functional_class, sort_order, enabled")
+      .eq("org_id", orgId)
       .eq("enabled", true)
       .order("sort_order"),
     supabase
@@ -40,6 +53,7 @@ export default async function BudgetPage({
       .select(
         "year, category_id, base_amount, contingency_t1, contingency_t2, activated_contingency"
       )
+      .eq("org_id", orgId)
       .eq("year", year),
   ]);
   const categories = (catsRaw ?? []) as FinCategory[];

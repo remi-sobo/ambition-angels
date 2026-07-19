@@ -38,6 +38,9 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabaseAdmin();
 
+  // Org fence: the service-role client bypasses RLS, so every write/read below
+  // is constrained to the caller's org (a bare .eq("id") update would let one
+  // tenant categorize another tenant's transactions).
   // Apply category assignments (one update per transaction; the set is small).
   let updated = 0;
   const updateErrors: string[] = [];
@@ -46,6 +49,7 @@ export async function POST(req: NextRequest) {
       const { error } = await supabase
         .from("fin_transactions")
         .update({ category_id: it.category_id })
+        .eq("org_id", ctx.orgId)
         .eq("id", it.id)
         .is("category_id", null); // don't clobber a category set since the suggestion
       if (error) updateErrors.push(error.message);
@@ -61,6 +65,7 @@ export async function POST(req: NextRequest) {
     const { data: existing } = await supabase
       .from("fin_category_rules")
       .select("pattern, category_id")
+      .eq("org_id", ctx.orgId)
       .in("pattern", patterns);
     const existingKey = new Set((existing ?? []).map((r) => `${r.pattern}::${r.category_id}`));
 

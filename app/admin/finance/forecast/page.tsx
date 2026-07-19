@@ -19,7 +19,7 @@ export default async function FinanceForecastPage() {
   // (pledges, awarded grants, weighted pipeline, manual). Committed lands at
   // full value; projected pipeline is already probability-weighted in the view,
   // so a 50%-likely ask seeds at half, not as guaranteed cash.
-  const schedule = await loadRevenueSchedule(sb);
+  const schedule = await loadRevenueSchedule(sb, snap.orgId);
   const seeds: SeedLever[] = schedule
     .filter((r) => r.due_date >= today)
     .map((r) => ({

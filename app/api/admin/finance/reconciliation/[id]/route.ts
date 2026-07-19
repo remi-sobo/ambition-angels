@@ -21,9 +21,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!action) return NextResponse.json({ error: "action must be accept or dismiss" }, { status: 400 });
 
   const supabase = getSupabaseAdmin();
+  // Org fence: the service-role client bypasses RLS. Scope the item read to the
+  // caller's org so a foreign proposal can't be read (and its payload copied
+  // into this org's ledger on accept). A cross-org id reads as not-found.
   const { data: item } = await supabase
     .from("fin_reconciliation_items")
     .select("*")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -66,6 +70,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { data: updated, error: updErr } = await supabase
     .from("fin_reconciliation_items")
     .update({ status: newStatus, resolved_by: user, resolved_at: new Date().toISOString(), applied_id: appliedId })
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .eq("status", "pending")
     .select("*")

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import {
   suggestCategories,
   SUGGEST_BATCH,
@@ -17,7 +17,11 @@ export const maxDuration = 120;
 // returns the suggestions enriched with the transaction + category display
 // data. Nothing is written — the apply route does that after the user confirms.
 export async function POST() {
-  if (!(await isAuthed())) {
+  // Org fence: the service-role client bypasses RLS. Without an org filter this
+  // route reads every tenant's uncategorized transactions and ships them to the
+  // AI — scope both reads to the caller's org.
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -30,11 +34,13 @@ export async function POST() {
     supabase
       .from("fin_categories")
       .select("id, display_name, group_name, kind, functional_class")
+      .eq("org_id", ctx.orgId)
       .eq("enabled", true)
       .order("sort_order"),
     supabase
       .from("fin_transactions")
       .select("id, txn_date, description, amount", { count: "exact" })
+      .eq("org_id", ctx.orgId)
       .is("category_id", null)
       .order("txn_date", { ascending: true })
       .limit(SUGGEST_BATCH),

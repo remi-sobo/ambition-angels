@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // Postgres error code for "relation does not exist" — surfaced when the
@@ -52,7 +52,10 @@ export async function GET() {
 // row.
 
 export async function PUT(req: NextRequest) {
-  if (!await isAuthed()) {
+  // Org fence: the note is keyed (org_id, attendee_key); getOrgContext gives us
+  // the org to stamp + conflict on so one tenant can't clobber another's note.
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const updatedBy = await getAdminUser();
@@ -78,6 +81,7 @@ export async function PUT(req: NextRequest) {
 
   const noteRaw = typeof body.note === "string" ? body.note.trim() : "";
   const row = {
+    org_id: ctx.orgId,
     attendee_key: attendeeKey,
     note: noteRaw === "" ? null : noteRaw,
     starred: body.starred === true,
@@ -88,7 +92,7 @@ export async function PUT(req: NextRequest) {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("demoday_notes")
-    .upsert(row, { onConflict: "attendee_key" })
+    .upsert(row, { onConflict: "org_id,attendee_key" })
     .select("attendee_key, note, starred, status, updated_by, updated_at")
     .single();
 

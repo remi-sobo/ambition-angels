@@ -93,13 +93,8 @@ export async function gatherInputs(): Promise<{
       sb.from("cohort_sessions").select("id, session_date").eq("org_id", orgId).limit(300),
       sb.from("attendance").select("session_id").eq("org_id", orgId).limit(2000),
       // Resilient: if the state table isn't migrated yet, data is null → no
-      // hidden items, and the feed still works.
-      // NOTE: bloomos_briefing_state has no org_id column yet — decision state is
-      // keyed by item_id only. Item ids embed content (amounts/titles) so cross-
-      // org collision is unlikely, but a follow-up migration should add org_id +
-      // backfill so this (and the briefing/decision route) can be fenced. Until
-      // then this read stays unscoped by necessity.
-      sb.from("bloomos_briefing_state").select("item_id, decision, hidden_until"),
+      // hidden items, and the feed still works. Keyed by (org_id, item_id).
+      sb.from("bloomos_briefing_state").select("item_id, decision, hidden_until").eq("org_id", orgId),
       // Strategy rollup (Phase 4): objective health + the OGSM review nudge.
       // Resilient if unseeded / plan_reviews not yet migrated (data → null).
       sb.from("plan_objectives").select("id, title, status, status_override").eq("org_id", orgId),

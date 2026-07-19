@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // Accept an application: create the student (or link an existing one by
 // email match), enroll them in the application's cohort, and close the
 // application out. One tap from "offered" to "on the roster".
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
@@ -15,8 +16,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: app } = await supabase
-    .from("applications").select("*").eq("id", params.id).maybeSingle();
+    .from("applications").select("*").eq("org_id", ctx.orgId).eq("id", params.id).maybeSingle();
   if (!app) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (app.status === "accepted") {
     return NextResponse.json({ error: "Already accepted" }, { status: 409 });
@@ -102,6 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       student_id: studentId,
       decided_at: new Date().toISOString(),
     })
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id);
   if (updateErr) {
     console.error("Accept: close application failed:", updateErr.message);

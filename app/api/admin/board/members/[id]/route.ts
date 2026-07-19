@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const ROLES = ["chair", "vice_chair", "secretary", "treasurer", "member"] as const;
@@ -9,7 +9,8 @@ const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
@@ -41,14 +42,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: before } = await supabase
     .from("board_members")
     .select("*")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { error } = await supabase.from("board_members").update(update).eq("id", params.id);
+  const { error } = await supabase.from("board_members").update(update).eq("org_id", ctx.orgId).eq("id", params.id);
   if (error) {
     console.error("Update board member failed:", error.message);
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
@@ -64,21 +67,24 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: before } = await supabase
     .from("board_members")
     .select("*")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { error } = await supabase.from("board_members").delete().eq("id", params.id);
+  const { error } = await supabase.from("board_members").delete().eq("org_id", ctx.orgId).eq("id", params.id);
   if (error) {
     console.error("Delete board member failed:", error.message);
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });

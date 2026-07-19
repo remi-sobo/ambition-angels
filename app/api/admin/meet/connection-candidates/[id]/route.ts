@@ -41,12 +41,14 @@ export async function PATCH(
 
   // Load the candidate + the person it reconciled to. Only pending candidates
   // are actionable (added/dismissed are terminal).
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data: candRow, error: candErr } = await supabase
     .from("connection_candidates")
     .select(
       "id, status, thread_id, subject, constituent_id, ops_task_id, " +
         "constituent:constituent_id(type, first_name, last_name, org_name)"
     )
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (candErr) {
@@ -80,6 +82,7 @@ export async function PATCH(
     const { error } = await supabase
       .from("connection_candidates")
       .update({ status: "dismissed", disposed_by: adminUser, disposed_at: nowIso })
+      .eq("org_id", ctx.orgId)
       .eq("id", cand.id);
     if (error) {
       console.error("[connection-candidates PATCH] dismiss:", error.message);
@@ -129,6 +132,7 @@ export async function PATCH(
       disposed_by: adminUser,
       disposed_at: nowIso,
     })
+    .eq("org_id", ctx.orgId)
     .eq("id", cand.id);
   if (updErr) {
     // The task exists; surface the error so the UI can refetch rather than

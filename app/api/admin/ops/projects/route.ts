@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser, getOrgContext } from "@/lib/admin/auth";
+import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import {
   isCategory,
   isProjectStatus,
@@ -73,13 +73,15 @@ export async function POST(req: NextRequest) {
 // ── GET /api/admin/ops/projects ────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  if (!await isAuthed()) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const url = new URL(req.url);
   const supabase = getSupabaseAdmin();
-  let q = supabase.from("ops_projects").select("*", { count: "exact" });
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
+  let q = supabase.from("ops_projects").select("*", { count: "exact" }).eq("org_id", ctx.orgId);
 
   const status = url.searchParams.get("status");
   if (status && isProjectStatus(status)) q = q.eq("status", status);

@@ -77,16 +77,21 @@ export function buildStuckProjectContext(
 export async function loadStuckProjectContext(
   supabase: SupabaseClient,
   stuckTasks: OpsTask[],
-  allTasks: OpsTask[]
+  allTasks: OpsTask[],
+  orgId: string
 ): Promise<Record<string, StuckProjectContext>> {
   const projectIds = Array.from(
     new Set(stuckTasks.map((t) => t.project_id).filter((id): id is string => !!id))
   );
   if (projectIds.length === 0) return {};
 
+  // Org fence: service-role client bypasses RLS, so every lookup below is
+  // constrained to the caller's org — these reads reach into ops_projects,
+  // grants, and constituents (donor names).
   const { data: projectRows } = await supabase
     .from("ops_projects")
     .select("id, title, grant_id")
+    .eq("org_id", orgId)
     .in("id", projectIds);
   const projects = (projectRows as ProjectRow[] | null) ?? [];
 
@@ -99,6 +104,7 @@ export async function loadStuckProjectContext(
     const { data: grantRows } = await supabase
       .from("grants")
       .select("id, funder_id")
+      .eq("org_id", orgId)
       .in("id", grantIds);
     const grants = (grantRows as { id: string; funder_id: string | null }[] | null) ?? [];
     const funderIds = Array.from(
@@ -108,6 +114,7 @@ export async function loadStuckProjectContext(
       const { data: funderRows } = await supabase
         .from("constituents")
         .select("id, type, first_name, last_name, org_name")
+        .eq("org_id", orgId)
         .in("id", funderIds);
       const funderName = new Map(
         (

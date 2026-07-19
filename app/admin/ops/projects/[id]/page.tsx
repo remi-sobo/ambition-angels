@@ -17,30 +17,34 @@ export default async function ProjectDetailPage({
 }) {
   const supabase = getSupabaseAdmin();
   const ctx = await getOrgContext();
-  const orgId = ctx?.orgId;
+  // Org fence: the service-role client bypasses RLS. Without an org the project
+  // and task reads below would return ANY tenant's rows by id (IDOR), so treat
+  // a missing org as not-found.
+  if (!ctx) notFound();
+  const orgId = ctx.orgId;
 
   const [projectRes, tasksRes, initiativesRes, goalsRes] = await Promise.all([
     supabase
       .from("ops_projects")
       .select("*")
+      .eq("org_id", orgId)
       .eq("id", params.id)
       .maybeSingle(),
     supabase
       .from("ops_tasks")
       .select("*")
+      .eq("org_id", orgId)
       .eq("project_id", params.id)
       .order("display_order", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: true }),
     // Initiatives the project can attach to (Phase 2 cascade). Org-scoped.
-    orgId
-      ? supabase.from("plan_initiatives").select("id, title, goal_id").eq("org_id", orgId)
-      : Promise.resolve({ data: [] as { id: string; title: string; goal_id: string | null }[] }),
-    orgId
-      ? supabase.from("plan_goals").select("id, title").eq("org_id", orgId)
-      : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+    supabase.from("plan_initiatives").select("id, title, goal_id").eq("org_id", orgId),
+    supabase.from("plan_goals").select("id, title").eq("org_id", orgId),
   ]);
 
   const project = projectRes.data as OpsProject | null;
+  // A row for a different org (or a bad id) reads as not-found — never leak
+  // its existence.
   if (!project) notFound();
 
   const tasks = (tasksRes.data as OpsTask[] | null) ?? [];

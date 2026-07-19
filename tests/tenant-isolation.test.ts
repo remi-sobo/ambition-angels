@@ -29,7 +29,8 @@ const REPO = join(__dirname, "..");
 // tables deliberately excluded.
 const TENANT_TABLES = new Set([
   "ack_templates", "acknowledgments", "agenda_delegations", "appeals", "applications",
-  "ask_documents", "asks", "attendance", "blackouts", "board_meetings", "board_members",
+  "ask_documents", "asks", "attendance", "blackouts", "bloomos_briefing_state",
+  "board_meetings", "board_members",
   "bookings", "briefings", "calendar_events", "calendar_sync_jobs", "campaigns",
   "cohort_members", "cohort_sessions", "cohorts", "compliance_items", "connection_candidates",
   "connections", "constituents", "custom_field_defs", "demoday_notes", "demoday_signups",
@@ -68,11 +69,7 @@ const GLOBAL_ALLOW = new Set([
 ]);
 
 // Audited exceptions: `${relPath}::${table}` → reason. Each must be justified.
-const EXCEPTIONS = new Map<string, string>([
-  // bloomos_briefing_state has NO org_id column yet (keyed by item_id); a
-  // follow-up migration adds one. It isn't in TENANT_TABLES, so this is a note
-  // only — no live exception is needed.
-]);
+const EXCEPTIONS = new Map<string, string>([]);
 
 /** Recursively collect *.ts / *.tsx files under a directory. */
 function walk(dir: string): string[] {

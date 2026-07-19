@@ -39,7 +39,13 @@ export async function POST(req: NextRequest) {
   const sb = getSupabaseAdmin();
 
   if (decision === "undo") {
-    const { error } = await sb.from("bloomos_briefing_state").delete().eq("item_id", itemId);
+    // Org fence: the state key is (org_id, item_id) — scope the delete so one
+    // tenant's undo can't remove another tenant's row on a colliding item_id.
+    const { error } = await sb
+      .from("bloomos_briefing_state")
+      .delete()
+      .eq("org_id", ctx.orgId)
+      .eq("item_id", itemId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, itemId, decision: "undo" });
   }
@@ -53,7 +59,7 @@ export async function POST(req: NextRequest) {
     .from("bloomos_briefing_state")
     .upsert(
       { org_id: ctx.orgId, item_id: itemId, decision, hidden_until, updated_at: new Date().toISOString() },
-      { onConflict: "item_id" },
+      { onConflict: "org_id,item_id" },
     );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

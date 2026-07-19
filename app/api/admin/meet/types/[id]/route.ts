@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 
 const patchSchema = z.object({
   name: z.string().min(1).max(200).optional(),
@@ -23,9 +23,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!await isAuthed()) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const ctx = await getOrgContext();
+  if (!ctx) { return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); }
 
   let body: unknown;
   try {
@@ -45,9 +44,11 @@ export async function PATCH(
   }
 
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data, error } = await supabase
     .from("meeting_types")
     .update({ ...parsed.data, updated_at: new Date().toISOString() })
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .select("*")
     .single();

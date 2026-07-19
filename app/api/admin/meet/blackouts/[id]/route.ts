@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 
 export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!await isAuthed()) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const ctx = await getOrgContext();
+  if (!ctx) { return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); }
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { error } = await supabase
     .from("blackouts")
     .delete()
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

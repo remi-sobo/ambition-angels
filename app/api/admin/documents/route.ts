@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
     if (linkErr) {
       // Keep upload atomic: no half-attached document. Service role cleans up
       // both writes (staff lack documents.delete, and that's correct).
-      await admin.from("documents").delete().eq("id", documentId);
+      await admin.from("documents").delete().eq("org_id", ctx.orgId).eq("id", documentId);
       await admin.storage.from(DOCUMENTS_BUCKET).remove([path]);
       return NextResponse.json({ error: linkErr.message }, { status: 500 });
     }

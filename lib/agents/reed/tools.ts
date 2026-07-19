@@ -177,16 +177,19 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
         const now = new Date();
+        // Org fence: sb is the service-role client (bypasses RLS), so every
+        // read is scoped to the tool's orgId.
         const [txnsRes, cashRes, scheduleRows] = await Promise.all([
           sb
             .from("fin_transactions")
             .select("txn_date, amount, exclude_from_runway")
+            .eq("org_id", orgId)
             .gte("txn_date", fy.start)
             .lte("txn_date", fy.end),
           cfg.startDate
-            ? sb.from("fin_transactions").select("amount").gt("txn_date", cfg.startDate)
+            ? sb.from("fin_transactions").select("amount").eq("org_id", orgId).gt("txn_date", cfg.startDate)
             : Promise.resolve({ data: [] as Array<{ amount: number }> }),
-          loadRevenueSchedule(sb),
+          loadRevenueSchedule(sb, orgId),
         ]);
 
         const txns = (txnsRes.data ?? []).map((t) => ({
@@ -277,9 +280,11 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         const cfg = await loadFinConfig(sb, orgId);
         const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
+        // Org fence: sb is the service-role client (bypasses RLS) — scope both
+        // reads to the tool's orgId.
         const [giftsRes, oppsRes] = await Promise.all([
-          sb.from("gifts").select("amount").gte("gift_date", fy.start).lte("gift_date", fy.end),
-          sb.from("opportunities").select("stage, ask_amount, probability").neq("stage", "lost").or(EXCLUDE_PARTNERSHIP_OPPS),
+          sb.from("gifts").select("amount").eq("org_id", orgId).gte("gift_date", fy.start).lte("gift_date", fy.end),
+          sb.from("opportunities").select("stage, ask_amount, probability").eq("org_id", orgId).neq("stage", "lost").or(EXCLUDE_PARTNERSHIP_OPPS),
         ]);
 
         const raised = (giftsRes.data ?? []).reduce((s, g) => s + Number(g.amount), 0);

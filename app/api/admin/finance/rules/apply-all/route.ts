@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { loadRules, matchRule, bumpHitCounts } from "@/lib/finance/categorize";
 
@@ -16,14 +16,20 @@ import { loadRules, matchRule, bumpHitCounts } from "@/lib/finance/categorize";
 // in steady state, dozens of rules), so we do it in-process rather than a
 // SQL update with regex joins.
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
+  // Org fence: the service-role client bypasses RLS, so this mass update MUST
+  // be constrained to the caller's org — else it would rewrite every tenant's
+  // transactions with this org's rules.
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const orgId = ctx.orgId;
   const supabase = getSupabaseAdmin();
 
   const { data: uncatRaw, error: selErr } = await supabase
     .from("fin_transactions")
     .select("id, description, restricted")
+    .eq("org_id", orgId)
     .is("category_id", null);
   if (selErr) {
     return NextResponse.json({ error: selErr.message }, { status: 500 });
@@ -34,7 +40,7 @@ export async function POST(req: NextRequest) {
     restricted: boolean;
   }>;
 
-  const rules = await loadRules(supabase);
+  const rules = await loadRules(supabase, orgId);
   if (rules.length === 0) {
     // The invocation itself is the audited action — log it even when
     // there were no rules to apply.
@@ -65,6 +71,7 @@ export async function POST(req: NextRequest) {
     const { error: updErr } = await supabase
       .from("fin_transactions")
       .update(update)
+      .eq("org_id", orgId)
       .eq("id", t.id);
     if (updErr) {
       console.error("[finance] apply-all update failed for", t.id, updErr.message);

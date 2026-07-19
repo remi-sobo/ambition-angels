@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
   // might have made.
   const { data: existing, error: selErr } = await supabase
     .from("fin_category_rules")
-    .select("pattern, category_id");
+    .select("pattern, category_id")
+    .eq("org_id", ctx.orgId);
   if (selErr) {
     return NextResponse.json({ error: selErr.message }, { status: 500 });
   }

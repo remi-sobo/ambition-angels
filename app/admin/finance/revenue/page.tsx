@@ -17,14 +17,22 @@ export default async function RevenuePage({
 }) {
   const supabase = getSupabaseAdmin();
 
+  // Org fence: the service-role client bypasses RLS, so every read below is
+  // scoped to the active org. No session → nothing to show.
   const ctx = await getOrgContext();
-  const { data: cfg } = ctx
-    ? await supabase
-        .from("fin_config")
-        .select("current_year, fundraising_goal")
-        .eq("org_id", ctx.orgId)
-        .maybeSingle()
-    : { data: null };
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Revenue" subtitle="Sign in to view revenue." />
+      </div>
+    );
+  }
+  const orgId = ctx.orgId;
+  const { data: cfg } = await supabase
+    .from("fin_config")
+    .select("current_year, fundraising_goal")
+    .eq("org_id", orgId)
+    .maybeSingle();
   const configYear = typeof cfg?.current_year === "number" ? cfg.current_year : new Date().getFullYear();
   const requested = parseInt(searchParams.year ?? "", 10);
   const year =
@@ -39,14 +47,16 @@ export default async function RevenuePage({
       .select(
         "id, year, source_type, source_name, amount, status, expected_date, probability, restricted, restricted_to, notes"
       )
+      .eq("org_id", orgId)
       .eq("year", year)
       .order("status", { ascending: true })
       .order("amount", { ascending: false }),
-    loadRevenueSchedule(supabase),
+    loadRevenueSchedule(supabase, orgId),
     // Received gifts for the year (the canonical landed-money ledger), donor-named.
     supabase
       .from("gifts")
       .select("id, amount, gift_date, constituent:constituents ( type, first_name, last_name, org_name )")
+      .eq("org_id", orgId)
       .gte("gift_date", yStart)
       .lte("gift_date", yEnd)
       .order("gift_date", { ascending: false })

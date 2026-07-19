@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const STATUSES = ["secured", "projected", "received"] as const;
@@ -22,7 +22,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!await isAuthed()) {
+  // Org fence: service-role update by id must be constrained to the caller's org.
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
@@ -74,6 +76,7 @@ export async function PATCH(
   const { data, error } = await supabase
     .from("fin_revenue_commitments")
     .update(update)
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .select("*")
     .single();
@@ -91,7 +94,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!await isAuthed()) {
+  // Org fence: service-role delete by id must be constrained to the caller's org.
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
@@ -103,6 +108,7 @@ export async function DELETE(
   const { data: deleted, error } = await supabase
     .from("fin_revenue_commitments")
     .delete()
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .select("*");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

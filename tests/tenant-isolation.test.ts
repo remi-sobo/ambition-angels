@@ -132,8 +132,7 @@ function receiverBefore(src: string, dot: number): string {
     // Walk back over a balanced `getSupabaseAdmin()` call.
     const close = i;
     const openParen = src.lastIndexOf("(", close);
-    let j = openParen - 1;
-    let start = j;
+    let start = openParen - 1;
     while (start >= 0 && /[\w$]/.test(src[start])) start--;
     return src.slice(start + 1, openParen);
   }

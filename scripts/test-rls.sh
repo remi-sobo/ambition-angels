@@ -187,6 +187,8 @@ ordered=(
   hubspot_projection_external_refs.sql
   add_constituents_is_volunteer.sql
   add_students_leader_id.sql
+  add_org_id_to_bloomos_briefing_state.sql
+  demoday_notes_org_scoped_unique.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

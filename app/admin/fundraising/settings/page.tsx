@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../_components/PageHeader";
 import HubSpotSettings from "./_components/HubSpotSettings";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -11,13 +12,18 @@ export const dynamic = "force-dynamic";
 export default async function FundraisingSettingsPage() {
   let connected = false;
   let flags = { sync_out: false, sync_in: false, sync_gifts_as_deals: false };
+  // Org fence: connections carries org_id and the service-role client bypasses
+  // RLS, so scope to the active org (else another tenant's HubSpot connection
+  // status/config would show). No session → render the disconnected default.
+  const ctx = await getOrgContext();
   try {
-    const { data } = await getSupabaseAdmin()
+    const { data } = ctx ? await getSupabaseAdmin()
       .from("connections")
       .select("status, meta")
+      .eq("org_id", ctx.orgId)
       .eq("provider", "hubspot")
       .limit(1)
-      .maybeSingle();
+      .maybeSingle() : { data: null };
     if (data) {
       connected = data.status === "active";
       const meta = (data.meta ?? {}) as Record<string, unknown>;

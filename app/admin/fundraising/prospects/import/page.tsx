@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../../_components/PageHeader";
 import HubspotImportPicker from "./_components/HubspotImportPicker";
 
@@ -10,10 +11,17 @@ export const dynamic = "force-dynamic";
 
 export default async function ImportFromHubspotPage() {
   const supabase = getSupabaseAdmin();
-  const [{ data: lc }, { data: count }] = await Promise.all([
-    supabase.from("hs_contacts").select("lifecycle_stage"),
+  // Org fence: hs_contacts carries org_id and the service-role client bypasses
+  // RLS, so scope the lifecycle read to the active org (empty for orgs with no
+  // HubSpot mirror). No session → nothing to import.
+  // NOTE: hubspot_bench_candidates_count takes no org param; it should gain one
+  // (a follow-up) so its count is org-scoped too — it currently returns a bare
+  // number, low sensitivity, and is only run for an authenticated session here.
+  const ctx = await getOrgContext();
+  const [{ data: lc }, { data: count }] = ctx ? await Promise.all([
+    supabase.from("hs_contacts").select("lifecycle_stage").eq("org_id", ctx.orgId),
     supabase.rpc("hubspot_bench_candidates_count", { p_search: null, p_lifecycle: null }),
-  ]);
+  ]) : [{ data: [] as { lifecycle_stage: string | null }[] }, { data: 0 }];
   const lifecycles = Array.from(
     new Set((lc ?? []).map((r) => r.lifecycle_stage as string | null).filter((v): v is string => !!v))
   ).sort();

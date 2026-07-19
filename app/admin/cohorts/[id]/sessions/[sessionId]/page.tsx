@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import AttendanceSheet, { type RosterEntry } from "./_components/AttendanceSheet";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -16,10 +17,17 @@ export default async function SessionAttendancePage({
 }) {
   if (!isUuid(params.id) || !isUuid(params.sessionId)) notFound();
   const supabase = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS. Scope the session read to the
+  // caller's org (foreign session id → not-found, was an IDOR) and every child
+  // read too.
+  const ctx = await getOrgContext();
+  if (!ctx) notFound();
+  const orgId = ctx.orgId;
 
   const { data: session } = await supabase
     .from("cohort_sessions")
     .select("*, cohorts(name)")
+    .eq("org_id", orgId)
     .eq("id", params.sessionId)
     .eq("cohort_id", params.id)
     .maybeSingle();
@@ -31,11 +39,13 @@ export default async function SessionAttendancePage({
     supabase
       .from("cohort_members")
       .select("student_id, status, students(first_name, last_name, custom_fields)")
+      .eq("org_id", orgId)
       .eq("cohort_id", params.id)
       .eq("status", "enrolled"),
     supabase
       .from("attendance")
       .select("student_id, status")
+      .eq("org_id", orgId)
       .eq("session_id", params.sessionId),
   ]);
 

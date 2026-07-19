@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import StatCard from "../../_components/StatCard";
 import { KIND_LABELS, type Partner } from "../_lib/partners";
 import { STATUS_LABELS, STATUS_STYLE, NEXT_STATUS, STATUS_SHORT, type PartnerStatus } from "../_lib/status";
@@ -32,23 +33,31 @@ const INT_LABEL: Record<string, string> = {
 export default async function PartnerProfilePage({ params }: { params: { id: string } }) {
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
   const supabase = getSupabaseAdmin();
+  // Org fence: the service-role client bypasses RLS. Scope the partner read to
+  // the caller's org (foreign id → not-found, was an IDOR) and every child read
+  // + the merge-candidate picker.
+  const ctx = await getOrgContext();
+  if (!ctx) notFound();
+  const orgId = ctx.orgId;
 
   const [pRes, contactsRes, intsRes, candRes] = await Promise.all([
-    supabase.from("partners").select("*").eq("id", params.id).maybeSingle(),
+    supabase.from("partners").select("*").eq("org_id", orgId).eq("id", params.id).maybeSingle(),
     supabase
       .from("partner_contacts")
       .select("id, first_name, last_name, email, phone, title, tags, notes, is_primary")
+      .eq("org_id", orgId)
       .eq("partner_id", params.id)
       .order("is_primary", { ascending: false })
       .order("created_at", { ascending: true }),
     supabase
       .from("partner_interactions")
       .select("id, kind, occurred_at, notes, logged_by, contact_id")
+      .eq("org_id", orgId)
       .eq("partner_id", params.id)
       .order("occurred_at", { ascending: false })
       .limit(200),
     // Candidate orgs for the "merge a duplicate in" picker.
-    supabase.from("partners").select("id, name, kind, city, status").order("name").limit(500),
+    supabase.from("partners").select("id, name, kind, city, status").eq("org_id", orgId).order("name").limit(500),
   ]);
 
   if (!pRes.data) notFound();

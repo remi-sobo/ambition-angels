@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import StatCard from "../_components/StatCard";
 import PageHeader from "../_components/PageHeader";
 import SectionSummary from "../_components/SectionSummary";
@@ -23,9 +24,20 @@ export const dynamic = "force-dynamic";
 
 export default async function CompliancePage() {
   const supabase = getSupabaseAdmin();
+  // Org fence: the service-role client bypasses RLS, so the read is scoped to
+  // the active org. No session → empty.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Compliance" subtitle="Sign in to view the compliance calendar." />
+      </div>
+    );
+  }
   const { data } = await supabase
     .from("compliance_items")
     .select("*")
+    .eq("org_id", ctx.orgId)
     .order("due_date")
     .limit(200);
   const items = (data ?? []) as ComplianceItem[];

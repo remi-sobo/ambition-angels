@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SectionHeading from "../_components/SectionHeading";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
 import {
@@ -39,14 +40,26 @@ const CLOSED = ["ineligible", "declined", "expired"];
 
 export default async function IntakePage() {
   const supabase = getSupabaseAdmin();
+  // Org fence: the service-role client bypasses RLS, so every read is scoped to
+  // the active org. No session → empty.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Intake" subtitle="Sign in to view applications." />
+      </div>
+    );
+  }
+  const orgId = ctx.orgId;
   const [{ data: appsData }, { data: cohortsData }, { data: membersData }] = await Promise.all([
-    supabase.from("applications").select("*").order("created_at", { ascending: true }),
+    supabase.from("applications").select("*").eq("org_id", orgId).order("created_at", { ascending: true }),
     supabase
       .from("cohorts")
       .select("id, name, capacity, status, accepting_applications")
+      .eq("org_id", orgId)
       .neq("status", "archived")
       .order("start_date", { ascending: false, nullsFirst: false }),
-    supabase.from("cohort_members").select("cohort_id, status"),
+    supabase.from("cohort_members").select("cohort_id, status").eq("org_id", orgId),
   ]);
   const apps = (appsData ?? []) as AppRecord[];
   const cohorts = cohortsData ?? [];

@@ -40,7 +40,7 @@ const TENANT_TABLES = new Set([
   "fin_transactions", "fr_agent_activity_log", "fr_email_drafts", "fr_funding_opportunities",
   "fr_nba_suggestions", "fr_prospect_briefs", "fr_prospect_disqualified", "fr_prospect_promoted",
   "fr_prospect_scores", "fr_prospects", "fr_touches", "funder_angles", "funds", "gifts",
-  "gmail_sync_jobs", "grant_payments", "grant_requirements", "grants", "households",
+  "gmail_sync_jobs", "grant_contacts", "grant_payments", "grant_requirements", "grants", "households",
   "hs_companies", "hs_contacts", "hs_deals", "hs_engagements", "hs_sync_jobs", "import_rows",
   "imports", "interactions", "invitations", "journey_enrollments", "journey_steps", "journeys",
   "meeting_exclusions", "meeting_records", "meeting_suggested_tasks", "meeting_types",

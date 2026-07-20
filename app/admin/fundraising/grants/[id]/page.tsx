@@ -14,6 +14,8 @@ import {
 } from "../_components/GrantControls";
 import GrantSeedTasks from "../_components/GrantSeedTasks";
 import GrantCoach from "../_components/GrantCoach";
+import { AddGrantContactForm, GrantContactRow } from "../_components/GrantContacts";
+import { listGrantContacts } from "@/lib/fundraising/grantContacts";
 import {
   COACH_PROMPTS,
   COACH_LENSES,
@@ -65,6 +67,12 @@ export default async function GrantDetailPage({ params }: { params: { id: string
   }
   if (!gRes.data) notFound();
   const g = gRes.data;
+
+  // The people attached to this grant (intro source, program officer,
+  // finance/reporting), primary first. Missing-table errors degrade to an
+  // empty list — the section then just shows the add form.
+  const contactsRes = await listGrantContacts(supabase, g.id);
+  const contacts = "contacts" in contactsRes ? contactsRes.contacts : [];
   const requirements = (reqsRes.data ?? []) as Array<{
     id: string; kind: string; label: string | null; due_date: string;
     status: string; submitted_at: string | null; notes: string | null;
@@ -178,6 +186,26 @@ export default async function GrantDetailPage({ params }: { params: { id: string
             <AddRequirementForm grantId={g.id} />
           </section>
         </div>
+
+        {/* ── Contacts: the people on this pursuit (funder org stays above) ── */}
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-outline">
+            <h2 className={TYPE.cardTitle}>Contacts</h2>
+          </div>
+          {contacts.length === 0 ? (
+            <p className={`px-5 py-6 ${TYPE.bodyMuted}`}>
+              No contacts yet — attach the intro source, program officer, and whoever handles
+              finance/reporting at the funder. The first contact becomes primary.
+            </p>
+          ) : (
+            <ul className="divide-y divide-hairline">
+              {contacts.map((c) => (
+                <GrantContactRow key={c.id} contact={c} />
+              ))}
+            </ul>
+          )}
+          <AddGrantContactForm grantId={g.id} />
+        </section>
 
         {/* ── Asks: the solicitations behind this grant + their PDFs ── */}
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">

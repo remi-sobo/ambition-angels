@@ -265,6 +265,122 @@ begin
   end if;
 end $$;
 
+-- ════ Grant contacts: org isolation + single-primary/no-dup constraints ══
+-- grant_contacts (create_grant_contacts.sql) joins people constituents onto
+-- grants. Same fundraising.* policies as grants — so the same access matrix
+-- must hold — plus the two unique indexes (one primary per grant, one link
+-- per person) that the data layer leans on.
+reset role;
+reset request.jwt.claim.sub;
+
+-- Seed as service role: one grant (funder is required) + one attached person
+-- per org.
+do $$
+declare aa uuid; t2 uuid; aac uuid; t2c uuid; aag uuid; t2g uuid; aac2 uuid;
+        aaf uuid; t2f uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+  select id into t2 from orgs where slug = 'tenant-two';
+
+  insert into constituents (org_id, type, org_name, source)
+  values (aa, 'organization', 'leak-test-aa-funder', 'manual')
+  returning id into aaf;
+  insert into constituents (org_id, type, org_name, source)
+  values (t2, 'organization', 'leak-test-t2-funder', 'manual')
+  returning id into t2f;
+
+  insert into constituents (org_id, type, first_name, last_name, emails, source)
+  values (aa, 'person', 'Grant', 'Contact', array['gc-aa@example.org'], 'manual')
+  returning id into aac;
+  insert into constituents (org_id, type, first_name, last_name, emails, source)
+  values (aa, 'person', 'Second', 'Contact', array['gc-aa-2@example.org'], 'manual')
+  returning id into aac2;
+  insert into constituents (org_id, type, first_name, last_name, emails, source)
+  values (t2, 'person', 'Tenant', 'Contact', array['gc-t2@example.org'], 'manual')
+  returning id into t2c;
+
+  insert into grants (org_id, funder_id, name) values (aa, aaf, 'leak-test-aa-grant')
+  returning id into aag;
+  insert into grants (org_id, funder_id, name) values (t2, t2f, 'leak-test-t2-grant')
+  returning id into t2g;
+
+  insert into grant_contacts (org_id, grant_id, constituent_id, role, is_primary)
+  values (aa, aag, aac, 'program_officer', true);
+  insert into grant_contacts (org_id, grant_id, constituent_id, role, is_primary)
+  values (t2, t2g, t2c, 'intro_source', true);
+
+  -- Duplicate link (same grant, same person): rejected even for service role.
+  begin
+    insert into grant_contacts (org_id, grant_id, constituent_id, role)
+    values (aa, aag, aac, 'other');
+    raise exception 'grant_contacts accepted a duplicate (grant, constituent) link';
+  exception when unique_violation then null; -- expected
+  end;
+
+  -- Second primary on the same grant: rejected (partial unique index).
+  begin
+    insert into grant_contacts (org_id, grant_id, constituent_id, role, is_primary)
+    values (aa, aag, aac2, 'finance_reporting', true);
+    raise exception 'grant_contacts accepted a second primary contact on one grant';
+  exception when unique_violation then null; -- expected
+  end;
+
+  -- A second non-primary contact is fine.
+  insert into grant_contacts (org_id, grant_id, constituent_id, role)
+  values (aa, aag, aac2, 'finance_reporting');
+end $$;
+
+set role authenticated;
+
+-- AA owner: reads its own grant contacts, none of tenant-two's.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare t2 uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  if (select count(*) from grant_contacts
+      where grant_id = (select id from grants where name = 'leak-test-aa-grant')) <> 2 then
+    raise exception 'AA owner cannot read its own grant contacts';
+  end if;
+  if (select count(*) from grant_contacts where org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two grant contacts';
+  end if;
+end $$;
+
+-- Tenant-two owner: only its own; a write into the AA org is denied.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from grant_contacts where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA grant contacts';
+  end if;
+  if (select count(*) from grant_contacts) = 0 then
+    raise exception 'tenant-two owner cannot read its OWN grant contacts';
+  end if;
+end $$;
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  -- The AA grant/constituent ids are invisible to this session, so the probe
+  -- uses freshly minted uuids: WITH CHECK on org_id must reject it first.
+  insert into grant_contacts (org_id, grant_id, constituent_id, role)
+  values (aa, gen_random_uuid(), gen_random_uuid(), 'other');
+  raise exception 'LEAK: tenant-two inserted a grant contact into the AA org';
+exception
+  when insufficient_privilege then null; -- expected: RLS WITH CHECK denial
+end $$;
+
+-- Stranger (session, no membership): nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from grant_contacts) <> 0 then
+    raise exception 'LEAK: non-member reads grant_contacts';
+  end if;
+end $$;
+
 -- ════ Operating Spine: v_action_items + entity_types ═════════════════════
 -- The unified action queue is a security_invoker view over five RLS-gated
 -- sources; if the invoker option were ever dropped it would run as owner and

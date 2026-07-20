@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
+import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
 import { getCalendarConnectionStatus, type CalendarConnectionStatus } from "@/lib/google/connection";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { spendSummary } from "@/lib/ai/ledger";
@@ -66,6 +68,26 @@ export default async function SettingsPage({
   // via the session client; returns an empty summary if the read fails.
   const spend = await spendSummary(createServerSupabase(), ctx.orgId);
   const aiCapUsd = orgMonthlyCapUsd();
+
+  // Data sources card (specs/bloomos-settings-data-sources.md): which rows an
+  // org sees is entitlement data, never code — the HubSpot row is AA-site.
+  const ents = await getEntitlements(ctx.orgId);
+  const canImport = hasFeature(ents, "modules.program") || hasFeature(ents, "modules.fundraising");
+  const showHubspot = hasFeature(ents, "aa.hubspot_mirror");
+
+  // Recent import runs — session client, so RLS keeps this org-scoped even
+  // though we filter explicitly too.
+  type RecentRun = { id: string; filename: string | null; source: string; status: string; created_at: string };
+  let recentRuns: RecentRun[] = [];
+  if (canImport) {
+    const { data } = await createServerSupabase()
+      .from("imports")
+      .select("id, filename, source, status, created_at")
+      .eq("org_id", ctx.orgId)
+      .order("created_at", { ascending: false })
+      .limit(3);
+    recentRuns = (data ?? []) as RecentRun[];
+  }
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[760px]">
@@ -135,10 +157,66 @@ export default async function SettingsPage({
         </Card>
 
         <Card
-          title="HubSpot sync"
-          description="Refresh the fundraising spine from HubSpot, and see how current the data is. Runs on demand."
+          title="Data sources"
+          description="Where your data comes from — file imports and connected systems."
         >
-          <HubspotSyncPanel />
+          <div className="space-y-5">
+            {canImport && (
+              <div>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-ink-1">File imports</h3>
+                    <p className="text-xs text-ink-2 mt-0.5">
+                      Bring data in from your current CRM or spreadsheet — any system that exports CSV works.
+                    </p>
+                  </div>
+                  <Link
+                    href="/admin/imports"
+                    className="shrink-0 text-sm font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Import a CSV
+                  </Link>
+                </div>
+                {recentRuns.length > 0 && (
+                  <ul className="mt-3 space-y-1">
+                    {recentRuns.map((r) => (
+                      <li key={r.id} className="flex items-center gap-2 text-xs">
+                        <span className="text-ink-1 truncate">
+                          {r.source === "hubspot" ? "HubSpot sync" : r.filename ?? "Untitled file"}
+                        </span>
+                        <span className="text-[10px] text-ink-3 uppercase tracking-wider">{r.status}</span>
+                        <span className="ml-auto text-ink-3 tabular-nums">{r.created_at.slice(0, 10)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {showHubspot ? (
+              <div className={canImport ? "pt-5 border-t border-outline" : undefined}>
+                <h3 className="text-sm font-semibold text-ink-1">HubSpot</h3>
+                <p className="text-xs text-ink-2 mt-0.5 mb-3">
+                  Refresh the fundraising spine from HubSpot, and see how current the data is. Runs on demand.
+                </p>
+                <HubspotSyncPanel />
+              </div>
+            ) : (
+              <div className={canImport ? "pt-5 border-t border-outline" : undefined}>
+                <h3 className="text-sm font-semibold text-ink-1">Using a CRM?</h3>
+                <p className="text-xs text-ink-2 mt-0.5">
+                  Live CRM sync isn&apos;t available yet — CSV import covers everything today.{" "}
+                  <a
+                    href="mailto:remi@ambitionangels.org?subject=Our%20CRM"
+                    className="text-orange font-semibold hover:underline"
+                  >
+                    Tell us what you run
+                  </a>{" "}
+                  and it shapes what gets built next.
+                </p>
+              </div>
+            )}
+          </div>
         </Card>
 
         <Card

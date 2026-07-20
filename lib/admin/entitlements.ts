@@ -55,6 +55,8 @@ export const FEATURE_KEYS = [
   "aa.bv",
   "aa.site_analytics",
   "aa.hubspot_mirror",
+  "aa.app", // the Ambition App roadmap surface — AA-only, not a generic module
+  "aa.internships", // AA internships surface — AA-only
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];

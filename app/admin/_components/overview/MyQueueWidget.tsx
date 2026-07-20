@@ -4,24 +4,22 @@ import { todayISO } from "../../ops/_types/ops";
 import { PriorityFlag } from "../../ops/_components/TaskRow";
 import { Widget, Empty } from "./shared";
 
-// Open tasks for one person, pinned-for-today first, then soonest due. Used as
-// Shannon's "My queue" on the Ops panel and Remi's "My to-dos" on the cockpit.
-// Compliance items assigned to the person fold in once due ≤30 days out and
-// link back to /admin/compliance. (Connection backlog + email-triage
-// candidates fold in here as those sources are wired.)
+// Open to-dos for the SIGNED-IN person, pinned-for-today first, then soonest
+// due. Scoped to the viewer and their active org by getQueueTasks — every user
+// sees only their own list. Compliance items assigned to them fold in once due
+// ≤30 days out and link back to /admin/compliance. (Connection backlog +
+// email-triage candidates fold in here as those sources are wired.)
 
 export default async function MyQueueWidget({
-  assignee = "shannon",
-  title = "My queue",
+  title = "My to-dos",
   href = "/admin/ops",
   className,
 }: {
-  assignee?: "remi" | "shannon";
   title?: string;
   href?: string;
   className?: string;
 }) {
-  const { tasks, total } = await getQueueTasks(assignee);
+  const { tasks, total } = await getQueueTasks();
   const today = todayISO();
 
   return (

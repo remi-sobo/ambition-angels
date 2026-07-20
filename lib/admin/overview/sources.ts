@@ -645,14 +645,22 @@ function compareQueue(a: QueueRow, b: QueueRow, today: string): number {
   return a.updatedAt < b.updatedAt ? -1 : a.updatedAt > b.updatedAt ? 1 : 0;
 }
 
-export const getQueueTasks = cache(async (assignee: "remi" | "shannon"): Promise<{ tasks: QueueTask[]; total: number }> => {
+export const getQueueTasks = cache(async (): Promise<{ tasks: QueueTask[]; total: number }> => {
+  // Scope to the signed-in person and their active org: each user sees only
+  // their OWN to-dos. Matches on the uuid owner column (ops_tasks.assigned_to_id
+  // / compliance_items.assigned_to_id — owner_uuid_promotion.sql), which the DB
+  // keeps in sync with the legacy text assignee. The prior hardcoded "remi"
+  // string match showed one person's list to everyone (and every org).
+  const ctx = await getOrgContext();
+  if (!ctx) return { tasks: [], total: 0 };
   const sb = getSupabaseAdmin();
   const today = todayISO();
   const [res, countRes, complianceRes] = await Promise.all([
     sb
       .from("ops_tasks")
       .select("id, title, category, due_date, pinned_for_today, priority, updated_at")
-      .eq("assigned_to", assignee)
+      .eq("org_id", ctx.orgId)
+      .eq("assigned_to_id", ctx.userId)
       .neq("status", "done")
       .is("archived_at", null)
       // Fetch a wider window than we display: the JS comparator can promote an
@@ -661,16 +669,17 @@ export const getQueueTasks = cache(async (assignee: "remi" | "shannon"): Promise
     sb
       .from("ops_tasks")
       .select("id", { count: "exact", head: true })
-      .eq("assigned_to", assignee)
+      .eq("org_id", ctx.orgId)
+      .eq("assigned_to_id", ctx.userId)
       .neq("status", "done")
       .is("archived_at", null),
     // Compliance items assigned to this person surface here once their due
     // date is ≤30 days out (see lib/admin/overview/complianceQueue.ts).
-    // ilike = case-insensitive match, tolerant of legacy 'Remi'-cased text.
     sb
       .from("compliance_items")
       .select("id, title, assigned_to, status, due_date, updated_at")
-      .ilike("assigned_to", assignee)
+      .eq("org_id", ctx.orgId)
+      .eq("assigned_to_id", ctx.userId)
       .in("status", [...OPEN_COMPLIANCE_STATUSES])
       .lte("due_date", complianceQueueHorizon(today))
       .limit(20),

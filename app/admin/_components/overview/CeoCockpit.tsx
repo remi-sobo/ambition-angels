@@ -31,7 +31,7 @@ export default function CeoCockpit({ ownerName }: { ownerName?: string | null })
             <path d="M12 12l4-2.5M12 12v-4.5" />
           </svg>
         </span>
-        <h2 className="font-heading font-semibold text-cream text-lg leading-tight">{title}</h2>
+        <h2 className="font-heading font-semibold text-ink-1 text-lg leading-tight">{title}</h2>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">

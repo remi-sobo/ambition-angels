@@ -33,6 +33,7 @@ export default function LoginScreen({
     authError ? "That sign-in link is invalid or expired. Try again." : ""
   );
   const [magicSent, setMagicSent] = useState(false);
+  const [resetMsg, setResetMsg] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -70,6 +71,30 @@ export default function LoginScreen({
       });
       if (res.ok) setMagicSent(true);
       else setLoginError("Could not send the sign-in link.");
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setLoginError("Enter your email first, then request a reset link.");
+      return;
+    }
+    setLoggingIn(true);
+    setLoginError("");
+    setResetMsg("");
+    try {
+      const res = await fetch("/api/admin/account/password/reset-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setResetMsg(`If an account exists for ${email}, a password reset link is on its way.`);
+      } else {
+        setLoginError("Could not send the reset link. Try again.");
+      }
     } finally {
       setLoggingIn(false);
     }
@@ -278,6 +303,7 @@ export default function LoginScreen({
                   </button>
                 </div>
                 {loginError && <p className="text-expense text-xs">{loginError}</p>}
+                {resetMsg && <p className="text-revenue text-xs">{resetMsg}</p>}
                 <button
                   type="submit"
                   disabled={loggingIn}
@@ -285,14 +311,24 @@ export default function LoginScreen({
                 >
                   {loggingIn ? "Signing in…" : "Sign in"}
                 </button>
-                <button
-                  type="button"
-                  onClick={handleMagicLink}
-                  disabled={loggingIn}
-                  className="text-ink-2 hover:text-ink-1 text-xs transition-colors disabled:opacity-60"
-                >
-                  Email me a one-time sign-in link instead
-                </button>
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={handleMagicLink}
+                    disabled={loggingIn}
+                    className="text-ink-2 hover:text-ink-1 text-xs transition-colors disabled:opacity-60"
+                  >
+                    Email me a one-time sign-in link instead
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={loggingIn}
+                    className="text-ink-2 hover:text-ink-1 text-xs transition-colors disabled:opacity-60 shrink-0"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </form>
             </>
           )}

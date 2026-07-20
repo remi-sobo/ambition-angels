@@ -70,7 +70,6 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Today's Moves", icon: "tasks", href: "/admin/fundraising/today", feature: "modules.fundraising" },
       { label: "Donors", icon: "donors", href: "/admin/fundraising/donors", feature: "modules.fundraising" },
-      { label: "Volunteers", icon: "team", href: "/admin/fundraising/volunteers", feature: "modules.fundraising", term: "volunteer" },
       { label: "Pipeline", icon: "majorgifts", href: "/admin/fundraising", feature: "modules.fundraising" },
       { label: "Strategy", icon: "strategy", href: "/admin/fundraising/strategy", feature: "modules.fundraising" },
       { label: "Prospects", icon: "events", href: "/admin/fundraising/prospects", feature: "ai.prospect_research" },
@@ -85,12 +84,20 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Students", icon: "students", href: "/admin/students", feature: "modules.program", term: "student" },
       { label: "Cohorts", icon: "cohorts", href: "/admin/cohorts", feature: "modules.program", term: "cohort" },
+      // Volunteers/Leaders belong to the program, not fundraising. The route
+      // still lives under /admin/fundraising, so the item stays gated on the
+      // fundraising module (where the page's own layout guard is) — the move is
+      // its home in the IA. For YL EPA the "volunteer" term resolves to "Leaders".
+      { label: "Volunteers", icon: "team", href: "/admin/fundraising/volunteers", feature: "modules.fundraising", term: "volunteer" },
       { label: "Intake", icon: "intake", href: "/admin/intake", feature: "modules.program" },
       { label: "Demo Day", icon: "demoday", href: "/admin/demoday", feature: "aa.demoday" },
       { label: "YGB Camp", icon: "camp", href: "/admin/ygb", feature: "aa.ygb" },
       { label: "Schools & Partners", icon: "schools", href: "/admin/partners", feature: "modules.partners", term: "partner" },
-      { label: "Ambition App", icon: "app", soon: true, feature: "modules.program" },
-      { label: "Internships", icon: "internships", soon: true, feature: "modules.program" },
+      // Ambition App + Internships are AA-only roadmap surfaces, not generic
+      // program modules — gate them on AA-only keys so they don't appear (even
+      // as "Soon") for other tenants like YL EPA.
+      { label: "Ambition App", icon: "app", soon: true, feature: "aa.app" },
+      { label: "Internships", icon: "internships", soon: true, feature: "aa.internships" },
       { label: "Career Library", icon: "career", href: "/admin/careers", feature: "aa.quiz" },
     ],
   },

@@ -4,21 +4,20 @@ import StrategyHealthWidget from "./StrategyHealthWidget";
 import TodayAgenda from "./TodayAgenda";
 import MyQueueWidget from "./MyQueueWidget";
 import MovesOnlyYouWidget from "./MovesOnlyYouWidget";
-import { getCockpitTitle } from "@/lib/admin/overview/sources";
 
 // The principal's cockpit — the Command Center's single curated view now that
 // the CEO/Ops pill toggle is retired. Finance + fundraising up top (where we
 // stand on money), then the schedule and the viewer's own to-dos (their day),
 // then partners to follow up (who to chase).
 //
-// The title is per-org data (orgs.settings.cockpit_title) so it reads right for
-// each tenant's principal — "CEO Cockpit" here, "Area Director" for a Young Life
-// AD — and stands in for the label the pill used to carry. Every widget is
-// org-scoped (RLS / active org), and the to-dos are scoped to the signed-in
-// person, so this same view serves whoever is logged in.
+// The header is named after the signed-in person ("Remi's Cockpit") — it stands
+// in for the label the pill used to carry, and reads right for whoever is logged
+// in on any tenant, no per-org config. Every widget is org-scoped (RLS / active
+// org) and the to-dos are scoped to the viewer, so this one view serves everyone.
 
-export default async function CeoCockpit() {
-  const title = await getCockpitTitle();
+export default function CeoCockpit({ ownerName }: { ownerName?: string | null }) {
+  const name = ownerName?.trim();
+  const title = name ? `${name}'s Cockpit` : "Your Cockpit";
 
   return (
     <div className="space-y-6">

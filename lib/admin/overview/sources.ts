@@ -48,25 +48,6 @@ export type FinanceData = FinanceSnapshot;
 /** Cash, burn, runway and the monthly revenue/expense/ending series. */
 export const getFinance = getFinanceSnapshot;
 
-// ── Cockpit identity ──────────────────────────────────────────────────────────
-// The Command Center opens on ONE curated cockpit (the CEO/Ops pill was
-// retired). Its title is per-org DATA, not code, so it fits each tenant's
-// principal — "CEO Cockpit" for a nonprofit CEO, "Area Director" for a Young
-// Life AD — with no tenant name ever hardcoded. Set it per org in
-// orgs.settings.cockpit_title; unset falls back to "CEO Cockpit".
-
-export const getCockpitTitle = cache(async (): Promise<string> => {
-  const ctx = await getOrgContext();
-  if (!ctx) return "Cockpit";
-  // Session client (RLS): a member may read their own org row.
-  const sb = createServerSupabase();
-  const { data } = await sb.from("orgs").select("settings").eq("id", ctx.orgId).maybeSingle();
-  const settings = (data?.settings ?? {}) as Record<string, unknown>;
-  const raw = settings.cockpit_title;
-  const title = typeof raw === "string" ? raw.trim() : "";
-  return title || "CEO Cockpit";
-});
-
 // ── Recent donations (legacy Stripe feed) ────────────────────────────────────
 
 export type DonationRow = {

@@ -10,7 +10,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
+import { requireEntitlement } from "@/lib/admin/entitlements";
 import {
   createJob,
   loadJob,
@@ -20,8 +21,11 @@ import {
 } from "@/lib/hubspot/sync-engine";
 
 export async function POST(req: NextRequest) {
-  if (!await isAuthed()) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // AA-site surface (core fence): the HubSpot pipeline belongs to the resident
+  // org only — authentication alone must not open another tenant's sync.
+  const ent = await requireEntitlement("aa.hubspot_mirror");
+  if (!ent.ok) {
+    return NextResponse.json({ error: ent.error }, { status: ent.status });
   }
 
   const body = await req.json().catch(() => ({}));
@@ -47,8 +51,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  if (!await isAuthed()) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ent = await requireEntitlement("aa.hubspot_mirror");
+  if (!ent.ok) {
+    return NextResponse.json({ error: ent.error }, { status: ent.status });
   }
   const url = new URL(req.url);
   const jobId = url.searchParams.get("jobId");

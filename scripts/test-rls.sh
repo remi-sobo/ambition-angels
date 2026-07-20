@@ -189,6 +189,7 @@ ordered=(
   add_students_leader_id.sql
   add_org_id_to_bloomos_briefing_state.sql
   demoday_notes_org_scoped_unique.sql
+  seed_aa_hubspot_mirror_entitlement.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

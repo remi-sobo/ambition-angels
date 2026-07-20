@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { requireEntitlement } from "@/lib/admin/entitlements";
 import { getDataAge } from "@/lib/admin/dataAge";
 
 // Thin wrapper over the data-age source of truth (lib/admin/dataAge.ts) so the
@@ -8,8 +8,11 @@ import { getDataAge } from "@/lib/admin/dataAge";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Data-age reports the AA HubSpot spine's freshness — an AA-site surface,
+  // fenced like the sync route so other tenants can't read it.
+  const ent = await requireEntitlement("aa.hubspot_mirror");
+  if (!ent.ok) {
+    return NextResponse.json({ error: ent.error }, { status: ent.status });
   }
   return NextResponse.json(await getDataAge());
 }

@@ -1,7 +1,4 @@
 import Greeting from "./Greeting";
-import NeedsYouToday from "./NeedsYouToday";
-import StatusLineCard from "./StatusLineCard";
-import MyWeekCard from "./overview/MyWeekCard";
 import RoleViewShell, { type ViewKey } from "./overview/RoleViewShell";
 import CeoCockpit from "./overview/CeoCockpit";
 import OpsPanel from "./overview/OpsPanel";
@@ -9,15 +6,15 @@ import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import { getMyDisplayName, firstName } from "@/lib/admin/profile";
 
 // Command Center — two curated role views (CEO cockpit for Remi, Ops control
-// panel for Shannon) behind a pill toggle. The view defaults to the logged-in
-// person's own view; the pill peeks at the other. Each view is an arrangement
-// of self-contained widget components (app/admin/_components/overview/*), so a
-// future widget customizer is cheap.
+// panel for Shannon) behind a pill toggle, straight after the greeting. The
+// view defaults to the logged-in person's own view; the pill peeks at the
+// other. Each view is an arrangement of self-contained widget components
+// (app/admin/_components/overview/*), so a future widget customizer is cheap.
 //
-// "Needs you today" (NeedsYouToday) is the ONE list of what needs a human:
-// briefing signal cards on top, the v_action_items queue below in expandable
-// per-module groups. It absorbed the former BriefingStrip + NeedsYouQueue
-// pair, which stacked two overlapping lists.
+// The former pre-cockpit stack (status line / "Act on runway" banner, My Week
+// summon card, and the merged "Needs you today" briefing + action queue) was
+// removed by request — the action queue still lives at /admin/queue and the
+// briefing at /admin/briefing.
 
 export default async function CommandCenter() {
   const [user, displayName, ctx] = await Promise.all([
@@ -33,9 +30,6 @@ export default async function CommandCenter() {
     <div className="min-h-screen bg-ink">
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <Greeting name={greetingName} org={orgName} />
-        <StatusLineCard />
-        <MyWeekCard />
-        <NeedsYouToday />
         <RoleViewShell defaultView={defaultView} ceo={<CeoCockpit />} ops={<OpsPanel />} />
       </div>
     </div>

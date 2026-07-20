@@ -143,7 +143,7 @@ export default async function SettingsPage({
 
         <Card
           title="Change password"
-          description="Enter your current password to confirm, then set a new one (8+ characters)."
+          description="Enter your current password to confirm, then set a new one (8+ characters). No password yet, or forgot it? Use the reset link below."
         >
           <ChangePasswordForm />
         </Card>

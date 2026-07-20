@@ -350,6 +350,53 @@ export function ChangePasswordForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // Reset escape hatch: email a recovery link so users who never set a
+  // password (invited / magic-link only) — or forgot it — can set one without
+  // a current password, which the form above structurally requires.
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  const sendReset = async () => {
+    setResetError(null);
+    setResetBusy(true);
+    try {
+      const res = await fetch("/api/admin/account/password/reset-link", { method: "POST" });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setResetError(j.error ?? `HTTP ${res.status}`);
+        return;
+      }
+      setResetSent(true);
+    } catch {
+      setResetError("Couldn't send the reset link — try again.");
+    } finally {
+      setResetBusy(false);
+    }
+  };
+
+  const resetRow = (
+    <div className="mt-4 pt-4 border-t border-hairline">
+      {resetSent ? (
+        <p className="text-xs text-revenue">
+          Reset link sent — check your email, then follow the link to set a new password (no current
+          password needed).
+        </p>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={sendReset}
+            disabled={resetBusy}
+            className="text-xs font-semibold text-orange hover:text-orange-dark transition-colors disabled:opacity-50"
+          >
+            {resetBusy ? "Sending…" : "Don't know your current password? Email me a reset link"}
+          </button>
+          {resetError && <p className="text-xs text-expense mt-1">{resetError}</p>}
+        </>
+      )}
+    </div>
+  );
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -383,7 +430,8 @@ export function ChangePasswordForm() {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3 max-w-sm">
+    <div className="max-w-sm">
+    <form onSubmit={submit} className="space-y-3">
       <label className="block text-xs text-ink-2">
         Current password
         <input
@@ -431,6 +479,8 @@ export function ChangePasswordForm() {
         {busy ? "Updating…" : "Update password"}
       </button>
     </form>
+    {resetRow}
+    </div>
   );
 }
 

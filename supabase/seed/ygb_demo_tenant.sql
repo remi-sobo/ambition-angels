@@ -1152,6 +1152,208 @@ on conflict do nothing;
 
 commit;
 
+-- ════════════════════════════════════════════════════════════════════════════
+-- SECTION 9 — Comms, meetings, messages, documents
+-- Documents caveat: rows + links are seeded, but the underlying files are NOT
+-- in the bloomos-documents storage bucket (no storage API in the seed path),
+-- so Download on a seeded row 404s. Replace via the upload UI as needed.
+-- ════════════════════════════════════════════════════════════════════════════
+begin;
+
+-- Comms identity + campaigns
+insert into public.org_comms_settings (org_id, from_name, from_email, reply_to, mailing_address, footer_text)
+values (md5('ygb:org')::uuid, 'Young, Gifted & Black', 'hello@ygbpeninsula.org', 'alicia@ygbpeninsula.org',
+        '1425 Bay Road, East Palo Alto, CA 94303',
+        'You are receiving this because you are part of the YGB village. Young, Gifted & Black is a 501(c)(3) nonprofit.')
+on conflict do nothing;
+
+insert into public.email_campaigns (id, org_id, name, subject, body, status, recipient_count, sent_count, failed_count, sent_at, created_by)
+select md5('ygb:ec:'||c.k)::uuid, md5('ygb:org')::uuid, c.n, c.subj, c.body, c.status, c.rc, c.sc, c.fc, c.at, 'Alicia Fontaine'
+from (values
+  ('spring26',  'Spring Family Appeal 2026',            'Every scholar deserves a summer',
+   E'Village,\n\nThis summer, 60 scholars will spend six weeks learning, swimming, building, and belonging at Freedom Summer Camp. A $250 gift covers a scholar''s week — books, meals, bus, and all.\n\nGive a week. Change a summer.\n\n— Raymond Williams, CEO',
+   'sent', 148, 146, 2, timestamptz '2026-04-24 09:00:00-07'),
+  ('gala-invite','Juneteenth Jubilee Gala — Invitations','Join us June 14 under the lights',
+   E'The Juneteenth Jubilee Gala returns to the Peninsula on Saturday, June 14 — dinner, music, scholar performances, and one big paddle raise for the Freedom Summer Fund.\n\nTables of 8 and sponsorships available.',
+   'sent', 212, 208, 1, timestamptz '2026-05-08 10:00:00-07'),
+  ('camp-wk4',  'Freedom Summer Week 4 family update',  'Week 4: Exploratorium, science fair, and showcase photos',
+   E'Families,\n\nWeek 4 is a wrap! The Exploratorium trip was a hit, Friday''s science-fair showcase had a packed house, and next week we start rehearsals for the closing ceremony on July 31 (11am, St. Mark Sanctuary). Every family is invited.\n\n— Marcus & the camp team',
+   'sent', 63, 63, 0, timestamptz '2026-07-17 16:30:00-07'),
+  ('july-news', 'July Village Newsletter',              'Juneteenth photos, camp countdown, and a big thank-you',
+   E'DRAFT — Juneteenth Village Night recap (64 families!), Freedom Summer closing ceremony invite, Saturday Academy 2026–27 enrollment link, monthly-donor spotlight: the Jenkins family.',
+   'draft', 0, 0, 0, null::timestamptz)
+) as c(k, n, subj, body, status, rc, sc, fc, at)
+on conflict do nothing;
+
+-- A visible slice of per-recipient sends for the two donor-facing campaigns.
+insert into public.email_sends (id, org_id, campaign_id, constituent_id, email, status, sent_at)
+select md5('ygb:es:'||s.camp||':'||s.con)::uuid, md5('ygb:org')::uuid, md5('ygb:ec:'||s.camp)::uuid,
+       md5('ygb:con:'||s.con)::uuid, s.em, s.status, s.at
+from (values
+  ('gala-invite', 'holloway',  'vholloway@example.com',   'sent',   timestamptz '2026-05-08 10:01:00-07'),
+  ('gala-invite', 'gaines',    'tgaines@example.com',     'sent',   timestamptz '2026-05-08 10:01:00-07'),
+  ('gala-invite', 'okafor',    'mokafor@example.com',     'sent',   timestamptz '2026-05-08 10:01:00-07'),
+  ('gala-invite', 'lawrence',  'clawrence@example.com',   'sent',   timestamptz '2026-05-08 10:01:00-07'),
+  ('gala-invite', 'dubois',    'rdclark@example.com',     'sent',   timestamptz '2026-05-08 10:01:00-07'),
+  ('gala-invite', 'hollis',    'ghollis@example.com',     'sent',   timestamptz '2026-05-08 10:02:00-07'),
+  ('gala-invite', 'kim',       'dkim@example.com',        'sent',   timestamptz '2026-05-08 10:02:00-07'),
+  ('gala-invite', 'ellison',   'tellison@example.com',    'failed', null::timestamptz),
+  ('spring26',    'daniels',   'cdaniels@example.com',    'sent',   timestamptz '2026-04-24 09:01:00-07'),
+  ('spring26',    'brooks',    'lbrooks@example.com',     'sent',   timestamptz '2026-04-24 09:01:00-07'),
+  ('spring26',    'carverp',   'ycarver@example.com',     'sent',   timestamptz '2026-04-24 09:01:00-07'),
+  ('spring26',    'mason',     'hmason@example.com',      'sent',   timestamptz '2026-04-24 09:01:00-07'),
+  ('spring26',    'jenkinsp',  'djenkins@example.com',    'sent',   timestamptz '2026-04-24 09:02:00-07')
+) as s(camp, con, em, status, at)
+on conflict do nothing;
+
+-- Meeting records + AI-suggested follow-ups
+insert into public.meeting_records (id, org_id, owner_user_id, title, occurred_at, source, summary, follow_up_status)
+select md5('ygb:mr:'||m.k)::uuid, md5('ygb:org')::uuid, md5('ygb:user:'||m.owner)::uuid, m.t, m.at, 'manual', m.summary, m.fs
+from (values
+  ('westbay',  'raymond', 'Westbay Fund intro — Marcus Lin',            timestamptz '2026-06-25 14:00:00-07',
+   'Vanessa''s introduction. Lin funds identity-affirming youth programs; wants the LOI to lead with family-engagement outcomes (Village Night growth, parent circles), not just academics. $40K ask for Freedom Summer 2027 = 15 seats + second-site staffing. LOI due Aug 15; decision docket November.', 'has_follow_up'),
+  ('bayfront', 'alicia',  'Bayfront Q3 check-in — Diane Castillo',      timestamptz '2026-07-08 10:30:00-07',
+   'Interim report due July 31 gates the $37.5K payment. Diane hinted at a multi-year conversation for 2027 — she wants to see the fall literacy assessment plan in the report. Invited her to the July 31 closing ceremony; she is checking her calendar.', 'has_follow_up'),
+  ('chair11',  'raymond', 'Chair 1:1 — Vanessa Holloway',               timestamptz '2026-07-10 08:00:00-07',
+   'Retreat agenda aligned: 2027–29 strategy refresh + board fundraising roles. Vanessa will personally follow up with Marcus Lin once the Westbay LOI is in. She asked for the gala debrief memo before the July 31 board packet deadline.', 'needs_follow_up'),
+  ('staffwk',  'denise',  'Staff weekly — camp week 4',                 timestamptz '2026-07-13 09:00:00-07',
+   'Week 4 recap: attendance holding ~87%. Shirts ordered by Wednesday or rush fees. Six media releases still outstanding (Jamal). Closing ceremony run-of-show due to Denise by the 28th. Okafor guest slot at TLC Money lab confirmed for the 15th.', 'none_needed'),
+  ('hollis',   'raymond', 'Gerald Hollis program tour debrief',         timestamptz '2026-07-16 13:00:00-07',
+   'Tour landed. He connected with the Griot Scholars'' storytelling block, asked how the Scholarship Fund works, and mentioned a donor-advised fund. Strong candidate for the major-donor track; likes tangible seat-level impact.', 'needs_follow_up'),
+  ('pcu',      'alicia',  'Peninsula Credit Union sponsorship meeting', timestamptz '2026-04-03 09:30:00-07',
+   'Renewed at $10K for the gala. Branch manager offered a financial-literacy workshop for a fall Village Night — good cultivation step toward a 2027 renewal.', 'none_needed')
+) as m(k, owner, t, at, summary, fs)
+on conflict do nothing;
+
+insert into public.meeting_suggested_tasks (id, org_id, meeting_record_id, suggested_title, suggested_category, suggested_entity_type, suggested_entity_id, status)
+select md5('ygb:mst:'||s.k)::uuid, md5('ygb:org')::uuid, md5('ygb:mr:'||s.mr)::uuid, s.t, s.cat, s.et,
+       case when s.eid is null then null else md5('ygb:con:'||s.eid)::uuid end, 'pending'
+from (values
+  ('chair-agenda', 'chair11', 'Send retreat agenda draft to Vanessa by Aug 1',      'board',       null::text,    null::text),
+  ('chair-intro',  'chair11', 'Queue Vanessa''s follow-up note to Westbay after LOI','fundraising', 'constituent', 'westbay'),
+  ('hollis-track', 'hollis',  'Add Gerald Hollis to the major-donor track',          'fundraising', 'constituent', 'hollis'),
+  ('hollis-daf',   'hollis',  'Send Hollis the Scholarship Fund one-pager (DAF-ready)','fundraising','constituent', 'hollis'),
+  ('bay-ceremony', 'bayfront','Hold a front-row seat for Diane at the closing ceremony','fundraising','constituent','bayfront')
+) as s(k, mr, t, cat, et, eid)
+on conflict do nothing;
+
+-- Documents (metadata + entity links; see section-header caveat about files)
+insert into public.documents (id, org_id, storage_path, filename, mime, size_bytes, title, doc_type, status, visibility, uploaded_by)
+select md5('ygb:doc:'||d.k)::uuid, md5('ygb:org')::uuid,
+       md5('ygb:org')::text || '/demo/' || d.fn, d.fn, 'application/pdf', d.sz, d.t, d.dt, 'active', d.vis, md5('ygb:user:'||d.who)::uuid
+from (values
+  ('bylaws',      'YGB-Bylaws-Amended-2024.pdf',            412688,  'Bylaws (amended 2024)',                     'policy',          'org',        'gloria'),
+  ('irs-letter',  'IRS-Determination-Letter-2019.pdf',      188342,  'IRS 501(c)(3) determination letter',        'other',           'org',        'gloria'),
+  ('board-packet','Board-Packet-2026-07.pdf',               2148311, 'Board packet — July 15, 2026',              'board_packet',    'restricted', 'raymond'),
+  ('minutes-may', 'Board-Minutes-2026-05-20-APPROVED.pdf',  96214,   'Board minutes — May 20, 2026 (approved)',   'minutes',         'restricted', 'raymond'),
+  ('stmark-mou',  'StMark-AME-Facility-MOU-2024-2027.pdf',  301876,  'St. Mark AME facility MOU (2024–2027)',     'mou',             'org',        'gloria'),
+  ('bay-award',   'Bayfront-Award-Letter-2026.pdf',         142650,  'Bayfront Community Foundation award letter','award_letter',    'org',        'alicia'),
+  ('sand-award',  'SandHill-Award-Letter-2026.pdf',         131209,  'Sand Hill Family Foundation award letter',  'award_letter',    'org',        'alicia'),
+  ('county-agmt', 'SMC-YouthDev-Grant-Agreement-FY26.pdf',  524190,  'San Mateo County grant agreement FY26',     'award_letter',    'org',        'gloria'),
+  ('copley-narr', 'Copley-Proposal-SaturdayAcademy.pdf',    887013,  'Copley proposal — Saturday Academy expansion','grant_narrative','org',        'alicia'),
+  ('coi-2026',    'Insurance-COI-2026.pdf',                 88410,   'Certificate of insurance 2026',             'policy',          'org',        'gloria'),
+  ('camp-handbook','FreedomSummer-2026-Family-Handbook.pdf',1642280, 'Freedom Summer 2026 family handbook',       'other',           'org',        'denise'),
+  ('gala-deck',   'Juneteenth-Gala-2026-Sponsor-Deck.pdf',  3821440, 'Gala sponsorship deck 2026',                'other',           'org',        'alicia'),
+  ('safety-policy','Child-Safety-Policy-2026.pdf',          214005,  'Child-safety policy (2026 refresh)',        'policy',          'org',        'denise')
+) as d(k, fn, sz, t, dt, vis, who)
+on conflict do nothing;
+
+insert into public.document_links (id, org_id, document_id, entity_type, entity_id, created_by)
+select md5('ygb:dl:'||l.k)::uuid, md5('ygb:org')::uuid, md5('ygb:doc:'||l.doc)::uuid, l.et, md5(l.ent)::uuid, md5('ygb:user:'||l.who)::uuid
+from (values
+  ('bay-award',    'bay-award',    'grant',           'ygb:grant:bayfront',   'alicia'),
+  ('sand-award',   'sand-award',   'grant',           'ygb:grant:sandhill',   'alicia'),
+  ('county-agmt',  'county-agmt',  'grant',           'ygb:grant:county',     'gloria'),
+  ('copley-narr',  'copley-narr',  'grant',           'ygb:grant:copley',     'alicia'),
+  ('stmark-mou',   'stmark-mou',   'partner',         'ygb:partner:stmark',   'gloria'),
+  ('minutes-may',  'minutes-may',  'board_meeting',   'ygb:bm:2605',          'raymond'),
+  ('board-packet', 'board-packet', 'board_meeting',   'ygb:bm:2607',          'raymond'),
+  ('safety-policy','safety-policy','compliance_item', 'ygb:comp:safety',      'denise'),
+  ('coi-2026',     'coi-2026',     'compliance_item', 'ygb:comp:gl-ins',      'gloria')
+) as l(k, doc, et, ent, who)
+on conflict do nothing;
+
+-- Internal messages: two team threads + two DMs. Raymond is left two unread
+-- messages in Freedom Summer HQ so the badge is live at first login.
+-- dm_key must be "min:max" of the canonical dashed uuid strings — the same
+-- value ensureThread computes — so the app dedupes onto these seeded DMs.
+insert into public.message_threads (id, org_id, is_group, title, dm_key, created_by, last_message_at)
+select md5('ygb:mt:'||t.k)::uuid, md5('ygb:org')::uuid, t.grp, t.title,
+       case when t.grp then null
+            else least(md5('ygb:user:'||t.a)::uuid::text, md5('ygb:user:'||t.b)::uuid::text) || ':' ||
+                 greatest(md5('ygb:user:'||t.a)::uuid::text, md5('ygb:user:'||t.b)::uuid::text) end,
+       md5('ygb:user:'||t.a)::uuid, t.last
+from (values
+  ('fshq', true,  'Freedom Summer HQ', 'denise',  null::text, timestamptz '2026-07-18 17:42:00-07'),
+  ('dev',  true,  'Development',       'raymond', null,       timestamptz '2026-07-17 11:05:00-07'),
+  ('rg',   false, null,                'raymond', 'gloria',   timestamptz '2026-07-16 15:20:00-07'),
+  ('rd',   false, null,                'raymond', 'denise',   timestamptz '2026-07-15 20:11:00-07')
+) as t(k, grp, title, a, b, last)
+on conflict do nothing;
+
+insert into public.message_thread_members (thread_id, user_id, org_id, last_read_at)
+select md5('ygb:mt:'||m.t)::uuid, md5('ygb:user:'||m.u)::uuid, md5('ygb:org')::uuid, m.lr
+from (values
+  ('fshq', 'denise',  timestamptz '2026-07-18 17:45:00-07'),
+  ('fshq', 'marcus',  timestamptz '2026-07-18 17:45:00-07'),
+  ('fshq', 'jamal',   timestamptz '2026-07-18 17:45:00-07'),
+  ('fshq', 'raymond', timestamptz '2026-07-17 12:00:00-07'),   -- 2 unread
+  ('dev',  'raymond', timestamptz '2026-07-17 11:10:00-07'),
+  ('dev',  'alicia',  timestamptz '2026-07-17 11:10:00-07'),
+  ('dev',  'gloria',  timestamptz '2026-07-17 11:10:00-07'),
+  ('rg',   'raymond', timestamptz '2026-07-16 15:25:00-07'),
+  ('rg',   'gloria',  timestamptz '2026-07-16 15:25:00-07'),
+  ('rd',   'raymond', timestamptz '2026-07-15 20:15:00-07'),
+  ('rd',   'denise',  timestamptz '2026-07-15 20:15:00-07')
+) as m(t, u, lr)
+on conflict do nothing;
+
+insert into public.messages (id, thread_id, org_id, sender_id, body, created_at)
+select md5('ygb:msg:'||x.k)::uuid, md5('ygb:mt:'||x.t)::uuid, md5('ygb:org')::uuid, md5('ygb:user:'||x.u)::uuid, x.body, x.at
+from (values
+  -- Freedom Summer HQ
+  ('fshq-1',  'fshq', 'denise',  'Week 5 planning thread. Big rocks: shirts, media releases, closing ceremony run-of-show.', timestamptz '2026-07-13 09:30:00-07'),
+  ('fshq-2',  'fshq', 'marcus',  'Bus for the Exploratorium recap day is confirmed — invoice went to Gloria.', timestamptz '2026-07-13 10:02:00-07'),
+  ('fshq-3',  'fshq', 'jamal',   'Media releases: down to 6 outstanding. Calling the last families tonight after Village Night prep.', timestamptz '2026-07-14 16:45:00-07'),
+  ('fshq-4',  'fshq', 'marcus',  'Shirt sizes pulled from the roster custom fields — ordering 68 (includes staff + TLC). Need approval by Wed or we hit rush fees.', timestamptz '2026-07-15 11:20:00-07'),
+  ('fshq-5',  'fshq', 'denise',  'Approved. Charge to the camp supplies line.', timestamptz '2026-07-15 11:34:00-07'),
+  ('fshq-6',  'fshq', 'raymond', 'Okafor said the Money lab was the most fun she''s had all quarter. TLC kids grilled her on index funds 😂', timestamptz '2026-07-15 18:05:00-07'),
+  ('fshq-7',  'fshq', 'marcus',  'Week 4 showcase attendance: 51 of 59 scholars had family in the room. Highest all summer.', timestamptz '2026-07-17 16:10:00-07'),
+  ('fshq-8',  'fshq', 'jamal',   'Darnell Jenkins is IN for the closing-ceremony parent speech. Round two 🎤', timestamptz '2026-07-18 14:30:00-07'),
+  ('fshq-9',  'fshq', 'denise',  'Run-of-show draft lands Monday. Marcus — rehearsal slots Tue/Thu. Jamal — seating plan for funder guests.', timestamptz '2026-07-18 17:40:00-07'),
+  ('fshq-10', 'fshq', 'marcus',  'On it. Also: 3 families asked about Saturday Academy signup at pickup today. Momentum!', timestamptz '2026-07-18 17:42:00-07'),
+  -- Development
+  ('dev-1',   'dev',  'gloria',  'Sand Hill wire landed: $50,000. 🎉 Booked to general operating.', timestamptz '2026-07-02 10:15:00-07'),
+  ('dev-2',   'dev',  'raymond', 'Huge. That plus the county payment gets us through camp without touching reserve.', timestamptz '2026-07-02 10:22:00-07'),
+  ('dev-3',   'dev',  'alicia',  'Westbay LOI outline done — leading with Village Night growth (38→64 families) per Lin''s guidance. Denise owes me outcomes data by Aug 1.', timestamptz '2026-07-14 09:40:00-07'),
+  ('dev-4',   'dev',  'alicia',  'Heads up: 3 July gifts still pending acknowledgment (Fitzgerald, Carver, Hollis). Doing them tomorrow with the Bayfront interim draft.', timestamptz '2026-07-16 17:55:00-07'),
+  ('dev-5',   'dev',  'raymond', 'Hollis first — his tour went really well. I want the thank-you to reference the Griot storytelling block.', timestamptz '2026-07-16 18:10:00-07'),
+  ('dev-6',   'dev',  'alicia',  'Bayfront interim report: narrative 80% drafted, waiting on Gloria''s restricted-fund ledger. Due the 31st — we''re fine.', timestamptz '2026-07-17 11:05:00-07'),
+  -- Raymond ↔ Gloria DM
+  ('rg-1',    'rg',   'gloria',  'DE-9 confirmation from Gusto is in — filed and verified for Q2.', timestamptz '2026-07-16 14:50:00-07'),
+  ('rg-2',    'rg',   'raymond', 'Thanks. Where does cash land after July payroll?', timestamptz '2026-07-16 15:05:00-07'),
+  ('rg-3',    'rg',   'gloria',  'About $170K — roughly 4.2 months at baseline burn. Trough as planned; Bayfront''s $37.5K in August starts the climb back.', timestamptz '2026-07-16 15:18:00-07'),
+  ('rg-4',    'rg',   'raymond', 'Good. Keep the reserve transfer paused until September, per the board vote.', timestamptz '2026-07-16 15:20:00-07'),
+  -- Raymond ↔ Denise DM
+  ('rd-1',    'rd',   'raymond', 'Closing ceremony: I want a scholar voice on stage next to Darnell. Simone Pratt?', timestamptz '2026-07-15 19:58:00-07'),
+  ('rd-2',    'rd',   'denise',  'She''d be perfect — TLC captain, heading into senior year. I''ll ask her at Wednesday''s lab.', timestamptz '2026-07-15 20:06:00-07'),
+  ('rd-3',    'rd',   'raymond', 'And let''s seat Diane from Bayfront front row. If she sees what Lin heard about, the multi-year conversation writes itself.', timestamptz '2026-07-15 20:11:00-07')
+) as x(k, t, u, body, at)
+on conflict do nothing;
+
+insert into public.message_reactions (message_id, user_id, org_id, emoji)
+select md5('ygb:msg:'||r.m)::uuid, md5('ygb:user:'||r.u)::uuid, md5('ygb:org')::uuid, r.e
+from (values
+  ('fshq-7', 'raymond', '🔥'),
+  ('fshq-7', 'jamal',   '🙌'),
+  ('fshq-8', 'denise',  '🎉'),
+  ('dev-1',  'raymond', '🎉'),
+  ('dev-1',  'alicia',  '🎉')
+) as r(m, u, e)
+on conflict do nothing;
+
+commit;
+
 -- ============================================================================
 -- End of seed. Post-checks worth running:
 --   select count(*) from students where org_id = md5('ygb:org')::uuid;   -- 43

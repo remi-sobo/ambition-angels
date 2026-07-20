@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import type { AdminUser } from "@/lib/admin/auth";
+import type { AdminUser, OrgContext } from "@/lib/admin/auth";
 import type { FeatureKey } from "@/lib/admin/entitlements";
 import OrgSwitcher from "./OrgSwitcher";
 import SearchTrigger from "./search/SearchTrigger";
@@ -384,6 +384,15 @@ function activeHref(pathname: string): string | null {
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+// Human label for the org membership role shown in the account block.
+const ROLE_LABEL: Record<OrgContext["role"], string> = {
+  owner: "Owner",
+  admin: "Admin",
+  staff: "Staff",
+  finance: "Finance",
+  board_viewer: "Board",
+};
+
 // A nav item's display label: the org's terminology when the item is
 // term-driven and a resolved label was passed down, else the code default.
 function itemLabel(item: NavItem, terms?: Record<string, string> | null): string {
@@ -404,6 +413,8 @@ function activeSectionLabel(pathname: string, terms?: Record<string, string> | n
 
 export default function Sidebar({
   currentUser,
+  displayName,
+  role,
   terms,
   orgName,
   features,
@@ -411,6 +422,12 @@ export default function Sidebar({
   activeOrgId,
 }: {
   currentUser: AdminUser | null;
+  /** The signed-in person's real display name for the account block. The
+   *  legacy remi/shannon `currentUser` handle is only a fallback, so a
+   *  second-tenant user isn't mislabeled "Remi". Null pre-auth. */
+  displayName?: string | null;
+  /** The signed-in person's org membership role, for the account block label. */
+  role?: OrgContext["role"] | null;
   /** Resolved terminology labels for term-driven nav items (term key →
    *  display label, plural pre-applied), from getNavTermLabels(). Null
    *  pre-auth — terminology is tenant data. */
@@ -575,15 +592,21 @@ export default function Sidebar({
             <OrgSwitcher orgs={orgs} activeOrgId={activeOrgId} />
           )}
 
-          {/* Account block: avatar + name + role, with log out tucked to the side. */}
+          {/* Account block: avatar + name + role, with log out tucked to the side.
+              Name/role are the real signed-in person (displayName + org role),
+              falling back to the legacy handle only if a name isn't resolved. */}
+          {(() => {
+            const name = displayName?.trim() || cap(currentUser);
+            const roleLabel = role ? ROLE_LABEL[role] : currentUser === "shannon" ? "Admin" : "Owner";
+            return (
           <div className="flex items-center gap-2.5">
             <span className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-light text-orange-dark text-[12px] font-bold uppercase">
-              {currentUser.charAt(0)}
+              {name.charAt(0)}
             </span>
             <div className="min-w-0 flex-1 leading-tight">
-              <div className="text-[13px] font-semibold text-cream truncate">{cap(currentUser)}</div>
+              <div className="text-[13px] font-semibold text-cream truncate">{name}</div>
               <div className="text-[10px] uppercase tracking-[0.08em] text-[#8d7c63]">
-                {currentUser === "shannon" ? "Admin" : "Owner"}
+                {roleLabel}
               </div>
             </div>
             <button
@@ -594,6 +617,8 @@ export default function Sidebar({
               {loggingOut ? "…" : "Log out"}
             </button>
           </div>
+            );
+          })()}
 
           {/* Quiet utility row: Settings · How-To. */}
           <div className="flex items-center gap-2 px-1 text-[11px]">

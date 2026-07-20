@@ -12,6 +12,7 @@ import AdminPWA from "./_components/AdminPWA";
 import { AdminUserProvider } from "./_components/AdminUserContext";
 import { AdminBadgesProvider } from "./_components/AdminBadges";
 import { getAdminUser, getOrgContext, getUserOrgs } from "@/lib/admin/auth";
+import { getMyDisplayName } from "@/lib/admin/profile";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
 import { getNavTermLabels } from "@/lib/admin/terminology";
 
@@ -69,6 +70,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const authed = user !== null;
   const orgId = ctx?.orgId ?? null;
 
+  // The signed-in person's real name for the sidebar footer — the legacy
+  // remi/shannon handle (`user`) is a display fallback only, so a second-tenant
+  // owner isn't shown as "Remi". Their role comes from the org membership.
+  const displayName = authed ? await getMyDisplayName() : null;
+
   // One request-cached entitlement read feeds the whole shell: the Reed FAB
   // gate, the sidebar's module filter, and the mobile dock — plus every
   // module-layout FeatureGate rendered below shares the same query.
@@ -106,6 +112,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <AdminPWA />
       <Sidebar
         currentUser={user}
+        displayName={displayName}
+        role={ctx?.role ?? null}
         terms={terms}
         orgName={ctx?.orgName ?? null}
         features={features}

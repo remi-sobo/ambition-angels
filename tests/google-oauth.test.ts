@@ -9,6 +9,7 @@ describe("google calendar consent URL", () => {
     process.env.GOOGLE_CLIENT_ID = "test-client-id";
     process.env.GOOGLE_CLIENT_SECRET = "test-client-secret";
     delete process.env.NEXT_PUBLIC_SITE_URL;
+    delete process.env.APP_ORIGIN;
   });
 
   it("forces the account chooser and offline access", () => {
@@ -29,12 +30,18 @@ describe("google calendar consent URL", () => {
     expect(url.toString()).not.toContain("ambitionangels.org");
   });
 
-  it("prefers NEXT_PUBLIC_SITE_URL over the request origin for the redirect URI", () => {
+  it("builds the redirect URI from APP_ORIGIN (admin host), never the marketing origin", () => {
+    // APP_ORIGIN (the admin host) wins, so a user on the admin domain gets a
+    // redirect_uri Google will accept — even when the marketing site URL differs.
+    process.env.APP_ORIGIN = "https://app.bloomos.org";
     process.env.NEXT_PUBLIC_SITE_URL = "https://www.ambitionangels.org/";
     expect(oauthRedirectUri("http://localhost:3000")).toBe(
-      "https://www.ambitionangels.org/api/admin/agenda/connect-google/callback"
+      "https://app.bloomos.org/api/admin/agenda/connect-google/callback"
     );
-    delete process.env.NEXT_PUBLIC_SITE_URL;
+
+    // With no APP_ORIGIN, fall back to the LIVE request origin — the host the
+    // flow is actually running on — and never the marketing NEXT_PUBLIC_SITE_URL.
+    delete process.env.APP_ORIGIN;
     expect(oauthRedirectUri("http://localhost:3000")).toBe(
       "http://localhost:3000/api/admin/agenda/connect-google/callback"
     );

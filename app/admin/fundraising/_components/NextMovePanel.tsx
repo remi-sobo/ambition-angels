@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { NextMoveRecord } from "@/lib/agents/next-move/types";
+import { useAdminUser } from "@/app/admin/_components/AdminUserContext";
 import { TYPE } from "@/lib/admin/typeScale";
 
 const CHANNEL_STYLE: Record<string, string> = {
@@ -33,6 +34,7 @@ export default function NextMovePanel({
   email: string | null;
 }) {
   const router = useRouter();
+  const me = useAdminUser();
   const [suggestion, setSuggestion] = useState<NextMoveRecord | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -108,7 +110,7 @@ export default function NextMovePanel({
           category: "fundraising",
           priority: "medium",
           due_date: due,
-          assigned_to: "remi",
+          assigned_to: me,
           linked_entity_type: entityType,
           linked_entity_id: entityId,
           linked_label: entityLabel,

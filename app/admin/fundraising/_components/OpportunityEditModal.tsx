@@ -183,7 +183,7 @@ export default function OpportunityEditModal({
                 className={`${inputCls} mt-1`}
                 value={owner}
                 onChange={(e) => setOwner(e.target.value)}
-                placeholder="remi"
+                placeholder="owner"
               />
             </label>
           </div>

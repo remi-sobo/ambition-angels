@@ -40,7 +40,7 @@ function cap(s: string): string {
 
 export default async function MondayPlanPage() {
   const me = await resolveUserHandle();
-  const currentUser = me?.handle ?? "remi";
+  const currentUser = me?.handle ?? "";
   const orgId = me?.orgId ?? null;
   const supabase = getSupabaseAdmin();
 

@@ -28,7 +28,7 @@ export type StewardshipRule = {
   channel: string;
   template_id: string | null;
   sla_hours: number;
-  assignee: "remi" | "shannon" | null;
+  assignee: string | null;
 };
 
 // All present conditions are AND-ed; an absent condition is ignored.
@@ -57,7 +57,7 @@ export type StewardshipDecision = {
   channel: string;
   templateId: string | null;
   slaHours: number;
-  assignee: "remi" | "shannon" | null;
+  assignee: string | null;
   ruleId: string | null;
   ruleName: string;
 };
@@ -253,7 +253,7 @@ async function autoSendReceipt(
  */
 export async function processGiftStewardship(
   supabase: SupabaseClient,
-  opts: { orgId: string; createdBy: "remi" | "shannon"; giftId: string }
+  opts: { orgId: string; createdBy: string; giftId: string }
 ): Promise<StewardshipDecision | null> {
   try {
     const { data: giftData } = await supabase
@@ -355,7 +355,7 @@ export async function processGiftStewardship(
             donorName,
             amount: facts.amount,
             giftDate: gift.gift_date,
-            assignee: esc.assignee ?? "remi",
+            assignee: esc.assignee ?? opts.createdBy,
             slaHours: esc.sla_hours,
           });
         }
@@ -378,7 +378,7 @@ export async function processGiftStewardship(
 export async function ensureEscalationsForQueue(
   supabase: SupabaseClient,
   orgId: string,
-  createdBy: "remi" | "shannon",
+  createdBy: string,
   gifts: AckQueueGift[]
 ): Promise<void> {
   const rules = await loadStewardshipRules(supabase, orgId);
@@ -403,7 +403,7 @@ export async function ensureEscalationsForQueue(
         donorName: g.constituent ? constituentName(g.constituent) : "this donor",
         amount: g.amount,
         giftDate: g.gift_date,
-        assignee: esc.assignee ?? "remi",
+        assignee: esc.assignee ?? createdBy,
         slaHours: esc.sla_hours,
       });
     }

@@ -113,7 +113,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
     project = (await ensureGrantProject(
       supabase,
       g,
-      (await getAdminUser()) ?? "remi"
+      (await getAdminUser()) ?? "admin"
     )) as OpsProject | null;
   }
 

@@ -111,7 +111,8 @@ export async function PATCH(
       category: SCHEDULING_TASK_CATEGORY,
       priority: "medium",
       labels: [SCHEDULING_LABEL],
-      assigned_to: "shannon",
+      // Assigned to whoever promoted it — they're working the queue.
+      assigned_to: adminUser,
       created_by: adminUser,
       linked_entity_type: "constituent",
       linked_entity_id: cand.constituent_id,

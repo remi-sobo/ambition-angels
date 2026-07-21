@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import TaskEditModal from "@/app/admin/_components/TaskEditModal";
 import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
+import { useAssignees, withSelected } from "@/app/admin/_lib/useAssignees";
 import {
   formatDueLabel,
   isTaskCategory,
@@ -59,6 +60,7 @@ export default function ProjectTaskList({
   // Assignee defaults to the project's assignee; priority to medium.
   const [newTitle, setNewTitle] = useState("");
   const [newAssignee, setNewAssignee] = useState<AdminUserId | "">(projectAssignedTo ?? "");
+  const assigneeOptions = withSelected(useAssignees(), newAssignee);
   const [newDue, setNewDue] = useState("");
   const [newPriority, setNewPriority] = useState<TaskPriority>("medium");
   const [adding, setAdding] = useState(false);
@@ -380,8 +382,9 @@ export default function ProjectTaskList({
             className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
           >
             <option value="">Unassigned</option>
-            <option value="remi">Remi</option>
-            <option value="shannon">Shannon</option>
+            {assigneeOptions.map((a) => (
+              <option key={a.value} value={a.value}>{a.label}</option>
+            ))}
           </select>
           <input
             type="date"

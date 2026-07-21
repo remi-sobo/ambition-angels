@@ -18,7 +18,7 @@ function isISODate(v: unknown): v is string {
 export async function POST(req: NextRequest) {
   const ctx = await getOrgContext();
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const createdBy = (await getAdminUser()) ?? "remi";
+  const createdBy = (await getAdminUser()) ?? "admin";
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const eventId = typeof body?.event_id === "string" ? body.event_id : "";

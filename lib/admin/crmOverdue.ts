@@ -15,7 +15,7 @@ export type CrmOverdueTask = {
   entityId: string;
   label: string;
   daysOverdue: number;
-  assignedTo: "remi" | "shannon" | null;
+  assignedTo: string | null;
 };
 
 export type CrmOverdue = {
@@ -34,14 +34,13 @@ export function crmTaskHref(t: CrmOverdueTask, absolute = false): string {
   return absolute ? `${appOrigin()}${path}` : path;
 }
 
-// Map an operator email to an admin user id, so the Monday digest can scope
-// to "your" overdue work. The two operators' mailboxes are remi@… / shannon@…,
-// so the local-part is the reliable key.
-export function assigneeFromEmail(email: string): "remi" | "shannon" | null {
+// Map an operator email to an assignee handle, so the Monday digest can scope
+// to "your" overdue work. Best-effort: the email local-part matches the
+// first-name handle convention for operators whose mailbox is their first
+// name (remi@…, shannon@…).
+export function assigneeFromEmail(email: string): string | null {
   const local = email.toLowerCase().split("@")[0];
-  if (local === "remi") return "remi";
-  if (local === "shannon") return "shannon";
-  return null;
+  return local || null;
 }
 
 // Pure: regroup a flat task list into the {all, partners, donors, total} shape
@@ -74,7 +73,7 @@ export async function gatherCrmOverdue(
   for (const t of (data ?? []) as Array<{
     id: string; title: string; due_date: string | null;
     linked_entity_type: "partner" | "constituent" | null; linked_entity_id: string | null;
-    linked_label: string | null; assigned_to: "remi" | "shannon" | null;
+    linked_label: string | null; assigned_to: string | null;
   }>) {
     if (!t.due_date || !t.linked_entity_id || !t.linked_entity_type) continue;
     const daysOverdue = Math.max(0, Math.round((todayMs - Date.parse(`${t.due_date}T00:00:00Z`)) / 86400000));

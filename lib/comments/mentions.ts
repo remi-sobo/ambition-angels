@@ -13,16 +13,18 @@ import { getDisplayNames } from "@/lib/admin/profile";
  * without a display_name isn't @mentionable by name yet (documented gap).
  */
 
-export type Mentionable = { userId: string; displayName: string };
+export type Mentionable = { userId: string; displayName: string; role: string | null };
 
 /** Org members that can be @mentioned (have a display_name), via the session client (RLS-scoped). */
 export async function getOrgMentionables(orgId: string): Promise<Mentionable[]> {
   const sb = createServerSupabase();
-  const { data: mems } = await sb.from("memberships").select("user_id").eq("org_id", orgId);
-  const ids = (mems ?? []).map((m) => (m as { user_id: string }).user_id);
-  if (ids.length === 0) return [];
-  const names = await getDisplayNames(ids);
-  return ids.filter((id) => names[id]).map((id) => ({ userId: id, displayName: names[id] }));
+  const { data: mems } = await sb.from("memberships").select("user_id, role").eq("org_id", orgId);
+  const rows = (mems ?? []) as Array<{ user_id: string; role: string | null }>;
+  if (rows.length === 0) return [];
+  const names = await getDisplayNames(rows.map((r) => r.user_id));
+  return rows
+    .filter((r) => names[r.user_id])
+    .map((r) => ({ userId: r.user_id, displayName: names[r.user_id], role: r.role }));
 }
 
 /**

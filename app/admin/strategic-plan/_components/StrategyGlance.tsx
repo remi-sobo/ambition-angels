@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getStrategyGlance } from "@/lib/admin/plan/glance";
+import { getOrgAssignees } from "@/lib/admin/assignees-server";
 import { healthLabel } from "@/lib/admin/plan/health";
 import { planHealthToStatus, type Status } from "@/lib/admin/status";
 import { StatusChip } from "@/app/admin/_components/StatusChip";
@@ -53,6 +54,7 @@ function MeasureRow({ m }: { m: StrategyHeadlineKpi }) {
 
 export default async function StrategyGlance() {
   const { hasPlan, objectives, statusLine, exceptions } = await getStrategyGlance();
+  const people = (await getOrgAssignees()).map((a) => ({ id: a.value, label: a.label }));
   if (!hasPlan) return null;
 
   return (
@@ -70,7 +72,7 @@ export default async function StrategyGlance() {
                   <span className="text-sm text-ink-1 flex-1 min-w-0 truncate group-hover:text-orange transition-colors">
                     {e.detail}
                   </span>
-                  {e.owner && <OwnerChip owner={e.owner} className="shrink-0" />}
+                  {e.owner && <OwnerChip owner={e.owner} people={people} className="shrink-0" />}
                   <span className="text-ink-3 shrink-0" aria-hidden>→</span>
                 </Link>
               </li>
@@ -92,7 +94,7 @@ export default async function StrategyGlance() {
                 <h3 className={`font-heading font-semibold ${TYPE.body} leading-tight min-w-0`}>{o.title}</h3>
                 <StatusChip status={status} className="shrink-0">{healthLabel(o.health)}</StatusChip>
               </div>
-              {o.owner && <div className="mb-1.5"><OwnerChip owner={o.owner} /></div>}
+              {o.owner && <div className="mb-1.5"><OwnerChip owner={o.owner} people={people} /></div>}
               {o.kpisOffTrack > 0 && (
                 <p className="text-[11px] text-status-critical-text font-semibold mb-1.5">
                   {o.kpisOffTrack} off target

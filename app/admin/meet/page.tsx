@@ -56,13 +56,13 @@ async function fetchAll(orgId: string) {
       .select("id, status, created_at, meeting_type_id", { count: "exact" })
       .eq("org_id", orgId)
       .gte("created_at", new Date(Date.now() - 30 * 24 * 3600_000).toISOString()),
-    // Shannon's connection backlog: scheduling tasks assigned to her, in her
-    // display_order (nulls last), oldest first as a stable tiebreak.
+    // The connection backlog: the org's scheduling tasks, in display_order
+    // (nulls last), oldest first as a stable tiebreak. Org-wide (not filtered
+    // to one hardcoded scheduler) so every tenant's backlog just works.
     supabase
       .from("ops_tasks")
       .select("*")
       .eq("org_id", orgId)
-      .eq("assigned_to", "shannon")
       .contains("labels", [SCHEDULING_LABEL])
       .order("display_order", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: true }),

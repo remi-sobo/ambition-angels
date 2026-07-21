@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     parent_id: (body.parent_id as string | null | undefined) ?? null,
     labels: isLabelArray(body.labels) ? body.labels : [],
     project_id: (body.project_id as string | null | undefined) ?? null,
-    assigned_to: (body.assigned_to as "remi" | "shannon" | null | undefined) ?? null,
+    assigned_to: (body.assigned_to as string | null | undefined) ?? null,
     created_by: createdBy,
     due_date: (body.due_date as string | null | undefined) ?? null,
     pinned_for_today: body.pinned_for_today === true,

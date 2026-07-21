@@ -77,14 +77,14 @@ type DonorRow = {
 
 type AckTaskGift = {
   orgId: string;
-  createdBy: "remi" | "shannon";
+  createdBy: string;
   giftId: string;
   constituentId: string;
   donorName: string;
   amount: number;
   giftDate: string; // YYYY-MM-DD
   slaHours?: number;
-  assignee?: "remi" | "shannon" | null;
+  assignee?: string | null;
   priority?: "urgent" | "high" | "medium" | "low";
 };
 
@@ -191,13 +191,13 @@ export async function closeAckTaskForGift(
 
 type EscalationGift = {
   orgId: string;
-  createdBy: "remi" | "shannon";
+  createdBy: string;
   giftId: string;
   constituentId: string;
   donorName: string;
   amount: number;
   giftDate: string;
-  assignee: "remi" | "shannon";
+  assignee: string;
   slaHours?: number;
 };
 
@@ -289,7 +289,7 @@ export type AckQueueGift = {
 export async function reconcileAckQueue(
   supabase: SupabaseClient,
   orgId: string,
-  createdBy: "remi" | "shannon"
+  createdBy: string
 ): Promise<AckQueueGift[]> {
   const { data: giftsRaw } = await supabase
     .from("gifts")

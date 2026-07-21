@@ -19,10 +19,9 @@ function statusLabel(s: string): string {
 }
 
 /**
- * Shannon's connection backlog — the scheduling tasks assigned to her,
- * grouped by status, in her display_order. This is NOT a second task store:
- * every row is a real ops_task (label 'scheduling', assigned_to 'shannon'),
- * so it reuses TaskRow wholesale — the checkbox (todo↔done), priority flag,
+ * The connection backlog — the org's scheduling tasks, grouped by status, in
+ * display_order. This is NOT a second task store: every row is a real
+ * ops_task (label 'scheduling'), so it reuses TaskRow wholesale — the checkbox (todo↔done), priority flag,
  * inline edit modal (priority / due / notes), pin, blocked toggle, delete, and
  * the constituent link chip all come for free and behave exactly as on the Ops
  * surface. Only the status grouping + drag-reorder are local, mirroring
@@ -112,8 +111,8 @@ export default function ConnectionsBacklog({
       <div className="rounded-lg border-[1.5px] border-outline bg-tile p-8 text-center">
         <p className="text-sm text-ink-2">No connections in the backlog yet.</p>
         <p className="mt-1 text-xs text-ink-3">
-          Intros Remi sends with you on them show up as candidates to add, or
-          create one manually with “+ New connection.”
+          Intros teammates send with you on the thread show up as candidates to
+          add, or create one manually with “+ New connection.”
         </p>
       </div>
     );

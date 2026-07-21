@@ -4,11 +4,11 @@
  * coercion step. No web search — it reasons only over the dossier the route
  * assembles, so a run costs cents and can never leak beyond the CRM.
  *
- * Model: Opus-tier. This is judgment + writing in Remi's voice for one
+ * Model: Opus-tier. This is judgment + writing in the operator's voice for one
  * high-value relationship at a time — the quality delta over Sonnet matters
  * and the per-call cost (a few cents) doesn't.
  */
-import NEXT_MOVE_SYSTEM_PROMPT from "./prompt";
+import { buildNextMovePrompt } from "./prompt";
 import { generateStructured } from "@/lib/ai/gateway";
 import { cleanVoiceText } from "@/lib/ai/voice";
 import type { NextMoveChannel, NextMoveDossier, NextMoveSuggestion } from "./types";
@@ -33,7 +33,7 @@ const NEXT_MOVE_SCHEMA = {
     },
     email_body: {
       type: ["string", "null"],
-      description: "Ready-to-send email body when channel is email (plain text, signed 'Remi'); null otherwise.",
+      description: "Ready-to-send email body when channel is email (plain text, signed with the operator's first name); null otherwise.",
     },
   },
   required: ["action", "rationale", "channel", "due_in_days", "email_subject", "email_body"],
@@ -151,8 +151,11 @@ export type NextMoveResult = {
 };
 
 export async function runNextMove(dossier: NextMoveDossier, today: string): Promise<NextMoveResult> {
+  // Lazy import: org-profile pulls the auth/session stack, which the pure
+  // parse/format exports of this module (unit-tested) must not drag in.
+  const { getAgentOrgProfile } = await import("@/lib/agents/org-profile");
   const { input, usage, model, costUsd } = await generateStructured({
-    system: NEXT_MOVE_SYSTEM_PROMPT,
+    system: buildNextMovePrompt(await getAgentOrgProfile()),
     prompt: formatDossier(dossier, today),
     model: NEXT_MOVE_MODEL,
     maxTokens: MAX_OUTPUT_TOKENS,

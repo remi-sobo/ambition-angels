@@ -8,6 +8,7 @@ import {
   type ReceiptGift,
 } from "@/lib/fundraising/receipt";
 import { ensureAckTaskForGift, ensureEscalationTaskForGift, type AckQueueGift } from "@/lib/fundraising/ack-tasks";
+import { getDefaultSteward } from "@/lib/fundraising/steward";
 import { constituentName } from "@/lib/fundraising/display";
 
 /**
@@ -290,6 +291,7 @@ export async function processGiftStewardship(
     // Unseeded org (no rules yet, or the tables not applied): preserve the
     // Phase 2 behavior — any gift with a donor becomes a personal-touch task —
     // so thank-yous are never silently dropped before the matrix is seeded.
+    const steward = await getDefaultSteward(supabase, opts.orgId);
     const decision: StewardshipDecision =
       rules.length === 0
         ? {
@@ -297,7 +299,7 @@ export async function processGiftStewardship(
             channel: "email",
             templateId: null,
             slaHours: 48,
-            assignee: "shannon",
+            assignee: steward,
             ruleId: null,
             ruleName: "default (unseeded)",
           }
@@ -326,7 +328,7 @@ export async function processGiftStewardship(
           amount: facts.amount,
           giftDate: gift.gift_date,
           slaHours: decision.slaHours,
-          assignee: decision.assignee ?? undefined,
+          assignee: decision.assignee ?? steward,
           priority: facts.amount >= 1000 ? "high" : "medium",
         });
         await setGiftStatus(supabase, opts.giftId, "pending");

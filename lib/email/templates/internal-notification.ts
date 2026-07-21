@@ -9,7 +9,7 @@ import {
 const HOST_TZ = "America/Los_Angeles";
 
 /**
- * Internal notification sent to Remi for every new booking. Optimized for
+ * Internal notification sent to the booking host for every new booking. Optimized for
  * fast scan: who, what, when, why. Voice is straight, not warm.
  */
 export function buildInternalNotificationEmail(args: {

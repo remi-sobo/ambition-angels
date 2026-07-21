@@ -21,7 +21,8 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import FUNDER_RESEARCH_SYSTEM_PROMPT from "./prompt";
+import { buildFunderResearchPrompt } from "./prompt";
+import { getAgentOrgProfile } from "@/lib/agents/org-profile";
 import { cleanVoiceDeep } from "@/lib/ai/voice";
 import type { BriefContent, ResearchContext, ResearchResult } from "./types";
 
@@ -560,6 +561,7 @@ export async function runFunderResearch(
 ): Promise<ResearchResult> {
   const client = getAnthropic();
   const userMessage = formatContext(context);
+  const systemPrompt = buildFunderResearchPrompt(await getAgentOrgProfile());
 
   const startedAt = Date.now();
   // The Anthropic SDK's type for `tools` is a discriminated union covering
@@ -572,7 +574,7 @@ export async function runFunderResearch(
     system: [
       {
         type: "text",
-        text: FUNDER_RESEARCH_SYSTEM_PROMPT,
+        text: systemPrompt,
         cache_control: { type: "ephemeral" },
       },
     ],

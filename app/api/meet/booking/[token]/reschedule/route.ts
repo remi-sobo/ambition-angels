@@ -4,6 +4,7 @@ import { getAvailableSlots, HOST_TIMEZONE } from "@/lib/availability";
 import { updateEvent } from "@/lib/google/calendar";
 import { sendEmail } from "@/lib/google/gmail";
 import { buildRescheduleConfirmationEmail } from "@/lib/email/templates/reschedule-confirmation";
+import { getBookingHost } from "@/lib/meet/host";
 import { rescheduleSchema } from "@/lib/meet/schemas";
 import type { Booking, MeetingType } from "@/lib/database.types";
 
@@ -102,9 +103,11 @@ export async function POST(
   }
 
   const next = { ...(updated as Booking) };
+  const host = await getBookingHost((next as unknown as { org_id: string }).org_id);
   const email = buildRescheduleConfirmationEmail({
     booking: next,
     meetingType: booking.meeting_type,
+    host,
   });
   await sendEmail({
     to: next.attendee_email,

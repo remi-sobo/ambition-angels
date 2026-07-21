@@ -5,6 +5,7 @@ import { audit } from "@/lib/audit";
 import { constituentName } from "@/lib/fundraising/display";
 import { addDays, todayInTZ } from "@/lib/admin/ops/week";
 import { ACK_LABEL, buildAckTaskInsert, openAckTaskId } from "@/lib/fundraising/ack-tasks";
+import { getDefaultSteward } from "@/lib/fundraising/steward";
 
 // POST /api/admin/acknowledgments/thankathon — batch mode. Create ONE parent
 // task that fans out into a per-donor call task for every pending thank-you,
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
   }
 
   const dueDate = addDays(todayInTZ(), 2);
+  const steward = await getDefaultSteward(supabase, ctx.orgId);
   const { data: parent, error: parentErr } = await supabase
     .from("ops_tasks")
     .insert({
@@ -51,7 +53,7 @@ export async function POST(req: NextRequest) {
       category: "fundraising",
       priority: "high",
       labels: [ACK_LABEL, "sys:thankathon"],
-      assigned_to: "shannon",
+      assigned_to: steward,
       created_by: createdBy,
       due_date: dueDate,
     })
@@ -81,7 +83,7 @@ export async function POST(req: NextRequest) {
         donorName: g.constituent ? constituentName(g.constituent) : "this donor",
         amount: Number(g.amount),
         giftDate: g.gift_date,
-        assignee: "shannon",
+        assignee: steward,
       });
       await supabase.from("ops_tasks").insert({ ...insert, parent_id: parent.id, description: script });
       createdChildren++;

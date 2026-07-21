@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { constituentName } from "@/lib/fundraising/display";
 import { addDays, todayInTZ } from "@/lib/admin/ops/week";
 import { ACK_LABEL } from "@/lib/fundraising/ack-tasks";
+import { getDefaultSteward } from "@/lib/fundraising/steward";
 import { IRS_SUBSTANTIATION_THRESHOLD } from "@/lib/fundraising/receipt";
 
 // Milestone detector. Runs daily (vercel.json) and turns date-based stewardship
@@ -45,8 +46,8 @@ async function ensureMilestoneTask(
     category: "fundraising",
     priority: "medium",
     labels: [ACK_LABEL, milestoneLabel],
-    assigned_to: "shannon",
-    created_by: "shannon",
+    assigned_to: await getDefaultSteward(admin, opts.orgId),
+    created_by: "system",
     due_date: opts.dueDate,
     linked_entity_type: "constituent",
     linked_entity_id: opts.constituentId,

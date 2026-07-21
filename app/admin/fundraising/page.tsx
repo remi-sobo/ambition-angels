@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../finance/_components/charts";
 import PageHeader from "../_components/PageHeader";
 import SectionSummary from "../_components/SectionSummary";
@@ -64,11 +65,16 @@ export default async function MajorGiftsPage({
 }: {
   searchParams?: { pipeline?: string; year?: string };
 }) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;
+  }
   const supabase = createServerSupabase();
   // Stage columns + forecast buckets come from per-org config
   // (pipeline_stages); falls back to the legacy five-stage funnel until the
-  // config migration is applied.
-  const configPromise = loadPipelineConfig(supabase);
+  // config migration is applied. Everything is pinned to the ACTIVE org —
+  // RLS alone would merge rows from every org the user belongs to.
+  const configPromise = loadPipelineConfig(supabase, ctx.orgId);
   const { data } = await supabase
     .from("opportunities")
     .select(
@@ -76,6 +82,7 @@ export default async function MajorGiftsPage({
        capacity_rating, affinity_rating, owner, next_step, next_step_due, notes,
        constituent:constituents ( id, type, first_name, last_name, org_name, external_ids )`
     )
+    .eq("org_id", ctx.orgId)
     // Fundraising is money-only: the partnership pipeline now lives in /admin/partners.
     .or(EXCLUDE_PARTNERSHIP_OPPS)
     .order("next_step_due", { ascending: true, nullsFirst: false })

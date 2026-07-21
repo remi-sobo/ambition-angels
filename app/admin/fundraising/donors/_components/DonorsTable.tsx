@@ -13,6 +13,7 @@ import TaskComposer, { type TaskTarget } from "../../_components/TaskComposer";
 import { money } from "../../../finance/_components/charts";
 import { FLAG_LABELS, FLAG_HELP, type RetentionFlag } from "@/lib/fundraising/retention";
 import { BAND_LABEL, type EngagementBand } from "@/lib/fundraising/engagement";
+import { LIFECYCLE_LABELS, LIFECYCLE_HELP, type LifecycleStage } from "@/lib/fundraising/lifecycle";
 
 export type DonorRow = {
   id: string;
@@ -23,6 +24,7 @@ export type DonorRow = {
   first: string; // ISO date
   last: string; // ISO date
   recurring: boolean;
+  stage: LifecycleStage;
   doNotContact: boolean;
   flags: RetentionFlag[];
   engagement: number;
@@ -36,6 +38,14 @@ const FLAG_STYLES: Record<RetentionFlag, string> = {
   sybunt: "bg-tile text-ink-2 border-[1.5px] border-outline",
   cadence_lapsed: "bg-expense-bg text-expense",
   second_gift_watch: "bg-blue-500/15 text-blue-400",
+};
+
+const STAGE_STYLES: Record<LifecycleStage, string> = {
+  prospect: "bg-tile text-ink-3 border-[1.5px] border-outline",
+  first_time: "bg-tile text-ink-2 border-[1.5px] border-outline",
+  repeat: "bg-blue-500/15 text-blue-400",
+  recurring: "bg-revenue/15 text-revenue",
+  major: "bg-orange/20 text-orange",
 };
 
 const BAND_STYLES: Record<EngagementBand, string> = {
@@ -121,6 +131,19 @@ export default function DonorsTable({
       align: "right",
       value: (r) => r.count,
       render: (r) => <span className="text-ink-2 [font-variant-numeric:tabular-nums]">{r.count}</span>,
+    },
+    {
+      key: "stage",
+      header: "Stage",
+      value: (r) => LIFECYCLE_LABELS[r.stage],
+      render: (r) => (
+        <span
+          title={LIFECYCLE_HELP[r.stage]}
+          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${STAGE_STYLES[r.stage]}`}
+        >
+          {LIFECYCLE_LABELS[r.stage]}
+        </span>
+      ),
     },
     {
       key: "first",

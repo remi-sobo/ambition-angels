@@ -10,6 +10,7 @@ import PageHeader from "../../_components/PageHeader";
 import { constituentName } from "@/lib/fundraising/display";
 import { analyzeDonor, retentionRate, FLAG_LABELS, FLAG_HELP, type RetentionFlag } from "@/lib/fundraising/retention";
 import { scoreDonor } from "@/lib/fundraising/engagement";
+import { deriveLifecycleStage, MAJOR_DONOR_THRESHOLD, type LifecycleStage } from "@/lib/fundraising/lifecycle";
 import { todayISO } from "../../ops/_types/ops";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -17,9 +18,6 @@ import { TYPE } from "@/lib/admin/typeScale";
 // fundraising core schema. Gift ingestion is automatic (Stripe trigger);
 // Givebutter and manual entry land in later chunks.
 export const dynamic = "force-dynamic";
-
-// $10k+ lifetime giving marks a major donor (derived segment, not a tag).
-const MAJOR_DONOR_THRESHOLD = 10000;
 
 type Constituent = {
   id: string;
@@ -100,10 +98,15 @@ type SegmentKey =
   | "archived"
   | RetentionFlag;
 
+// Lifecycle-stage filter values. "prospect" is deliberately absent: this
+// table lists constituents with at least one gift, and prospects by
+// definition have none, so a Prospect tab would always be empty here.
+const STAGE_FILTERS: readonly LifecycleStage[] = ["first_time", "repeat", "recurring", "major"];
+
 export default async function DonorsPage({
   searchParams,
 }: {
-  searchParams?: { year?: string; segment?: string };
+  searchParams?: { year?: string; segment?: string; stage?: string };
 }) {
   const supabase = createServerSupabase();
   const [{ gifts: allGifts, error: giftsError }, plansRes, constituentCountRes, pendingAcksRes] = await Promise.all([
@@ -138,6 +141,10 @@ export default async function DonorsPage({
   const segment = (searchParams?.segment ?? "all") as SegmentKey;
   const retentionSegment = (RETENTION_SEGMENTS as readonly string[]).includes(segment)
     ? (segment as RetentionFlag)
+    : null;
+  const stageParam = searchParams?.stage ?? "all";
+  const stageFilter = (STAGE_FILTERS as readonly string[]).includes(stageParam)
+    ? (stageParam as LifecycleStage)
     : null;
   const inYear = (iso: string) => year === "all" || iso.slice(0, 4) === year;
 
@@ -220,6 +227,21 @@ export default async function DonorsPage({
     const { flags } = analyzeDonor(r.dates, today, activePlanDonors.has(id));
     if (flags.length > 0) flagsByDonor.set(id, flags);
   }
+
+  // Lifecycle stage per donor — always over lifetime rollups (a stage is a
+  // cross-year designation, like major/lapsed), same derivation the profile
+  // uses so the two surfaces reconcile.
+  const stageByDonor = new Map<string, LifecycleStage>();
+  for (const [id, r] of Array.from(rollupsAll.entries())) {
+    stageByDonor.set(
+      id,
+      deriveLifecycleStage({
+        giftCount: r.count,
+        lifetimeAmount: r.total,
+        hasActiveRecurringPlan: activePlanDonors.has(id),
+      })
+    );
+  }
   const retention = retentionRate(
     Array.from(rollupsAll.values()).map((r) => r.dates),
     today
@@ -250,6 +272,7 @@ export default async function DonorsPage({
     // Archived donors are hidden everywhere except the Archived segment.
     .filter((c) => (segment === "archived" ? !!c.archived_at : !c.archived_at))
     .filter(matchesSegment)
+    .filter((c) => !stageFilter || stageByDonor.get(c.id) === stageFilter)
     .map((c) => {
       const lifetime = rollupsAll.get(c.id)!;
       const shown = (displayRollups ?? rollupsAll).get(c.id)!;
@@ -293,6 +316,13 @@ export default async function DonorsPage({
     { value: "lapsed", label: "Lapsed" },
     { value: "archived", label: "Archived" },
   ];
+  const stageOptions = [
+    { value: "all", label: "All stages" },
+    { value: "first_time", label: "First-time" },
+    { value: "repeat", label: "Repeat" },
+    { value: "recurring", label: "Recurring" },
+    { value: "major", label: "Major" },
+  ];
   const segmentLabel = retentionSegment
     ? FLAG_LABELS[retentionSegment]
     : segmentOptions.find((s) => s.value === segment)?.label ?? "All";
@@ -331,6 +361,7 @@ export default async function DonorsPage({
       first: lifetime.first,
       last: lifetime.last,
       recurring: lifetime.recurring,
+      stage: stageByDonor.get(c.id) ?? "prospect",
       doNotContact: c.do_not_contact,
       flags: flagsByDonor.get(c.id) ?? [],
       engagement: eng.score,
@@ -357,7 +388,7 @@ export default async function DonorsPage({
       .filter((m): m is { c: Constituent; r: Rollup } => !!m.c && !m.c.archived_at && !!m.r)
       .sort((a, b) => b.r.total - a.r.total);
   const segmentHref = (seg: string) =>
-    `/admin/fundraising/donors?year=${encodeURIComponent(year)}&segment=${encodeURIComponent(seg)}`;
+    `/admin/fundraising/donors?year=${encodeURIComponent(year)}&segment=${encodeURIComponent(seg)}&stage=${encodeURIComponent(stageParam)}`;
 
   return (
     <div className="min-h-screen bg-ink">
@@ -394,8 +425,9 @@ export default async function DonorsPage({
 
         {/* ── Filters ── */}
         <div className="flex flex-wrap items-center gap-3">
-          <FilterTabs options={yearOptions} current={year} paramKey="year" basePath="/admin/fundraising/donors" extraParams={{ segment }} />
-          <FilterTabs options={segmentOptions} current={segment} paramKey="segment" basePath="/admin/fundraising/donors" extraParams={{ year }} size="sm" />
+          <FilterTabs options={yearOptions} current={year} paramKey="year" basePath="/admin/fundraising/donors" extraParams={{ segment, stage: stageParam }} />
+          <FilterTabs options={segmentOptions} current={segment} paramKey="segment" basePath="/admin/fundraising/donors" extraParams={{ year, stage: stageParam }} size="sm" />
+          <FilterTabs options={stageOptions} current={stageParam} paramKey="stage" basePath="/admin/fundraising/donors" extraParams={{ year, segment }} size="sm" />
           <div className="ml-auto">
             <SegmentExportPanel />
           </div>

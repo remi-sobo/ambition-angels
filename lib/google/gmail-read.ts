@@ -5,9 +5,11 @@ import { getGmailClient } from "./auth";
 // constituents. Requires the `gmail.readonly` scope on GOOGLE_REFRESH_TOKEN —
 // until that scope is granted these calls return a 403 and the sync logs zero.
 
-// Staff side of any thread: mail between two @ambitionangels.org addresses is
-// internal and never logged. The counterparty is the non-staff address.
-export const STAFF_DOMAIN = "ambitionangels.org";
+// Staff side of any thread: mail between two staff addresses is internal and
+// never logged. The counterparty is the non-staff address. The staff domain
+// follows the connected Gmail account's org — configurable so a different
+// tenant's connected mailbox doesn't inherit tenant one's domain.
+export const STAFF_DOMAIN = process.env.STAFF_EMAIL_DOMAIN || "ambitionangels.org";
 
 export type ParsedMessage = {
   messageId: string;
@@ -24,20 +26,15 @@ export function isStaffEmail(email: string | null | undefined): boolean {
   return !!email && email.toLowerCase().endsWith("@" + STAFF_DOMAIN);
 }
 
-// Shannon is the scheduler Remi loops in on intro threads ("connecting you two,
-// Shannon will find us time"). Her address is staff, so counterpartyEmails
-// drops it — connection-candidate detection tests the RAW participants for her
-// before that filter. Identity matches lib/admin/auth (local-part 'shannon').
-export function isShannonAddress(email: string | null | undefined): boolean {
-  if (!email) return false;
-  const [local, domain] = email.toLowerCase().split("@");
-  return local === "shannon" && domain === STAFF_DOMAIN;
-}
-
-// Was Shannon a participant (From/To/Cc) on this message? Tests raw addresses
-// (incl. staff), unlike counterpartyEmails which de-staffs.
-export function shannonPresent(msg: ParsedMessage): boolean {
-  return [msg.from, ...msg.to].some(isShannonAddress);
+// Intro-handoff detection: an operator loops a TEAMMATE in on an intro thread
+// ("connecting you two, X will find us time"). The teammate's address is
+// staff, so counterpartyEmails drops it — connection-candidate detection
+// tests the RAW participants before that filter. Generalized from the
+// original "is Shannon on the thread" heuristic: any staff participant other
+// than the sender counts.
+export function staffCoPresent(msg: ParsedMessage): boolean {
+  const sender = msg.from?.toLowerCase() ?? null;
+  return msg.to.some((e) => isStaffEmail(e) && e.toLowerCase() !== sender);
 }
 
 // Pull bare email addresses out of a raw header value

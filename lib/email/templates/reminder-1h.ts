@@ -4,14 +4,15 @@ import { escapeHtml, htmlShell } from "../format";
 export function buildReminder1hEmail(args: {
   booking: Booking;
   meetingType: MeetingType;
+  host: { firstName: string };
 }): { subject: string; text: string; html: string } {
-  const { booking, meetingType } = args;
+  const { booking, meetingType, host } = args;
   const firstName = booking.attendee_name.split(" ")[0];
   const isVideo = booking.location_type === "video";
   const meetingUrl = booking.meeting_url ?? "";
   const address = booking.location_details ?? "Address TBD";
 
-  const subject = `In an hour: ${meetingType.name} with Remi`;
+  const subject = `In an hour: ${meetingType.name} with ${host.firstName}`;
 
   const text = [
     `Hey ${firstName},`,
@@ -20,7 +21,7 @@ export function buildReminder1hEmail(args: {
     ``,
     isVideo ? `Zoom: ${meetingUrl}` : `Where: ${address}`,
     ``,
-    `— Remi`,
+    `— ${host.firstName}`,
   ].join("\n");
 
   const locationBlock = isVideo
@@ -39,7 +40,7 @@ export function buildReminder1hEmail(args: {
     <tr><td style="padding-bottom:20px;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1.15;color:#0E0E0E;">See you soon.</td></tr>
     <tr><td style="padding-bottom:20px;">Hey ${escapeHtml(firstName)} — one hour out.</td></tr>
     ${locationBlock}
-    <tr><td style="padding-top:18px;color:#3D3D3D;">— Remi</td></tr>
+    <tr><td style="padding-top:18px;color:#3D3D3D;">— ${escapeHtml(host.firstName)}</td></tr>
   `);
 
   return { subject, text, html };

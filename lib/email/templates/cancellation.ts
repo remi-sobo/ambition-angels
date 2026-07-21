@@ -5,12 +5,13 @@ import { marketingOrigin } from "@/lib/origins";
 export function buildCancellationEmail(args: {
   booking: Booking;
   meetingType: MeetingType;
+  host: { firstName: string };
 }): { subject: string; text: string; html: string } {
-  const { booking, meetingType } = args;
+  const { booking, meetingType, host } = args;
   const firstName = booking.attendee_name.split(" ")[0];
   const meetHome = `${marketingOrigin()}/meet`;
 
-  const subject = `Cancelled: ${meetingType.name} with Remi`;
+  const subject = `Cancelled: ${meetingType.name} with ${host.firstName}`;
 
   const text = [
     `Hey ${firstName},`,
@@ -19,7 +20,7 @@ export function buildCancellationEmail(args: {
     ``,
     `If you want to rebook, the door's open: ${meetHome}`,
     ``,
-    `— Remi`,
+    `— ${host.firstName}`,
   ].join("\n");
 
   const html = htmlShell(`
@@ -30,7 +31,7 @@ export function buildCancellationEmail(args: {
     <tr><td style="padding-bottom:24px;">
       <a href="${escapeHtml(meetHome)}" style="display:inline-block;background:#0E0E0E;color:#FFFFFF;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:600;">Rebook when you're ready</a>
     </td></tr>
-    <tr><td style="color:#3D3D3D;">— Remi</td></tr>
+    <tr><td style="color:#3D3D3D;">— ${escapeHtml(host.firstName)}</td></tr>
   `);
 
   return { subject, text, html };

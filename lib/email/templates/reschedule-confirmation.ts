@@ -10,8 +10,9 @@ import {
 export function buildRescheduleConfirmationEmail(args: {
   booking: Booking;
   meetingType: MeetingType;
+  host: { firstName: string };
 }): { subject: string; text: string; html: string } {
-  const { booking, meetingType } = args;
+  const { booking, meetingType, host } = args;
   const start = new Date(booking.start_time);
   const end = new Date(booking.end_time);
   const tz = booking.attendee_timezone;
@@ -23,7 +24,7 @@ export function buildRescheduleConfirmationEmail(args: {
   const meetingUrl = booking.meeting_url ?? "";
   const address = booking.location_details ?? "Address TBD — I'll be in touch.";
 
-  const subject = `Rescheduled: ${meetingType.name} with Remi to ${date.split(",").slice(0, 2).join(",")}`;
+  const subject = `Rescheduled: ${meetingType.name} with ${host.firstName} to ${date.split(",").slice(0, 2).join(",")}`;
 
   const text = [
     `Hey ${firstName},`,
@@ -40,7 +41,7 @@ export function buildRescheduleConfirmationEmail(args: {
     ``,
     `See you then.`,
     ``,
-    `— Remi`,
+    `— ${host.firstName}`,
   ].join("\n");
 
   const locationBlock = isVideo
@@ -69,7 +70,7 @@ export function buildRescheduleConfirmationEmail(args: {
       Need to change it again? <a href="${escapeHtml(manage)}" style="color:#0E0E0E;text-decoration:underline;">Manage your booking</a>.
     </td></tr>
     <tr><td>See you then.</td></tr>
-    <tr><td style="padding-top:4px;color:#3D3D3D;">— Remi</td></tr>
+    <tr><td style="padding-top:4px;color:#3D3D3D;">— ${escapeHtml(host.firstName)}</td></tr>
   `);
 
   return { subject, text, html };

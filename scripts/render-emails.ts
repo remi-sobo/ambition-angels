@@ -72,13 +72,15 @@ const booking: Booking = {
 const outDir = join(process.cwd(), "public", "_email-previews");
 mkdirSync(outDir, { recursive: true });
 
+const host = { firstName: "Remi" };
+
 const templates = [
-  ["confirmation", buildConfirmationEmail({ booking, meetingType })],
+  ["confirmation", buildConfirmationEmail({ booking, meetingType, host })],
   ["internal-notification", buildInternalNotificationEmail({ booking, meetingType })],
-  ["reschedule", buildRescheduleConfirmationEmail({ booking, meetingType })],
-  ["cancellation", buildCancellationEmail({ booking, meetingType })],
-  ["reminder-24h", buildReminder24hEmail({ booking, meetingType })],
-  ["reminder-1h", buildReminder1hEmail({ booking, meetingType })],
+  ["reschedule", buildRescheduleConfirmationEmail({ booking, meetingType, host })],
+  ["cancellation", buildCancellationEmail({ booking, meetingType, host })],
+  ["reminder-24h", buildReminder24hEmail({ booking, meetingType, host })],
+  ["reminder-1h", buildReminder1hEmail({ booking, meetingType, host })],
 ] as const;
 
 const index: string[] = [

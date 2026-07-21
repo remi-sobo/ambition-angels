@@ -7,9 +7,8 @@ import { buildConfirmationEmail } from "@/lib/email/templates/confirmation";
 import { buildInternalNotificationEmail } from "@/lib/email/templates/internal-notification";
 import { bookSchema } from "@/lib/meet/schemas";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { getBookingHost } from "@/lib/meet/host";
 import type { Booking, LocationType, MeetingType } from "@/lib/database.types";
-
-const HOST_EMAIL = "remi@ambitionangels.org";
 
 // 3 booking attempts per IP per 10 minutes. Per-instance in-memory; see
 // lib/rate-limit.ts for caveats. Generous on purpose — real users may
@@ -73,6 +72,18 @@ export async function POST(req: NextRequest) {
   // column default — this is a public route with no session to read.
   const mtOrgId = (meetingType as Record<string, unknown>).org_id as string;
 
+  // The identity this booking speaks as (event title, emails, calendar
+  // attendee). Transport (Google Calendar + Gmail) still runs on the single
+  // env-configured account, which belongs to the resident org — refuse other
+  // orgs instead of silently booking onto the wrong calendar.
+  const host = await getBookingHost(mtOrgId);
+  if (!host.configured) {
+    return NextResponse.json(
+      { error: "Booking isn't set up for this organization yet." },
+      { status: 503 }
+    );
+  }
+
   // Resolve effective duration. When the type has duration_options, the
   // caller must pass durationMinutes and it must be in the allow-list.
   const effectiveDuration = resolveBookingDuration(mtRaw, durationMinutes);
@@ -111,11 +122,11 @@ export async function POST(req: NextRequest) {
   // 1) Create the Google Calendar event (with Meet link). If this throws,
   //    nothing is persisted yet — return 500 cleanly.
   //
-  //    Event title format: "Ambition Angels [Type] meeting w/ [Name] - [Org]".
-  //    Drop the trailing " - [Org]" entirely when no organization was given.
+  //    Event title format: "[Org] [Type] meeting w/ [Name] - [Company]".
+  //    Drop the trailing " - [Company]" entirely when none was given.
   const summary = attendee.company
-    ? `Ambition Angels ${mt.name} meeting w/ ${attendee.name} - ${attendee.company}`
-    : `Ambition Angels ${mt.name} meeting w/ ${attendee.name}`;
+    ? `${host.orgName} ${mt.name} meeting w/ ${attendee.name} - ${attendee.company}`
+    : `${host.orgName} ${mt.name} meeting w/ ${attendee.name}`;
   const description = [
     resolvedLocation.locationType === "video"
       ? `Zoom: ${resolvedLocation.meetingUrl}${
@@ -147,7 +158,7 @@ export async function POST(req: NextRequest) {
       end,
       timeZone: HOST_TIMEZONE,
       attendees: [
-        { email: HOST_EMAIL, displayName: "Remi Sobo" },
+        { email: host.email, displayName: host.name },
         { email: attendee.email, displayName: attendee.name },
       ],
       location: eventLocation,
@@ -206,7 +217,7 @@ export async function POST(req: NextRequest) {
   // 3) Emails. Each one tries independently; failures are logged but do
   //    not roll back the booking — the calendar invite already carries
   //    the same info as the confirmation email.
-  const confirmation = buildConfirmationEmail({ booking, meetingType: mt });
+  const confirmation = buildConfirmationEmail({ booking, meetingType: mt, host });
   const internal = buildInternalNotificationEmail({ booking, meetingType: mt });
 
   await Promise.allSettled([
@@ -217,7 +228,7 @@ export async function POST(req: NextRequest) {
       text: confirmation.text,
     }).catch((e) => console.error("confirmation email failed", e)),
     sendEmail({
-      to: HOST_EMAIL,
+      to: host.email,
       subject: internal.subject,
       html: internal.html,
       text: internal.text,

@@ -49,7 +49,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
 
   const supabase = createServerSupabase();
-  const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes, campaignsRes, fundsRes, appealsRes, scReceivedRes, oppsRes] = await Promise.all([
+  const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes, campaignsRes, fundsRes, appealsRes, scReceivedRes, oppsRes, enrollRes] = await Promise.all([
     supabase.from("constituents").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("gifts")
@@ -91,6 +91,15 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .eq("constituent_id", params.id)
       .order("next_step_due", { ascending: true, nullsFirst: false })
       .limit(20),
+    // Journey enrollments (Epic J, spec Phase 2 — read-only): which
+    // sequences this donor is in and where. Joined to the journey for
+    // name/status/trigger; step totals come from a follow-up query.
+    supabase
+      .from("journey_enrollments")
+      .select("id, journey_id, status, current_step, next_run_at, last_step_at, enrolled_at, journey:journeys ( name, status, trigger )")
+      .eq("constituent_id", params.id)
+      .order("enrolled_at", { ascending: false })
+      .limit(100),
   ]);
 
   // Query error = tables not applied yet (same grace state as the list
@@ -193,22 +202,46 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const recognitionReceived = ((scReceivedRes.data ?? []) as Array<{ amount: number }>)
     .reduce((s, r) => s + Number(r.amount), 0);
 
-  const total = gifts.reduce((s, g) => s + g.amount, 0);
-  const recognition = total + recognitionReceived;
   const name = constituentName(c);
   const activePlan = plans.find((p) => p.status === "active");
   const fullHistory = (allDatesRes.data ?? []) as Array<{ gift_date: string; amount: number }>;
   const allDates = fullHistory.map((g) => g.gift_date);
-  // Lifecycle inputs come from the full-history query, not the 500-row
-  // timeline — a capped sum would mis-stage a long-history donor.
-  const lifetimeAmount = fullHistory.reduce((s, g) => s + Number(g.amount), 0);
+  // One source of truth: the displayed lifetime total and the lifecycle
+  // stage sum the same full-history amounts — never the 500-row timeline,
+  // whose capped sum would understate a long-history donor.
+  const total = fullHistory.reduce((s, g) => s + Number(g.amount), 0);
   const stage = deriveLifecycleStage({
     giftCount: fullHistory.length,
-    lifetimeAmount,
+    lifetimeAmount: total,
     hasActiveRecurringPlan: Boolean(activePlan),
   });
+  const recognition = total + recognitionReceived;
   const { flags } = analyzeDonor(allDates, todayISO(), Boolean(activePlan));
   const engagement = scoreDonor(allDates, total, Boolean(activePlan), todayISO());
+
+  // ── Journey enrollments (spec Phase 2, read-only) ──
+  // Step totals come from a follow-up query keyed by the enrolled journey
+  // ids (same pattern as the soft-credit join). current_step counts steps
+  // already sent, so the upcoming step is current_step + 1.
+  type Enrollment = {
+    id: string; journey_id: string; status: string; current_step: number;
+    next_run_at: string | null; last_step_at: string | null; enrolled_at: string;
+    journey: { name: string; status: string; trigger: string } | null;
+  };
+  const enrollments = ((enrollRes.data ?? []) as unknown as Enrollment[]);
+  const stepTotals = new Map<string, number>();
+  if (enrollments.length > 0) {
+    const { data: stepRows } = await supabase
+      .from("journey_steps")
+      .select("journey_id")
+      .in("journey_id", Array.from(new Set(enrollments.map((e) => e.journey_id))))
+      .limit(2000);
+    for (const s of (stepRows ?? []) as Array<{ journey_id: string }>) {
+      stepTotals.set(s.journey_id, (stepTotals.get(s.journey_id) ?? 0) + 1);
+    }
+  }
+  const activeEnrollments = enrollments.filter((e) => e.status === "active");
+  const pastEnrollments = enrollments.filter((e) => e.status !== "active");
   const ENG_STYLES: Record<EngagementBand, string> = {
     strong: "bg-revenue/15 text-revenue",
     steady: "bg-blue-500/15 text-blue-400",
@@ -373,6 +406,9 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const COMM_TYPE_LABEL: Record<string, string> = {
     email: "Email", call: "Call", meeting: "Meeting", note: "Note", task: "Task",
   };
+  const TRIGGER_LABEL: Record<string, string> = {
+    first_gift: "First gift", lapsed: "Lapsed", manual: "Manual",
+  };
   const PLEDGE_STATUS_STYLE: Record<Exclude<HubSpotPledgeStatus, "ignore">, string> = {
     received: "bg-revenue/15 text-revenue",
     secured: "bg-orange/20 text-orange",
@@ -477,6 +513,85 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
               title: LIFECYCLE_HELP[s],
             }))}
           />
+        </section>
+
+        {/* Journeys panel (spec Phase 2, read-only): which sequences this
+            donor is in and where they stand. Enrollment actions are Phase 3. */}
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
+            <h2 className={TYPE.cardTitle}>Journeys</h2>
+            <Link
+              href="/admin/fundraising/journeys"
+              className="text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors whitespace-nowrap"
+            >
+              Manage journeys →
+            </Link>
+          </div>
+          {enrollments.length === 0 ? (
+            <p className={`px-5 py-5 ${TYPE.bodyMuted}`}>
+              Not enrolled in any journey. Journeys are triggered, multi-step email sequences —
+              build them in{" "}
+              <Link
+                href="/admin/fundraising/journeys"
+                className="font-semibold text-orange hover:text-orange-dark"
+              >
+                Fundraising → Journeys
+              </Link>
+              .
+            </p>
+          ) : (
+            <ul className="divide-y divide-hairline">
+              {activeEnrollments.map((e) => {
+                const totalSteps = stepTotals.get(e.journey_id) ?? 0;
+                const upcoming = Math.min(e.current_step + 1, Math.max(totalSteps, 1));
+                const journeyPaused = e.journey?.status === "paused";
+                return (
+                  <li key={e.id} className="px-5 py-3 flex items-center gap-3 flex-wrap">
+                    <span className="text-sm font-medium text-ink-1">{e.journey?.name ?? "(journey removed)"}</span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider bg-revenue/15 text-revenue">
+                      Active
+                    </span>
+                    {e.journey && (
+                      <span className="text-[11px] text-ink-3">{TRIGGER_LABEL[e.journey.trigger] ?? e.journey.trigger}</span>
+                    )}
+                    <span className="ml-auto text-xs text-ink-2 [font-variant-numeric:tabular-nums]">
+                      Step {upcoming} of {totalSteps || "?"}
+                    </span>
+                    {journeyPaused ? (
+                      <span className="text-xs text-ink-3 whitespace-nowrap">sends held — journey paused</span>
+                    ) : (
+                      e.next_run_at && (
+                        <span className="text-xs text-ink-2 whitespace-nowrap">next send {fmtWhen(e.next_run_at)}</span>
+                      )
+                    )}
+                  </li>
+                );
+              })}
+              {pastEnrollments.map((e) => {
+                const totalSteps = stepTotals.get(e.journey_id) ?? 0;
+                const done = e.status === "completed";
+                return (
+                  <li key={e.id} className="px-5 py-3 flex items-center gap-3 flex-wrap">
+                    <span className="text-sm text-ink-2">{e.journey?.name ?? "(journey removed)"}</span>
+                    <span
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                        done ? "bg-tile text-ink-2 border-[1.5px] border-outline" : "bg-expense-bg text-expense"
+                      }`}
+                    >
+                      {done ? "Completed" : "Cancelled"}
+                    </span>
+                    <span className="ml-auto text-xs text-ink-3 [font-variant-numeric:tabular-nums]">
+                      {done
+                        ? `${totalSteps || e.current_step} step${(totalSteps || e.current_step) === 1 ? "" : "s"}${
+                            e.last_step_at ? ` · finished ${fmtWhen(e.last_step_at)}` : ""
+                          }`
+                        : `${e.current_step} of ${totalSteps || "?"} steps sent · enrolled ${fmtWhen(e.enrolled_at)}`}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </section>
 
         <NextMovePanel

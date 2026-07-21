@@ -106,7 +106,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // The floating QuickAddButton is still gated on authed since its
   // actions all require a valid session.
   return (
-    <AdminUserProvider value={user}>
+    <AdminUserProvider value={{ user, isOwner: ctx?.role === "owner" }}>
     <AdminBadgesProvider orgId={orgId} enabled={authed}>
     <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
       <AdminPWA />

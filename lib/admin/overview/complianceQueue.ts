@@ -41,7 +41,7 @@ export function complianceQueueHorizon(today: string): string {
  */
 export function isInComplianceQueue(
   item: ComplianceQueueSource,
-  assignee: "remi" | "shannon",
+  assignee: string,
   today: string
 ): boolean {
   if (!item.assigned_to || item.assigned_to.trim().toLowerCase() !== assignee) return false;

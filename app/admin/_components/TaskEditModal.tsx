@@ -18,6 +18,7 @@ import {
   type TaskPriority,
 } from "@/app/admin/ops/_types/ops";
 import { useIsOwner } from "./AdminUserContext";
+import { useAssignees, withSelected } from "../_lib/useAssignees";
 import { TYPE } from "@/lib/admin/typeScale";
 
 /** Pull any report screenshot URLs out of a task description for inline preview. */
@@ -62,9 +63,7 @@ export default function TaskEditModal({
   const [labels, setLabels] = useState(
     (task.labels ?? []).filter((l) => !l.startsWith("sys:")).join(", ")
   );
-  const [assignee, setAssignee] = useState<"remi" | "shannon" | "">(
-    task.assigned_to ?? ""
-  );
+  const [assignee, setAssignee] = useState<string>(task.assigned_to ?? "");
   const [dueDate, setDueDate] = useState(task.due_date ?? "");
   const [projectId, setProjectId] = useState(task.project_id ?? "");
   const [pinToday, setPinToday] = useState(task.pinned_for_today);
@@ -77,6 +76,8 @@ export default function TaskEditModal({
   const [assigneeError, setAssigneeError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const isOwner = useIsOwner();
+  const members = useAssignees();
+  const assigneeOptions = withSelected(members, assignee);
 
   // ── Stuck-work forcing prompt ──────────────────────────────────────────────
   // A dismissible strip (NOT an auto-modal — that friction makes people stop
@@ -112,14 +113,12 @@ export default function TaskEditModal({
   }
 
   function delegate() {
-    // Hand off to the other operator (Shannon runs the ops queue, so an
-    // unassigned stuck task goes to her).
-    const next = assignee === "shannon" ? "remi" : "shannon";
-    setAssignee(next);
-    void promptPatch(
-      { assigned_to: next },
-      `Delegated to ${next === "remi" ? "Remi" : "Shannon"}.`
-    );
+    // Hand off to another org member — the next one who isn't the current
+    // assignee. With no other member to hand to, this is a no-op.
+    const next = members.find((m) => m.value !== assignee);
+    if (!next) return;
+    setAssignee(next.value);
+    void promptPatch({ assigned_to: next.value }, `Delegated to ${next.label}.`);
   }
 
   function schedule() {
@@ -176,8 +175,8 @@ export default function TaskEditModal({
   }
 
   // Tasks filed by the guided reporter carry a ready-to-paste Claude Code prompt
-  // as their description. The copy affordance is owner-only (Remi) by design —
-  // everyone else can report, but the prompt-to-paste step is his.
+  // as their description. The copy affordance is owner-only by design —
+  // everyone else can report, but the prompt-to-paste step is the org owner's.
   const hasClaudePrompt = (task.labels ?? []).includes("claude-prompt") && isOwner;
   const photoUrls = extractImageUrls(task.description);
   async function copyPrompt() {
@@ -367,7 +366,9 @@ export default function TaskEditModal({
               ) : (
                 <div className="flex flex-wrap gap-2">
                   <StuckAction label="Decompose" onClick={() => setDecomposing(true)} disabled={promptBusy} />
-                  <StuckAction label="Delegate" onClick={delegate} disabled={promptBusy} />
+                  {members.some((m) => m.value !== assignee) && (
+                    <StuckAction label="Delegate" onClick={delegate} disabled={promptBusy} />
+                  )}
                   <StuckAction label="Schedule" onClick={schedule} disabled={promptBusy} />
                   <StuckAction label="Drop" onClick={() => void drop()} disabled={promptBusy} danger />
                 </div>
@@ -481,14 +482,15 @@ export default function TaskEditModal({
               <select
                 value={assignee}
                 onChange={(e) => {
-                  setAssignee(e.target.value as "remi" | "shannon" | "");
+                  setAssignee(e.target.value);
                   setAssigneeError(null);
                 }}
                 className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
               >
                 <option value="">Unassigned</option>
-                <option value="remi">Remi</option>
-                <option value="shannon">Shannon</option>
+                {assigneeOptions.map((a) => (
+                  <option key={a.value} value={a.value}>{a.label}</option>
+                ))}
               </select>
               {assigneeError && (
                 <p className="mt-1 text-expense text-xs">{assigneeError}</p>

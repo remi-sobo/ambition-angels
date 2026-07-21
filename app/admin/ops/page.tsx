@@ -46,10 +46,7 @@ export default async function OpsLandingPage({
   const rawAssignee = Array.isArray(searchParams?.assignee)
     ? searchParams?.assignee[0]
     : searchParams?.assignee;
-  const assignee =
-    rawAssignee === "remi" || rawAssignee === "shannon" || rawAssignee === "unassigned"
-      ? rawAssignee
-      : "all";
+  const assignee = rawAssignee?.trim() ? rawAssignee.trim() : "all";
   const matchesAssignee = (t: OpsTask) =>
     assignee === "all"
       ? true

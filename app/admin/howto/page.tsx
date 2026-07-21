@@ -50,7 +50,7 @@ const SECTIONS: Section[] = [
         does: [
           "Read the day's priorities, highest-impact first",
           "Open the Weekly Briefing for the Monday edition",
-          "Weekly view adds an AI-narrated summary plus an “Overdue across CRM” card you can filter by owner (Remi / Shannon / Unassigned) and reschedule or complete inline",
+          "Weekly view adds an AI-narrated summary plus an “Overdue across CRM” card you can filter by owner and reschedule or complete inline",
         ],
       },
     ],
@@ -316,7 +316,7 @@ const ORDERED_SECTIONS = ["command-center", "operations", "fundraising", "progra
 const GLOBALS: { title: string; body: string }[] = [
   {
     title: "Signing in",
-    body: "Each operator (Remi, Shannon) signs in from the login panel. The left sidebar is the table of contents for the whole system; items marked “Soon” are planned but not built yet.",
+    body: "Each operator signs in from the login panel. The left sidebar is the table of contents for the whole system; items marked “Soon” are planned but not built yet.",
   },
   {
     title: "Your rail — the daily cockpit",

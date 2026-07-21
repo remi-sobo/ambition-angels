@@ -8,14 +8,11 @@
 
 import { useEffect, useState } from "react";
 import { TASK_PRIORITIES, type TaskPriority } from "../../ops/_types/ops";
+import { useAssignees, withSelected } from "../../_lib/useAssignees";
+import { useAdminUser } from "../../_components/AdminUserContext";
 import { TYPE } from "@/lib/admin/typeScale";
 
 export type TaskTarget = { id: string; name: string };
-
-const ASSIGNEES = [
-  { value: "remi", label: "Remi" },
-  { value: "shannon", label: "Shannon" },
-] as const;
 
 const fieldCls =
   "w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 text-base sm:text-sm";
@@ -40,7 +37,10 @@ export default function TaskComposer({
   );
   const [due, setDue] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("medium");
-  const [assignee, setAssignee] = useState<string>("remi");
+  // Default the owner to the signed-in person (their first-name handle).
+  const me = useAdminUser();
+  const [assignee, setAssignee] = useState<string>(me ?? "");
+  const assigneeOptions = withSelected(useAssignees(), assignee);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -137,7 +137,7 @@ export default function TaskComposer({
             <label className="block">
               <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">Owner</div>
               <select value={assignee} onChange={(e) => setAssignee(e.target.value)} className={fieldCls}>
-                {ASSIGNEES.map((a) => (
+                {assigneeOptions.map((a) => (
                   <option key={a.value} value={a.value} className="bg-surface">{a.label}</option>
                 ))}
               </select>

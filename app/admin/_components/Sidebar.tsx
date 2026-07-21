@@ -597,7 +597,7 @@ export default function Sidebar({
               falling back to the legacy handle only if a name isn't resolved. */}
           {(() => {
             const name = displayName?.trim() || cap(currentUser);
-            const roleLabel = role ? ROLE_LABEL[role] : currentUser === "shannon" ? "Admin" : "Owner";
+            const roleLabel = role ? ROLE_LABEL[role] : "Member";
             return (
           <div className="flex items-center gap-2.5">
             <span className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-light text-orange-dark text-[12px] font-bold uppercase">

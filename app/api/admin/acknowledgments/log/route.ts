@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
         priority: "medium",
         labels: ["stewardship"],
         assigned_to: user,
-        created_by: user ?? "remi",
+        created_by: user ?? "admin",
         due_date: dueDate,
         linked_entity_type: linkType,
         linked_entity_id: subjectId,

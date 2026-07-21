@@ -7,6 +7,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAssignees, withSelected } from "../../_lib/useAssignees";
+import { normalizeAssignee, handleLabel } from "@/lib/admin/assignees";
 
 export type ChecklistItem = { id: string; text: string; done: boolean };
 
@@ -46,26 +48,11 @@ export const RECUR_OPTIONS: Array<[string, string]> = [
   ["none", "One-time"],
 ];
 
-// Same hardcoded person set as ops tasks (TaskEditModal / TasksSurface); the
-// stored lowercase value is what the daily-queue assignee filter matches on.
-export const ASSIGNEE_OPTIONS: Array<[string, string]> = [
-  ["", "Unassigned"],
-  ["remi", "Remi"],
-  ["shannon", "Shannon"],
-];
-
-// Map stored text (possibly legacy free text like "Remi Sobo") onto a dropdown
-// value by first-name match; unknown names fall back to Unassigned.
-export function normalizeAssignee(v: string | null): string {
-  if (!v) return "";
-  const first = v.trim().split(/\s+/)[0].toLowerCase();
-  return ASSIGNEE_OPTIONS.some(([val]) => val === first) ? first : "";
-}
-
-export function assigneeLabel(v: string): string {
-  const match = ASSIGNEE_OPTIONS.find(([val]) => val === normalizeAssignee(v));
-  return match && match[0] ? match[1] : v;
-}
+// Assignees come from the org's members (useAssignees), same handle
+// convention as ops tasks; the stored lowercase value is what the
+// daily-queue assignee filter matches on. The pure helpers (normalizeAssignee
+// / handleLabel) live in lib/admin/assignees so server components (the item
+// profile page) can import them without crossing the client boundary.
 
 export function ComplianceRow({ item }: { item: ComplianceItem }) {
   const router = useRouter();
@@ -86,6 +73,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
   const [eRecur, setERecur] = useState(item.recur);
   const [eJurisdiction, setEJurisdiction] = useState(item.jurisdiction ?? "");
   const [eAssignee, setEAssignee] = useState(normalizeAssignee(item.assigned_to));
+  const memberOptions = useAssignees();
 
   const startEdit = () => {
     setETitle(item.title);
@@ -226,8 +214,9 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
           <label className="text-xs text-ink-2">
             Assigned to
             <select className={`${inputCls} w-full mt-1`} value={eAssignee} onChange={(e) => setEAssignee(e.target.value)}>
-              {ASSIGNEE_OPTIONS.map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
+              <option value="">Unassigned</option>
+              {withSelected(memberOptions, eAssignee).map((a) => (
+                <option key={a.value} value={a.value}>{a.label}</option>
               ))}
             </select>
           </label>
@@ -268,7 +257,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
         )}
         {item.assigned_to && (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/10 text-orange">
-            {assigneeLabel(item.assigned_to)}
+            {handleLabel(item.assigned_to)}
           </span>
         )}
         <span
@@ -453,6 +442,7 @@ export function NewComplianceForm() {
   const [recur, setRecur] = useState("annual");
   const [jurisdiction, setJurisdiction] = useState("");
   const [assignee, setAssignee] = useState("");
+  const memberOptions = useAssignees();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -536,8 +526,9 @@ export function NewComplianceForm() {
       <label className="text-xs text-ink-2">
         Assigned to
         <select className={`${inputCls} w-full mt-1`} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
-          {ASSIGNEE_OPTIONS.map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
+          <option value="">Unassigned</option>
+          {withSelected(memberOptions, assignee).map((a) => (
+            <option key={a.value} value={a.value}>{a.label}</option>
           ))}
         </select>
       </label>

@@ -16,12 +16,12 @@ function gmailThreadUrl(threadId: string): string {
 }
 
 /**
- * "Candidates from email" — intros Remi sent with Shannon on the thread,
- * surfaced off the existing Gmail sync (outbound + Shannon participant +
- * reconciled to a constituent). Suggest-then-confirm: nothing here is a task
- * yet. Add promotes it to a scheduling task tied to the person, with a link
- * back to the thread; Dismiss suppresses it so it won't return next sync.
- * Shannon controls the queue entirely.
+ * "Candidates from email" — intro threads the connected mailbox sent with a
+ * teammate cc'd, surfaced off the existing Gmail sync (outbound + operator
+ * participant + reconciled to a constituent). Suggest-then-confirm: nothing
+ * here is a task yet. Add promotes it to a scheduling task tied to the
+ * person, with a link back to the thread; Dismiss suppresses it so it won't
+ * return next sync. The operator controls the queue entirely.
  */
 export default function CandidatesQueue({
   candidates,

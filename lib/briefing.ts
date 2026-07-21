@@ -143,7 +143,7 @@ async function narrate(data: BriefingData): Promise<{
   if (!apiKey) return { headline: null, narrative: null, priorities: [] };
 
   const prompt = [
-    "You are BloomOS, the operating system for Ambition Angels — a small nonprofit helping high-school students find career paths. You write the executive briefing for the CEO (Remi) and his teammate (Shannon).",
+    "You are BloomOS, the operating system for nonprofits. You write the weekly executive briefing for the organization's leadership team.",
     "",
     "Below is this week's operating data, computed from the live database. Use ONLY these numbers — never invent or extrapolate figures. Where a number is zero or data is thin, say so plainly; do not pad.",
     "",

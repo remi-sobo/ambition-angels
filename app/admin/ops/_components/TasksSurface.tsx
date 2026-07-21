@@ -7,19 +7,14 @@ import TaskListView, { type GroupBy } from "./TaskListView";
 import TaskBoardView from "./TaskBoardView";
 import TaskRow from "./TaskRow";
 import type { OpsTask } from "../_types/ops";
+import { useAssignees, withSelected } from "../../_lib/useAssignees";
 import { TYPE } from "@/lib/admin/typeScale";
 
 type View = "list" | "board";
 type Scope = "active" | "archived";
 type LinkFilter = "all" | "any" | "partner" | "constituent";
-type AssigneeFilter = "all" | "remi" | "shannon" | "unassigned";
-
-const ASSIGNEE_OPTIONS: { value: AssigneeFilter; label: string }[] = [
-  { value: "all", label: "Everyone" },
-  { value: "remi", label: "Remi" },
-  { value: "shannon", label: "Shannon" },
-  { value: "unassigned", label: "Unassigned" },
-];
+// "all" | "unassigned" | any org member's handle.
+type AssigneeFilter = string;
 
 const LINK_OPTIONS: { value: LinkFilter; label: string }[] = [
   { value: "all", label: "All tasks" },
@@ -62,12 +57,15 @@ export default function TasksSurface({
 
   // The assignee filter lives in the URL (?assignee=) so it survives the
   // router.refresh() fired when a task is completed — client state would reset
-  // to "Everyone", forcing the user to reselect their name (Shannon's report).
-  const rawAssignee = searchParams.get("assignee");
-  const assignee: AssigneeFilter =
-    rawAssignee === "remi" || rawAssignee === "shannon" || rawAssignee === "unassigned"
-      ? rawAssignee
-      : "all";
+  // to "Everyone", forcing the user to reselect their name.
+  const rawAssignee = searchParams.get("assignee")?.trim();
+  const assignee: AssigneeFilter = rawAssignee || "all";
+  const members = useAssignees();
+  const assigneeOptions = [
+    { value: "all", label: "Everyone" },
+    ...withSelected(members, assignee === "all" || assignee === "unassigned" ? "" : assignee),
+    { value: "unassigned", label: "Unassigned" },
+  ];
   const setAssignee = (value: AssigneeFilter) => {
     const sp = new URLSearchParams(Array.from(searchParams.entries()));
     if (value === "all") sp.delete("assignee");
@@ -168,7 +166,7 @@ export default function TasksSurface({
                 onChange={(e) => setAssignee(e.target.value as AssigneeFilter)}
                 className="bg-tile border-[1.5px] border-outline rounded-lg px-2.5 py-1.5 text-xs text-ink-1 normal-case tracking-normal focus:outline-none focus:border-orange/50"
               >
-                {ASSIGNEE_OPTIONS.map((o) => (
+                {assigneeOptions.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>

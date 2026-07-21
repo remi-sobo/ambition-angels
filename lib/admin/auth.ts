@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { assigneeSlug } from "@/lib/admin/assignees";
 
 /**
  * BloomOS Ring 1 auth helpers, backed by Supabase Auth.
@@ -11,13 +12,15 @@ import { createServerSupabase } from "@/lib/supabase/server";
  * supabase/migrations/create_membership_bootstrap.sql). A random self-signup
  * gets a session but no membership, and is rejected here.
  *
- * The legacy `AdminUser` name type survives for display/attribution compat
- * ("remi" / "shannon" appear in ops task fields and UI). It is derived from
- * the email local-part and will be replaced by real user references as
- * Ring 1 route conversion proceeds.
+ * The legacy `AdminUser` handle survives for display/attribution compat
+ * (lowercase first-name handles live in ops task fields and UI). It is now
+ * derived per-user from their profile display name (falling back to the email
+ * local-part), so a second tenant's people get their own handles instead of
+ * everyone collapsing to "remi". Real user references replace it as Ring 1
+ * route conversion proceeds.
  */
 
-export type AdminUser = "remi" | "shannon";
+export type AdminUser = string;
 
 /** Cookie naming the user's active org (core fence spec §6c, C1). Written
  *  ONLY by /api/admin/org/switch after validating membership — server
@@ -146,9 +149,25 @@ export async function ctxHasPermission(ctx: OrgContext, perm: string): Promise<b
   return !!data;
 }
 
-export async function getAdminUser(): Promise<AdminUser | null> {
+/** The signed-in user's attribution handle: first token of their profile
+ *  display name, lowercased (the same convention the sync_assigned_to_id
+ *  trigger matches on), falling back to the email local-part when no profile
+ *  name is set. For AA this yields the historical "remi"/"shannon" values;
+ *  for any other tenant it yields THEIR people's handles. React-cached so the
+ *  extra profile read costs one query per request. */
+export const getAdminUser = cache(async (): Promise<AdminUser | null> => {
   const ctx = await getOrgContext();
   if (!ctx) return null;
-  const local = ctx.email.split("@")[0]?.toLowerCase();
-  return local === "shannon" ? "shannon" : "remi";
-}
+  const supabase = createServerSupabase();
+  const { data } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("user_id", ctx.userId)
+    .maybeSingle();
+  const name =
+    (data?.display_name as string | null | undefined)?.trim() ||
+    ctx.email.split("@")[0] ||
+    "";
+  const handle = assigneeSlug(name);
+  return handle || null;
+});

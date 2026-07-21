@@ -9,7 +9,9 @@ import type { MatchedEntity } from "./types";
  * One implementation, two callers: Reed's read-only tools (lib/agents/reed/tools.ts)
  * and the upcoming-meeting detail page (app/admin/meetings/upcoming/[eventId]).
  * Everything runs on the SESSION client passed in, so RLS scopes every row to the
- * viewer — the same rule the rest of the meetings surface follows. The pure
+ * viewer — the same rule the rest of the meetings surface follows. Every query
+ * ALSO carries an explicit org_id fence so a future caller on the service-role
+ * client (which bypasses RLS) can't silently widen these reads. The pure
  * shaping helpers (summarizeGiving / toAgendaEntities / shapeInteraction) carry the
  * logic worth unit-testing; the load* functions are thin I/O over them.
  */
@@ -123,16 +125,17 @@ export type ConstituentDossier = {
 
 export async function loadConstituentDossier(
   sb: SupabaseClient,
+  orgId: string,
   id: string,
   historyLimit = 15,
 ): Promise<ConstituentDossier | null> {
   const limit = Math.min(40, Math.max(1, Math.trunc(historyLimit)));
   const [cRes, giftsRes, plansRes, interRes, oppsRes] = await Promise.all([
-    sb.from("constituents").select("id, type, first_name, last_name, org_name, emails, tags, city, state, do_not_contact, notes").eq("id", id).maybeSingle(),
-    sb.from("gifts").select("amount, gift_date").eq("constituent_id", id).order("gift_date", { ascending: false }).limit(1000),
-    sb.from("recurring_plans").select("amount, frequency, status").eq("constituent_id", id).eq("status", "active"),
-    sb.from("interactions").select("kind, occurred_at, direction, subject, body_preview, notes, is_private").eq("constituent_id", id).order("occurred_at", { ascending: false }).limit(limit),
-    sb.from("opportunities").select("name, stage, next_step, next_step_due, ask_amount, expected_close").eq("constituent_id", id).neq("stage", "lost").order("next_step_due", { ascending: true, nullsFirst: false }).limit(20),
+    sb.from("constituents").select("id, type, first_name, last_name, org_name, emails, tags, city, state, do_not_contact, notes").eq("org_id", orgId).eq("id", id).maybeSingle(),
+    sb.from("gifts").select("amount, gift_date").eq("org_id", orgId).eq("constituent_id", id).order("gift_date", { ascending: false }).limit(1000),
+    sb.from("recurring_plans").select("amount, frequency, status").eq("org_id", orgId).eq("constituent_id", id).eq("status", "active"),
+    sb.from("interactions").select("kind, occurred_at, direction, subject, body_preview, notes, is_private").eq("org_id", orgId).eq("constituent_id", id).order("occurred_at", { ascending: false }).limit(limit),
+    sb.from("opportunities").select("name, stage, next_step, next_step_due, ask_amount, expected_close").eq("org_id", orgId).eq("constituent_id", id).neq("stage", "lost").order("next_step_due", { ascending: true, nullsFirst: false }).limit(20),
   ]);
   if (!cRes.data) return null;
 
@@ -196,13 +199,14 @@ export type PartnerDossier = {
 
 export async function loadPartnerDossier(
   sb: SupabaseClient,
+  orgId: string,
   id: string,
   historyLimit = 15,
 ): Promise<PartnerDossier | null> {
   const limit = Math.min(40, Math.max(1, Math.trunc(historyLimit)));
   const [pRes, interRes] = await Promise.all([
-    sb.from("partners").select("name, kind, status, champion_name, champion_email, champion_role, teen_count, program_type, mou_status, mou_start, mou_end, referral, notes, last_touch_at").eq("id", id).maybeSingle(),
-    sb.from("partner_interactions").select("kind, occurred_at, notes, logged_by").eq("partner_id", id).order("occurred_at", { ascending: false }).limit(limit),
+    sb.from("partners").select("name, kind, status, champion_name, champion_email, champion_role, teen_count, program_type, mou_status, mou_start, mou_end, referral, notes, last_touch_at").eq("org_id", orgId).eq("id", id).maybeSingle(),
+    sb.from("partner_interactions").select("kind, occurred_at, notes, logged_by").eq("org_id", orgId).eq("partner_id", id).order("occurred_at", { ascending: false }).limit(limit),
   ]);
   if (!pRes.data) return null;
   const p = pRes.data as Record<string, unknown>;
@@ -251,6 +255,7 @@ export async function loadMeetingBrief(
   const { data: ev } = await sb
     .from("calendar_events")
     .select("id, title, start_time, attendees")
+    .eq("org_id", orgId)
     .eq("id", eventId)
     .maybeSingle();
   if (!ev) return null;
@@ -266,11 +271,11 @@ export async function loadMeetingBrief(
   const consCount = new Map<string, number>();
   const partCount = new Map<string, number>();
   if (consIds.length) {
-    const { data } = await sb.from("interactions").select("constituent_id").in("constituent_id", consIds).lte("occurred_at", nowIso);
+    const { data } = await sb.from("interactions").select("constituent_id").eq("org_id", orgId).in("constituent_id", consIds).lte("occurred_at", nowIso);
     for (const r of (data ?? []) as Array<{ constituent_id: string }>) consCount.set(r.constituent_id, (consCount.get(r.constituent_id) ?? 0) + 1);
   }
   if (partIds.length) {
-    const { data } = await sb.from("partner_interactions").select("partner_id").in("partner_id", partIds).lte("occurred_at", nowIso);
+    const { data } = await sb.from("partner_interactions").select("partner_id").eq("org_id", orgId).in("partner_id", partIds).lte("occurred_at", nowIso);
     for (const r of (data ?? []) as Array<{ partner_id: string }>) partCount.set(r.partner_id, (partCount.get(r.partner_id) ?? 0) + 1);
   }
 

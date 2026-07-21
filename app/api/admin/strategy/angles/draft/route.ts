@@ -10,19 +10,15 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { generateText, AIKeyMissingError } from "@/lib/ai/gateway";
 import { logAICall } from "@/lib/ai/ledger";
+import { getAgentOrgProfile, type AgentOrgProfile } from "@/lib/agents/org-profile";
 import { ANGLE_BADGES, ANGLE_TONES, angleStr } from "@/lib/admin/strategy/angle-fields";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// Tenant identity is hardcoded here until agent prompts are parameterized by
-// org (name + mission from orgs.settings — core fence spec §6d, later PR).
-const SYSTEM = [
-  "You are Reed, Ambition Angels' in-house strategist. Ambition Angels gives low-income teens",
-  "career exposure, a trusted-adult layer, and coaching so they can picture and reach an",
-  "economically empowered future. You help draft \"framing angles\" for the internal Strategy Room:",
-  "one true mission, framed for whoever is across the table (a funder, a corporate CSR team, a",
-  "place-based collaborative).",
+// Per-tenant identity: the resident org keeps its hand-tuned mission framing;
+// every other org drafts in its own name with no invented mission facts.
+const SHARED_INSTRUCTIONS = [
   "",
   "Given a brief, write ONE angle. Return ONLY a JSON object (no markdown, no prose) with these keys:",
   "  name         — short title for the angle (a few words)",
@@ -43,6 +39,25 @@ const SYSTEM = [
   "Be concrete and grounded — name real funders and real metrics where you can. Match the",
   "confident, plain voice of the existing deck. Output the JSON object and nothing else.",
 ].join("\n");
+
+function buildSystem(profile: AgentOrgProfile): string {
+  const identity = profile.isResident
+    ? [
+        "You are Reed, Ambition Angels' in-house strategist. Ambition Angels gives low-income teens",
+        "career exposure, a trusted-adult layer, and coaching so they can picture and reach an",
+        "economically empowered future. You help draft \"framing angles\" for the internal Strategy Room:",
+        "one true mission, framed for whoever is across the table (a funder, a corporate CSR team, a",
+        "place-based collaborative).",
+      ]
+    : [
+        `You are Reed, the in-house strategist for ${profile.orgName}, a nonprofit. You help draft`,
+        '"framing angles" for the internal Strategy Room: one true mission, framed for whoever is',
+        "across the table (a funder, a corporate CSR team, a place-based collaborative). You have",
+        "NOT been given this organization's mission or program details — ground the angle ONLY in",
+        "the brief you are given, and never invent facts about the organization.",
+      ];
+  return identity.join("\n") + SHARED_INSTRUCTIONS;
+}
 
 function extractJson(text: string): Record<string, unknown> | null {
   const start = text.indexOf("{");
@@ -67,7 +82,8 @@ export async function POST(req: NextRequest) {
 
   let result;
   try {
-    result = await generateText({ system: SYSTEM, prompt, tier: "fast", maxTokens: 1400, voice: false });
+    const system = buildSystem(await getAgentOrgProfile());
+    result = await generateText({ system, prompt, tier: "fast", maxTokens: 1400, voice: false });
   } catch (e) {
     if (e instanceof AIKeyMissingError) {
       return NextResponse.json({ error: "ANTHROPIC_API_KEY is not configured" }, { status: 503 });

@@ -18,18 +18,28 @@ import type { MatchedEntity } from "./types";
 
 type Attendee = { email?: string | null; displayName?: string | null };
 
-export async function orgEmailDomain(sb: SupabaseClient, orgId: string): Promise<string> {
+/**
+ * The org's staff email domain (orgs.settings.email_domain). The legacy
+ * hardcoded fallback applies to the RESIDENT org only — for any other tenant
+ * with no configured domain we return null ("no known staff domain") rather
+ * than classifying their staff against tenant one's domain.
+ */
+export async function orgEmailDomain(sb: SupabaseClient, orgId: string): Promise<string | null> {
   const { data } = await sb.from("orgs").select("settings").eq("id", orgId).maybeSingle();
   const d = (data?.settings as Record<string, unknown> | null)?.email_domain as string | undefined;
-  return (d ?? "ambitionangels.org").toLowerCase();
+  if (d) return d.toLowerCase();
+  const { getResidentOrgId } = await import("@/lib/admin/orgs");
+  const resident = await getResidentOrgId().catch(() => null);
+  return orgId === resident ? "ambitionangels.org" : null;
 }
 
-/** External (non-org-domain) attendee emails, lowercased + deduped. */
-export function externalEmails(attendees: Attendee[] | null, domain: string): string[] {
+/** External (non-org-domain) attendee emails, lowercased + deduped. With no
+ *  known staff domain, every attendee counts as external. */
+export function externalEmails(attendees: Attendee[] | null, domain: string | null): string[] {
   const out = new Set<string>();
   for (const a of attendees ?? []) {
     const e = a?.email?.toLowerCase().trim();
-    if (e && !e.endsWith("@" + domain)) out.add(e);
+    if (e && (!domain || !e.endsWith("@" + domain))) out.add(e);
   }
   return Array.from(out);
 }

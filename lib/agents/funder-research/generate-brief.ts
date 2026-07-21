@@ -90,7 +90,8 @@ export function inferProspectType(
  */
 export async function loadInternalConnections(
   supabase: ReturnType<typeof getSupabaseAdmin>,
-  contact: ContextContact
+  contact: ContextContact,
+  orgId: string
 ): Promise<InternalConnection[]> {
   const company = (contact.company ?? "").trim();
   if (!company) return [];
@@ -105,6 +106,7 @@ export async function loadInternalConnections(
     const { data: sameCompany } = await supabase
       .from("hs_contacts")
       .select("hubspot_id, first_name, last_name, email, company")
+      .eq("org_id", orgId)
       .ilike("company", safeCompany)
       .limit(50);
     for (const r of (sameCompany ?? []) as Array<{
@@ -138,6 +140,7 @@ export async function loadInternalConnections(
       .select(
         "hubspot_id, engagement_type, subject, body_preview, occurred_at, contact_ids"
       )
+      .eq("org_id", orgId)
       .or(`subject.ilike.${pattern},body_preview.ilike.${pattern}`)
       .order("occurred_at", { ascending: false, nullsFirst: false })
       .limit(100);
@@ -165,6 +168,7 @@ export async function loadInternalConnections(
       const { data: extraContacts } = await supabase
         .from("hs_contacts")
         .select("hubspot_id, first_name, last_name, email, company")
+        .eq("org_id", orgId)
         .in("hubspot_id", Array.from(referencedContactIds));
       for (const r of (extraContacts ?? []) as Array<{
         hubspot_id: string;
@@ -200,9 +204,14 @@ export async function loadInternalConnections(
  * invokes the agent. Throws on contact-not-found so the caller returns 404.
  * Re-throws any underlying Anthropic / parse errors so the caller logs the
  * failure with the right status.
+ *
+ * Org fence: this runs on the service-role client (bypasses RLS) and often in
+ * a background task (no session), so every mirror read carries the caller's
+ * orgId explicitly and the agent prompt is built for that org.
  */
 export async function generateBriefForContact(
-  hubspotContactId: string
+  hubspotContactId: string,
+  orgId: string
 ): Promise<{ context: ResearchContext; result: ResearchResult }> {
   const supabase = getSupabaseAdmin();
 
@@ -211,6 +220,7 @@ export async function generateBriefForContact(
     .select(
       "hubspot_id, email, first_name, last_name, phone, company, lifecycle_stage, lead_status, owner_id, last_activity_at, created_in_hubspot_at"
     )
+    .eq("org_id", orgId)
     .eq("hubspot_id", hubspotContactId)
     .maybeSingle();
   if (contactErr) {
@@ -229,6 +239,7 @@ export async function generateBriefForContact(
     const { data: companyRow } = await supabase
       .from("hs_companies")
       .select("hubspot_id, name, domain, industry, owner_id, last_activity_at")
+      .eq("org_id", orgId)
       .ilike("name", contact.company)
       .maybeSingle();
     company = (companyRow as ContextCompany | null) ?? null;
@@ -241,6 +252,7 @@ export async function generateBriefForContact(
       .select(
         "hubspot_id, name, amount, stage, pipeline, close_date, last_activity_at"
       )
+      .eq("org_id", orgId)
       .eq("primary_contact_id", hubspotContactId)
       .order("last_activity_at", { ascending: false, nullsFirst: false }),
     supabase
@@ -248,10 +260,11 @@ export async function generateBriefForContact(
       .select(
         "hubspot_id, engagement_type, subject, body_preview, occurred_at"
       )
+      .eq("org_id", orgId)
       .contains("contact_ids", [hubspotContactId])
       .order("occurred_at", { ascending: false, nullsFirst: false })
       .limit(25),
-    loadInternalConnections(supabase, contact),
+    loadInternalConnections(supabase, contact, orgId),
   ]);
 
   const deals = (dealsRes.data as ContextDeal[] | null) ?? [];
@@ -270,7 +283,7 @@ export async function generateBriefForContact(
     prospect_type: prospectType,
   };
 
-  const result = await runFunderResearch(context);
+  const result = await runFunderResearch(context, orgId);
   return { context, result };
 }
 
@@ -279,16 +292,19 @@ export async function generateBriefForContact(
  * the full mirror context; manual / AI-discovered prospects get a minimal
  * synthesized context (the agent web-searches from the name + org regardless).
  */
-export async function generateBriefForProspect(prospect: {
-  id: string;
-  hubspot_contact_id: string | null;
-  name: string;
-  email: string | null;
-  org_name: string | null;
-  type: string;
-}): Promise<{ context: ResearchContext; result: ResearchResult }> {
+export async function generateBriefForProspect(
+  prospect: {
+    id: string;
+    hubspot_contact_id: string | null;
+    name: string;
+    email: string | null;
+    org_name: string | null;
+    type: string;
+  },
+  orgId: string
+): Promise<{ context: ResearchContext; result: ResearchResult }> {
   if (prospect.hubspot_contact_id) {
-    return generateBriefForContact(prospect.hubspot_contact_id);
+    return generateBriefForContact(prospect.hubspot_contact_id, orgId);
   }
 
   // No HubSpot record — synthesize a thin context from the bench row.
@@ -320,6 +336,6 @@ export async function generateBriefForProspect(prospect: {
     internal_connections: [],
     prospect_type: prospectType,
   };
-  const result = await runFunderResearch(context);
+  const result = await runFunderResearch(context, orgId);
   return { context, result };
 }

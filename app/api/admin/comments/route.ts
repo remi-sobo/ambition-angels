@@ -16,12 +16,15 @@ import { notify } from "@/lib/notifications/notify";
  */
 export const dynamic = "force-dynamic";
 
-const ENTITY_TYPES = new Set(["constituent", "fr_prospects", "board_member", "compliance_item"]);
+const ENTITY_TYPES = new Set([
+  "constituent", "fr_prospects", "board_member", "compliance_item", "student",
+]);
 const ENTITY_LINK: Record<string, (id: string) => string> = {
   constituent: (id) => `/admin/fundraising/donors/${id}`,
   fr_prospects: (id) => `/admin/fundraising/prospects/${id}`,
   board_member: (id) => `/admin/board/${id}`,
   compliance_item: (id) => `/admin/compliance/${id}`,
+  student: (id) => `/admin/students/${id}`,
 };
 const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);

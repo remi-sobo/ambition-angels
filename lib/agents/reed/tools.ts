@@ -177,8 +177,9 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
         const now = new Date();
-        // Org fence: sb is the service-role client (bypasses RLS), so every
-        // read is scoped to the tool's orgId.
+        // Org fence: sb is the RLS session client today, but every read is
+        // ALSO scoped to the tool's orgId so a future switch to the
+        // service-role client can't silently widen it.
         const [txnsRes, cashRes, scheduleRows] = await Promise.all([
           sb
             .from("fin_transactions")
@@ -280,8 +281,9 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         const cfg = await loadFinConfig(sb, orgId);
         const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
 
-        // Org fence: sb is the service-role client (bypasses RLS) — scope both
-        // reads to the tool's orgId.
+        // Org fence: sb is the RLS session client today, but both reads are
+        // ALSO scoped to the tool's orgId so a future switch to the
+        // service-role client can't silently widen them.
         const [giftsRes, oppsRes] = await Promise.all([
           sb.from("gifts").select("amount").eq("org_id", orgId).gte("gift_date", fy.start).lte("gift_date", fy.end),
           sb.from("opportunities").select("stage, ask_amount, probability").eq("org_id", orgId).neq("stage", "lost").or(EXCLUDE_PARTNERSHIP_OPPS),
@@ -339,6 +341,7 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         const { data } = await sb
           .from("grant_requirements")
           .select("kind, label, due_date, status, grant:grants ( name, stage )")
+          .eq("org_id", orgId)
           .neq("status", "submitted")
           .neq("status", "waived")
           .gte("due_date", todayIso)
@@ -413,7 +416,7 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         const id = typeof input.constituent_id === "string" ? input.constituent_id : "";
         if (!id) return { error: "bad_request", message: "constituent_id is required." };
         const limit = typeof input.history_limit === "number" ? input.history_limit : 15;
-        const dossier = await loadConstituentDossier(sb, id, limit);
+        const dossier = await loadConstituentDossier(sb, orgId, id, limit);
         if (!dossier) return { error: "not_found", message: "No such constituent." };
         return dossier;
       },
@@ -440,7 +443,7 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         const id = typeof input.partner_id === "string" ? input.partner_id : "";
         if (!id) return { error: "bad_request", message: "partner_id is required." };
         const limit = typeof input.history_limit === "number" ? input.history_limit : 15;
-        const dossier = await loadPartnerDossier(sb, id, limit);
+        const dossier = await loadPartnerDossier(sb, orgId, id, limit);
         if (!dossier) return { error: "not_found", message: "No such partner." };
         return dossier;
       },

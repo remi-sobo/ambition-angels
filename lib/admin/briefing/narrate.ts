@@ -18,6 +18,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getResidentOrgId } from "@/lib/admin/orgs";
+import { getAgentOrgProfile, type AgentOrgProfile } from "@/lib/agents/org-profile";
 import { cleanVoiceText } from "@/lib/ai/voice";
 import type { Briefing } from "./engine";
 import type { Pulse } from "./pulse";
@@ -35,11 +36,11 @@ function summarizeFollowups(followups: FollowupLite[], now: number): FollowupsSu
 
 // Deterministic calendar summary for the narrative's strategy-vs-time cross-
 // reference. Counts only — the model never sees raw events and can't invent
-// purposes. Reads via the service client (cron has no session); single-tenant
-// today, so all cached calendar_events are the CEO's.
+// purposes. Reads via the service client (cron has no session), which bypasses
+// RLS, so the query must fence to the briefing's org explicitly.
 type AgendaSummary = { today: number; next7d: number; externalNext7d: number };
 
-async function agendaSummary(sb: SupabaseClient, now: number): Promise<AgendaSummary> {
+async function agendaSummary(sb: SupabaseClient, now: number, orgId: string): Promise<AgendaSummary> {
   const nowIso = new Date(now).toISOString();
   const in24hIso = new Date(now + 86_400_000).toISOString();
   const in7dIso = new Date(now + 7 * 86_400_000).toISOString();
@@ -47,6 +48,7 @@ async function agendaSummary(sb: SupabaseClient, now: number): Promise<AgendaSum
     const { data } = await sb
       .from("calendar_events")
       .select("start_time, is_external, status")
+      .eq("org_id", orgId)
       .gte("start_time", nowIso)
       .lt("start_time", in7dIso)
       .neq("status", "cancelled");
@@ -114,9 +116,10 @@ function factSheet(briefing: Briefing, pulse: Pulse, followups: FollowupsSummary
 
 type FactSheet = ReturnType<typeof factSheet>;
 
-// Tenant identity is hardcoded here until agent prompts are parameterized by
-// org (name + mission from orgs.settings — core fence spec §6d, later PR).
-const SYSTEM_PROMPT = `You are the chief of staff to the CEO of Ambition Angels, a fast-growing nonprofit that builds future-orientation in under-resourced teens. Every morning you hand the CEO a short, sharp brief.
+// Kept byte-stable PER ORG so the ephemeral cache breakpoint hits across
+// days: the resident org keeps its hand-tuned prompt verbatim; every other
+// org gets a neutral prompt built from its own name and operator.
+const RESIDENT_SYSTEM_PROMPT = `You are the chief of staff to the CEO of Ambition Angels, a fast-growing nonprofit that builds future-orientation in under-resourced teens. Every morning you hand the CEO a short, sharp brief.
 
 Voice: warm but direct, executive, confident — a trusted, McKinsey-trained chief of staff. Plain English. No hype, no filler, no emoji, no exclamation marks.
 
@@ -130,6 +133,24 @@ CONNECTING TIME TO STRATEGY:
 - You are given the CEO's calendar load (meetings on the calendar this week, how many with external attendees, how many today). When it sharpens the read, cross-reference it against the pulse — e.g., if fundraising is behind goal while few or no external meetings are on the calendar this week, name that gap plainly. Use ONLY the provided counts; never guess what a meeting is about or who is attending.
 
 Call submit_briefing exactly once.`;
+
+function buildBriefingSystemPrompt(profile: AgentOrgProfile): string {
+  if (profile.isResident) return RESIDENT_SYSTEM_PROMPT;
+  return `You are the chief of staff to ${profile.operatorName}, who leads ${profile.orgName}, a nonprofit. Every morning you hand them a short, sharp brief.
+
+Voice: warm but direct, executive, confident — a trusted, McKinsey-trained chief of staff. Plain English. No hype, no filler, no emoji, no exclamation marks.
+
+HARD RULES:
+- Use ONLY the facts in the data provided. NEVER invent, infer, or alter a number, name, dollar amount, percentage, or date. If you're unsure, leave it out. You have NOT been given any background about this organization's programs or mission — never invent one.
+- If there are no items needing a decision, say plainly that the morning is clear and name one healthy signal from the pulse.
+- The narrative is 2–4 sentences, at most 110 words. Lead with the single most important thing.
+- "focus" is one imperative sentence: the one thing to do first today, drawn from the top item. If nothing needs action, set focus to a short steady-state note.
+
+CONNECTING TIME TO STRATEGY:
+- You are given the leader's calendar load (meetings on the calendar this week, how many with external attendees, how many today). When it sharpens the read, cross-reference it against the pulse — e.g., if fundraising is behind goal while few or no external meetings are on the calendar this week, name that gap plainly. Use ONLY the provided counts; never guess what a meeting is about or who is attending.
+
+Call submit_briefing exactly once.`;
+}
 
 const SUBMIT_SCHEMA = {
   type: "object",
@@ -236,7 +257,7 @@ function fallbackNarrative(briefing: Briefing, pulse: Pulse, now: number): Narra
 }
 
 // ── The Sonnet call ──────────────────────────────────────────────────────────
-async function callModel(fs: FactSheet): Promise<{ headline: string; narrative: string; focus: string; model: string } | null> {
+async function callModel(fs: FactSheet, system: string): Promise<{ headline: string; narrative: string; focus: string; model: string } | null> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null;
   const client = new Anthropic({ apiKey: key });
@@ -244,7 +265,7 @@ async function callModel(fs: FactSheet): Promise<{ headline: string; narrative: 
   const response = await client.messages.create({
     model: BRIEFING_MODEL,
     max_tokens: MAX_OUTPUT_TOKENS,
-    system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+    system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: renderFactsForModel(fs) }],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tools: [{ name: "submit_briefing", description: "Submit the morning brief. Call exactly once.", input_schema: SUBMIT_SCHEMA } as any],
@@ -278,6 +299,12 @@ function rowToNarrative(
   };
 }
 
+/** The org the narrative belongs to: session org when user-triggered, resident
+ *  org on sessionless paths (cron pre-warm) — same convention as gather.ts. */
+async function activeOrgId(): Promise<string> {
+  return (await getOrgContext().catch(() => null))?.orgId ?? (await getResidentOrgId());
+}
+
 /** Force a fresh generation and store it (cron pre-warm + manual regenerate). */
 export async function generateNarrativeNow(
   briefing: Briefing,
@@ -287,10 +314,12 @@ export async function generateNarrativeNow(
   sb: SupabaseClient = getSupabaseAdmin()
 ): Promise<Narrative> {
   const today = isoDate(now);
-  const fs = factSheet(briefing, pulse, summarizeFollowups(followups, now), await agendaSummary(sb, now), today);
+  const orgId = await activeOrgId();
+  const fs = factSheet(briefing, pulse, summarizeFollowups(followups, now), await agendaSummary(sb, now, orgId), today);
   let ai: Awaited<ReturnType<typeof callModel>> = null;
   try {
-    ai = await callModel(fs);
+    const profile = await getAgentOrgProfile(orgId);
+    ai = await callModel(fs, buildBriefingSystemPrompt(profile));
   } catch (e) {
     console.error("[briefing] narrative generation failed:", e);
   }
@@ -307,8 +336,7 @@ export async function generateNarrativeNow(
     .from("bloomos_briefing_narrative")
     .upsert(
       {
-        // Session org when user-triggered; resident org on the cron path.
-        org_id: (await getOrgContext())?.orgId ?? (await getResidentOrgId()),
+        org_id: orgId,
         brief_date: today,
         headline,
         narrative,
@@ -317,7 +345,7 @@ export async function generateNarrativeNow(
         model: ai.model,
         generated_at: generatedAt,
       },
-      { onConflict: "brief_date" }
+      { onConflict: "org_id,brief_date" }
     )
     .then(({ error }) => {
       if (error) console.error("[briefing] narrative upsert failed:", error.message);
@@ -337,9 +365,12 @@ export async function getNarrative(
   const sb = getSupabaseAdmin();
   const today = isoDate(now);
   try {
+    // Org fence: service-role read — without the org filter, tenant B's first
+    // page-load of the day would be served tenant A's cached narrative.
     const { data } = await sb
       .from("bloomos_briefing_narrative")
       .select("headline, narrative, focus, model, generated_at")
+      .eq("org_id", await activeOrgId())
       .eq("brief_date", today)
       .maybeSingle();
     if (data) return rowToNarrative(data, briefing);

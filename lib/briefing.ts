@@ -15,10 +15,12 @@ import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
  *
  * The KPI block reads the Metric Catalog (metric_definitions + latest
  * metric_snapshots) — the same numbers the /admin/kpis hub and the scorecard
- * show, replacing the retired org-blind lib/kpis.ts registry. Like every
- * other query in this file it runs unscoped on the service-role client
- * (single-tenant digest); org-scoping the digest is part of the wider
- * tenant-two hardening, not special to this block.
+ * show, replacing the retired org-blind lib/kpis.ts registry.
+ *
+ * Org fence: the briefing runs on the service-role client (bypasses RLS), so
+ * every query here carries an explicit org_id filter — the gathered numbers
+ * are JSON.stringify'd straight into the model prompt, and an unscoped read
+ * would narrate other tenants' gifts and deadlines.
  */
 
 export type BriefingData = {
@@ -47,7 +49,7 @@ const daysAhead = (n: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-export async function gatherBriefingData(supabase: SupabaseClient): Promise<BriefingData> {
+export async function gatherBriefingData(supabase: SupabaseClient, orgId: string): Promise<BriefingData> {
   const weekAgo = daysAgo(7);
   const today = daysAgo(0);
   const horizon = daysAhead(14);
@@ -55,29 +57,38 @@ export async function gatherBriefingData(supabase: SupabaseClient): Promise<Brie
 
   const [giftsRes, newConstRes, movesRes, acksRes, overdueMovesRes, compOverdueRes, grantDueRes, compDueRes, metricDefsRes, metricSnapsRes] =
     await Promise.all([
-      supabase.from("gifts").select("amount").gte("gift_date", weekAgo).limit(5000),
-      supabase.from("constituents").select("id", { count: "exact", head: true }).gte("created_at", weekAgoTs),
+      supabase.from("gifts").select("amount").eq("org_id", orgId).gte("gift_date", weekAgo).limit(5000),
+      supabase.from("constituents").select("id", { count: "exact", head: true })
+        .eq("org_id", orgId).gte("created_at", weekAgoTs),
       supabase.from("audit_log").select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .eq("action", "fundraising.opportunity.stage").gte("ts", weekAgoTs),
       supabase.from("gifts").select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .eq("acknowledgment_status", "pending"),
       supabase.from("opportunities").select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .lt("next_step_due", today).not("next_step_due", "is", null)
         .in("stage", OPEN_STAGE_LIST).or(EXCLUDE_PARTNERSHIP_OPPS),
       supabase.from("compliance_items").select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .in("status", ["upcoming", "in_progress"]).lt("due_date", today),
       supabase.from("grant_requirements").select("kind, label, due_date, grant:grants(name)")
+        .eq("org_id", orgId)
         .in("status", ["upcoming", "in_progress"]).gte("due_date", today)
         .lte("due_date", horizon).order("due_date").limit(8),
       supabase.from("compliance_items").select("title, due_date")
+        .eq("org_id", orgId)
         .in("status", ["upcoming", "in_progress"]).gte("due_date", today)
         .lte("due_date", horizon).order("due_date").limit(8),
       supabase.from("metric_definitions")
         .select("id, name, unit, department")
+        .eq("org_id", orgId)
         .eq("active", true)
         .order("department").order("name").limit(40),
       supabase.from("metric_snapshots")
         .select("metric_id, value, captured_on")
+        .eq("org_id", orgId)
         .order("captured_on", { ascending: false }).limit(500),
     ]);
 
@@ -198,12 +209,13 @@ export async function generateBriefing(
   supabase: SupabaseClient,
   kind: "weekly" | "on_demand"
 ): Promise<BriefingResult> {
-  const data = await gatherBriefingData(supabase);
+  // Session org when a user triggered it; resident org on the cron path.
+  // Resolved BEFORE gathering so every read is fenced to the same org the
+  // briefing row is stored under.
+  const orgId = (await getOrgContext().catch(() => null))?.orgId ?? (await getResidentOrgId());
+  const data = await gatherBriefingData(supabase, orgId);
   const ai = await narrate(data);
   const result: BriefingResult = { ...ai, data, model: ai.narrative ? MODEL : null };
-
-  // Session org when a user triggered it; resident org on the cron path.
-  const orgId = (await getOrgContext())?.orgId ?? (await getResidentOrgId());
   const { error } = await supabase.from("briefings").insert({
     org_id: orgId,
     kind,

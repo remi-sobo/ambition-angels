@@ -11,6 +11,7 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { cleanVoiceText } from "@/lib/ai/voice";
+import type { AgentOrgProfile } from "@/lib/agents/org-profile";
 
 export const DISCOVERY_MODEL = "claude-sonnet-4-6";
 const MAX_WEB_SEARCHES = 8;
@@ -41,7 +42,11 @@ const TYPE_NOUN: Record<DiscoveryType, string> = {
   corporate: "companies / corporate giving programs",
 };
 
-const SYSTEM_PROMPT = `You are a major-gifts prospect researcher for Ambition Angels, a nonprofit that builds future-orientation and career readiness in under-resourced teens (87% Title I; demonstrated lift in students' future-orientation). You find net-new prospects worth cultivating.
+// Kept byte-stable PER ORG so the ephemeral cache breakpoint hits across
+// runs: the resident org keeps its hand-tuned prompt verbatim; other orgs get
+// a neutral prompt in their own name that leans on the angle's thesis instead
+// of the missing mission facts.
+const RESIDENT_SYSTEM_PROMPT = `You are a major-gifts prospect researcher for Ambition Angels, a nonprofit that builds future-orientation and career readiness in under-resourced teens (87% Title I; demonstrated lift in students' future-orientation). You find net-new prospects worth cultivating.
 
 Your job: given a funding ANGLE (a strategic thesis) and a TARGET TYPE, use web search to surface real, specific prospects who plausibly fund work like ours and are NOT obvious existing donors. Quality over quantity.
 
@@ -55,6 +60,24 @@ RULES:
 - Bias toward funders who give to youth development, education equity, workforce/career readiness, or the angle's specific theme.
 
 Call submit_candidates exactly once when done. Do not return candidates as text.`;
+
+function buildDiscoveryPrompt(profile: AgentOrgProfile): string {
+  if (profile.isResident) return RESIDENT_SYSTEM_PROMPT;
+  return `You are a major-gifts prospect researcher for ${profile.orgName}, a nonprofit. You find net-new prospects worth cultivating.
+
+Your job: given a funding ANGLE (a strategic thesis) and a TARGET TYPE, use web search to surface real, specific prospects who plausibly fund work like this and are NOT obvious existing donors. Quality over quantity.
+
+RULES:
+- Return 5–8 candidates, ranked best-fit first. Fewer high-confidence beats many weak ones.
+- Every candidate must be a REAL, named, verifiable entity you found via search — never invented. If you can't verify, don't include it.
+- Each fit_rationale (1–2 sentences) must cite something concrete: their actual giving history, stated funding priorities, mission, or public statements — tied to the angle's thesis.
+- signal: one short note on capacity or why-now (recent grant, fund size, public interest), or null.
+- sources: the URLs you actually used for this candidate.
+- Respect the excluded list — don't return anyone on it.
+- Bias toward funders whose stated priorities match the angle's specific theme. You have NOT been given any background about this organization beyond its name and the angle — never invent its mission, programs, or statistics.
+
+Call submit_candidates exactly once when done. Do not return candidates as text.`;
+}
 
 const SUBMIT_SCHEMA = {
   type: "object",
@@ -88,6 +111,9 @@ export async function runProspectDiscovery(input: {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("Prospect discovery: ANTHROPIC_API_KEY must be set");
   const client = new Anthropic({ apiKey: key });
+  // Dynamic import (like next-move): keeps this module importable from tests
+  // that only exercise the pure parse helpers.
+  const { getAgentOrgProfile } = await import("@/lib/agents/org-profile");
 
   const excludeBlock = input.exclude.length
     ? `\n\nEXCLUDE (already on our bench — do not return these):\n${input.exclude.slice(0, 200).map((n) => `- ${n}`).join("\n")}`
@@ -102,7 +128,7 @@ export async function runProspectDiscovery(input: {
   const response = await client.messages.create({
     model: DISCOVERY_MODEL,
     max_tokens: MAX_OUTPUT_TOKENS,
-    system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+    system: [{ type: "text", text: buildDiscoveryPrompt(await getAgentOrgProfile()), cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: userMessage }],
     tools: [
       { type: "web_search_20250305", name: "web_search", max_uses: MAX_WEB_SEARCHES },

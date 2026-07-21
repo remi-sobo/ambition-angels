@@ -22,7 +22,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { buildFunderResearchPrompt } from "./prompt";
-import { getAgentOrgProfile } from "@/lib/agents/org-profile";
+import { getAgentOrgProfile, type AgentOrgProfile } from "@/lib/agents/org-profile";
 import { cleanVoiceDeep } from "@/lib/ai/voice";
 import type { BriefContent, ResearchContext, ResearchResult } from "./types";
 
@@ -204,33 +204,77 @@ function formatContext(ctx: ResearchContext): string {
 // TypeScript type (lib/agents/funder-research/types.ts) so a successful
 // tool call lands a value that satisfies the brief contract.
 
-const personSchema = {
-  type: "object",
-  description:
+// The tool schema is AI-visible, so its wording is per-tenant like the system
+// prompt: the resident org keeps its hand-tuned descriptions (byte-stable),
+// every other org gets neutral wording that never names Ambition Angels,
+// Remi, or the missing story bank. Field NAMES stay fixed — they are the
+// persisted brief contract (BriefContent), not tenant copy.
+type BriefSchemaWording = {
+  person_desc: string;
+  connection_desc: string;
+  stories_desc: string;
+  board_desc: string;
+  staff_desc: string;
+  ready_stories_desc: string;
+  one_thing_desc: string;
+};
+
+const RESIDENT_WORDING: BriefSchemaWording = {
+  person_desc:
     "A named person: their title, professional background, and any connection to youth / education / Bay Area work we care about.",
-  properties: {
-    name: { type: "string" },
-    title: {
-      type: "string",
-      description: "Job title or board role. Empty string if unknown.",
+  connection_desc:
+    "Specific tie to youth / education / Bay Area, or 'no public connection found'. Empty string if not applicable.",
+  stories_desc:
+    "2-4 lines from Ambition Angels' story that map to their priorities. Use Remi's actual language.",
+  board_desc: "Focus on people with youth/education/Bay Area connections.",
+  staff_desc: "Program officers, EDs, others Remi might encounter.",
+  ready_stories_desc: "2-4 stories from Remi's life and work. Pull from the story bank.",
+  one_thing_desc:
+    "The single most important specific thing Remi should walk away knowing.",
+};
+
+function briefSchemaWording(profile: AgentOrgProfile): BriefSchemaWording {
+  if (profile.isResident) return RESIDENT_WORDING;
+  const first = profile.operatorFirstName;
+  return {
+    person_desc:
+      "A named person: their title, professional background, and any connection to the organization's cause area or region.",
+    connection_desc:
+      "Specific tie to the organization's cause area or region, or 'no public connection found'. Empty string if not applicable.",
+    stories_desc: `2-4 lines about ${profile.orgName} that map to their priorities, drawn ONLY from facts in the provided context. Empty array if the context has none — never invent.`,
+    board_desc: "Focus on people with connections to the organization's cause area or region.",
+    staff_desc: `Program officers, EDs, others ${first} might encounter.`,
+    ready_stories_desc: `2-4 stories drawn ONLY from the provided context. Empty array if the context has none — never invent stories.`,
+    one_thing_desc: `The single most important specific thing ${first} should walk away knowing.`,
+  };
+}
+
+const makePersonSchema = (w: BriefSchemaWording) =>
+  ({
+    type: "object",
+    description: w.person_desc,
+    properties: {
+      name: { type: "string" },
+      title: {
+        type: "string",
+        description: "Job title or board role. Empty string if unknown.",
+      },
+      professional_background: {
+        type: "string",
+        description: "1-3 sentences on their career. Empty string if unknown.",
+      },
+      connection_to_youth_education_bayarea: {
+        type: "string",
+        description: w.connection_desc,
+      },
     },
-    professional_background: {
-      type: "string",
-      description: "1-3 sentences on their career. Empty string if unknown.",
-    },
-    connection_to_youth_education_bayarea: {
-      type: "string",
-      description:
-        "Specific tie to youth / education / Bay Area, or 'no public connection found'. Empty string if not applicable.",
-    },
-  },
-  required: [
-    "name",
-    "title",
-    "professional_background",
-    "connection_to_youth_education_bayarea",
-  ],
-} as const;
+    required: [
+      "name",
+      "title",
+      "professional_background",
+      "connection_to_youth_education_bayarea",
+    ],
+  }) as const;
 
 const recentGrantSchema = {
   type: "object",
@@ -283,7 +327,9 @@ const mutualConnectionSchema = {
   required: ["name", "how_connected", "source", "recent_touch_if_any"],
 } as const;
 
-const BRIEF_INPUT_SCHEMA = {
+const makeBriefInputSchema = (w: BriefSchemaWording) => {
+  const personSchema = makePersonSchema(w);
+  return {
   type: "object",
   properties: {
     snapshot: {
@@ -343,8 +389,7 @@ const BRIEF_INPUT_SCHEMA = {
         },
         our_matching_stories: {
           type: "array",
-          description:
-            "2-4 lines from Ambition Angels' story that map to their priorities. Use Remi's actual language.",
+          description: w.stories_desc,
           items: { type: "string" },
         },
         honest_gaps: {
@@ -371,13 +416,12 @@ const BRIEF_INPUT_SCHEMA = {
         },
         board_members: {
           type: "array",
-          description:
-            "Focus on people with youth/education/Bay Area connections.",
+          description: w.board_desc,
           items: personSchema,
         },
         staff_of_note: {
           type: "array",
-          description: "Program officers, EDs, others Remi might encounter.",
+          description: w.staff_desc,
           items: personSchema,
         },
       },
@@ -428,13 +472,12 @@ const BRIEF_INPUT_SCHEMA = {
         },
         ready_stories: {
           type: "array",
-          description: "2-4 stories from Remi's life and work. Pull from the story bank.",
+          description: w.ready_stories_desc,
           items: readyStorySchema,
         },
         one_thing_to_learn: {
           type: "string",
-          description:
-            "The single most important specific thing Remi should walk away knowing.",
+          description: w.one_thing_desc,
         },
         suggested_next_ask: {
           type: "string",
@@ -482,7 +525,8 @@ const BRIEF_INPUT_SCHEMA = {
     "source_notes_and_gaps",
     "raw_research_notes",
   ],
-} as const;
+  } as const;
+};
 
 // ── Defensive shape validation on tool input ──────────────────────────────
 
@@ -557,11 +601,16 @@ function summarizeResponse(response: Anthropic.Messages.Message): string {
 // ── Public entry point ────────────────────────────────────────────────────
 
 export async function runFunderResearch(
-  context: ResearchContext
+  context: ResearchContext,
+  // The org this run speaks for. REQUIRED to be passed by background callers:
+  // without it the profile resolver falls back to session cookies, which don't
+  // exist off-request, and would silently resolve to the resident org.
+  orgId?: string
 ): Promise<ResearchResult> {
   const client = getAnthropic();
   const userMessage = formatContext(context);
-  const systemPrompt = buildFunderResearchPrompt(await getAgentOrgProfile());
+  const profile = await getAgentOrgProfile(orgId);
+  const systemPrompt = buildFunderResearchPrompt(profile);
 
   const startedAt = Date.now();
   // The Anthropic SDK's type for `tools` is a discriminated union covering
@@ -594,7 +643,7 @@ export async function runFunderResearch(
         name: "submit_brief",
         description:
           "Submit the final 9-section research brief. Call this exactly once when your research is complete. Do not return the brief as text.",
-        input_schema: BRIEF_INPUT_SCHEMA,
+        input_schema: makeBriefInputSchema(briefSchemaWording(profile)),
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ] as any,

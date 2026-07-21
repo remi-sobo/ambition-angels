@@ -8,7 +8,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getAdminUser, getOrgContext } from "@/lib/admin/auth";
-import { getResidentOrgId } from "@/lib/admin/orgs";
 import { logAICall } from "@/lib/ai/ledger";
 import { orgOverAICap } from "@/lib/ai/cap";
 import {
@@ -32,6 +31,10 @@ export async function POST(req: NextRequest) {
   }
   const currentUser = await getAdminUser();
   if (!currentUser) return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });
+  // isAuthed() above guarantees a session org — resolve it once; every write
+  // below attributes to this org (never a resident-org fallback).
+  const ctx = await getOrgContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = (await req.json().catch(() => null)) as { angle_id?: unknown; type?: unknown } | null;
   const angleId = typeof body?.angle_id === "string" ? body.angle_id : "";
@@ -80,8 +83,7 @@ export async function POST(req: NextRequest) {
       : null;
 
   // Global org backstop across ALL AI surfaces (above this agent's budget). Fail-open.
-  const ctx = await getOrgContext();
-  if (ctx?.orgId) {
+  {
     const orgCap = await orgOverAICap(supabase, ctx.orgId);
     if (orgCap.over) {
       return NextResponse.json(
@@ -117,7 +119,7 @@ export async function POST(req: NextRequest) {
 
   const costUsd = estimateDiscoveryCostUsd(result.tokens_input, result.tokens_output);
   await supabase.from("fr_agent_activity_log").insert({
-    org_id: ctx?.orgId ?? (await getResidentOrgId()),
+    org_id: ctx.orgId,
     created_by: "agent",
     triggered_by: currentUser,
     action_type: "other",
@@ -136,7 +138,7 @@ export async function POST(req: NextRequest) {
 
   // Mirror into the unified AI ledger (additive; fr_agent_activity_log above
   // stays the agent-wallet cap source). Reuses ctx from the pre-flight cap check.
-  if (ctx?.orgId) {
+  {
     await logAICall(supabase, {
       orgId: ctx.orgId,
       surface: "prospect_discovery",

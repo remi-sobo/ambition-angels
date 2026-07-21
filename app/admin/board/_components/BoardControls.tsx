@@ -5,6 +5,7 @@
 // Mutations go through the admin APIs, then router.refresh().
 
 import { useState } from "react";
+import Link from "next/link";
 import SectionHeading from "../../_components/SectionHeading";
 import { useRouter } from "next/navigation";
 
@@ -101,7 +102,12 @@ export function MemberRow({
       className={`bg-surface border-[1.5px] border-outline rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-semibold text-ink-1">{member.name}</span>
+        <Link
+          href={`/admin/board/${member.id}`}
+          className="font-semibold text-ink-1 hover:text-orange transition-colors"
+        >
+          {member.name}
+        </Link>
         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
           {ROLE_LABELS[member.officer_role] ?? member.officer_role}
         </span>

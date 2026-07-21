@@ -19,11 +19,11 @@ function isISODate(v: unknown): v is string {
 
 // Entity-link vocabulary — mirrors the DB CHECK
 // (ops_tasks_linked_entity_type_check, last widened by
-// prospect_task_links.sql to match the spine registry).
+// board_compliance_profiles.sql to match the spine registry).
 const LINK_TYPES = [
   "partner", "constituent", "opportunity", "volunteer", "milestone",
   "student", "cohort", "application", "program", "grant", "document", "metric",
-  "fr_prospects",
+  "fr_prospects", "board_member", "board_meeting", "compliance_item",
 ] as const;
 
 function isLabelArray(v: unknown): v is string[] {

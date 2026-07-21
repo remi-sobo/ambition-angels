@@ -5,6 +5,7 @@
 // recurring item filed rolls its due date forward server-side.
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export type ChecklistItem = { id: string; text: string; done: boolean };
@@ -26,7 +27,7 @@ export type ComplianceItem = {
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
-const KIND_LABELS: Record<string, string> = {
+export const KIND_LABELS: Record<string, string> = {
   form_990: "IRS 990",
   state_charitable: "Charitable reg.",
   corporate_report: "Corporate",
@@ -38,7 +39,7 @@ const KIND_LABELS: Record<string, string> = {
   custom: "Custom",
 };
 
-const RECUR_OPTIONS: Array<[string, string]> = [
+export const RECUR_OPTIONS: Array<[string, string]> = [
   ["annual", "Annually"],
   ["quarterly", "Quarterly"],
   ["biennial", "Every 2 years"],
@@ -47,7 +48,7 @@ const RECUR_OPTIONS: Array<[string, string]> = [
 
 // Same hardcoded person set as ops tasks (TaskEditModal / TasksSurface); the
 // stored lowercase value is what the daily-queue assignee filter matches on.
-const ASSIGNEE_OPTIONS: Array<[string, string]> = [
+export const ASSIGNEE_OPTIONS: Array<[string, string]> = [
   ["", "Unassigned"],
   ["remi", "Remi"],
   ["shannon", "Shannon"],
@@ -55,13 +56,13 @@ const ASSIGNEE_OPTIONS: Array<[string, string]> = [
 
 // Map stored text (possibly legacy free text like "Remi Sobo") onto a dropdown
 // value by first-name match; unknown names fall back to Unassigned.
-function normalizeAssignee(v: string | null): string {
+export function normalizeAssignee(v: string | null): string {
   if (!v) return "";
   const first = v.trim().split(/\s+/)[0].toLowerCase();
   return ASSIGNEE_OPTIONS.some(([val]) => val === first) ? first : "";
 }
 
-function assigneeLabel(v: string): string {
+export function assigneeLabel(v: string): string {
   const match = ASSIGNEE_OPTIONS.find(([val]) => val === normalizeAssignee(v));
   return match && match[0] ? match[1] : v;
 }
@@ -256,7 +257,12 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
           {KIND_LABELS[item.kind] ?? item.kind}
         </span>
-        <span className="font-semibold text-ink-1">{item.title}</span>
+        <Link
+          href={`/admin/compliance/${item.id}`}
+          className="font-semibold text-ink-1 hover:text-orange transition-colors"
+        >
+          {item.title}
+        </Link>
         {item.jurisdiction && item.jurisdiction !== "—" && (
           <span className="text-[11px] text-ink-2">{item.jurisdiction}</span>
         )}

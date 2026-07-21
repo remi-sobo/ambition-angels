@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 const KINDS = [
@@ -123,6 +123,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (error) {
     console.error("Update compliance item failed:", error.message);
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
+  }
+  // Filing history: every "mark filed" leaves a permanent row (the item's
+  // due_date rolls forward, so this is the only durable record of the
+  // period). Confirmation number / fee get added on /admin/compliance/[id].
+  if (body.status === "filed") {
+    const { error: filingError } = await supabase.from("compliance_filings").insert({
+      org_id: ctx.orgId,
+      item_id: params.id,
+      filed_date: new Date().toISOString().slice(0, 10),
+      period_due_date: before.due_date,
+      filed_by: await getAdminUser(),
+    });
+    if (filingError) console.error("Record compliance filing failed:", filingError.message);
   }
   await audit(req, {
     action: body.status === "filed" ? "compliance.item.filed" : "compliance.item.update",

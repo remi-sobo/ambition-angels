@@ -145,6 +145,7 @@ const RECORD_LOOKUPS: Record<string, RecordLookup> = {
   ops_project: { table: "ops_projects", select: "id, title", toLabel: title },
   compliance_item: { table: "compliance_items", select: "id, title", toLabel: title },
   board_meeting: { table: "board_meetings", select: "id, title", toLabel: title },
+  board_member: { table: "board_members", select: "id, name", toLabel: name },
 };
 
 /**

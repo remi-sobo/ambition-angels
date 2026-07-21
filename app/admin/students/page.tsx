@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import SectionHeading from "../_components/SectionHeading";
+import StageStrip from "../_components/StageStrip";
 import StatCard from "../_components/StatCard";
 import PageHeader from "../_components/PageHeader";
 import SectionSummary from "../_components/SectionSummary";
@@ -116,30 +117,19 @@ export default async function StudentsPage() {
       </div>
 
       {/* Journey funnel — one cell per non-terminal stage, org-defined */}
-      <div
-        className="grid gap-1.5 mb-8"
-        style={{ gridTemplateColumns: `repeat(${Math.max(journey.length, 1)}, minmax(0, 1fr))` }}
-      >
-        {journey.map((s, i) => {
+      <StageStrip
+        className="mb-8"
+        cells={journey.map((s, i) => {
           const n = byStage(s.stage_key).length;
-          return (
-            <div
-              key={s.stage_key}
-              title={s.description ?? undefined}
-              className={`rounded-lg border px-2 py-2.5 text-center ${
-                n > 0 ? "bg-orange/10 border-orange/30" : "bg-surface shadow-panel border-outline"
-              }`}
-            >
-              <div className={`text-lg font-bold tabular-nums ${n > 0 ? "text-orange" : "text-ink-2"}`}>
-                {n}
-              </div>
-              <div className="text-[10px] uppercase tracking-wider text-ink-2">
-                {i + 1}. {s.label}
-              </div>
-            </div>
-          );
+          return {
+            key: s.stage_key,
+            label: `${i + 1}. ${s.label}`,
+            value: n,
+            active: n > 0,
+            title: s.description ?? undefined,
+          };
         })}
-      </div>
+      />
 
       <div className="space-y-8">
         {stages.map((stage) => {

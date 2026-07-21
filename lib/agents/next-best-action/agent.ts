@@ -6,7 +6,7 @@
  *
  * Never logs the API key or the system prompt.
  */
-import NBA_SYSTEM_PROMPT from "./prompt";
+import { buildNbaPrompt } from "./prompt";
 import { generateStructured } from "@/lib/ai/gateway";
 import { cleanVoiceText } from "@/lib/ai/voice";
 import type { NbaCandidate, NbaChannel, NbaRecommendation } from "./types";
@@ -148,8 +148,9 @@ export async function runNextBestAction(
 
   // Through the shared seam: forces the submit_recommendations tool call and
   // returns its input + usage. parseRecommendations does the coercion (tested).
+  const { getAgentOrgProfile } = await import("@/lib/agents/org-profile");
   const { input, usage, model } = await generateStructured({
-    system: NBA_SYSTEM_PROMPT,
+    system: buildNbaPrompt(await getAgentOrgProfile()),
     prompt: formatCandidates(candidates, today),
     model: NBA_MODEL,
     maxTokens: MAX_OUTPUT_TOKENS,

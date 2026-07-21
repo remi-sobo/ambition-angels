@@ -16,7 +16,6 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
-import { getResidentOrgId } from "@/lib/admin/orgs";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "@/app/admin/ops/_types/ops";
 import { runNextBestAction, estimateNbaCostUsd } from "@/lib/agents/next-best-action/agent";
@@ -193,8 +192,11 @@ export async function POST() {
       : null;
 
   // Global org backstop across ALL AI surfaces (above this agent's budget). Fail-open.
+  // isAuthed() above guarantees a session org — every write below attributes to
+  // this org (never a resident-org fallback).
   const ctx = await getOrgContext();
-  if (ctx?.orgId) {
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  {
     const orgCap = await orgOverAICap(supabase, ctx.orgId);
     if (orgCap.over) {
       return NextResponse.json(
@@ -307,7 +309,7 @@ export async function POST() {
   // Record spend on the shared agent wallet (drives the budget cap above).
   const costUsd = estimateNbaCostUsd(result.tokensInput, result.tokensOutput);
   await supabase.from("fr_agent_activity_log").insert({
-    org_id: ctx?.orgId ?? (await getResidentOrgId()),
+    org_id: ctx.orgId,
     created_by: "agent",
     triggered_by: currentUser,
     action_type: "other",
@@ -322,7 +324,7 @@ export async function POST() {
   // Mirror into the unified AI ledger (additive; fr_agent_activity_log above
   // stays the agent-wallet cap source). Runs for every call, including the
   // zero-recommendation path below. Reuses ctx resolved in the pre-flight cap check.
-  if (ctx?.orgId) {
+  {
     await logAICall(supabase, {
       orgId: ctx.orgId,
       surface: "next_best_action",
@@ -353,7 +355,7 @@ export async function POST() {
   const rows = recs.map((r) => {
     const due = new Date(Date.now() + r.suggested_due_in_days * DAY).toISOString().slice(0, 10);
     return {
-      org_id: ctx?.orgId ?? null,
+      org_id: ctx.orgId,
       opportunity_id: r.opportunity_id,
       constituent_id: byId.get(r.opportunity_id)?.constituent?.id ?? null,
       batch_id: batchId,

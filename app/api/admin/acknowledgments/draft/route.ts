@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
+import { getAgentOrgProfile } from "@/lib/agents/org-profile";
 import { generateText } from "@/lib/ai/gateway";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
@@ -73,9 +74,16 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Tenant identity is hardcoded here until agent prompts are parameterized by
-  // org (name + mission from orgs.settings — core fence spec §6d, later PR).
-  const prompt = `Write a short personal thank-you note (2-4 sentences) from Ambition Angels — a nonprofit helping teens from under-resourced communities discover real career paths — to a donor.
+  // Per-tenant identity: the resident org keeps its hand-tuned framing; every
+  // other org drafts in its own name with no invented program facts.
+  const profile = await getAgentOrgProfile();
+  const identity = profile.isResident
+    ? "Ambition Angels — a nonprofit helping teens from under-resourced communities discover real career paths"
+    : `${profile.orgName}, a nonprofit`;
+  const impactRule = profile.isResident
+    ? "- Mention what their support makes possible for teens, concretely but briefly."
+    : "- Mention briefly that their support advances the organization's work. You have NOT been given this organization's programs or mission — never invent specifics about what it does.";
+  const prompt = `Write a short personal thank-you note (2-4 sentences) from ${identity} to a donor.
 
 Donor first name: ${donorFirstName}
 This gift: $${Number(gift.amount).toFixed(2)} on ${gift.gift_date}
@@ -83,7 +91,7 @@ Giving history: ${history}
 
 Rules:
 - Warm, specific, human. Reference their history naturally (first-time donor vs. returning vs. monthly).
-- Mention what their support makes possible for teens, concretely but briefly.
+${impactRule}
 - Do NOT include any tax, receipt, or legal language — that's appended separately.
 - Do NOT include a subject line, greeting beyond using their first name, or signature block. Start with "Dear ${donorFirstName}," and end after the last sentence of thanks.
 - Output ONLY the note text.`;

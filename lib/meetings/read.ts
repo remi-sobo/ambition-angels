@@ -250,8 +250,8 @@ export async function getUpcomingMeetingDetail(eventId: string): Promise<Upcomin
   const consIds = brief.entities.filter((e) => e.type === "constituent").map((e) => e.id);
   const partIds = brief.entities.filter((e) => e.type === "partner").map((e) => e.id);
   const [cons, parts, agenda] = await Promise.all([
-    Promise.all(consIds.map((id) => loadConstituentDossier(sb, id))),
-    Promise.all(partIds.map((id) => loadPartnerDossier(sb, id))),
+    Promise.all(consIds.map((id) => loadConstituentDossier(sb, ctx.orgId, id))),
+    Promise.all(partIds.map((id) => loadPartnerDossier(sb, ctx.orgId, id))),
     loadLatestMeetingAgenda(sb, eventId),
   ]);
 

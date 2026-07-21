@@ -229,7 +229,10 @@ async function runResearch(rc: RunCtx): Promise<void> {
   };
 
   try {
-    const { result } = await generateBriefForProspect(rc.prospect);
+    // Org fence: this runs in the background (no session cookies), so the
+    // org MUST be threaded explicitly — otherwise the agent's org profile
+    // would silently resolve to the resident org's prompts and data.
+    const { result } = await generateBriefForProspect(rc.prospect, rc.orgId);
 
     const { data: briefRow, error: briefErr } = await admin
       .from("fr_prospect_briefs")

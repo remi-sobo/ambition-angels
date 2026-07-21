@@ -155,30 +155,46 @@ describe("stageKeyFromLabel", () => {
   });
 });
 
-describe("loadPipelineConfig fallback", () => {
-  // Minimal PostgREST-shaped stub: .from().select().order()[.eq()] awaits to
-  // the canned result.
+describe("loadPipelineConfig", () => {
+  // Minimal PostgREST-shaped stub: .from().select().eq().order() awaits to
+  // the canned result, recording every .eq() filter.
   const stubClient = (result: { data: unknown; error: unknown }) => {
+    const eqCalls: Array<[string, unknown]> = [];
     const thenable = {
-      eq: () => thenable,
+      eq: (col: string, val: unknown) => {
+        eqCalls.push([col, val]);
+        return thenable;
+      },
+      order: () => thenable,
       then: (resolve: (v: unknown) => void) => resolve(result),
     };
     return {
-      from: () => ({ select: () => ({ order: () => thenable }) }),
-    } as never;
+      client: { from: () => ({ select: () => thenable }) } as never,
+      eqCalls,
+    };
   };
 
   test("serves the legacy funnel when the config tables are missing", async () => {
-    const cfg = await loadPipelineConfig(
-      stubClient({ data: null, error: { message: "relation does not exist" } })
-    );
+    const { client } = stubClient({ data: null, error: { message: "relation does not exist" } });
+    const cfg = await loadPipelineConfig(client, "org-1");
     expect(cfg.fromConfig).toBe(false);
     expect(cfg.stages).toEqual(LEGACY_STAGES);
   });
 
   test("serves the legacy funnel when no rows are seeded", async () => {
-    const cfg = await loadPipelineConfig(stubClient({ data: [], error: null }));
+    const { client } = stubClient({ data: [], error: null });
+    const cfg = await loadPipelineConfig(client, "org-1");
     expect(cfg.fromConfig).toBe(false);
     expect(firstOpenStageKey(stagesForPipeline(cfg, "default"))).toBe("identify");
+  });
+
+  test("always pins both queries to the caller's org (multi-org members must not merge configs)", async () => {
+    const { client, eqCalls } = stubClient({ data: [], error: null });
+    await loadPipelineConfig(client, "org-1");
+    // One org_id filter per query (pipelines + pipeline_stages).
+    expect(eqCalls).toEqual([
+      ["org_id", "org-1"],
+      ["org_id", "org-1"],
+    ]);
   });
 });

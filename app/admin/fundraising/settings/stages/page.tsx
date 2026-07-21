@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../../_components/PageHeader";
 import StagesEditor from "./_components/StagesEditor";
 import { loadPipelineConfig } from "@/lib/fundraising/stages";
@@ -12,10 +13,16 @@ import { loadPipelineConfig } from "@/lib/fundraising/stages";
 export const dynamic = "force-dynamic";
 
 export default async function PipelineStagesSettingsPage() {
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;
+  }
   const supabase = createServerSupabase();
+  // Active-org scoped: a multi-org member's RLS view spans every org they
+  // belong to, so each query pins org_id rather than trusting RLS.
   const [config, oppsRes] = await Promise.all([
-    loadPipelineConfig(supabase),
-    supabase.from("opportunities").select("pipeline, stage").limit(10000),
+    loadPipelineConfig(supabase, ctx.orgId),
+    supabase.from("opportunities").select("pipeline, stage").eq("org_id", ctx.orgId).limit(10000),
   ]);
 
   // How many asks sit in each (pipeline, stage) — powers the "move cards
@@ -27,10 +34,11 @@ export default async function PipelineStagesSettingsPage() {
   }
 
   // The editor needs stage ids; the shared loader intentionally omits them,
-  // so fetch the raw rows here (RLS-scoped).
+  // so fetch the raw rows here (active-org scoped).
   const { data: rawStages } = await supabase
     .from("pipeline_stages")
     .select("id, pipeline, key, label, sort_order, stage_type, external_stage_id, probability_default, is_active")
+    .eq("org_id", ctx.orgId)
     .order("sort_order");
 
   return (

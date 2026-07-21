@@ -63,26 +63,28 @@ const legacyConfig = (): PipelineConfig => ({
 });
 
 /**
- * Load the caller's pipeline/stage config (RLS-scoped: the user client sees
- * their org's rows; the service client sees every org — pass `orgId` there).
+ * Load one org's pipeline/stage config. `orgId` is required: RLS is a
+ * security boundary, not an active-org selector — a user with memberships in
+ * several orgs sees ALL of their orgs' rows through the user client, and
+ * without the explicit filter every stage renders once per org (duplicate
+ * board columns). Pages pass getOrgContext().orgId; service-role callers pass
+ * the org they're operating on.
  */
 export async function loadPipelineConfig(
   supabase: SupabaseClient,
-  orgId?: string
+  orgId: string
 ): Promise<PipelineConfig> {
   try {
-    let pipelineQuery = supabase
+    const pipelineQuery = supabase
       .from("pipelines")
       .select("key, label, sort_order, is_default")
+      .eq("org_id", orgId)
       .order("sort_order");
-    let stageQuery = supabase
+    const stageQuery = supabase
       .from("pipeline_stages")
       .select("pipeline, key, label, sort_order, stage_type, external_stage_id, probability_default, is_active")
+      .eq("org_id", orgId)
       .order("sort_order");
-    if (orgId) {
-      pipelineQuery = pipelineQuery.eq("org_id", orgId);
-      stageQuery = stageQuery.eq("org_id", orgId);
-    }
     const [{ data: pipelines, error: pErr }, { data: stages, error: sErr }] =
       await Promise.all([pipelineQuery, stageQuery]);
     if (pErr || sErr || !stages || stages.length === 0) return legacyConfig();

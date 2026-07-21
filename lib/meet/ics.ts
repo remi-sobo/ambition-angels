@@ -1,7 +1,6 @@
 import type { Booking, MeetingType } from "../database.types";
 
-const HOST_EMAIL = "remi@ambitionangels.org";
-const PRODID = "-//Ambition Angels//Meet//EN";
+const PRODID = "-//BloomOS//Meet//EN";
 
 /**
  * Builds an RFC 5545 VEVENT for a booking. Returned as a string ready to be
@@ -14,8 +13,9 @@ const PRODID = "-//Ambition Angels//Meet//EN";
 export function buildIcs(args: {
   booking: Booking;
   meetingType: MeetingType;
+  host: { name: string; firstName: string; email: string };
 }): string {
-  const { booking, meetingType } = args;
+  const { booking, meetingType, host } = args;
   const start = new Date(booking.start_time);
   const end = new Date(booking.end_time);
   const isVideo = booking.location_type === "video";
@@ -28,7 +28,7 @@ export function buildIcs(args: {
   const locationValue = isVideo ? meetingUrl : address;
 
   const description = [
-    `${meetingType.name} with Remi.`,
+    `${meetingType.name} with ${host.firstName}.`,
     isVideo && meetingUrl ? `Zoom: ${meetingUrl}` : null,
     !isVideo && address ? `Where: ${address}` : null,
     meetingType.prep_notes ? `Prep: ${meetingType.prep_notes}` : null,
@@ -43,15 +43,15 @@ export function buildIcs(args: {
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
-    `UID:${booking.id}@ambitionangels.org`,
+    `UID:${booking.id}@bloomos.meet`,
     `DTSTAMP:${formatIcsUtc(new Date())}`,
     `DTSTART:${formatIcsUtc(start)}`,
     `DTEND:${formatIcsUtc(end)}`,
-    `SUMMARY:${escIcs(`${meetingType.name} with Remi`)}`,
+    `SUMMARY:${escIcs(`${meetingType.name} with ${host.firstName}`)}`,
     `DESCRIPTION:${description}`,
     locationValue ? `LOCATION:${escIcs(locationValue)}` : "",
     isVideo && meetingUrl ? `URL:${escIcs(meetingUrl)}` : "",
-    `ORGANIZER;CN=Remi Sobo:mailto:${HOST_EMAIL}`,
+    host.email ? `ORGANIZER;CN=${escIcs(host.name)}:mailto:${host.email}` : "",
     `ATTENDEE;CN=${escIcs(booking.attendee_name)};RSVP=TRUE:mailto:${booking.attendee_email}`,
     "STATUS:CONFIRMED",
     "SEQUENCE:0",

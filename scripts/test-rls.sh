@@ -191,6 +191,7 @@ ordered=(
   demoday_notes_org_scoped_unique.sql
   seed_aa_hubspot_mirror_entitlement.sql
   create_grant_contacts.sql
+  board_compliance_profiles.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

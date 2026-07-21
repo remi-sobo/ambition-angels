@@ -10,7 +10,12 @@ import { useCallback, useEffect, useState } from "react";
 import { MentionTextarea, type Mentionable } from "./MentionTextarea";
 import { TYPE } from "@/lib/admin/typeScale";
 
-export type CommentEntityType = "constituent" | "fr_prospects" | "board_member" | "compliance_item";
+export type CommentEntityType =
+  | "constituent"
+  | "fr_prospects"
+  | "board_member"
+  | "compliance_item"
+  | "student";
 
 type Comment = {
   id: string;

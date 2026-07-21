@@ -5,8 +5,16 @@ import { money } from "../../../finance/_components/charts";
 import StatCard from "../../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import { CHANNEL_PAST } from "@/lib/fundraising/ack-channels";
-import { analyzeDonor, FLAG_LABELS, FLAG_HELP } from "@/lib/fundraising/retention";
+import { analyzeDonor, FLAG_LABELS, FLAG_HELP, type RetentionFlag } from "@/lib/fundraising/retention";
 import { scoreDonor, BAND_LABEL, type EngagementBand } from "@/lib/fundraising/engagement";
+import {
+  deriveLifecycleStage,
+  LIFECYCLE_STAGES,
+  LIFECYCLE_LABELS,
+  LIFECYCLE_HELP,
+  type LifecycleStage,
+} from "@/lib/fundraising/lifecycle";
+import StageStrip from "../../../_components/StageStrip";
 import { todayISO } from "../../../ops/_types/ops";
 import { GiftEntryForm, GiftRowActions } from "../_components/GiftControls";
 import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentControls";
@@ -55,11 +63,12 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .eq("constituent_id", params.id)
       .order("status")
       .order("amount", { ascending: false }),
-    // Full date history (dates only, cheap) — drives the first-gift stat
-    // AND retention flags, independent of the timeline's display cap.
+    // Full gift history (dates + amounts, cheap) — drives the first-gift
+    // stat, retention flags, and the lifecycle stage, independent of the
+    // timeline's 500-row display cap.
     supabase
       .from("gifts")
-      .select("gift_date")
+      .select("gift_date, amount")
       .eq("constituent_id", params.id)
       .order("gift_date", { ascending: true })
       .limit(5000),
@@ -188,7 +197,16 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   const recognition = total + recognitionReceived;
   const name = constituentName(c);
   const activePlan = plans.find((p) => p.status === "active");
-  const allDates = ((allDatesRes.data ?? []) as Array<{ gift_date: string }>).map((g) => g.gift_date);
+  const fullHistory = (allDatesRes.data ?? []) as Array<{ gift_date: string; amount: number }>;
+  const allDates = fullHistory.map((g) => g.gift_date);
+  // Lifecycle inputs come from the full-history query, not the 500-row
+  // timeline — a capped sum would mis-stage a long-history donor.
+  const lifetimeAmount = fullHistory.reduce((s, g) => s + Number(g.amount), 0);
+  const stage = deriveLifecycleStage({
+    giftCount: fullHistory.length,
+    lifetimeAmount,
+    hasActiveRecurringPlan: Boolean(activePlan),
+  });
   const { flags } = analyzeDonor(allDates, todayISO(), Boolean(activePlan));
   const engagement = scoreDonor(allDates, total, Boolean(activePlan), todayISO());
   const ENG_STYLES: Record<EngagementBand, string> = {
@@ -196,6 +214,19 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
     steady: "bg-blue-500/15 text-blue-400",
     at_risk: "bg-[#F4E8D0] text-[#A56A1B]",
     none: "bg-tile text-ink-3 border border-outline",
+  };
+  const STAGE_STYLES: Record<LifecycleStage, string> = {
+    prospect: "bg-tile text-ink-3 border-[1.5px] border-outline",
+    first_time: "bg-tile text-ink-2 border-[1.5px] border-outline",
+    repeat: "bg-blue-500/15 text-blue-400",
+    recurring: "bg-revenue/15 text-revenue",
+    major: "bg-orange/20 text-orange",
+  };
+  const FLAG_STYLES: Record<RetentionFlag, string> = {
+    lybunt: "bg-[#F4E8D0] text-[#A56A1B]",
+    sybunt: "bg-tile text-ink-2",
+    cadence_lapsed: "bg-expense-bg text-expense",
+    second_gift_watch: "bg-blue-500/15 text-blue-400",
   };
   const pendingAcks = gifts.filter((g) => g.acknowledgment_status === "pending").length;
 
@@ -358,6 +389,12 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
           ← Donors
         </Link>
         <span className={`${TYPE.cardTitle} sm:text-base truncate`}>{name}</span>
+        <span
+          title={LIFECYCLE_HELP[stage]}
+          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STAGE_STYLES[stage]}`}
+        >
+          {LIFECYCLE_LABELS[stage]}
+        </span>
         {activePlan && (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">
             Monthly · {money(Number(activePlan.amount))}
@@ -381,15 +418,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
           <span
             key={f}
             title={FLAG_HELP[f]}
-            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-              f === "cadence_lapsed"
-                ? "bg-expense-bg text-expense"
-                : f === "lybunt"
-                ? "bg-[#F4E8D0] text-[#A56A1B]"
-                : f === "second_gift_watch"
-                ? "bg-blue-500/15 text-blue-400"
-                : "bg-tile text-ink-2"
-            }`}
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${FLAG_STYLES[f]}`}
           >
             {FLAG_LABELS[f]}
           </span>
@@ -422,6 +451,33 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
             sub={pendingAcks > 0 ? "gifts awaiting a thank-you" : "all caught up"}
           />
         </div>
+
+        {/* Lifecycle stage strip — stage is derived at read time, never
+            stored. Lapsed overlays as retention-flag badges, not a stage:
+            a lapsed major donor is still Major, visibly flagged. */}
+        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg px-5 py-4">
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <h2 className={TYPE.cardTitle}>Lifecycle Stage</h2>
+            {flags.map((f) => (
+              <span
+                key={f}
+                title={FLAG_HELP[f]}
+                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${FLAG_STYLES[f]}`}
+              >
+                {FLAG_LABELS[f]}
+              </span>
+            ))}
+          </div>
+          <StageStrip
+            cells={LIFECYCLE_STAGES.map((s) => ({
+              key: s,
+              label: LIFECYCLE_LABELS[s],
+              value: s === stage ? "●" : "·",
+              active: s === stage,
+              title: LIFECYCLE_HELP[s],
+            }))}
+          />
+        </section>
 
         <NextMovePanel
           entityType="constituent"

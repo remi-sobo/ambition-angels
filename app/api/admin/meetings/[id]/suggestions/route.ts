@@ -50,7 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (s.status === "accepted") {
     return NextResponse.json({ ok: true, alreadyAccepted: true });
   }
-  const createdBy = (await getAdminUser()) ?? "remi";
+  const createdBy = (await getAdminUser()) ?? "admin";
   const category = isTaskCategory(s.suggested_category) ? s.suggested_category : "other";
 
   // Resolve a display label for the linked entity, if any.

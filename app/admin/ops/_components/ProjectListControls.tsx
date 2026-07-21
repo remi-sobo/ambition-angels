@@ -8,6 +8,7 @@ import {
   categoryLabel,
   type Category,
 } from "../_types/ops";
+import { useAssignees, withSelected } from "../../_lib/useAssignees";
 import { TYPE } from "@/lib/admin/typeScale";
 
 /**
@@ -32,10 +33,11 @@ export default function ProjectListControls({
   category: string;
   assignee: string;
   q: string;
-  currentUser: "remi" | "shannon" | null;
+  currentUser: string | null;
   showGrants: boolean;
 }) {
   const router = useRouter();
+  const memberOptions = withSelected(useAssignees(), assignee === "me" || assignee === "unassigned" ? "" : assignee);
   const [, startTransition] = useTransition();
   const [localQ, setLocalQ] = useState(q);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -108,9 +110,10 @@ export default function ProjectListControls({
           className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
         >
           <option value="">All assignees</option>
-          <option value="me">Me ({currentUser ?? "remi"})</option>
-          <option value="remi">Remi</option>
-          <option value="shannon">Shannon</option>
+          <option value="me">{currentUser ? `Me (${currentUser})` : "Me"}</option>
+          {memberOptions.map((m) => (
+            <option key={m.value} value={m.value}>{m.label}</option>
+          ))}
           <option value="unassigned">Unassigned</option>
         </select>
         <label className="flex items-center gap-2 text-ink-2 cursor-pointer select-none whitespace-nowrap">
@@ -142,12 +145,13 @@ function NewProjectModal({
   currentUser,
 }: {
   onClose: () => void;
-  currentUser: "remi" | "shannon" | null;
+  currentUser: string | null;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<Category>("other");
-  const [assignee, setAssignee] = useState<"remi" | "shannon" | "">(currentUser ?? "");
+  const [assignee, setAssignee] = useState<string>(currentUser ?? "");
+  const modalOptions = withSelected(useAssignees(), assignee);
   const [dueDate, setDueDate] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
@@ -241,13 +245,14 @@ function NewProjectModal({
               <select
                 value={assignee}
                 onChange={(e) =>
-                  setAssignee(e.target.value as "remi" | "shannon" | "")
+                  setAssignee(e.target.value)
                 }
                 className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
               >
                 <option value="">Unassigned</option>
-                <option value="remi">Remi</option>
-                <option value="shannon">Shannon</option>
+                {modalOptions.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
               </select>
             </Field>
             <Field label="Due date">

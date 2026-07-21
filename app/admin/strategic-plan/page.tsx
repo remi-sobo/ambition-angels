@@ -6,7 +6,8 @@ import ReedReviewButton from "./_components/ReedReviewButton";
 import ReedDesignButton from "./_components/ReedDesignButton";
 import ReedStartButton from "./_components/ReedStartButton";
 import { deriveHealth, isOffTrack } from "@/lib/admin/plan/health";
-import { resolveOwner, ownerValue, matchOwner, ownerRank } from "@/lib/admin/plan/owners";
+import { resolveOwner, ownerValue, matchOwner, ownerRank, type PlanPerson } from "@/lib/admin/plan/owners";
+import { getOrgAssignees } from "@/lib/admin/assignees-server";
 import { measureFreshness } from "@/lib/admin/plan/freshness";
 import { getUnassignedPlanMetrics } from "@/lib/admin/plan/metrics";
 import { getReadiness } from "@/lib/admin/strategy/readiness";
@@ -112,7 +113,9 @@ export default async function StrategicPlanPage({
     return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;
   }
   const orgId = ctx.orgId;
-  const currentUser = (await getAdminUser()) ?? "remi";
+  const currentUser = (await getAdminUser()) ?? "";
+  // Org members, as the plan's person set (owner chips, Mine lens, ranking).
+  const people: PlanPerson[] = (await getOrgAssignees()).map((a) => ({ id: a.value, label: a.label }));
   const supabase = getSupabaseAdmin();
 
   const [foundationRes, objectivesRes, goalsRes, kpisRes, initiativesRes, projectsRes] =
@@ -205,7 +208,7 @@ export default async function StrategicPlanPage({
   // Owner dropdown options: every distinct resolved owner across the plan.
   const ownerOptionMap = new Map<string, string>();
   const addOwner = (s: string | null) => {
-    const r = resolveOwner(s);
+    const r = resolveOwner(s, people);
     if (r) ownerOptionMap.set(ownerValue(r), r.label);
   };
   objectives.forEach((o) => addOwner(o.owner));
@@ -214,7 +217,7 @@ export default async function StrategicPlanPage({
   initiatives.forEach((i) => addOwner(i.owner));
   const ownerOptions = Array.from(ownerOptionMap.entries())
     .map(([value, label]) => ({ value, label }))
-    .sort((a, b) => ownerRank(a.value) - ownerRank(b.value) || a.label.localeCompare(b.label));
+    .sort((a, b) => ownerRank(a.value, people) - ownerRank(b.value, people) || a.label.localeCompare(b.label));
 
   // The owner we filter to: locked to the viewer in Mine, the dropdown in Area.
   const ownerTarget = lens === "mine" ? currentUser : lens === "area" ? ownerFilter : undefined;
@@ -223,10 +226,10 @@ export default async function StrategicPlanPage({
   // KPIs/initiatives carries that owner — so an objective surfaces when any work
   // under it is theirs, not only when the objective itself is tagged.
   const goalOwnedBy = (g: PlanGoal, objOwner: string | null, target: string): boolean =>
-    matchOwner(objOwner, target) ||
-    matchOwner(g.owner, target) ||
-    (kpisByGoal[g.id] ?? []).some((k) => matchOwner(k.owner, target)) ||
-    (initiativesByGoal[g.id] ?? []).some((i) => matchOwner(i.owner, target));
+    matchOwner(objOwner, target, people) ||
+    matchOwner(g.owner, target, people) ||
+    (kpisByGoal[g.id] ?? []).some((k) => matchOwner(k.owner, target, people)) ||
+    (initiativesByGoal[g.id] ?? []).some((i) => matchOwner(i.owner, target, people));
 
   // "Due for review": a goal carrying a measure gone stale past its cadence.
   const goalHasStale = (g: PlanGoal): boolean =>
@@ -240,7 +243,7 @@ export default async function StrategicPlanPage({
     let gs = goalsByObjective[o.id] ?? [];
     if (ownerTarget) {
       gs = gs.filter((g) => goalOwnedBy(g, o.owner, ownerTarget));
-      if (!matchOwner(o.owner, ownerTarget) && gs.length === 0) return false;
+      if (!matchOwner(o.owner, ownerTarget, people) && gs.length === 0) return false;
     }
     if (reviewFilter === "due" && !gs.some(goalHasStale)) return false;
     keptGoalsByObjective[o.id] = gs;

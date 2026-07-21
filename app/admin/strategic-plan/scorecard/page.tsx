@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgAssignees } from "@/lib/admin/assignees-server";
 import PageHeader from "../../_components/PageHeader";
 import { RefreshMetricsButton } from "../_components/PlanControls";
 import ScorecardCard, { type ScorecardKpi } from "./_components/ScorecardCard";
@@ -12,8 +13,6 @@ import { TYPE } from "@/lib/admin/typeScale";
 // place on each card. Structural editing (add/delete measures, targets,
 // baselines) stays on the plan. Org-scoped service-role reads.
 export const dynamic = "force-dynamic";
-
-const OWNER_ORDER = ["Remi", "Shannon"];
 
 type KpiRow = {
   id: string; title: string; owner: string | null; unit: string | null;
@@ -86,7 +85,7 @@ export default async function ScorecardPage() {
     };
   };
 
-  // Group by owner; order Remi, Shannon, then the rest.
+  // Group by owner; org members first (in member order), then the rest.
   const byOwner = new Map<string, (ScorecardKpi & { _objSort: number })[]>();
   for (const k of kpis) {
     const owner = k.owner?.trim() || "Unassigned";
@@ -94,8 +93,9 @@ export default async function ScorecardPage() {
     arr.push(toCard(k));
     byOwner.set(owner, arr);
   }
+  const ownerOrder = (await getOrgAssignees()).map((a) => a.label);
   const owners = Array.from(byOwner.keys()).sort((a, b) => {
-    const ia = OWNER_ORDER.indexOf(a), ib = OWNER_ORDER.indexOf(b);
+    const ia = ownerOrder.indexOf(a), ib = ownerOrder.indexOf(b);
     if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
     return a.localeCompare(b);
   });

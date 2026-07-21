@@ -47,13 +47,15 @@ export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 export const PROJECT_STATUSES = ["active", "paused", "done", "archived"] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
-export type AdminUserId = "remi" | "shannon";
+// Free-text first-name handle ("remi", "raymond", …) — derived per-user from
+// profile display names, no longer a fixed two-person set.
+export type AdminUserId = string;
 
-// The label that marks an ops_task as a "connection" — Shannon's scheduling
-// backlog in the Meetings tab. The backlog reads ops_tasks filtered to this
-// label + assigned_to='shannon'; candidates promoted from email (Phase 4) and
-// the manual "+ New connection" form (Phase 3) both stamp it. Lives on labels
-// (not category) because the task UI groups/filters by the fixed category
+// The label that marks an ops_task as a "connection" — the scheduling
+// backlog in the Meetings tab. The backlog reads the org's ops_tasks filtered
+// to this label; candidates promoted from email (Phase 4) and the manual
+// "+ New connection" form (Phase 3) both stamp it. Lives on labels (not
+// category) because the task UI groups/filters by the fixed category
 // taxonomy, and 'scheduling' is a cross-cutting facet, not a department.
 export const SCHEDULING_LABEL = "scheduling";
 
@@ -171,8 +173,10 @@ export function isProjectStatus(v: unknown): v is ProjectStatus {
   return typeof v === "string" && (PROJECT_STATUSES as readonly string[]).includes(v);
 }
 
+// Assignees are org members now, not a fixed set — this only rejects
+// obviously-broken input (empty / oversized); the DB constraint is gone.
 export function isAdminUserId(v: unknown): v is AdminUserId {
-  return v === "remi" || v === "shannon";
+  return typeof v === "string" && v.trim().length > 0 && v.length <= 64;
 }
 
 // ── Assignee requirement ───────────────────────────────────────────────────

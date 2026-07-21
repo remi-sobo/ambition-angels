@@ -6,6 +6,7 @@ import {
   SCHEDULING_LABEL,
   SCHEDULING_TASK_CATEGORY,
 } from "@/app/admin/ops/_types/ops";
+import { useAdminUser } from "@/app/admin/_components/AdminUserContext";
 
 // Search result shape from /api/admin/constituents/search (constituents on the
 // spine + HubSpot mirror prospects not yet promoted).
@@ -26,12 +27,13 @@ const inputCls =
 /**
  * "+ New connection" — for asks that didn't come over email. Pick the person
  * (existing constituent or quick-create) + a purpose + optional due, and it
- * creates a scheduling task assigned to Shannon, tied to that person via the
- * existing ops_tasks entity link. created_by is stamped server-side, so both
- * Remi and Shannon can file one; it always lands in Shannon's backlog.
+ * creates a scheduling task assigned to the filer, tied to that person via
+ * the existing ops_tasks entity link. created_by is stamped server-side; the
+ * backlog is org-wide, so anyone on the team can pick it up or reassign.
  */
 export default function NewConnectionForm() {
   const router = useRouter();
+  const me = useAdminUser();
   const [open, setOpen] = useState(false);
 
   // person picker
@@ -150,7 +152,7 @@ export default function NewConnectionForm() {
           category: SCHEDULING_TASK_CATEGORY,
           priority: "medium",
           labels: [SCHEDULING_LABEL],
-          assigned_to: "shannon",
+          assigned_to: me,
           due_date: due || null,
           linked_entity_type: "constituent",
           linked_entity_id: chosen.id,
@@ -262,7 +264,7 @@ export default function NewConnectionForm() {
           <input
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
-            placeholder={`Purpose — e.g. Connect Remi & ${chosen.name}`}
+            placeholder={`Purpose — e.g. Intro call with ${chosen.name}`}
             className={inputCls}
             autoFocus
           />

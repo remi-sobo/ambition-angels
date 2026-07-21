@@ -36,7 +36,7 @@ const TOOLS = [
           enum: ["operations", "fundraising", "program", "product", "finance", "compliance", "board", "other"],
           description: "Default operations.",
         },
-        assignee: { type: "string", enum: ["shannon", "remi"], description: "Default shannon." },
+        assignee: { type: "string", description: "First-name handle of an org member (e.g. shannon). Default shannon." },
         pin_today: { type: "boolean", description: "Also pin to the ops board's Today section. Default false." },
         dedupe_key: {
           type: "string",
@@ -52,7 +52,7 @@ const TOOLS = [
       "List the open (not done) BloomOS tasks for a person, so you can see what's already on the board before adding more. Defaults to Shannon.",
     inputSchema: {
       type: "object",
-      properties: { assignee: { type: "string", enum: ["shannon", "remi"], description: "Default shannon." } },
+      properties: { assignee: { type: "string", description: "First-name handle of an org member. Default shannon." } },
     },
   },
 ];
@@ -91,7 +91,8 @@ async function handle(msg: Rpc, req: NextRequest, supabase: SupabaseClient): Pro
       return ok(id, { content: [{ type: "text", text }], isError: r.status === "error" });
     }
     if (name === "list_my_tasks") {
-      const assignee = args.assignee === "remi" ? "remi" : "shannon";
+      const assignee =
+        typeof args.assignee === "string" && args.assignee.trim() ? args.assignee.trim().toLowerCase() : "shannon";
       const { data } = await supabase
         .from("ops_tasks")
         .select("title, due_date, priority")

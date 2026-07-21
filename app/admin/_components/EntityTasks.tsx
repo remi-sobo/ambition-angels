@@ -9,16 +9,13 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { TASK_PRIORITIES, priorityFlagClass, taskHasAssignee, type OpsTask, type TaskPriority } from "../ops/_types/ops";
 import { useTaskComplete } from "../_lib/useTaskComplete";
+import { useAssignees } from "../_lib/useAssignees";
 import { TYPE } from "@/lib/admin/typeScale";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
-const ASSIGNEES = [
-  { value: "", label: "Unassigned" },
-  { value: "remi", label: "Remi" },
-  { value: "shannon", label: "Shannon" },
-] as const;
+const UNASSIGNED = { value: "", label: "Unassigned" };
 
 export function EntityTasks({
   entityType,
@@ -45,6 +42,7 @@ export function EntityTasks({
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [assignee, setAssignee] = useState("");
   const [assigneeError, setAssigneeError] = useState<string | null>(null);
+  const assigneeOptions = [UNASSIGNED, ...useAssignees()];
 
   const load = useCallback(async () => {
     const params = new URLSearchParams({
@@ -156,7 +154,7 @@ export function EntityTasks({
           <label className={`${TYPE.sectionHeader} flex flex-col gap-1`}>
             Owner
             <select value={assignee} onChange={(e) => { setAssignee(e.target.value); setAssigneeError(null); }} className={inputCls}>
-              {ASSIGNEES.map((a) => <option key={a.value} value={a.value} className="bg-surface">{a.label}</option>)}
+              {assigneeOptions.map((a) => <option key={a.value} value={a.value} className="bg-surface">{a.label}</option>)}
             </select>
           </label>
           <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full disabled:opacity-50">

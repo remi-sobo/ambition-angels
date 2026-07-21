@@ -11,11 +11,11 @@ import { TYPE } from "@/lib/admin/typeScale";
 import {
   KIND_LABELS,
   RECUR_OPTIONS,
-  ASSIGNEE_OPTIONS,
-  normalizeAssignee,
   type ComplianceItem,
   type ChecklistItem,
 } from "../../_components/ComplianceControls";
+import { normalizeAssignee } from "@/lib/admin/assignees";
+import { useAssignees, withSelected } from "@/app/admin/_lib/useAssignees";
 
 export type ComplianceFiling = {
   id: string;
@@ -100,6 +100,7 @@ export function EditItemDetails({ item }: { item: ComplianceItem }) {
   const [recur, setRecur] = useState(item.recur);
   const [jurisdiction, setJurisdiction] = useState(item.jurisdiction ?? "");
   const [assignee, setAssignee] = useState(normalizeAssignee(item.assigned_to));
+  const memberOptions = useAssignees();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,8 +172,9 @@ export function EditItemDetails({ item }: { item: ComplianceItem }) {
       <label className="text-xs text-ink-2">
         Assigned to
         <select className={`${inputCls} w-full mt-1`} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
-          {ASSIGNEE_OPTIONS.map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
+          <option value="">Unassigned</option>
+          {withSelected(memberOptions, assignee).map((a) => (
+            <option key={a.value} value={a.value}>{a.label}</option>
           ))}
         </select>
       </label>

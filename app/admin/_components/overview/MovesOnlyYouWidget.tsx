@@ -3,8 +3,8 @@ import { getMoves } from "@/lib/admin/overview/sources";
 import { money } from "../../finance/_components/charts";
 import { Widget, Empty } from "./shared";
 
-// Moves only you can make: open asks owned by Remi or ≥ $10k whose next step is
-// missing or overdue, biggest ask first.
+// Moves only you can make: open asks owned by the viewer or ≥ $10k whose next
+// step is missing or overdue, biggest ask first.
 
 export default async function MovesOnlyYouWidget({
   title = "Moves only you can make",

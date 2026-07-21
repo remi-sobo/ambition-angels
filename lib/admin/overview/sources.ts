@@ -18,7 +18,7 @@
 import { cache } from "react";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import { deriveHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO, priorityRank, type TaskPriority } from "@/app/admin/ops/_types/ops";
@@ -393,12 +393,17 @@ export type MoveRow = {
 };
 
 /**
- * Open asks where the owner is Remi OR ask_amount ≥ $10k, AND the next step is
- * missing or overdue. Biggest ask first — the moves only the CEO can make.
+ * Open asks where the owner is the VIEWER or ask_amount ≥ $10k, AND the next
+ * step is missing or overdue. Biggest ask first — the moves only the
+ * signed-in principal can make.
  */
 export const getMoves = cache(async (): Promise<MoveRow[]> => {
   const sb = createServerSupabase();
   const today = todayISO();
+  // Viewer's first-name handle; assigneeSlug strips PostgREST filter syntax,
+  // so interpolating it into .or() below is safe.
+  const me = await getAdminUser();
+  const ownerArm = me ? `owner.ilike.${me},` : "";
 
   const res = await sb
     .from("opportunities")
@@ -408,7 +413,7 @@ export const getMoves = cache(async (): Promise<MoveRow[]> => {
     )
     .in("stage", OPEN_STAGE_LIST)
     .or(EXCLUDE_PARTNERSHIP_OPPS)
-    .or("owner.ilike.remi,ask_amount.gte.10000")
+    .or(`${ownerArm}ask_amount.gte.10000`)
     .order("ask_amount", { ascending: false, nullsFirst: false })
     .limit(100);
 

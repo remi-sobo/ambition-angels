@@ -1,12 +1,21 @@
-import { resolveOwner } from "@/lib/admin/plan/owners";
+import { resolveOwner, type PlanPerson } from "@/lib/admin/plan/owners";
 
 // Owner as identity, not text (Phase D). A resolved person renders as an initials
 // avatar in the brand tint; an external owner (Empathy Labs, a contractor) gets a
 // visibly different outlined avatar and an "· ext" tag, so accountability reads at
 // a glance and people are distinguishable from outside parties. Pure (no hooks),
 // so it works in both server and client trees.
-export default function OwnerChip({ owner, className = "" }: { owner: string | null; className?: string }) {
-  const r = resolveOwner(owner);
+export default function OwnerChip({
+  owner,
+  people = [],
+  className = "",
+}: {
+  owner: string | null;
+  /** Org members (getOrgAssignees) — distinguishes people from external owners. */
+  people?: PlanPerson[];
+  className?: string;
+}) {
+  const r = resolveOwner(owner, people);
   if (!r) return null;
   const initials = r.label
     .split(/[\s/,]+/)

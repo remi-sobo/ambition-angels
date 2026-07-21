@@ -18,7 +18,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
-  const operator = (await getAdminUser()) ?? "remi";
+  const operator = (await getAdminUser()) ?? "admin";
   const supabase = createServerSupabase();
 
   const { data: grant, error: gErr } = await supabase

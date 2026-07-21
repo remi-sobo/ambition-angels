@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getOrgOwnerHandle } from "@/lib/admin/assignees-server";
 import { sendOperatorEmail, operatorEmailShell } from "@/lib/email/operator";
 import { adminUrl } from "@/lib/origins";
 
@@ -48,6 +49,9 @@ export async function POST(req: NextRequest) {
   if (!reporter) {
     return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });
   }
+  // Upgrade tasks land with the org owner (the person who runs the prompts),
+  // whoever that is on this tenant; fall back to the reporter.
+  const upgradeOwner = (await getOrgOwnerHandle()) ?? reporter;
 
   let form: FormData;
   try {
@@ -132,7 +136,7 @@ export async function POST(req: NextRequest) {
         title: UPGRADES_PROJECT,
         category: "other",
         description: "Issues, confusions, and ideas captured from inside BloomOS via the Report button.",
-        assigned_to: "remi",
+        assigned_to: upgradeOwner,
         created_by: reporter,
       })
       .select("id")
@@ -191,7 +195,7 @@ export async function POST(req: NextRequest) {
       description: taskDescription,
       category: "product",
       priority: type === "bug" ? "high" : "medium",
-      assigned_to: "remi",
+      assigned_to: upgradeOwner,
       created_by: reporter,
       project_id: projectId,
       labels,

@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     org_id: data.org_id,
     title: data.name,
     category: "fundraising",
-    created_by: user ?? "remi",
+    created_by: user ?? "admin",
     status: projectDone ? "done" : "active",
     ...(projectDone ? { completed_at: new Date().toISOString() } : {}),
   });

@@ -1,5 +1,5 @@
 import "server-only";
-import { getOrgContext, type AdminUser, type OrgContext } from "@/lib/admin/auth";
+import { getAdminUser, getOrgContext, type AdminUser, type OrgContext } from "@/lib/admin/auth";
 
 /**
  * The ONE resolver for "who am I, and which ops handle is mine."
@@ -13,10 +13,10 @@ import { getOrgContext, type AdminUser, type OrgContext } from "@/lib/admin/auth
  *
  * This is auth-backed and supersedes the `admin_user` cookie the ops surfaces
  * read today (the cookie is set nowhere and only cleared on logout — it
- * defaults silently to 'remi', which would show the wrong person's tasks). The
- * handle derivation matches getAdminUser() (email local-part) so behavior is
- * identical, just sourced from the session instead of a cookie. When real user
- * references replace the text handle, only this function changes.
+ * defaults silently to 'remi', which would show the wrong person's tasks).
+ * The handle comes from getAdminUser() (display-name-derived, tenant-neutral)
+ * so the two resolvers can never disagree. When real user references replace
+ * the text handle, only this function changes.
  */
 
 export type ResolvedUser = {
@@ -33,8 +33,8 @@ export type ResolvedUser = {
 export async function resolveUserHandle(): Promise<ResolvedUser | null> {
   const ctx = await getOrgContext();
   if (!ctx) return null;
-  const local = ctx.email.split("@")[0]?.toLowerCase();
-  const handle: AdminUser = local === "shannon" ? "shannon" : "remi";
+  const handle: AdminUser = (await getAdminUser()) ?? "";
+  if (!handle) return null;
   return {
     handle,
     userId: ctx.userId,

@@ -1,16 +1,16 @@
 "use client";
 
 // Interactive "overdue across CRM" list for the Weekly Briefing: filter by
-// owner (Remi / Shannon / Unassigned) and reschedule or complete a task
-// inline. Each action hits the ops_tasks PATCH route; a refresh drops the
-// row once it's no longer overdue.
+// owner (chips derived from the tasks' own assignees, plus Unassigned) and
+// reschedule or complete a task inline. Each action hits the ops_tasks PATCH
+// route; a refresh drops the row once it's no longer overdue.
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CrmOverdueTask } from "@/lib/admin/crmOverdue";
 
-type AssigneeFilter = "all" | "remi" | "shannon" | "unassigned";
+type AssigneeFilter = string; // "all" | "unassigned" | an assignee handle
 
 const hrefFor = (t: CrmOverdueTask) =>
   t.entityType === "partner"
@@ -39,17 +39,17 @@ export default function CrmOverdueList({
   const fPartners = partners.filter(match);
   const fDonors = donors.filter(match);
 
-  const counts: Record<AssigneeFilter, number> = {
-    all: all.length,
-    remi: all.filter((t) => t.assignedTo === "remi").length,
-    shannon: all.filter((t) => t.assignedTo === "shannon").length,
-    unassigned: all.filter((t) => t.assignedTo === null).length,
-  };
+  // Owner chips come from the data itself, so any tenant's people show up.
+  const handles = Array.from(
+    new Set(all.map((t) => t.assignedTo).filter((a): a is string => !!a)),
+  ).sort();
+  const counts: Record<string, number> = { all: all.length };
+  for (const h of handles) counts[h] = all.filter((t) => t.assignedTo === h).length;
+  counts.unassigned = all.filter((t) => t.assignedTo === null).length;
 
   const CHIPS: { key: AssigneeFilter; label: string }[] = [
     { key: "all", label: "All" },
-    { key: "remi", label: "Remi" },
-    { key: "shannon", label: "Shannon" },
+    ...handles.map((h) => ({ key: h, label: h.charAt(0).toUpperCase() + h.slice(1) })),
     { key: "unassigned", label: "Unassigned" },
   ];
 

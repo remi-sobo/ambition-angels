@@ -29,12 +29,17 @@ import {
  * since "unidentifiable" is usually part of why it's stuck.
  */
 
-// Assignee buckets in display order; null assignee falls into "Unassigned".
-const ASSIGNEE_ORDER: Array<{ key: AdminUserId | "unassigned"; label: string }> = [
-  { key: "remi", label: "Remi" },
-  { key: "shannon", label: "Shannon" },
-  { key: "unassigned", label: "Unassigned" },
-];
+// Assignee buckets are derived from the stuck tasks themselves (alphabetical,
+// Unassigned last) so the rollup works on any tenant's people.
+function assigneeBuckets(tasks: OpsTask[]): Array<{ key: string; label: string }> {
+  const handles = Array.from(
+    new Set(tasks.map((t) => t.assigned_to).filter((a): a is string => !!a)),
+  ).sort();
+  return [
+    ...handles.map((h) => ({ key: h, label: h.charAt(0).toUpperCase() + h.slice(1) })),
+    { key: "unassigned", label: "Unassigned" },
+  ];
+}
 
 export default function StuckWorkRollup({
   tasks,
@@ -72,7 +77,7 @@ export default function StuckWorkRollup({
       </p>
 
       <div className="space-y-6">
-        {ASSIGNEE_ORDER.map(({ key, label }) => {
+        {assigneeBuckets(tasks).map(({ key, label }) => {
           const forAssignee = byAssignee.get(key);
           if (!forAssignee || forAssignee.length === 0) return null;
 

@@ -33,7 +33,7 @@ export type ExistingBrief = {
   template_version: string;
   status: "draft" | "final" | "archived";
   generated_at: string;
-  created_by: "remi" | "shannon" | "agent" | null;
+  created_by: string | null;
 };
 
 function fmtRelative(iso: string): string {

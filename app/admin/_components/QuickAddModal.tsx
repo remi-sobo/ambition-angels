@@ -13,6 +13,7 @@ import {
   type TaskCategory,
   type TaskPriority,
 } from "@/app/admin/ops/_types/ops";
+import { useAssignees, withSelected } from "../_lib/useAssignees";
 import { TYPE } from "@/lib/admin/typeScale";
 
 /**
@@ -37,6 +38,7 @@ export default function QuickAddModal({
   const [category, setCategory] = useState<TaskCategory>("other");
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [assignee, setAssignee] = useState<AdminUser | "">(currentUser ?? "");
+  const assigneeOptions = withSelected(useAssignees(), assignee);
   const [dueDate, setDueDate] = useState("");
   const [projectId, setProjectId] = useState("");
   const [pinToday, setPinToday] = useState(false);
@@ -203,8 +205,9 @@ export default function QuickAddModal({
                 className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               >
                 <option value="">Unassigned</option>
-                <option value="remi">Remi</option>
-                <option value="shannon">Shannon</option>
+                {assigneeOptions.map((a) => (
+                  <option key={a.value} value={a.value}>{a.label}</option>
+                ))}
               </select>
               {assigneeError && (
                 <p className="mt-1 text-expense text-xs">{assigneeError}</p>

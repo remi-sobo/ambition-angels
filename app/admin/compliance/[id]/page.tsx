@@ -11,9 +11,9 @@ import { EntityHistory } from "../../_components/EntityHistory";
 import { TYPE } from "@/lib/admin/typeScale";
 import {
   KIND_LABELS,
-  assigneeLabel,
   type ComplianceItem,
 } from "../_components/ComplianceControls";
+import { handleLabel } from "@/lib/admin/assignees";
 import {
   ItemStatusActions,
   EditItemDetails,
@@ -130,7 +130,7 @@ export default async function ComplianceItemPage({ params }: { params: { id: str
           {[
             ["Type", KIND_LABELS[item.kind] ?? item.kind],
             ["Jurisdiction", item.jurisdiction && item.jurisdiction !== "—" ? item.jurisdiction : "—"],
-            ["Assigned to", item.assigned_to ? assigneeLabel(item.assigned_to) : "Unassigned"],
+            ["Assigned to", item.assigned_to ? handleLabel(item.assigned_to) : "Unassigned"],
           ].map(([label, value]) => (
             <div key={label} className="flex gap-3 text-xs">
               <span className="text-ink-3 w-24 flex-shrink-0 uppercase tracking-wider font-semibold pt-px">

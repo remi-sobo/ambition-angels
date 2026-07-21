@@ -15,8 +15,8 @@ import { TYPE } from "@/lib/admin/typeScale";
  * Claude Code prompt that is always saved on the resulting "BloomOS Upgrades"
  * task and emailed to the operators.
  *
- * The ONE difference is who sees the prompt: the owner (Remi) gets the prompt
- * revealed with a "Copy prompt" button; everyone else just submits it to him and
+ * The ONE difference is who sees the prompt: the org owner gets the prompt
+ * revealed with a "Copy prompt" button; everyone else just submits it and
  * never sees the prompt. That keeps maximum info-gathering for all reporters
  * while keeping the copy-into-Claude-Code step the owner's.
  */
@@ -252,7 +252,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
           {/* ── Done. ── */}
           {phase === "done" && (
             <p className="text-revenue text-sm py-4 text-center">
-              {isOwner ? "Filed as a BloomOS Upgrade — thank you." : "Sent to Remi — thank you."}
+              {isOwner ? "Filed as a BloomOS Upgrade — thank you." : "Sent to your team — thank you."}
             </p>
           )}
 
@@ -272,7 +272,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                   </button>
                 </>
               ) : (
-                <p className={`${TYPE.bodyMuted}`}>Sending to Remi…</p>
+                <p className={`${TYPE.bodyMuted}`}>Sending…</p>
               )}
             </div>
           )}

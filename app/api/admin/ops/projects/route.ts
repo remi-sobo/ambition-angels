@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     title,
     category: body.category,
     description: typeof body.description === "string" ? body.description : null,
-    assigned_to: (body.assigned_to as "remi" | "shannon" | null | undefined) ?? null,
+    assigned_to: (body.assigned_to as string | null | undefined) ?? null,
     created_by: createdBy,
     due_date: (body.due_date as string | null | undefined) ?? null,
   };

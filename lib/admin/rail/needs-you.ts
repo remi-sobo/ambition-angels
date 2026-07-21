@@ -83,7 +83,7 @@ export async function getNeedsYou(): Promise<NeedsYouData> {
     sb
       .from("ops_tasks")
       .select("id, title, due_date")
-      .eq("assigned_to", me ?? "remi")
+      .eq("assigned_to", me ?? "")
       .neq("status", "done")
       .is("archived_at", null)
       .not("due_date", "is", null)

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { useAssignees, withSelected } from "@/app/admin/_lib/useAssignees";
 import {
   CATEGORIES,
   PROJECT_STATUSES,
@@ -32,6 +33,7 @@ export default function ProjectHeader({
   const [titleEditing, setTitleEditing] = useState(false);
   const [titleDraft, setTitleDraft] = useState(project.title);
   const [busy, setBusy] = useState(false);
+  const assigneeOptions = useAssignees();
 
   async function patch(body: Record<string, unknown>) {
     setBusy(true);
@@ -161,8 +163,9 @@ export default function ProjectHeader({
             className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-sm text-ink-1 focus:outline-none focus:border-orange/50"
           >
             <option value="">Unassigned</option>
-            <option value="remi">Remi</option>
-            <option value="shannon">Shannon</option>
+            {withSelected(assigneeOptions, project.assigned_to ?? "").map((a) => (
+              <option key={a.value} value={a.value}>{a.label}</option>
+            ))}
           </select>
         </FieldGroup>
 

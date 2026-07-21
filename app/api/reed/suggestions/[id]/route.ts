@@ -98,7 +98,7 @@ async function applyExtraction(
     .eq("id", payload.document_id)
     .eq("org_id", orgId)
     .maybeSingle();
-  const createdBy = (await getAdminUser()) ?? "remi";
+  const createdBy = (await getAdminUser()) ?? "admin";
   const { data: task, error } = await supabase
     .from("ops_tasks")
     .insert({

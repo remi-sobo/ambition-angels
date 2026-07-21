@@ -42,7 +42,7 @@ export async function ingestTask(
   const title = typeof t.title === "string" ? t.title.trim().slice(0, 300) : "";
   if (!title) return { title: "", status: "error", error: "title is required" };
 
-  const assignee = isAdminUserId(t.assignee) ? (t.assignee as "remi" | "shannon") : "shannon";
+  const assignee = isAdminUserId(t.assignee) ? t.assignee : "shannon";
   const category = isTaskCategory(t.category) ? (t.category as string) : "operations";
   const priority = isTaskPriority(t.priority) ? (t.priority as string) : "medium";
   const due_date = isISODate(t.due_date) ? (t.due_date as string) : null;

@@ -15,7 +15,7 @@ export type ProspectScore = {
   score_energy_suck: number | null;
   score_total: number | null;
   notes: string | null;
-  scored_by: "remi" | "shannon" | null;
+  scored_by: string | null;
   scored_at: string | null;
 };
 

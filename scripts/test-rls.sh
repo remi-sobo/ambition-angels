@@ -193,6 +193,8 @@ ordered=(
   create_grant_contacts.sql
   board_compliance_profiles.sql
   student_profile_route.sql
+  tenant_neutral_assignees.sql
+  create_org_settings.sql
   tenant_scope_briefing_narrative.sql
   drop_fr_prospects_org_id_default.sql
 )

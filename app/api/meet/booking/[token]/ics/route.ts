@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { buildIcs } from "@/lib/meet/ics";
+import { getBookingHost } from "@/lib/meet/host";
 import type { Booking, MeetingType } from "@/lib/database.types";
 
 /**
@@ -30,13 +31,14 @@ export async function GET(
   const { meeting_type, ...booking } = data as Booking & {
     meeting_type: MeetingType;
   };
-  const ics = buildIcs({ booking: booking as Booking, meetingType: meeting_type });
+  const host = await getBookingHost((booking as unknown as { org_id: string }).org_id);
+  const ics = buildIcs({ booking: booking as Booking, meetingType: meeting_type, host });
 
   return new NextResponse(ics, {
     status: 200,
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `attachment; filename="ambition-angels-${booking.id}.ics"`,
+      "Content-Disposition": `attachment; filename="meeting-${booking.id}.ics"`,
       "Cache-Control": "no-store",
     },
   });

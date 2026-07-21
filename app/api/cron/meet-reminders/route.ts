@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/google/gmail";
+import { getBookingHost, type BookingHost } from "@/lib/meet/host";
 import { buildReminder24hEmail } from "@/lib/email/templates/reminder-24h";
 import { buildReminder1hEmail } from "@/lib/email/templates/reminder-1h";
 import type { Booking, MeetingType } from "@/lib/database.types";
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
     flagColumn: "reminder_sent_24h",
     windowStart: new Date(now + 23 * 3600_000),
     windowEnd: new Date(now + 25 * 3600_000),
-    build: (b, m) => buildReminder24hEmail({ booking: b, meetingType: m }),
+    build: (b, m, host) => buildReminder24hEmail({ booking: b, meetingType: m, host }),
   });
 
   const r1 = await runReminderBatch({
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
     flagColumn: "reminder_sent_1h",
     windowStart: new Date(now + 30 * 60_000),
     windowEnd: new Date(now + 90 * 60_000),
-    build: (b, m) => buildReminder1hEmail({ booking: b, meetingType: m }),
+    build: (b, m, host) => buildReminder1hEmail({ booking: b, meetingType: m, host }),
   });
 
   return NextResponse.json({
@@ -67,7 +68,7 @@ async function runReminderBatch(args: {
   flagColumn: "reminder_sent_24h" | "reminder_sent_1h";
   windowStart: Date;
   windowEnd: Date;
-  build: (b: Booking, m: MeetingType) => { subject: string; html: string; text: string };
+  build: (b: Booking, m: MeetingType, host: BookingHost) => { subject: string; html: string; text: string };
 }): Promise<BatchResult> {
   const { supabase, flagColumn, windowStart, windowEnd, build } = args;
 
@@ -90,7 +91,8 @@ async function runReminderBatch(args: {
   for (const row of rows) {
     try {
       const { meeting_type, ...booking } = row;
-      const email = build(booking as Booking, meeting_type);
+      const host = await getBookingHost((booking as unknown as { org_id: string }).org_id);
+      const email = build(booking as Booking, meeting_type, host);
       await sendEmail({
         to: booking.attendee_email,
         subject: email.subject,

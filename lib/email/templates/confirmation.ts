@@ -10,8 +10,9 @@ import {
 export function buildConfirmationEmail(args: {
   booking: Booking;
   meetingType: MeetingType;
+  host: { firstName: string };
 }): { subject: string; text: string; html: string } {
-  const { booking, meetingType } = args;
+  const { booking, meetingType, host } = args;
   const start = new Date(booking.start_time);
   const end = new Date(booking.end_time);
   const tz = booking.attendee_timezone;
@@ -24,7 +25,7 @@ export function buildConfirmationEmail(args: {
   const address = booking.location_details ?? "Address TBD — I'll be in touch.";
   const passcode = process.env.ZOOM_PASSCODE;
 
-  const subject = `You're booked: ${meetingType.name} with Remi on ${formatDateLong(start, tz).split(",").slice(0, 2).join(",")}`;
+  const subject = `You're booked: ${meetingType.name} with ${host.firstName} on ${formatDateLong(start, tz).split(",").slice(0, 2).join(",")}`;
 
   const locationLines: string[] = isVideo
     ? [`Zoom: ${meetingUrl}`, passcode ? `Passcode: ${passcode}` : ""]
@@ -46,7 +47,7 @@ export function buildConfirmationEmail(args: {
     ``,
     `I'll show up ready.`,
     ``,
-    `— Remi`,
+    `— ${host.firstName}`,
   ]
     .filter((line) => line !== null)
     .join("\n");
@@ -68,7 +69,7 @@ export function buildConfirmationEmail(args: {
       </td></tr>`;
 
   const html = htmlShell(`
-    <tr><td style="padding-bottom:6px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#E8500A;font-weight:700;">Booked with Remi</td></tr>
+    <tr><td style="padding-bottom:6px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#E8500A;font-weight:700;">Booked with ${escapeHtml(host.firstName)}</td></tr>
     <tr><td style="padding-bottom:24px;font-family:Georgia,'Times New Roman',serif;font-size:32px;line-height:1.15;color:#0E0E0E;">You're booked.</td></tr>
     <tr><td style="padding-bottom:8px;">Hey ${escapeHtml(firstName)},</td></tr>
     <tr><td style="padding-bottom:20px;">Here's what's on the books.</td></tr>
@@ -87,7 +88,7 @@ export function buildConfirmationEmail(args: {
       Something change? <a href="${escapeHtml(manage)}" style="color:#0E0E0E;text-decoration:underline;">Reschedule or cancel</a>.
     </td></tr>
     <tr><td style="padding-top:8px;padding-bottom:0;">I'll show up ready.</td></tr>
-    <tr><td style="padding-top:4px;color:#3D3D3D;">— Remi</td></tr>
+    <tr><td style="padding-top:4px;color:#3D3D3D;">— ${escapeHtml(host.firstName)}</td></tr>
   `);
 
   return { subject, text, html };

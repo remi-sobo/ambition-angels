@@ -29,6 +29,8 @@ export const ESCALATE_LABEL_PREFIX = "sys:escalate:";
 
 // Interim stewardship defaults until the matrix lands (Phase 4): a pending gift
 // that needs a personal thank-you becomes a 48-hour task on the ops lead.
+// ACK_DEFAULT_ASSIGNEE is the legacy last-ditch fallback only — live callers
+// resolve the org's steward via lib/fundraising/steward.ts and pass it in.
 export const ACK_DEFAULT_SLA_HOURS = 48;
 export const ACK_DEFAULT_ASSIGNEE = "shannon" as const;
 

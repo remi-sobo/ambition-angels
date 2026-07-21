@@ -10,8 +10,9 @@ import {
 export function buildReminder24hEmail(args: {
   booking: Booking;
   meetingType: MeetingType;
+  host: { firstName: string };
 }): { subject: string; text: string; html: string } {
-  const { booking, meetingType } = args;
+  const { booking, meetingType, host } = args;
   const start = new Date(booking.start_time);
   const end = new Date(booking.end_time);
   const tz = booking.attendee_timezone;
@@ -23,7 +24,7 @@ export function buildReminder24hEmail(args: {
   const meetingUrl = booking.meeting_url ?? "";
   const address = booking.location_details ?? "Address TBD — I'll be in touch.";
 
-  const subject = `Tomorrow: ${meetingType.name} with Remi`;
+  const subject = `Tomorrow: ${meetingType.name} with ${host.firstName}`;
 
   const text = [
     `Hey ${firstName},`,
@@ -38,7 +39,7 @@ export function buildReminder24hEmail(args: {
     ``,
     `Need to move it? ${manage}`,
     ``,
-    `— Remi`,
+    `— ${host.firstName}`,
   ].join("\n");
 
   const locationBlock = isVideo
@@ -65,7 +66,7 @@ export function buildReminder24hEmail(args: {
     <tr><td style="padding-bottom:8px;font-size:14px;color:#6B6960;">
       Need to move it? <a href="${escapeHtml(manage)}" style="color:#0E0E0E;text-decoration:underline;">Reschedule or cancel</a>.
     </td></tr>
-    <tr><td style="padding-top:12px;color:#3D3D3D;">— Remi</td></tr>
+    <tr><td style="padding-top:12px;color:#3D3D3D;">— ${escapeHtml(host.firstName)}</td></tr>
   `);
 
   return { subject, text, html };

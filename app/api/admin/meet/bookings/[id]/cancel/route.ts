@@ -5,6 +5,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { cancelEvent } from "@/lib/google/calendar";
 import { sendEmail } from "@/lib/google/gmail";
 import { buildCancellationEmail } from "@/lib/email/templates/cancellation";
+import { getBookingHost } from "@/lib/meet/host";
 import type { Booking, MeetingType } from "@/lib/database.types";
 
 const schema = z.object({
@@ -84,9 +85,11 @@ export async function POST(
   }
 
   if (parsed.data.notifyAttendee !== false) {
+    const host = await getBookingHost(ctx.orgId);
     const email = buildCancellationEmail({
       booking,
       meetingType: booking.meeting_type,
+      host,
     });
     await sendEmail({
       to: booking.attendee_email,

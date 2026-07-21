@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { cancelEvent } from "@/lib/google/calendar";
 import { sendEmail } from "@/lib/google/gmail";
 import { buildCancellationEmail } from "@/lib/email/templates/cancellation";
+import { getBookingHost } from "@/lib/meet/host";
 import { cancelSchema } from "@/lib/meet/schemas";
 import type { Booking, MeetingType } from "@/lib/database.types";
 
@@ -75,9 +76,11 @@ export async function POST(
     );
   }
 
+  const host = await getBookingHost((booking as unknown as { org_id: string }).org_id);
   const email = buildCancellationEmail({
     booking,
     meetingType: booking.meeting_type,
+    host,
   });
   await sendEmail({
     to: booking.attendee_email,

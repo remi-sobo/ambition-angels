@@ -17,6 +17,11 @@ const ACTION_LABELS: Record<string, string> = {
   "compliance.item.update": "Details updated",
   "compliance.item.filed": "Marked filed",
   "compliance.item.delete": "Deleted",
+  "program.student.create": "Added to the roster",
+  "program.student.update": "Details updated",
+  "program.student.stage": "Stage changed",
+  "program.student.delete": "Removed from roster",
+  "program.attendance.record": "Attendance recorded",
 };
 
 function actionLabel(action: string): string {

@@ -192,6 +192,7 @@ ordered=(
   seed_aa_hubspot_mirror_entitlement.sql
   create_grant_contacts.sql
   board_compliance_profiles.sql
+  student_profile_route.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

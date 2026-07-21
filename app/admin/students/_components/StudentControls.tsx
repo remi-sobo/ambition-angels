@@ -4,6 +4,7 @@
 // contact, inline edit; and the new-student form.
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS, STAGE_DESCRIPTIONS } from "../_lib/stages";
 import CustomFields, { type CustomValues } from "./CustomFields";
@@ -139,7 +140,12 @@ export function StudentRow({
       className={`bg-surface border-[1.5px] border-outline rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-semibold text-ink-1">{fullName(student)}</span>
+        <Link
+          href={`/admin/students/${student.id}`}
+          className="font-semibold text-ink-1 hover:text-orange transition-colors"
+        >
+          {fullName(student)}
+        </Link>
         {grade && <span className="text-[11px] text-ink-2">Grade {grade}</span>}
         {school && <span className="text-[11px] text-ink-2">· {school}</span>}
         {student.external_source && (

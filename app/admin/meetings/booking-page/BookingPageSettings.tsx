@@ -1,303 +1,52 @@
 "use client";
 
 import { useState } from "react";
-import type { Blackout, Booking, MeetingType } from "@/lib/database.types";
-import type { OpsTask } from "@/app/admin/ops/_types/ops";
-import ConnectionsBacklog from "./ConnectionsBacklog";
-import NewConnectionForm from "./NewConnectionForm";
-import CandidatesQueue, { type Candidate } from "./CandidatesQueue";
+import type { Blackout, MeetingType } from "@/lib/database.types";
 import { TYPE } from "@/lib/admin/typeScale";
 
-type BookingWithType = Booking & { meeting_type: MeetingType };
+// Shared light-workspace input treatment (matches NewConnectionForm).
+const inputCls =
+  "w-full text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 disabled:opacity-60";
 
-type InitialData = {
-  types: MeetingType[];
-  upcoming: BookingWithType[];
-  recent: BookingWithType[];
-  blackouts: Blackout[];
-  last30Count: number;
-  connections: OpsTask[];
-  candidates: Candidate[];
-};
-
-type Tab = "connections" | "bookings" | "types" | "blackouts";
-
-const TAB_LABELS: Record<Tab, string> = {
-  connections: "Connections",
-  bookings: "Bookings",
-  types: "Types",
-  blackouts: "Blackouts",
-};
-
-export default function MeetAdmin({ initial }: { initial: InitialData }) {
-  const [tab, setTab] = useState<Tab>("connections");
-  const [types, setTypes] = useState(initial.types);
-  const [upcoming, setUpcoming] = useState(initial.upcoming);
-  const [recent, setRecent] = useState(initial.recent);
-  const [blackouts, setBlackouts] = useState(initial.blackouts);
-
-  const upcomingThisWeek = upcoming.filter((b) => {
-    const ms = new Date(b.start_time).getTime();
-    return ms < Date.now() + 7 * 24 * 3600_000;
-  }).length;
-
-  // Connections come straight from the server prop (no local copy) so a
-  // router.refresh() after any task edit / reorder flows the new list through.
-  const openConnections = initial.connections.filter(
-    (t) => t.status !== "done"
-  ).length;
-
-  return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-8">
-      <header>
-        <h1 className={TYPE.pageTitle}>Meet</h1>
-        <p className="mt-2 text-zinc-400">
-          Bookings, meeting types, blackouts.
-        </p>
-        <div className="mt-5 flex gap-6 text-sm">
-          <Stat label="Candidates" value={initial.candidates.length} />
-          <Stat label="Open connections" value={openConnections} />
-          <Stat label="Upcoming" value={upcoming.length} />
-          <Stat label="This week" value={upcomingThisWeek} />
-          <Stat label="Last 30d" value={initial.last30Count} />
-        </div>
-      </header>
-
-      <nav className="flex gap-2 border-b border-outline">
-        {(["connections", "bookings", "types", "blackouts"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            className={[
-              "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
-              tab === t
-                ? "text-ink-1 border-orange"
-                : "text-ink-2 border-transparent hover:text-ink-1",
-            ].join(" ")}
-          >
-            {TAB_LABELS[t]}
-          </button>
-        ))}
-      </nav>
-
-      {tab === "connections" && (
-        <div className="space-y-6">
-          <CandidatesQueue candidates={initial.candidates} />
-          <NewConnectionForm />
-          <ConnectionsBacklog connections={initial.connections} />
-        </div>
-      )}
-      {tab === "bookings" && (
-        <BookingsTab
-          upcoming={upcoming}
-          recent={recent}
-          onCancelled={(id) => {
-            setUpcoming((rows) => rows.filter((r) => r.id !== id));
-            const cancelled = upcoming.find((r) => r.id === id);
-            if (cancelled) {
-              setRecent((rows) => [
-                { ...cancelled, status: "cancelled" as const },
-                ...rows,
-              ]);
-            }
-          }}
-        />
-      )}
-      {tab === "types" && (
-        <TypesTab types={types} onUpdated={(updated) => setTypes(updated)} />
-      )}
-      {tab === "blackouts" && (
-        <BlackoutsTab
-          blackouts={blackouts}
-          types={types}
-          onChanged={(updated) => setBlackouts(updated)}
-        />
-      )}
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <div className="text-2xl font-semibold text-ink-1">{value}</div>
-      <div className="text-xs uppercase tracking-widest text-zinc-500">
-        {label}
-      </div>
-    </div>
-  );
-}
-
-// ── Bookings ─────────────────────────────────────────────────────
-
-function BookingsTab({
-  upcoming,
-  recent,
-  onCancelled,
+// Meeting types + blackouts, stacked — the whole configuration of the public
+// booking page on one screen instead of separate tabs.
+export default function BookingPageSettings({
+  initialTypes,
+  initialBlackouts,
 }: {
-  upcoming: BookingWithType[];
-  recent: BookingWithType[];
-  onCancelled: (id: string) => void;
+  initialTypes: MeetingType[];
+  initialBlackouts: Blackout[];
 }) {
-  const [busy, setBusy] = useState<string | null>(null);
-  const [showPast, setShowPast] = useState(false);
-
-  async function cancel(id: string) {
-    if (busy) return;
-    if (!confirm("Cancel this booking? Attendee will be emailed.")) return;
-    setBusy(id);
-    try {
-      const r = await fetch(`/api/admin/meet/bookings/${id}/cancel`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: "cancelled by admin" }),
-      });
-      if (!r.ok) {
-        const data = await r.json().catch(() => ({}));
-        alert(data.error ?? "Cancel failed");
-        return;
-      }
-      onCancelled(id);
-    } finally {
-      setBusy(null);
-    }
-  }
+  const [types, setTypes] = useState(initialTypes);
+  const [blackouts, setBlackouts] = useState(initialBlackouts);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <section>
-        <h2 className={`${TYPE.sectionTitle} mb-4`}>Upcoming</h2>
-        {upcoming.length === 0 ? (
-          <p className="text-zinc-500 text-sm">Nothing on the books.</p>
-        ) : (
-          <BookingTable
-            rows={upcoming}
-            busy={busy}
-            onCancel={cancel}
-            canCancel
-          />
-        )}
-      </section>
-
-      <section>
-        <button
-          type="button"
-          onClick={() => setShowPast((s) => !s)}
-          className="text-sm text-ink-2 hover:text-ink-1 transition-colors"
-        >
-          {showPast ? "Hide" : "Show"} past + cancelled ({recent.length})
-        </button>
-        {showPast && (
-          <div className="mt-4">
-            <BookingTable rows={recent} busy={busy} canCancel={false} />
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-function BookingTable({
-  rows,
-  busy,
-  onCancel,
-  canCancel,
-}: {
-  rows: BookingWithType[];
-  busy: string | null;
-  onCancel?: (id: string) => void;
-  canCancel: boolean;
-}) {
-  return (
-    <div className="overflow-x-auto rounded-lg border-[1.5px] border-outline">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs uppercase tracking-widest text-zinc-500 border-b border-outline">
-            <th className="px-4 py-3 font-medium">When (PT)</th>
-            <th className="px-4 py-3 font-medium">Type</th>
-            <th className="px-4 py-3 font-medium">Attendee</th>
-            <th className="px-4 py-3 font-medium">Role</th>
-            <th className="px-4 py-3 font-medium">Status</th>
-            {canCancel && <th className="px-4 py-3" />}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id} className="border-b border-hairline last:border-0">
-              <td className="px-4 py-3 whitespace-nowrap">
-                {formatDateTime(new Date(r.start_time))}
-              </td>
-              <td className="px-4 py-3">{r.meeting_type.name}</td>
-              <td className="px-4 py-3">
-                <div className="text-ink-1">{r.attendee_name}</div>
-                <div className="text-xs text-zinc-500">{r.attendee_email}</div>
-              </td>
-              <td className="px-4 py-3 text-zinc-400">
-                {r.attendee_role ?? "—"}
-              </td>
-              <td className="px-4 py-3">
-                <StatusPill status={r.status} />
-              </td>
-              {canCancel && (
-                <td className="px-4 py-3 text-right">
-                  <button
-                    type="button"
-                    disabled={busy === r.id}
-                    onClick={() => onCancel?.(r.id)}
-                    className="text-xs text-orange hover:text-orange-light transition-colors disabled:opacity-50"
-                  >
-                    {busy === r.id ? "Cancelling…" : "Cancel"}
-                  </button>
-                </td>
-              )}
-            </tr>
+        <h2 className={`${TYPE.sectionTitle} mb-4`}>Meeting types</h2>
+        <div className="space-y-4">
+          {types.map((t) => (
+            <TypeRow
+              key={t.id}
+              type={t}
+              onSave={(patched) => {
+                setTypes(types.map((x) => (x.id === t.id ? patched : x)));
+              }}
+            />
           ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+        </div>
+      </section>
 
-function StatusPill({ status }: { status: Booking["status"] }) {
-  const styles: Record<Booking["status"], string> = {
-    confirmed: "bg-revenue-bg text-revenue border-revenue/30",
-    cancelled: "bg-expense-bg text-expense border-expense/30",
-    no_show: "bg-[#F4E8D0] text-[#A56A1B] border-[#D9BE86]",
-    completed: "bg-zinc-500/15 text-zinc-700 border-zinc-500/30",
-  };
-  return (
-    <span
-      className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${styles[status]}`}
-    >
-      {status}
-    </span>
+      <Blackouts
+        blackouts={blackouts}
+        types={types}
+        onChanged={(updated) => setBlackouts(updated)}
+      />
+    </div>
   );
 }
 
 // ── Types ────────────────────────────────────────────────────────
-
-function TypesTab({
-  types,
-  onUpdated,
-}: {
-  types: MeetingType[];
-  onUpdated: (updated: MeetingType[]) => void;
-}) {
-  return (
-    <div className="space-y-4">
-      {types.map((t) => (
-        <TypeRow
-          key={t.id}
-          type={t}
-          onSave={(patched) => {
-            onUpdated(types.map((x) => (x.id === t.id ? patched : x)));
-          }}
-        />
-      ))}
-    </div>
-  );
-}
 
 function TypeRow({
   type,
@@ -349,7 +98,7 @@ function TypeRow({
   }
 
   return (
-    <div className="rounded-lg border-[1.5px] border-outline bg-tile p-5">
+    <div className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           <span
@@ -357,11 +106,11 @@ function TypeRow({
             style={{ background: draft.color }}
           />
           <div>
-            <div className="font-semibold">{type.name}</div>
-            <div className="text-xs text-zinc-500">/{type.slug}</div>
+            <div className="font-semibold text-ink-1">{type.name}</div>
+            <div className="text-xs text-ink-3">/{type.slug}</div>
           </div>
         </div>
-        <label className="flex items-center gap-2 text-sm text-zinc-400">
+        <label className="flex items-center gap-2 text-sm text-ink-2">
           <input
             type="checkbox"
             checked={draft.is_active}
@@ -378,7 +127,7 @@ function TypeRow({
           <input
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            className="admin-input"
+            className={inputCls}
           />
         </Field>
         <Field label="Color">
@@ -395,7 +144,7 @@ function TypeRow({
             onChange={(e) =>
               setDraft({ ...draft, description: e.target.value })
             }
-            className="admin-input"
+            className={inputCls}
           />
         </Field>
         <Field label="Prep notes">
@@ -404,7 +153,7 @@ function TypeRow({
             onChange={(e) =>
               setDraft({ ...draft, prep_notes: e.target.value })
             }
-            className="admin-input"
+            className={inputCls}
           />
         </Field>
         <Field label="Duration (min)">
@@ -417,7 +166,7 @@ function TypeRow({
                 duration_minutes: Number(e.target.value),
               })
             }
-            className="admin-input"
+            className={inputCls}
           />
         </Field>
         <Field label="Buffer (min)">
@@ -427,7 +176,7 @@ function TypeRow({
             onChange={(e) =>
               setDraft({ ...draft, buffer_minutes: Number(e.target.value) })
             }
-            className="admin-input"
+            className={inputCls}
           />
         </Field>
         <Field label="Min notice (hours)">
@@ -440,7 +189,7 @@ function TypeRow({
                 min_notice_hours: Number(e.target.value),
               })
             }
-            className="admin-input"
+            className={inputCls}
           />
         </Field>
         <Field label="Max advance (days)">
@@ -453,13 +202,13 @@ function TypeRow({
                 max_advance_days: Number(e.target.value),
               })
             }
-            className="admin-input"
+            className={inputCls}
           />
         </Field>
       </div>
 
-      <div className="mt-5 pt-5 border-t border-outline">
-        <div className="text-xs text-zinc-500 uppercase tracking-widest mb-2">
+      <div className="mt-5 pt-5 border-t border-hairline">
+        <div className="text-xs text-ink-3 uppercase tracking-widest mb-2">
           Location options
         </div>
         <div className="flex flex-wrap gap-2 mb-4">
@@ -497,7 +246,7 @@ function TypeRow({
                 setDraft({ ...draft, default_in_person_address: e.target.value })
               }
               placeholder="e.g. 380 Portage Ave, Palo Alto, CA"
-              className="admin-input"
+              className={inputCls}
             />
           </Field>
         ) : null}
@@ -512,24 +261,8 @@ function TypeRow({
         >
           {saving ? "Saving…" : "Save"}
         </button>
-        {msg && <span className="text-sm text-zinc-400">{msg}</span>}
+        {msg && <span className="text-sm text-ink-2">{msg}</span>}
       </div>
-
-      <style jsx>{`
-        :global(.admin-input) {
-          width: 100%;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 6px;
-          padding: 8px 10px;
-          color: #faf6ee;
-          font-size: 14px;
-        }
-        :global(.admin-input:focus) {
-          outline: none;
-          border-color: #C0703C;
-        }
-      `}</style>
     </div>
   );
 }
@@ -543,7 +276,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-xs text-zinc-500 uppercase tracking-widest mb-1">
+      <span className="block text-xs text-ink-3 uppercase tracking-widest mb-1">
         {label}
       </span>
       {children}
@@ -553,7 +286,7 @@ function Field({
 
 // ── Blackouts ────────────────────────────────────────────────────
 
-function BlackoutsTab({
+function Blackouts({
   blackouts,
   types,
   onChanged,
@@ -623,8 +356,8 @@ function BlackoutsTab({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-lg border-[1.5px] border-outline bg-tile p-5">
+    <section className="space-y-6">
+      <div className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
         <h2 className={`${TYPE.sectionTitle} mb-4`}>Add a blackout</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Start date">
@@ -634,7 +367,7 @@ function BlackoutsTab({
               onChange={(e) =>
                 setDraft({ ...draft, start_date: e.target.value })
               }
-              className="admin-input"
+              className={inputCls}
             />
           </Field>
           <Field label="End date">
@@ -644,20 +377,20 @@ function BlackoutsTab({
               onChange={(e) =>
                 setDraft({ ...draft, end_date: e.target.value })
               }
-              className="admin-input"
+              className={inputCls}
             />
           </Field>
           <Field label="Reason (optional)">
             <input
               value={draft.reason}
               onChange={(e) => setDraft({ ...draft, reason: e.target.value })}
-              className="admin-input"
+              className={inputCls}
               placeholder="Out of office"
             />
           </Field>
         </div>
         <div className="mt-4">
-          <span className="block text-xs text-zinc-500 uppercase tracking-widest mb-2">
+          <span className="block text-xs text-ink-3 uppercase tracking-widest mb-2">
             Applies to (none selected = all types)
           </span>
           <div className="flex flex-wrap gap-2">
@@ -702,19 +435,19 @@ function BlackoutsTab({
       <div>
         <h2 className={`${TYPE.sectionTitle} mb-4`}>Current blackouts</h2>
         {blackouts.length === 0 ? (
-          <p className="text-zinc-500 text-sm">No blackouts set.</p>
+          <p className="text-ink-3 text-sm">No blackouts set.</p>
         ) : (
           <ul className="space-y-2">
             {blackouts.map((b) => (
               <li
                 key={b.id}
-                className="flex items-center justify-between gap-4 rounded-lg border-[1.5px] border-outline bg-tile px-4 py-3"
+                className="flex items-center justify-between gap-4 rounded-lg border-[1.5px] border-outline bg-surface shadow-panel px-4 py-3"
               >
                 <div className="flex-1 min-w-0">
                   <div className="text-ink-1">
                     {b.start_date} → {b.end_date}
                   </div>
-                  <div className="text-xs text-zinc-500 truncate">
+                  <div className="text-xs text-ink-3 truncate">
                     {b.reason ?? "no reason"}
                     {b.meeting_type_ids && b.meeting_type_ids.length > 0
                       ? ` · ${b.meeting_type_ids.length} type(s)`
@@ -734,18 +467,6 @@ function BlackoutsTab({
           </ul>
         )}
       </div>
-    </div>
+    </section>
   );
-}
-
-// ── helpers ──────────────────────────────────────────────────────
-
-function formatDateTime(d: Date): string {
-  return d.toLocaleString(undefined, {
-    timeZone: "America/Los_Angeles",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
 }

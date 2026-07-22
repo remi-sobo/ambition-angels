@@ -32,6 +32,9 @@ export type UpcomingMeeting = {
   title: string | null;
   start: string;
   matched: MatchedEntity[];
+  /** The Google event id, when the mirror has one — lets callers join a row
+   *  back to the /meet booking that created it (bookings.google_event_id). */
+  googleEventId: string | null;
 };
 
 type Attendee = { email?: string | null };
@@ -140,7 +143,13 @@ export async function listMeetings(now: Date): Promise<{
     if (key && excluded.has(key)) continue;
     const emails = externalEmails(ev.attendees, domain);
     const ents = await matchAttendees(sb, ctx.orgId, emails);
-    upcoming.push({ eventId: ev.id, title: ev.title, start: ev.start_time, matched: ents });
+    upcoming.push({
+      eventId: ev.id,
+      title: ev.title,
+      start: ev.start_time,
+      matched: ents,
+      googleEventId: ev.google_event_id,
+    });
   }
 
   return {

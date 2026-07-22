@@ -111,10 +111,9 @@ export const PAGES: PageEntry[] = [
   { label: "Monday Plan", href: "/admin/ops/monday", keywords: ["weekly", "planning"] },
   { label: "Friday Review", href: "/admin/ops/friday", keywords: ["weekly", "retro"] },
   { label: "Projects", href: "/admin/ops/projects", keywords: ["initiatives"] },
-  { label: "Meetings", href: "/admin/meetings", keywords: ["calendar", "notes", "follow-ups"] },
+  { label: "Meetings", href: "/admin/meetings", keywords: ["calendar", "notes", "follow-ups", "bookings", "upcoming"] },
   { label: "Connections", href: "/admin/meetings/connections", keywords: ["scheduling", "intros", "backlog", "meet"] },
-  { label: "Bookings", href: "/admin/meetings/bookings", keywords: ["booked", "attendees", "meet"] },
-  { label: "Booking page", href: "/admin/meetings/booking-page", keywords: ["schedule", "availability", "meeting types", "blackouts"] },
+  { label: "Booking page", href: "/admin/meetings/booking-page", keywords: ["schedule", "availability", "meeting types", "blackouts", "bookings", "history"] },
 
   { label: "Today's Moves", href: "/admin/fundraising/today", keywords: ["fundraising", "daily"] },
   { label: "Donors", href: "/admin/fundraising/donors", keywords: ["constituents", "people", "households"] },

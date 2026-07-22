@@ -266,14 +266,13 @@ const SECTIONS: Section[] = [
       {
         name: "Meetings",
         href: "/admin/meetings",
-        what: "Everything meetings in one place: your real meetings (synced from calendar and matched to the donor or partner each one concerns), the connection backlog, incoming bookings, and your public booking page's setup — as tabs.",
+        what: "Everything meetings in one place: your real meetings (synced from calendar and matched to the donor or partner each one concerns), the connection backlog, and your public booking page's setup — as tabs.",
         does: [
-          "Overview: past and upcoming meetings, each matched to a donor/partner; the meeting lands on their timeline",
+          "Overview: past and upcoming meetings, each matched to a donor/partner; the meeting lands on their timeline. Meetings booked through your public page show badged in Upcoming, with cancel right on the row",
           "Paste a transcript and Reed drafts a summary plus one to three suggested follow-ups — accept one and it becomes a real task linked to the donor",
           "A deterministic “N meetings with no follow-up” coverage line keeps anything from slipping; clear it by adding a follow-up or marking it not needed",
           "Connections: intro candidates from email plus your scheduling backlog, tracked until each meeting is booked",
-          "Bookings: meetings booked through your public page, with admin-side cancel",
-          "Booking page: the bookable meeting types, availability, and blackouts behind the public Calendly-style scheduler",
+          "Booking page: the bookable meeting types, availability, and blackouts behind the public Calendly-style scheduler, plus booking history",
         ],
       },
       { name: "Team", soon: true, what: "Team roster and roles. Coming soon." },

@@ -24,6 +24,7 @@ import { type AckChannel } from "@/lib/fundraising/ack-channels";
 import { HouseholdControls } from "../_components/HouseholdControls";
 import { AddSoftCredit, SoftCreditChip, SC_TYPE_LABEL } from "../_components/SoftCreditControls";
 import EmailActions from "../_components/EmailActions";
+import { EnrollInJourney, CancelEnrollment } from "../_components/JourneyControls";
 import NextMovePanel from "../../_components/NextMovePanel";
 import { EntityTasks } from "../../../_components/EntityTasks";
 import { EntityDocuments } from "../../../_components/EntityDocuments";
@@ -49,7 +50,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
 
   const supabase = createServerSupabase();
-  const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes, campaignsRes, fundsRes, appealsRes, scReceivedRes, oppsRes, enrollRes] = await Promise.all([
+  const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes, campaignsRes, fundsRes, appealsRes, scReceivedRes, oppsRes, enrollRes, activeJourneysRes] = await Promise.all([
     supabase.from("constituents").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("gifts")
@@ -100,6 +101,10 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .eq("constituent_id", params.id)
       .order("enrolled_at", { ascending: false })
       .limit(100),
+    // This org's active journeys (RLS-scoped) — the manual-enroll picker
+    // lists any active journey, not just manual-trigger ones (open
+    // decision 2 as amended).
+    supabase.from("journeys").select("id, name").eq("status", "active").order("name").limit(200),
   ]);
 
   // Query error = tables not applied yet (same grace state as the list
@@ -242,6 +247,14 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
   }
   const activeEnrollments = enrollments.filter((e) => e.status === "active");
   const pastEnrollments = enrollments.filter((e) => e.status !== "active");
+  const activeJourneys = (activeJourneysRes.data ?? []) as Array<{ id: string; name: string }>;
+  // Why manual enrollment is blocked for this donor (mirrors the enroll
+  // route's guards so the UI can say so instead of failing on submit).
+  const enrollBlockedReason = c.do_not_contact
+    ? "this donor is marked do-not-contact"
+    : !(((c.emails as string[] | null) ?? [])[0])
+    ? "no email on file"
+    : null;
   const ENG_STYLES: Record<EngagementBand, string> = {
     strong: "bg-revenue/15 text-revenue",
     steady: "bg-blue-500/15 text-blue-400",
@@ -520,12 +533,20 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
             <h2 className={TYPE.cardTitle}>Journeys</h2>
-            <Link
-              href="/admin/fundraising/journeys"
-              className="text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors whitespace-nowrap"
-            >
-              Manage journeys →
-            </Link>
+            <div className="ml-auto flex items-center gap-3">
+              <EnrollInJourney
+                constituentId={c.id}
+                journeys={activeJourneys}
+                enrolledJourneyIds={activeEnrollments.map((e) => e.journey_id)}
+                disabledReason={enrollBlockedReason}
+              />
+              <Link
+                href="/admin/fundraising/journeys"
+                className="text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors whitespace-nowrap"
+              >
+                Manage journeys →
+              </Link>
+            </div>
           </div>
           {enrollments.length === 0 ? (
             <p className={`px-5 py-5 ${TYPE.bodyMuted}`}>
@@ -564,6 +585,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                         <span className="text-xs text-ink-2 whitespace-nowrap">next send {fmtWhen(e.next_run_at)}</span>
                       )
                     )}
+                    <CancelEnrollment enrollmentId={e.id} journeyName={e.journey?.name ?? "This journey"} />
                   </li>
                 );
               })}

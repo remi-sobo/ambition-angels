@@ -107,18 +107,21 @@ export const PAGES: PageEntry[] = [
   { label: "Strategy", href: "/admin/strategic-plan", keywords: ["plan", "objectives", "okrs", "scorecard"] },
   { label: "Executive Briefing", href: "/admin/briefing", keywords: ["brief", "morning", "summary"] },
 
-  { label: "Tasks", href: "/admin/ops", keywords: ["ops", "todo", "to-do", "moves"] },
+  { label: "My Week", href: "/admin/ops/my-week", keywords: ["work", "week", "today", "plan"] },
+  { label: "Tasks", href: "/admin/ops", keywords: ["ops", "work", "todo", "to-do", "moves"] },
   { label: "Monday Plan", href: "/admin/ops/monday", keywords: ["weekly", "planning"] },
   { label: "Friday Review", href: "/admin/ops/friday", keywords: ["weekly", "retro"] },
   { label: "Projects", href: "/admin/ops/projects", keywords: ["initiatives"] },
-  { label: "Meetings", href: "/admin/meetings", keywords: ["calendar", "bookings", "notes"] },
-  { label: "Booking page", href: "/admin/meet", keywords: ["schedule", "availability"] },
+  { label: "Meetings", href: "/admin/meetings", keywords: ["calendar", "notes", "follow-ups", "bookings", "upcoming"] },
+  { label: "Connections", href: "/admin/meetings/connections", keywords: ["scheduling", "intros", "backlog", "meet"] },
+  { label: "Booking page", href: "/admin/meetings/booking-page", keywords: ["schedule", "availability", "meeting types", "blackouts", "bookings", "history"] },
 
   { label: "Today's Moves", href: "/admin/fundraising/today", keywords: ["fundraising", "daily"] },
   { label: "Donors", href: "/admin/fundraising/donors", keywords: ["constituents", "people", "households"] },
   { label: "Pipeline", href: "/admin/fundraising", keywords: ["major gifts", "fundraising", "opportunities"] },
   { label: "Fundraising Strategy", href: "/admin/fundraising/strategy", keywords: ["plan"] },
   { label: "Prospects", href: "/admin/fundraising/prospects", keywords: ["leads", "research", "bench"] },
+  { label: "Ask Log", href: "/admin/fundraising/asks", keywords: ["asks", "solicitations"] },
   { label: "Grants", href: "/admin/fundraising/grants", keywords: ["foundations", "deadlines", "loi"] },
   { label: "Campaigns", href: "/admin/fundraising/campaigns", keywords: ["appeals", "email"] },
 
@@ -134,7 +137,7 @@ export const PAGES: PageEntry[] = [
   { label: "Expenses", href: "/admin/finance/transactions", keywords: ["spend", "transactions", "burn"] },
   { label: "Budget vs Actual", href: "/admin/finance/budget", keywords: ["budget", "forecast"] },
 
-  { label: "Website Analytics", href: "/admin/analytics", keywords: ["traffic", "ga4", "data"] },
+  { label: "Analytics", href: "/admin/analytics", keywords: ["traffic", "ga4", "data", "website"] },
 
   { label: "Board", href: "/admin/board", keywords: ["directors", "governance", "meetings"] },
   { label: "Compliance", href: "/admin/compliance", keywords: ["filings", "renewals", "legal"] },

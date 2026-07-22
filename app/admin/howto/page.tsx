@@ -63,20 +63,18 @@ const SECTIONS: Section[] = [
       {
         name: "Students",
         href: "/admin/students",
-        what: "One roster across every program — each student's journey from discover to launch.",
-        does: ["Track each student's stage and program history", "Search and filter the full roster"],
+        what: "One roster across every program — each student's journey from discover to launch. Intake rides along as a tab (the pipeline into the roster).",
+        does: [
+          "Track each student's stage and program history",
+          "Search and filter the full roster",
+          "Intake tab: applications from the public form — review, screen → waitlist → offer, and promote accepted students onto the roster",
+        ],
       },
       {
         name: "Cohorts",
         href: "/admin/cohorts",
         what: "Program cohorts, their sessions, and attendance.",
         does: ["Manage cohort sessions", "Record and review attendance"],
-      },
-      {
-        name: "Intake",
-        href: "/admin/intake",
-        what: "Applications from the public form — screen → waitlist → offer → roster.",
-        does: ["Review inbound applications", "Move applicants through screening to an offer", "Promote accepted students onto the roster"],
       },
       {
         name: "Demo Day",
@@ -137,23 +135,13 @@ const SECTIONS: Section[] = [
       {
         name: "Pipeline",
         href: "/admin/fundraising",
-        what: "The moves-management pipeline, Identification → Cultivation → Solicitation → Stewardship.",
-        does: ["Track opportunities, ask amounts, and next steps", "See the AI next-best-action suggestions in context"],
-      },
-      {
-        name: "Strategy",
-        href: "/admin/fundraising/strategy",
-        what: "Funding angles — the strategic framing for how you approach funders.",
-        does: ["Capture and reference funding angles"],
-      },
-      {
-        name: "Prospects",
-        href: "/admin/fundraising/prospects",
-        what: "Prospect research, mirrored from HubSpot, with AI-generated research briefs.",
+        what: "The moves-management pipeline, Identification → Cultivation → Solicitation → Stewardship. Prospects, the Ask Log, and funding Strategy ride along as tabs on the Fundraising bar.",
         does: [
-          "Browse prospects and their giving / connection profile",
-          "Run an AI research brief (snapshot, how-we-fit, meeting playbook, mutual connections)",
-          "Score and disqualify prospects without touching the HubSpot mirror",
+          "Track opportunities, ask amounts, and next steps",
+          "See the AI next-best-action suggestions in context",
+          "Prospects tab: HubSpot-mirrored prospect research with AI research briefs (snapshot, how-we-fit, meeting playbook, mutual connections); score and disqualify without touching the mirror",
+          "Ask Log tab: the record of every ask and its outcome",
+          "Strategy tab: funding angles — the strategic framing for how you approach funders",
         ],
       },
       {
@@ -177,30 +165,16 @@ const SECTIONS: Section[] = [
     blurb: "A live picture of cash, burn, and budget.",
     items: [
       {
-        name: "Overview",
+        name: "Finance",
         href: "/admin/finance",
-        what: "Live cash, burn, fundraising, and budget — numbers update as transactions are imported, categorized, and pledges land.",
-        does: ["Watch runway and cash on hand", "See burn vs. fundraising at a glance"],
+        what: "One sidebar item; the whole finance product lives on its own tab bar — Dashboard, Friday close, Reconcile, Forecast, Report, Model, Upload, Transactions, Budget, Pledges, Rules, Config.",
+        does: [
+          "Dashboard: live cash, burn, fundraising, and budget — watch runway and cash on hand at a glance",
+          "Transactions: the ledger — import, categorize, and rule-tag expenses; set rules so categorization sticks",
+          "Budget: planned vs. actual by category",
+          "Pledges: revenue by source and time",
+        ],
       },
-      {
-        name: "Revenue",
-        href: "/admin/finance/revenue",
-        what: "Revenue broken down by source and time.",
-        does: ["Analyze where money comes from"],
-      },
-      {
-        name: "Expenses",
-        href: "/admin/finance/transactions",
-        what: "The transaction ledger — import, categorize, and rule-tag expenses.",
-        does: ["Review and categorize transactions", "Set rules so categorization sticks"],
-      },
-      {
-        name: "Budget vs Actual",
-        href: "/admin/finance/budget",
-        what: "Budget tracking against real spending.",
-        does: ["Compare planned vs. actual by category"],
-      },
-      { name: "Cash Flow", soon: true, what: "Forward cash-flow projection. Coming soon." },
     ],
   },
   {
@@ -209,7 +183,7 @@ const SECTIONS: Section[] = [
     blurb: "How the work is landing in the world.",
     items: [
       {
-        name: "Website Analytics",
+        name: "Analytics",
         href: "/admin/analytics",
         what: "Traffic and events for the public site.",
         does: ["See visits, sources, and key page events"],
@@ -225,60 +199,28 @@ const SECTIONS: Section[] = [
     blurb: "The shared to-do system that everything else feeds into.",
     items: [
       {
-        name: "Tasks",
-        href: "/admin/ops",
-        what: "The task hub. Every task in one place, as a list or a board.",
+        name: "Work",
+        href: "/admin/ops/my-week",
+        what: "The whole task system behind one sidebar item, with tabs: My Week (your personal home, including the Monday Plan and Friday Review wizards), Tasks (the org-wide hub), and Projects.",
         does: [
-          "Group by priority, status, department, or project",
-          "“Linked” filter narrows to CRM work — All / CRM-linked / Partners / Donors",
-          "Quick-add, subtasks, priorities, labels, and pins",
-          "Plan a task into a week and onto a day (Monday Plan), or schedule it into a calendar block — the task carries that planning everywhere it shows",
+          "My Week: plan the week day by day against your real calendar — place tasks onto days, reorder, push to next week, or drop one into an open time block to put it on Google Calendar",
+          "Monday Plan walks the week with your agenda alongside each day; Friday Review walks what was planned vs. what shipped, and rolls the rest forward",
+          "Tasks: every task as a list or board — group by priority, status, department, or project; quick-add, subtasks, labels, pins; a “Linked” filter narrows to CRM work",
           "Each task can carry a chip linking back to the partner or donor it's about",
+          "Projects: longer-running initiatives, each with its own task list and activity log",
         ],
-      },
-      {
-        name: "Monday Plan",
-        href: "/admin/ops/monday",
-        what: "Plan the week day by day against your real calendar — place tasks onto specific days, reorder them, and drop one into an open time block to put it on your Google Calendar.",
-        does: [
-          "Walk the week Monday → Sunday with your agenda shown alongside each day",
-          "Place a task on a day, reorder within a day, or “Push to next week” — which actually moves it to next week",
-          "Schedule a task into a time block and BloomOS writes a tagged Google Calendar event; editing the block in BloomOS updates Google",
-          "“From last week” surfaces anything planned for an earlier week that still isn't done",
-        ],
-      },
-      {
-        name: "Friday Review",
-        href: "/admin/ops/friday",
-        what: "The weekly review, walked day by day — what was planned each day, what shipped, and what rolls forward.",
-        does: [
-          "See each day's planned work split into done vs. still-open",
-          "Mark done, or push unfinished work to next week",
-          "“Also completed this week” catches wins that weren't on the plan",
-        ],
-      },
-      {
-        name: "Projects",
-        href: "/admin/ops/projects",
-        what: "Longer-running initiatives, each with its own task list and activity log.",
-        does: ["Group tasks under a project", "Track project status and momentum"],
       },
       {
         name: "Meetings",
         href: "/admin/meetings",
-        what: "Your real meetings — synced from your calendar and matched to the donor or partner each one concerns — with notes, transcripts, and follow-ups that actually get done.",
+        what: "Everything meetings in one place: your real meetings (synced from calendar and matched to the donor or partner each one concerns), the connection backlog, and your public booking page's setup — as tabs.",
         does: [
-          "Past and upcoming meetings, each matched to a donor/partner; the meeting lands on their timeline",
+          "Overview: past and upcoming meetings, each matched to a donor/partner; the meeting lands on their timeline. Meetings booked through your public page show badged in Upcoming, with cancel right on the row",
           "Paste a transcript and Reed drafts a summary plus one to three suggested follow-ups — accept one and it becomes a real task linked to the donor",
           "A deterministic “N meetings with no follow-up” coverage line keeps anything from slipping; clear it by adding a follow-up or marking it not needed",
-          "“Sync from calendar” pulls your past external meetings in and matches the attendees",
+          "Connections: intro candidates from email plus your scheduling backlog, tracked until each meeting is booked",
+          "Booking page: the bookable meeting types, availability, and blackouts behind the public Calendly-style scheduler, plus booking history",
         ],
-      },
-      {
-        name: "Booking page",
-        href: "/admin/meet",
-        what: "Your outbound scheduler — bookable meeting types, availability, and incoming bookings (the Calendly-style page). It lives here now that Meetings is your record of real meetings.",
-        does: ["Offer bookable meeting types", "Manage availability and incoming bookings"],
       },
       { name: "Team", soon: true, what: "Team roster and roles. Coming soon." },
       { name: "Documents", soon: true, what: "Shared document hub. Coming soon." },
@@ -316,7 +258,7 @@ const ORDERED_SECTIONS = ["command-center", "operations", "fundraising", "progra
 const GLOBALS: { title: string; body: string }[] = [
   {
     title: "Signing in",
-    body: "Each operator signs in from the login panel. The left sidebar is the table of contents for the whole system; items marked “Soon” are planned but not built yet.",
+    body: "Each operator signs in from the login panel. The left sidebar shows one row per product; bigger products fan out through a tab bar at the top of their pages. Items marked “Soon” on this page are planned but not built yet.",
   },
   {
     title: "Your rail — the daily cockpit",

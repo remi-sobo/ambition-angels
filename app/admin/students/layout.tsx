@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import FeatureGate from "@/app/admin/_components/FeatureGate";
+import SectionSubNav from "@/app/admin/_components/SectionSubNav";
+import { STUDENT_TABS } from "./tabs";
 
 // Module gate (core fence B1): every route under this group renders only when
 // the org holds the `modules.program` entitlement; otherwise the not-authorized
@@ -7,7 +9,10 @@ import FeatureGate from "@/app/admin/_components/FeatureGate";
 export default function StudentsLayout({ children }: { children: ReactNode }) {
   return (
     <FeatureGate feature="modules.program" label="Program">
-      {children}
+      <div>
+        <SectionSubNav eyebrow="Students" rootHref="/admin/students" tabs={STUDENT_TABS} />
+        {children}
+      </div>
     </FeatureGate>
   );
 }

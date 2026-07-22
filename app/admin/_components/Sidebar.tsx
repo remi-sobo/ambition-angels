@@ -11,9 +11,11 @@ import { useAdminBadges } from "./AdminBadges";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // ── BloomOS IA (docs/bloomos/06-design-system.md §1) ────────────────────────
-// Seven sections mapped over the pages that exist today. Items without a
-// page yet render as muted "Soon" rows — the sidebar is the product's table
-// of contents, so the full IA is visible even before every module ships.
+// Seven sections, one row per product. Consolidated products (Work, Meetings,
+// Fundraising, Students, Finance) fan out through a persistent section
+// sub-nav in their route-group layout instead of extra sidebar rows. Roadmap
+// items no longer render as muted "Soon" rows — the full IA lives in the
+// How-To page and docs; the `soon` mechanism stays for future use.
 //
 // `feature` is THE mapping from nav item to entitlement key (core fence spec
 // §6b): items whose org lacks the key are filtered out, and the matching
@@ -56,11 +58,13 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Operations",
     items: [
-      { label: "My Week", icon: "week", href: "/admin/ops/my-week", feature: "modules.ops" },
-      { label: "Tasks", icon: "tasks", href: "/admin/ops", feature: "modules.ops" },
-      { label: "Projects", icon: "projects", href: "/admin/ops/projects", feature: "modules.ops" },
+      // One item for the whole ops_tasks product — My Week, Tasks, and
+      // Projects live on the Work sub-nav (app/admin/ops/layout.tsx). Lands
+      // on My Week, the personal daily home.
+      { label: "Work", icon: "week", href: "/admin/ops/my-week", feature: "modules.ops" },
+      // One item for the whole meetings product — the booking admin (the old
+      // "Booking page" item at /admin/meet) now lives on tabs inside it.
       { label: "Meetings", icon: "meetings", href: "/admin/meetings", feature: "modules.meetings" },
-      { label: "Booking page", icon: "events", href: "/admin/meet", feature: "modules.meetings" },
       { label: "Staff", icon: "team", href: "/admin/staff", feature: "modules.staff", term: "staff" },
       { label: "Documents", icon: "documents", href: "/admin/documents", feature: "modules.documents" },
     ],
@@ -68,20 +72,20 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Fundraising",
     items: [
+      // The daily surfaces only. Prospects, the Ask Log, and fundraising
+      // Strategy are tabs on the section sub-nav (fundraising/layout.tsx).
       { label: "Today's Moves", icon: "tasks", href: "/admin/fundraising/today", feature: "modules.fundraising" },
       { label: "Donors", icon: "donors", href: "/admin/fundraising/donors", feature: "modules.fundraising" },
       { label: "Pipeline", icon: "majorgifts", href: "/admin/fundraising", feature: "modules.fundraising" },
-      { label: "Strategy", icon: "strategy", href: "/admin/fundraising/strategy", feature: "modules.fundraising" },
-      { label: "Prospects", icon: "events", href: "/admin/fundraising/prospects", feature: "ai.prospect_research" },
       { label: "Grants", icon: "grants", href: "/admin/fundraising/grants", feature: "modules.fundraising" },
-      { label: "Ask Log", icon: "documents", href: "/admin/fundraising/asks", feature: "modules.fundraising" },
       { label: "Campaigns", icon: "campaigns", href: "/admin/fundraising/campaigns", feature: "modules.fundraising" },
-      { label: "Events", icon: "events", soon: true, feature: "modules.fundraising" },
     ],
   },
   {
     label: "Program",
     items: [
+      // Intake is a tab of Students (students/tabs.ts) — the pipeline into
+      // the roster, not a separate destination.
       { label: "Students", icon: "students", href: "/admin/students", feature: "modules.program", term: "student" },
       { label: "Cohorts", icon: "cohorts", href: "/admin/cohorts", feature: "modules.program", term: "cohort" },
       // Volunteers/Leaders belong to the program, not fundraising. The route
@@ -89,35 +93,24 @@ const NAV_SECTIONS: NavSection[] = [
       // fundraising module (where the page's own layout guard is) — the move is
       // its home in the IA. For YL EPA the "volunteer" term resolves to "Leaders".
       { label: "Volunteers", icon: "team", href: "/admin/fundraising/volunteers", feature: "modules.fundraising", term: "volunteer" },
-      { label: "Intake", icon: "intake", href: "/admin/intake", feature: "modules.program" },
       { label: "Demo Day", icon: "demoday", href: "/admin/demoday", feature: "aa.demoday" },
       { label: "YGB Camp", icon: "camp", href: "/admin/ygb", feature: "aa.ygb" },
       { label: "Schools & Partners", icon: "schools", href: "/admin/partners", feature: "modules.partners", term: "partner" },
-      // Ambition App + Internships are AA-only roadmap surfaces, not generic
-      // program modules — gate them on AA-only keys so they don't appear (even
-      // as "Soon") for other tenants like YL EPA.
-      { label: "Ambition App", icon: "app", soon: true, feature: "aa.app" },
-      { label: "Internships", icon: "internships", soon: true, feature: "aa.internships" },
       { label: "Career Library", icon: "career", href: "/admin/careers", feature: "aa.quiz" },
     ],
   },
   {
     label: "Finance",
     items: [
-      { label: "Overview", icon: "finance", href: "/admin/finance", feature: "modules.finance" },
-      { label: "Revenue", icon: "revenue", href: "/admin/finance/revenue", feature: "modules.finance" },
-      { label: "Expenses", icon: "expenses", href: "/admin/finance/transactions", feature: "modules.finance" },
-      { label: "Budget vs Actual", icon: "budget", href: "/admin/finance/budget", feature: "modules.finance" },
-      { label: "Cash Flow", icon: "cashflow", soon: true, feature: "modules.finance" },
+      // One item — the finance section's own 12-tab sub-nav (finance/layout)
+      // already covers Revenue / Expenses / Budget and the rest.
+      { label: "Finance", icon: "finance", href: "/admin/finance", feature: "modules.finance" },
     ],
   },
   {
     label: "Data",
     items: [
-      { label: "Website Analytics", icon: "webanalytics", href: "/admin/analytics", feature: "aa.site_analytics" },
-      { label: "App Analytics", icon: "appanalytics", soon: true, feature: "aa.site_analytics" },
-      { label: "Student Analytics", icon: "studentanalytics", soon: true, feature: "modules.program" },
-      { label: "Surveys", icon: "surveys", soon: true, feature: "modules.program" },
+      { label: "Analytics", icon: "webanalytics", href: "/admin/analytics", feature: "aa.site_analytics" },
     ],
   },
   {
@@ -363,13 +356,14 @@ function Icon({ name, className }: { name: IconName; className?: string }) {
 // nearest ancestor.
 
 function activeHref(pathname: string): string | null {
-  // The Monday/Friday wizard pages are entered through the My Week hub — keep
-  // that item lit rather than falling through to the /admin/ops (Tasks) prefix.
-  if (
-    pathname.startsWith("/admin/ops/monday") ||
-    pathname.startsWith("/admin/ops/friday")
-  ) {
+  // Everything under /admin/ops is the Work item (its sub-nav handles
+  // My Week / Tasks / Projects), but the item itself lands on My Week.
+  if (pathname === "/admin/ops" || pathname.startsWith("/admin/ops/")) {
     return "/admin/ops/my-week";
+  }
+  // Intake is a tab of Students (students/tabs.ts) — keep Students lit.
+  if (pathname === "/admin/intake" || pathname.startsWith("/admin/intake/")) {
+    return "/admin/students";
   }
   let best: string | null = null;
   for (const section of NAV_SECTIONS) {

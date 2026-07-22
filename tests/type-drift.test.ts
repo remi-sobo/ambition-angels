@@ -96,6 +96,7 @@ const FINGERPRINTS: { pattern: string; role: string; allow: { file: string; reas
       { file: "app/admin/_components/PageHeader.tsx", reason: "the primitive that defines the eyebrow treatment" },
       { file: "app/admin/_components/FeatureGate.tsx", reason: "standalone module-gate panel eyebrow (no PageHeader on this surface)" },
       { file: "app/admin/finance/layout.tsx", reason: "finance breadcrumb-bar eyebrow (layout chrome, not a page header)" },
+      { file: "app/admin/meetings/layout.tsx", reason: "meetings breadcrumb-bar eyebrow (layout chrome, not a page header)" },
       { file: "app/admin/strategic-plan/narrative/_components/shared.tsx", reason: "D5 exemption: presentation deck eyebrow" },
     ],
   },

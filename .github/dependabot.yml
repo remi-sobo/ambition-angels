@@ -1,0 +1,52 @@
+# Automated dependency updates. CI (.github/workflows/ci.yml) gates every PR
+# with typecheck + lint + vitest, so these bumps arrive pre-vetted.
+#
+# Majors for the Next/React stack are excluded on purpose: Next 15/16 pulls in
+# React 19 and async request APIs — that's a deliberate migration project, not
+# a bot merge. Everything else groups into one weekly PR per category to keep
+# the PR list quiet.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Los_Angeles
+    open-pull-requests-limit: 5
+    groups:
+      production-deps:
+        dependency-type: production
+        update-types: [minor, patch]
+      dev-deps:
+        dependency-type: development
+        update-types: [minor, patch]
+    ignore:
+      # Coupled major-version migration (Next 15/16 + React 19) — done by hand.
+      - dependency-name: next
+        update-types: ["version-update:semver-major"]
+      - dependency-name: eslint-config-next
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react-dom
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react-dom"
+        update-types: ["version-update:semver-major"]
+      # eslint 9 requires flat config; wait for the Next 15+ migration.
+      - dependency-name: eslint
+        update-types: ["version-update:semver-major"]
+      # tailwind 4 is a config-format rewrite; migrate deliberately.
+      - dependency-name: tailwindcss
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Los_Angeles

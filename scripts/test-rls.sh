@@ -185,6 +185,7 @@ ordered=(
   create_import_layer.sql
   constituent_custom_fields.sql
   hubspot_projection_external_refs.sql
+  hubspot_projection_dedupe_pushed_deals.sql
   add_constituents_is_volunteer.sql
   add_students_leader_id.sql
   add_org_id_to_bloomos_briefing_state.sql
@@ -197,6 +198,7 @@ ordered=(
   create_org_settings.sql
   tenant_scope_briefing_narrative.sql
   drop_fr_prospects_org_id_default.sql
+  seed_aa_ai_prospect_research.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

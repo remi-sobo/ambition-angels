@@ -17,7 +17,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { requireEntitlement } from "@/lib/admin/entitlements";
 import { constituentName } from "@/lib/fundraising/display";
 import { analyzeDonor, FLAG_LABELS, type RetentionFlag } from "@/lib/fundraising/retention";
 import { scoreDonor } from "@/lib/fundraising/engagement";
@@ -359,8 +360,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ANTHROPIC_API_KEY is not configured" }, { status: 503 });
   }
 
-  const ctx = await getOrgContext();
-  if (!ctx?.orgId) return NextResponse.json({ error: "No org" }, { status: 401 });
+  // Grow-tier gate on the model path only (401/402): deciding on an existing
+  // suggestion above stays auth-only, so a downgraded org can still resolve
+  // cards it already generated.
+  const ent = await requireEntitlement("ai.reed");
+  if (!ent.ok) return NextResponse.json({ error: ent.error }, { status: ent.status });
+  const ctx = ent.ctx;
 
   // Rate limit per user via the activity log.
   const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();

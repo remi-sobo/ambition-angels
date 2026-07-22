@@ -26,6 +26,7 @@ import { AddSoftCredit, SoftCreditChip, SC_TYPE_LABEL } from "../_components/Sof
 import EmailActions from "../_components/EmailActions";
 import { EnrollInJourney, CancelEnrollment } from "../_components/JourneyControls";
 import NextMovePanel from "../../_components/NextMovePanel";
+import { hasEntitlement } from "@/lib/admin/entitlements";
 import { EntityTasks } from "../../../_components/EntityTasks";
 import { EntityDocuments } from "../../../_components/EntityDocuments";
 import { CommentThread } from "../../../_components/CommentThread";
@@ -49,6 +50,8 @@ const fmtWhen = (s: string) =>
 export default async function DonorProfilePage({ params }: { params: { id: string } }) {
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
 
+  // Reed's next-move panel is a Grow-tier feature (the route 402s without ai.reed).
+  const reedEnabled = await hasEntitlement("ai.reed");
   const supabase = createServerSupabase();
   const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes, campaignsRes, fundsRes, appealsRes, scReceivedRes, oppsRes, enrollRes, activeJourneysRes] = await Promise.all([
     supabase.from("constituents").select("*").eq("id", params.id).maybeSingle(),
@@ -616,12 +619,14 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
           )}
         </section>
 
-        <NextMovePanel
-          entityType="constituent"
-          entityId={c.id}
-          entityLabel={name}
-          email={((c.emails as string[]) ?? [])[0] ?? null}
-        />
+        {reedEnabled && (
+          <NextMovePanel
+            entityType="constituent"
+            entityId={c.id}
+            entityLabel={name}
+            email={((c.emails as string[]) ?? [])[0] ?? null}
+          />
+        )}
 
         {openOpps.length > 0 && (
           <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg px-5 py-4 flex items-center gap-4 flex-wrap">

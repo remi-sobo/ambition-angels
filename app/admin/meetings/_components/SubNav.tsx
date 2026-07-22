@@ -11,7 +11,6 @@ import { usePathname } from "next/navigation";
 const LINKS: Array<{ href: string; label: string }> = [
   { href: "/admin/meetings", label: "Overview" },
   { href: "/admin/meetings/connections", label: "Connections" },
-  { href: "/admin/meetings/bookings", label: "Bookings" },
   { href: "/admin/meetings/booking-page", label: "Booking page" },
 ];
 

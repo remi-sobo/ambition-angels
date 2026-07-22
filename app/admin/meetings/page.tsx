@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
+import type { Booking, MeetingType } from "@/lib/database.types";
 import { listMeetings, type MeetingListItem, type UpcomingMeeting } from "@/lib/meetings/read";
 import { meetingFollowUpGaps } from "@/lib/meetings/coverage";
 import { MatchCluster, StatusPill, SectionTitle } from "./_ui";
 import SyncMeetingsButton from "./SyncMeetingsButton";
 import MeetingAgendaButton from "./_components/MeetingAgendaButton";
 import FollowUpQuickActions from "./_components/FollowUpQuickActions";
+import CancelBookingButton from "./_components/CancelBookingButton";
 import PageHeader from "../_components/PageHeader";
 
 export const dynamic = "force-dynamic";
@@ -70,6 +72,30 @@ function PastRow({ item, emphasize = false }: { item: MeetingListItem; emphasize
   );
 }
 
+type BookingWithType = Booking & { meeting_type: MeetingType | null };
+
+// One upcoming list: calendar events (badged when a /meet booking created
+// them, joined on google_event_id) plus any confirmed booking the calendar
+// mirror hasn't picked up yet.
+type UpcomingRow =
+  | { kind: "event"; meeting: UpcomingMeeting; booking: BookingWithType | null }
+  | { kind: "booking"; booking: BookingWithType };
+
+const rowStart = (r: UpcomingRow) =>
+  r.kind === "event" ? r.meeting.start : r.booking.start_time;
+
+// The chip that marks a row as booked through the public booking page.
+function BookedChip({ typeName }: { typeName?: string | null }) {
+  return (
+    <span
+      className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full border border-orange/30 bg-orange-light text-[10px] font-medium text-orange-dark"
+      title="Booked through your booking page"
+    >
+      {typeName ? `Booked · ${typeName}` : "Booked"}
+    </span>
+  );
+}
+
 export default async function MeetingsPage() {
   const now = new Date();
   const { past, upcoming } = await listMeetings(now);
@@ -77,6 +103,33 @@ export default async function MeetingsPage() {
   const coverage = ctx
     ? await meetingFollowUpGaps(getSupabaseAdmin(), ctx.orgId, now)
     : { gapCount: 0, total: 0, windowDays: 14 };
+
+  // Confirmed future bookings from the public booking page, for the badge +
+  // cancel join. Org fence: service-role client, scoped by org_id.
+  const { data: bookingRows } = ctx
+    ? await getSupabaseAdmin()
+        .from("bookings")
+        .select("*, meeting_type:meeting_types(*)")
+        .eq("org_id", ctx.orgId)
+        .eq("status", "confirmed")
+        .gte("start_time", now.toISOString())
+        .order("start_time", { ascending: true })
+        .limit(100)
+    : { data: [] };
+  const bookings = (bookingRows ?? []) as BookingWithType[];
+  const bookingByGoogleId = new Map(
+    bookings
+      .filter((b) => b.google_event_id)
+      .map((b) => [b.google_event_id as string, b])
+  );
+  // Bookings the calendar mirror hasn't synced yet still deserve a row —
+  // otherwise a fresh booking is invisible until the next sync.
+  const syncedGoogleIds = new Set(
+    upcoming.map((m) => m.googleEventId).filter(Boolean)
+  );
+  const unsyncedBookings = bookings.filter(
+    (b) => !b.google_event_id || !syncedGoogleIds.has(b.google_event_id)
+  );
 
   const needs = past.filter((m) => m.record.follow_up_status === "needs_follow_up");
   // Dismissed = "not a business meeting, get it out of my view" — kept out of
@@ -86,15 +139,28 @@ export default async function MeetingsPage() {
   );
   const dismissed = past.filter((m) => m.record.follow_up_status === "dismissed");
 
-  // Group upcoming by day, in order.
+  // Group the merged upcoming rows by day, sorted by start within each day.
   const todayKey = laDayKey(now.toISOString());
-  const byDay = new Map<string, UpcomingMeeting[]>();
-  for (const m of upcoming) {
-    const k = laDayKey(m.start);
+  const upcomingRows: UpcomingRow[] = [
+    ...upcoming.map((m) => ({
+      kind: "event" as const,
+      meeting: m,
+      booking: m.googleEventId
+        ? bookingByGoogleId.get(m.googleEventId) ?? null
+        : null,
+    })),
+    ...unsyncedBookings.map((b) => ({ kind: "booking" as const, booking: b })),
+  ];
+  const byDay = new Map<string, UpcomingRow[]>();
+  for (const r of upcomingRows) {
+    const k = laDayKey(rowStart(r));
     const arr = byDay.get(k) ?? [];
-    arr.push(m);
+    arr.push(r);
     byDay.set(k, arr);
   }
+  byDay.forEach((arr) => {
+    arr.sort((a, b) => rowStart(a).localeCompare(rowStart(b)));
+  });
   const days = Array.from(byDay.keys()).sort();
 
   return (
@@ -188,10 +254,11 @@ export default async function MeetingsPage() {
         </section>
       )}
 
-      {/* Upcoming — grouped by day, scannable. */}
+      {/* Upcoming — grouped by day, scannable. Calendar meetings and booking-
+          page bookings in one list; booked rows carry a chip + inline cancel. */}
       <section>
-        <SectionTitle count={upcoming.length}>Upcoming</SectionTitle>
-        {upcoming.length === 0 ? (
+        <SectionTitle count={upcomingRows.length}>Upcoming</SectionTitle>
+        {upcomingRows.length === 0 ? (
           <p className="text-sm text-ink-2 px-1">No upcoming external meetings on the calendar.</p>
         ) : (
           <div className="space-y-5">
@@ -207,23 +274,43 @@ export default async function MeetingsPage() {
                     {head.sub && <span className="text-[11px] text-ink-3">· {head.sub}</span>}
                   </div>
                   <div className="space-y-1.5">
-                    {(byDay.get(key) ?? []).map((m) => (
-                      <div
-                        key={m.eventId}
-                        className="group flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel transition-colors hover:bg-[#EFE6D4]"
-                      >
-                        <Link href={`/admin/meetings/upcoming/${m.eventId}`} className="flex flex-1 min-w-0 items-center gap-3">
+                    {(byDay.get(key) ?? []).map((r) =>
+                      r.kind === "event" ? (
+                        <div
+                          key={r.meeting.eventId}
+                          className="group flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel transition-colors hover:bg-[#EFE6D4]"
+                        >
+                          <Link href={`/admin/meetings/upcoming/${r.meeting.eventId}`} className="flex flex-1 min-w-0 items-center gap-3">
+                            <span className="text-[12px] text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-20 shrink-0">
+                              {laTime(r.meeting.start)}
+                            </span>
+                            <span className="flex-1 min-w-0 text-[14px] text-ink-1 group-hover:text-orange truncate transition-colors">
+                              {r.meeting.title ?? "Untitled meeting"}
+                            </span>
+                            {r.booking && <BookedChip typeName={r.booking.meeting_type?.name} />}
+                            <MatchCluster matched={r.meeting.matched} muted />
+                          </Link>
+                          <MeetingAgendaButton eventId={r.meeting.eventId} title={r.meeting.title} start={r.meeting.start} />
+                          {r.booking && <CancelBookingButton bookingId={r.booking.id} />}
+                        </div>
+                      ) : (
+                        // A booking the calendar mirror hasn't synced yet — no
+                        // event to open, but it's real and cancellable.
+                        <div
+                          key={r.booking.id}
+                          className="flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel"
+                        >
                           <span className="text-[12px] text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-20 shrink-0">
-                            {laTime(m.start)}
+                            {laTime(r.booking.start_time)}
                           </span>
-                          <span className="flex-1 min-w-0 text-[14px] text-ink-1 group-hover:text-orange truncate transition-colors">
-                            {m.title ?? "Untitled meeting"}
+                          <span className="flex-1 min-w-0 text-[14px] text-ink-1 truncate">
+                            {r.booking.attendee_name}
                           </span>
-                          <MatchCluster matched={m.matched} muted />
-                        </Link>
-                        <MeetingAgendaButton eventId={m.eventId} title={m.title} start={m.start} />
-                      </div>
-                    ))}
+                          <BookedChip typeName={r.booking.meeting_type?.name} />
+                          <CancelBookingButton bookingId={r.booking.id} />
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
               );

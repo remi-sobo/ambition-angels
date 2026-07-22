@@ -59,8 +59,9 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "My Week", icon: "week", href: "/admin/ops/my-week", feature: "modules.ops" },
       { label: "Tasks", icon: "tasks", href: "/admin/ops", feature: "modules.ops" },
       { label: "Projects", icon: "projects", href: "/admin/ops/projects", feature: "modules.ops" },
+      // One item for the whole meetings product — the booking admin (the old
+      // "Booking page" item at /admin/meet) now lives on tabs inside it.
       { label: "Meetings", icon: "meetings", href: "/admin/meetings", feature: "modules.meetings" },
-      { label: "Booking page", icon: "events", href: "/admin/meet", feature: "modules.meetings" },
       { label: "Staff", icon: "team", href: "/admin/staff", feature: "modules.staff", term: "staff" },
       { label: "Documents", icon: "documents", href: "/admin/documents", feature: "modules.documents" },
     ],

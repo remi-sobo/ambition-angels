@@ -13,7 +13,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext, getAdminUser, type AdminUser } from "@/lib/admin/auth";
+import { getAdminUser, type AdminUser } from "@/lib/admin/auth";
+import { requireEntitlement } from "@/lib/admin/entitlements";
 import { notify } from "@/lib/notifications/notify";
 import { runInBackground } from "@/lib/background";
 import { generateBriefForProspect } from "@/lib/agents/funder-research/generate-brief";
@@ -57,10 +58,13 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Grow-tier gate: prospect research is a paid AI capability. 401 unauthenticated,
+  // 402 when the org lacks the entitlement — same seam as reed/ask.
+  const ent = await requireEntitlement("ai.prospect_research");
+  if (!ent.ok) {
+    return NextResponse.json({ error: ent.error }, { status: ent.status });
   }
+  const ctx = ent.ctx;
   const currentUser = await getAdminUser();
   if (!currentUser) {
     return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });

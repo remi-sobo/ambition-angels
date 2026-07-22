@@ -2,7 +2,7 @@
 
 **Status:** Internal report (source of truth for marketing-site "how we use AI" copy and tier packaging).
 **Date:** 2026-07-22
-**Scope:** Every Anthropic Claude API call site in this codebase — the public marketing website and the BloomOS admin product — plus how the tier system (Bloom → **Bloom Grow** → Bloom Flourish) gates access today, and the gaps between what the code enforces and what the packaging implies.
+**Scope:** Every Anthropic Claude API call site in this codebase — the public marketing website and the BloomOS admin product — plus how the tier system (Bloom → **Grow** → Flourish) gates access today, and the gaps between what the code enforces and what the packaging implies.
 
 ---
 
@@ -11,8 +11,8 @@
 - All AI in the product is **Anthropic Claude**, called server-side only. Two models are in use: `claude-sonnet-4-6` (fast/conversational tier) and `claude-opus-4-8` (deep/judgment tier; funder research still pins `claude-opus-4-7`). Model choice is centralized in `lib/ai/gateway.ts`, though several older agents still call the API directly.
 - **AI never acts autonomously.** Every AI surface is either advisory prose (briefings, coaching feedback) or an inert proposal/draft that a human must accept before anything is saved, sent, or booked. Reed's tools are read-only; Reed cannot send email, move money, change permissions, or delete anything.
 - **On the public site, AI touches no student PII in `/ms`** (the middle-school game): matching is fully deterministic, students have no free-text input, and the only two model calls see trait scores + career titles + anonymous handles. The career quiz does send quiz answers (including the teen's first name) to Claude; the trust docs note a **zero-data-retention agreement with Anthropic is still pending** and required before any student PII flows.
-- **Tier model in code:** `ai.reed` is the entitlement that separates **Bloom** from **Bloom Grow**; `coaching` marks **Bloom Flourish** (human SOBO coaching; Reed offers to tee up sessions when the org holds it). `ai.prospect_research` gates the fundraising research agents — but **only in the UI**.
-- **Key finding:** as enforced today, "Bloom Grow unlocks AI" is only true for **Reed Ask**. Every other AI surface in BloomOS (13 of 14) is available to any authenticated tenant with no entitlement check on the server. Section 5 lists what to reconcile before the marketing site makes tier claims.
+- **Tier model (canonical, 2026-07-22): Bloom → Grow → Flourish. No free/Seed tier.** `ai.reed` + `ai.prospect_research` are the Grow tier's AI switches; `coaching` marks Flourish (human SOBO coaching; Reed offers to tee up sessions when the org holds it).
+- **The Grow gate is server-enforced** on all six agentic AI surfaces: Reed Ask, meeting-agenda/strategy drafting via Reed, funder research, prospect discovery, next-best-action, and next-move (each 402s without the entitlement, with matching UI hiding). The remaining ungated surfaces (§4.3) are assistive drafts/briefings bundled with base Bloom.
 
 ---
 
@@ -22,14 +22,14 @@ Defined in `lib/admin/entitlements.ts`. Entitlements are per-org rows in `org_en
 
 | Tier | Entitlement key | What it unlocks |
 |---|---|---|
-| **Bloom** (base) | — | All module switches (`modules.*`) as seeded; every AI surface that has no entitlement gate (see §4) |
-| **Bloom Grow** | `ai.reed` | **Reed, the AI assistant** — the Ask Reed FAB, `/admin/reed`, record-anchored panels, meeting-agenda drafting, strategy review. Server-enforced: `app/api/reed/ask` returns **402** without it. |
-| **Bloom Grow** (intended) | `ai.prospect_research` | The fundraising prospect-research surfaces (funder research briefs, prospect discovery). Currently **UI-gated only** — see §5.2. |
-| **Bloom Flourish** | `coaching` | Human SOBO coaching (the "judgment-heavy 20%"). Not an AI feature itself; when held, Reed's system prompt lets it offer to tee up a coaching session. |
+| **Bloom** (base) | — | All module switches (`modules.*`) as seeded, plus the assistive AI drafts/briefings in §4.3 |
+| **Grow** | `ai.reed` | **Reed, the AI assistant** — the Ask Reed FAB, `/admin/reed`, record-anchored panels, meeting-agenda drafting, strategy review, next-best-action cards, next-move email drafts. Server-enforced: `reed/ask`, `next-best-action`, and `next-move` all return **402** without it. |
+| **Grow** | `ai.prospect_research` | The fundraising prospect-research surfaces. Server-enforced: the funder-research and prospect-discovery routes return **402** without it, matching the prospects-section FeatureGate. |
+| **Flourish** | `coaching` | Human SOBO coaching (the "judgment-heavy 20%"). Not an AI feature itself; when held, Reed's system prompt lets it offer to tee up a coaching session. |
 
 The upsell boundary is explicit in code: `requireEntitlement()` returns **402 Payment Required** with "This feature requires an upgrade" when an org lacks the key.
 
-> ⚠️ Naming note: `docs/bloomos/01-vision-and-strategy.md` (Ring-4 pricing) uses a *different* scheme — **Seed $0 / Bloom ~$99 / Grow ~$249**, where the priced "Grow" is described around advanced reporting/NDPA, not AI, and "Bloom" is described as including "AI features with monthly credit pool." The code's Bloom / Bloom Grow / Bloom Flourish names carry no pricing anywhere in the repo. These two schemes must be reconciled before public pricing/AI copy ships (§5.1).
+Naming was reconciled 2026-07-22: the previous Seed $0 tier is gone, and `docs/bloomos/01-vision-and-strategy.md` now prices the same three tiers the code enforces — Bloom ~$99 (no AI), Grow ~$249 (the AI layer), Flourish (adds coaching, pricing TBD).
 
 ---
 
@@ -67,31 +67,38 @@ A bespoke private family decision-analysis tool that happens to live on the publ
 - **Spend ledger** (`lib/ai/ledger.ts`): append-only `ai_calls` per-org ledger. Tested.
 - **Org backstop** (`lib/ai/cap.ts`): global per-org monthly AI cap, default **$100** (`ORG_MONTHLY_AI_CAP_USD`), fail-open.
 
-### 4.1 The Bloom Grow surface: Reed Ask
-`app/api/reed/ask/route.ts` + `lib/agents/reed/{client,tools}.ts` — **the only server-gated AI surface** (`requireEntitlement("ai.reed")` → 402).
+### 4.1 The flagship Grow surface: Reed Ask
+`app/api/reed/ask/route.ts` + `lib/agents/reed/{client,tools}.ts` — server-gated by `requireEntitlement("ai.reed")` → 402.
 
 - Bounded read-only tool-use loop (max 6 turns) over the org's real data via 19 RLS-scoped tools: finance snapshot, fundraising forecast, grant deadlines, meeting briefs, constituent/partner dossiers, needs-you queue, status/outlook, metric catalog + explain, strategy plan/coherence, document list/read, plus three **inert-proposal** writes (`save_draft`, `propose_next_best_action`, `propose_plan_element`, `propose_document_extraction`).
 - Cannot send email, move money, change permissions, or delete. All numbers come from tools, never authored by the model.
 - Model: `claude-sonnet-4-6`. Per-org cap: **$25/month** hard stop (429), warn at $18, tracked in `reed_activity_log` and mirrored to the unified ledger.
 - Entry points (all UI-gated on `ai.reed`): Ask Reed FAB, `/admin/reed`, record panels, meeting agenda button, strategy review button.
 
-### 4.2 Everything else (currently ungated at the server — effectively base Bloom)
+### 4.2 The other Grow surfaces (server-gated 2026-07-22, with matching UI hiding)
+
+| # | Feature | Where | Model | Data sent | Gate + guardrails |
+|---|---|---|---|---|---|
+| 1 | **Funder research briefs** — 9-section deep brief w/ web search, background job | `lib/agents/funder-research/*` | **Opus 4.7**, ≤20 web searches | Prospect's full HubSpot-mirror context | `requireEntitlement("ai.prospect_research")` → 402; rate limit 5/10min; **$20/mo shared fundraising wallet**; ledgered |
+| 2 | **Prospect discovery** — web-searches 5–8 net-new candidates per strategy angle | `lib/agents/prospect-discovery/agent.ts` | Sonnet, ≤8 searches | Angle, target type, exclude list | `requireEntitlement("ai.prospect_research")` → 402; same wallet; rate limit 8/10min; ledgered |
+| 3 | **Next-best-action** — ranks pipeline opportunities, proposes one action each | `lib/agents/next-best-action/agent.ts` | Sonnet (gateway) | Per-opportunity fundraising facts (≤25) | `requireEntitlement("ai.reed")` → 402 on POST (GET of persisted cards stays auth-only); same wallet; rate limit 10/10min; ledgered |
+| 4 | **Next move + email draft** — single best move for one donor, ready-to-edit email | `lib/agents/next-move/agent.ts` | **Opus 4.8** (gateway) | Full donor dossier (private rows filtered; honors do-not-contact) | `requireEntitlement("ai.reed")` → 402 on the model path (decisions on existing cards stay auth-only); same wallet; rate limit 15/10min; ledgered |
+
+### 4.3 Assistive surfaces bundled with base Bloom (auth-only, no entitlement gate)
 
 | # | Feature | Where | Model | Data sent | Guardrails |
 |---|---|---|---|---|---|
 | 1 | **Meeting transcript parser** — summary + suggested follow-up tasks (human accepts) | `lib/meetings/reed.ts`, transcript route | Sonnet | Meeting title, attendees, agenda, transcript (12k chars) | Auth only; no cap, no ledger |
-| 2 | **Funder research briefs** — 9-section deep brief w/ web search, background job | `lib/agents/funder-research/*` | **Opus 4.7**, ≤20 web searches | Prospect's full HubSpot-mirror context | UI-gated `ai.prospect_research` only; rate limit 5/10min; **$20/mo shared fundraising wallet**; ledgered |
-| 3 | **Prospect discovery** — web-searches 5–8 net-new candidates per strategy angle | `lib/agents/prospect-discovery/agent.ts` | Sonnet, ≤8 searches | Angle, target type, exclude list | Same wallet; rate limit 8/10min; ledgered |
-| 4 | **Next-best-action** — ranks pipeline opportunities, proposes one action each | `lib/agents/next-best-action/agent.ts` | Sonnet (gateway) | Per-opportunity fundraising facts (≤25) | Same wallet; rate limit 10/10min; ledgered |
-| 5 | **Next move + email draft** — single best move for one donor, ready-to-edit email | `lib/agents/next-move/agent.ts` | **Opus 4.8** (gateway) | Full donor dossier (private rows filtered; honors do-not-contact) | Same wallet; rate limit 15/10min; ledgered |
-| 6 | **Grant Coach ("Reed's Proposal Review")** — critic-only stress test through 4 audience lenses; never writes the proposal | `lib/fundraising/grantCoach.ts` | **Opus 4.8** (gateway) | Proposal draft (text or PDF document block) + funder materials | Org backstop; ledgered |
-| 7 | **Grant Coach "Defend the draft"** — turn-by-turn tough-reader interrogation | `.../coach/defend` route | Opus 4.8 (gateway) | Draft + chat history (stateless) | Org backstop; ledgered |
-| 8 | **Strategy angle draft ("Draft with Reed")** — drafts a Strategy Room angle from a brief | strategy angles draft route | Sonnet (gateway) | Operator's brief (≤2k chars) | Ledgered; no cap |
-| 9 | **Thank-you note draft** — short acknowledgment grounded in giving history; editable, never auto-sent | acknowledgments draft route | Sonnet (gateway) | Donor first name + gift stats | Rate limit 30/10min; **not ledgered/capped** |
-| 10 | **Finance categorization** — suggests chart-of-accounts category + rule per bank transaction; advisory, apply-after-confirm | `lib/finance/ai-categorize.ts` | **Opus 4.8** (adaptive thinking) | Category list + ≤60 transaction descriptions/amounts | **Not ledgered/capped** |
-| 11 | **Morning executive briefing** — daily headline/narrative; deterministic selection, AI narrates only (no invented numbers); deterministic fallback | `lib/admin/briefing/narrate.ts` + cron | Sonnet | Rounded fact sheet (runway, pipeline, counts) | Not ledgered/capped |
-| 12 | **Weekly briefing (legacy)** — weekly headline/narrative/priorities | `lib/briefing.ts` + cron | Sonnet | SQL-computed weekly operating data | Not ledgered/capped |
-| 13 | **Bug-report interview** — conversational intake (≤4 questions) → ready-to-paste dev prompt | report/debug route | Sonnet | The Q&A transcript, page context | Not ledgered/capped |
+| 2 | **Grant Coach ("Reed's Proposal Review")** — critic-only stress test through 4 audience lenses; never writes the proposal | `lib/fundraising/grantCoach.ts` | **Opus 4.8** (gateway) | Proposal draft (text or PDF document block) + funder materials | Org backstop; ledgered |
+| 3 | **Grant Coach "Defend the draft"** — turn-by-turn tough-reader interrogation | `.../coach/defend` route | Opus 4.8 (gateway) | Draft + chat history (stateless) | Org backstop; ledgered |
+| 4 | **Strategy angle draft ("Draft with Reed")** — drafts a Strategy Room angle from a brief | strategy angles draft route | Sonnet (gateway) | Operator's brief (≤2k chars) | Ledgered; no cap |
+| 5 | **Thank-you note draft** — short acknowledgment grounded in giving history; editable, never auto-sent | acknowledgments draft route | Sonnet (gateway) | Donor first name + gift stats | Rate limit 30/10min; **not ledgered/capped** |
+| 6 | **Finance categorization** — suggests chart-of-accounts category + rule per bank transaction; advisory, apply-after-confirm | `lib/finance/ai-categorize.ts` | **Opus 4.8** (adaptive thinking) | Category list + ≤60 transaction descriptions/amounts | **Not ledgered/capped** |
+| 7 | **Morning executive briefing** — daily headline/narrative; deterministic selection, AI narrates only (no invented numbers); deterministic fallback | `lib/admin/briefing/narrate.ts` + cron | Sonnet | Rounded fact sheet (runway, pipeline, counts) | Not ledgered/capped |
+| 8 | **Weekly briefing (legacy)** — weekly headline/narrative/priorities | `lib/briefing.ts` + cron | Sonnet | SQL-computed weekly operating data | Not ledgered/capped |
+| 9 | **Bug-report interview** — conversational intake (≤4 questions) → ready-to-paste dev prompt | report/debug route | Sonnet | The Q&A transcript, page context | Not ledgered/capped |
+
+Whether these assistive surfaces stay in base Bloom or move behind Grow is a packaging decision, not a code constraint — each would take one `requireEntitlement` line to move.
 
 Non-calls worth knowing (they look AI-adjacent but make no model call): `RulesEditor.tsx` ("Anthropic" is a seed merchant string), `TaskEditModal.tsx` (renders an already-generated prompt), `app/api/admin/report` (files the task), `lib/demoday/attendees.ts` (attendee employer data).
 
@@ -99,11 +106,11 @@ Non-calls worth knowing (they look AI-adjacent but make no model call): `RulesEd
 
 ## 5. Gaps to close before the marketing site makes AI/tier claims
 
-1. **Reconcile the two tier vocabularies.** Code says Bloom / **Bloom Grow** (`ai.reed`) / Bloom Flourish (`coaching`); the vision doc prices Seed $0 / Bloom $99 / Grow $249 and puts "AI features with monthly credit pool" in *Bloom*, not Grow. The website cannot state "AI is a Bloom Grow feature" and "Bloom includes AI credits" at the same time. Decide the canonical mapping, then update whichever document loses.
+1. ~~**Reconcile the two tier vocabularies.**~~ **Resolved 2026-07-22.** The canonical tiers are **Bloom → Grow → Flourish** (no Seed / free tier). `docs/bloomos/01-vision-and-strategy.md` now prices the same three tiers the entitlement code enforces: Grow = the AI layer (`ai.reed` + `ai.prospect_research`), Flourish = Grow + human coaching (`coaching`).
 
-2. **`ai.prospect_research` is presentational only.** The prospects UI and sidebar hide behind it, but the four fundraising-agent API routes (#2–#5 in §4.2) check only `isAuthed()`. A base-Bloom tenant that hits the endpoints directly gets the paid feature. If prospect research is meant to be a Bloom Grow capability, add `requireEntitlement("ai.prospect_research")` to those routes (the pattern already exists in `reed/ask`).
+2. ~~**`ai.prospect_research` is presentational only.**~~ **Resolved 2026-07-22.** All four fundraising-agent routes are server-gated: funder research and prospect discovery `requireEntitlement("ai.prospect_research")`; next-best-action and next-move `requireEntitlement("ai.reed")`. The corresponding UI launchers (Suggested Moves on Today, Next Move panels on donor/prospect profiles, the Discover panel on strategy angles) render only when the org holds the key, and AA is seeded with `ai.prospect_research` by migration (`seed_aa_ai_prospect_research.sql`).
 
-3. **Most AI surfaces are unmetered.** If the packaging story is "AI with monthly credit pool," note that today only Reed ($25), the fundraising wallet ($20 shared), and grant coach (via the $100 backstop) are bounded; briefings, transcript parsing, thank-you drafts, finance categorization, angle drafts, and the bug interviewer have no cap and several have no ledger rows. Routing them all through `logAICall` + the org backstop makes the credit-pool claim true.
+3. **The Bloom-tier assistive surfaces are unmetered.** If the packaging story is "AI with monthly credit pool," note that today only Reed ($25), the fundraising wallet ($20 shared), and grant coach (via the $100 backstop) are bounded; briefings, transcript parsing, thank-you drafts, finance categorization, angle drafts, and the bug interviewer have no cap and several have no ledger rows. Routing them all through `logAICall` + the org backstop makes the credit-pool claim true.
 
 4. **`/shannon` has no rate limit** and bypasses the gateway. It's a personal tool, not a product surface — either add the standard `rateLimit` guard or retire it; exclude it from public AI copy either way.
 
@@ -116,7 +123,8 @@ Safe to publish now:
 - "In the middle-school game, students never enter their name or email, and the AI only ever sees anonymous trait scores — never anything a child typed."
 - "Student information is never used to train AI, and AI never makes decisions about a young person. People do." (already drafted in `docs/trust/trust-page-draft.md`)
 - "In BloomOS, AI drafts and proposes — a person always reviews and approves before anything is saved or sent. The AI assistant's data access is read-only and scoped to your own organization."
-- "Reed, the BloomOS AI assistant, is included in the Bloom Grow plan." *(true — it is the one server-enforced Bloom Grow feature)*
+- "Reed, the BloomOS AI assistant — and the AI fundraising agents (prospect research, discovery, next-move drafting) — are included in the **Grow** plan." *(server-enforced as of 2026-07-22)*
+- "BloomOS comes in three plans: Bloom, Grow, and Flourish. Grow adds the AI layer; Flourish adds human coaching."
 
-Hold until §5 items are resolved:
-- Any claim that *all* AI features are Bloom Grow-gated, any AI "credit pool" language, and any per-tier price next to an AI feature list.
+Hold until §5 items 3–5 are resolved:
+- Any AI "credit pool" language (the Bloom-tier assistive surfaces are not yet all metered), and final per-tier prices next to an AI feature list.

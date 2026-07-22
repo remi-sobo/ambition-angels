@@ -5,6 +5,7 @@ import PageHeader from "../../../_components/PageHeader";
 import { constituentName } from "@/lib/fundraising/display";
 import StrategyBoard, { type FunderRow } from "../_components/StrategyBoard";
 import DiscoverPanel from "../_components/DiscoverPanel";
+import { hasEntitlement } from "@/lib/admin/entitlements";
 
 // Strategy angle drill-in (Phase 2): the funnel board for one angle. Funders
 // are grouped by stage; add via constituent search/create; move stage + record
@@ -30,6 +31,9 @@ type RawFa = {
 };
 
 export default async function AngleFunnelPage({ params }: { params: { key: string } }) {
+  // AI prospect discovery is a Grow-tier feature (the discover route 402s
+  // without ai.prospect_research); the funnel board itself stays available.
+  const discoveryEnabled = await hasEntitlement("ai.prospect_research");
   const supabase = createServerSupabase();
 
   const { data: angle, error } = await supabase
@@ -78,9 +82,11 @@ export default async function AngleFunnelPage({ params }: { params: { key: strin
           </Link>
         }
       />
-      <div className="mb-5">
-        <DiscoverPanel angleId={angle.id} angleName={angle.name} />
-      </div>
+      {discoveryEnabled && (
+        <div className="mb-5">
+          <DiscoverPanel angleId={angle.id} angleName={angle.name} />
+        </div>
+      )}
       <StrategyBoard angleId={angle.id} funders={funders} />
     </div>
   );

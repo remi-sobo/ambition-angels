@@ -10,6 +10,7 @@ import ProspectAngles, { type OnAngle } from "./_components/ProspectAngles";
 import { CommentThread } from "../../../_components/CommentThread";
 import { EntityTasks } from "../../../_components/EntityTasks";
 import NextMovePanel from "../../_components/NextMovePanel";
+import { hasEntitlement } from "@/lib/admin/entitlements";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // Prospect detail — keyed by the bench entity (fr_prospects.id), so it works for
@@ -60,6 +61,9 @@ function MetaItem({ label, children }: { label: string; children: React.ReactNod
 
 export default async function ProspectDetailPage({ params }: { params: { id: string } }) {
   const prospectId = params.id;
+  // The section is fenced by ai.prospect_research (layout FeatureGate); the
+  // next-move panel additionally needs ai.reed (its route 402s without it).
+  const reedEnabled = await hasEntitlement("ai.reed");
   const supabase = createServerSupabase();
 
   const { data: prospectRow } = await supabase
@@ -192,12 +196,14 @@ export default async function ProspectDetailPage({ params }: { params: { id: str
         )}
       </header>
 
-      <NextMovePanel
-        entityType="fr_prospects"
-        entityId={prospect.id}
-        entityLabel={prospect.org_name || prospect.name}
-        email={prospect.email}
-      />
+      {reedEnabled && (
+        <NextMovePanel
+          entityType="fr_prospects"
+          entityId={prospect.id}
+          entityLabel={prospect.org_name || prospect.name}
+          email={prospect.email}
+        />
+      )}
 
       <ProspectAngles prospectId={prospect.id} onAngles={onAngles} allAngles={allAngles} />
 

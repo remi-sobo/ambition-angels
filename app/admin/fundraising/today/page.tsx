@@ -7,6 +7,7 @@ import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "../../ops/_types/ops";
 import GmailSyncButton from "../_components/GmailSyncButton";
 import SuggestedMoves from "../_components/SuggestedMoves";
+import { hasEntitlement } from "@/lib/admin/entitlements";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { TYPE } from "@/lib/admin/typeScale";
 import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
@@ -61,6 +62,9 @@ const profileHref = (c: ConstituentLite) => (c ? `/admin/fundraising/donors/${c.
 
 export default async function TodaysMovesPage() {
   const supabase = createServerSupabase();
+  // Reed's NBA cards are a Grow-tier feature; the POST route 402s without
+  // ai.reed, so don't render the launcher at all on base Bloom.
+  const reedEnabled = await hasEntitlement("ai.reed");
   const today = todayISO();
   const soon = addDays(today, 30);
   const recentSince = addDays(today, -14);
@@ -152,9 +156,11 @@ export default async function TodaysMovesPage() {
         <StatCard label="Recent gifts" value={recent.length} sub={recent.length > 0 ? `${money(recentValue)} · 14d` : "none yet"} />
       </div>
 
-      <div className="mb-4">
-        <SuggestedMoves />
-      </div>
+      {reedEnabled && (
+        <div className="mb-4">
+          <SuggestedMoves />
+        </div>
+      )}
 
       <div className="space-y-4">
         <OppQueue

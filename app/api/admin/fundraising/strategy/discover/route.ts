@@ -7,7 +7,8 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getAdminUser, getOrgContext } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
+import { requireEntitlement } from "@/lib/admin/entitlements";
 import { logAICall } from "@/lib/ai/ledger";
 import { orgOverAICap } from "@/lib/ai/cap";
 import {
@@ -25,16 +26,17 @@ const MONTHLY_BUDGET_HARD_USD = 20;
 const MONTHLY_BUDGET_WARN_USD = 12;
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Grow-tier gate: prospect discovery is a paid AI capability (401/402), and
+  // the returned ctx is the session org — every write below attributes to it
+  // (never a resident-org fallback).
+  const ent = await requireEntitlement("ai.prospect_research");
+  if (!ent.ok) return NextResponse.json({ error: ent.error }, { status: ent.status });
+  const ctx = ent.ctx;
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: "ANTHROPIC_API_KEY is not configured" }, { status: 503 });
   }
   const currentUser = await getAdminUser();
   if (!currentUser) return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });
-  // isAuthed() above guarantees a session org — resolve it once; every write
-  // below attributes to this org (never a resident-org fallback).
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = (await req.json().catch(() => null)) as { angle_id?: unknown; type?: unknown } | null;
   const angleId = typeof body?.angle_id === "string" ? body.angle_id : "";

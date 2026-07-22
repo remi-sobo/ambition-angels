@@ -15,7 +15,8 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { requireEntitlement } from "@/lib/admin/entitlements";
 import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "@/app/admin/ops/_types/ops";
 import { runNextBestAction, estimateNbaCostUsd } from "@/lib/agents/next-best-action/agent";
@@ -136,8 +137,11 @@ export async function GET() {
 }
 
 export async function POST() {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Grow-tier gate: NBA suggestions are a Reed capability (401/402). GET stays
+  // auth-only so already-persisted cards remain readable.
+  const ent = await requireEntitlement("ai.reed");
+  if (!ent.ok) {
+    return NextResponse.json({ error: ent.error }, { status: ent.status });
   }
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: "ANTHROPIC_API_KEY is not configured" }, { status: 503 });
@@ -192,10 +196,9 @@ export async function POST() {
       : null;
 
   // Global org backstop across ALL AI surfaces (above this agent's budget). Fail-open.
-  // isAuthed() above guarantees a session org — every write below attributes to
-  // this org (never a resident-org fallback).
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // requireEntitlement above resolved the session org — every write below
+  // attributes to this org (never a resident-org fallback).
+  const ctx = ent.ctx;
   {
     const orgCap = await orgOverAICap(supabase, ctx.orgId);
     if (orgCap.over) {

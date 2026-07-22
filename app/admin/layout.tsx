@@ -83,7 +83,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const ents = authed && orgId ? await getEntitlements(orgId) : null;
   const features = ents ? Array.from(ents) : null;
 
-  // Reed is gated by the `ai.reed` entitlement (Bloom Grow and up). On Bloom
+  // Reed is gated by the `ai.reed` entitlement (Grow and up). On Bloom
   // base the FAB simply doesn't mount — and /api/reed/* will 402 server-side
   // (Phase 4), so hiding it here is an affordance, not the security boundary.
   const reedEnabled = !!ents && hasFeature(ents, "ai.reed");

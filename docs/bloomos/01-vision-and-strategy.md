@@ -55,11 +55,15 @@ Research-validated buyer pains: per-record pricing (Bloomerang), per-user pricin
 
 **Therefore: flat, published, per-org pricing. Unlimited users. Unlimited records.**
 
-| Tier (working) | Price (target) | Includes |
+Three tiers — no free tier. Names match the entitlement model in code
+(`lib/admin/entitlements.ts`): Grow is the AI tier (`ai.reed` +
+`ai.prospect_research`), Flourish adds human coaching (`coaching`).
+
+| Tier | Price (target) | Includes |
 |---|---|---|
-| Seed | $0 | Command center, projects/tasks, board lite, 1 integration — the wedge/trust builder |
-| Bloom | ~$99/mo | All modules, all integrations, AI features with monthly credit pool |
-| Grow | ~$249/mo | Multi-program orgs: advanced impact/reporting, NDPA/district features, priority support |
+| Bloom | ~$99/mo | All modules, all integrations — the complete operating system, no AI |
+| Grow | ~$249/mo | Everything in Bloom + the AI layer: Reed assistant, prospect research + discovery, next-move drafting (metered per-org credit pool) — plus advanced impact/reporting, NDPA/district features, priority support |
+| Flourish | TBD | Everything in Grow + human SOBO coaching (the judgment-heavy 20%) |
 
 Anchors: total incumbent replacement cost for the same coverage is $400–$1,200+/mo (LGL + Apricot + Boardable + Fathom + UpMetrics + Asana). At $99–249 flat we are simultaneously the cheapest credible option in every category and a 5–10x consolidation saving. Per-org AI metering (see 03-architecture §AI cost controls) protects margins.
 

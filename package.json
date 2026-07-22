@@ -14,7 +14,7 @@
     "qa:visual": "playwright test"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.96.0",
+    "@anthropic-ai/sdk": "^0.113.0",
     "@hookform/resolvers": "^5.2.2",
     "@stripe/react-stripe-js": "^6.1.0",
     "@stripe/stripe-js": "^9.1.0",
@@ -24,7 +24,7 @@
     "date-fns": "^4.2.1",
     "date-fns-tz": "^3.2.0",
     "framer-motion": "^12.39.0",
-    "googleapis": "^171.4.0",
+    "googleapis": "^173.0.0",
     "lucide-react": "^1.17.0",
     "next": "14.2.35",
     "papaparse": "^5.5.4",

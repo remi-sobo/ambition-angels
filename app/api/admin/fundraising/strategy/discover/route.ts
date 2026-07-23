@@ -98,12 +98,13 @@ export async function POST(req: NextRequest) {
   const { data: angle } = await supabase
     .from("strategy_angles")
     .select("id, name, hook")
+    .eq("org_id", ctx.orgId)
     .eq("id", angleId)
     .maybeSingle();
   if (!angle) return NextResponse.json({ error: "Angle not found" }, { status: 404 });
 
   // Exclude what's already on the bench so we surface net-new names.
-  const { data: benchRows } = await supabase.from("fr_prospects").select("name").limit(2000);
+  const { data: benchRows } = await supabase.from("fr_prospects").select("name").eq("org_id", ctx.orgId).limit(2000);
   const exclude = (benchRows ?? []).map((r) => r.name as string).filter(Boolean);
 
   let result;

@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
   const { data: last } = await supabase
     .from("strategy_angles")
     .select("sort_order")
+    .eq("org_id", ctx.orgId)
     .order("sort_order", { ascending: false })
     .limit(1)
     .maybeSingle();

@@ -201,15 +201,26 @@ type EscalationGift = {
   giftDate: string;
   assignee: string;
   slaHours?: number;
+  /** The matched stewardship rule's name; titles the task when present, so an
+   *  additive rule that isn't a major-gift escalation (e.g. a handwritten-note
+   *  step) reads as itself. Absent → the classic major-gift copy. */
+  ruleName?: string | null;
+  /** The rule's template body; becomes the task description when present. */
+  noteBody?: string | null;
 };
 
-/** The ops_tasks insert for a major-gift escalation task. */
+/** The ops_tasks insert for an additive stewardship task (major-gift
+ *  escalation by default; any rule-named extra touch when ruleName is set). */
 export function buildEscalationTaskInsert(g: EscalationGift) {
   const slaDays = Math.max(1, Math.ceil((g.slaHours ?? 24) / 24));
   return {
     org_id: g.orgId,
-    title: `Personally thank ${g.donorName} for their ${usd(g.amount)} major gift`,
-    description: "A gift this size is yours to acknowledge personally. A call or a handwritten note from you goes a long way.",
+    title: g.ruleName
+      ? `${g.ruleName}: ${g.donorName} (${usd(g.amount)} gift)`
+      : `Personally thank ${g.donorName} for their ${usd(g.amount)} major gift`,
+    description: g.noteBody?.trim()
+      ? g.noteBody
+      : "A gift this size is yours to acknowledge personally. A call or a handwritten note from you goes a long way.",
     category: "fundraising" as const,
     priority: "high" as const,
     labels: [ACK_LABEL, escalateLabel(g.giftId)],

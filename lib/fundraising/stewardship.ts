@@ -342,12 +342,15 @@ export async function processGiftStewardship(
     }
 
     // ── Escalations (additional tasks, orthogonal to the primary) ──
-    // A major gift also gets a task for its escalation owner (e.g. Remi), on top
-    // of Shannon's primary task, whichever primary rule matched.
+    // A matching additive rule gets its own task on top of the primary — a
+    // major-gift owner call, or an org's extra touch like a handwritten-note
+    // step. The task carries the rule's name and template body so it reads as
+    // the rule, not as generic major-gift copy.
     if (gift.constituent_id) {
       const escalations = escalationsFor(facts, rules);
       if (escalations.length) {
         const donorName = gift.constituent ? constituentName(gift.constituent) : "this donor";
+        const noteBodies = await loadTemplateBodies(supabase, escalations);
         for (const esc of escalations) {
           await ensureEscalationTaskForGift(supabase, {
             orgId: opts.orgId,
@@ -359,6 +362,8 @@ export async function processGiftStewardship(
             giftDate: gift.gift_date,
             assignee: esc.assignee ?? opts.createdBy,
             slaHours: esc.sla_hours,
+            ruleName: esc.name,
+            noteBody: esc.template_id ? noteBodies.get(esc.template_id) ?? null : null,
           });
         }
       }
@@ -384,7 +389,9 @@ export async function ensureEscalationsForQueue(
   gifts: AckQueueGift[]
 ): Promise<void> {
   const rules = await loadStewardshipRules(supabase, orgId);
-  if (!rules.some((r) => r.action === "escalate")) return;
+  const escalationRules = rules.filter((r) => r.action === "escalate");
+  if (escalationRules.length === 0) return;
+  const noteBodies = await loadTemplateBodies(supabase, escalationRules);
   for (const g of gifts) {
     if (!g.constituent_id) continue;
     const facts: GiftFacts = {
@@ -407,9 +414,22 @@ export async function ensureEscalationsForQueue(
         giftDate: g.gift_date,
         assignee: esc.assignee ?? createdBy,
         slaHours: esc.sla_hours,
+        ruleName: esc.name,
+        noteBody: esc.template_id ? noteBodies.get(esc.template_id) ?? null : null,
       });
     }
   }
+}
+
+/** Template bodies for the rules that reference one, in a single read. */
+async function loadTemplateBodies(
+  supabase: SupabaseClient,
+  rules: StewardshipRule[]
+): Promise<Map<string, string>> {
+  const ids = Array.from(new Set(rules.map((r) => r.template_id).filter((x): x is string => !!x)));
+  if (ids.length === 0) return new Map();
+  const { data } = await supabase.from("ack_templates").select("id, body").in("id", ids);
+  return new Map(((data ?? []) as { id: string; body: string }[]).map((t) => [t.id, t.body]));
 }
 
 /**

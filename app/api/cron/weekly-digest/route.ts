@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 import { sendOperatorEmailTo, getOperatorEmails, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
 import { refreshAllPlanMetrics } from "@/lib/admin/plan/metrics";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
@@ -44,6 +45,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const supabase = getSupabaseAdmin();
+  // Org fence: the digest is the resident org's Monday email, and the
+  // service-role client bypasses RLS — every read below scopes to that org so
+  // other tenants' gifts/deadlines never land in this inbox.
+  const orgId = await getResidentOrgId();
   const weekAgo = daysAgo(7);
   const today = daysAgo(0);
   const horizon = daysAhead(14);
@@ -51,23 +56,27 @@ export async function GET(req: NextRequest) {
 
   const [giftsRes, newConstituentsRes, stageMovesRes, pendingAcksRes, dueRes, overdueMovesRes] =
     await Promise.all([
-      supabase.from("gifts").select("amount").gte("gift_date", weekAgo).limit(5000),
+      supabase.from("gifts").select("amount").eq("org_id", orgId).gte("gift_date", weekAgo).limit(5000),
       supabase
         .from("constituents")
         .select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .gte("created_at", weekAgoTs),
       supabase
         .from("audit_log")
         .select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .eq("action", "fundraising.opportunity.stage")
         .gte("ts", weekAgoTs),
       supabase
         .from("gifts")
         .select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .eq("acknowledgment_status", "pending"),
       supabase
         .from("grant_requirements")
         .select("kind, label, due_date, grant:grants(name)")
+        .eq("org_id", orgId)
         .in("status", ["upcoming", "in_progress"])
         .gte("due_date", today)
         .lte("due_date", horizon)
@@ -76,13 +85,14 @@ export async function GET(req: NextRequest) {
       supabase
         .from("opportunities")
         .select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .lt("next_step_due", today)
         .not("next_step_due", "is", null)
         .in("stage", OPEN_STAGE_LIST)
         .or(EXCLUDE_PARTNERSHIP_OPPS),
     ]);
 
-  const crmOverdue = await gatherCrmOverdue(today);
+  const crmOverdue = await gatherCrmOverdue(orgId, today);
 
   const gifts = (giftsRes.data ?? []) as Array<{ amount: number }>;
   const giftTotal = gifts.reduce((s, g) => s + Number(g.amount), 0);

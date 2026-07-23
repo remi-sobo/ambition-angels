@@ -36,7 +36,7 @@ export default async function WeeklyBriefingPage() {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    gatherCrmOverdue(),
+    gatherCrmOverdue(ctx.orgId),
   ]);
 
   const b = data as

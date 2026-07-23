@@ -55,12 +55,16 @@ export function groupOverdue(tasks: CrmOverdueTask[]): CrmOverdue {
 }
 
 export async function gatherCrmOverdue(
+  orgId: string,
   today = new Date().toISOString().slice(0, 10)
 ): Promise<CrmOverdue> {
   const sb = getSupabaseAdmin();
+  // Org fence: service-role client bypasses RLS, so the read must carry the
+  // caller's org explicitly.
   const { data } = await sb
     .from("ops_tasks")
     .select("id, title, due_date, linked_entity_type, linked_entity_id, linked_label, assigned_to")
+    .eq("org_id", orgId)
     .neq("status", "done")
     .not("linked_entity_type", "is", null)
     .not("due_date", "is", null)

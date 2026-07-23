@@ -14,5 +14,5 @@ export async function GET() {
   if (!ent.ok) {
     return NextResponse.json({ error: ent.error }, { status: ent.status });
   }
-  return NextResponse.json(await getDataAge());
+  return NextResponse.json(await getDataAge(ent.ctx.orgId));
 }

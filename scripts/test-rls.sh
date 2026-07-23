@@ -201,6 +201,7 @@ ordered=(
   seed_aa_ai_prospect_research.sql
   drop_donations_org_id_default.sql
   fin_dedup_hash_org_scope.sql
+  stewardship_tenant_neutral_assignee.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

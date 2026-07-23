@@ -11,6 +11,7 @@ import { CommentThread } from "../../../_components/CommentThread";
 import { EntityTasks } from "../../../_components/EntityTasks";
 import NextMovePanel from "../../_components/NextMovePanel";
 import { hasEntitlement } from "@/lib/admin/entitlements";
+import { getOrgContext } from "@/lib/admin/auth";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // Prospect detail — keyed by the bench entity (fr_prospects.id), so it works for
@@ -64,6 +65,8 @@ export default async function ProspectDetailPage({ params }: { params: { id: str
   // The section is fenced by ai.prospect_research (layout FeatureGate); the
   // next-move panel additionally needs ai.reed (its route 402s without it).
   const reedEnabled = await hasEntitlement("ai.reed");
+  const ctx = await getOrgContext();
+  if (!ctx) notFound();
   const supabase = createServerSupabase();
 
   const { data: prospectRow } = await supabase
@@ -96,7 +99,7 @@ export default async function ProspectDetailPage({ params }: { params: { id: str
       .from("funder_angles")
       .select("id, stage, angle:strategy_angles ( key, name )")
       .eq("prospect_id", prospectId),
-    supabase.from("strategy_angles").select("id, key, name").order("name"),
+    supabase.from("strategy_angles").select("id, key, name").eq("org_id", ctx.orgId).order("name"),
   ]);
   type LinkRow = { id: string; stage: string; angle: { key: string; name: string } | { key: string; name: string }[] | null };
   const onAngles: OnAngle[] = ((angleLinksRes.data ?? []) as unknown as LinkRow[]).map((r) => {

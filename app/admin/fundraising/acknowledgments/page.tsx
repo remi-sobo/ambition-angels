@@ -47,11 +47,14 @@ export default async function AcknowledgmentsPage() {
 
   // Gift-subject templates for the composer's per-channel picker (empty until
   // the library is seeded or the Phase 1 migration is applied).
-  const { data: tplData } = await supabase
-    .from("ack_templates")
-    .select("id, name, channel, subject, body")
-    .eq("subject_type", "gift")
-    .order("name");
+  const { data: tplData } = ctx
+    ? await supabase
+        .from("ack_templates")
+        .select("id, name, channel, subject, body")
+        .eq("org_id", ctx.orgId)
+        .eq("subject_type", "gift")
+        .order("name")
+    : { data: null };
   const templates = (tplData ?? []) as AckTemplateLite[];
 
   // IRS substantiation is derived from the gift amount via the compliance

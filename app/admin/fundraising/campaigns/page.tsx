@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import PageHeader from "../../_components/PageHeader";
@@ -14,18 +15,30 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function CampaignsPage() {
+  // Every read is pinned to the ACTIVE org — RLS alone would merge rows from
+  // every org the user belongs to.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Campaigns" subtitle="Sign in to view campaigns." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   const [campaignsRes, appealsRes, giftsRes, unattributedRes] = await Promise.all([
     supabase
       .from("campaigns")
       .select("id, name, goal, starts_on, ends_on")
+      .eq("org_id", ctx.orgId)
       .order("created_at", { ascending: false })
       .limit(100),
-    supabase.from("appeals").select("id, name, source_code, campaign_id").limit(500),
-    supabase.from("gifts").select("campaign_id, appeal_id, amount").limit(10000),
+    supabase.from("appeals").select("id, name, source_code, campaign_id").eq("org_id", ctx.orgId).limit(500),
+    supabase.from("gifts").select("campaign_id, appeal_id, amount").eq("org_id", ctx.orgId).limit(10000),
     supabase
       .from("gifts")
       .select("id", { count: "exact", head: true })
+      .eq("org_id", ctx.orgId)
       .is("campaign_id", null),
   ]);
 

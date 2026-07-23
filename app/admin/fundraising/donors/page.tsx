@@ -4,6 +4,7 @@ import DonorsTable, { type DonorRow } from "./_components/DonorsTable";
 import { NewDonorForm } from "./_components/ConstituentControls";
 import FilterTabs from "../_components/FilterTabs";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import StatCard, { type Delta } from "../../_components/StatCard";
 import PageHeader from "../../_components/PageHeader";
@@ -41,13 +42,14 @@ type Gift = {
 // Page through the whole gifts spine so KPIs and rollups are exact, not a
 // recency sample. Bounded at 50 pages (50k gifts) — revisit with SQL-side
 // aggregation long before that's real.
-async function fetchAllGifts(supabase: ReturnType<typeof createServerSupabase>) {
+async function fetchAllGifts(supabase: ReturnType<typeof createServerSupabase>, orgId: string) {
   const out: Gift[] = [];
   const PAGE = 1000;
   for (let page = 0; page < 50; page++) {
     const { data, error } = await supabase
       .from("gifts")
       .select("constituent_id, amount, gift_date, recurring_plan_id")
+      .eq("org_id", orgId)
       .order("gift_date", { ascending: false })
       .range(page * PAGE, page * PAGE + PAGE - 1);
     if (error) return { gifts: null, error };
@@ -59,7 +61,7 @@ async function fetchAllGifts(supabase: ReturnType<typeof createServerSupabase>) 
 
 // Paginate active plans fully — the flag-suppression set must never be a
 // sample, or on-schedule monthly donors could get false lapse flags.
-async function fetchActivePlans(supabase: ReturnType<typeof createServerSupabase>) {
+async function fetchActivePlans(supabase: ReturnType<typeof createServerSupabase>, orgId: string) {
   const ids: Array<string | null> = [];
   const PAGE = 1000;
   let count: number | null = null;
@@ -67,6 +69,7 @@ async function fetchActivePlans(supabase: ReturnType<typeof createServerSupabase
     const { data, count: c, error } = await supabase
       .from("recurring_plans")
       .select("constituent_id", { count: "exact" })
+      .eq("org_id", orgId)
       .eq("status", "active")
       .range(page * PAGE, page * PAGE + PAGE - 1);
     if (error) break;
@@ -108,12 +111,22 @@ export default async function DonorsPage({
 }: {
   searchParams?: { year?: string; segment?: string; stage?: string };
 }) {
+  // Every read is pinned to the ACTIVE org — RLS alone would merge rows from
+  // every org the user belongs to.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Donors" subtitle="Sign in to view donors." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   const [{ gifts: allGifts, error: giftsError }, plansRes, constituentCountRes, pendingAcksRes] = await Promise.all([
-    fetchAllGifts(supabase),
-    fetchActivePlans(supabase),
-    supabase.from("constituents").select("id", { count: "exact", head: true }),
-    supabase.from("gifts").select("id", { count: "exact", head: true }).eq("acknowledgment_status", "pending"),
+    fetchAllGifts(supabase, ctx.orgId),
+    fetchActivePlans(supabase, ctx.orgId),
+    supabase.from("constituents").select("id", { count: "exact", head: true }).eq("org_id", ctx.orgId),
+    supabase.from("gifts").select("id", { count: "exact", head: true }).eq("org_id", ctx.orgId).eq("acknowledgment_status", "pending"),
   ]);
 
   // Tables not applied yet (the migration ships ahead of the prod apply).
@@ -209,6 +222,7 @@ export default async function DonorsPage({
     const { data, error } = await supabase
       .from("constituents")
       .select("id, type, first_name, last_name, org_name, emails, do_not_contact, source, archived_at")
+      .eq("org_id", ctx.orgId)
       .in("id", ids);
     if (error) {
       constituentFetchFailed = true;
@@ -327,15 +341,16 @@ export default async function DonorsPage({
     ? FLAG_LABELS[retentionSegment]
     : segmentOptions.find((s) => s.value === segment)?.label ?? "All";
 
-  // Open tasks linked to donors — for the "Tasks" column. Read on the SESSION
-  // client so RLS scopes ops_tasks to the caller's org (the service-role client
-  // bypasses RLS and would count every tenant's tasks).
+  // Open tasks linked to donors — for the "Tasks" column. Pinned to the ACTIVE
+  // org explicitly: RLS admits rows from every org the user belongs to, so the
+  // session client alone is not enough.
   const openTaskCount = new Map<string, number>();
   const overdueTaskCount = new Map<string, number>();
   {
     const { data: taskRows } = await supabase
       .from("ops_tasks")
       .select("linked_entity_id, due_date")
+      .eq("org_id", ctx.orgId)
       .eq("linked_entity_type", "constituent")
       .neq("status", "done")
       .limit(5000);

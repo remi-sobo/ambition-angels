@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { NewCampaignForm, CampaignActions } from "./_components/CommsControls";
@@ -26,17 +27,29 @@ const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 export default async function CommsPage() {
+  // Every read is pinned to the ACTIVE org — RLS alone would merge rows from
+  // every org the user belongs to.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Comms" subtitle="Sign in to view comms." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   const [campaignsRes, segmentsRes, settingsRes] = await Promise.all([
     supabase
       .from("email_campaigns")
       .select("id, name, subject, status, recipient_count, sent_count, failed_count, sent_at, segment_id, segment:segments ( name )")
+      .eq("org_id", ctx.orgId)
       .order("created_at", { ascending: false })
       .limit(200),
-    supabase.from("segments").select("id, name").order("created_at", { ascending: false }).limit(100),
+    supabase.from("segments").select("id, name").eq("org_id", ctx.orgId).order("created_at", { ascending: false }).limit(100),
     supabase
       .from("org_comms_settings")
       .select("from_name, from_email, reply_to, mailing_address, footer_text, daily_send_cap")
+      .eq("org_id", ctx.orgId)
       .limit(1)
       .maybeSingle(),
   ]);

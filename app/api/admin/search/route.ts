@@ -8,14 +8,16 @@
  * merges in client-side page/action matches.
  *
  * Auth + RLS: same posture as /api/admin/constituents/search — gated by
- * isAuthed(), queried through the user-session client so search can never
- * surface a row the signed-in admin couldn't already open. Each sub-query is
+ * getOrgContext(), queried through the user-session client so search can never
+ * surface a row the signed-in admin couldn't already open. RLS alone admits
+ * rows from EVERY org the user belongs to, so every tenant-table sub-query is
+ * additionally pinned to the ACTIVE org (ctx.orgId). Each sub-query is
  * isolated (Promise.allSettled): one failing table degrades that group, never
  * the whole search.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import type { SearchGroup, SearchHit, SearchKind } from "@/app/admin/_components/search/types";
 
@@ -72,7 +74,8 @@ type BookingRow = { id: string; attendee_name: string | null; attendee_email: st
 type FuzzyRow = { id: string; kind: "constituent" | "prospect"; name: string | null; org_name: string | null; email: string | null; sim: number };
 
 export async function GET(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -103,6 +106,7 @@ export async function GET(req: NextRequest) {
     supabase
       .from("constituents")
       .select("id, type, first_name, last_name, org_name, emails")
+      .eq("org_id", ctx.orgId)
       .or(`first_name.ilike.${like},last_name.ilike.${like},org_name.ilike.${like}`)
       .is("archived_at", null)
       .limit(LIMIT)
@@ -120,6 +124,7 @@ export async function GET(req: NextRequest) {
     supabase
       .from("fr_prospects")
       .select("id, name, org_name, type, status")
+      .eq("org_id", ctx.orgId)
       .or(`name.ilike.${like},org_name.ilike.${like},email.ilike.${like}`)
       .neq("status", "disqualified")
       .limit(LIMIT)
@@ -134,6 +139,7 @@ export async function GET(req: NextRequest) {
     supabase
       .from("grants")
       .select("id, name, stage, amount_requested, owner")
+      .eq("org_id", ctx.orgId)
       .or(`name.ilike.${like},program.ilike.${like},owner.ilike.${like}`)
       .limit(LIMIT)
       .then(({ data }) =>
@@ -151,6 +157,7 @@ export async function GET(req: NextRequest) {
     supabase
       .from("fin_revenue_commitments")
       .select("id, source_name, amount, status, year")
+      .eq("org_id", ctx.orgId)
       .ilike("source_name", like)
       .limit(LIMIT)
       .then(({ data }) =>
@@ -173,6 +180,7 @@ export async function GET(req: NextRequest) {
     supabase
       .from("ops_tasks")
       .select("id, title, status, priority, assigned_to")
+      .eq("org_id", ctx.orgId)
       .or(`title.ilike.${like},description.ilike.${like}`)
       .is("archived_at", null)
       .limit(LIMIT)
@@ -199,6 +207,7 @@ export async function GET(req: NextRequest) {
     supabase
       .from("ops_projects")
       .select("id, title, status, category")
+      .eq("org_id", ctx.orgId)
       .or(`title.ilike.${like},description.ilike.${like}`)
       .limit(LIMIT)
       .then(({ data }) =>
@@ -212,6 +221,7 @@ export async function GET(req: NextRequest) {
     supabase
       .from("partners")
       .select("id, name, kind, status")
+      .eq("org_id", ctx.orgId)
       .or(`name.ilike.${like},champion_name.ilike.${like},champion_email.ilike.${like}`)
       .limit(LIMIT)
       .then(({ data }) =>
@@ -226,6 +236,7 @@ export async function GET(req: NextRequest) {
     supabase
       .from("students")
       .select("id, first_name, last_name, custom_fields, stage")
+      .eq("org_id", ctx.orgId)
       .or(`first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},custom_fields->>school.ilike.${like}`)
       .limit(LIMIT)
       .then(({ data }) =>
@@ -241,6 +252,7 @@ export async function GET(req: NextRequest) {
     supabase
       .from("cohorts")
       .select("id, name, program, term, status")
+      .eq("org_id", ctx.orgId)
       .or(`name.ilike.${like},program.ilike.${like},term.ilike.${like},location.ilike.${like}`)
       .limit(LIMIT)
       .then(({ data }) =>
@@ -254,6 +266,7 @@ export async function GET(req: NextRequest) {
     supabase
       .from("bookings")
       .select("id, attendee_name, attendee_email, start_time")
+      .eq("org_id", ctx.orgId)
       .or(`attendee_name.ilike.${like},attendee_email.ilike.${like}`)
       .order("start_time", { ascending: false })
       .limit(LIMIT)
@@ -268,12 +281,14 @@ export async function GET(req: NextRequest) {
       ),
   ];
 
-  // Phase 3: typo-tolerant people via the pg_trgm RPC. Merged with (not
+  // Phase 3: typo-tolerant people via the pg_trgm RPC, pinned to the active
+  // org (search_people_org_scope.sql — the invoker's RLS spans all their
+  // orgs, so the function filters by the org argument). Merged with (not
   // replacing) the substring matches above — trigram's similarity threshold
   // misses short prefixes that ilike catches, so the dedup keeps the best of
   // both. Degrades silently to substring-only if the function isn't present.
   tasks.push(
-    supabase.rpc("bloomos_search_people", { q, lim: LIMIT }).then(({ data }) =>
+    supabase.rpc("bloomos_search_people", { q, org: ctx.orgId, lim: LIMIT }).then(({ data }) =>
       ((data ?? []) as FuzzyRow[]).map((r) => {
         const fuzz = Math.round(40 + Math.min(1, Math.max(0, r.sim)) * 60) + KIND_WEIGHT[r.kind];
         if (r.kind === "prospect") {
@@ -296,6 +311,7 @@ export async function GET(req: NextRequest) {
       supabase
         .from("interactions")
         .select("constituents(id, type, first_name, last_name, org_name)")
+        .eq("org_id", ctx.orgId)
         .ilike("notes", like)
         .order("occurred_at", { ascending: false })
         .limit(20)

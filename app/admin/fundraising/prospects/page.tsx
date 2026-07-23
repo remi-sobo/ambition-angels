@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../_components/PageHeader";
 import ProspectsTable, { type ProspectRow } from "./_components/ProspectsTable";
 import { todayISO } from "../../ops/_types/ops";
@@ -25,6 +26,16 @@ export default async function FundraisingProspectsPage({
 }: {
   searchParams?: { show?: string };
 }) {
+  // Every read is pinned to the ACTIVE org — RLS alone would merge rows from
+  // every org the user belongs to.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Prospects" subtitle="Sign in to view prospects." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   const disqualifiedView = searchParams?.show === "disqualified";
   const status = disqualifiedView ? "disqualified" : "active";
@@ -32,6 +43,7 @@ export default async function FundraisingProspectsPage({
   const { data: benchData, error: benchErr } = await supabase
     .from("fr_prospects")
     .select("id, hubspot_contact_id, type, source, name, email, org_name, status")
+    .eq("org_id", ctx.orgId)
     .eq("status", status)
     .limit(5000);
   const bench = (benchData ?? []) as BenchRow[];
@@ -49,13 +61,13 @@ export default async function FundraisingProspectsPage({
       hubspotIds.length
         ? supabase.from("fr_prospect_scores").select("hubspot_contact_id, score_total").in("hubspot_contact_id", hubspotIds)
         : Promise.resolve({ data: [] as Array<{ hubspot_contact_id: string; score_total: number | null }> }),
-      supabase.from("fr_prospects").select("id", { count: "exact", head: true }).eq("status", "disqualified"),
-      supabase.from("fr_prospects").select("id", { count: "exact", head: true }).eq("status", "promoted"),
+      supabase.from("fr_prospects").select("id", { count: "exact", head: true }).eq("org_id", ctx.orgId).eq("status", "disqualified"),
+      supabase.from("fr_prospects").select("id", { count: "exact", head: true }).eq("org_id", ctx.orgId).eq("status", "promoted"),
     ]);
 
-  // Open tasks linked to prospects — the "Tasks" column. Read on the SESSION
-  // client so RLS scopes ops_tasks to the caller's org (the service-role client
-  // bypasses RLS and would count every tenant's tasks).
+  // Open tasks linked to prospects — the "Tasks" column. Pinned to the ACTIVE
+  // org explicitly: RLS admits rows from every org the user belongs to, so the
+  // session client alone is not enough.
   const today = todayISO();
   const openTaskCount = new Map<string, number>();
   const overdueTaskCount = new Map<string, number>();
@@ -63,6 +75,7 @@ export default async function FundraisingProspectsPage({
     const { data: taskRows } = await supabase
       .from("ops_tasks")
       .select("linked_entity_id, due_date")
+      .eq("org_id", ctx.orgId)
       .eq("linked_entity_type", "fr_prospects")
       .neq("status", "done")
       .limit(5000);

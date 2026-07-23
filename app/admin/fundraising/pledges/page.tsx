@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
@@ -24,22 +25,34 @@ type DbPledge = {
 type DbPayment = { pledge_id: string; expected_amount: number; status: string; due_date: string };
 
 export default async function PledgesPage() {
+  // Every read is pinned to the ACTIVE org — RLS alone would merge rows from
+  // every org the user belongs to.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Pledges" subtitle="Sign in to view pledges." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   const [pledgesRes, paymentsRes, campaignsRes, fundsRes, wonRes] = await Promise.all([
     supabase
       .from("pledges")
       .select("id, total_amount, installment_count, frequency, status, start_date, constituent:constituents ( type, first_name, last_name, org_name )")
+      .eq("org_id", ctx.orgId)
       .order("created_at", { ascending: false })
       .limit(500),
-    supabase.from("pledge_payments").select("pledge_id, expected_amount, status, due_date").limit(10000),
-    supabase.from("campaigns").select("id, name").order("name"),
-    supabase.from("funds").select("id, name").order("name"),
+    supabase.from("pledge_payments").select("pledge_id, expected_amount, status, due_date").eq("org_id", ctx.orgId).limit(10000),
+    supabase.from("campaigns").select("id, name").eq("org_id", ctx.orgId).order("name"),
+    supabase.from("funds").select("id, name").eq("org_id", ctx.orgId).order("name"),
     // Won or pledged asks with a real amount + donor — convertible into a
     // dated pledge schedule that feeds runway. ("pledged" is an open Sales
     // stage, but the donor has committed — exactly what a pledge schedule is.)
     supabase
       .from("opportunities")
       .select("id, name, ask_amount, constituent:constituents ( id, type, first_name, last_name, org_name )")
+      .eq("org_id", ctx.orgId)
       .in("stage", [...WON_STAGE_LIST, "pledged"])
       .gt("ask_amount", 0)
       .order("ask_amount", { ascending: false })

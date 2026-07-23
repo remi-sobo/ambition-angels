@@ -1,6 +1,6 @@
 import "server-only";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
@@ -8,9 +8,11 @@ import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 /**
  * Needs-you shelf data for the BloomOS right rail.
  *
- * Reads through the SESSION client so RLS scopes every row to the viewer's org
- * and permissions (ops.read / fundraising.read) — no service-role here. Tasks
- * are scoped to the viewer (assigned_to) so the shelf is personal; the next
+ * Reads through the SESSION client under the viewer's permissions (ops.read /
+ * fundraising.read) — no service-role here. RLS admits rows from every org the
+ * viewer belongs to, so both queries also filter to the ACTIVE org explicitly
+ * (`.eq("org_id", …)` via getOrgContext). Tasks are further scoped to the
+ * viewer (assigned_to) so the shelf is personal; the next
  * fundraising touch is the org's most-overdue open move (single-lane for now —
  * owner-level scoping lands with the two-lane delegation work).
  *
@@ -74,6 +76,8 @@ type ConstituentLite = {
 } | null;
 
 export async function getNeedsYou(): Promise<NeedsYouData> {
+  const ctx = await getOrgContext();
+  if (!ctx) return { overdue: [], today: [], nextTouch: null };
   const me = await getAdminUser();
   const sb = createServerSupabase();
   const today = todayInTZ();
@@ -83,6 +87,7 @@ export async function getNeedsYou(): Promise<NeedsYouData> {
     sb
       .from("ops_tasks")
       .select("id, title, due_date")
+      .eq("org_id", ctx.orgId)
       .eq("assigned_to", me ?? "")
       .neq("status", "done")
       .is("archived_at", null)
@@ -96,6 +101,7 @@ export async function getNeedsYou(): Promise<NeedsYouData> {
       .select(
         "id, next_step, next_step_due, constituent:constituents ( id, type, first_name, last_name, org_name )"
       )
+      .eq("org_id", ctx.orgId)
       .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step", "is", null)

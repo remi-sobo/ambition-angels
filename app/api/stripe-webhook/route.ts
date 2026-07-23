@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 
 // Stripe webhooks deliver the object shape from the API version at time of
 // event creation, which may include fields removed from newer TS type defs.
@@ -115,6 +116,9 @@ export async function POST(req: NextRequest) {
           const amt = (invoice.amount_paid ?? 0) / 100;
 
           await supabase.from("donations").insert({
+            // Renewals belong to the resident org — stamped explicitly, never
+            // left to a column default.
+            org_id: await getResidentOrgId(),
             email: invoice.customer_email ?? null,
             amount: amt,
             recurring: true,

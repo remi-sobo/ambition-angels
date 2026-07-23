@@ -37,7 +37,10 @@ insert into ops_tasks (title, category, created_by) values ('leak-test','operati
 insert into fin_transactions (txn_date, description, amount, dedup_hash)
   values ('2026-01-01','leak-test',100,'leak-test-h1');
 insert into page_views (page) values ('/leak-test');
-insert into donations (amount, stripe_payment_id) values (10,'leak-test-pi');
+-- org-explicit: donations no longer carries an org_id default
+-- (drop_donations_org_id_default.sql), matching the app's write paths.
+insert into donations (org_id, amount, stripe_payment_id)
+  select id, 10, 'leak-test-pi' from public.orgs where slug = 'ambition-angels';
 insert into meeting_types (slug, name, duration_minutes, is_active) values
   ('leak-test-active','Leak Active',30,true),
   ('leak-test-inactive','Leak Inactive',30,false)

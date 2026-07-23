@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../_components/PageHeader";
 import NewAngleForm from "./_components/NewAngleForm";
 import ReedAngleWizard from "./_components/ReedAngleWizard";
@@ -13,12 +14,23 @@ import RoomMetaEditor, { type RoomMetaInput } from "./_components/RoomMetaEditor
 export const dynamic = "force-dynamic";
 
 export default async function StrategyPage() {
+  // Active-org fence: RLS admits rows from every org the viewer belongs to,
+  // so the reads below scope to the switched-into org explicitly.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+        <PageHeader title="Strategy" subtitle="Sign in to view funding angles." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   const { data, error } = await supabase
     .from("strategy_angles")
     .select(
       "id, key, name, nav_title, status_badge, tone, hook, frame, lead, funds_label, funds, want, catch_label, catch_body, ask, flag, approach, sort_order, is_active",
     )
+    .eq("org_id", ctx.orgId)
     .order("sort_order", { ascending: true });
 
   if (error) {
@@ -38,7 +50,7 @@ export default async function StrategyPage() {
   const angles = (data ?? []) as AdminAngle[];
 
   // Funder counts per angle for the card footer.
-  const { data: faRows } = await supabase.from("funder_angles").select("angle_id");
+  const { data: faRows } = await supabase.from("funder_angles").select("angle_id").eq("org_id", ctx.orgId);
   const counts = new Map<string, number>();
   for (const r of (faRows ?? []) as { angle_id: string }[]) {
     counts.set(r.angle_id, (counts.get(r.angle_id) ?? 0) + 1);
@@ -48,6 +60,7 @@ export default async function StrategyPage() {
   const { data: metaRow } = await supabase
     .from("strategy_room_meta")
     .select("eyebrow, headline, headline_accent, subtitle, stats, this_year_heading, year_intro, this_year")
+    .eq("org_id", ctx.orgId)
     .maybeSingle();
   const asArr = (v: unknown) => (Array.isArray(v) ? v : []);
   const meta: RoomMetaInput = {

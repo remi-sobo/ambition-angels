@@ -9,7 +9,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import {
   ANGLE_BADGES,
@@ -25,7 +25,10 @@ const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  // Active-org fence: a multi-org operator's RLS spans every org they belong
+  // to, so by-id writes must also match the switched-into org.
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!isUuid(params.id)) {
@@ -71,11 +74,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const supabase = createServerSupabase();
   const { data: before } = await supabase
-    .from("strategy_angles").select("*").eq("id", params.id).maybeSingle();
+    .from("strategy_angles").select("*").eq("org_id", ctx.orgId).eq("id", params.id).maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const { error } = await supabase
-    .from("strategy_angles").update(update).eq("id", params.id);
+    .from("strategy_angles").update(update).eq("org_id", ctx.orgId).eq("id", params.id);
   if (error) {
     console.error("[strategy/angles] update failed:", error.message);
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
@@ -92,7 +95,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!isUuid(params.id)) {
@@ -100,11 +104,11 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   }
   const supabase = createServerSupabase();
   const { data: before } = await supabase
-    .from("strategy_angles").select("*").eq("id", params.id).maybeSingle();
+    .from("strategy_angles").select("*").eq("org_id", ctx.orgId).eq("id", params.id).maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const { error } = await supabase
-    .from("strategy_angles").delete().eq("id", params.id);
+    .from("strategy_angles").delete().eq("org_id", ctx.orgId).eq("id", params.id);
   if (error) {
     console.error("[strategy/angles] delete failed:", error.message);
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });

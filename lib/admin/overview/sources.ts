@@ -9,11 +9,14 @@
  * request.
  *
  * Client policy: the fundraising spine (opportunities / gifts / constituents /
- * interactions) is read under the user-session client (RLS, org-scoped) — the
- * same path the rest of the fundraising module already uses. Finance and the
- * legacy donations/ops/analytics reads carried over from the old Command
- * Center stay on the service-role client until those modules' RLS conversion
- * lands; switching them here would be a behavior change outside this spec.
+ * interactions) is read under the user-session client — the same path the rest
+ * of the fundraising module already uses. RLS admits rows from EVERY org the
+ * user belongs to, not just the active one, so each session-client loader also
+ * resolves the active org (`getOrgContext`) and filters `.eq("org_id", …)`
+ * explicitly. Finance and the legacy donations/ops/analytics reads carried
+ * over from the old Command Center stay on the service-role client until those
+ * modules' RLS conversion lands; switching them here would be a behavior
+ * change outside this spec.
  */
 import { cache } from "react";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -316,7 +319,8 @@ export const getPipeline = cache(async (): Promise<PipelineData> => {
   return { stages, total };
 });
 
-// ── Fundraising spine helpers (user-session client, RLS, org-scoped) ──────────
+// ── Fundraising spine helpers (user-session client + explicit active-org
+// filter — RLS alone spans all the user's orgs) ──────────────────────────────
 
 
 const addDays = (iso: string, n: number) => {
@@ -355,13 +359,20 @@ export type ForecastData = {
  * is built to avoid.
  */
 export const getForecast = cache(async (): Promise<ForecastData> => {
+  const ctx = await getOrgContext();
+  if (!ctx) return { raised: 0, committedSteward: 0, committed: 0, weightedOpen: 0, forecast: 0, goal: 0, gap: 0 };
   const sb = createServerSupabase();
   const fin = await getFinance();
   const fy = fiscalYearBounds(fin.cfg.year, fin.cfg.startMonth);
 
   const [giftsRes, oppsRes] = await Promise.all([
-    sb.from("gifts").select("amount").gte("gift_date", fy.start).lte("gift_date", fy.end),
-    sb.from("opportunities").select("stage, ask_amount, probability").neq("stage", "lost").or(EXCLUDE_PARTNERSHIP_OPPS),
+    sb.from("gifts").select("amount").eq("org_id", ctx.orgId).gte("gift_date", fy.start).lte("gift_date", fy.end),
+    sb
+      .from("opportunities")
+      .select("stage, ask_amount, probability")
+      .eq("org_id", ctx.orgId)
+      .neq("stage", "lost")
+      .or(EXCLUDE_PARTNERSHIP_OPPS),
   ]);
 
   const raised = (giftsRes.data ?? []).reduce((s, g) => s + Number(g.amount), 0);
@@ -404,6 +415,8 @@ export type MoveRow = {
  * signed-in principal can make.
  */
 export const getMoves = cache(async (): Promise<MoveRow[]> => {
+  const ctx = await getOrgContext();
+  if (!ctx) return [];
   const sb = createServerSupabase();
   const today = todayISO();
   // Viewer's first-name handle; assigneeSlug strips PostgREST filter syntax,
@@ -417,6 +430,7 @@ export const getMoves = cache(async (): Promise<MoveRow[]> => {
       "id, name, stage, ask_amount, owner, next_step, next_step_due, " +
         "constituent:constituents ( id, type, first_name, last_name, org_name )",
     )
+    .eq("org_id", ctx.orgId)
     .in("stage", OPEN_STAGE_LIST)
     .or(EXCLUDE_PARTNERSHIP_OPPS)
     .or(`${ownerArm}ask_amount.gte.10000`)
@@ -482,6 +496,8 @@ const GRANT_KIND_SHORT: Record<string, string> = {
  * Hygiene/data items deliberately do NOT live here — those are Shannon's.
  */
 export const getFires = cache(async (): Promise<FireItem[]> => {
+  const ctx = await getOrgContext();
+  if (!ctx) return [];
   const sb = createServerSupabase();
   const fin = await getFinance();
   const today = todayISO();
@@ -504,6 +520,7 @@ export const getFires = cache(async (): Promise<FireItem[]> => {
     sb
       .from("grant_requirements")
       .select("id, grant_id, kind, label, due_date, grants(name)")
+      .eq("org_id", ctx.orgId)
       .in("status", ["upcoming", "in_progress"])
       .gte("due_date", today)
       .lte("due_date", in14)
@@ -512,6 +529,7 @@ export const getFires = cache(async (): Promise<FireItem[]> => {
     sb
       .from("opportunities")
       .select("id, name, ask_amount, next_step_due, constituent:constituents ( id, type, first_name, last_name, org_name )")
+      .eq("org_id", ctx.orgId)
       .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step_due", "is", null)
@@ -521,6 +539,7 @@ export const getFires = cache(async (): Promise<FireItem[]> => {
     sb
       .from("opportunities")
       .select("ask_amount, constituent:constituents ( id, type, first_name, last_name, org_name )")
+      .eq("org_id", ctx.orgId)
       .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .gte("ask_amount", 10000)
@@ -575,6 +594,7 @@ export const getFires = cache(async (): Promise<FireItem[]> => {
     const warmRes = await sb
       .from("interactions")
       .select("constituent_id")
+      .eq("org_id", ctx.orgId)
       .in("constituent_id", ids)
       .gte("occurred_at", since60 + "T00:00:00");
     const warm = new Set((warmRes.data ?? []).map((r) => r.constituent_id as string));
@@ -734,10 +754,13 @@ export type AckRow = {
 };
 
 export const getAcksDue = cache(async (): Promise<{ rows: AckRow[]; total: number; totalValue: number }> => {
+  const ctx = await getOrgContext();
+  if (!ctx) return { rows: [], total: 0, totalValue: 0 };
   const sb = createServerSupabase();
   const res = await sb
     .from("gifts")
     .select("id, amount, gift_date, constituent:constituents ( id, type, first_name, last_name, org_name )")
+    .eq("org_id", ctx.orgId)
     .eq("acknowledgment_status", "pending")
     .order("gift_date", { ascending: true })
     .limit(50);
@@ -864,7 +887,9 @@ export const getDataHygiene = cache(async (): Promise<HygieneData> => {
     ctx
       ? getDataAge(ctx.orgId)
       : Promise.resolve({ ageLabel: "never", severity: "stale" as const }),
-    sb.from("gifts").select("id", { count: "exact", head: true }).is("constituent_id", null),
+    ctx
+      ? sb.from("gifts").select("id", { count: "exact", head: true }).eq("org_id", ctx.orgId).is("constituent_id", null)
+      : Promise.resolve({ count: 0 }),
   ]);
   return {
     sync: [
@@ -884,6 +909,8 @@ export const getDataHygiene = cache(async (): Promise<HygieneData> => {
 export type DeadlineRow = { id: string; title: string; sub: string; due: string; href: string; overdue: boolean };
 
 export const getDeadlinesFinance = cache(async (): Promise<DeadlineRow[]> => {
+  const ctx = await getOrgContext();
+  if (!ctx) return [];
   const sb = createServerSupabase();
   const today = todayISO();
   const in30 = addDays(today, 30);
@@ -892,6 +919,7 @@ export const getDeadlinesFinance = cache(async (): Promise<DeadlineRow[]> => {
     sb
       .from("grant_requirements")
       .select("id, grant_id, kind, label, due_date, grants(name)")
+      .eq("org_id", ctx.orgId)
       .in("status", ["upcoming", "in_progress"])
       .lte("due_date", in30)
       .order("due_date", { ascending: true })
@@ -899,6 +927,7 @@ export const getDeadlinesFinance = cache(async (): Promise<DeadlineRow[]> => {
     sb
       .from("pledge_payments")
       .select("id, pledge_id, due_date, expected_amount")
+      .eq("org_id", ctx.orgId)
       .eq("status", "scheduled")
       .lt("due_date", today)
       .order("due_date", { ascending: true })
@@ -954,6 +983,8 @@ export type FollowThrough = {
 };
 
 export const getFollowThrough = cache(async (): Promise<FollowThrough> => {
+  const ctx = await getOrgContext();
+  if (!ctx) return { overdueMoves: 0, ownerlessAsks: 0, recentGifts: 0, recentGiftsValue: 0 };
   const sb = createServerSupabase();
   const today = todayISO();
   const since14 = addDays(today, -14);
@@ -962,12 +993,19 @@ export const getFollowThrough = cache(async (): Promise<FollowThrough> => {
     sb
       .from("opportunities")
       .select("id", { count: "exact", head: true })
+      .eq("org_id", ctx.orgId)
       .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step_due", "is", null)
       .lt("next_step_due", today),
-    sb.from("opportunities").select("id", { count: "exact", head: true }).in("stage", OPEN_STAGE_LIST).or(EXCLUDE_PARTNERSHIP_OPPS).is("owner", null),
-    sb.from("gifts").select("amount").gte("gift_date", since14),
+    sb
+      .from("opportunities")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", ctx.orgId)
+      .in("stage", OPEN_STAGE_LIST)
+      .or(EXCLUDE_PARTNERSHIP_OPPS)
+      .is("owner", null),
+    sb.from("gifts").select("amount").eq("org_id", ctx.orgId).gte("gift_date", since14),
   ]);
 
   const recent = recentRes.data ?? [];

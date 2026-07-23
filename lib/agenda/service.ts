@@ -1,12 +1,17 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 
 /**
  * Delegation-aware agenda assembler (BloomOS Agenda Phase 3).
  *
- * Reads through the SESSION client, so calendar_events RLS does the work: a
+ * Reads through the SESSION client: calendar_events RLS handles delegation — a
  * viewer sees their own events plus any owner delegated to them — no owner
- * resolution needed here. /meet bookings are merged in, deduped against events
- * already synced from Google (so a booked meeting shows once, not twice).
+ * resolution needed here. But RLS spans every org the viewer belongs to, so
+ * both reads also filter to the active org explicitly (falling back to the
+ * resident org for sessionless callers: briefing cron, pre-warm). /meet
+ * bookings are merged in, deduped against events already synced from Google
+ * (so a booked meeting shows once, not twice).
  *
  * One function feeds the cockpit Today component, the ops two-lane view, and the
  * briefing builder.
@@ -57,12 +62,16 @@ export async function getVisibleOwners(): Promise<string[]> {
 
 export async function getAgenda(range: { start: Date; end: Date }): Promise<Agenda> {
   const sb = createServerSupabase();
+  // Active org, or the resident org for sessionless callers (cron/briefing) —
+  // same pattern as the finance snapshot and briefing gather.
+  const orgId = (await getOrgContext().catch(() => null))?.orgId ?? (await getResidentOrgId());
 
   const { data, error } = await sb
     .from("calendar_events")
     .select(
       "id, owner_user_id, title, location, start_time, end_time, all_day, is_external, source, google_event_id, synced_at, status"
     )
+    .eq("org_id", orgId)
     .gte("start_time", range.start.toISOString())
     .lt("start_time", range.end.toISOString())
     .neq("status", "cancelled")
@@ -95,6 +104,7 @@ export async function getAgenda(range: { start: Date; end: Date }): Promise<Agen
   const { data: bookings } = await sb
     .from("bookings")
     .select("id, start_time, end_time, attendee_name, attendee_company, location_details, google_event_id, status")
+    .eq("org_id", orgId)
     .gte("start_time", range.start.toISOString())
     .lt("start_time", range.end.toISOString())
     .neq("status", "cancelled");

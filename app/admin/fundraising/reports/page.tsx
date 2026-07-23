@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
@@ -36,12 +37,23 @@ export default async function ReportsPage({
   const fundId = searchParams.fund_id && isUuid(searchParams.fund_id) ? searchParams.fund_id : "";
   const method = searchParams.method ?? "";
 
+  // Every read is pinned to the ACTIVE org — RLS alone would merge rows from
+  // every org the user belongs to.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Reports" subtitle="Sign in to view reports." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   let giftQuery = supabase
     .from("gifts")
     .select(
       "amount, gift_date, method, campaign_id, constituent:constituents ( type, first_name, last_name, org_name )"
     )
+    .eq("org_id", ctx.orgId)
     .order("gift_date", { ascending: false })
     .limit(10000);
   if (from) giftQuery = giftQuery.gte("gift_date", from);
@@ -52,9 +64,9 @@ export default async function ReportsPage({
 
   const [giftsRes, campaignsRes, fundsRes, segmentsRes] = await Promise.all([
     giftQuery,
-    supabase.from("campaigns").select("id, name").order("name"),
-    supabase.from("funds").select("id, name").order("name"),
-    supabase.from("segments").select("id, name, definition").order("created_at", { ascending: false }).limit(100),
+    supabase.from("campaigns").select("id, name").eq("org_id", ctx.orgId).order("name"),
+    supabase.from("funds").select("id, name").eq("org_id", ctx.orgId).order("name"),
+    supabase.from("segments").select("id, name, definition").eq("org_id", ctx.orgId).order("created_at", { ascending: false }).limit(100),
   ]);
 
   if (giftsRes.error) {

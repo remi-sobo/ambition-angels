@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
@@ -41,15 +42,17 @@ type LetterGift = {
 export default async function BatchLettersPage() {
   const supabase = createServerSupabase();
   const ctx = await getOrgContext();
+  if (!ctx) notFound();
   // Org name from the orgs row, never hardcoded (shared-host rule). The
   // letterhead address/EIN below are still resident-org literals — they move
   // to org settings when a second tenant needs letters.
-  const orgName = ctx?.orgName ?? "our organization";
+  const orgName = ctx.orgName;
   const { data } = await supabase
     .from("gifts")
     .select(
       "id, amount, gift_date, method, fair_market_value, deductible_amount, constituent:constituents(type, first_name, last_name, org_name, street, city, state, postal_code)"
     )
+    .eq("org_id", ctx.orgId)
     .eq("acknowledgment_status", "pending")
     .order("gift_date", { ascending: true })
     .limit(200);

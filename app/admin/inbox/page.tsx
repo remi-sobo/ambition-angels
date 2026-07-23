@@ -84,6 +84,7 @@ export default async function InboxPage() {
   const { data, error } = await sb
     .from("notifications")
     .select("id, title, body, linked_entity_type, linked_entity_id, url, read_at, created_at")
+    .eq("org_id", ctx.orgId)
     .order("created_at", { ascending: false })
     .limit(PAGE_SIZE);
 

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { adminUrl } from "@/lib/origins";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 
 const getSupabase = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -64,7 +65,12 @@ export async function POST(req: NextRequest) {
   const resolvedFirst = firstName ?? (name ? name.split(" ")[0] : null) ?? null;
   const resolvedLast  = lastName  ?? (name ? name.split(" ").slice(1).join(" ") : null) ?? null;
 
+  // This public form lives on the resident org's website, so the org is a
+  // deployment fact — stamped explicitly, never left to a column default.
+  const orgId = await getResidentOrgId();
+
   const { error } = await supabase.from("donations").insert({
+    org_id:     orgId,
     first_name: resolvedFirst,
     last_name:  resolvedLast,
     email:      email || null,
@@ -79,6 +85,7 @@ export async function POST(req: NextRequest) {
     // If the new columns don't exist yet, fall back to old schema
     if (error.message?.includes("first_name") || error.message?.includes("last_name")) {
       const { error: fallbackError } = await supabase.from("donations").insert({
+        org_id: orgId,
         name:  [resolvedFirst, resolvedLast].filter(Boolean).join(" ") || null,
         email: email || null,
         amount: Number(amount),

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import PageHeader from "../../_components/PageHeader";
@@ -41,6 +42,16 @@ const fmtDate = (iso: string | null) =>
   iso ? new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
 
 export default async function AsksPage() {
+  // Pinned to the ACTIVE org — RLS alone would merge rows from every org the
+  // user belongs to.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Ask Log" subtitle="Sign in to view asks." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   const { data, error } = await supabase
     .from("asks")
@@ -48,6 +59,7 @@ export default async function AsksPage() {
       "id, form, title, status, amount_requested, amount_committed, ask_date, grant_id, " +
         "funder:constituents(type, first_name, last_name, org_name), ask_documents(count)"
     )
+    .eq("org_id", ctx.orgId)
     .order("ask_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(500);

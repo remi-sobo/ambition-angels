@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { NewJourneyForm, JourneyActions } from "./_components/JourneyControls";
@@ -16,11 +17,21 @@ const TRIGGER_LABEL: Record<string, string> = {
 };
 
 export default async function JourneysPage() {
+  // Pinned to the ACTIVE org — RLS alone would merge rows from every org the
+  // user belongs to.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Journeys" subtitle="Sign in to view journeys." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   const [journeysRes, stepsRes, enrollRes] = await Promise.all([
-    supabase.from("journeys").select("id, name, trigger, status, created_at").order("created_at", { ascending: false }).limit(200),
-    supabase.from("journey_steps").select("journey_id").limit(5000),
-    supabase.from("journey_enrollments").select("journey_id, status").limit(20000),
+    supabase.from("journeys").select("id, name, trigger, status, created_at").eq("org_id", ctx.orgId).order("created_at", { ascending: false }).limit(200),
+    supabase.from("journey_steps").select("journey_id").eq("org_id", ctx.orgId).limit(5000),
+    supabase.from("journey_enrollments").select("journey_id, status").eq("org_id", ctx.orgId).limit(20000),
   ]);
 
   if (journeysRes.error) {

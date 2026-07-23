@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
@@ -61,6 +62,16 @@ const oppName = (o: OppRow) => o.name ?? (o.constituent ? constituentName(o.cons
 const profileHref = (c: ConstituentLite) => (c ? `/admin/fundraising/donors/${c.id}` : "/admin/fundraising");
 
 export default async function TodaysMovesPage() {
+  // Every queue read is pinned to the ACTIVE org — RLS alone would merge rows
+  // from every org the user belongs to.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Today's Moves" subtitle="Sign in to view today's moves." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   // Reed's NBA cards are a Grow-tier feature; the POST route 402s without
   // ai.reed, so don't render the launcher at all on base Bloom.
@@ -81,6 +92,7 @@ export default async function TodaysMovesPage() {
     supabase
       .from("opportunities")
       .select(oppSelect)
+      .eq("org_id", ctx.orgId)
       .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .not("next_step", "is", null)
@@ -91,6 +103,7 @@ export default async function TodaysMovesPage() {
     supabase
       .from("opportunities")
       .select(oppSelect)
+      .eq("org_id", ctx.orgId)
       .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .gte("expected_close", today)
@@ -101,6 +114,7 @@ export default async function TodaysMovesPage() {
     supabase
       .from("opportunities")
       .select(oppSelect)
+      .eq("org_id", ctx.orgId)
       .in("stage", OPEN_STAGE_LIST)
       .or(EXCLUDE_PARTNERSHIP_OPPS)
       .is("owner", null)
@@ -110,6 +124,7 @@ export default async function TodaysMovesPage() {
     supabase
       .from("gifts")
       .select(giftSelect)
+      .eq("org_id", ctx.orgId)
       .eq("acknowledgment_status", "pending")
       .order("gift_date", { ascending: false })
       .limit(50),
@@ -117,6 +132,7 @@ export default async function TodaysMovesPage() {
     supabase
       .from("gifts")
       .select(giftSelect)
+      .eq("org_id", ctx.orgId)
       .gte("gift_date", recentSince)
       .order("gift_date", { ascending: false })
       .limit(50),

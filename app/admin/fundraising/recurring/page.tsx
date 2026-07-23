@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
@@ -34,10 +35,21 @@ const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 export default async function RecurringPage() {
+  // Pinned to the ACTIVE org — RLS alone would merge rows from every org the
+  // user belongs to.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Recurring" subtitle="Sign in to view recurring plans." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   const { data, error } = await supabase
     .from("recurring_plans")
     .select("id, amount, frequency, status, external_source, last_charged_at, last_payment_failed_at, constituent:constituents ( id, type, first_name, last_name, org_name )")
+    .eq("org_id", ctx.orgId)
     .order("status")
     .order("amount", { ascending: false })
     .limit(1000);

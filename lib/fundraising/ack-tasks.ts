@@ -309,6 +309,7 @@ export async function reconcileAckQueue(
     .select(
       "id, amount, gift_date, method, fair_market_value, deductible_amount, external_source, constituent_id, constituent:constituents(type, first_name, last_name, org_name, emails, preferred_ack_channel)"
     )
+    .eq("org_id", orgId)
     .eq("acknowledgment_status", "pending")
     .order("gift_date", { ascending: true })
     .limit(200);
@@ -320,6 +321,7 @@ export async function reconcileAckQueue(
   const { data: tasksRaw } = await supabase
     .from("ops_tasks")
     .select("id, labels")
+    .eq("org_id", orgId)
     .contains("labels", [ACK_LABEL])
     .neq("status", "done")
     .is("archived_at", null);

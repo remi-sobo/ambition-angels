@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
@@ -17,10 +18,20 @@ type Constituent = {
 };
 
 export default async function DuplicatesPage() {
+  // Pinned to the ACTIVE org — RLS alone would merge rows from every org the
+  // user belongs to.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Duplicates" subtitle="Sign in to view duplicates." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   const [cRes, giftsRes] = await Promise.all([
-    supabase.from("constituents").select("id, type, first_name, last_name, org_name, emails").limit(20000),
-    supabase.from("gifts").select("constituent_id, amount").not("constituent_id", "is", null).limit(20000),
+    supabase.from("constituents").select("id, type, first_name, last_name, org_name, emails").eq("org_id", ctx.orgId).limit(20000),
+    supabase.from("gifts").select("constituent_id, amount").eq("org_id", ctx.orgId).not("constituent_id", "is", null).limit(20000),
   ]);
 
   if (cRes.error) {

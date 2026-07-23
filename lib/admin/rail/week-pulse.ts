@@ -1,5 +1,6 @@
 import "server-only";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { getAgenda } from "@/lib/agenda/service";
 import {
   thisMonday,
@@ -13,7 +14,9 @@ import {
 /**
  * "This week" pulse for the rail — a deterministic per-day load (calendar events
  * + planned tasks) for the current LA week, so the rail shows the shape of the
- * week at a glance and links into Monday Plan. Session client + RLS throughout.
+ * week at a glance and links into Monday Plan. Session client throughout; RLS
+ * spans all the viewer's orgs, so the task read filters to the active org
+ * explicitly.
  */
 
 export type PulseDay = {
@@ -56,15 +59,19 @@ export async function getWeekPulse(): Promise<WeekPulse> {
   const tasksByDay = new Map<string, number>();
   let totalTasks = 0;
   try {
-    const sb = createServerSupabase();
-    const { data } = await sb
-      .from("ops_tasks")
-      .select("planned_day")
-      .eq("planned_week", monday)
-      .neq("status", "done");
-    for (const r of (data ?? []) as Array<{ planned_day: string | null }>) {
-      totalTasks += 1;
-      if (r.planned_day) tasksByDay.set(r.planned_day, (tasksByDay.get(r.planned_day) ?? 0) + 1);
+    const ctx = await getOrgContext();
+    if (ctx) {
+      const sb = createServerSupabase();
+      const { data } = await sb
+        .from("ops_tasks")
+        .select("planned_day")
+        .eq("org_id", ctx.orgId)
+        .eq("planned_week", monday)
+        .neq("status", "done");
+      for (const r of (data ?? []) as Array<{ planned_day: string | null }>) {
+        totalTasks += 1;
+        if (r.planned_day) tasksByDay.set(r.planned_day, (tasksByDay.get(r.planned_day) ?? 0) + 1);
+      }
     }
   } catch {
     /* no tasks read → zero */

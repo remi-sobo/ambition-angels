@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import PageHeader from "../../_components/PageHeader";
@@ -44,16 +45,28 @@ const fmtDate = (iso: string) =>
   new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 export default async function GrantsPage() {
+  // Every read is pinned to the ACTIVE org — RLS alone would merge rows from
+  // every org the user belongs to.
+  const ctx = await getOrgContext();
+  if (!ctx) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8">
+        <PageHeader title="Grants" subtitle="Sign in to view grants." />
+      </div>
+    );
+  }
   const supabase = createServerSupabase();
   const [grantsRes, reqsRes] = await Promise.all([
     supabase
       .from("grants")
       .select("id, name, stage, amount_requested, amount_awarded, period_end, funder:constituents(org_name)")
+      .eq("org_id", ctx.orgId)
       .order("created_at", { ascending: false })
       .limit(500),
     supabase
       .from("grant_requirements")
       .select("id, grant_id, kind, label, due_date, status, grants(name)")
+      .eq("org_id", ctx.orgId)
       .in("status", ["upcoming", "in_progress"])
       .order("due_date", { ascending: true })
       .limit(20),

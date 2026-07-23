@@ -27,6 +27,7 @@ import EmailActions from "../_components/EmailActions";
 import { EnrollInJourney, CancelEnrollment } from "../_components/JourneyControls";
 import NextMovePanel from "../../_components/NextMovePanel";
 import { hasEntitlement } from "@/lib/admin/entitlements";
+import { getOrgContext } from "@/lib/admin/auth";
 import { EntityTasks } from "../../../_components/EntityTasks";
 import { EntityDocuments } from "../../../_components/EntityDocuments";
 import { CommentThread } from "../../../_components/CommentThread";
@@ -52,6 +53,11 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
 
   // Reed's next-move panel is a Grow-tier feature (the route 402s without ai.reed).
   const reedEnabled = await hasEntitlement("ai.reed");
+  // Active-org fence for the org-wide list reads below (RLS alone spans every
+  // org the user belongs to); the by-constituent reads inherit the scope from
+  // the constituent row itself.
+  const ctx = await getOrgContext();
+  if (!ctx) notFound();
   const supabase = createServerSupabase();
   const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes, campaignsRes, fundsRes, appealsRes, scReceivedRes, oppsRes, enrollRes, activeJourneysRes] = await Promise.all([
     supabase.from("constituents").select("*").eq("id", params.id).maybeSingle(),
@@ -83,9 +89,9 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .order("occurred_at", { ascending: false })
       .limit(100),
     // Attribution options for manual gift entry (Epic A).
-    supabase.from("campaigns").select("id, name").order("created_at", { ascending: false }).limit(100),
-    supabase.from("funds").select("id, name").order("name").limit(100),
-    supabase.from("appeals").select("id, name").order("name").limit(200),
+    supabase.from("campaigns").select("id, name").eq("org_id", ctx.orgId).order("created_at", { ascending: false }).limit(100),
+    supabase.from("funds").select("id, name").eq("org_id", ctx.orgId).order("name").limit(100),
+    supabase.from("appeals").select("id, name").eq("org_id", ctx.orgId).order("name").limit(200),
     // Soft credits this donor *received* (recognition only) — Epic D3.
     supabase.from("soft_credits").select("amount").eq("constituent_id", params.id).limit(5000),
     // Open asks → the "next move" block (Constituent 360 v1).
@@ -104,10 +110,10 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
       .eq("constituent_id", params.id)
       .order("enrolled_at", { ascending: false })
       .limit(100),
-    // This org's active journeys (RLS-scoped) — the manual-enroll picker
+    // The active org's active journeys — the manual-enroll picker
     // lists any active journey, not just manual-trigger ones (open
     // decision 2 as amended).
-    supabase.from("journeys").select("id, name").eq("status", "active").order("name").limit(200),
+    supabase.from("journeys").select("id, name").eq("org_id", ctx.orgId).eq("status", "active").order("name").limit(200),
   ]);
 
   // Query error = tables not applied yet (same grace state as the list

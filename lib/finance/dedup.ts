@@ -8,8 +8,8 @@ import type { ParsedTxn } from "./types";
 // The occurrence index disambiguates legitimate same-content duplicates
 // within a single statement: e.g. two $6.81 OpenAI charges on the same
 // day are two separate transactions, not one duplicate of the other. They
-// each get a unique hash (occurrence 0 and 1) so the UNIQUE constraint on
-// fin_transactions.dedup_hash doesn't collapse them. Cross-file dedup
+// each get a unique hash (occurrence 0 and 1) so the per-org UNIQUE index on
+// fin_transactions (org_id, dedup_hash) doesn't collapse them. Cross-file dedup
 // still works: re-uploading the same batch produces the same hashes (same
 // (date, amount, desc) tuples appear in the same order within their group,
 // so each gets the same occurrence index it had last time).

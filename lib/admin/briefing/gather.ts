@@ -60,7 +60,7 @@ export async function gatherInputs(): Promise<{
     followupsRes,
   ] =
     await Promise.all([
-      getDataAge(),
+      getDataAge(orgId),
       getFinanceSnapshot(),
       sb
         .from("ops_tasks")

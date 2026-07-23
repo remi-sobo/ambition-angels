@@ -6,6 +6,7 @@ import { constituentName } from "@/lib/fundraising/display";
 import StrategyBoard, { type FunderRow } from "../_components/StrategyBoard";
 import DiscoverPanel from "../_components/DiscoverPanel";
 import { hasEntitlement } from "@/lib/admin/entitlements";
+import { getOrgContext } from "@/lib/admin/auth";
 
 // Strategy angle drill-in (Phase 2): the funnel board for one angle. Funders
 // are grouped by stage; add via constituent search/create; move stage + record
@@ -34,11 +35,16 @@ export default async function AngleFunnelPage({ params }: { params: { key: strin
   // AI prospect discovery is a Grow-tier feature (the discover route 402s
   // without ai.prospect_research); the funnel board itself stays available.
   const discoveryEnabled = await hasEntitlement("ai.prospect_research");
+  // Active-org fence: angle keys repeat across orgs, and RLS spans every org
+  // the viewer belongs to — resolve the angle within the switched-into org.
+  const ctx = await getOrgContext();
+  if (!ctx) notFound();
   const supabase = createServerSupabase();
 
   const { data: angle, error } = await supabase
     .from("strategy_angles")
     .select("id, key, name, status_badge, hook")
+    .eq("org_id", ctx.orgId)
     .eq("key", params.key)
     .maybeSingle();
   if (error || !angle) notFound();

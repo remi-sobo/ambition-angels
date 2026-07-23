@@ -71,16 +71,19 @@ export function isStale(age: Pick<DataAge, "severity">): boolean {
   return age.severity === "stale";
 }
 
-export async function getDataAge(): Promise<DataAge> {
+export async function getDataAge(orgId: string): Promise<DataAge> {
   // Imported lazily so the pure helpers above stay unit-testable without
   // pulling the Supabase admin client (and its env) into the module graph.
   const { getSupabaseAdmin } = await import("@/lib/supabase/admin");
   const sb = getSupabaseAdmin();
 
   // Most recent run of any status — for "last run" + its status nuance.
+  // Org fence: service-role client bypasses RLS; without it, one tenant's
+  // sync clock would show on every tenant's briefing.
   const { data: latest } = await sb
     .from("hs_sync_jobs")
     .select("finished_at,status")
+    .eq("org_id", orgId)
     .order("started_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -89,6 +92,7 @@ export async function getDataAge(): Promise<DataAge> {
   const { data: full } = await sb
     .from("hs_sync_jobs")
     .select("finished_at")
+    .eq("org_id", orgId)
     .eq("status", "completed")
     .order("finished_at", { ascending: false })
     .limit(1)

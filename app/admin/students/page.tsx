@@ -151,8 +151,8 @@ export default async function StudentsPage() {
         })}
         {students.length === 0 && (
           <p className="text-sm text-ink-2">
-            No {terms.students.toLowerCase()} yet — add one above, or run the create_students
-            migration to import YGB campers and career-quiz teens.
+            No {terms.students.toLowerCase()} yet — add one above, or bring them in
+            through Imports.
           </p>
         )}
       </div>

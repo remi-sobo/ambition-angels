@@ -83,7 +83,7 @@ function walk(dir: string): string[] {
 }
 
 function serviceRoleFiles(): string[] {
-  const roots = [join(REPO, "app/admin"), join(REPO, "app/api/admin")];
+  const roots = [join(REPO, "app/admin"), join(REPO, "app/api/admin"), join(REPO, "lib/admin")];
   const files: string[] = [];
   for (const root of roots) {
     for (const abs of walk(root)) {

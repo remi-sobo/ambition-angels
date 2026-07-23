@@ -232,20 +232,24 @@ const GRANT_KIND_LABELS: Record<string, string> = {
 };
 
 export const getPriorities = cache(async (): Promise<{ rows: PriorityRow[]; openTaskCount: number }> => {
+  const ctx = await getOrgContext();
+  if (!ctx) return { rows: [], openTaskCount: 0 };
   const sb = getSupabaseAdmin();
   const [tasksRes, openTasksRes, grantReqsRes] = await Promise.all([
     sb
       .from("ops_tasks")
       .select("id, title, category, due_date")
+      .eq("org_id", ctx.orgId)
       .neq("status", "done")
       .is("archived_at", null)
       .not("due_date", "is", null)
       .order("due_date", { ascending: true })
       .limit(8),
-    sb.from("ops_tasks").select("id", { count: "exact", head: true }).neq("status", "done").is("archived_at", null),
+    sb.from("ops_tasks").select("id", { count: "exact", head: true }).eq("org_id", ctx.orgId).neq("status", "done").is("archived_at", null),
     sb
       .from("grant_requirements")
       .select("id, grant_id, kind, label, due_date, grants(name)")
+      .eq("org_id", ctx.orgId)
       .in("status", ["upcoming", "in_progress"])
       .order("due_date", { ascending: true })
       .limit(8),
@@ -292,8 +296,10 @@ export type PipelineData = {
 const humanizeStage = (s: string) => s.replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 export const getPipeline = cache(async (): Promise<PipelineData> => {
+  const ctx = await getOrgContext();
+  if (!ctx) return { stages: [], total: 0 };
   const sb = getSupabaseAdmin();
-  const res = await sb.from("hs_deals").select("stage, amount").limit(1000);
+  const res = await sb.from("hs_deals").select("stage, amount").eq("org_id", ctx.orgId).limit(1000);
   const agg = new Map<string, { count: number; total: number }>();
   for (const d of res.data ?? []) {
     if (!d.stage) continue;
@@ -760,11 +766,14 @@ export const getAcksDue = cache(async (): Promise<{ rows: AckRow[]; total: numbe
 export type BookingRow = { id: string; name: string; type: string; start: string };
 
 export const getSchedulingLane = cache(async (): Promise<BookingRow[]> => {
+  const ctx = await getOrgContext();
+  if (!ctx) return [];
   const sb = getSupabaseAdmin();
   const nowIso = new Date().toISOString();
   const res = await sb
     .from("bookings")
     .select("id, attendee_name, start_time, meeting_types(name)")
+    .eq("org_id", ctx.orgId)
     .eq("status", "confirmed")
     .gte("start_time", nowIso)
     .order("start_time", { ascending: true })
@@ -808,10 +817,13 @@ export const getSchedule = cache(async (): Promise<{ items: ScheduleItem[]; sour
     };
   } catch {
     // Calendar env missing or API error — fall back to the bookings spine.
+    const ctx = await getOrgContext();
+    if (!ctx) return { items: [], source: "bookings", timeZone: "America/Los_Angeles" };
     const sb = getSupabaseAdmin();
     const res = await sb
       .from("bookings")
       .select("id, attendee_name, start_time, meeting_types(name)")
+      .eq("org_id", ctx.orgId)
       .eq("status", "confirmed")
       .gte("start_time", now.toISOString())
       .lte("start_time", horizon.toISOString())
@@ -846,9 +858,12 @@ export type HygieneData = {
 };
 
 export const getDataHygiene = cache(async (): Promise<HygieneData> => {
+  const ctx = await getOrgContext();
   const sb = createServerSupabase();
   const [age, unattrib] = await Promise.all([
-    getDataAge(),
+    ctx
+      ? getDataAge(ctx.orgId)
+      : Promise.resolve({ ageLabel: "never", severity: "stale" as const }),
     sb.from("gifts").select("id", { count: "exact", head: true }).is("constituent_id", null),
   ]);
   return {

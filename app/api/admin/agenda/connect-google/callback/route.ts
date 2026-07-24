@@ -7,7 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getOrgContext } from "@/lib/admin/auth";
-import { oauthClient, listAccountCalendars, OAUTH_STATE_COOKIE } from "@/lib/google/oauth";
+import { oauthClient, listAccountCalendars, OAUTH_STATE_COOKIE, INVALID_CLIENT_REASON } from "@/lib/google/oauth";
 import { upsertPendingGoogleAccount } from "@/lib/google/connection";
 
 export const dynamic = "force-dynamic";
@@ -63,11 +63,14 @@ export async function GET(req: NextRequest) {
       accountEmail,
     });
   } catch (err) {
-    console.error("connect-google callback failed:", err instanceof Error ? err.message : err);
-    return settingsRedirect(origin, {
-      calendar: "error",
-      reason: "Couldn't complete the Google connection — try again.",
-    });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("connect-google callback failed:", msg);
+    // A mismatched client id/secret shows up here as invalid_client — name it,
+    // rather than the generic "try again" that a bad secret would never fix.
+    const reason = /invalid_client/i.test(msg)
+      ? INVALID_CLIENT_REASON
+      : "Couldn't complete the Google connection — try again.";
+    return settingsRedirect(origin, { calendar: "error", reason });
   }
 
   return settingsRedirect(origin, { calendar: "pick" });

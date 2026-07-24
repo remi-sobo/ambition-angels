@@ -10,7 +10,7 @@ import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { isTokenEncConfigured } from "@/lib/crypto/secret-box";
-import { buildConsentUrl, OAUTH_STATE_COOKIE } from "@/lib/google/oauth";
+import { buildConsentUrl, OAUTH_STATE_COOKIE, preflightOAuthCredentials } from "@/lib/google/oauth";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +27,16 @@ export async function GET(req: NextRequest) {
   if (!isTokenEncConfigured()) {
     settingsUrl.searchParams.set("calendar", "error");
     settingsUrl.searchParams.set("reason", "BLOOMOS_TOKEN_ENC_KEY is not set on the server.");
+    return NextResponse.redirect(settingsUrl);
+  }
+
+  // Preflight the OAuth client id/secret against Google before sending the user
+  // to consent — otherwise a wrong GOOGLE_CLIENT_SECRET only surfaces at the
+  // callback's token exchange, after the whole consent round-trip.
+  const preflight = await preflightOAuthCredentials();
+  if (!preflight.ok) {
+    settingsUrl.searchParams.set("calendar", "error");
+    settingsUrl.searchParams.set("reason", preflight.reason);
     return NextResponse.redirect(settingsUrl);
   }
 

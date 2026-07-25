@@ -68,28 +68,61 @@ const tiers = [
 
 const dotColors = ["#E8500A", "#1E2235", "#6B7280", "#374151", "#9CA3AF"];
 
-const model = [
+const settings = [
   {
-    num: "01",
-    title: "Exposure",
-    sub: "The Ambition App",
-    desc: "30-day simulated internships in real careers. 15 minutes a day. On the phone they already have. Wide reach. Low lift. High engagement. Already proven.",
-    status: "Live",
+    name: "In school",
+    guide: "Advisory teachers and counselors",
+    body: "Advisory periods and career-connected learning blocks. The adult already has the room, the roster, and the schedule. Our first full-year in-school integration starts this fall, which also means moving the platform to the web so students can use it on school computers.",
+    status: "First full-year integration underway",
+    proven: false,
   },
   {
-    num: "02",
-    title: "Conversations",
-    sub: "The adult layer",
-    desc: "When a teen completes lessons, their trusted adult receives a customized conversation guide with specific questions and specific context, tied to exactly what their teen just experienced. Think dinner table conversation cards, built around your kid's actual career interests. Research shows career conversations with a trusted adult by age 15 are one of the strongest predictors of adult employment outcomes.",
-    status: "Built, rolling out to parents",
+    name: "In community college",
+    guide: "Program counselors",
+    body: "Cohort programs whose entire measure of success is helping students finish and land somewhere. This is the setting closest to what we already do. Our pilot is with MESA, which runs at 96 campuses across California.",
+    status: "Pilot in progress",
+    proven: false,
   },
   {
-    num: "03",
-    title: "Connections",
-    sub: "Ambition Coaches",
-    desc: "For teens who have gone deep and chosen a direction. We connect them with a professional in the field they care about for 4 sessions over 4 weeks. The goal: a career plan and a real first connection in their chosen field.",
-    status: "First pilot in progress",
+    name: "In after-school programs",
+    guide: "Mentors and program leaders",
+    body: "Mentoring organizations, youth programs, and juvenile justice partners. The adult already has a cohort and a relationship. This is where we started, and where our partners already run us.",
+    status: "Proven, 36 partners",
+    proven: true,
   },
+  {
+    name: "With parents",
+    guide: "Parents and family",
+    body: "The adult with the most invested and the least support. Same conversation guides, same visibility into what their teen is exploring, built for the dinner table instead of the classroom.",
+    status: "Rolling out now",
+    proven: false,
+  },
+];
+
+const settingIcons = [
+  // In school — open book
+  <g key="school">
+    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+  </g>,
+  // Community college — graduation cap
+  <g key="college">
+    <path d="M22 9L12 4 2 9l10 5 10-5z" />
+    <path d="M6 11.5V16c0 1.66 2.69 3 6 3s6-1.34 6-3v-4.5" />
+    <path d="M22 9v5" />
+  </g>,
+  // After-school programs — people
+  <g key="programs">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </g>,
+  // Parents — home
+  <g key="parents">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <path d="M9 22V12h6v10" />
+  </g>,
 ];
 
 const priorities = [
@@ -148,6 +181,7 @@ export default function UpdatePage() {
         .upd-photo-break { position:relative; width:100%; height:320px; border-radius:16px; overflow:hidden; margin:40px 0; }
         .upd-photo-quote { font-size:22px; }
         .upd-model-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+        .upd-settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
         @media (max-width: 640px) {
           .upd-hero-grid { flex-direction:column; gap:28px; }
           .upd-hero-photo { width:100%; height:260px; flex-shrink:unset; }
@@ -156,6 +190,7 @@ export default function UpdatePage() {
           .upd-photo-break { height:240px; }
           .upd-photo-quote { font-size:18px; }
           .upd-model-grid { grid-template-columns:1fr; }
+          .upd-settings-grid { grid-template-columns:1fr; }
         }
       `}</style>
 
@@ -264,11 +299,8 @@ export default function UpdatePage() {
           <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:14, maxWidth:680 }}>
             We built Ambition to go directly to teens. And we were right that the phone was the channel. But we learned something critical: the teens who complete internships and actually shift their career thinking are almost always connected to an adult who knows they are doing it. A counselor. A coach. A mentor. A parent. Someone who can say: tell me what you learned today.
           </p>
-          <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:14, maxWidth:680 }}>
-            We stopped asking how to get teens to activate on their own. We started asking how to equip the adults who already love them to bring them in and keep them going. That insight is reshaping everything we are building in 2026.
-          </p>
           <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, maxWidth:680 }}>
-            The app does the work. The adult makes it stick.
+            That insight is reshaping everything we are building in 2026.
           </p>
         </section>
 
@@ -286,43 +318,46 @@ export default function UpdatePage() {
           </div>
         </div>
 
-        {/* ── THE MODEL ── */}
+        {/* ── THE MODEL: ONE TOOL, FOUR SETTINGS ── */}
         <section style={{ marginBottom:56 }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:orange, marginBottom:12 }}>The model</div>
-          <h2 style={{ fontSize:"clamp(24px, 3.5vw, 36px)", fontWeight:800, letterSpacing:"-0.025em", color:navy, marginBottom:14, lineHeight:1.15 }}>
-            Three layers of the same program.
+          <h2 style={{ fontSize:"clamp(24px, 3.5vw, 36px)", fontWeight:800, letterSpacing:"-0.025em", color:navy, marginBottom:20, lineHeight:1.15 }}>
+            One tool. <span style={{ color:orange }}>Four settings.</span>
           </h2>
-          <p style={{ fontSize:15, color:"#4B5563", lineHeight:1.75, marginBottom:28, maxWidth:620 }}>
-            This is not just an app. This is a system. Think of it as a funnel: breadth at the top, depth at the bottom. Every layer is a win.
+          <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:14, maxWidth:680 }}>
+            The teens whose outlook actually changed had one thing in common. Someone was tracking them. A counselor, a coach, a mentor, a parent. The app did the exposure work. The adult made it stick.
+          </p>
+          <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:14, maxWidth:680 }}>
+            So we stopped asking how to get teens to activate on their own, and started asking a simpler question. Where are the adults who already care about these teens?
+          </p>
+          <p style={{ fontSize:17, fontWeight:700, color:navy, lineHeight:1.6, marginBottom:28, maxWidth:680 }}>
+            There are four answers, and we are in all four.
           </p>
 
-          {/* Three cards */}
-          <div className="upd-model-grid" style={{ marginBottom:20 }}>
-            {model.map((m, i) => (
-              <div
-                key={m.num}
-                style={{
-                  background: i === 0 ? orange : i === 1 ? navy : "#F9FAFB",
-                  borderRadius:16,
-                  padding:"28px 24px",
-                  position:"relative",
-                  border: i === 2 ? `1px solid #E5E7EB` : "none",
-                }}
-              >
-                <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", color: i === 0 ? "rgba(255,255,255,0.6)" : i === 1 ? "rgba(255,255,255,0.4)" : "#9CA3AF", marginBottom:6 }}>
-                  {m.num}
+          {/* Four setting cards */}
+          <div className="upd-settings-grid" style={{ marginBottom:20 }}>
+            {settings.map((s, i) => (
+              <div key={s.name} style={{ background:"#ffffff", border:"1px solid #E5E7EB", borderRadius:16, padding:"26px 24px", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column" }}>
+                <div style={{ position:"absolute", top:16, right:22, fontSize:44, fontWeight:800, color:"#FFF0EA", letterSpacing:"-0.04em", lineHeight:1, userSelect:"none" }}>
+                  {`0${i + 1}`}
                 </div>
-                <div style={{ fontSize:22, fontWeight:800, color: i < 2 ? "#ffffff" : navy, letterSpacing:"-0.02em", marginBottom:4, lineHeight:1.1 }}>
-                  {m.title}
+                <div style={{ width:42, height:42, borderRadius:12, background:"#FFF0EA", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:16 }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={orange} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    {settingIcons[i]}
+                  </svg>
                 </div>
-                <div style={{ fontSize:11, fontWeight:600, color: i === 0 ? "rgba(255,255,255,0.7)" : i === 1 ? orange : orange, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:14 }}>
-                  {m.sub}
+                <div style={{ fontSize:19, fontWeight:800, color:navy, letterSpacing:"-0.02em", marginBottom:4, lineHeight:1.2 }}>
+                  {s.name}
                 </div>
-                <p style={{ fontSize:13, color: i < 2 ? "rgba(255,255,255,0.7)" : "#4B5563", lineHeight:1.65, margin:0, marginBottom:16 }}>
-                  {m.desc}
+                <div style={{ fontSize:10.5, fontWeight:700, color:orange, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>
+                  Guide: {s.guide}
+                </div>
+                <p style={{ fontSize:13.5, color:"#4B5563", lineHeight:1.7, margin:0, marginBottom:16, flex:1 }}>
+                  {s.body}
                 </p>
-                <span style={{ display:"inline-block", background: i === 0 ? "rgba(255,255,255,0.2)" : i === 1 ? "rgba(232,80,10,0.2)" : "#FFF0EA", color: i < 2 ? "#ffffff" : orange, fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", padding:"4px 10px", borderRadius:100 }}>
-                  {m.status}
+                <span style={{ display:"inline-flex", alignItems:"center", gap:6, alignSelf:"flex-start", background: s.proven ? orange : "#FFF0EA", color: s.proven ? "#ffffff" : orange, fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", padding:"5px 12px", borderRadius:100 }}>
+                  <span style={{ width:6, height:6, borderRadius:"50%", background: s.proven ? "#ffffff" : orange, opacity:0.85, flexShrink:0 }} />
+                  {s.status}
                 </span>
               </div>
             ))}
@@ -331,9 +366,39 @@ export default function UpdatePage() {
           {/* Connector note */}
           <div style={{ background:"#F9FAFB", border:"1px solid #E5E7EB", borderRadius:12, padding:"18px 22px" }}>
             <p style={{ fontSize:14, color:"#6B7280", lineHeight:1.75, margin:0, fontStyle:"italic" }}>
-              Most teens will only experience exposure. Some will have conversations. Even fewer will reach connections. That is by design. Every layer is a form of success.
+              We serve teens and young adults from 14 to 24. The tool does not change across those years. What changes is who the guide is, how much guiding a young person still needs, and what their setting makes possible.
             </p>
           </div>
+        </section>
+
+        {/* ── PROVING IT SETTING BY SETTING ── */}
+        <section style={{ marginBottom:56 }}>
+          <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:orange, marginBottom:12 }}>What we are learning</div>
+          <h2 style={{ fontSize:"clamp(24px, 3.5vw, 36px)", fontWeight:800, letterSpacing:"-0.025em", color:navy, marginBottom:20, lineHeight:1.15 }}>
+            We are proving it setting by setting.
+          </h2>
+          <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:14, maxWidth:680 }}>
+            We are not running four experiments and hoping one works. We are running one tool through four doors, and watching which one opens widest.
+          </p>
+          <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:14, maxWidth:680 }}>
+            Each setting has to earn its own evidence. Completion in a classroom looks different from completion in a community college cohort, which looks different again from what a parent sees at home. We are not going to claim a result in one setting and imply it in the others.
+          </p>
+          <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:28, maxWidth:680 }}>
+            By the end of this year we will know which setting carries the most weight per adult we train. That is the one we build the next phase around. If it is high school advisory, we go to every district running an advisory model. If it is community college, MESA alone is 96 campuses. If it is programs, we grow through the mentoring networks we are already inside.
+          </p>
+
+          <blockquote style={{ borderLeft:`4px solid ${orange}`, background:cream, borderRadius:"0 12px 12px 0", padding:"24px 28px", margin:0, marginBottom:20 }}>
+            <p style={{ fontSize:18, fontStyle:"italic", color:navy, fontWeight:500, lineHeight:1.6, marginBottom:10 }}>
+              &ldquo;Our partnership with Ambition Angels and the Ambition App has been an incredible value-add to our programming. Our Geniuses have truly enjoyed using the app. It&rsquo;s intuitive, user-friendly, and offers an engaging way for them to explore a wide range of careers across various industries.&rdquo;
+            </p>
+            <cite style={{ fontSize:12, color:"#9CA3AF", fontStyle:"normal", fontWeight:600, letterSpacing:"0.05em", textTransform:"uppercase" }}>
+              Janay Osborne, Richmond Site Director &middot; The Hidden Genius Project
+            </cite>
+          </blockquote>
+
+          <p style={{ fontSize:15, color:"#6B7280", lineHeight:1.75, margin:0, maxWidth:680 }}>
+            If you want to hear it unfiltered, we will connect you directly with the program leaders and counselors running Ambition. <strong style={{ color:navy }}>Ask and we will make the introduction.</strong>
+          </p>
         </section>
 
         {/* ── HOW WE REACH TEENS ── */}
@@ -398,6 +463,11 @@ export default function UpdatePage() {
           <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, maxWidth:680 }}>
             The policy landscape is shifting too. DEI rollbacks. Reduced government investment in youth services. The erosion of school counseling. The systems meant to support teens from under-resourced communities are contracting. We are one of the organizations that can fill that gap. The question is not whether this works. We have the data. The question is whether we can build the infrastructure to scale it.
           </p>
+          <div style={{ marginTop:24, background:cream, borderLeft:`4px solid ${orange}`, borderRadius:"0 12px 12px 0", padding:"20px 24px", maxWidth:680 }}>
+            <p style={{ fontSize:15.5, color:"#4B5563", lineHeight:1.75, margin:0 }}>
+              At the same time, there is significant public funding available right now for career-connected learning, and much of it is going unspent. Not because schools do not want it, but because there is no straightforward way to deliver real career exposure to a few hundred students at once. That is the exact gap we built for. <strong style={{ color:navy }}>The need is growing and the money is already appropriated. What is missing is the delivery.</strong>
+            </p>
+          </div>
         </section>
 
         {/* ── WHAT WE'RE BUILDING ── */}
@@ -438,6 +508,35 @@ export default function UpdatePage() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* ── SUSTAINABILITY ── */}
+        <section style={{ marginBottom:48 }}>
+          <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:orange, marginBottom:12 }}>Sustainability</div>
+          <h2 style={{ fontSize:"clamp(24px, 3.5vw, 36px)", fontWeight:800, letterSpacing:"-0.025em", color:navy, marginBottom:20, lineHeight:1.15 }}>
+            Who pays when the grant ends.
+          </h2>
+          <p style={{ fontSize:17, fontWeight:600, color:navy, lineHeight:1.7, marginBottom:14, maxWidth:680 }}>
+            Fair question, and one we would rather answer now than in year three.
+          </p>
+          <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:14, maxWidth:680 }}>
+            The answer we are building toward is corporate partnership, and we are already in it. Not logo placement. Companies bring their people in to author the career content itself. Their employees sit for a one-hour session or record a ten-minute clip about the work they actually do, and we produce it into a 30-day internship that thousands of teens move through. The company gets employee engagement, reportable outcomes, and a real relationship with the next generation of workers in their field. We get content built by people doing the job, and a revenue line that is not a grant.
+          </p>
+          <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:14, maxWidth:680 }}>
+            We are building this at two levels. National companies whose customers are already students and families, and community-level companies who want their name attached to the young people in their own market. We are choosing carefully. A sponsor&rsquo;s name on our platform is a signal to every partner and family who sees it, so we vet them the way they vet us.
+          </p>
+          <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:14, maxWidth:680 }}>
+            The reason we are moving here first is straightforward. Foundation funding runs one to three years. Corporate relationships, when both sides are actually getting something, run much longer. We would rather build the line that lasts.
+          </p>
+          <p style={{ fontSize:16, color:"#4B5563", lineHeight:1.75, marginBottom:28, maxWidth:680 }}>
+            Earned revenue comes after. We are not going to ask a school to pay for something we have not yet proven inside a school. Prove it this year, price it next.
+          </p>
+          <a href="/companies" style={{ display:"inline-block", background:orange, color:"#ffffff", fontWeight:700, fontSize:14, padding:"13px 30px", borderRadius:100, textDecoration:"none", letterSpacing:"-0.01em" }}>
+            See the corporate partnership model →
+          </a>
+          <p style={{ fontSize:14, color:"#6B7280", lineHeight:1.7, fontStyle:"italic", marginTop:16, marginBottom:0, maxWidth:680 }}>
+            Know a company that should be in this? That introduction is worth as much to us as a check.
+          </p>
         </section>
 
         <div style={{ width:36, height:4, background:orange, borderRadius:2, marginBottom:48 }} />

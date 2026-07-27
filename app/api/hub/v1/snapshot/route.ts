@@ -60,6 +60,7 @@ type TaskRow = {
   assigned_to_id: string | null;
   category: string;
   labels: string[] | null;
+  org_id: string;
   updated_at: string;
 };
 
@@ -144,7 +145,7 @@ export async function GET(req: NextRequest) {
     const tasks = await fetchAllPages<TaskRow>((from, to) =>
       supabase
         .from("ops_tasks")
-        .select("id, project_id, title, status, due_date, assigned_to_id, category, labels, updated_at")
+        .select("id, project_id, title, status, due_date, assigned_to_id, category, labels, org_id, updated_at")
         .in("org_id", orgIds)
         .is("archived_at", null)
         .or(assigneeFilter)
@@ -174,6 +175,9 @@ export async function GET(req: NextRequest) {
           title: t.title,
           status: t.status,
           due_date: t.due_date,
+          // A task without a project cannot route through one hub-side, so
+          // every task carries its own area_hint from its org.
+          area_hint: areaHintByOrgId.get(t.org_id),
           owner: t.assigned_to_id,
           labels: [t.category, ...(t.labels ?? [])],
           updated_at: t.updated_at,

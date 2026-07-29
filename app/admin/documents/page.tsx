@@ -29,6 +29,7 @@ type DocRow = {
   doc_type: string | null;
   status: string;
   visibility: string;
+  issued_at: string | null;
   expires_at: string | null;
   uploaded_by: string | null;
   created_at: string;
@@ -72,7 +73,7 @@ export default async function DocumentsHubPage({
   let query = supabase
     .from("documents")
     .select(
-      "id, filename, mime, size_bytes, title, doc_type, status, visibility, expires_at, uploaded_by, created_at, document_links(entity_type, entity_id)",
+      "id, filename, mime, size_bytes, title, doc_type, status, visibility, issued_at, expires_at, uploaded_by, created_at, document_links(entity_type, entity_id)",
     )
     .eq("org_id", ctx.orgId)
     .order("created_at", { ascending: false })
@@ -238,6 +239,11 @@ export default async function DocumentsHubPage({
                       })}
                     </div>
                   </div>
+                  {d.issued_at && (
+                    <span className="text-[11px] text-ink-3 whitespace-nowrap hidden sm:inline">
+                      Issued {d.issued_at}
+                    </span>
+                  )}
                   {d.expires_at && (
                     <span
                       className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${

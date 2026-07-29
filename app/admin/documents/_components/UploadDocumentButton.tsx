@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DOC_TYPES, DOC_TYPE_LABEL } from "@/lib/documents/config";
+import { DOC_TYPES, DOC_TYPE_LABEL, docTypeExpires, minExpirationISO } from "@/lib/documents/config";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -16,21 +16,28 @@ export default function UploadDocumentButton() {
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [docType, setDocType] = useState("");
+  const [issued, setIssued] = useState("");
   const [expires, setExpires] = useState("");
   const [restricted, setRestricted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const expirable = docTypeExpires(docType);
 
   const upload = async (e: React.FormEvent) => {
     e.preventDefault();
     const file = fileRef.current?.files?.[0];
     if (!file || busy) return;
+    if (expirable && expires && expires < minExpirationISO()) {
+      setError("Expiration date must be in the future.");
+      return;
+    }
     setBusy(true);
     setError(null);
     const form = new FormData();
     form.set("file", file);
     if (title.trim()) form.set("title", title.trim());
     if (docType) form.set("doc_type", docType);
-    if (expires) form.set("expires_at", expires);
+    if (issued) form.set("issued_at", issued);
+    if (expirable && expires) form.set("expires_at", expires);
     if (restricted) form.set("visibility", "restricted");
     const res = await fetch("/api/admin/documents", { method: "POST", body: form });
     const j = (await res.json().catch(() => ({}))) as { error?: string };
@@ -42,6 +49,7 @@ export default function UploadDocumentButton() {
     setOpen(false);
     setTitle("");
     setDocType("");
+    setIssued("");
     setExpires("");
     setRestricted(false);
     if (fileRef.current) fileRef.current.value = "";
@@ -81,14 +89,31 @@ export default function UploadDocumentButton() {
           </option>
         ))}
       </select>
-      <input
-        type="date"
-        value={expires}
-        onChange={(e) => setExpires(e.target.value)}
-        className={inputCls}
-        aria-label="Expires on"
-        title="Expires on (feeds the renewal queue)"
-      />
+      <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-2">
+        Issue date
+        <input
+          type="date"
+          value={issued}
+          onChange={(e) => setIssued(e.target.value)}
+          className={inputCls}
+          aria-label="Issue date"
+          title="When the document was created or approved"
+        />
+      </label>
+      {expirable && (
+        <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-2">
+          Expiration date
+          <input
+            type="date"
+            value={expires}
+            onChange={(e) => setExpires(e.target.value)}
+            min={minExpirationISO()}
+            className={inputCls}
+            aria-label="Expiration date"
+            title="Must be a future date (feeds the renewal queue)"
+          />
+        </label>
+      )}
       <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-2">
         <input type="checkbox" checked={restricted} onChange={(e) => setRestricted(e.target.checked)} />
         Restricted

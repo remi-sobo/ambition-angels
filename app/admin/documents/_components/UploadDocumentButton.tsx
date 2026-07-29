@@ -15,6 +15,7 @@ export default function UploadDocumentButton() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
+  const [notes, setNotes] = useState("");
   const [docType, setDocType] = useState("");
   const [issued, setIssued] = useState("");
   const [expires, setExpires] = useState("");
@@ -35,6 +36,7 @@ export default function UploadDocumentButton() {
     const form = new FormData();
     form.set("file", file);
     if (title.trim()) form.set("title", title.trim());
+    if (notes.trim()) form.set("notes", notes.trim());
     if (docType) form.set("doc_type", docType);
     if (issued) form.set("issued_at", issued);
     if (expirable && expires) form.set("expires_at", expires);
@@ -48,6 +50,7 @@ export default function UploadDocumentButton() {
     }
     setOpen(false);
     setTitle("");
+    setNotes("");
     setDocType("");
     setIssued("");
     setExpires("");
@@ -118,6 +121,15 @@ export default function UploadDocumentButton() {
         <input type="checkbox" checked={restricted} onChange={(e) => setRestricted(e.target.checked)} />
         Restricted
       </label>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Notes (optional) — provider, policy number, context…"
+        rows={2}
+        maxLength={4000}
+        className={`${inputCls} w-full resize-y`}
+        aria-label="Notes"
+      />
       <button
         type="submit"
         disabled={busy}

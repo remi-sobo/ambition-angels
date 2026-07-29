@@ -27,6 +27,7 @@ type DocRow = {
   size_bytes: number | null;
   title: string | null;
   doc_type: string | null;
+  notes: string | null;
   status: string;
   visibility: string;
   issued_at: string | null;
@@ -73,7 +74,7 @@ export default async function DocumentsHubPage({
   let query = supabase
     .from("documents")
     .select(
-      "id, filename, mime, size_bytes, title, doc_type, status, visibility, issued_at, expires_at, uploaded_by, created_at, document_links(entity_type, entity_id)",
+      "id, filename, mime, size_bytes, title, doc_type, notes, status, visibility, issued_at, expires_at, uploaded_by, created_at, document_links(entity_type, entity_id)",
     )
     .eq("org_id", ctx.orgId)
     .order("created_at", { ascending: false })
@@ -238,6 +239,11 @@ export default async function DocumentsHubPage({
                         ) : null;
                       })}
                     </div>
+                    {d.notes && (
+                      <p className="mt-0.5 text-xs text-ink-2 truncate" title={d.notes}>
+                        {d.notes}
+                      </p>
+                    )}
                   </div>
                   {d.issued_at && (
                     <span className="text-[11px] text-ink-3 whitespace-nowrap hidden sm:inline">
@@ -258,7 +264,17 @@ export default async function DocumentsHubPage({
                   </span>
                   <span className="text-[11px] text-ink-3 whitespace-nowrap hidden md:inline">{fmtSize(d.size_bytes)}</span>
                   <span className="text-[11px] text-ink-3 whitespace-nowrap hidden lg:inline">{fmtDate(d.created_at)}</span>
-                  <DocumentActions id={d.id} status={d.status} />
+                  <DocumentActions
+                    doc={{
+                      id: d.id,
+                      filename: d.filename,
+                      title: d.title,
+                      doc_type: d.doc_type,
+                      notes: d.notes,
+                      expires_at: d.expires_at,
+                    }}
+                    status={d.status}
+                  />
                 </li>
               );
             })}

@@ -47,6 +47,7 @@ export function EntityDocuments({
   const [error, setError] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
+  const [notes, setNotes] = useState("");
   const [docType, setDocType] = useState("");
   const [issued, setIssued] = useState("");
   const [expires, setExpires] = useState("");
@@ -80,6 +81,7 @@ export function EntityDocuments({
     form.set("entity_type", entityType);
     form.set("entity_id", entityId);
     if (title.trim()) form.set("title", title.trim());
+    if (notes.trim()) form.set("notes", notes.trim());
     if (docType) form.set("doc_type", docType);
     if (issued) form.set("issued_at", issued);
     if (expirable && expires) form.set("expires_at", expires);
@@ -91,6 +93,7 @@ export function EntityDocuments({
       return;
     }
     setTitle("");
+    setNotes("");
     setDocType("");
     setIssued("");
     setExpires("");
@@ -182,6 +185,15 @@ export function EntityDocuments({
                 {busy ? "Uploading…" : "Upload"}
               </button>
             </div>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Notes (optional) — provider, policy number, context…"
+              rows={2}
+              maxLength={4000}
+              className={`${inputCls} w-full resize-y`}
+              aria-label="Notes"
+            />
             {error && <p className="text-xs font-semibold text-expense">{error}</p>}
           </form>
         )}

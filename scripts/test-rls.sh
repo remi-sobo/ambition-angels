@@ -204,6 +204,7 @@ ordered=(
   stewardship_tenant_neutral_assignee.sql
   search_people_org_scope.sql
   add_documents_issued_at.sql
+  add_documents_notes.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

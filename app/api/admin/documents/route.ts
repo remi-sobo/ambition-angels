@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
   let q = supabase
     .from("documents")
     .select(
-      "id, filename, mime, size_bytes, title, doc_type, status, visibility, version, issued_at, expires_at, uploaded_by, created_at, document_links(id, entity_type, entity_id)",
+      "id, filename, mime, size_bytes, title, doc_type, notes, status, visibility, version, issued_at, expires_at, uploaded_by, created_at, document_links(id, entity_type, entity_id)",
     )
     .eq("org_id", ctx.orgId)
     .order("created_at", { ascending: false })
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
 }
 
 // ── POST /api/admin/documents ───────────────────────────────────────────────
-// Upload. multipart/form-data: file (required); title?, doc_type?,
+// Upload. multipart/form-data: file (required); title?, notes?, doc_type?,
 // issued_at?, expires_at? (future only), visibility?; entity_type? +
 // entity_id? (auto-link context from
 // the record page the upload started on).
@@ -122,6 +122,7 @@ export async function POST(req: NextRequest) {
   }
 
   const title = form.get("title");
+  const notes = form.get("notes");
   const docType = form.get("doc_type");
   const issuedAt = form.get("issued_at");
   const expiresAt = form.get("expires_at");
@@ -194,6 +195,7 @@ export async function POST(req: NextRequest) {
       mime: file.type,
       size_bytes: file.size,
       title: typeof title === "string" && title.trim() ? title.trim().slice(0, 200) : null,
+      notes: typeof notes === "string" && notes.trim() ? notes.trim().slice(0, 4000) : null,
       doc_type: typeof docType === "string" ? docType : null,
       issued_at: isISODate(issuedAt) ? issuedAt : null,
       expires_at: isISODate(expiresAt) ? expiresAt : null,

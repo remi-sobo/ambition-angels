@@ -12,6 +12,7 @@ import {
   DOC_TYPES,
   DOCUMENTS_BUCKET,
   EXPIRING_WINDOW_DAYS,
+  minExpirationISO,
   safeFilename,
 } from "@/lib/documents/config";
 
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
   let q = supabase
     .from("documents")
     .select(
-      "id, filename, mime, size_bytes, title, doc_type, status, visibility, version, expires_at, uploaded_by, created_at, document_links(id, entity_type, entity_id)",
+      "id, filename, mime, size_bytes, title, doc_type, status, visibility, version, issued_at, expires_at, uploaded_by, created_at, document_links(id, entity_type, entity_id)",
     )
     .eq("org_id", ctx.orgId)
     .order("created_at", { ascending: false })
@@ -81,7 +82,8 @@ export async function GET(req: NextRequest) {
 
 // ── POST /api/admin/documents ───────────────────────────────────────────────
 // Upload. multipart/form-data: file (required); title?, doc_type?,
-// expires_at?, visibility?; entity_type? + entity_id? (auto-link context from
+// issued_at?, expires_at? (future only), visibility?; entity_type? +
+// entity_id? (auto-link context from
 // the record page the upload started on).
 //
 // Mirrors the bloomos-asks pattern: validation happens BEFORE any write, the
@@ -121,6 +123,7 @@ export async function POST(req: NextRequest) {
 
   const title = form.get("title");
   const docType = form.get("doc_type");
+  const issuedAt = form.get("issued_at");
   const expiresAt = form.get("expires_at");
   const visibility = form.get("visibility");
   const entityType = form.get("entity_type");
@@ -128,8 +131,16 @@ export async function POST(req: NextRequest) {
   if (docType && !DOC_TYPES.includes(docType as (typeof DOC_TYPES)[number])) {
     return NextResponse.json({ error: "Unknown doc_type" }, { status: 400 });
   }
+  if (issuedAt && !isISODate(issuedAt)) {
+    return NextResponse.json({ error: "issued_at must be YYYY-MM-DD" }, { status: 400 });
+  }
   if (expiresAt && !isISODate(expiresAt)) {
     return NextResponse.json({ error: "expires_at must be YYYY-MM-DD" }, { status: 400 });
+  }
+  // A new expiry that's already past is a data-entry error (Shannon's report:
+  // an "Expired 2023-08-31" badge from the day it was uploaded).
+  if (isISODate(expiresAt) && expiresAt < minExpirationISO()) {
+    return NextResponse.json({ error: "Expiration date must be in the future." }, { status: 400 });
   }
   if (visibility && visibility !== "org" && visibility !== "restricted") {
     return NextResponse.json({ error: "visibility must be org or restricted" }, { status: 400 });
@@ -184,6 +195,7 @@ export async function POST(req: NextRequest) {
       size_bytes: file.size,
       title: typeof title === "string" && title.trim() ? title.trim().slice(0, 200) : null,
       doc_type: typeof docType === "string" ? docType : null,
+      issued_at: isISODate(issuedAt) ? issuedAt : null,
       expires_at: isISODate(expiresAt) ? expiresAt : null,
       visibility: visibility === "restricted" ? "restricted" : "org",
       uploaded_by: ctx.userId,

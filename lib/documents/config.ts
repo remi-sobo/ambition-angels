@@ -34,9 +34,24 @@ export const DOC_TYPES = [
   "report",
   "grant_narrative",
   "receipt",
+  "insurance",
   "other",
 ] as const;
 export type DocType = (typeof DOC_TYPES)[number];
+
+/** Types whose documents expire and belong in the renewal queue — the upload
+ * forms only offer an expiration date for these. */
+export const EXPIRING_DOC_TYPES: readonly string[] = ["insurance"];
+export const docTypeExpires = (t: string): boolean => EXPIRING_DOC_TYPES.includes(t);
+
+/** Earliest valid expiration date: tomorrow, in the caller's timezone.
+ * Expirations must be future dates — a document that expires today or earlier
+ * is already expired, so it isn't accepted as a new expiry. */
+export const minExpirationISO = (now: Date = new Date()): string => {
+  const d = new Date(now);
+  d.setDate(d.getDate() + 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 
 export const DOC_TYPE_LABEL: Record<string, string> = {
   award_letter: "Award letter",
@@ -47,6 +62,7 @@ export const DOC_TYPE_LABEL: Record<string, string> = {
   report: "Report",
   grant_narrative: "Grant narrative",
   receipt: "Receipt",
+  insurance: "Insurance",
   other: "Other",
 };
 

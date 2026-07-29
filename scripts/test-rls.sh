@@ -203,6 +203,7 @@ ordered=(
   fin_dedup_hash_org_scope.sql
   stewardship_tenant_neutral_assignee.sql
   search_people_org_scope.sql
+  add_documents_issued_at.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

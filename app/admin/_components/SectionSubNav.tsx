@@ -26,6 +26,7 @@ export default function SectionSubNav({
   eyebrow,
   rootHref,
   tabs,
+  exclude,
 }: {
   eyebrow: string;
   /** The section's root route. The tab living at it also claims any section
@@ -33,8 +34,13 @@ export default function SectionSubNav({
    *  drilling into a record keeps you oriented. */
   rootHref: string;
   tabs: SectionTab[];
+  /** Route prefixes inside the section that are IA-homed elsewhere and
+   *  should not show the section's tab bar at all. */
+  exclude?: string[];
 }) {
   const pathname = usePathname() ?? "";
+
+  if ((exclude ?? []).some((p) => hit(pathname, p))) return null;
 
   function isActive(tab: SectionTab): boolean {
     const othersHit = tabs.some(

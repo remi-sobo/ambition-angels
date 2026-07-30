@@ -22,6 +22,7 @@ import {
   stageByKey,
   stageKeysOfType,
 } from "@/lib/fundraising/stages";
+import { inYear, futureCloseYears } from "@/lib/fundraising/pipeline-year";
 
 // Major Gifts — the moves-management pipeline (modules/03-fundraising.md
 // "Major Gifts"). /admin/fundraising is the pipeline home; the HubSpot
@@ -145,6 +146,10 @@ export default async function MajorGiftsPage({
   const yearOptions = [
     { value: String(currentYear), label: "This year" },
     { value: String(currentYear - 1), label: "Last year" },
+    ...futureCloseYears(opps, currentYear).map((y) => ({
+      value: String(y),
+      label: String(y),
+    })),
     { value: "all", label: "All time" },
   ];
 
@@ -154,19 +159,14 @@ export default async function MajorGiftsPage({
   const stages = stagesForPipeline(config, pipelineFilter);
   const openKeys = stageKeysOfType(stages, "open");
   const wonKeys = stageKeysOfType(stages, "won");
-  const lostKeys = stageKeysOfType(stages, "lost");
-  const open = opps.filter((o) => openKeys.includes(o.stage));
 
-  // Won/lost columns accumulate forever, so scope them to the selected year by
-  // close date — "This year" shows this year's outcomes, not the all-time
-  // pile. Open asks are live work and always show; terminal entries with no
-  // close date aren't dated outcomes, so they stay visible too.
-  const terminalInYear = (o: OpportunityRow) =>
-    year === "all" || !o.expectedClose || o.expectedClose.slice(0, 4) === year;
-  const boardOpps = opps.filter(
-    (o) =>
-      (!wonKeys.includes(o.stage) && !lostKeys.includes(o.stage)) || terminalInYear(o)
-  );
+  // Everything on the board — open asks and won/lost outcomes alike — is
+  // scoped to the selected year by expected close date, so a pledge dated to
+  // a future year stays out of view (and out of every total) until that
+  // year's filter is selected. Entries with no close date aren't dated to any
+  // year, so they stay visible under every filter.
+  const boardOpps = opps.filter((o) => inYear(o, year));
+  const open = boardOpps.filter((o) => openKeys.includes(o.stage));
   const committed = boardOpps.filter((o) => wonKeys.includes(o.stage));
   // Weighted value: per-ask probability, else the stage's config default.
   const probabilityOf = (o: OpportunityRow) =>
@@ -180,10 +180,9 @@ export default async function MajorGiftsPage({
   const today = new Date().toISOString().slice(0, 10);
   const overdueMoves = open.filter((o) => o.nextStepDue && o.nextStepDue < today).length;
 
-  // Forecast: open asks expected to close in the selected year.
-  const closing = open.filter(
-    (o) => o.expectedClose && (year === "all" || o.expectedClose.slice(0, 4) === year)
-  );
+  // Forecast: open asks with a close date — `open` is already year-scoped,
+  // so this just drops the undated ones.
+  const closing = open.filter((o) => o.expectedClose);
   const closingValue = closing.reduce((s, o) => s + (o.askAmount ?? 0), 0);
   const closingWeighted = closing.reduce(
     (s, o) => s + ((o.askAmount ?? 0) * probabilityOf(o)) / 100,

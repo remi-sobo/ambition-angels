@@ -15,7 +15,7 @@ type SyncResponse = {
   status: SyncStatus;
   finished_at: string | null;
   counts: { contacts: number; companies: number; deals: number; engagements: number };
-  errors: Array<{ step: string; message: string }>;
+  errors: Array<{ step: string; message: string; kind?: string }>;
 };
 
 type DataAge = {
@@ -110,6 +110,8 @@ export default function HubspotSyncPanel() {
   const running = job?.status === "running";
   const partial = job?.status === "partial";
   const finished = job?.status === "completed" || partial;
+  const scopeErrors = job?.errors.filter((e) => e.kind === "missing_scope") ?? [];
+  const otherErrors = job?.errors.filter((e) => e.kind !== "missing_scope") ?? [];
 
   return (
     <div className="space-y-4">
@@ -158,11 +160,36 @@ export default function HubspotSyncPanel() {
 
       {syncError && <p className="text-xs text-expense">{syncError}</p>}
 
-      {partial && job && job.errors.length > 0 && (
+      {/* Missing-scope errors get a visible, actionable callout: the fix is a
+          human granting the scope to the HubSpot private app, so don't bury
+          the instructions inside the collapsed details below. */}
+      {finished && scopeErrors.length > 0 && (
+        <div className="rounded-lg bg-status-watch-bg border border-status-watch/40 px-3 py-2.5 space-y-1.5">
+          <div className="text-xs font-semibold text-status-watch-text">
+            HubSpot needs additional permissions
+          </div>
+          {scopeErrors.map((e, i) => (
+            <p key={i} className="text-xs text-ink-2">{e.message}</p>
+          ))}
+          <p className="text-xs text-ink-3">
+            Scope reference:{" "}
+            <a
+              href="https://developers.hubspot.com/scopes"
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-ink-2"
+            >
+              developers.hubspot.com/scopes
+            </a>
+          </p>
+        </div>
+      )}
+
+      {partial && job && otherErrors.length > 0 && (
         <details className="text-xs text-ink-2">
-          <summary className="cursor-pointer text-status-watch-text">Last run was partial — {job.errors.length} step(s) failed</summary>
+          <summary className="cursor-pointer text-status-watch-text">Last run was partial — {otherErrors.length} step(s) failed</summary>
           <ul className="mt-1.5 space-y-1 pl-4 list-disc text-ink-3">
-            {job.errors.map((e, i) => (
+            {otherErrors.map((e, i) => (
               <li key={i}>
                 <span className="font-medium text-ink-2">{e.step}:</span> {e.message}
               </li>

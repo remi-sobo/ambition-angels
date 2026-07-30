@@ -11,8 +11,8 @@ const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 // ── PATCH /api/admin/documents/[id] — metadata edits ────────────────────────
-// title, doc_type, expires_at, visibility, status (active|archived). All via
-// the session client: documents.write RLS is the authority.
+// title, doc_type, notes, expires_at, visibility, status (active|archived).
+// All via the session client: documents.write RLS is the authority.
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const ctx = await getOrgContext();
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -31,6 +31,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (v === null || v === "") update.doc_type = null;
     else if (DOC_TYPES.includes(v as (typeof DOC_TYPES)[number])) update.doc_type = v;
     else return NextResponse.json({ error: "Unknown doc_type" }, { status: 400 });
+  }
+  if ("notes" in body) {
+    const v = body.notes;
+    if (v === null || v === "") update.notes = null;
+    else if (typeof v === "string") update.notes = v.trim() ? v.trim().slice(0, 4000) : null;
   }
   if ("expires_at" in body) {
     const v = body.expires_at;

@@ -33,6 +33,7 @@ import { EntityDocuments } from "../../../_components/EntityDocuments";
 import { CommentThread } from "../../../_components/CommentThread";
 import { RailEntity } from "../../../_components/rail/RailEntityContext";
 import ConstituentDangerZone from "../_components/ConstituentDangerZone";
+import ExpandableList from "../_components/ExpandableList";
 import { mapStage, type HubSpotPledgeStatus } from "@/lib/finance/hubspot-pledges";
 import { TYPE } from "@/lib/admin/typeScale";
 import { isOpenStage } from "@/lib/fundraising/stage-sets";
@@ -739,7 +740,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                 No activity yet. Gifts, logged calls/emails/meetings, and thank-yous appear here.
               </p>
             ) : (
-              <ul className="divide-y divide-hairline">
+              <ExpandableList limit={5}>
                 {activity.map((ev) => {
                   if (ev.kind === "gift") {
                     const g = ev.gift;
@@ -862,7 +863,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                     </li>
                   );
                 })}
-              </ul>
+              </ExpandableList>
             )}
           </section>
         </div>
@@ -948,7 +949,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
             ) : hsComms.length === 0 ? (
               <p className={`p-6 ${TYPE.bodyMuted}`}>No HubSpot emails, calls, meetings, or notes linked to this donor.</p>
             ) : (
-              <ul className="divide-y divide-hairline">
+              <ExpandableList limit={5}>
                 {hsComms.map((e) => (
                   <li key={e.id} className="px-5 py-3 flex items-start gap-4">
                     <span className="text-xs text-ink-2 w-24 flex-shrink-0 pt-px">{e.at ? fmtWhen(e.at) : "—"}</span>
@@ -965,7 +966,7 @@ export default async function DonorProfilePage({ params }: { params: { id: strin
                     </div>
                   </li>
                 ))}
-              </ul>
+              </ExpandableList>
             )}
           </section>
         )}

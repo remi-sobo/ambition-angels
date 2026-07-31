@@ -26,6 +26,10 @@ import {
   fetchCompanies,
   fetchDeals,
   fetchEngagements,
+  fetchContactsTotal,
+  fetchCompaniesTotal,
+  fetchDealsTotal,
+  fetchEngagementsTotal,
   ENGAGEMENT_SUBTYPES,
   type EngagementSubtype,
   type HubSpotRecord,
@@ -128,6 +132,11 @@ export type JobRow = {
   current_step: Step | null;
   cursors: Cursors;
   counts: Counts;
+  // Record counts available in HubSpot as of job creation, per step — the
+  // denominator for "X of Y synced". Null (whole object, not per-step) when
+  // the totals lookup itself failed; a missing denominator shouldn't block
+  // the sync, so the UI just falls back to showing counts alone.
+  totals: Counts | null;
   errors: ErrorEntry[];
 };
 
@@ -207,6 +216,24 @@ export async function loadLatestJob(): Promise<JobRow | null> {
   return (data as JobRow | null) ?? null;
 }
 
+// Best-effort denominator for "X of Y synced". A failure here (rate limit
+// exhausted retries, a transient outage) must never block the sync itself —
+// the counts still update as records land, just without a total to compare
+// against — so this always resolves, never rejects.
+async function fetchTotals(): Promise<Counts | null> {
+  try {
+    const [contacts, companies, deals, engagements] = await Promise.all([
+      fetchContactsTotal(),
+      fetchCompaniesTotal(),
+      fetchDealsTotal(),
+      fetchEngagementsTotal(),
+    ]);
+    return { contacts, companies, deals, engagements };
+  } catch {
+    return null;
+  }
+}
+
 export async function createJob(triggeredBy: AdminUser | null): Promise<JobRow> {
   const initial = {
     status: "running" as const,
@@ -224,6 +251,7 @@ export async function createJob(triggeredBy: AdminUser | null): Promise<JobRow> 
       deals: 0,
       engagements: 0,
     } satisfies Counts,
+    totals: await fetchTotals(),
     errors: [] as ErrorEntry[],
   };
   const { data, error } = await supabase()
@@ -526,6 +554,7 @@ export function jobToResponse(job: JobRow) {
     started_at: job.started_at,
     finished_at: job.finished_at,
     counts: job.counts,
+    totals: job.totals,
     errors: job.errors,
   };
 }

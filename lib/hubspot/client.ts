@@ -18,11 +18,46 @@ export class HubSpotError extends Error {
   bodyPreview: string;
 
   constructor(status: number, bodyPreview: string, path: string) {
-    super(`HubSpot ${status} on ${path}: ${bodyPreview.slice(0, 200)}`);
+    super(`${describeStatus(status)} on ${path}: ${bodyPreview.slice(0, 200)}`);
     this.name = "HubSpotError";
     this.status = status;
     this.bodyPreview = bodyPreview;
   }
+}
+
+// A specific, actionable prefix per status class — this is what ends up on
+// the job's error list and, from there, in the Settings UI, so it needs to
+// tell a human what to actually do rather than just "HubSpot 403".
+function describeStatus(status: number): string {
+  if (status === 401) return "HubSpot 401 (access token invalid or expired — reconnect the integration)";
+  if (status === 403) return "HubSpot 403 (the access token is missing a required scope for this object)";
+  if (status === 429) return "HubSpot 429 (rate limited)";
+  if (status >= 500) return `HubSpot ${status} (HubSpot server error)`;
+  return `HubSpot ${status}`;
+}
+
+// Transient statuses worth a couple of retries before giving up: rate limits
+// and momentary server hiccups. Anything else (4xx auth/scope/shape errors)
+// won't succeed on retry, so we fail fast instead of stalling the chunk.
+function isRetryable(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
+const MAX_RETRIES = 3;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Honors HubSpot's Retry-After header (seconds) when present, otherwise
+// backs off exponentially (500ms, 1s, 2s).
+function retryDelayMs(res: Response, attempt: number): number {
+  const retryAfter = res.headers.get("retry-after");
+  if (retryAfter) {
+    const secs = Number(retryAfter);
+    if (Number.isFinite(secs) && secs >= 0) return secs * 1000;
+  }
+  return 500 * 2 ** attempt;
 }
 
 let cachedToken: string | null = null;
@@ -45,27 +80,40 @@ function getToken(): string {
  * `path` should start with a slash (e.g. "/crm/v3/objects/contacts"). Query
  * params are caller-built — most fetchers compose `?properties=…&limit=…`.
  *
- * Throws HubSpotError on non-2xx. Body preview is included for debugging
- * but the token is never serialized.
+ * Retries once-per-backoff on 429 / 5xx (up to MAX_RETRIES) before giving up
+ * — a single transient rate-limit or server hiccup on one step used to
+ * permanently hard-fail that step for the whole sync run, which is why a run
+ * could land "partial" at almost the same point every time. Throws
+ * HubSpotError on a non-2xx that isn't retryable, or once retries are
+ * exhausted. Body preview is included for debugging but the token is never
+ * serialized.
  */
 export async function hubspotGet<T = unknown>(path: string): Promise<T> {
   const token = getToken();
-  const res = await fetch(`${HUBSPOT_BASE_URL}${path}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    // No caching at the platform layer; we own caching via hs_* tables.
-    cache: "no-store",
-  });
+  let lastError: HubSpotError | null = null;
 
-  if (!res.ok) {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const res = await fetch(`${HUBSPOT_BASE_URL}${path}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      // No caching at the platform layer; we own caching via hs_* tables.
+      cache: "no-store",
+    });
+
+    if (res.ok) return (await res.json()) as T;
+
     const body = await res.text().catch(() => "");
-    throw new HubSpotError(res.status, body, path);
+    lastError = new HubSpotError(res.status, body, path);
+
+    if (!isRetryable(res.status) || attempt === MAX_RETRIES) throw lastError;
+    await sleep(retryDelayMs(res, attempt));
   }
 
-  return (await res.json()) as T;
+  // Unreachable — the loop always returns or throws — but keeps TS satisfied.
+  throw lastError as HubSpotError;
 }
 
 /**
@@ -98,3 +146,36 @@ export const hubspotPost = <T = unknown>(path: string, body: unknown): Promise<T
   hubspotSend<T>("POST", path, body);
 export const hubspotPatch = <T = unknown>(path: string, body: unknown): Promise<T> =>
   hubspotSend<T>("PATCH", path, body);
+
+/**
+ * POST to a `/search` endpoint — this is a *read*, not the outbound-write
+ * path above (HubSpot puts search behind POST because filters go in the
+ * body). Same retry-on-429/5xx contract as hubspotGet, so a transient hiccup
+ * fetching a step's total doesn't take down the whole sync.
+ */
+export async function hubspotSearch<T = unknown>(path: string, body: unknown): Promise<T> {
+  const token = getToken();
+  let lastError: HubSpotError | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const res = await fetch(`${HUBSPOT_BASE_URL}${path}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+
+    if (res.ok) return (await res.json()) as T;
+
+    const text = await res.text().catch(() => "");
+    lastError = new HubSpotError(res.status, text, path);
+
+    if (!isRetryable(res.status) || attempt === MAX_RETRIES) throw lastError;
+    await sleep(retryDelayMs(res, attempt));
+  }
+
+  throw lastError as HubSpotError;
+}

@@ -14,7 +14,7 @@
  * field as a "<subtype>:<after>" string.
  */
 
-import { hubspotGet } from "./client";
+import { hubspotGet, hubspotSearch } from "./client";
 
 // ── Shared shapes ──────────────────────────────────────────────────────────
 
@@ -192,4 +192,39 @@ export function fetchEngagements(
     "contacts,companies,deals",
     cursor
   );
+}
+
+// ── Totals (for "X of Y synced" progress) ───────────────────────────────────
+//
+// The paginated list endpoints above never report a grand total, so the sync
+// UI could only ever show "N synced so far" with no denominator to compare
+// it against. HubSpot's search endpoint returns a `total` field even with an
+// empty filter — one cheap call (limit 1, no properties) gets an accurate
+// count without paging through everything.
+
+type SearchTotalResponse = { total?: number };
+
+async function fetchObjectTotal(objectType: string): Promise<number> {
+  const res = await hubspotSearch<SearchTotalResponse>(
+    `/crm/v3/objects/${objectType}/search`,
+    { limit: 1, filterGroups: [] }
+  );
+  return res.total ?? 0;
+}
+
+export function fetchContactsTotal(): Promise<number> {
+  return fetchObjectTotal("contacts");
+}
+
+export function fetchCompaniesTotal(): Promise<number> {
+  return fetchObjectTotal("companies");
+}
+
+export function fetchDealsTotal(): Promise<number> {
+  return fetchObjectTotal("deals");
+}
+
+export async function fetchEngagementsTotal(): Promise<number> {
+  const perSubtype = await Promise.all(ENGAGEMENT_SUBTYPES.map(fetchObjectTotal));
+  return perSubtype.reduce((sum, n) => sum + n, 0);
 }

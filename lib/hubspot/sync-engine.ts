@@ -20,6 +20,7 @@
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { type AdminUser } from "@/lib/admin/auth";
+import { HubSpotError } from "@/lib/hubspot/client";
 import {
   fetchContacts,
   fetchCompanies,
@@ -52,6 +53,10 @@ type ErrorEntry = {
   // Optional context for per-record soft failures (engagements only).
   subtype?: string;
   hubspot_id?: string;
+  // Machine-readable tag so the settings panel can render an actionable
+  // callout (e.g. "missing_scope" → reauthorize instructions) instead of a
+  // raw API error.
+  kind?: "missing_scope";
 };
 
 // Cap on detailed per-record JSON failures stored on a single job row, to
@@ -161,6 +166,20 @@ function nextEngagementSubtype(
 ): EngagementSubtype | null {
   const i = ENGAGEMENT_SUBTYPES.indexOf(current);
   return ENGAGEMENT_SUBTYPES[i + 1] ?? null;
+}
+
+/**
+ * The access token is a HubSpot *private app* token (HUBSPOT_ACCESS_TOKEN) —
+ * there is no OAuth flow to re-run, so a 403 means a human has to add the
+ * missing scope to the private app in HubSpot's settings. Email engagements
+ * need "sales-email-read", which portals commonly haven't granted.
+ */
+export function missingScopeMessage(subtype: EngagementSubtype): string {
+  const scope = subtype === "emails" ? ' ("sales-email-read")' : "";
+  return (
+    `HubSpot denied access to ${subtype} engagements: the private app is missing a required scope${scope}, so this run skipped ${subtype} and synced everything else. ` +
+    `To fix: in HubSpot, open Settings → Integrations → Private Apps → your app → Scopes, grant the missing scope, then run a full sync again.`
+  );
 }
 
 // ── DB helpers ─────────────────────────────────────────────────────────────
@@ -296,6 +315,11 @@ type ProcessResult = {
   // Per-record soft failures inside this page (engagements only). Records
   // counted in `processed` are the ones that actually landed.
   failures?: EngagementUpsertResult["failed"];
+  // A hard, human-actionable error recorded WITHOUT aborting the step —
+  // e.g. a missing-scope 403 on one engagement subtype: we skip that
+  // subtype (via nextCursor) but keep syncing the rest. Marks the run
+  // partial so the settings panel surfaces the message.
+  stepError?: { message: string; subtype?: string; kind?: ErrorEntry["kind"] };
 };
 
 async function processContactsPage(cursor: string | null): Promise<ProcessResult> {
@@ -318,7 +342,28 @@ async function processDealsPage(cursor: string | null): Promise<ProcessResult> {
 
 async function processEngagementsPage(cursor: string | null): Promise<ProcessResult> {
   const state = parseEngagementCursor(cursor);
-  const page: Page = await fetchEngagements(state.subtype, state.after);
+  let page: Page;
+  try {
+    page = await fetchEngagements(state.subtype, state.after);
+  } catch (e: unknown) {
+    if (e instanceof HubSpotError && e.status === 403) {
+      // Missing scope on THIS subtype only (e.g. emails needs
+      // "sales-email-read"). Skip it and move on to the next subtype instead
+      // of letting the throw abort the whole engagements step — a scope gap
+      // on emails must not silently drop calls/meetings/notes/tasks.
+      const nextSub = nextEngagementSubtype(state.subtype);
+      return {
+        processed: 0,
+        nextCursor: nextSub ? serializeEngagementCursor(nextSub, null) : null,
+        stepError: {
+          message: missingScopeMessage(state.subtype),
+          subtype: state.subtype,
+          kind: "missing_scope",
+        },
+      };
+    }
+    throw e;
+  }
   const result = await upsertEngagements(state.subtype, page.records as HubSpotRecord[]);
 
   // Where do we go next?
@@ -399,6 +444,22 @@ export async function runChunk(jobInput: JobRow): Promise<JobRow> {
     job.counts = { ...job.counts, [step]: job.counts[step] + result.processed };
     processed += result.processed;
     job.cursors = { ...job.cursors, [step]: result.nextCursor };
+
+    // Hard-but-contained failure (missing-scope 403 on one engagement
+    // subtype): record the actionable message — no hubspot_id, so it marks
+    // the run partial — and keep going with the rest of the step.
+    if (result.stepError) {
+      job.errors = [
+        ...job.errors,
+        {
+          step,
+          subtype: result.stepError.subtype,
+          kind: result.stepError.kind,
+          message: result.stepError.message,
+          occurred_at: new Date().toISOString(),
+        },
+      ];
+    }
 
     // Per-record soft failures (engagements only): record the bad
     // hubspot_ids on the job and keep going. The good records in this

@@ -202,12 +202,8 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:px-4"
-      onClick={() => !busy && onClose()}
-    >
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:px-4">
       <div
-        onClick={(e) => e.stopPropagation()}
         className="w-full sm:max-w-md rounded-t-2xl sm:rounded-card border-[1.5px] border-outline bg-ink shadow-2xl max-h-[92vh] overflow-y-auto"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >

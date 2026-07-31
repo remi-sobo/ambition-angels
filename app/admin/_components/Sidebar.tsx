@@ -4,123 +4,23 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import type { AdminUser, OrgContext } from "@/lib/admin/auth";
-import type { FeatureKey } from "@/lib/admin/entitlements";
+import {
+  NAV_SECTIONS,
+  activeHref,
+  itemLabel,
+  visibleSections,
+  type IconName,
+} from "@/lib/admin/nav";
 import OrgSwitcher from "./OrgSwitcher";
 import SearchTrigger from "./search/SearchTrigger";
 import { useAdminBadges } from "./AdminBadges";
 import { TYPE } from "@/lib/admin/typeScale";
 
-// ── BloomOS IA (docs/bloomos/06-design-system.md §1) ────────────────────────
-// Seven sections, one row per product. Consolidated products (Work, Meetings,
-// Fundraising, Students, Finance) fan out through a persistent section
-// sub-nav in their route-group layout instead of extra sidebar rows. Roadmap
-// items no longer render as muted "Soon" rows — the full IA lives in the
-// How-To page and docs; the `soon` mechanism stays for future use.
-//
-// `feature` is THE mapping from nav item to entitlement key (core fence spec
-// §6b): items whose org lacks the key are filtered out, and the matching
-// module layout gates the routes themselves. Items without a `feature`
-// (Overview, Inbox, Settings) are platform surfaces every tenant gets.
-
-type IconName =
-  | "overview" | "briefing" | "inbox" | "messages"
-  | "students" | "cohorts" | "intake" | "demoday" | "camp" | "schools" | "app" | "internships" | "career"
-  | "majorgifts" | "donors" | "grants" | "campaigns" | "events"
-  | "finance" | "revenue" | "expenses" | "budget" | "cashflow"
-  | "webanalytics" | "appanalytics" | "studentanalytics" | "surveys"
-  | "week" | "tasks" | "monday" | "friday" | "projects" | "meetings" | "team" | "documents"
-  | "board" | "compliance" | "kpis" | "strategy";
-
-type NavItem = {
-  label: string;
-  icon: IconName;
-  href?: string;
-  soon?: boolean;
-  feature?: FeatureKey;
-  /** Terminology key (core fence spec B3): when the org has renamed this term
-   *  (org_terminology → entity_types fallback, resolved server-side in the
-   *  admin layout), the resolved label replaces `label`. */
-  term?: string;
-};
-type NavSection = { label: string; items: NavItem[] };
-
-const NAV_SECTIONS: NavSection[] = [
-  {
-    label: "Command Center",
-    items: [
-      { label: "Overview", icon: "overview", href: "/admin" },
-      { label: "Inbox", icon: "inbox", href: "/admin/inbox" },
-      { label: "Messages", icon: "messages", href: "/admin/messages", feature: "modules.messages" },
-      { label: "Strategy", icon: "strategy", href: "/admin/strategic-plan", feature: "modules.strategy" },
-      { label: "Executive Briefing", icon: "briefing", href: "/admin/briefing", feature: "modules.ops" },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      // One item for the whole ops_tasks product — My Week, Tasks, and
-      // Projects live on the Work sub-nav (app/admin/ops/layout.tsx). Lands
-      // on My Week, the personal daily home.
-      { label: "Work", icon: "week", href: "/admin/ops/my-week", feature: "modules.ops" },
-      // One item for the whole meetings product — the booking admin (the old
-      // "Booking page" item at /admin/meet) now lives on tabs inside it.
-      { label: "Meetings", icon: "meetings", href: "/admin/meetings", feature: "modules.meetings" },
-      { label: "Staff", icon: "team", href: "/admin/staff", feature: "modules.staff", term: "staff" },
-      { label: "Documents", icon: "documents", href: "/admin/documents", feature: "modules.documents" },
-    ],
-  },
-  {
-    label: "Fundraising",
-    items: [
-      // The daily surfaces only. Prospects, the Ask Log, and fundraising
-      // Strategy are tabs on the section sub-nav (fundraising/layout.tsx).
-      { label: "Today's Moves", icon: "tasks", href: "/admin/fundraising/today", feature: "modules.fundraising" },
-      { label: "Donors", icon: "donors", href: "/admin/fundraising/donors", feature: "modules.fundraising" },
-      { label: "Pipeline", icon: "majorgifts", href: "/admin/fundraising", feature: "modules.fundraising" },
-      { label: "Grants", icon: "grants", href: "/admin/fundraising/grants", feature: "modules.fundraising" },
-      { label: "Campaigns", icon: "campaigns", href: "/admin/fundraising/campaigns", feature: "modules.fundraising" },
-    ],
-  },
-  {
-    label: "Program",
-    items: [
-      // Intake is a tab of Students (students/tabs.ts) — the pipeline into
-      // the roster, not a separate destination.
-      { label: "Students", icon: "students", href: "/admin/students", feature: "modules.program", term: "student" },
-      { label: "Cohorts", icon: "cohorts", href: "/admin/cohorts", feature: "modules.program", term: "cohort" },
-      // Volunteers/Leaders belong to the program, not fundraising. The route
-      // still lives under /admin/fundraising, so the item stays gated on the
-      // fundraising module (where the page's own layout guard is) — the move is
-      // its home in the IA. For YL EPA the "volunteer" term resolves to "Leaders".
-      { label: "Volunteers", icon: "team", href: "/admin/fundraising/volunteers", feature: "modules.fundraising", term: "volunteer" },
-      { label: "Demo Day", icon: "demoday", href: "/admin/demoday", feature: "aa.demoday" },
-      { label: "YGB Camp", icon: "camp", href: "/admin/ygb", feature: "aa.ygb" },
-      { label: "Schools & Partners", icon: "schools", href: "/admin/partners", feature: "modules.partners", term: "partner" },
-      { label: "Career Library", icon: "career", href: "/admin/careers", feature: "aa.quiz" },
-    ],
-  },
-  {
-    label: "Finance",
-    items: [
-      // One item — the finance section's own 12-tab sub-nav (finance/layout)
-      // already covers Revenue / Expenses / Budget and the rest.
-      { label: "Finance", icon: "finance", href: "/admin/finance", feature: "modules.finance" },
-    ],
-  },
-  {
-    label: "Data",
-    items: [
-      { label: "Analytics", icon: "webanalytics", href: "/admin/analytics", feature: "aa.site_analytics" },
-    ],
-  },
-  {
-    label: "Governance",
-    items: [
-      { label: "Board", icon: "board", href: "/admin/board", feature: "modules.board", term: "board" },
-      { label: "Compliance", icon: "compliance", href: "/admin/compliance", feature: "modules.compliance" },
-    ],
-  },
-];
+// The IA itself (sections, items, entitlement keys, tab sets) lives in
+// lib/admin/nav.ts so this sidebar and the horizontal sub-topic bar
+// (SectionSubNav) render from one list. Roadmap items no longer render as
+// muted "Soon" rows — the full IA lives in the How-To page and docs; the
+// `soon` mechanism stays for future use.
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
@@ -349,33 +249,6 @@ function Icon({ name, className }: { name: IconName; className?: string }) {
   );
 }
 
-// ── Active matching ──────────────────────────────────────────────────────────
-// Longest-prefix wins so "/admin" (Overview) doesn't light up on every page,
-// and "/admin/ops" (Tasks) yields to "/admin/ops/projects" (Projects). Pages
-// without a nav item of their own (e.g. /admin/finance/rules) light up their
-// nearest ancestor.
-
-function activeHref(pathname: string): string | null {
-  // Everything under /admin/ops is the Work item (its sub-nav handles
-  // My Week / Tasks / Projects), but the item itself lands on My Week.
-  if (pathname === "/admin/ops" || pathname.startsWith("/admin/ops/")) {
-    return "/admin/ops/my-week";
-  }
-  // Intake is a tab of Students (students/tabs.ts) — keep Students lit.
-  if (pathname === "/admin/intake" || pathname.startsWith("/admin/intake/")) {
-    return "/admin/students";
-  }
-  let best: string | null = null;
-  for (const section of NAV_SECTIONS) {
-    for (const item of section.items) {
-      if (!item.href) continue;
-      const match = pathname === item.href || pathname.startsWith(item.href + "/");
-      if (match && (best === null || item.href.length > best.length)) best = item.href;
-    }
-  }
-  return best;
-}
-
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 // Human label for the org membership role shown in the account block.
@@ -386,12 +259,6 @@ const ROLE_LABEL: Record<OrgContext["role"], string> = {
   finance: "Finance",
   board_viewer: "Board",
 };
-
-// A nav item's display label: the org's terminology when the item is
-// term-driven and a resolved label was passed down, else the code default.
-function itemLabel(item: NavItem, terms?: Record<string, string> | null): string {
-  return (item.term && terms?.[item.term]) || item.label;
-}
 
 // Short label shown next to the hamburger on the mobile top bar.
 function activeSectionLabel(pathname: string, terms?: Record<string, string> | null): string {
@@ -478,12 +345,7 @@ export default function Sidebar({
 
   // Entitlement filter: drop items whose org lacks the key, then sections
   // left empty. Unknown keys are off by design (core fence spec §6b).
-  const sections = features
-    ? NAV_SECTIONS.map((section) => ({
-        ...section,
-        items: section.items.filter((item) => !item.feature || features.includes(item.feature)),
-      })).filter((section) => section.items.length > 0)
-    : NAV_SECTIONS;
+  const sections = visibleSections(features);
 
   const navPanel = (
     <>

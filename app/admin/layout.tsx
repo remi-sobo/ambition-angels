@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import Sidebar from "./_components/Sidebar";
+import SectionSubNav from "./_components/SectionSubNav";
 import QuickAddButton from "./_components/QuickAddButton";
 import Rail from "./_components/rail/Rail";
 import { RailEntityProvider } from "./_components/rail/RailEntityContext";
@@ -124,7 +125,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           FAB (mobile), so there's a single Reed drawer regardless of entry. */}
       <ReedLauncherProvider enabled={reedEnabled}>
         <RailEntityProvider>
-          <main className="admin-main flex-1 min-w-0 overflow-y-auto">{children}</main>
+          {/* The horizontal sub-topic bar for whichever section the route
+              belongs to. It lives here, not in each route-group layout, so
+              every section gets one — that opt-in-per-layout wiring is why
+              only Fundraising used to show sibling sub-topics. Authed only:
+              the pre-auth /admin login screen carries no section. */}
+          <main className="admin-main flex-1 min-w-0 overflow-y-auto">
+            {authed && <SectionSubNav features={features} terms={terms} />}
+            {children}
+          </main>
           {authed && <Rail reedEnabled={reedEnabled} />}
         </RailEntityProvider>
         {/* lg–xl tablets: the rail only mounts at xl, so the standalone FABs

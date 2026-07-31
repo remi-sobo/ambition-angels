@@ -10,13 +10,25 @@ import { useCallback, useEffect, useRef, useState } from "react";
  */
 
 type SyncStatus = "running" | "completed" | "failed" | "partial";
+type StepCounts = { contacts: number; companies: number; deals: number; engagements: number };
 type SyncResponse = {
   jobId: string;
   status: SyncStatus;
   finished_at: string | null;
-  counts: { contacts: number; companies: number; deals: number; engagements: number };
+  counts: StepCounts;
+  // Records available in HubSpot as of job start, per step — the denominator
+  // for "X of Y synced". Null when that lookup itself failed; counts alone
+  // still render fine without it.
+  totals: StepCounts | null;
   errors: Array<{ step: string; message: string; kind?: string }>;
 };
+
+const STEP_LABELS: Array<{ key: keyof StepCounts; label: string }> = [
+  { key: "contacts", label: "contacts" },
+  { key: "companies", label: "companies" },
+  { key: "deals", label: "deals" },
+  { key: "engagements", label: "engagements" },
+];
 
 type DataAge = {
   lastFullSyncAt: string | null;
@@ -107,11 +119,23 @@ export default function HubspotSyncPanel() {
   }, []);
 
   const counts = job?.counts ?? ZERO;
+  const totals = job?.totals ?? null;
   const running = job?.status === "running";
   const partial = job?.status === "partial";
   const finished = job?.status === "completed" || partial;
   const scopeErrors = job?.errors.filter((e) => e.kind === "missing_scope") ?? [];
   const otherErrors = job?.errors.filter((e) => e.kind !== "missing_scope") ?? [];
+
+  // The specific reason the most recent run didn't fully complete, straight
+  // from the job's own error log — shown inline instead of leaving the user
+  // to expand the details drawer just to find out why. Missing-scope errors
+  // already get their own dedicated callout below, so prefer a non-scope
+  // reason here and only fall back to the scope error to avoid repeating it.
+  const primaryError = otherErrors[0] ?? scopeErrors[0] ?? null;
+  const lastRunReason =
+    job && (job.status === "partial" || job.status === "failed") && primaryError
+      ? `${primaryError.step}: ${primaryError.message}`
+      : null;
 
   return (
     <div className="space-y-4">
@@ -129,8 +153,15 @@ export default function HubspotSyncPanel() {
               <div className="text-xs text-ink-2 mt-0.5 pl-3.5">
                 {dataAge.lastFullSyncAt
                   ? `Last full sync ${fmtDate(dataAge.lastFullSyncAt)}`
-                  : "Run a sync to populate the spine"}
+                  : lastRunReason
+                    ? `Last attempt didn't finish — ${lastRunReason}`
+                    : "Run a sync to populate the spine"}
               </div>
+              {dataAge.lastFullSyncAt && dataAge.lastRunStatus === "partial" && lastRunReason && (
+                <div className="text-xs text-status-watch-text mt-0.5 pl-3.5">
+                  Since then, the last attempt stopped early — {lastRunReason}
+                </div>
+              )}
             </>
           ) : (
             <div className="text-sm text-ink-2">
@@ -154,8 +185,16 @@ export default function HubspotSyncPanel() {
 
       {(running || finished) && (
         <div className="text-[11px] text-ink-3 [font-variant-numeric:tabular-nums]">
-          {counts.contacts} contacts · {counts.companies} companies · {counts.deals} deals · {counts.engagements} engagements
+          {STEP_LABELS.map(
+            ({ key, label }) => `${counts[key]}${totals ? ` of ${totals[key]}` : ""} ${label}`
+          ).join(" · ")}
         </div>
+      )}
+
+      {running && (
+        <p className="text-[11px] text-ink-3">
+          Safe to navigate away — the sync keeps running and picks up right where it left off.
+        </p>
       )}
 
       {syncError && <p className="text-xs text-expense">{syncError}</p>}

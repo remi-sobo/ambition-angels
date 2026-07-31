@@ -66,6 +66,7 @@ const engagementsJob = (): JobRow => ({
   current_step: "engagements",
   cursors: { contacts: null, companies: null, deals: null, engagements: null },
   counts: { contacts: 2, companies: 2, deals: 2, engagements: 0 },
+  totals: null,
   errors: [],
 });
 

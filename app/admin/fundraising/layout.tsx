@@ -6,7 +6,8 @@ import SectionSubNav from "@/app/admin/_components/SectionSubNav";
 // surfaces (Today's Moves · Donors · Pipeline · Grants · Campaigns); the
 // full set — including Prospects, the Ask Log, and fundraising Strategy —
 // persists here as tabs, Finance-style. Volunteers routes live under this
-// group too but are IA-homed in Program, so they're not a tab.
+// group too but are IA-homed in Program, so they're not a tab and the bar
+// itself stays off those routes (`exclude`).
 // Module gate (core fence B1): every route under this group renders only when
 // the org holds the `modules.fundraising` entitlement; otherwise the
 // not-authorized panel. Direct URL hits are covered here.
@@ -17,6 +18,7 @@ export default function FundraisingLayout({ children }: { children: ReactNode })
         <SectionSubNav
           eyebrow="Fundraising"
           rootHref="/admin/fundraising"
+          exclude={["/admin/fundraising/volunteers"]}
           tabs={[
             { href: "/admin/fundraising/today", label: "Today's Moves" },
             { href: "/admin/fundraising/donors", label: "Donors" },

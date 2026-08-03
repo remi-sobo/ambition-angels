@@ -5,19 +5,20 @@ import {
   resolveSectionNav,
   type NavSection,
 } from "@/lib/admin/nav";
+import type { FeatureKey } from "@/lib/admin/entitlements";
 
 // The horizontal sub-topic bar is derived from the sidebar IA rather than
 // hand-wired per route group — that opt-in wiring is why only Fundraising used
 // to show sibling sub-topics. These tests hold the derivation to the reported
 // acceptance criteria.
 
-const ALL_FEATURES = Array.from(
+const ALL_FEATURES: FeatureKey[] = Array.from(
   new Set(
     NAV_SECTIONS.flatMap((s) => [
       ...s.items.map((i) => i.feature),
       ...(s.tabs ?? []).map((t) => t.feature),
       ...s.items.flatMap((i) => (i.tabs ?? []).map((t) => t.feature)),
-    ]).filter((f): f is string => !!f)
+    ]).filter((f): f is FeatureKey => !!f)
   )
 );
 

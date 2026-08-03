@@ -11,7 +11,8 @@ const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 // ── PATCH /api/admin/documents/[id] — metadata edits ────────────────────────
-// title, doc_type, notes, expires_at, visibility, status (active|archived).
+// title, doc_type, notes, issued_at, expires_at, visibility, status
+// (active|archived).
 // All via the session client: documents.write RLS is the authority.
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const ctx = await getOrgContext();
@@ -36,6 +37,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const v = body.notes;
     if (v === null || v === "") update.notes = null;
     else if (typeof v === "string") update.notes = v.trim() ? v.trim().slice(0, 4000) : null;
+  }
+  // Issue dates are historical, so — unlike expires_at — any valid date is
+  // accepted; a document issued last year is the normal case.
+  if ("issued_at" in body) {
+    const v = body.issued_at;
+    if (v === null || v === "") update.issued_at = null;
+    else if (isISODate(v)) update.issued_at = v;
+    else return NextResponse.json({ error: "issued_at must be YYYY-MM-DD" }, { status: 400 });
   }
   if ("expires_at" in body) {
     const v = body.expires_at;

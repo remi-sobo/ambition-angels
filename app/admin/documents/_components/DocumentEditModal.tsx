@@ -11,14 +11,17 @@ export type EditableDoc = {
   title: string | null;
   doc_type: string | null;
   notes: string | null;
+  issued_at: string | null;
   expires_at: string | null;
+  visibility: string;
 };
 
 /**
- * Metadata edit dialog for a document row — title, type, notes, and (for
- * renewal-tracked types) the expiration date, without re-uploading the file.
- * Mirrors TaskEditModal's shell: dimmed backdrop, Escape to close, one PATCH
- * with every editable field on save.
+ * Metadata edit dialog for a document row — every field the upload form sets
+ * (title, type, notes, issue date, restricted) plus, for renewal-tracked
+ * types, the expiration date, without re-uploading the file. Mirrors
+ * TaskEditModal's shell: dimmed backdrop, Escape to close, one PATCH with
+ * every editable field on save.
  */
 export default function DocumentEditModal({ doc, onClose }: { doc: EditableDoc; onClose: () => void }) {
   const router = useRouter();
@@ -26,7 +29,9 @@ export default function DocumentEditModal({ doc, onClose }: { doc: EditableDoc; 
   const [title, setTitle] = useState(doc.title ?? "");
   const [docType, setDocType] = useState(doc.doc_type ?? "");
   const [notes, setNotes] = useState(doc.notes ?? "");
+  const [issued, setIssued] = useState(doc.issued_at ?? "");
   const [expires, setExpires] = useState(doc.expires_at ?? "");
+  const [restricted, setRestricted] = useState(doc.visibility === "restricted");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,7 +66,9 @@ export default function DocumentEditModal({ doc, onClose }: { doc: EditableDoc; 
           title: title.trim() || null,
           doc_type: docType || null,
           notes: notes.trim() || null,
+          issued_at: issued || null,
           expires_at: showExpires ? expires || null : doc.expires_at,
+          visibility: restricted ? "restricted" : "org",
         }),
       });
       if (!r.ok) {
@@ -118,6 +125,16 @@ export default function DocumentEditModal({ doc, onClose }: { doc: EditableDoc; 
                 ))}
               </select>
             </label>
+            <label className={labelCls}>
+              Issue date
+              <input
+                className={`${inputCls} mt-1`}
+                type="date"
+                value={issued}
+                onChange={(e) => setIssued(e.target.value)}
+                title="When the document was created or approved"
+              />
+            </label>
             {showExpires && (
               <label className={labelCls}>
                 Expiration date
@@ -131,6 +148,11 @@ export default function DocumentEditModal({ doc, onClose }: { doc: EditableDoc; 
               </label>
             )}
           </div>
+
+          <label className="inline-flex items-center gap-2 text-xs text-ink-2">
+            <input type="checkbox" checked={restricted} onChange={(e) => setRestricted(e.target.checked)} />
+            Restricted — hide from the board and other limited-access roles
+          </label>
 
           <label className={labelCls}>
             Notes

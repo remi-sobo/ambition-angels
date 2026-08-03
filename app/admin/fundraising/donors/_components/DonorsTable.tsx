@@ -19,7 +19,10 @@ export type DonorRow = {
   id: string;
   name: string;
   email: string | null;
+  /** Giving within the selected period (lifetime when the period is all-time). */
   total: number;
+  /** All-time giving, every gift on record. */
+  lifetime: number;
   count: number;
   first: string; // ISO date
   last: string; // ISO date
@@ -65,10 +68,18 @@ const fmtDate = (iso: string) =>
 export default function DonorsTable({
   rows,
   taskContext,
+  showLifetime = false,
 }: {
   rows: DonorRow[];
   /** Active retention segment label (e.g. "LYBUNT") — seeds task titles. */
   taskContext?: string;
+  /**
+   * Show the all-time column alongside the period total. Off when the period
+   * IS all-time (retention segments, the "All time" filter) — the two columns
+   * would be identical and money columns that duplicate each other invite
+   * misreading.
+   */
+  showLifetime?: boolean;
 }) {
   const router = useRouter();
   const [taskTargets, setTaskTargets] = useState<TaskTarget[] | null>(null);
@@ -125,6 +136,24 @@ export default function DonorsTable({
       value: (r) => r.total,
       render: (r) => <span className="font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(r.total)}</span>,
     },
+    ...(showLifetime
+      ? [
+          {
+            key: "lifetime",
+            header: "Lifetime Total",
+            align: "right",
+            value: (r: DonorRow) => r.lifetime,
+            render: (r: DonorRow) => (
+              <span
+                title="Every gift on record, all years"
+                className="font-semibold text-ink-2 [font-variant-numeric:tabular-nums]"
+              >
+                {money(r.lifetime)}
+              </span>
+            ),
+          } satisfies Column<DonorRow>,
+        ]
+      : []),
     {
       key: "count",
       header: "Gifts",

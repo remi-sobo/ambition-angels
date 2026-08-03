@@ -15,6 +15,14 @@ describe("documents config — insurance type and expiration rules", () => {
     expect(DOC_TYPE_LABEL.insurance).toBe("Insurance");
   });
 
+  // Shannon again: finance and compliance files had nowhere to land.
+  test("financial and compliance are document types with labels", () => {
+    expect(DOC_TYPES).toContain("financial");
+    expect(DOC_TYPE_LABEL.financial).toBe("Financial");
+    expect(DOC_TYPES).toContain("compliance");
+    expect(DOC_TYPE_LABEL.compliance).toBe("Compliance");
+  });
+
   test("every doc type has a label", () => {
     for (const t of DOC_TYPES) expect(DOC_TYPE_LABEL[t]).toBeTruthy();
   });

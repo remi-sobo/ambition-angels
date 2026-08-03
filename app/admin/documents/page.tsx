@@ -186,6 +186,7 @@ export default async function DocumentsHubPage({
           basePath="/admin/documents"
           extraParams={keepFor("type")}
           size="sm"
+          wrap
         />
         <form action="/admin/documents" className="ml-auto">
           <input type="hidden" name="view" value={view} />

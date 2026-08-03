@@ -205,6 +205,8 @@ ordered=(
   search_people_org_scope.sql
   add_documents_issued_at.sql
   add_documents_notes.sql
+  hs_sync_jobs_add_totals.sql
+  hubspot_backfill_constituent_names.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

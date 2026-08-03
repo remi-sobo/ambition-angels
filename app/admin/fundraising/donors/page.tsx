@@ -372,6 +372,7 @@ export default async function DonorsPage({
       name: constituentName(c),
       email: c.emails[0] ?? null,
       total,
+      lifetime: lifetime.total,
       count,
       first: lifetime.first,
       last: lifetime.last,
@@ -558,6 +559,7 @@ export default async function DonorsPage({
             <DonorsTable
               rows={donorRows}
               taskContext={retentionSegment ? FLAG_LABELS[retentionSegment] : undefined}
+              showLifetime={displayRollups !== null}
             />
             {segment === "all" && anonCount > 0 && (
               <p className="text-xs text-ink-3 px-1">
@@ -566,6 +568,25 @@ export default async function DonorsPage({
                 with no donor identity (not shown in the table; counted in totals above).
               </p>
             )}
+            <p className="text-xs text-ink-3 px-1 leading-relaxed max-w-4xl">
+              <span className="font-semibold text-ink-2">Where this comes from:</span>{" "}
+              {displayRollups !== null ? (
+                <>
+                  <span className="font-semibold text-ink-2">Total Given</span> covers {yearLabel};{" "}
+                  <span className="font-semibold text-ink-2">Lifetime Total</span> covers every gift
+                  on record.{" "}
+                </>
+              ) : null}
+              Donor records live in BloomOS and are fed by Stripe donations, CSV imports, and the
+              HubSpot sync — contacts, companies and closed-won deals project in twice a day, or on
+              demand from{" "}
+              <Link href="/admin/fundraising/settings" className="text-orange hover:text-orange-mid">
+                Settings → Sync now
+              </Link>
+              . Edits made in HubSpot arrive on the next sync and fill anything left blank here
+              (including names added to contacts that were email-only when they first synced); a
+              name edited in BloomOS is never overwritten by HubSpot.
+            </p>
           </>
         )}
       </div>

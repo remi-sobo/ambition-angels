@@ -326,6 +326,11 @@ async function runSpineProjection(job: JobRow, step: Step): Promise<void> {
   try {
     const { error } = await supabase().rpc("fr_sync_hubspot_to_spine");
     if (error) throw new Error(error.message);
+    // The projection only INSERTS constituents, so a contact that had just an
+    // email at first sync keeps its blank name forever after. Fill blanks from
+    // the refreshed mirror — never overwrites a name stored in BloomOS.
+    const { error: nameErr } = await supabase().rpc("fr_backfill_constituent_names_from_hubspot");
+    if (nameErr) throw new Error(nameErr.message);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     job.errors = [

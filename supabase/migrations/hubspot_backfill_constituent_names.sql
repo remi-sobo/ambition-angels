@@ -20,6 +20,10 @@
 --
 -- Idempotent and re-runnable: once a name lands, the "spine name is blank"
 -- guard excludes the row, so re-running is a no-op.
+--
+-- Apply this BEFORE the code deploy: the sync calls the function on every run,
+-- so a deploy that lands first would record a "function does not exist" error
+-- on each sync job (and mark the run partial) until the migration is applied.
 
 create or replace function public.fr_backfill_constituent_names_from_hubspot()
  returns integer

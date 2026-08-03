@@ -34,6 +34,8 @@ export const DOC_TYPES = [
   "report",
   "grant_narrative",
   "receipt",
+  "financial",
+  "compliance",
   "insurance",
   "other",
 ] as const;
@@ -62,6 +64,8 @@ export const DOC_TYPE_LABEL: Record<string, string> = {
   report: "Report",
   grant_narrative: "Grant narrative",
   receipt: "Receipt",
+  financial: "Financial",
+  compliance: "Compliance",
   insurance: "Insurance",
   other: "Other",
 };

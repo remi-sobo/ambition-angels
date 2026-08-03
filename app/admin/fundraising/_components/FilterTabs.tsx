@@ -13,6 +13,7 @@ export default function FilterTabs({
   basePath,
   extraParams,
   size = "md",
+  wrap = false,
 }: {
   options: FilterOption[];
   current: string;
@@ -22,10 +23,18 @@ export default function FilterTabs({
   // changing the pipeline).
   extraParams?: Record<string, string>;
   size?: "sm" | "md";
+  // Let a long strip reflow onto a second line instead of overflowing its row.
+  // Without it a strip wider than the container clips its trailing options,
+  // which makes them unclickable (the documents type strip, 13 options).
+  wrap?: boolean;
 }) {
   const pad = size === "sm" ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5 text-xs";
   return (
-    <div className="inline-flex items-center gap-1 bg-tile border-[1.5px] border-outline rounded-full p-1">
+    <div
+      className={`items-center gap-1 bg-tile border-[1.5px] border-outline p-1 ${
+        wrap ? "flex flex-wrap rounded-card-lg" : "inline-flex rounded-full"
+      }`}
+    >
       {options.map((o) => {
         const params = new URLSearchParams({ ...extraParams, [paramKey]: o.value });
         const active = o.value === current;

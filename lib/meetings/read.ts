@@ -2,6 +2,7 @@ import "server-only";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
+import { dedupeSharedMirrors } from "./dedupe";
 import { isRecurringInstance, loadExcludedSeriesKeys, seriesKey } from "./exclusions";
 import { externalEmails, matchAttendees, orgEmailDomain } from "./match";
 import {
@@ -101,6 +102,29 @@ async function matchedByRecord(
   return out;
 }
 
+/** How many rows each list shows, and how many we read to fill it. The mirror
+ *  rows of a shared calendar are dropped after the query, so a viewer with a
+ *  delegated calendar needs headroom to still reach a full list. */
+const PAST_LIMIT = 50;
+const UPCOMING_LIMIT = 25;
+const MIRROR_HEADROOM = 3;
+
+/** google_event_id for a set of calendar_events rows — the identity a meeting
+ *  keeps across every calendar it's shared onto. RLS-scoped like everything here. */
+async function googleEventIds(
+  sb: ReturnType<typeof createServerSupabase>,
+  eventIds: Array<string | null>
+): Promise<Map<string, string | null>> {
+  const ids = Array.from(new Set(eventIds.filter((id): id is string => !!id)));
+  const out = new Map<string, string | null>();
+  if (ids.length === 0) return out;
+  const { data } = await sb.from("calendar_events").select("id, google_event_id").in("id", ids);
+  for (const r of (data ?? []) as Array<{ id: string; google_event_id: string | null }>) {
+    out.set(r.id, r.google_event_id);
+  }
+  return out;
+}
+
 export async function listMeetings(now: Date): Promise<{
   past: MeetingListItem[];
   upcoming: UpcomingMeeting[];
@@ -114,33 +138,56 @@ export async function listMeetings(now: Date): Promise<{
     .select("*")
     .lte("occurred_at", now.toISOString())
     .order("occurred_at", { ascending: false })
-    .limit(50);
-  const past = (records ?? []) as MeetingRecord[];
+    .limit(PAST_LIMIT * MIRROR_HEADROOM);
+  const pastRows = (records ?? []) as MeetingRecord[];
+  // A meeting synced from a calendar two people both connect gets a record per
+  // owner; both are visible to the delegate, so collapse them on the shared
+  // Google event before rendering.
+  const gidByEvent = await googleEventIds(sb, pastRows.map((r) => r.calendar_event_id));
+  const past = dedupeSharedMirrors(
+    pastRows,
+    (r) => ({
+      id: r.id,
+      ownerUserId: r.owner_user_id,
+      eventKey: r.calendar_event_id ? gidByEvent.get(r.calendar_event_id) ?? null : null,
+    }),
+    ctx.userId
+  ).slice(0, PAST_LIMIT);
   const matched = await matchedByRecord(sb, past.map((r) => r.id));
 
   // Upcoming external events straight off the calendar mirror (RLS-scoped),
   // minus anything the viewer excluded from the follow-up loop.
   const { data: events } = await sb
     .from("calendar_events")
-    .select("id, title, start_time, attendees, is_external, status, google_event_id, recurring_event_id")
+    .select("id, owner_user_id, title, start_time, attendees, is_external, status, google_event_id, recurring_event_id")
     .eq("is_external", true)
     .gte("start_time", now.toISOString())
     .neq("status", "cancelled")
     .order("start_time", { ascending: true })
-    .limit(25);
+    .limit(UPCOMING_LIMIT * MIRROR_HEADROOM);
   const excluded = await loadExcludedSeriesKeys(sb, ctx.orgId);
   const domain = await orgEmailDomain(sb, ctx.orgId);
-  const upcoming: UpcomingMeeting[] = [];
-  for (const ev of (events ?? []) as Array<{
+  const eventRows = ((events ?? []) as Array<{
     id: string;
+    owner_user_id: string | null;
     title: string | null;
     start_time: string;
     attendees: Attendee[] | null;
     google_event_id: string | null;
     recurring_event_id: string | null;
-  }>) {
+  }>).filter((ev) => {
     const key = seriesKey(ev);
-    if (key && excluded.has(key)) continue;
+    return !(key && excluded.has(key));
+  });
+  // Same event, one row per connected calendar it sits on → one row here.
+  const visible = dedupeSharedMirrors(
+    eventRows,
+    (ev) => ({ id: ev.id, ownerUserId: ev.owner_user_id, eventKey: ev.google_event_id }),
+    ctx.userId
+  ).slice(0, UPCOMING_LIMIT);
+
+  const upcoming: UpcomingMeeting[] = [];
+  for (const ev of visible) {
     const emails = externalEmails(ev.attendees, domain);
     const ents = await matchAttendees(sb, ctx.orgId, emails);
     upcoming.push({

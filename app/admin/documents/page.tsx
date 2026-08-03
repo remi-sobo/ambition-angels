@@ -271,7 +271,9 @@ export default async function DocumentsHubPage({
                       title: d.title,
                       doc_type: d.doc_type,
                       notes: d.notes,
+                      issued_at: d.issued_at,
                       expires_at: d.expires_at,
+                      visibility: d.visibility,
                     }}
                     status={d.status}
                   />

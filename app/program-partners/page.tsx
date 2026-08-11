@@ -62,8 +62,8 @@ const steps = [
   },
   {
     num: "04",
-    title: "Students start learning and earning",
-    body: "They pick a career, start their internship, and earn real rewards for finishing. You watch it happen in real time from your dashboard.",
+    title: "Students get to work",
+    body: "They pick a career and start their internship. You watch it happen in real time from your dashboard — who's moving, who stalled, and what to ask each of them about.",
   },
 ];
 

@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/the-app", priority: 0.8 },
     { path: "/curriculum", priority: 0.8 },
     { path: "/impact", priority: 0.8 },
+    { path: "/schools", priority: 0.9 },
     { path: "/donate", priority: 0.9 },
     { path: "/for-adults", priority: 0.7 },
     { path: "/founder", priority: 0.5 },

@@ -298,63 +298,6 @@ export default function PartnersPage() {
         </div>
       </section>
 
-      {/* ── THE AMBITION FUND ────────────────────────────────────────────── */}
-      <section
-        className="py-16 lg:py-20 relative overflow-hidden"
-        style={{
-          backgroundColor: "#1A0A00",
-          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.09) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-          zIndex: 0,
-        }}
-      >
-        {/* Orange glow behind headline */}
-        <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[320px] pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at center, rgba(232,80,10,0.18) 0%, transparent 70%)", zIndex: 1 }}
-        />
-        <div className="container-site relative max-w-2xl" style={{ zIndex: 2 }}>
-          <p className="text-xs font-bold text-orange uppercase tracking-widest mb-5">
-            The Ambition Fund
-          </p>
-          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-white tracking-tight leading-tight mb-6">
-            No support system? We&apos;ve got you.
-          </h2>
-          <div className="space-y-4 mb-8">
-            <p className="text-white/90 text-base leading-relaxed">
-              Some teens don&apos;t have an adult who can make the deal with them. The Ambition Fund exists for those kids.
-            </p>
-            <p className="text-white/90 text-base leading-relaxed">
-              Low-income teens can apply directly through the app, make an agreement with Ambition Angels, and earn real rewards as they complete internships. We invest in them — and we keep investing as they grow.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <a
-              href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-orange hover:bg-orange-dark text-white font-semibold text-base px-10 py-4 rounded-full transition-colors min-h-[56px] w-full sm:w-auto shadow-lg shadow-orange/20"
-            >
-              Download for iOS to Apply
-            </a>
-            <a
-              href="https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-base px-10 py-4 rounded-full transition-colors min-h-[56px] w-full sm:w-auto"
-            >
-              Download for Android
-            </a>
-          </div>
-          <p className="mt-4 text-white/60 text-sm">
-            The Ambition Fund is made possible by donors like you.{" "}
-            <a href="/donate" className="text-orange hover:text-orange-dark underline underline-offset-2 transition-colors">
-              Become a donor.
-            </a>
-          </p>
-        </div>
-      </section>
-
       {/* ── CONVERSATION PROMPTS ─────────────────────────────────────────── */}
       <section className="section-pad bg-cream">
         <div className="container-site">
@@ -413,6 +356,20 @@ export default function PartnersPage() {
                 <p className="text-gray-mid text-sm leading-relaxed">{p.desc}</p>
               </div>
             ))}
+          </div>
+
+          {/* School / program hand-off */}
+          <div className="mt-10 bg-orange/10 border border-orange/25 rounded-card-lg p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <p className="text-cream text-base leading-relaxed">
+              Running a whole classroom, program, or campus?{" "}
+              <span className="text-gray-mid">Ambition runs inside the time you already have with students.</span>
+            </p>
+            <a
+              href="/schools"
+              className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-6 py-3 rounded-full transition-colors text-sm min-h-[44px] flex-shrink-0"
+            >
+              For Schools &amp; Programs &rarr;
+            </a>
           </div>
         </div>
       </section>

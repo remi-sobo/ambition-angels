@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     template: "%s | Ambition Angels",
   },
   description:
-    "Ambition Angels delivers real career internships to teens on the phones they already have. Free for every student. Backed by real rewards.",
+    "Ambition delivers real careers through thirty-day simulated internships. In the classroom on the web, in their pocket on the phone. Free for every student.",
   metadataBase: new URL("https://www.ambitionangels.org"),
   openGraph: {
     siteName: "Ambition Angels",
@@ -59,7 +59,7 @@ const organizationSchema = {
   url: "https://www.ambitionangels.org",
   logo: "https://www.ambitionangels.org/images/logo-color.png",
   description:
-    "Ambition Angels delivers free 30-day simulated career internships to teens on the phones they already have.",
+    "Ambition Angels delivers real careers through free thirty-day simulated internships — in the classroom on the web, in their pocket on the phone.",
   email: "hello@ambitionangels.org",
   taxID: "87-2513010",
   nonprofitStatus: "Nonprofit501c3",

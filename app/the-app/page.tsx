@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import AppDemo from "@/components/AppDemo";
+import DashboardMockup from "@/components/DashboardMockup";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import AppStoreButtons from "@/components/AppStoreButtons";
 import { HEADLINE_STATS } from "@/lib/stats";
 
 export const metadata: Metadata = {
-  title: "The App",
+  title: "The Platform",
   description:
-    "The Ambition app delivers 30-day simulated internships on the phone teens already have. Free for every student.",
+    "Ambition delivers real careers through thirty-day simulated internships. In the classroom on the web, in their pocket on the phone. Free for every student.",
 };
 
 // Slim recap of the three-step framework. Tighter than the original cards
@@ -18,17 +19,37 @@ const recapSteps = [
   {
     number: "01",
     title: "Pick",
-    body: "Entrepreneurship. Sales. Game design. Wealth management. Careers they might never have considered.",
+    body: "Entrepreneurship. Nursing. Game design. Wealth management. Careers they might never have considered.",
   },
   {
     number: "02",
     title: "Show up",
-    body: "30 days. 15 minutes a day. Built for the phone screen.",
+    body: "30 days. 15 minutes a day. In class on the web, everywhere else on the phone.",
   },
   {
     number: "03",
-    title: "Earn",
-    body: "Gift cards from brands they actually use. Real outcomes for real work.",
+    title: "Leave with a direction",
+    body: "What the work feels like, what it pays, and what the path in looks like. Then they try another one.",
+  },
+];
+
+// The four regions of the Guide dashboard, walked through under the mockup.
+const dashboardRegions = [
+  {
+    title: "The roster",
+    body: "Every student, their current internship, progress, and last activity — on track, making progress, or needs a check-in.",
+  },
+  {
+    title: "The student spotlight",
+    body: "One student at a time, in depth: where they are in the internship, how far they've come, and the skills they're building.",
+  },
+  {
+    title: "The prompts",
+    body: "Career conversation questions tied to the exact internship each student is in right now. Not generic. Ready before you sit down.",
+  },
+  {
+    title: "The follow-ups",
+    body: "The students who went quiet surface at the top of your week, with a note you can send in one click.",
   },
 ];
 
@@ -75,7 +96,7 @@ export default function TheAppPage() {
 
           <div className="px-8 lg:px-14 py-24 pt-36 lg:pt-24 max-w-xl w-full">
             <div className="inline-block text-xs font-medium text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
-              The Ambition App
+              The Ambition Platform
             </div>
 
             <h1 className="font-display font-black text-6xl lg:text-7xl text-cream mb-5 leading-none tracking-tight uppercase">
@@ -85,7 +106,7 @@ export default function TheAppPage() {
             </h1>
 
             <p className="text-gray-mid text-lg leading-relaxed mb-10 max-w-sm">
-              30-day simulated internships. 15 minutes a day. On the phone they already have.
+              30-day simulated internships. 15 minutes a day. On the web during class or program time, on the phone everywhere else.
             </p>
 
             <AppStoreButtons variant="pill" theme="dark" source="the_app_hero" />
@@ -125,6 +146,76 @@ export default function TheAppPage() {
                 <p className="text-gray-warm leading-relaxed text-sm">
                   {step.body}
                 </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* TWO FORMATS — same student, same internship */}
+      <section className="section-pad bg-[#F5F4F0]">
+        <div className="container-site">
+          <div className="max-w-2xl mb-12">
+            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
+              Two Formats, One Internship
+            </p>
+            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink leading-tight tracking-tight">
+              Fourth period on a Chromebook. After practice on their phone.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm">
+              <div className="inline-block text-xs font-bold text-orange uppercase tracking-widest bg-orange-light border border-orange/20 rounded-full px-3 py-1 mb-5">
+                On the web
+              </div>
+              <h3 className="font-heading font-bold text-ink text-xl mb-3 tracking-tight">
+                In class or program time.
+              </h3>
+              <p className="text-gray-warm text-sm leading-relaxed">
+                A school or program puts Ambition in front of every student in the room, on the computers they already use. Advisory, homeroom, a career block — fifteen minutes, and the teacher watches progress while it happens.
+              </p>
+            </div>
+            <div className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm">
+              <div className="inline-block text-xs font-bold text-orange uppercase tracking-widest bg-orange-light border border-orange/20 rounded-full px-3 py-1 mb-5">
+                On the phone
+              </div>
+              <h3 className="font-heading font-bold text-ink text-xl mb-3 tracking-tight">
+                Everywhere else.
+              </h3>
+              <p className="text-gray-warm text-sm leading-relaxed">
+                The same student picks the same internship back up on the bus, at home, after practice. Same account, same progress, same thirty days — the internship doesn&apos;t care which screen it&apos;s on.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* THE DASHBOARD — for the adults */}
+      <section id="dashboard" className="section-pad scroll-mt-24">
+        <div className="container-site">
+          <div className="max-w-2xl mb-10">
+            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
+              The Dashboard
+            </p>
+            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink leading-tight tracking-tight mb-5">
+              They do the internship. The adults see all of it.
+            </h2>
+            <p className="text-gray-warm text-lg leading-relaxed">
+              Every teacher, counselor, mentor, and parent gets a dashboard built around four things.
+            </p>
+          </div>
+
+          <DashboardMockup className="max-w-4xl mx-auto mb-12 fade-up" />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {dashboardRegions.map((r, i) => (
+              <div key={r.title} className="border-t-[3px] border-orange bg-white border border-gray-light rounded-card p-6 shadow-sm">
+                <div className="font-display font-black text-3xl text-orange/60 leading-none mb-3 tracking-tight">
+                  0{i + 1}
+                </div>
+                <h3 className="font-heading font-semibold text-ink text-base mb-2">{r.title}</h3>
+                <p className="text-gray-warm text-sm leading-relaxed">{r.body}</p>
               </div>
             ))}
           </div>
@@ -230,33 +321,29 @@ export default function TheAppPage() {
         </div>
       </section>
 
-      {/* ARE YOU AN ADULT? */}
+      {/* NOT IN A SCHOOL OR A PROGRAM? — the app-only path */}
       <section className="section-pad">
         <div className="container-site">
           <div className="max-w-2xl mx-auto text-center fade-up">
             <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
-              Are You an Adult?
+              Not in a school or a program?
             </p>
             <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink mb-5 tracking-tight">
-              Bring the app to the teens you care about.
+              A teen can download Ambition and start today.
             </h2>
-            <p className="text-gray-warm text-lg leading-relaxed mb-8">
-              We&apos;re building a Guide portal for the adults in a teen&apos;s corner. Sign up for early access and be among the first to follow along with what they&apos;re learning, with conversation prompts that turn the app into a starting point for real career conversations.
+            <p className="text-gray-warm text-lg leading-relaxed mb-4">
+              Free, same internships, same thirty days. Any adult in their corner can sign up as a Guide.
             </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <a
-                href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px] inline-flex items-center"
-              >
-                Get the App for a Teen
-              </a>
+            <p className="text-gray-warm text-base leading-relaxed mb-8">
+              Teens going through internships on their own can also earn gift cards for the ones they complete — their time has real value, and we honor it.
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center items-center">
+              <AppStoreButtons variant="pill" theme="light" source="the_app_solo_path" />
               <Link
                 href="/for-adults"
                 className="bg-transparent hover:bg-ink/5 text-ink font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px] inline-flex items-center border border-ink/20"
               >
-                Get Early Access as a Guide
+                Sign up as a Guide
               </Link>
             </div>
           </div>

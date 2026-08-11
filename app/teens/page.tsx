@@ -16,11 +16,12 @@ export const metadata: Metadata = {
     "Free career games for teens. Real jobs, real pay, no sign-up, no email.",
 };
 
-const COMING_SOON = [
+const TEEN_GAMES: { name: string; tag: string; blurb: string; href?: string }[] = [
   {
     name: "Higher Wage",
     tag: "Ages 14-18",
     blurb: "Two jobs. Tap the one that pays more. How long can you keep the streak alive?",
+    href: "/teens/higher-wage",
   },
   {
     name: "Never Heard of It",
@@ -83,25 +84,45 @@ export default function TeensHubPage() {
           </div>
         </div>
 
-        {/* The three teen games, honest about not existing yet */}
+        {/* The three teen games — live ones link, the rest are honest about
+            not existing yet */}
         <div className="mt-8 grid sm:grid-cols-3 gap-4">
-          {COMING_SOON.map((game) => (
-            <div
-              key={game.name}
-              className="rounded-card border border-cream/15 bg-cream/[0.03] p-6 flex flex-col"
-            >
-              <p className="font-heading text-[10px] tracking-[0.25em] uppercase text-cream/40">
-                {game.tag}
-              </p>
-              <h3 className="font-display text-2xl mt-2">{game.name}</h3>
-              <p className="font-body text-sm text-cream/60 mt-2 leading-relaxed flex-1">
-                {game.blurb}
-              </p>
-              <p className="font-heading text-[10px] tracking-[0.25em] uppercase text-orange/80 mt-4">
-                Coming soon
-              </p>
-            </div>
-          ))}
+          {TEEN_GAMES.map((game) => {
+            const inner = (
+              <>
+                <p className="font-heading text-[10px] tracking-[0.25em] uppercase text-cream/40">
+                  {game.tag}
+                </p>
+                <h3 className="font-display text-2xl mt-2">{game.name}</h3>
+                <p className="font-body text-sm text-cream/60 mt-2 leading-relaxed flex-1">
+                  {game.blurb}
+                </p>
+                <p
+                  className={`font-heading text-[10px] tracking-[0.25em] uppercase mt-4 ${
+                    game.href ? "text-orange" : "text-orange/80"
+                  }`}
+                >
+                  {game.href ? "Play now →" : "Coming soon"}
+                </p>
+              </>
+            );
+            return game.href ? (
+              <Link
+                key={game.name}
+                href={game.href}
+                className="rounded-card border border-orange/40 bg-cream/[0.04] p-6 flex flex-col hover:border-orange transition-colors"
+              >
+                {inner}
+              </Link>
+            ) : (
+              <div
+                key={game.name}
+                className="rounded-card border border-cream/15 bg-cream/[0.03] p-6 flex flex-col"
+              >
+                {inner}
+              </div>
+            );
+          })}
         </div>
       </div>
       <footer className="px-6 py-5 text-center">

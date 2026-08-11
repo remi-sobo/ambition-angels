@@ -33,6 +33,7 @@ const TEEN_GAMES: { name: string; tag: string; blurb: string; href?: string }[] 
     name: "The Cut",
     tag: "Ages 14-18",
     blurb: "Six careers on the board, one rule at a time. Your whole class votes on who gets cut.",
+    href: "/teens/the-cut",
   },
 ];
 

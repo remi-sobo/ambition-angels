@@ -295,7 +295,7 @@ export default function CurriculumPage() {
                 <span className="text-orange">All free.</span>
               </h1>
               <p className="text-gray-mid text-lg lg:text-xl leading-relaxed fade-up stagger-2">
-                Each track is a simulated internship — a real employer, real deliverables, and real career skills. 15 minutes a day. In class on the web. Everywhere else on the phone.
+                Each track is a simulated internship with an employer, a real deliverable, and the skills that job actually takes. 15 minutes a day. In class on the web. Everywhere else on the phone.
               </p>
 
               {/* Stats strip */}
@@ -480,7 +480,7 @@ export default function CurriculumPage() {
               More career tracks in development.
             </h2>
             <p className="text-gray-warm text-lg leading-relaxed">
-              Each new track takes funding to build — employer partnerships, production, and content design. Help us get these to teens faster.
+              Each new track takes funding to build. Employer partnerships, production, content design. Help us get these to teens faster.
             </p>
           </div>
 

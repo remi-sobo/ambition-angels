@@ -11,7 +11,7 @@ import JoinRoom from "./built-for/JoinRoom";
 // the projected room screen tells students to type ambitionangels.org/teens —
 // a kid off the wall must be able to enter the code without hunting.
 export const metadata: Metadata = {
-  title: "For Teens — Games & Quizzes",
+  title: "For Teens · Games & Quizzes",
   description:
     "Free career games and quizzes for teens. Real jobs, real pay, straight from government data. Find your fit, then try a career on for 30 days.",
 };
@@ -57,7 +57,7 @@ export default function TeensHubPage() {
             <span className="text-orange">Find yours.</span>
           </h1>
           <p className="font-body text-base sm:text-lg text-gray-mid text-center max-w-md mx-auto mb-14">
-            Every job and every paycheck here is real — straight from government data. Play with them.
+            Every job and every paycheck here is real, straight from government data. Play with them.
           </p>
 
           {/* FIND YOUR FIT — the two matchers, side by side */}
@@ -104,7 +104,7 @@ export default function TeensHubPage() {
                 Your top <span className="text-orange">10 careers</span>
               </h2>
               <p className="font-body text-cream/70 mt-4 max-w-md mx-auto leading-relaxed flex-1">
-                15 questions. 3 minutes. 10 careers matched to who you actually are — with real pay for where you live.
+                15 questions. 3 minutes. 10 careers matched to who you actually are, with real pay for where you live.
               </p>
               <div className="mt-7">
                 <Link

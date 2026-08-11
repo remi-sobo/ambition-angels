@@ -20,13 +20,13 @@ const gapFacts = [
   {
     num: "By 15",
     title: "The career conversation is the central lever.",
-    body: "Career conversations with a trusted adult by age 15 are one of the strongest independent predictors of adult employment outcomes. Everything we build exists to make that conversation happen — and happen well.",
+    body: "Career conversations with a trusted adult by age 15 are one of the strongest independent predictors of adult employment outcomes. Everything we build exists to make that conversation happen, and happen well.",
     source: "OECD Career Readiness Research · 2021",
   },
   {
     num: "By 16",
     title: "Career uncertainty by 16 predicts disconnection.",
-    body: "Teens who cannot picture a career by age 16 are statistically more likely to be unemployed or disconnected from education and work by their mid-20s.",
+    body: "Teens who can't picture a career by 16 are far more likely to be unemployed or disconnected from school and work by their mid-20s.",
     source: "OECD Career Readiness Research · 2021",
   },
   {
@@ -46,12 +46,12 @@ const howWeRespond = [
   {
     num: "02",
     title: "In the classroom and in their pocket",
-    body: "On the web during class or program time — every student in the room, on the computers they already use. On the phone everywhere else. Same internship either way, so exposure doesn't stop at the bell.",
+    body: "On the web during class or program time, with every student in the room on the computers they already use. On the phone everywhere else. Same internship either way, so exposure doesn't stop at the bell.",
   },
   {
     num: "03",
     title: "A trusted adult in the room",
-    body: "The teens who shift their career thinking are almost always connected to an adult who knows they are doing it. We equip teachers, counselors, mentors, and parents to be that person — even if no one ever did it for them.",
+    body: "The teens who shift their career thinking are almost always connected to an adult who knows they are doing it. We equip teachers, counselors, mentors, and parents to be that person, even if nobody ever did it for them.",
   },
 ];
 
@@ -66,7 +66,7 @@ const quotes = [
   {
     initials: "MT",
     quote:
-      "The wealth management track changed how I think about money. I taught my mom what I learned and I am starting to think I might have a future here.",
+      "The wealth management track changed how I think about money. I taught my mom what I learned and I'm starting to think I might have a future here.",
     name: "Marcus T.",
     grade: "11th Grade · East Palo Alto, CA",
   },
@@ -118,7 +118,7 @@ const measures = [
   {
     tag: "The Outcome",
     title: "Future Orientation",
-    body: "Can a teen envision a future for themselves — and are they taking concrete steps toward it? That action piece is our strongest result: the 14% gain measured across 1,000+ teens.",
+    body: "Can a teen envision a future for themselves, and are they taking concrete steps toward it? That action piece is our strongest result: the 14% gain measured across 1,000+ teens.",
   },
 ];
 
@@ -154,7 +154,7 @@ export default function ImpactPage() {
             <span className="text-orange">works.</span>
           </h1>
           <p className="text-gray-mid text-lg lg:text-xl max-w-2xl leading-relaxed fade-up stagger-2">
-            Career exposure is one of the most powerful tools we have to help teens break the cycle of poverty. We have the data. Here is what it shows.
+            Career exposure is one of the few things that reliably moves a teen&apos;s economic trajectory. We have the data. Here is what it shows.
           </p>
         </div>
       </section>
@@ -181,7 +181,7 @@ export default function ImpactPage() {
             The gap is not ambition. It is access.
           </h2>
           <p className="text-gray-warm text-base leading-relaxed max-w-2xl mb-12">
-            Teens from low-income communities graduate knowing academic subjects — not how to make their way in a workforce that is changing faster than any curriculum can keep up with. Career exposure is a proven pathway toward economic mobility. And right now, it is not equally distributed.
+            Teens from low-income communities graduate knowing academic subjects, not how to make their way in a workforce that is changing faster than any curriculum can keep up with. Career exposure is a proven pathway to economic mobility. Right now it goes to the teens who need it least.
           </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20">
@@ -249,7 +249,7 @@ export default function ImpactPage() {
                 14%
               </span>
               <p className="text-white/80 text-base leading-relaxed mt-4">
-                <strong className="text-white font-bold block mb-1">Increase in Action Orientation — the highest-gain dimension within our Future Orientation Score (FOS).</strong>
+                <strong className="text-white font-bold block mb-1">Increase in Action Orientation, the highest-gain dimension within our Future Orientation Score (FOS).</strong>
               </p>
               <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-white/70">
                 Pre and post · 1,000+ teens · Measured across our school and nonprofit program partners
@@ -266,10 +266,10 @@ export default function ImpactPage() {
                   The Future Orientation Score (FOS) tracks how teens think about and move toward their futures across multiple dimensions. We measure before and after every program cycle.
                 </p>
                 <p>
-                  Action Orientation — one element within the FOS — measures whether a teen is actually taking steps toward a career, not just imagining one. Across 1,000+ teens, it showed the biggest improvement of any dimension we track.
+                  Action Orientation, one element within the FOS, measures whether a teen is taking real steps toward a career, not just imagining one. Across 1,000+ teens, it showed the biggest improvement of any dimension we track.
                 </p>
                 <p className="font-semibold text-ink">
-                  Career exposure alone does not break the cycle of poverty. But teens who can see a path — and start walking it — have a meaningfully better shot.
+                  Career exposure alone doesn&apos;t break the cycle of poverty. But a teen who can see a path and starts walking it has a real shot that a teen who can&apos;t see one doesn&apos;t.
                 </p>
               </div>
             </div>

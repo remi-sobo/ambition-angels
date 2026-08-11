@@ -4,7 +4,7 @@ import BoardScreen from "./BoardScreen";
 // The projected board (and, with ?solo=1, the one-player board). Noindex
 // like every room screen — a live room code is not a landing page.
 export const metadata: Metadata = {
-  title: "The Cut — board",
+  title: "The Cut · board",
   robots: { index: false, follow: false },
 };
 

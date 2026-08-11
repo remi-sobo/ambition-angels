@@ -6,9 +6,9 @@ import HigherWageGame from "./HigherWageGame";
 // decision 6) — share cards deep-link here, not to the hub, so a friend
 // tapping a share lands in the game they were sent.
 export const metadata: Metadata = {
-  title: "Higher Wage — Ambition Angels",
+  title: "Higher Wage · Ambition Angels",
   description:
-    "Two real jobs. Tap the one that pays more. Real government pay data — how long can you keep the streak alive?",
+    "Two real jobs. Tap the one that pays more. Real government pay data. How long can you keep the streak alive?",
 };
 
 export default function HigherWagePage() {

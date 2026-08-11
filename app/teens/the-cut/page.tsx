@@ -6,7 +6,7 @@ import CutLanding from "./CutLanding";
 // end-to-end run against real pool data (Remi's call, 2026-08-11).
 // Room and projector screens stay noindex permanently.
 export const metadata: Metadata = {
-  title: "The Cut — Ambition Angels",
+  title: "The Cut · Ambition Angels",
   description:
     "Six careers on the board. One rule at a time. The class votes on who gets cut.",
 };

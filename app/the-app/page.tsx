@@ -10,7 +10,7 @@ import { HEADLINE_STATS } from "@/lib/stats";
 export const metadata: Metadata = {
   title: "The Platform",
   description:
-    "Ambition delivers real careers through thirty-day simulated internships. In the classroom on the web, in their pocket on the phone. Free for every student.",
+    "Ambition delivers real careers through 30-day simulated internships. In the classroom on the web, in their pocket on the phone. Free for every student.",
 };
 
 // Slim recap of the three-step framework. Tighter than the original cards
@@ -37,11 +37,11 @@ const recapSteps = [
 const dashboardRegions = [
   {
     title: "The roster",
-    body: "Every student, their current internship, progress, and last activity — on track, making progress, or needs a check-in.",
+    body: "Every student, their current internship, progress, and last activity: on track, making progress, or needs a check-in.",
   },
   {
-    title: "The student spotlight",
-    body: "One student at a time, in depth: where they are in the internship, how far they've come, and the skills they're building.",
+    title: "The spotlight",
+    body: "One student at a time. Where they are in the internship, what they've finished, and the skills they're building.",
   },
   {
     title: "The prompts",
@@ -174,7 +174,7 @@ export default function TheAppPage() {
               className="w-full h-auto"
             />
             <figcaption className="mt-3 text-center text-xs text-gray-warm">
-              The student view on the web — sample data shown for illustration.
+              The student view on the web. Sample data shown for illustration.
             </figcaption>
           </figure>
 
@@ -187,7 +187,7 @@ export default function TheAppPage() {
                 In class or program time.
               </h3>
               <p className="text-gray-warm text-sm leading-relaxed">
-                A school or program puts Ambition in front of every student in the room, on the computers they already use. Advisory, homeroom, a career block — fifteen minutes, and the teacher watches progress while it happens.
+                A school or program puts Ambition in front of every student in the room, on the computers they already use. Advisory, homeroom, a career block: 15 minutes, and the teacher watches progress while it happens.
               </p>
             </div>
             <div className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm">
@@ -198,7 +198,7 @@ export default function TheAppPage() {
                 Everywhere else.
               </h3>
               <p className="text-gray-warm text-sm leading-relaxed">
-                The same student picks the same internship back up on the bus, at home, after practice. Same account, same progress, same thirty days — the internship doesn&apos;t care which screen it&apos;s on.
+                The same student picks the same internship back up on the bus, at home, after practice. Same account, same progress, same 30 days. The internship doesn&apos;t care which screen it&apos;s on.
               </p>
             </div>
           </div>
@@ -223,11 +223,8 @@ export default function TheAppPage() {
           <DashboardMockup className="max-w-4xl mx-auto mb-12 fade-up" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {dashboardRegions.map((r, i) => (
+            {dashboardRegions.map((r) => (
               <div key={r.title} className="border-t-[3px] border-orange bg-white border border-gray-light rounded-card p-6 shadow-sm">
-                <div className="font-display font-black text-3xl text-orange/60 leading-none mb-3 tracking-tight">
-                  0{i + 1}
-                </div>
                 <h3 className="font-heading font-semibold text-ink text-base mb-2">{r.title}</h3>
                 <p className="text-gray-warm text-sm leading-relaxed">{r.body}</p>
               </div>
@@ -261,7 +258,7 @@ export default function TheAppPage() {
               By day 30, a student knows what that career actually feels like.
             </h2>
             <p className="text-gray-mid text-lg leading-relaxed">
-              What it pays. Whether it fits. Then they try something else. Marketing. Game design. Wealth management. They start seeing careers they did not know existed. And they start believing those careers are for them.
+              What it pays. Whether it fits. Then they try something else. Marketing. Game design. Wealth management. They start seeing careers they didn&apos;t know existed. And they start believing those careers are for them.
             </p>
             <p className="text-gray-mid text-lg leading-relaxed mt-4">
               We call that future orientation. A teen&apos;s ability to picture and take real steps toward a future they are excited about. Research shows it is one of the strongest predictors of high school graduation and career entry. We are moving that number.
@@ -349,7 +346,7 @@ export default function TheAppPage() {
               Free, same internships, same thirty days. Any adult in their corner can sign up as a Guide.
             </p>
             <p className="text-gray-warm text-base leading-relaxed mb-8">
-              Teens going through internships on their own can also earn gift cards for the ones they complete — their time has real value, and we honor it.
+              Teens working on their own can also earn a gift card for each internship they finish.
             </p>
             <div className="flex flex-wrap gap-4 justify-center items-center">
               <AppStoreButtons variant="pill" theme="light" source="the_app_solo_path" />
@@ -386,7 +383,7 @@ export default function TheAppPage() {
               The app starts it. Real opportunity picks up from there.
             </h2>
             <p className="text-gray-mid text-lg leading-relaxed mb-10">
-              Students discover real-world opportunities tailored to their age, experience, interests, and location: internships, post-grad jobs, and trade school programs. The app opens the door. We help them walk through it.
+              Real programs, real jobs, real trade school pathways, matched to where a teen is and what they just tried on. We&apos;re building this now.
             </p>
             <Link
               href="/curriculum"

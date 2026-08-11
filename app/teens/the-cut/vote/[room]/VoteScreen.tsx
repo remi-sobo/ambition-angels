@@ -120,7 +120,7 @@ export default function VoteScreen({ roomCode }: { roomCode: string }) {
 
         <h1 className="font-display text-3xl leading-[1.02]">{state.rule?.text}</h1>
         <p className="font-body text-sm text-cream/50 mt-2">
-          {voted ? "Locked in — tap another to change it." : "Tap your call."}
+          {voted ? "Locked in. Tap another to change it." : "Tap your call."}
         </p>
 
         <div className="flex flex-col gap-2.5 mt-5">

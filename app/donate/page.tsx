@@ -7,7 +7,7 @@ import { HEADLINE_STATS } from "@/lib/stats";
 export const metadata: Metadata = {
   title: "Donate",
   description:
-    "Help teens reach their full potential. Your gift delivers real careers through thirty-day simulated internships — in the classroom and in their pocket. Free for every student.",
+    "Help teens reach their full potential. Your gift delivers real careers through 30-day simulated internships, in the classroom and in their pocket. Free for every student.",
 };
 
 export default function DonatePage() {
@@ -61,7 +61,7 @@ export default function DonatePage() {
               </blockquote>
 
               <p className="text-gray-mid text-base leading-relaxed mb-8">
-                Angel investors put real money behind founders before they&apos;ve proven themselves — because they believe in the potential. That&apos;s exactly what an Ambition Angel does for a teen. You invest before they&apos;ve had a chance to show the world what they can do. That&apos;s the bet. That&apos;s the belief.
+                Angel investors put real money behind founders before they&apos;ve proven themselves, because they believe in the potential. That&apos;s exactly what an Ambition Angel does for a teen. You invest before they&apos;ve had a chance to show the world what they can do. That&apos;s the bet.
               </p>
 
               <div className="flex flex-wrap gap-3 fade-up stagger-3">
@@ -125,7 +125,7 @@ export default function DonatePage() {
                 Talk to us about sponsoring a school
               </a>
               <p className="mt-6 text-gray-warm/80 text-sm leading-relaxed">
-                Some partners also fund a reward for the classroom or program that commits the most — if that&apos;s interesting to you, we&apos;ll build it in.
+                Some partners also fund a reward for the classroom or program that commits the most. If that&apos;s interesting, we&apos;ll build it in.
               </p>
             </div>
 
@@ -141,7 +141,7 @@ export default function DonatePage() {
               </p>
               <ul className="space-y-5">
                 {[
-                  "Thirty-day career internships for every student in the building",
+                  "30-day career internships for every student in the building",
                   "A dashboard for every teacher, counselor, and mentor who works with them",
                   "Career conversation prompts tied to each student's internship",
                   "The school pays nothing in year one",
@@ -176,7 +176,7 @@ export default function DonatePage() {
               </h2>
               <div className="space-y-4 text-gray-warm leading-relaxed">
                 <p>
-                  Remi Sobomehin grew up in Portland, attended his father&apos;s community nonprofit as a kid, and made it to Stanford. Not because of luck. Because the right support showed up at the right time.
+                  Remi Sobomehin grew up in Portland, attended his father&apos;s community nonprofit as a kid, and made it to Stanford. Not luck. The right support showed up at the right time.
                 </p>
                 <p>
                   After graduating, he went to East Palo Alto and got to work. He kept hitting the same wall: he could not get teens to show up. Meanwhile his co-founder Demetric was at Facebook watching teens spend 8 hours a day on their phones.
@@ -254,7 +254,7 @@ export default function DonatePage() {
               {
                 num: "01",
                 label: "The App",
-                body: "Your gift gives teens access to career internships and the exposure they need to find a future worth chasing. Completely free to every student who downloads the app.",
+                body: "Your gift puts career internships in front of teens who have never seen the jobs up close. Free for every student, in a classroom or on their own.",
               },
               {
                 num: "02",

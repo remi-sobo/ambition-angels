@@ -299,7 +299,7 @@ function Survivor({ state, solo }: { state: CutRoomView; solo: boolean }) {
       <p className="font-heading text-xs tracking-[0.25em] uppercase text-cream/50 mt-10">
         {state.lives > 0
           ? `The ${solo ? "run" : "room"} finished with ${state.lives} ${state.lives === 1 ? "life" : "lives"}`
-          : "The board took every life — rematch?"}
+          : "The board took every life. Rematch?"}
       </p>
       <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
         <Link

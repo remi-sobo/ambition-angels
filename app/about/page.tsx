@@ -121,7 +121,7 @@ export default function AboutPage() {
               <span className="text-orange">A real path.</span>
             </h1>
             <p className="text-white/85 text-lg lg:text-xl max-w-2xl leading-relaxed fade-up stagger-2">
-              Every teen deserves a clear picture of what is possible and a real path to get there. Ambition Angels is a youth development organization building that path through real career exposure — in the classroom and in their pocket.
+              Every teen deserves a clear picture of what is possible and a real path to get there. Ambition Angels is a youth development organization building that path through real career exposure, in the classroom and in their pocket.
             </p>
           </div>
         </div>
@@ -141,19 +141,19 @@ export default function AboutPage() {
             </div>
             <div className="space-y-5 text-gray-warm leading-relaxed text-base lg:text-lg fade-up stagger-1">
               <p>
-                Remi Sobomehin and Demetric Sanders grew up together in Portland, Oregon, both attending Remi&apos;s father&apos;s community nonprofit as kids. Despite growing up in low-income, inner-city communities with no roadmap, they set their sights on Stanford. Eight years later, with the support of dedicated youth developers and the organizations that showed up for them, they made it.
+                Remi Sobomehin and Demetric Sanders grew up together in Portland, Oregon, both attending Remi&apos;s father&apos;s community nonprofit as kids. They grew up in low-income neighborhoods with no roadmap and decided on Stanford anyway. Youth workers and community organizations showed up for them for years. They both got in.
               </p>
               <p>
                 After graduating, Remi went to East Palo Alto and got to work, leading in schools and nonprofits, trying to replicate what had worked for him and Demetric. He kept running into the same wall: he could not get teens to show up.
               </p>
               <p>
-                Meanwhile, Demetric joined Facebook and worked on the product team focused on teens. He could see exactly who WAS reaching them at scale. Their phones.
+                Meanwhile, Demetric joined Facebook and worked on the product team focused on teens. He could see exactly what was reaching them at scale. Their phones.
               </p>
               <p>
-                So they built for the phone — and then kept building. Today Ambition runs on the web in classrooms and programs, on the phone everywhere else, with a dashboard for every adult in a teen&apos;s corner.
+                So they built for the phone, and then kept building. Today Ambition runs on the web in classrooms and programs, on the phone everywhere else, with a dashboard for every adult in a teen&apos;s corner.
               </p>
               <p>
-                Stop fighting where teens are. Meet them there, and bring the adults with you. That is our ambition.
+                Stop fighting where teens are. Meet them there, and bring the adults with you.
               </p>
             </div>
           </div>

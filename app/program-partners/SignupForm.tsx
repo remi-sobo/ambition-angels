@@ -69,7 +69,7 @@ export default function ProgramPartnerSignupForm() {
           You&apos;re in. Check your email.
         </p>
         <p className="text-gray-mid text-sm leading-relaxed">
-          Your program code is on the way — usually within a few hours. If you don&apos;t hear from us by tomorrow, email{" "}
+          Your program code is on the way, usually within a few hours. If you don&apos;t hear from us by tomorrow, email{" "}
           <a href="mailto:hello@ambitionangels.org" className="text-orange underline underline-offset-2">
             hello@ambitionangels.org
           </a>.
@@ -154,7 +154,7 @@ export default function ProgramPartnerSignupForm() {
         disabled={submitting}
         className="w-full bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-5 rounded-full transition-colors min-h-[60px] disabled:opacity-60 flex items-center justify-center"
       >
-        {submitting ? "Submitting…" : "Get Access — It's Free"}
+        {submitting ? "Submitting…" : "Get Free Access"}
       </button>
 
       <p className="text-center text-xs text-gray-mid leading-relaxed">

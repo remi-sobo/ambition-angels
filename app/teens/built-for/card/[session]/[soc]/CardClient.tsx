@@ -148,7 +148,7 @@ export default function CardClient({
             {dayVignette}
           </p>
           <p className="font-body text-sm text-cream/40 mt-8">
-            Read it like it&rsquo;s your day. Your table never sees this — but they can ask you
+            Read it like it&rsquo;s your day. Your table never sees this, but they can ask you
             questions, so know it.
           </p>
           <button
@@ -263,11 +263,11 @@ export default function CardClient({
               disabled={busy}
               className="w-full border border-cream/20 hover:border-cream/50 transition-colors text-cream/80 font-heading text-sm px-8 py-3 rounded-full"
             >
-              They guessed it — on this clue
+              They guessed it on this clue
             </button>
           ) : (
             <p className="font-body text-sm text-cream/50 text-center py-2">
-              Got it on clue {guessedAt}. Read the rest anyway — that&rsquo;s where the learning is.
+              Got it on clue {guessedAt}. Read the rest anyway. That&rsquo;s where the learning is.
             </p>
           )}
         </div>

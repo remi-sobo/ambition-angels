@@ -6,7 +6,7 @@ const faqs = [
   {
     question: "How do I make a gift?",
     answer:
-      "You can donate online or by emailing our philanthropy team at shannon@ambitionangels.org. You can also donate by mail — checks can be made payable to Ambition Angels and mailed to: 380 Portage Ave., Palo Alto, CA 94306. For wire transfers: Beneficiary: Ambition Angels · Bank: Wells Fargo Bank, N.A. · Routing: 121000248 · Account: 2245119926 · Bank address: 420 Montgomery, San Francisco, CA 94104 · Tax ID: 87-2513010.",
+      "You can donate online or by emailing our philanthropy team at shannon@ambitionangels.org. You can also donate by mail: checks can be made payable to Ambition Angels and mailed to: 380 Portage Ave., Palo Alto, CA 94306. For wire transfers: Beneficiary: Ambition Angels · Bank: Wells Fargo Bank, N.A. · Routing: 121000248 · Account: 2245119926 · Bank address: 420 Montgomery, San Francisco, CA 94104 · Tax ID: 87-2513010.",
   },
   {
     question: "Can I choose what my donation supports?",

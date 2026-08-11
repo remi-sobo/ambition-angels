@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import ApplyForm, { type OpenCohort } from "./ApplyForm";
 
 export const metadata: Metadata = {
-  title: "Apply — Ambition Angels",
+  title: "Apply · Ambition Angels",
   description:
     "Apply to an Ambition Angels program. Career exposure, real internship simulations, and a community that believes in your ambition.",
 };

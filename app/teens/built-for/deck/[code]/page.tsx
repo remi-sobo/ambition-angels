@@ -10,7 +10,7 @@ import SendToAdult from "./SendToAdult";
 // this student explored, each card showing how few clues the table needed.
 // A mistyped code gets the entry form back, not a dead end.
 export const metadata: Metadata = {
-  title: "Your Deck — What Are You Built For",
+  title: "Your Deck · What Are You Built For",
   robots: { index: false, follow: false },
 };
 export const dynamic = "force-dynamic";
@@ -67,14 +67,14 @@ export default async function DeckPage({ params }: { params: { code: string } })
           {session.claim_code}
         </h1>
         <p className="font-body text-cream/60 mt-4 mb-10">
-          Write this down. Any phone, any time, no login — this code opens this page forever.
+          Write this down. Any phone, any time, no login. This code opens this page forever.
         </p>
 
         {cards.length === 0 ? (
           <div className="rounded-2xl border border-cream/12 px-6 py-8">
             <p className="font-heading font-semibold text-lg">Nothing in the deck yet.</p>
             <p className="font-body text-cream/60 mt-1">
-              Go back to your list and take a career all the way to the answer — it lands here.
+              Go back to your list and take a career all the way to the answer. It lands here.
             </p>
             <Link
               href={`/teens/built-for/results/${session.id}`}
@@ -104,7 +104,7 @@ export default async function DeckPage({ params }: { params: { code: string } })
                 href={`/teens/built-for/results/${session.id}`}
                 className="font-body text-sm text-cream/50 hover:text-cream transition-colors"
               >
-                &larr; Back to your ranked list — there&rsquo;s more to explore
+                &larr; Back to your ranked list. There&rsquo;s more to explore
               </Link>
             </div>
           </>

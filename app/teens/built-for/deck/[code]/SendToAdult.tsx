@@ -30,7 +30,7 @@ export default function SendToAdult({ claimCode, hasCards }: { claimCode: string
     <div className="mt-10 rounded-2xl border border-cream/12 px-6 py-5">
       <p className="font-heading font-semibold text-lg">Send it to a grown-up</p>
       <p className="font-body text-sm text-cream/60 mt-1">
-        This part is for an adult — a parent, a mentor, a teacher. Their email, not yours. They
+        This part is for an adult: a parent, a mentor, a teacher. Their email, not yours. They
         get your deck and your code so it can never get lost.
       </p>
       {!open ? (

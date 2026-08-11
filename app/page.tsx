@@ -24,7 +24,7 @@ const pillars = [
   {
     icon: "03",
     title: "Leave with a direction.",
-    body: "By day thirty they know what the work feels like, what it pays, and what the path in actually looks like. Then they try another one.",
+    body: "By day 30 they know what the work feels like, what it pays, and what the path in looks like. Then they try another one.",
   },
 ];
 
@@ -38,7 +38,7 @@ const guideSupports = [
     body: "Not generic career questions. Questions about the internship they are in right now.",
   },
   {
-    title: "Follow-ups that surface themselves.",
+    title: "The quiet ones find you.",
     body: "The students who went quiet show up at the top of your week, with a note you can send in one click.",
   },
 ];
@@ -50,7 +50,7 @@ const whereItRuns = [
   },
   {
     title: "In programs.",
-    body: "After-school, mentoring, juvenile justice, faith communities. Fifteen minutes twice a week, built into time you already run.",
+    body: "After-school, mentoring, juvenile justice, faith communities. 15 minutes twice a week, built into time you already run.",
   },
   {
     title: "In community college.",
@@ -58,7 +58,7 @@ const whereItRuns = [
   },
   {
     title: "On their own.",
-    body: "A teen who is not in any of those can download the app and start today. Any adult in their corner can sign up as a Guide and see what they are doing.",
+    body: "A teen who isn't in any of those can download the app and start today. Any adult in their corner signs up as a Guide and sees what they're working on.",
   },
 ];
 
@@ -75,7 +75,7 @@ const team = [
     name: "Demetric Sanders",
     title: "Tech Partner",
     quote:
-      "I overcame childhood adversity to become a first-generation college graduate. At Facebook I worked on the teens team and saw how effectively phones reach young people. I asked why we were not using that for something that actually helps them. Now we are.",
+      "I overcame childhood adversity to become a first-generation college graduate. At Facebook I worked on the teens team and saw how effectively phones reach young people. I asked why we weren't using that for something that actually helps them. Now we are.",
     initials: "DS",
     photo: "/images/deme_edited.jpg",
   },
@@ -138,7 +138,7 @@ export default function Home() {
             </h1>
 
             <p className="font-body text-gray-mid text-base lg:text-lg mb-8 leading-relaxed max-w-sm fade-up stagger-2">
-              Ambition delivers real careers through thirty-day simulated internships. On the web during class or program time, and on the phone everywhere else. Free for every student.
+              Ambition delivers real careers through 30-day simulated internships. On the web during class or program time, and on the phone everywhere else. Free for every student.
             </p>
 
             {/* Primary CTAs — the school ask leads */}
@@ -175,10 +175,10 @@ export default function Home() {
               The Ambition Approach
             </p>
             <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream mb-6 tracking-tight fade-up stagger-1">
-              Thirty days inside a real career. Then they pick another one.
+              30 days inside a real career. Then they pick another one.
             </h2>
             <p className="text-gray-mid text-lg leading-relaxed fade-up stagger-2">
-              Every internship has a fictional employer, real work, and something they actually build by the end. Fifteen minutes a day.
+              Every internship has a fictional employer, real work, and something they actually build by the end. 15 minutes a day.
             </p>
           </div>
 
@@ -269,7 +269,7 @@ export default function Home() {
                   Future orientation is a teen&apos;s belief that their future is worth working toward right now. It is one of the strongest predictors of whether a young person stays connected to school and work into their twenties.
                 </p>
                 <p className="fade-up stagger-3">
-                  Across more than 1,000 teens, the piece we track most closely — whether a teen is actually taking steps toward a career instead of just imagining one — went up 14%.
+                  We track one thing most closely: whether a teen is taking real steps toward a career, not just imagining one. Across more than 1,000 teens, that went up 14%.
                 </p>
                 <p className="font-semibold text-ink fade-up stagger-3">
                   They do the work. They leave on their way to a career that pays.
@@ -296,7 +296,7 @@ export default function Home() {
                 14%
               </span>
               <p className="text-white/85 text-base leading-relaxed mt-4 max-w-sm mx-auto">
-                Increase in teens taking real steps toward a career — not just imagining one.
+                Increase in teens taking real steps toward a career, not just imagining one.
               </p>
               <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-white/70">
                 Pre and post · 1,000+ teens
@@ -323,7 +323,7 @@ export default function Home() {
               They do the internship. You see all of it.
             </h2>
             <p className="text-gray-warm text-lg leading-relaxed">
-              Every teacher, counselor, mentor, and parent gets a dashboard. Who is moving and who stalled. What each teen is working on today. And a prompt tied to that exact internship, so the career conversation is ready before you sit down.
+              Every teacher, counselor, mentor, and parent gets a dashboard. You see who&apos;s moving and who stalled, what each teen is working on today, and a prompt tied to that exact internship. The career conversation is ready before you sit down.
             </p>
           </div>
 
@@ -383,7 +383,7 @@ export default function Home() {
               Where It Runs
             </p>
             <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream tracking-tight leading-tight fade-up stagger-1">
-              Is this a school thing or an app? Yes.
+              One platform. Four places it runs.
             </h2>
           </div>
 
@@ -419,7 +419,7 @@ export default function Home() {
                 The Gap
               </p>
               <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6 tracking-tight fade-up stagger-1">
-                Schools can&apos;t do it alone.
+                Nobody hands them a map.
               </h2>
               <div className="space-y-4 text-gray-warm leading-relaxed">
                 <p className="fade-up stagger-2">
@@ -428,10 +428,10 @@ export default function Home() {
                   faster than any curriculum can keep up with.
                 </p>
                 <p className="fade-up stagger-3">
-                  Youth not connected to a viable career path by age 25 are more
-                  likely to face unemployment, poverty, and housing instability. And
-                  the programs built to help them have never been able to reach
-                  them at scale.
+                  A young person who hasn&apos;t found a path by 25 is far more
+                  likely to end up unemployed, in poverty, or without stable
+                  housing. The programs built to prevent that have never reached
+                  enough of them.
                 </p>
               </div>
             </div>
@@ -444,9 +444,9 @@ export default function Home() {
             >
               <div className="space-y-6">
                 {[
-                  { pct: "95%", label: "of teens own a smartphone" },
-                  { pct: "8 hrs", label: "average daily screen time" },
-                  { pct: "Under 5", label: "careers most teens have been exposed to — usually whatever their parents do" },
+                  { pct: "Under 5", label: "careers most teens have seen up close, usually whatever their parents do" },
+                  { pct: "1", label: "counselor for every 400+ students in most public high schools" },
+                  { pct: "8 hrs", label: "a day teens already spend on a screen" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-5">
                     <div className="font-display font-black text-3xl lg:text-4xl text-orange flex-shrink-0 w-28 lg:w-32 tracking-tight">
@@ -462,7 +462,7 @@ export default function Home() {
               {/* Capstone — the conclusion the three stats lead to */}
               <div className="mt-8 pt-6 border-t border-orange/20">
                 <p className="font-display font-black text-3xl lg:text-5xl text-orange tracking-tight leading-[1.05] text-right">
-                  We meet them there.
+                  We work in all three.
                 </p>
               </div>
             </div>
@@ -492,14 +492,14 @@ export default function Home() {
                 initials: "DM",
               },
               {
-                quote: "The wealth management track changed how I think about money. I taught my mom what I learned and I am starting to think I might have a future here.",
+                quote: "The wealth management track changed how I think about money. I taught my mom what I learned and I'm starting to think I might have a future here.",
                 name: "Marcus T.",
                 grade: "11th Grade",
                 location: "East Palo Alto, CA",
                 initials: "MT",
               },
               {
-                quote: "I did the nursing internship and it clicked. I know exactly what I am doing after high school. No one in my family has ever worked in healthcare.",
+                quote: "I did the nursing internship and it clicked. I know exactly what I'm doing after high school. No one in my family has ever worked in healthcare.",
                 name: "Aaliyah R.",
                 grade: "12th Grade",
                 location: "Richmond, CA",
@@ -550,7 +550,7 @@ export default function Home() {
                 Everywhere<br /><span className="text-orange">class<br />isn&apos;t.</span>
               </h2>
               <p className="text-charcoal text-lg leading-relaxed mb-8 max-w-lg">
-                The same thirty-day internships, on their phone. A teen who is not in a school or program can download Ambition and start today — and a teen who is can keep going on the bus, at practice, at home. Free for every student.
+                The same 30-day internships, on their phone. A teen who isn&apos;t in a school or program can download Ambition and start today, and a teen who is can keep going on the bus, at practice, at home. Free for every student.
               </p>
               <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-start">
                 <AppStoreButtons variant="lockup" source="home_app_showcase" />
@@ -616,7 +616,7 @@ export default function Home() {
               The People Behind This
             </p>
             <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight fade-up stagger-1">
-              Built by people who lived the gap and refused to accept it.
+              Built by two kids who came up without a map.
             </h2>
           </div>
 

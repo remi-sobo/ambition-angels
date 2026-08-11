@@ -134,7 +134,7 @@ export default function RoomScreen({
 
         {state?.tables && (
           <p className="font-body text-cream/50 mt-8 max-w-xl">
-            Find your table. Your phone shows your career for the round — read your day silently,
+            Find your table. Your phone shows your career for the round. Read your day silently,
             then read the clues out loud, one at a time. The fewer clues it takes, the better.
           </p>
         )}
@@ -172,7 +172,7 @@ export default function RoomScreen({
             )}
           </div>
           <p className="font-body text-[11px] text-cream/30">
-            Only you see these buttons — keep this tab for the projector.
+            Only you see these buttons. Keep this tab for the projector.
           </p>
         </div>
       )}

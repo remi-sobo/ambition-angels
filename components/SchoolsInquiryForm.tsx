@@ -217,7 +217,7 @@ export default function SchoolsInquiryForm() {
       </button>
 
       <p className="text-center text-xs text-gray-warm">
-        We&apos;ll reach out personally — usually the same day.
+        We&apos;ll reach out personally, usually the same day.
       </p>
     </form>
   );

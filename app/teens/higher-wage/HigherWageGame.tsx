@@ -142,7 +142,7 @@ export default function HigherWageGame() {
         await navigator.share({ text, url: SHARE_URL });
       } else {
         await navigator.clipboard.writeText(`${text} ${SHARE_URL}`);
-        alert("Copied — paste it to a friend.");
+        alert("Copied. Paste it to a friend.");
       }
     } catch {
       /* user closed the sheet */
@@ -192,7 +192,7 @@ export default function HigherWageGame() {
           <div className="text-center max-w-sm">
             <h1 className="font-display text-5xl leading-[0.95]">Almost ready</h1>
             <p className="font-body text-cream/70 mt-5 leading-relaxed">
-              We&rsquo;re still stocking this game with careers. Check back soon —
+              We&rsquo;re still stocking this game with careers. Check back soon,
               or play{" "}
               <Link href="/teens/built-for" className="text-orange underline underline-offset-4">
                 What Are You Built For
@@ -221,7 +221,7 @@ export default function HigherWageGame() {
             </h1>
             <p className="font-body text-lg text-cream/70 mt-3">
               {phase.finalStreak === 1 ? "round" : "rounds"} in a row
-              {phase.finalStreak >= best && phase.finalStreak > 0 && " — your best yet"}
+              {phase.finalStreak >= best && phase.finalStreak > 0 && ", your best yet"}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 mt-9">
               <button

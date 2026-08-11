@@ -4,7 +4,7 @@ import { ImageResponse } from "next/og";
 // iMessage preview). Drawn with satori-safe flex + system fonts — no
 // external font fetch, nothing to break at the edge.
 export const runtime = "edge";
-export const alt = "Higher Wage — two real jobs, tap the one that pays more";
+export const alt = "Higher Wage: two real jobs, tap the one that pays more";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

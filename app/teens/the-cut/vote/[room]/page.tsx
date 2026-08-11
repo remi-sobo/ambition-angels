@@ -3,7 +3,7 @@ import VoteScreen from "./VoteScreen";
 
 // The phone in a student's hand. Noindex like every room screen.
 export const metadata: Metadata = {
-  title: "The Cut — vote",
+  title: "The Cut · vote",
   robots: { index: false, follow: false },
 };
 

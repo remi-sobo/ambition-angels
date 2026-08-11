@@ -23,13 +23,13 @@ export default function CutLanding() {
       const res = await fetch("/api/games/the-cut/room", { method: "POST" });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setNotice(j.error ?? "Something went wrong — try again.");
+        setNotice(j.error ?? "Something went wrong. Try again.");
         return;
       }
       const suffix = solo ? "&solo=1" : "";
       router.push(`/teens/the-cut/room/${j.roomCode}?host=${j.hostToken}${suffix}`);
     } catch {
-      setNotice("Network hiccup — try again.");
+      setNotice("Network hiccup. Try again.");
     } finally {
       setBusy(null);
     }
@@ -57,7 +57,7 @@ export default function CutLanding() {
         </h1>
         <p className="font-body text-lg text-cream/70 mt-6 max-w-md leading-relaxed">
           Six real careers on the board. One rule at a time. Vote on who gets
-          cut — last career standing wins the spotlight.
+          cut. Last career standing wins the spotlight.
         </p>
 
         <div className="mt-10 flex flex-col items-center gap-4 w-full max-w-sm">
@@ -111,7 +111,7 @@ export default function CutLanding() {
           <p className="font-body text-sm text-orange mt-6 max-w-sm">{notice}</p>
         )}
         <p className="font-body text-sm text-cream/40 mt-8">
-          Phones and one screen — nothing to install.
+          Phones and one screen, nothing to install.
         </p>
       </div>
       <footer className="px-6 py-5 text-center">

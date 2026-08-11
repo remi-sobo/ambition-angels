@@ -7,7 +7,7 @@ import SchoolsInquiryForm from "@/components/SchoolsInquiryForm";
 export const metadata: Metadata = {
   title: "For Schools & Programs",
   description:
-    "Career exposure for every student in the building, run by the adults already in the room. Chromebooks, fifteen minutes twice a week, one adult who owns it.",
+    "Career exposure for every student in the building, run by the adults already in the room. Chromebooks, 15 minutes twice a week, one adult who owns it.",
 };
 
 const settings = [
@@ -104,7 +104,7 @@ export default function SchoolsPage() {
               <div className="space-y-4 mb-6">
                 {[
                   "Chromebooks or a computer lab.",
-                  "Fifteen minutes, twice a week.",
+                  "15 minutes, twice a week.",
                   "One adult who owns it.",
                 ].map((item, i) => (
                   <div key={item} className="flex items-center gap-4">
@@ -116,7 +116,7 @@ export default function SchoolsPage() {
                 ))}
               </div>
               <p className="text-charcoal text-base leading-relaxed border-t border-orange/20 pt-5">
-                That is the whole ask. Your staff does not run it. Nobody from Ambition sits in your room.
+                That&apos;s the whole ask. Your staff doesn&apos;t run it. Nobody from Ambition sits in your room.
               </p>
             </div>
           </div>
@@ -137,10 +137,10 @@ export default function SchoolsPage() {
               What Your Students Get
             </p>
             <h2 className="font-heading font-bold text-3xl lg:text-5xl text-cream tracking-tight leading-tight mb-6">
-              Thirty days inside a real career, then another one.
+              30 days inside a real career, then another one.
             </h2>
             <p className="text-gray-mid text-lg leading-relaxed">
-              By the end of the year they have tried on four careers they had never seen up close, and they can tell you what each one pays and what the path in looks like.
+              By the end of the year they&apos;ve tried on four careers they&apos;d never seen up close, and they can tell you what each one pays and how you get in.
             </p>
           </div>
 
@@ -154,7 +154,7 @@ export default function SchoolsPage() {
               className="w-full h-auto"
             />
             <figcaption className="mt-3 text-center text-xs text-gray-mid/70">
-              The student view on a school Chromebook — sample data shown for illustration.
+              The student view on a school Chromebook. Sample data shown for illustration.
             </figcaption>
           </figure>
         </div>
@@ -220,7 +220,7 @@ export default function SchoolsPage() {
               You don&apos;t need a building to run this.
             </h2>
             <p className="text-gray-warm text-lg leading-relaxed mb-8">
-              Parents and individual mentors use Ambition with one teen or a handful. The teen downloads the app and starts today — free, same internships, same thirty days. You sign up as a Guide and get the same dashboard: their progress, and conversation prompts tied to the internship they&apos;re in right now.
+              Parents and individual mentors use Ambition with one teen or a handful. The teen downloads the app and starts today. Free, same internships, same 30 days. You sign up as a Guide and get the same dashboard: their progress, and conversation prompts tied to the internship they&apos;re in right now.
             </p>
             <div className="flex flex-wrap gap-4 justify-center items-center">
               <AppStoreButtons variant="pill" theme="light" source="schools_guides" />

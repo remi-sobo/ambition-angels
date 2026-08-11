@@ -17,7 +17,7 @@ export default function DashboardMockup({ className = "" }: { className?: string
         className="w-full h-auto"
       />
       <figcaption className="mt-3 text-center text-xs text-gray-warm">
-        Teacher dashboard — sample data shown for illustration.
+        Teacher dashboard. Sample data shown for illustration.
       </figcaption>
     </figure>
   );

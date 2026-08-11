@@ -27,7 +27,7 @@ const dashboardFeatures = [
   },
   {
     title: "What They're Working On",
-    body: "See exactly which internship each student is in right now — marketing, wealth management, game design, nursing, and more.",
+    body: "See exactly which internship each student is in right now: marketing, wealth management, game design, nursing, and more.",
   },
   {
     title: "Career Conversation Prompts",
@@ -53,7 +53,7 @@ const steps = [
   {
     num: "02",
     title: "Get your program code",
-    body: "Every program gets a unique code. Share it with your students — that's how they connect to your dashboard.",
+    body: "Every program gets a unique code. Share it with your students. That's how they connect to your dashboard.",
   },
   {
     num: "03",
@@ -63,7 +63,7 @@ const steps = [
   {
     num: "04",
     title: "Students get to work",
-    body: "They pick a career and start their internship. You watch it happen in real time from your dashboard — who's moving, who stalled, and what to ask each of them about.",
+    body: "They pick a career and start their internship. You watch it happen in real time from your dashboard: who's moving, who stalled, and what to ask each of them about.",
   },
 ];
 
@@ -99,7 +99,7 @@ export default function ProgramPartnersPage() {
                 Career exposure. Built into what you&apos;re already doing.
               </h1>
               <p className="text-gray-mid text-lg leading-relaxed mb-10 max-w-lg">
-                You&apos;re already in front of teens who need direction. Ambition Angels gives you something real to work with — 30-day career internships, right inside your program. 15 minutes. Twice a week. That&apos;s it.
+                You&apos;re already in front of teens who need direction. Ambition Angels gives you something real to work with: 30-day career internships, right inside your program. 15 minutes. Twice a week. That&apos;s it.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <a
@@ -150,7 +150,7 @@ export default function ProgramPartnersPage() {
               Two ways to bring Ambition to your teens.
             </h2>
             <p className="text-gray-warm text-lg leading-relaxed">
-              Start with either — one goes deeper than the other.
+              Start with either. One goes deeper than the other.
             </p>
           </div>
 
@@ -162,7 +162,7 @@ export default function ProgramPartnersPage() {
               </div>
               <h3 className="font-heading font-bold text-2xl text-ink mb-4">Let us introduce it.</h3>
               <p className="text-gray-warm text-sm leading-relaxed mb-6">
-                We come to you — via Zoom or in person — and pitch the app directly to your students. They get on, they start learning. You don&apos;t have to do anything except open the door.
+                We come to you, via Zoom or in person, and pitch the app directly to your students. They get on, they start learning. You don&apos;t have to do anything except open the door.
               </p>
               <ul className="space-y-3">
                 {[
@@ -185,19 +185,19 @@ export default function ProgramPartnersPage() {
             <div className="bg-ink rounded-card-lg p-8 relative overflow-hidden" style={dotTexture}>
               <div className="relative z-10">
                 <div className="inline-block text-xs font-bold text-orange bg-orange/15 border border-orange/30 px-3 py-1 rounded-full uppercase tracking-widest mb-5">
-                  Program Partner — Recommended
+                  Program Partner · Recommended
                 </div>
                 <h3 className="font-heading font-bold text-2xl text-cream mb-4">Make it part of the program.</h3>
                 <p className="text-gray-mid text-sm leading-relaxed mb-6">
-                  Set aside 15 minutes, twice a week. Students complete their internship modules inside your program time. You get access to the Guide dashboard — see exactly what each student is working on and get career conversation prompts tied to their progress.
+                  Set aside 15 minutes, twice a week. Students complete their internship modules inside your program time. You get access to the Guide dashboard: see exactly what each student is working on and get career conversation prompts tied to their progress.
                 </p>
                 <ul className="space-y-3">
                   {[
-                    "15 minutes, twice a week — that's the model",
+                    "15 minutes, twice a week. That's the model",
                     "Students work inside your existing program time",
                     "You get the Guide dashboard: progress, completion, conversation prompts",
                     "Prompts are tied to what each student is doing in the app right now",
-                    "Works for any size — classroom, small group, 1-on-1",
+                    "Works for any size: classroom, small group, 1-on-1",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-3 text-gray-mid text-sm leading-relaxed">
                       <span className="w-4 h-4 rounded-full bg-orange/20 border border-orange/40 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -222,7 +222,7 @@ export default function ProgramPartnersPage() {
               You don&apos;t just hand them an app. You stay in the room.
             </h2>
             <p className="text-gray-mid text-lg leading-relaxed">
-              Program Partners get their own login. Same app — completely different experience. You see what your teens are working on and get the tools to turn it into a real conversation.
+              Program Partners get their own login. Same app, completely different experience. You see what your teens are working on and get the tools to turn it into a real conversation.
             </p>
           </div>
 
@@ -242,7 +242,7 @@ export default function ProgramPartnersPage() {
           {/* Callout */}
           <div className="border border-orange/30 bg-orange/5 rounded-card-lg p-7">
             <p className="text-cream text-base lg:text-lg leading-relaxed italic">
-              &ldquo;The teens who shift their career thinking are almost always connected to an adult who knew what they were doing. The Guide dashboard makes that possible for any program — even if no one ever did it for the adults running it.&rdquo;
+              &ldquo;The teens who shift their career thinking are almost always connected to an adult who knew what they were doing. The Guide dashboard makes that possible for any program, even if no one ever did it for the adults running it.&rdquo;
             </p>
           </div>
         </div>
@@ -314,7 +314,7 @@ export default function ProgramPartnersPage() {
           <div className="max-w-2xl mb-12">
             <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">How It Works</p>
             <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-4">
-              Four steps to get started — same-day access.
+              Four steps to get started. Same-day access.
             </h2>
             <p className="text-gray-warm text-lg leading-relaxed">
               We built this to be self-serve from day one. You shouldn&apos;t need to wait for a kickoff call to get your students learning.
@@ -358,7 +358,7 @@ export default function ProgramPartnersPage() {
               <ul className="space-y-3">
                 {[
                   "Free for every teen in your program",
-                  "Program code delivered within 24 hours — usually same day",
+                  "Program code delivered within 24 hours, usually same day",
                   "Guide dashboard login included",
                   "No contract required. Cancel anytime.",
                 ].map((item) => (

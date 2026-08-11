@@ -47,7 +47,7 @@ const tiers = [
     amount: "$50,000",
     name: "Student Access Partner",
     description:
-      "Funds directed rewards and recognition for the partners whose teens need them most — built with each partner, in the conversation, not on the site.",
+      "Funds directed rewards and recognition for the partners whose teens need them most, built with each partner, in the conversation, not on the site.",
     highlight: false,
   },
   {
@@ -265,7 +265,7 @@ export default function UpdatePage() {
                 They don&apos;t just learn about careers. They try them.
               </h2>
               <p style={{ fontSize:15, color:"#4B5563", lineHeight:1.75, marginBottom:16 }}>
-                On Ambition, students complete 30-day simulated internships across business, tech, health, creative fields, and more. 15 minutes a day. Real tasks. Real skills. On the web during class or program time, on the phone everywhere else — and every adult around them gets a dashboard showing what each teen is working on. By the end of 30 days, they know what a career actually feels like.
+                On Ambition, students complete 30-day simulated internships across business, tech, health, creative fields, and more. 15 minutes a day. Real tasks. Real skills. On the web during class or program time, on the phone everywhere else, and every adult around them gets a dashboard showing what each teen is working on. By the end of 30 days, they know what a career actually feels like.
               </p>
               <p style={{ fontSize:15, color:"#4B5563", lineHeight:1.75, marginBottom:0 }}>
                 The rhythm is four internships a year, one a quarter. That means four real careers a teen has tried on by year&apos;s end.

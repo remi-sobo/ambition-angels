@@ -60,7 +60,7 @@ export default function RoomBanner({
             You&rsquo;re at Table {you.table}.
           </p>
           <p className="font-body text-sm text-cream/70 mt-1">
-            Your round card is dealt — nobody else can see it. Read your day silently, then read
+            Your round card is dealt. Nobody else can see it. Read your day silently, then read
             the clues out loud.
           </p>
           <Link
@@ -72,7 +72,7 @@ export default function RoomBanner({
         </>
       ) : (
         <p className="font-body text-sm text-cream/70 mt-2">
-          Tables are up — you joined after the deal. Ask your facilitator to re-deal, or explore
+          Tables are up. You joined after the deal. Ask your facilitator to re-deal, or explore
           on your own below.
         </p>
       )}

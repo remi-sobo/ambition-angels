@@ -21,8 +21,8 @@ export const STATS = {
   titleI: { value: "87%", label: "From Title I schools" },
   futureOrientation: {
     value: "14%",
-    label: "Increase in future orientation",
-    note: "A teen's belief that their future is worth working toward",
+    label: "Increase in action orientation",
+    note: "The piece of future orientation we track most closely: teens taking real steps toward a career",
   },
   hoursDelivered: { value: "1,100+", label: "Hours of career exploration delivered" },
   partners: { value: "36+", label: "School and nonprofit partners" },

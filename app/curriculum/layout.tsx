@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Careers",
   description:
-    "19 career tracks, 30 days each, all free. Simulated internships with a real employer, real deliverables, and real career skills — in class on the web, everywhere else on the phone.",
+    "19 career tracks, 30 days each, all free. Simulated internships with an employer, a real deliverable, and the skills the job actually takes. In class on the web, everywhere else on the phone.",
 };
 
 export default function CurriculumLayout({ children }: { children: React.ReactNode }) {

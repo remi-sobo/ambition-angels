@@ -7,7 +7,7 @@ import JoinRoom from "./JoinRoom";
 // a share-driven public surface (specs/c1d2c9e2-teengamesv1 locked decision
 // 6). Session, room, and facilitator screens below stay noindex.
 export const metadata: Metadata = {
-  title: "What Are You Built For — Ambition Angels",
+  title: "What Are You Built For · Ambition Angels",
   description: "An 8-minute career game for middle schoolers. Real careers with real pay, matched to how you work.",
 };
 

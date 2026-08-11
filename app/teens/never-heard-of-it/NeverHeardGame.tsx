@@ -201,7 +201,7 @@ export default function NeverHeardGame() {
 
         {offToday ? (
           <p className="font-body text-cream/70 text-center mt-10 leading-relaxed">
-            No mystery job today — come back tomorrow. Meanwhile,{" "}
+            No mystery job today. Come back tomorrow. Meanwhile,{" "}
             <Link href="/teens/higher-wage" className="text-orange underline underline-offset-4">
               Higher Wage
             </Link>{" "}
@@ -209,7 +209,7 @@ export default function NeverHeardGame() {
           </p>
         ) : error ? (
           <p className="font-body text-cream/70 text-center mt-10">
-            Something dropped — refresh to try again.
+            Something dropped. Refresh to try again.
           </p>
         ) : !daily || !state ? (
           <p className="font-heading text-xs tracking-[0.3em] uppercase text-cream/40 text-center mt-10">
@@ -258,7 +258,7 @@ export default function NeverHeardGame() {
             </form>
             {miss && (
               <p className="font-body text-sm text-orange mt-3 text-center">
-                Not it — here&rsquo;s another clue.
+                Not it. Here&rsquo;s another clue.
               </p>
             )}
             <button

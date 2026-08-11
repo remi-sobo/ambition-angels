@@ -23,7 +23,7 @@ export default function HostClient() {
       </h1>
       <p className="font-body text-cream/60 mt-5 max-w-md text-center">
         You get a room code for the screen. Students join from their own phones. At the end,
-        every student&rsquo;s deck lands in your inbox in one email — with a conversation
+        every student&rsquo;s deck lands in your inbox in one email, with a conversation
         starter for each of them.
       </p>
       <form
@@ -57,7 +57,7 @@ export default function HostClient() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="your@email.com — the decks go here"
+          placeholder="your@email.com (the decks go here)"
           className="w-full bg-transparent border border-cream/25 focus:border-orange outline-none rounded-full px-6 py-4 font-body text-cream placeholder:text-cream/25"
         />
         <button

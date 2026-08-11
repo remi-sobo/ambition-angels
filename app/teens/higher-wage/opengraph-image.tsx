@@ -74,7 +74,7 @@ export default function Image() {
           </div>
         </div>
         <div style={{ display: "flex", fontSize: 26, color: "rgba(250,250,248,0.5)", marginTop: 40 }}>
-          Real jobs, real pay · free, no sign-up · ambitionangels.org/teens
+          Real jobs, real pay · free · ambitionangels.org/teens
         </div>
       </div>
     ),

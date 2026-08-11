@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/the-app", label: "The Platform" },
   { href: "/curriculum", label: "Careers" },
   { href: "/impact", label: "Impact" },
+  { href: "/teens", label: "For Teens" },
   { href: "/schools", label: "For Schools & Programs" },
 ];
 

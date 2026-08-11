@@ -186,7 +186,7 @@ export default function HigherWageGame() {
             >
               Play
             </button>
-            <p className="font-body text-sm text-cream/40 mt-4">No sign-up. No email.</p>
+            <p className="font-body text-sm text-cream/40 mt-4">Free. Real government pay data.</p>
           </div>
         ) : phase.name === "stocking" ? (
           <div className="text-center max-w-sm">

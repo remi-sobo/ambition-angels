@@ -7,10 +7,12 @@ export const metadata: Metadata = {
     "Career exposure is what breaks the cycle of poverty. Here is the data behind the Ambition Angels model.",
 };
 
+// Exposure numbers only — the one future-orientation stat on this page is
+// the big 14% card below, so it lands once, with its full story.
 const stats = [
   { num: "3,500", sup: "+", label: "Teens reached" },
   { num: "36", sup: "", label: "School and nonprofit partners" },
-  { num: "14", sup: "%", label: "Increase in future orientation" },
+  { num: "74", sup: "%", label: "Start a second internship" },
   { num: "1,100", sup: "+", label: "Hours of career exploration delivered" },
 ];
 
@@ -28,28 +30,28 @@ const gapFacts = [
     source: "OECD Career Readiness Research · 2021",
   },
   {
-    num: "11%",
-    title: "Traditional programs never reach them.",
-    body: "Only 11% of teens attend after-school programming. The systems built to help them have never been able to reach them at scale.",
-    source: "After School Matters · National Survey Data",
+    num: "< 5",
+    title: "Most teens have seen fewer than five careers.",
+    body: "Usually whatever their parents do. The world has thousands of paths, and the teens with the least access to networks see the fewest of them.",
+    source: "",
   },
 ];
 
 const howWeRespond = [
   {
     num: "01",
-    title: "The phone",
-    body: "95% of teens own a smartphone and spend 8 hours a day on it. We stopped fighting that and started building for it. The Ambition App lives where teens already live.",
-  },
-  {
-    num: "02",
     title: "Real career exposure",
     body: "30-day simulated internships in real careers. 15 minutes a day. Students pick their path, build real skills, and see what a career actually feels like before they have to choose one.",
   },
   {
+    num: "02",
+    title: "In the classroom and in their pocket",
+    body: "On the web during class or program time — every student in the room, on the computers they already use. On the phone everywhere else. Same internship either way, so exposure doesn't stop at the bell.",
+  },
+  {
     num: "03",
     title: "A trusted adult in the room",
-    body: "The teens who shift their career thinking are almost always connected to an adult who knows they are doing it. We equip parents, counselors, and mentors to be that person — even if no one ever did it for them.",
+    body: "The teens who shift their career thinking are almost always connected to an adult who knows they are doing it. We equip teachers, counselors, mentors, and parents to be that person — even if no one ever did it for them.",
   },
 ];
 
@@ -100,17 +102,9 @@ const research = [
   },
 ];
 
+// Exposure measures lead; future orientation gets one card, matching the
+// one FO stat the page carries.
 const measures = [
-  {
-    tag: "Future Orientation Score",
-    title: "Future Orientation",
-    body: "Can a teen envision a future for themselves? Do they believe they have choices? Do they feel agency over where their life goes?",
-  },
-  {
-    tag: "Future Orientation Score",
-    title: "Action Orientation",
-    body: "One element within the FOS and our strongest result. Is a teen taking concrete steps toward a future they can see? Measured across 1,000+ teens, this is where we saw our biggest gain.",
-  },
   {
     tag: "Career Exposure",
     title: "Exploration Breadth",
@@ -120,6 +114,11 @@ const measures = [
     tag: "Career Exposure",
     title: "Career Conversation Quality",
     body: "Are teens talking to adults about their futures? Mentorship and career conversations are independently proven to improve labor market outcomes.",
+  },
+  {
+    tag: "The Outcome",
+    title: "Future Orientation",
+    body: "Can a teen envision a future for themselves — and are they taking concrete steps toward it? That action piece is our strongest result: the 14% gain measured across 1,000+ teens.",
   },
 ];
 
@@ -352,7 +351,7 @@ export default function ImpactPage() {
           <p className="text-gray-warm text-base leading-relaxed max-w-xl mb-10">
             Two areas. One question: does this program put teens on a different economic trajectory?
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 fade-up stagger-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 fade-up stagger-1">
             {measures.map((m) => (
               <div
                 key={m.title}

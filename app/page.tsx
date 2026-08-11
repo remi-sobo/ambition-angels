@@ -327,11 +327,16 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Dashboard mockup full width, phone beside it */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 items-end mb-12 fade-up">
-            <DashboardMockup />
-            <div className="hidden lg:block scale-[0.62] origin-bottom -my-24">
-              <IPhoneMockup />
+          {/* Dashboard laptop with the teen's phone tucked right beside it.
+              IPhoneMockup keeps its full 280×570 layout box when scaled, so
+              it sits in a wrapper sized to the scaled result, base lifted to
+              the laptop's base (above the caption line). */}
+          <div className="flex justify-center items-end gap-6 lg:gap-10 mb-12 fade-up">
+            <DashboardMockup className="w-full max-w-3xl min-w-0" />
+            <div className="hidden md:block relative flex-shrink-0" style={{ width: 168, height: 372 }}>
+              <div className="absolute bottom-[30px] left-0 origin-bottom-left scale-[0.6]">
+                <IPhoneMockup />
+              </div>
             </div>
           </div>
 

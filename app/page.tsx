@@ -329,7 +329,7 @@ export default function Home() {
 
           {/* Dashboard mockup full width, phone beside it */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 items-end mb-12 fade-up">
-            <DashboardMockup frame="group" />
+            <DashboardMockup />
             <div className="hidden lg:block scale-[0.62] origin-bottom -my-24">
               <IPhoneMockup />
             </div>

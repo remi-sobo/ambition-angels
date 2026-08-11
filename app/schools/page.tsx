@@ -132,7 +132,7 @@ export default function SchoolsPage() {
         }}
       >
         <div className="container-site relative z-10">
-          <div className="max-w-3xl">
+          <div className="max-w-3xl mb-12">
             <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
               What Your Students Get
             </p>
@@ -143,6 +143,20 @@ export default function SchoolsPage() {
               By the end of the year they have tried on four careers they had never seen up close, and they can tell you what each one pays and what the path in looks like.
             </p>
           </div>
+
+          {/* The student experience on the computers they already use */}
+          <figure className="max-w-4xl mx-auto">
+            <Image
+              src="/images/student-web-mockup.png"
+              alt="Student dashboard on a laptop: a 30-day entrepreneurship internship in progress, with today's work, skill growth, and what the student is building"
+              width={1536}
+              height={1024}
+              className="w-full h-auto"
+            />
+            <figcaption className="mt-3 text-center text-xs text-gray-mid/70">
+              The student view on a school Chromebook — sample data shown for illustration.
+            </figcaption>
+          </figure>
         </div>
       </section>
 
@@ -158,7 +172,7 @@ export default function SchoolsPage() {
             </h2>
           </div>
 
-          <DashboardMockup frame="school" className="max-w-4xl mx-auto mb-12 fade-up" />
+          <DashboardMockup className="max-w-4xl mx-auto mb-12 fade-up" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
             {adultFeatures.map((f) => (

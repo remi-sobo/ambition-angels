@@ -1145,6 +1145,28 @@ do $$ begin
 exception when insufficient_privilege then null; -- expected
 end $$;
 
+-- ════ Daily calendar (create_game_daily.sql) ══════════════════════════════
+-- Tomorrow's scheduled job is a spoiler; service-path only, both roles.
+reset role;
+reset request.jwt.claim.sub;
+insert into game_daily (game, day, soc_code) values ('nhoi', '2099-01-01', '29-2055')
+on conflict (game, day) do nothing;
+
+set role anon;
+do $$ begin
+  perform count(*) from game_daily;
+  raise exception 'LEAK: anon reads game_daily (future dailies) directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  perform count(*) from game_daily;
+  raise exception 'LEAK: owner session reads game_daily directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

@@ -27,6 +27,7 @@ const TEEN_GAMES: { name: string; tag: string; blurb: string; href?: string }[] 
     name: "Never Heard of It",
     tag: "Ages 14-18",
     blurb: "One mystery career a day, eight clues to name it. Same job for everyone, everywhere.",
+    href: "/teens/never-heard-of-it",
   },
   {
     name: "The Cut",

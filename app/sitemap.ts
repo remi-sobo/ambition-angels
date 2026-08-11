@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/teens", priority: 0.7 },
     { path: "/teens/built-for", priority: 0.6 },
     { path: "/teens/higher-wage", priority: 0.6 },
+    { path: "/teens/never-heard-of-it", priority: 0.6 },
   ];
 
   return [

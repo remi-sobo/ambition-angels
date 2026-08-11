@@ -46,6 +46,10 @@ export default async function CareersPage() {
         <Link href="/admin/careers/pool" className="underline underline-offset-2">
           Play Pool
         </Link>
+        ; the mystery-job-of-the-day schedule lives in the{" "}
+        <Link href="/admin/careers/daily" className="underline underline-offset-2">
+          Daily Calendar
+        </Link>
         .
       </p>
 

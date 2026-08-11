@@ -209,6 +209,7 @@ ordered=(
   hubspot_backfill_constituent_names.sql
   create_game_pool.sql
   create_cut_rooms.sql
+  create_game_daily.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

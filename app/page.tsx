@@ -355,7 +355,7 @@ export default function Home() {
               See the dashboard
             </Link>
             <Link
-              href="/for-adults#waitlist"
+              href="/schools#guides"
               className="inline-flex items-center bg-ink/[0.06] hover:bg-ink/[0.12] text-ink border border-ink/15 font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px]"
             >
               Sign up as a Guide

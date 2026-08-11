@@ -340,7 +340,7 @@ export default function TheAppPage() {
             <div className="flex flex-wrap gap-4 justify-center items-center">
               <AppStoreButtons variant="pill" theme="light" source="the_app_solo_path" />
               <Link
-                href="/for-adults"
+                href="/schools#guides"
                 className="bg-transparent hover:bg-ink/5 text-ink font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px] inline-flex items-center border border-ink/20"
               >
                 Sign up as a Guide

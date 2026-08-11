@@ -9,7 +9,6 @@ const footerLinks = [
   { href: "/curriculum", label: "Careers" },
   { href: "/impact", label: "Impact" },
   { href: "/schools", label: "For Schools & Programs" },
-  { href: "/for-adults", label: "For Guides" },
   { href: "/donate", label: "Donate" },
 ];
 

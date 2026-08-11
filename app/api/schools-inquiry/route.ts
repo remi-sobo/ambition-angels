@@ -25,7 +25,7 @@ function kindForSetting(setting: string): "school" | "nonprofit" | "other" {
   if (setting.startsWith("High school") || setting.startsWith("Community college")) {
     return "school";
   }
-  if (setting === "Other") return "other";
+  if (setting === "Other" || setting === "Individual mentor or parent") return "other";
   return "nonprofit";
 }
 

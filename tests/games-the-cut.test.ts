@@ -88,7 +88,7 @@ describe("room lifecycle", () => {
   });
 
   test("a right plurality keeps lives; wrong or silent rounds cost one", () => {
-    let state = newRoomState(board, seeded(7));
+    const state = newRoomState(board, seeded(7));
     const rule = RULES.find((r) => r.id === state.deck[0])!;
     const correct = rule.pick(standing(state)).soc_code;
     const wrong = standing(state).find((c) => c.soc_code !== correct)!.soc_code;

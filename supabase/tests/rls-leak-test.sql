@@ -1101,6 +1101,50 @@ do $$ begin
 exception when insufficient_privilege then null; -- expected
 end $$;
 
+-- ════ The Cut rooms (create_cut_rooms.sql) ════════════════════════════════
+-- Room state holds the answer key (the un-cut careers' stats) and the host
+-- token; votes are per-phone rows. Service-path only, both roles.
+reset role;
+reset request.jwt.claim.sub;
+insert into cut_rooms (room_code, state) values ('LKT1', '{"careers":[]}'::jsonb)
+on conflict (room_code) do nothing;
+insert into cut_players (room_id, voter_id)
+select id, 'leak-test-voter' from cut_rooms where room_code = 'LKT1'
+on conflict do nothing;
+insert into cut_votes (room_id, round, voter_id, soc_code)
+select id, 0, 'leak-test-voter', '29-2055' from cut_rooms where room_code = 'LKT1'
+on conflict do nothing;
+
+set role anon;
+do $$ begin
+  perform count(*) from cut_rooms;
+  raise exception 'LEAK: anon reads cut_rooms (host tokens + answer key) directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
+do $$ begin
+  perform count(*) from cut_players;
+  raise exception 'LEAK: anon reads cut_players directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
+do $$ begin
+  perform count(*) from cut_votes;
+  raise exception 'LEAK: anon reads cut_votes directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  perform count(*) from cut_rooms;
+  raise exception 'LEAK: owner session reads cut_rooms directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+do $$ begin
+  perform count(*) from cut_votes;
+  raise exception 'LEAK: owner session reads cut_votes directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

@@ -63,22 +63,22 @@ export default function FounderPage() {
               </p>
               <div className="space-y-5 text-gray-warm leading-relaxed text-base lg:text-lg">
                 <p>
-                  Born into a family dedicated to social justice and community service, Remi inherited a passion for youth development from his parents in Portland, Oregon. Their nonprofit work instilled in him a deep commitment to showing up for young people who had not had enough people in their corner.
+                  Remi&apos;s parents ran youth nonprofits in Portland, Oregon. He grew up inside the work, watching what it took to show up for young people nobody else was showing up for.
                 </p>
                 <p>
-                  That desire to understand and address the barriers facing Black youth led Remi to Stanford University, where he sought to uncover root causes and equip himself with the tools to create lasting change.
+                  He went to Stanford to understand why the barriers facing Black youth were so hard to move, and to get the tools to move them.
                 </p>
                 <p>
-                  After graduating, he moved from Stanford to East Palo Alto and got directly to work, leading in schools and nonprofits, building relationships, and trying to replicate what had worked for him. Youth development is not just a profession for Remi. It is a way of life.
+                  After graduating, he moved from Stanford to East Palo Alto and got directly to work, leading in schools and nonprofits, building relationships, and trying to replicate what had worked for him.
                 </p>
                 <p>
-                  He sees boundless potential in young people and works to provide the resources and support they need to grow academically, professionally, and as full human beings.
+                  He builds what young people need to get somewhere: the exposure, the support, and an adult who keeps asking.
                 </p>
                 <p>
                   That same care carries into his personal life. Remi and his wife Kendra homeschool their two children in East Palo Alto, where they stay deeply rooted in the community he serves.
                 </p>
                 <p>
-                  His vision is simple: every young person, regardless of where they start, should have the tools and support to reach their full potential. Through direct service, innovative technology, and a commitment to dismantling the barriers that create inequity, that is exactly what he is building.
+                  Every young person should be able to see what is possible for them, no matter where they start. That is the whole thing he is building toward.
                 </p>
               </div>
             </div>

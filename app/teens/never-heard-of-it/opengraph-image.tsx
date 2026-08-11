@@ -3,7 +3,7 @@ import { ImageResponse } from "next/og";
 // Share card for Never Heard of It — the squares ARE the brand of a
 // daily guessing game, so they carry the image.
 export const runtime = "edge";
-export const alt = "Never Heard of It — one mystery career a day, eight clues to name it";
+export const alt = "Never Heard of It: one mystery career a day, eight clues to name it";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

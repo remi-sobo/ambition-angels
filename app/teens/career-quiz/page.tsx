@@ -3,9 +3,9 @@ import Link from "next/link";
 import CareerQuiz from "@/components/CareerQuiz";
 
 export const metadata: Metadata = {
-  title: "Your Top 10 — The Career Quiz",
+  title: "Your Top 10 · The Career Quiz",
   description:
-    "15 questions, about 3 minutes. Get 10 careers matched to how you actually work — with real pay for where you live.",
+    "15 questions, about 3 minutes. Get 10 careers matched to how you actually work, with real pay for where you live.",
 };
 
 // The teen-facing home of the career quiz (ages 14–18). The same quiz runs
@@ -30,7 +30,7 @@ export default function CareerQuizPage() {
             Your top <span className="text-orange">10 careers.</span>
           </h1>
           <p className="text-gray-mid text-lg leading-relaxed max-w-xl">
-            15 questions about how you actually work — what you&apos;re into, what people come to you for, what a good day looks like. You get 10 careers matched to you, with real pay for where you live.
+            15 questions about how you actually work: what you&apos;re into, what people come to you for, what a good day looks like. You get 10 careers matched to you, with real pay for where you live.
           </p>
         </div>
       </section>

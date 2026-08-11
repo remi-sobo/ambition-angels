@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import RoomScreen from "./RoomScreen";
 
 export const metadata: Metadata = {
-  title: "Room — What Are You Built For",
+  title: "Room · What Are You Built For",
   robots: { index: false, follow: false },
 };
 

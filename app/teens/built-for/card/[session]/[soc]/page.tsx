@@ -8,7 +8,7 @@ import CardClient from "./CardClient";
 // server until tapped for (/api/ms/reveal, D8) — the answer never sits in
 // the HTML for a kid to scroll to.
 export const metadata: Metadata = {
-  title: "The Card — What Are You Built For",
+  title: "The Card · What Are You Built For",
   robots: { index: false, follow: false },
 };
 export const dynamic = "force-dynamic";

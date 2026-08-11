@@ -26,7 +26,7 @@ export default function Footer() {
             Fund a teen&apos;s first internship.<br className="hidden lg:block" /> Watch what happens next.
           </h2>
           <p className="text-white/80 text-lg mb-8 max-w-prose mx-auto">
-            Become an Angel investor in a teen&apos;s future before the world knows their name.
+            Back a teen&apos;s first internship before anyone else has.
           </p>
           <DonateButton className="inline-flex items-center bg-white text-orange font-semibold text-base px-8 py-4 rounded-full hover:bg-orange-light transition-colors min-h-[52px]">
             Become an Angel
@@ -50,10 +50,8 @@ export default function Footer() {
               />
             </Link>
             <p className="text-gray-mid text-sm leading-relaxed mb-4">
-              We envision a future where all teens experience greater wealth,
-              health, and life satisfaction as they grow into adults. At Ambition
-              Angels, we have the potential to alter the course of an entire
-              generation for good.
+              Every teen should be able to see what is possible for them and
+              know how to get there. That is the whole job.
             </p>
             <div className="flex gap-2 -ml-2">
               <a

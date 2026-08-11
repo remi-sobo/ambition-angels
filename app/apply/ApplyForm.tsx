@@ -87,7 +87,7 @@ export default function ApplyForm({ cohorts }: { cohorts: OpenCohort[] }) {
           <label className={labelClass}>Program</label>
           <div className="relative">
             <select name="cohort_id" value={form.cohort_id} onChange={handleChange} className={selectClass}>
-              <option value="">General interest — match me to a program</option>
+              <option value="">General interest: match me to a program</option>
               {cohorts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-mid text-xs">▾</div>
@@ -146,7 +146,7 @@ export default function ApplyForm({ cohorts }: { cohorts: OpenCohort[] }) {
 
       <div>
         <label className={labelClass}>Why do you want to join?</label>
-        <textarea name="motivation" value={form.motivation} onChange={handleChange} rows={4} placeholder="A sentence or two is perfect — what are you excited about?" className={inputClass} />
+        <textarea name="motivation" value={form.motivation} onChange={handleChange} rows={4} placeholder="A sentence or two is perfect. What are you excited about?" className={inputClass} />
       </div>
 
       <div>

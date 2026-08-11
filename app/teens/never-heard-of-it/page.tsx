@@ -7,7 +7,7 @@ import NeverHeardGame from "./NeverHeardGame";
 export const metadata: Metadata = {
   title: "Never Heard of It — Ambition Angels",
   description:
-    "One mystery career a day. Eight clues to name it. Same job for everyone, everywhere. No sign-up.",
+    "One mystery career a day. Eight clues to name it. Same job for everyone, everywhere.",
 };
 
 export default function NeverHeardOfItPage() {

@@ -43,7 +43,7 @@ Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + auth), S
 - Public-site content is static in page files or `lib/` (e.g. `lib/internships.ts`, `lib/donors.ts`). Content changes require code edits.
 - Admin + meet data lives in Supabase (`lib/supabase/*`, types in `lib/database.types.ts`).
 
-**Career library (`/teens/built-for` groundwork, specs/ms-career-library-v2.md):** `ms_occupations` (imported O*NET RIASEC + BLS pay, `scripts/import-onet.ts`) + `ms_cards` (Claude-drafted, machine-gated, human-approved content) behind `/admin/careers`. Core logic in `lib/ms/` (deterministic RIASEC scorer, gates, rendered pay/education clues). Only `status = 'approved'` rows reach the public `ms_catalog` view, which never exposes `title` or `clue_8`. Approval is a human click, never code.
+**Career library (`/teens/built-for` groundwork, specs/ms-career-library-v2.md):** `ms_occupations` (imported O*NET RIASEC + BLS pay, `scripts/import-onet.ts`) + `ms_cards` (Claude-drafted, machine-gated, human-approved content) behind `/admin/careers`. Core logic in `lib/ms/` (deterministic RIASEC scorer, gates, rendered pay/education clues). Only `status = 'approved'` rows reach the public `ms_catalog` view, which never exposes `title` or `clue_8`. Approval is a human click, never code. The teen games add a second, separate gate: `game_pool` (specs/teen-games-v1.md, reviewed at `/admin/careers/pool`, rules in `lib/games/pool.ts`) — an occupation is not playable in Higher Wage / Never Heard of It / The Cut until a human flips it eligible there and approves its one-line reveal.
 
 **Key API routes (public):**
 - `app/api/career-match/route.ts` — Claude-powered career matching (model `claude-sonnet-4-6`). Requires `ANTHROPIC_API_KEY`.

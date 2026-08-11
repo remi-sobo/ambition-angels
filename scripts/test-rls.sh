@@ -207,6 +207,7 @@ ordered=(
   add_documents_notes.sql
   hs_sync_jobs_add_totals.sql
   hubspot_backfill_constituent_names.sql
+  create_game_pool.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

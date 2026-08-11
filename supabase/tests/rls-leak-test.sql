@@ -1072,4 +1072,36 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+-- ════ Teen games play pool (create_game_pool.sql) ═════════════════════════
+-- Service-path only, same as the ms_ base tables: the games read the pool
+-- through /api/games/* route handlers, never from the client. Also prove
+-- the eligible-requires-approval constraint holds: no row goes eligible
+-- without a reveal line and a human stamp.
+insert into game_pool (soc_code) values ('29-2055')
+on conflict (soc_code) do nothing;
+
+do $$ begin
+  update game_pool set eligible = true where soc_code = '29-2055';
+  raise exception 'game_pool accepted eligible without approval (constraint missing)';
+exception when check_violation then null; -- expected
+end $$;
+
+set role anon;
+do $$ begin
+  perform count(*) from game_pool;
+  raise exception 'LEAK: anon reads game_pool directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  perform count(*) from game_pool;
+  raise exception 'LEAK: owner session reads game_pool directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

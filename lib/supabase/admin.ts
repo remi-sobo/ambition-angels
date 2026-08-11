@@ -18,6 +18,14 @@ export function getSupabaseAdmin(): SupabaseClient {
   }
   cached = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      // Next patches global fetch and will happily persist supabase GET
+      // responses in its data cache, which served a stale daily/pool read
+      // from a route handler. Service-role reads must always be live —
+      // an admin approving a career or scheduling a daily takes effect
+      // now, not at the next deploy.
+      fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
+    },
   });
   return cached;
 }

@@ -47,7 +47,7 @@ const tiers = [
     amount: "$50,000",
     name: "Student Access Partner",
     description:
-      "Funds the Ambition Fund, the partner-directed reward pot for the highest-need teens, the ones whose partners serve them without an existing support system.",
+      "Funds directed rewards and recognition for the partners whose teens need them most — built with each partner, in the conversation, not on the site.",
     highlight: false,
   },
   {

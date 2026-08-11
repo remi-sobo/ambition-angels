@@ -172,7 +172,7 @@ export default function DonatePage() {
                 Why This Matters
               </p>
               <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6 leading-tight">
-                Only 11% of teens attend after-school programs. 95% have a smartphone.
+                Most teens have seen fewer than five careers. Usually whatever their parents do.
               </h2>
               <div className="space-y-4 text-gray-warm leading-relaxed">
                 <p>

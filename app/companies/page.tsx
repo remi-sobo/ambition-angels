@@ -223,7 +223,7 @@ export default function CompaniesPage() {
                 Show the next generation where work is going.
               </h1>
               <p className="text-gray-mid text-lg leading-relaxed mb-10 max-w-lg">
-                The workforce is changing fast, and the teens furthest from opportunity are usually the last to find out. We close that gap with 30-day simulated career internships on the phones every teen already has. The research is clear: a teen with real career exposure is more than twice as likely to be employed than one without it. Be part of making sure the next generation has what they need.
+                The workforce is changing fast, and the teens furthest from opportunity are usually the last to find out. We close that gap with 30-day simulated career internships — in the classroom on the web, in their pocket on the phone. The research is clear: a teen with real career exposure is more than twice as likely to be employed than one without it. Be part of making sure the next generation has what they need.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <a
@@ -296,7 +296,7 @@ export default function CompaniesPage() {
               The work your industry does is changing fast. New roles, new tools, new ways of working, most of it lives inside companies and never reaches the teens deciding what to study or who to become. The teens furthest from opportunity feel that gap the most. They&apos;re the last to find out where the workforce is going, and by the time they do, the paths are already crowded.
             </p>
             <p className="text-gray-warm text-lg leading-relaxed">
-              Career exposure closes the gap. The research is clear: a teen with structured exposure to careers is more than twice as likely to be employed than peers without it. We deliver that exposure at scale, through the phones teens already have, in the industries your company actually operates in. You can be part of making sure the next generation has what they need to succeed in a workforce that won&apos;t sit still.
+              Career exposure closes the gap. The research is clear: a teen with structured exposure to careers is more than twice as likely to be employed than peers without it. We deliver that exposure at scale — in classrooms and programs on the web, on the phone everywhere else — in the industries your company actually operates in. You can be part of making sure the next generation has what they need to succeed in a workforce that won&apos;t sit still.
             </p>
           </div>
         </div>
@@ -434,7 +434,7 @@ export default function CompaniesPage() {
               Career tracks built one at a time.
             </h2>
             <p className="text-gray-mid text-lg leading-relaxed">
-              Each Ambition internship is a 30-day immersion in one career path: 20 videos, 10 quizzes, 10 hands-on activities, designed for 15 minutes a day on a phone. Sponsor an existing track or co-create a new one from your team&apos;s session.
+              Each Ambition internship is a 30-day immersion in one career path: 20 videos, 10 quizzes, 10 hands-on activities, designed for 15 minutes a day. Sponsor an existing track or co-create a new one from your team&apos;s session.
             </p>
           </div>
 

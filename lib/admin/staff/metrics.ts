@@ -22,9 +22,9 @@ export type StaffMetricMeta = { label: string; unit: string; direction: "up" | "
 /** Curated keys a person can bind a KPI to. All resolve org-scoped from the spine. */
 export const STAFF_METRIC_META: Record<string, StaffMetricMeta> = {
   cash_runway_months: { label: "Months of runway", unit: "months", direction: "up" },
-  dollars_raised_fy26: { label: "Dollars raised (FY26)", unit: "usd", direction: "up" },
-  weighted_pipeline_fy26: { label: "Weighted pipeline (FY26)", unit: "usd", direction: "up" },
-  corporate_raised: { label: "Corporate raised (FY26)", unit: "usd", direction: "up" },
+  dollars_raised_fy26: { label: "Dollars raised (fiscal year)", unit: "usd", direction: "up" },
+  weighted_pipeline_fy26: { label: "Weighted pipeline (fiscal year)", unit: "usd", direction: "up" },
+  corporate_raised: { label: "Corporate raised (fiscal year)", unit: "usd", direction: "up" },
   grants_submitted_ytd: { label: "Grants submitted (YTD)", unit: "count", direction: "up" },
   donor_updates_sent_ytd: { label: "Donor updates sent (YTD)", unit: "count", direction: "up" },
   active_teens: { label: "Active teens", unit: "count", direction: "up" },

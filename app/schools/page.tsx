@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import AppStoreButtons from "@/components/AppStoreButtons";
 import DashboardMockup from "@/components/DashboardMockup";
 import SchoolsInquiryForm from "@/components/SchoolsInquiryForm";
 
@@ -189,6 +190,33 @@ export default function SchoolsPage() {
             </h2>
             <p className="text-gray-warm text-lg leading-relaxed">
               Students who have moved through real careers show up with actual questions instead of a blank stare. Your counselors do less explaining and more advising.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ONE TEEN OR A SMALL GROUP — the individual guide mention */}
+      <section id="guides" className="section-pad bg-[#F5F4F0] scroll-mt-24">
+        <div className="container-site">
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
+              One Teen or a Small Group?
+            </p>
+            <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink tracking-tight leading-tight mb-6">
+              You don&apos;t need a building to run this.
+            </h2>
+            <p className="text-gray-warm text-lg leading-relaxed mb-8">
+              Parents and individual mentors use Ambition with one teen or a handful. The teen downloads the app and starts today — free, same internships, same thirty days. You sign up as a Guide and get the same dashboard: their progress, and conversation prompts tied to the internship they&apos;re in right now.
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center items-center">
+              <AppStoreButtons variant="pill" theme="light" source="schools_guides" />
+            </div>
+            <p className="text-gray-warm text-sm mt-6">
+              Want Guide access?{" "}
+              <a href="#start" className="text-orange font-semibold hover:text-orange-dark transition-colors">
+                Tell us about your teen below
+              </a>{" "}
+              and pick &ldquo;Individual mentor or parent.&rdquo;
             </p>
           </div>
         </div>

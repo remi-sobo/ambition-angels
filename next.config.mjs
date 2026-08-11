@@ -22,6 +22,10 @@ const nextConfig = {
       // path. Query strings (?room=, ?host=) survive the hop automatically.
       { source: "/ms", destination: "/teens", permanent: true },
       { source: "/ms/:path*", destination: "/teens/built-for/:path*", permanent: true },
+      // /for-adults folded into /schools (website build plan v3 follow-up):
+      // parent/mentor content is now a section there, so old Guide links
+      // land on the page that replaced it.
+      { source: "/for-adults", destination: "/schools", permanent: true },
     ];
   },
   async rewrites() {

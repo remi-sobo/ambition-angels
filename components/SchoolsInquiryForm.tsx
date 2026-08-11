@@ -15,10 +15,11 @@ const SETTINGS = [
   "Mentoring program",
   "Juvenile justice program",
   "Faith community",
+  "Individual mentor or parent",
   "Other",
 ];
 
-const STUDENT_COUNTS = ["Under 25", "25–100", "100–500", "500+"];
+const STUDENT_COUNTS = ["1–5", "Under 25", "25–100", "100–500", "500+"];
 
 export default function SchoolsInquiryForm() {
   const [form, setForm] = useState({

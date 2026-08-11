@@ -44,7 +44,7 @@ export default function HostClient() {
               setError(data.error ?? "Something went wrong");
               return;
             }
-            router.push(`/ms/room/${data.roomCode}?host=${data.hostToken}`);
+            router.push(`/teens/built-for/room/${data.roomCode}?host=${data.hostToken}`);
           } catch {
             setError("Something went wrong");
           } finally {

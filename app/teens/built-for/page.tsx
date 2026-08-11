@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import JoinRoom from "./JoinRoom";
 
-// /ms landing (specs/ms-career-game.md): one screen, one button, no
-// marketing. Live and public but not in site nav — shareable by link only,
-// so noindex like the other unlinked outreach pages.
+// Built For landing (specs/ms-career-game.md): one screen, one button, no
+// marketing. Lives under the /teens games hub; indexable now that the hub is
+// a share-driven public surface (specs/c1d2c9e2-teengamesv1 locked decision
+// 6). Session, room, and facilitator screens below stay noindex.
 export const metadata: Metadata = {
   title: "What Are You Built For — Ambition Angels",
   description: "An 8-minute career game for middle schoolers. No sign-up, no email.",
-  robots: { index: false, follow: false },
 };
 
 export default function MsLandingPage() {
@@ -32,7 +32,7 @@ export default function MsLandingPage() {
           actually work.
         </p>
         <Link
-          href="/ms/assess"
+          href="/teens/built-for/assess"
           className="mt-10 inline-block bg-orange hover:bg-orange-dark transition-colors text-white font-heading font-semibold text-lg px-12 py-4 rounded-full"
         >
           Start
@@ -42,7 +42,7 @@ export default function MsLandingPage() {
         </p>
         <JoinRoom />
         <Link
-          href="/ms/deck"
+          href="/teens/built-for/deck"
           className="font-body text-sm text-cream/50 hover:text-cream underline underline-offset-4 mt-6"
         >
           Played before? Open your deck

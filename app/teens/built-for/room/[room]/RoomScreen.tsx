@@ -90,7 +90,7 @@ export default function RoomScreen({
     >
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">
         <p className="font-heading text-sm tracking-[0.35em] uppercase text-cream/50">
-          ambitionangels.org/ms &middot; tap &ldquo;I have a room code&rdquo;
+          ambitionangels.org/teens &middot; tap &ldquo;I have a room code&rdquo;
         </p>
         <h1 className="font-display text-[7rem] sm:text-[11rem] leading-none tracking-[0.15em] text-orange mt-2">
           {state?.roomCode ?? roomCode.toUpperCase()}

@@ -7,12 +7,22 @@ const nextConfig = {
     // in-flight POSTs from a stale PWA shell survive the hop. Host-matched:
     // the app host itself, previews, and localhost are untouched. This stays
     // forever (links in sent email never die).
-    return ["www.ambitionangels.org", "ambitionangels.org"].map((host) => ({
-      source: "/admin/:path*",
-      has: [{ type: "host", value: host }],
-      destination: "https://app.bloomos.org/admin/:path*",
-      permanent: true,
-    }));
+    return [
+      ...["www.ambitionangels.org", "ambitionangels.org"].map((host) => ({
+        source: "/admin/:path*",
+        has: [{ type: "host", value: host }],
+        destination: "https://app.bloomos.org/admin/:path*",
+        permanent: true,
+      })),
+      // /ms → /teens (specs/c1d2c9e2-teengamesv1): the middle-school game
+      // moved under the /teens games hub. Permanent (308) so every card,
+      // flyer, and deck email already in circulation keeps working — the
+      // bare route lands on the hub, deep links (deck codes, live room
+      // screens, mid-session results) land on the same page at its new
+      // path. Query strings (?room=, ?host=) survive the hop automatically.
+      { source: "/ms", destination: "/teens", permanent: true },
+      { source: "/ms/:path*", destination: "/teens/built-for/:path*", permanent: true },
+    ];
   },
   async rewrites() {
     return [

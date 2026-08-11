@@ -64,7 +64,7 @@ export default function RoomBanner({
             the clues out loud.
           </p>
           <Link
-            href={`/ms/card/${sessionId}/${you.socCode}`}
+            href={`/teens/built-for/card/${sessionId}/${you.socCode}`}
             className="inline-block mt-3 bg-orange hover:bg-orange-dark transition-colors text-white font-heading font-semibold px-8 py-3 rounded-full"
           >
             Open my round card

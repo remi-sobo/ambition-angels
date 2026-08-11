@@ -77,7 +77,7 @@ export default async function DeckPage({ params }: { params: { code: string } })
               Go back to your list and take a career all the way to the answer — it lands here.
             </p>
             <Link
-              href={`/ms/results/${session.id}`}
+              href={`/teens/built-for/results/${session.id}`}
               className="inline-block mt-5 bg-orange hover:bg-orange-dark transition-colors text-white font-heading font-semibold px-8 py-3 rounded-full"
             >
               Back to your list
@@ -101,7 +101,7 @@ export default async function DeckPage({ params }: { params: { code: string } })
             </div>
             <div className="mt-4">
               <Link
-                href={`/ms/results/${session.id}`}
+                href={`/teens/built-for/results/${session.id}`}
                 className="font-body text-sm text-cream/50 hover:text-cream transition-colors"
               >
                 &larr; Back to your ranked list — there&rsquo;s more to explore

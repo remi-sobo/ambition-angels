@@ -180,7 +180,7 @@ export default function CardClient({
         </div>
         <div className="px-6 pb-10 text-center">
           <Link
-            href={`/ms/results/${sessionId}`}
+            href={`/teens/built-for/results/${sessionId}`}
             className="inline-block bg-white text-orange font-heading font-semibold px-10 py-4 rounded-full hover:bg-cream transition-colors"
           >
             Back to your list

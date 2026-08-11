@@ -20,7 +20,7 @@ Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + auth), S
 
 ## Architecture
 
-**App Router** — all routes live under `app/`. The root layout (`app/layout.tsx`) wraps pages with `<Nav>` and `<Footer>` via `components/SiteChrome.tsx`, which skips that chrome for standalone routes (`/admin`, `/ygb`, `/shannon`, `/strategy`, `/update/koshland`).
+**App Router** — all routes live under `app/`. The root layout (`app/layout.tsx`) wraps pages with `<Nav>` and `<Footer>` via `components/SiteChrome.tsx`, which skips that chrome for standalone routes (`/admin`, `/teens`, `/ygb`, `/shannon`, `/strategy`, `/update/koshland`).
 
 **Public pages:**
 - `/` — homepage (client component; `IntersectionObserver` drives `.fade-up` animations)
@@ -34,7 +34,8 @@ Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + auth), S
 - `/companies`, `/program-partners` — outreach pages (noindex, not linked from nav)
 - `/update` — investor update (not linked from nav)
 - `/meet` — meeting scheduler backed by Supabase (`meeting_types`, bookings)
-- `/ms` — "What Are You Built For," the middle-school career game (specs/ms-career-game.md + amendments; noindex, standalone chrome, shareable by link only). Solo: landing → 30-item tap-only wizard (`/ms/assess`) → deterministic RIASEC ranking (`/ms/results/[session]`) → card play (`/ms/card/[session]/[soc]`) → permanent no-login deck by 6-char claim code (`/ms/deck/[code]`). Group: `/ms/host` opens a room, `/ms/room/[room]` is the projected screen, students join by 4-char room code. APIs under `app/api/ms/*` (session, reveal, deliver, room). Hard rules: no student email/name anywhere (auto handles), no LLM in the matching path, card `title`/`clue_8` only via the reveal route (which writes `clues_used`), AI live only for the results summary + facilitator prompts.
+- `/teens` — the games hub (specs/c1d2c9e2-teengamesv1; indexable, standalone chrome). Lists "What Are You Built For" as the hero plus three coming-soon teen games (Higher Wage, Never Heard of It, The Cut). `/ms` and `/ms/*` 308-redirect here (`next.config.mjs`) — old flyer/email links never die.
+- `/teens/built-for` — "What Are You Built For," the middle-school career game (specs/ms-career-game.md + amendments; landing indexable, session/room screens noindex). Solo: landing → 30-item tap-only wizard (`/teens/built-for/assess`) → deterministic RIASEC ranking (`…/results/[session]`) → card play (`…/card/[session]/[soc]`) → permanent no-login deck by 6-char claim code (`…/deck/[code]`). Group: `…/host` opens a room, `…/room/[room]` is the projected screen, students join by 4-char room code. APIs stay under `app/api/ms/*` (session, reveal, deliver, room), and code stays in `lib/ms/` — the move was a URL decision, not a refactor. Hard rules: no student email/name anywhere (auto handles), no LLM in the matching path, card `title`/`clue_8` only via the reveal route (which writes `clues_used`), AI live only for the results summary + facilitator prompts.
 
 **Admin** — a large internal dashboard under `/admin` (finance, fundraising, ops, KPIs, board, compliance), running as an installable PWA. Auth via `lib/admin/auth.ts`; data in Supabase; HubSpot sync for fundraising.
 
@@ -42,7 +43,7 @@ Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + auth), S
 - Public-site content is static in page files or `lib/` (e.g. `lib/internships.ts`, `lib/donors.ts`). Content changes require code edits.
 - Admin + meet data lives in Supabase (`lib/supabase/*`, types in `lib/database.types.ts`).
 
-**Career library (`/ms` groundwork, specs/ms-career-library-v2.md):** `ms_occupations` (imported O*NET RIASEC + BLS pay, `scripts/import-onet.ts`) + `ms_cards` (Claude-drafted, machine-gated, human-approved content) behind `/admin/careers`. Core logic in `lib/ms/` (deterministic RIASEC scorer, gates, rendered pay/education clues). Only `status = 'approved'` rows reach the public `ms_catalog` view, which never exposes `title` or `clue_8`. Approval is a human click, never code.
+**Career library (`/teens/built-for` groundwork, specs/ms-career-library-v2.md):** `ms_occupations` (imported O*NET RIASEC + BLS pay, `scripts/import-onet.ts`) + `ms_cards` (Claude-drafted, machine-gated, human-approved content) behind `/admin/careers`. Core logic in `lib/ms/` (deterministic RIASEC scorer, gates, rendered pay/education clues). Only `status = 'approved'` rows reach the public `ms_catalog` view, which never exposes `title` or `clue_8`. Approval is a human click, never code.
 
 **Key API routes (public):**
 - `app/api/career-match/route.ts` — Claude-powered career matching (model `claude-sonnet-4-6`). Requires `ANTHROPIC_API_KEY`.

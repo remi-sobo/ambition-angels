@@ -41,7 +41,7 @@ export default function AssessClient({ roomCode = null }: { roomCode?: string | 
           setSubmitting(false);
           return;
         }
-        router.replace(`/ms/results/${data.sessionId}`);
+        router.replace(`/teens/built-for/results/${data.sessionId}`);
       } catch {
         setError("Something went wrong. Tap to try again.");
         setSubmitting(false);

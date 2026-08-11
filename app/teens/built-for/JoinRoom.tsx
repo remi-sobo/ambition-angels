@@ -30,7 +30,7 @@ export default function JoinRoom() {
       onSubmit={(e) => {
         e.preventDefault();
         if (normalized.length === ROOM_CODE_LENGTH) {
-          router.push(`/ms/assess?room=${normalized}`);
+          router.push(`/teens/built-for/assess?room=${normalized}`);
         }
       }}
     >

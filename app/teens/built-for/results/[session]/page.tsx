@@ -75,7 +75,7 @@ export default async function ResultsPage({ params }: { params: { session: strin
             return (
               <li key={entry.soc_code}>
                 <Link
-                  href={`/ms/card/${params.session}/${entry.soc_code}`}
+                  href={`/teens/built-for/card/${params.session}/${entry.soc_code}`}
                   className="flex items-baseline gap-4 rounded-2xl border border-cream/12 hover:border-orange/70 transition-colors px-5 py-4"
                 >
                   <span className="font-display text-3xl text-orange w-10 flex-shrink-0 tabular-nums">
@@ -101,7 +101,7 @@ export default async function ResultsPage({ params }: { params: { session: strin
         </ol>
 
         <Link
-          href={`/ms/deck/${session.claim_code}`}
+          href={`/teens/built-for/deck/${session.claim_code}`}
           className="block mt-10 rounded-2xl border border-orange/50 hover:border-orange transition-colors px-6 py-5"
         >
           <p className="font-heading text-[11px] tracking-[0.25em] uppercase text-cream/50">

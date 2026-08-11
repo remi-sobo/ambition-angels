@@ -26,7 +26,7 @@ export default function DeckCodeEntry({ wrongCode }: { wrongCode?: string }) {
         className="mt-8 flex flex-col items-center gap-4 w-full max-w-xs"
         onSubmit={(e) => {
           e.preventDefault();
-          if (normalized.length === CLAIM_CODE_LENGTH) router.push(`/ms/deck/${normalized}`);
+          if (normalized.length === CLAIM_CODE_LENGTH) router.push(`/teens/built-for/deck/${normalized}`);
         }}
       >
         <input

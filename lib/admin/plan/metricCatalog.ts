@@ -51,7 +51,7 @@ export const AUTO_METRIC_CATALOG: MetricCatalogEntry[] = [
   },
   {
     key: "weighted_pipeline_fy26",
-    label: "Weighted pipeline (FY26)",
+    label: "Weighted pipeline (fiscal year)",
     unit: "$",
     description: "Open pipeline asks × probability; excludes steward, lost, won (CRM).",
   },
@@ -66,5 +66,29 @@ export const AUTO_METRIC_CATALOG: MetricCatalogEntry[] = [
     label: "Cash runway (months)",
     unit: "months",
     description: "Cash on hand ÷ monthly burn, from the finance snapshot.",
+  },
+  {
+    key: "anchor_gifts_closed",
+    label: "Anchor gifts ($150K+) closed",
+    unit: "gifts",
+    description: "Counts gifts of $150,000 or more received this fiscal year (Finance).",
+  },
+  {
+    key: "gifts_10k_closed",
+    label: "Gifts of $10,000+ closed",
+    unit: "gifts",
+    description: "Counts gifts of $10,000 or more received this fiscal year (Finance).",
+  },
+  {
+    key: "monthly_donors",
+    label: "Monthly donors",
+    unit: "donors",
+    description: "Active recurring giving plans (Stripe / CRM).",
+  },
+  {
+    key: "ogsm_reviews_held",
+    label: "OGSM reviews held (fiscal year)",
+    unit: "reviews",
+    description: "Strategy reviews logged in BloomOS this fiscal year.",
   },
 ];

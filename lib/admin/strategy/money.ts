@@ -19,7 +19,7 @@ import { OPEN_STAGE_KEYS } from "@/lib/fundraising/stage-sets";
 export const MONEY_OPEN_STAGES = OPEN_STAGE_KEYS;
 
 /** Fiscal-year bounds for an org, from its fin_config (defaults to calendar). */
-async function fyBounds(sb: SupabaseClient, orgId: string): Promise<{ start: string; end: string }> {
+export async function fyBounds(sb: SupabaseClient, orgId: string): Promise<{ start: string; end: string }> {
   const { data } = await sb
     .from("fin_config")
     .select("current_year, fiscal_year_start_month")
@@ -40,6 +40,23 @@ export async function computeSecuredFy(sb: SupabaseClient, orgId: string): Promi
     .gte("gift_date", fy.start)
     .lte("gift_date", fy.end);
   return (data ?? []).reduce((s, g) => s + Number((g as { amount: number | null }).amount ?? 0), 0);
+}
+
+/** Count of gifts at or above a threshold received this fiscal year (gift-table math). */
+export async function computeGiftsAtLeastFy(
+  sb: SupabaseClient,
+  orgId: string,
+  minAmount: number
+): Promise<number> {
+  const fy = await fyBounds(sb, orgId);
+  const { count } = await sb
+    .from("gifts")
+    .select("id", { count: "exact", head: true })
+    .eq("org_id", orgId)
+    .gte("amount", minAmount)
+    .gte("gift_date", fy.start)
+    .lte("gift_date", fy.end);
+  return count ?? 0;
 }
 
 /** Open-weighted dollars: Σ open-stage ask × probability/100. Excludes steward/lost/won. */

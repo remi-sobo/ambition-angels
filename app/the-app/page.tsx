@@ -164,6 +164,20 @@ export default function TheAppPage() {
             </h2>
           </div>
 
+          {/* The student web experience — the second frame beside the phone */}
+          <figure className="max-w-4xl mx-auto mb-12 fade-up">
+            <Image
+              src="/images/student-web-mockup.png"
+              alt="Student dashboard on a laptop: Ashley's entrepreneurship internship on day 5 of 30, with today's work, skill growth, recent activity, and what she's building"
+              width={1536}
+              height={1024}
+              className="w-full h-auto"
+            />
+            <figcaption className="mt-3 text-center text-xs text-gray-warm">
+              The student view on the web — sample data shown for illustration.
+            </figcaption>
+          </figure>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm">
               <div className="inline-block text-xs font-bold text-orange uppercase tracking-widest bg-orange-light border border-orange/20 rounded-full px-3 py-1 mb-5">

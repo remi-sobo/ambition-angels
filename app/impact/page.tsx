@@ -16,6 +16,12 @@ const stats = [
 
 const gapFacts = [
   {
+    num: "By 15",
+    title: "The career conversation is the central lever.",
+    body: "Career conversations with a trusted adult by age 15 are one of the strongest independent predictors of adult employment outcomes. Everything we build exists to make that conversation happen — and happen well.",
+    source: "OECD Career Readiness Research · 2021",
+  },
+  {
     num: "By 16",
     title: "Career uncertainty by 16 predicts disconnection.",
     body: "Teens who cannot picture a career by age 16 are statistically more likely to be unemployed or disconnected from education and work by their mid-20s.",
@@ -71,7 +77,15 @@ const quotes = [
   },
 ];
 
+// Ordered deliberately: the OECD trusted-adult-by-15 finding is the central
+// claim of the model and leads the list.
 const research = [
+  {
+    stat: "By 15",
+    finding:
+      "Career conversations with a trusted adult by age 15 are one of the strongest independent predictors of adult employment outcomes. We are making it possible for any parent, teacher, or mentor to have that conversation well.",
+    source: "OECD Career Readiness Research · 2021",
+  },
   {
     stat: "40/47",
     finding:
@@ -83,12 +97,6 @@ const research = [
     finding:
       "Wage boost in adulthood tied specifically to early career exposure. Even career conversations, job shadowing, and simulated experience showed measurable long-term impact on earnings.",
     source: "OECD, From Classroom to Career · 2025",
-  },
-  {
-    stat: "By 15",
-    finding:
-      "Career conversations with a trusted adult by age 15 are one of the strongest independent predictors of adult employment outcomes. We are making it possible for any parent or mentor to have that conversation well.",
-    source: "OECD Career Readiness Research · 2021",
   },
 ];
 
@@ -245,7 +253,7 @@ export default function ImpactPage() {
                 <strong className="text-white font-bold block mb-1">Increase in Action Orientation — the highest-gain dimension within our Future Orientation Score (FOS).</strong>
               </p>
               <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-white/70">
-                Pre and post · 1,000+ teens
+                Pre and post · 1,000+ teens · Measured across our school and nonprofit program partners
               </p>
             </div>
 

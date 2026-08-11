@@ -7,7 +7,7 @@ import { HEADLINE_STATS } from "@/lib/stats";
 export const metadata: Metadata = {
   title: "Donate",
   description:
-    "Help teens reach their full potential. Your gift puts real career exposure in the pocket of every student who needs it.",
+    "Help teens reach their full potential. Your gift delivers real careers through thirty-day simulated internships — in the classroom and in their pocket. Free for every student.",
 };
 
 export default function DonatePage() {
@@ -89,6 +89,74 @@ export default function DonatePage() {
               <p className="text-gray-mid text-xs">Secure · Tax-deductible · Takes 60 seconds</p>
             </div>
 
+          </div>
+        </div>
+      </section>
+
+      {/* SPONSOR A SCHOOL */}
+      <section
+        className="section-pad bg-[#F5F4F0] relative overflow-hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
+        <div className="container-site relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div>
+              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
+                Directed Giving
+              </p>
+              <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6 tracking-tight leading-tight">
+                Sponsor a school.
+              </h2>
+              <div className="space-y-4 text-gray-warm leading-relaxed">
+                <p>
+                  One school. One year. Every student in it gets real career exposure, and every adult who works with them gets the tools to talk about it.
+                </p>
+                <p>
+                  Some partners come to us with a school already in mind. A place they went, a place their company sits, a place their family cares about. Others ask us to bring them one. Both work.
+                </p>
+              </div>
+              <a
+                href="/meet"
+                className="mt-8 inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px]"
+              >
+                Talk to us about sponsoring a school
+              </a>
+              <p className="mt-6 text-gray-warm/80 text-sm leading-relaxed">
+                Some partners also fund a reward for the classroom or program that commits the most — if that&apos;s interesting to you, we&apos;ll build it in.
+              </p>
+            </div>
+
+            <div
+              className="bg-ink rounded-card-lg p-8 lg:p-10 relative overflow-hidden"
+              style={{
+                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
+                backgroundSize: "22px 22px",
+              }}
+            >
+              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-6">
+                What one sponsored school gets
+              </p>
+              <ul className="space-y-5">
+                {[
+                  "Thirty-day career internships for every student in the building",
+                  "A dashboard for every teacher, counselor, and mentor who works with them",
+                  "Career conversation prompts tied to each student's internship",
+                  "The school pays nothing in year one",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-gray-mid text-base leading-relaxed">
+                    <span className="w-6 h-6 rounded-full bg-orange/15 border border-orange/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-3 h-3 text-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -191,7 +259,7 @@ export default function DonatePage() {
               {
                 num: "02",
                 label: "The Content",
-                body: "Donations power new curriculum and the student rewards that keep teens engaged. They earn gift cards. You fund the belief that their time has real value.",
+                body: "Donations power new internship tracks and the Guide dashboard that puts every adult in a teen's corner. More careers to try on, and more adults ready to talk about them.",
               },
               {
                 num: "03",

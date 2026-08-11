@@ -5,10 +5,10 @@ import DonateButton from "@/components/DonateButton";
 const footerLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
-  { href: "/the-app", label: "The App" },
-  { href: "/curriculum", label: "Curriculum" },
+  { href: "/the-app", label: "The Platform" },
+  { href: "/curriculum", label: "Careers" },
   { href: "/impact", label: "Impact" },
-  { href: "/for-adults", label: "For Guides" },
+  { href: "/schools", label: "For Schools & Programs" },
   { href: "/donate", label: "Donate" },
 ];
 
@@ -152,7 +152,7 @@ export default function Footer() {
             501(c)(3) &middot; EIN 87-2513010
           </p>
           <p className="text-gray-mid text-xs">
-            Built to put career exposure in every pocket.
+            Built to give every teen career exposure.
           </p>
         </div>
       </div>

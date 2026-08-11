@@ -86,7 +86,7 @@ function buildRoomEmailHTML(
       <td style="padding:14px 20px;border-bottom:1px solid #f0eeea;">
         <div style="font-size:15px;font-weight:700;color:#0E0E0E;">${s.handle}
           <span style="font-weight:400;color:#6B6960;font-size:12px;">&middot; deck code
-            <a href="https://www.ambitionangels.org/ms/deck/${s.claimCode}" style="color:#E8500A;text-decoration:none;font-weight:700;letter-spacing:0.08em;">${s.claimCode}</a>
+            <a href="https://www.ambitionangels.org/teens/built-for/deck/${s.claimCode}" style="color:#E8500A;text-decoration:none;font-weight:700;letter-spacing:0.08em;">${s.claimCode}</a>
           </span>
         </div>
         <div style="font-size:12px;color:#6B6960;margin-top:4px;">${cards}</div>

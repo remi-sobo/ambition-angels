@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
@@ -33,12 +34,24 @@ export default async function CareersPage() {
         subtitle="O*NET-backed catalog for /ms · Claude drafts, machines gate, a human approves"
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-2">
         <StatCard label="Imported" value={occupations.length} sub="occupations (O*NET + BLS)" muted={occupations.length === 0} />
         <StatCard label="Queued" value={queued} sub="picked, not yet generated" muted={queued === 0} />
         <StatCard label="Awaiting review" value={drafts} muted={drafts === 0} />
         <StatCard label="Approved" value={approved} sub="live in the catalog" muted={approved === 0} />
       </div>
+
+      <p className="text-[12px] text-ink-2 mb-6">
+        Which occupations the teen games may use is a separate decision — the{" "}
+        <Link href="/admin/careers/pool" className="underline underline-offset-2">
+          Play Pool
+        </Link>
+        ; the mystery-job-of-the-day schedule lives in the{" "}
+        <Link href="/admin/careers/daily" className="underline underline-offset-2">
+          Daily Calendar
+        </Link>
+        .
+      </p>
 
       {occupations.length === 0 ? (
         <div className="bg-surface shadow-panel border-[1.5px] border-outline rounded-xl px-4 py-6 text-sm text-ink-2">

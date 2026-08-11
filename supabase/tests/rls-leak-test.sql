@@ -1072,4 +1072,102 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+-- ════ Teen games play pool (create_game_pool.sql) ═════════════════════════
+-- Service-path only, same as the ms_ base tables: the games read the pool
+-- through /api/games/* route handlers, never from the client. Also prove
+-- the eligible-requires-approval constraint holds: no row goes eligible
+-- without a reveal line and a human stamp.
+insert into game_pool (soc_code) values ('29-2055')
+on conflict (soc_code) do nothing;
+
+do $$ begin
+  update game_pool set eligible = true where soc_code = '29-2055';
+  raise exception 'game_pool accepted eligible without approval (constraint missing)';
+exception when check_violation then null; -- expected
+end $$;
+
+set role anon;
+do $$ begin
+  perform count(*) from game_pool;
+  raise exception 'LEAK: anon reads game_pool directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  perform count(*) from game_pool;
+  raise exception 'LEAK: owner session reads game_pool directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- ════ The Cut rooms (create_cut_rooms.sql) ════════════════════════════════
+-- Room state holds the answer key (the un-cut careers' stats) and the host
+-- token; votes are per-phone rows. Service-path only, both roles.
+reset role;
+reset request.jwt.claim.sub;
+insert into cut_rooms (room_code, state) values ('LKT1', '{"careers":[]}'::jsonb)
+on conflict (room_code) do nothing;
+insert into cut_players (room_id, voter_id)
+select id, 'leak-test-voter' from cut_rooms where room_code = 'LKT1'
+on conflict do nothing;
+insert into cut_votes (room_id, round, voter_id, soc_code)
+select id, 0, 'leak-test-voter', '29-2055' from cut_rooms where room_code = 'LKT1'
+on conflict do nothing;
+
+set role anon;
+do $$ begin
+  perform count(*) from cut_rooms;
+  raise exception 'LEAK: anon reads cut_rooms (host tokens + answer key) directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
+do $$ begin
+  perform count(*) from cut_players;
+  raise exception 'LEAK: anon reads cut_players directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
+do $$ begin
+  perform count(*) from cut_votes;
+  raise exception 'LEAK: anon reads cut_votes directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  perform count(*) from cut_rooms;
+  raise exception 'LEAK: owner session reads cut_rooms directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+do $$ begin
+  perform count(*) from cut_votes;
+  raise exception 'LEAK: owner session reads cut_votes directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- ════ Daily calendar (create_game_daily.sql) ══════════════════════════════
+-- Tomorrow's scheduled job is a spoiler; service-path only, both roles.
+reset role;
+reset request.jwt.claim.sub;
+insert into game_daily (game, day, soc_code) values ('nhoi', '2099-01-01', '29-2055')
+on conflict (game, day) do nothing;
+
+set role anon;
+do $$ begin
+  perform count(*) from game_daily;
+  raise exception 'LEAK: anon reads game_daily (future dailies) directly';
+exception when insufficient_privilege then null; -- expected
+end $$;
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  perform count(*) from game_daily;
+  raise exception 'LEAK: owner session reads game_daily directly (service-path only)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

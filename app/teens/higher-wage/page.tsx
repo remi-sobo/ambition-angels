@@ -8,7 +8,7 @@ import HigherWageGame from "./HigherWageGame";
 export const metadata: Metadata = {
   title: "Higher Wage — Ambition Angels",
   description:
-    "Two real jobs. Tap the one that pays more. Real government pay data, no sign-up, no email.",
+    "Two real jobs. Tap the one that pays more. Real government pay data — how long can you keep the streak alive?",
 };
 
 export default function HigherWagePage() {

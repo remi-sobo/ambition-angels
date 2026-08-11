@@ -22,10 +22,17 @@ export default function SiteChrome({
   // position:fixed so leaving it visible over any page that doesn't account
   // for its 64/80px height causes the page heading to slide behind it
   // (see /admin — its sidebar shell is the chrome, no public nav needed).
+  // /teens itself (the hub) and the career quiz are part of the site — full
+  // Nav + Footer. The game screens under /teens/* keep their own immersive
+  // chrome: a fixed marketing nav over a projected room screen or a
+  // mid-game view would fight the game.
+  const teensGameScreen =
+    (pathname?.startsWith("/teens/") &&
+      !pathname?.startsWith("/teens/career-quiz")) ??
+    false;
   const standalone =
     (pathname?.startsWith("/admin") ||
-      pathname === "/teens" ||
-      pathname?.startsWith("/teens/") ||
+      teensGameScreen ||
       pathname?.startsWith("/ygb") ||
       pathname?.startsWith("/shannon") ||
       pathname?.startsWith("/strategy") ||

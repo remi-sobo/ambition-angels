@@ -111,7 +111,7 @@ export default function CutLanding() {
           <p className="font-body text-sm text-orange mt-6 max-w-sm">{notice}</p>
         )}
         <p className="font-body text-sm text-cream/40 mt-8">
-          No sign-up, no email, no app — phones and one screen.
+          Phones and one screen — nothing to install.
         </p>
       </div>
       <footer className="px-6 py-5 text-center">

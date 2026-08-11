@@ -6,25 +6,59 @@ import CareerQuizModal from "@/components/CareerQuizModal";
 import IPhoneMockup from "@/components/IPhoneMockup";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import AppStoreButtons from "@/components/AppStoreButtons";
-import { useDonateModal } from "@/components/DonateModalProvider";
+import DashboardMockup from "@/components/DashboardMockup";
 import { trackEvent } from "@/lib/analytics";
 import { HEADLINE_STATS } from "@/lib/stats";
 
 const pillars = [
   {
     icon: "01",
-    title: "Pick your path",
-    body: "Internships in entrepreneurship, sales, game design, nursing, wealth management, and more. Careers they may never have considered before.",
+    title: "Pick a career.",
+    body: "Entrepreneurship, nursing, game design, wealth management, engineering, and more. Careers most of them have never seen up close.",
   },
   {
     icon: "02",
-    title: "Show up to work",
-    body: "Videos, quizzes, and activities built for the phone screen. 15 minutes a day. No commute. No classroom.",
+    title: "Show up to work.",
+    body: "Videos, quizzes, and hands-on activities. On a school Chromebook during advisory, or on their phone on the bus. Same internship either way.",
   },
   {
     icon: "03",
-    title: "Earn for your effort",
-    body: "Complete an internship and earn gift cards from brands you actually use. Their time has real value. We honor that.",
+    title: "Leave with a direction.",
+    body: "By day thirty they know what the work feels like, what it pays, and what the path in actually looks like. Then they try another one.",
+  },
+];
+
+const guideSupports = [
+  {
+    title: "A live roster.",
+    body: "Every student, their current internship, progress, and last activity. On track, making progress, or needs a check-in.",
+  },
+  {
+    title: "Prompts tied to the work.",
+    body: "Not generic career questions. Questions about the internship they are in right now.",
+  },
+  {
+    title: "Follow-ups that surface themselves.",
+    body: "The students who went quiet show up at the top of your week, with a note you can send in one click.",
+  },
+];
+
+const whereItRuns = [
+  {
+    title: "In school.",
+    body: "Advisory, homeroom, or a career-connected learning block. Every student in the room, on the computers they already use, with the teacher watching progress.",
+  },
+  {
+    title: "In programs.",
+    body: "After-school, mentoring, juvenile justice, faith communities. Fifteen minutes twice a week, built into time you already run.",
+  },
+  {
+    title: "In community college.",
+    body: "Cohort programs where the whole measure of success is helping students land somewhere.",
+  },
+  {
+    title: "On their own.",
+    body: "A teen who is not in any of those can download the app and start today. Any adult in their corner can sign up as a Guide and see what they are doing.",
   },
 ];
 
@@ -49,7 +83,6 @@ const team = [
 
 export default function Home() {
   const [quizOpen, setQuizOpen] = useState(false);
-  const { openModal: openDonateModal } = useDonateModal();
 
   return (
     <>
@@ -98,39 +131,31 @@ export default function Home() {
               Freshman Year to Career
             </div>
 
-            <h1 className="font-display font-black text-6xl lg:text-7xl text-cream mb-5 leading-none tracking-tight uppercase fade-up stagger-1">
-              Career<br />
-              exposure.<br />
-              <span className="text-orange">In their<br />pocket.</span>
+            <h1 className="font-display font-black text-5xl lg:text-6xl text-cream mb-5 leading-none tracking-tight uppercase fade-up stagger-1">
+              Career exposure.<br />
+              <span className="text-orange">In their pocket.</span><br />
+              <span className="text-orange">In their classroom.</span>
             </h1>
 
             <p className="font-body text-gray-mid text-base lg:text-lg mb-8 leading-relaxed max-w-sm fade-up stagger-2">
-              Teens discover real careers through simulated internships, on the phone they already have. Free for every student.
+              Ambition delivers real careers through thirty-day simulated internships. On the web during class or program time, and on the phone everywhere else. Free for every student.
             </p>
 
-            {/* App store buttons — primary */}
-            <p className="text-gray-mid/50 text-xs uppercase tracking-widest font-semibold mb-3 fade-up stagger-3">
-              Available now — free for every student.
-            </p>
-            <AppStoreButtons variant="lockup" source="home_hero" className="mb-6 fade-up stagger-3" />
-
-            {/* Secondary CTAs */}
-            <div className="flex flex-wrap gap-3 fade-up stagger-4">
-              <button
-                onClick={() => {
-                  trackEvent("career_quiz_cta_clicked");
-                  setQuizOpen(true);
-                }}
-                className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 shadow-lg shadow-orange/30 min-h-[52px]"
+            {/* Primary CTAs — the school ask leads */}
+            <div className="flex flex-wrap gap-3 fade-up stagger-3">
+              <Link
+                href="/schools"
+                onClick={() => trackEvent("schools_cta_clicked", { source: "home_hero" })}
+                className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 shadow-lg shadow-orange/30 min-h-[52px] inline-flex items-center"
               >
-                Take the Career Quiz
-              </button>
-              <button
-                onClick={openDonateModal}
+                Bring Ambition to your students
+              </Link>
+              <a
+                href="#get-the-app"
                 className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 border border-cream/20 min-h-[52px] inline-flex items-center"
               >
-                Support the Mission
-              </button>
+                Get the app
+              </a>
             </div>
           </div>
         </div>
@@ -150,14 +175,10 @@ export default function Home() {
               The Ambition Approach
             </p>
             <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream mb-6 tracking-tight fade-up stagger-1">
-              Instead of paying adults to develop young people, we reward teens
-              for developing themselves.
+              Thirty days inside a real career. Then they pick another one.
             </h2>
             <p className="text-gray-mid text-lg leading-relaxed fade-up stagger-2">
-              The Ambition app delivers 30-day simulated internships in real
-              careers. 15 minutes a day. Students pick their path, build technical
-              and life skills, and earn gift cards when they complete an
-              internship.
+              Every internship has a fictional employer, real work, and something they actually build by the end. Fifteen minutes a day.
             </p>
           </div>
 
@@ -183,13 +204,13 @@ export default function Home() {
               href="/the-app"
               className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm min-h-[44px] inline-flex items-center"
             >
-              See How the App Works
+              See the Platform
             </Link>
             <Link
               href="/curriculum"
               className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm min-h-[44px] inline-flex items-center"
             >
-              Explore Internships
+              Explore Careers
             </Link>
           </div>
         </div>
@@ -232,6 +253,158 @@ export default function Home() {
         </div>
       </section>
 
+      {/* THE OUTCOME — future orientation */}
+      <section className="section-pad">
+        <div className="container-site">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div>
+              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
+                The Outcome
+              </p>
+              <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6 tracking-tight leading-tight fade-up stagger-1">
+                A teen who can picture their future starts working toward it.
+              </h2>
+              <div className="space-y-4 text-gray-warm leading-relaxed">
+                <p className="fade-up stagger-2">
+                  Future orientation is a teen&apos;s belief that their future is worth working toward right now. It is one of the strongest predictors of whether a young person stays connected to school and work into their twenties.
+                </p>
+                <p className="fade-up stagger-3">
+                  Across more than 1,000 teens, the piece we track most closely — whether a teen is actually taking steps toward a career instead of just imagining one — went up 14%.
+                </p>
+                <p className="font-semibold text-ink fade-up stagger-3">
+                  They do the work. They leave on their way to a career that pays.
+                </p>
+              </div>
+              <Link
+                href="/impact"
+                className="mt-8 inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm min-h-[44px] fade-up stagger-4"
+              >
+                See the full results
+              </Link>
+            </div>
+
+            {/* Orange big number card */}
+            <div
+              className="relative bg-orange rounded-card-lg p-12 lg:p-14 text-center overflow-hidden fade-up"
+              style={{
+                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)",
+                backgroundSize: "20px 20px",
+              }}
+            >
+              <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/[0.07]" />
+              <span className="font-display font-black text-[6rem] lg:text-[8rem] text-white leading-none tracking-tight block">
+                14%
+              </span>
+              <p className="text-white/85 text-base leading-relaxed mt-4 max-w-sm mx-auto">
+                Increase in teens taking real steps toward a career — not just imagining one.
+              </p>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-white/70">
+                Pre and post · 1,000+ teens
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* THE GUIDE LAYER — for the adults in their corner */}
+      <section
+        className="section-pad bg-[#F5F4F0] relative overflow-hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
+        <div className="container-site relative z-10">
+          <div className="max-w-2xl mb-12 fade-up">
+            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
+              For the Adults in Their Corner
+            </p>
+            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-5">
+              They do the internship. You see all of it.
+            </h2>
+            <p className="text-gray-warm text-lg leading-relaxed">
+              Every teacher, counselor, mentor, and parent gets a dashboard. Who is moving and who stalled. What each teen is working on today. And a prompt tied to that exact internship, so the career conversation is ready before you sit down.
+            </p>
+          </div>
+
+          {/* Dashboard mockup full width, phone beside it */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 items-end mb-12 fade-up">
+            <DashboardMockup />
+            <div className="hidden lg:block scale-[0.62] origin-bottom -my-24">
+              <IPhoneMockup />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {guideSupports.map((s, i) => (
+              <div
+                key={s.title}
+                className={`bg-white border border-gray-light rounded-card-lg p-7 shadow-sm fade-up stagger-${i + 1}`}
+              >
+                <h3 className="font-heading font-bold text-ink text-lg mb-2 tracking-tight">{s.title}</h3>
+                <p className="text-gray-warm text-sm leading-relaxed">{s.body}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 flex flex-wrap gap-4 fade-up">
+            <Link
+              href="/the-app#dashboard"
+              className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px]"
+            >
+              See the dashboard
+            </Link>
+            <Link
+              href="/schools#guides"
+              className="inline-flex items-center bg-ink/[0.06] hover:bg-ink/[0.12] text-ink border border-ink/15 font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px]"
+            >
+              Sign up as a Guide
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* WHERE IT RUNS */}
+      <section
+        className="section-pad bg-ink relative overflow-hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      >
+        <div className="container-site relative z-10">
+          <div className="max-w-2xl mb-12">
+            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
+              Where It Runs
+            </p>
+            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream tracking-tight leading-tight fade-up stagger-1">
+              Is this a school thing or an app? Yes.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {whereItRuns.map((card, i) => (
+              <div
+                key={card.title}
+                className={`bg-cream/5 border border-cream/10 rounded-card-lg p-7 hover:bg-cream/10 hover:border-orange/30 transition-all duration-200 fade-up stagger-${(i % 4) + 1}`}
+              >
+                <h3 className="font-heading font-bold text-cream text-xl mb-3 tracking-tight">{card.title}</h3>
+                <p className="text-gray-mid text-sm leading-relaxed">{card.body}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10">
+            <Link
+              href="/schools"
+              className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px]"
+            >
+              Bring Ambition to your students
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* THE PROBLEM */}
       <section className="section-pad">
         <div className="container-site">
@@ -268,7 +441,7 @@ export default function Home() {
                 {[
                   { pct: "95%", label: "of teens own a smartphone" },
                   { pct: "8 hrs", label: "average daily screen time" },
-                  { pct: "Only 11%", label: "attend after-school programming" },
+                  { pct: "Under 5", label: "careers most teens have been exposed to — usually whatever their parents do" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-5">
                     <div className="font-display font-black text-3xl lg:text-4xl text-orange flex-shrink-0 w-28 lg:w-32 tracking-tight">
@@ -353,116 +526,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FOR THE ADULTS IN THEIR CORNER — parent instruction block */}
+      {/* APP SHOWCASE — where "Get the app" lands */}
       <section
-        className="section-pad bg-[#F5F4F0] relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <div className="max-w-2xl mb-12 fade-up">
-            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
-              For the Adults in Their Corner
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-5">
-              Got a teen in your life? Here&apos;s how to actually help.
-            </h2>
-            <p className="text-gray-warm text-lg leading-relaxed">
-              The app does the work. You make it stick. It takes 15 minutes a day from them — and a few minutes a week from you.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* CARD 01 — download */}
-            <div className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm flex flex-col fade-up stagger-1">
-              <div className="font-display font-black text-6xl text-orange leading-none mb-5 tracking-tight">01</div>
-              <h3 className="font-heading font-bold text-ink text-xl mb-3 tracking-tight">
-                Get the app on their phone.
-              </h3>
-              <p className="text-gray-warm text-sm leading-relaxed flex-1 mb-6">
-                Download Ambition together. Let them pick their first 30-day career internship — entrepreneurship, nursing, game design, wealth management, and more.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <a
-                  href="https://apps.apple.com/us/app/ambition-shape-your-future/id1557562279"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-5 py-3 rounded-full transition-colors text-sm min-h-[44px]"
-                >
-                  Download for iOS
-                </a>
-                <a
-                  href="https://play.google.com/store/apps/details?id=com.theambitionapp.ambitionappRN"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center bg-ink/8 hover:bg-ink/15 text-ink border border-ink/15 font-semibold px-5 py-3 rounded-full transition-colors text-sm min-h-[44px]"
-                >
-                  Download for Android
-                </a>
-              </div>
-            </div>
-
-            {/* CARD 02 — the deal */}
-            <div className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm flex flex-col fade-up stagger-2">
-              <div className="font-display font-black text-6xl text-orange leading-none mb-5 tracking-tight">02</div>
-              <h3 className="font-heading font-bold text-ink text-xl mb-3 tracking-tight">
-                Make a deal with them.
-              </h3>
-              <p className="text-gray-warm text-sm leading-relaxed flex-1 mb-6">
-                Pick a reward they&apos;ll actually want when they finish. Pizza party. New kicks. A get-out-of-a-test-free card. Cash. We&apos;ll give you a starter list of what works.
-              </p>
-              <Link
-                href="/for-adults#the-deal"
-                className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-5 py-3 rounded-full transition-colors text-sm min-h-[44px] self-start"
-              >
-                See reward examples
-              </Link>
-            </div>
-
-            {/* CARD 03 — the conversation */}
-            <div className="bg-white border border-gray-light rounded-card-lg p-8 shadow-sm flex flex-col fade-up stagger-3">
-              <div className="font-display font-black text-6xl text-orange leading-none mb-5 tracking-tight">03</div>
-              <h3 className="font-heading font-bold text-ink text-xl mb-3 tracking-tight">
-                Show up for the conversation.
-              </h3>
-              <p className="text-gray-warm text-sm leading-relaxed flex-1 mb-6">
-                Ask them what they learned this week. That one conversation is the whole game. We&apos;ll give you the prompts to make it easy.
-              </p>
-              <Link
-                href="/for-adults"
-                className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-5 py-3 rounded-full transition-colors text-sm min-h-[44px] self-start"
-              >
-                See conversation prompts
-              </Link>
-            </div>
-          </div>
-
-          {/* WAITLIST CAPTURE BAND */}
-          <div className="mt-16 lg:mt-20 pt-12 lg:pt-14 border-t border-ink/10 max-w-2xl mx-auto text-center fade-up">
-            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-3">
-              The Guide Portal Is Coming
-            </p>
-            <h3 className="font-heading font-bold text-2xl lg:text-[28px] text-ink tracking-tight leading-tight mb-4">
-              Want the full dashboard when it opens?
-            </h3>
-            <p className="text-gray-warm text-base leading-relaxed mb-7 max-w-[600px] mx-auto">
-              We&apos;re building a Guide portal with live progress, conversation prompts tied to your teen&apos;s current module, and a way to track every conversation you have. Waitlist members get in first.
-            </p>
-            <Link
-              href="/for-adults#waitlist"
-              className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px]"
-            >
-              Join the Guide Waitlist &rarr;
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* APP SHOWCASE */}
-      <section
-        className="section-pad bg-[#F5F4F0] relative overflow-hidden"
+        id="get-the-app"
+        className="section-pad bg-[#F5F4F0] relative overflow-hidden scroll-mt-24"
         style={{
           backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)",
           backgroundSize: "22px 22px",
@@ -475,12 +542,15 @@ export default function Home() {
             <div className="reveal">
               <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">The App</p>
               <h2 className="font-display font-black text-5xl lg:text-6xl text-[#0E0E0E] mb-6 leading-none tracking-tight uppercase">
-                Built for the<br /><span className="text-orange">phone they<br />already have.</span>
+                Everywhere<br /><span className="text-orange">class<br />isn&apos;t.</span>
               </h2>
               <p className="text-charcoal text-lg leading-relaxed mb-8 max-w-lg">
-                30-day simulated internships. 15 minutes a day. Videos, quizzes, and activities designed for the phone screen. Teens pick a career, show up to work, and earn real rewards for finishing.
+                The same thirty-day internships, on their phone. A teen who is not in a school or program can download Ambition and start today — and a teen who is can keep going on the bus, at practice, at home. Free for every student.
               </p>
               <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-start">
+                <AppStoreButtons variant="lockup" source="home_app_showcase" />
+              </div>
+              <div className="mt-6 flex flex-wrap gap-4 items-center">
                 <Link
                   href="/the-app#demo"
                   onClick={() => trackEvent("app_demo_teaser_clicked", { source: "home" })}
@@ -493,7 +563,15 @@ export default function Home() {
                   </span>
                   Try the interactive demo
                 </Link>
-                <AppStoreButtons variant="pill" theme="light" source="home_app_showcase" />
+                <button
+                  onClick={() => {
+                    trackEvent("career_quiz_cta_clicked");
+                    setQuizOpen(true);
+                  }}
+                  className="text-orange font-semibold text-sm hover:text-orange-dark transition-colors min-h-[44px]"
+                >
+                  Or take the career quiz &rarr;
+                </button>
               </div>
             </div>
 

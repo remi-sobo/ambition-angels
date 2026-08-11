@@ -121,7 +121,7 @@ export default function AboutPage() {
               <span className="text-orange">A real path.</span>
             </h1>
             <p className="text-white/85 text-lg lg:text-xl max-w-2xl leading-relaxed fade-up stagger-2">
-              Every teen deserves a clear picture of what is possible and a real path to get there. Ambition Angels is a youth development organization building that path through technology, career exposure, and a deep belief in the potential of every student we serve.
+              Every teen deserves a clear picture of what is possible and a real path to get there. Ambition Angels is a youth development organization building that path through real career exposure — in the classroom and in their pocket.
             </p>
           </div>
         </div>
@@ -150,10 +150,10 @@ export default function AboutPage() {
                 Meanwhile, Demetric joined Facebook and worked on the product team focused on teens. He could see exactly who WAS reaching them at scale. Their phones.
               </p>
               <p>
-                Only 11% of teens attend after-school programming. More than 95% own a smartphone and spend 8 hours a day on it. That is not a crisis to solve. That is the most powerful channel in the history of youth development. So they built for it.
+                So they built for the phone — and then kept building. Today Ambition runs on the web in classrooms and programs, on the phone everywhere else, with a dashboard for every adult in a teen&apos;s corner.
               </p>
               <p>
-                Ambition is what happens when you stop fighting where teens are and start meeting them there. That is our ambition.
+                Stop fighting where teens are. Meet them there, and bring the adults with you. That is our ambition.
               </p>
             </div>
           </div>

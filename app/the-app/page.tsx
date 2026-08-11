@@ -392,7 +392,7 @@ export default function TheAppPage() {
               href="/curriculum"
               className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-8 py-4 rounded-full transition-colors text-base shadow-lg shadow-orange/20 min-h-[52px]"
             >
-              Explore Internships
+              Explore careers
             </Link>
           </div>
         </div>

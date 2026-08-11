@@ -8,7 +8,7 @@ import JoinRoom from "./JoinRoom";
 // 6). Session, room, and facilitator screens below stay noindex.
 export const metadata: Metadata = {
   title: "What Are You Built For — Ambition Angels",
-  description: "An 8-minute career game for middle schoolers. No sign-up, no email.",
+  description: "An 8-minute career game for middle schoolers. Real careers with real pay, matched to how you work.",
 };
 
 export default function MsLandingPage() {
@@ -38,7 +38,7 @@ export default function MsLandingPage() {
           Start
         </Link>
         <p className="font-body text-sm text-cream/40 mt-5">
-          No sign-up. No email. Nothing to lose.
+          Free. 8 minutes. Your deck saves with a code.
         </p>
         <JoinRoom />
         <Link

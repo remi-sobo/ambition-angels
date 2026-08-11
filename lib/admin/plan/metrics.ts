@@ -6,6 +6,8 @@ import {
   computeWeightedPipeline,
   computeCorporateRaisedFy,
   computeRunwayMonths,
+  computeGiftsAtLeastFy,
+  fyBounds,
 } from "@/lib/admin/strategy/money";
 import { getEngagedStageKeys } from "@/lib/admin/program/stages";
 import { WON_STAGE_LIST } from "@/lib/fundraising/stage-sets";
@@ -127,6 +129,37 @@ export const PLAN_METRICS: Record<string, PlanMetricFn> = {
   corporate_raised: (s, org) => computeCorporateRaisedFy(s, org),
   // Cash runway — cash on hand ÷ monthly burn, from the canonical finance snapshot.
   cash_runway_months: () => computeRunwayMonths(),
+
+  // ── Gift-table metrics (2026–27 OGSM) — counts over the same fiscal-year
+  // gifts the money module sums, so the gift table and "Raised" always agree.
+  // Anchor gifts — gifts of $150,000+ received this fiscal year.
+  anchor_gifts_closed: (s, org) => computeGiftsAtLeastFy(s, org, 150_000),
+  // Major gifts — gifts of $10,000+ received this fiscal year.
+  gifts_10k_closed: (s, org) => computeGiftsAtLeastFy(s, org, 10_000),
+
+  // Monthly donors — active recurring giving plans (the canonical recurring-
+  // giving table, written by the Stripe pipeline).
+  monthly_donors: async (s, org) => {
+    const { count } = await s
+      .from("recurring_plans")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", org)
+      .eq("status", "active");
+    return count ?? 0;
+  },
+
+  // OGSM reviews held — plan reviews logged in BloomOS this fiscal year.
+  // conducted_at is a timestamptz, so the date-only FY end needs end-of-day.
+  ogsm_reviews_held: async (s, org) => {
+    const fy = await fyBounds(s, org);
+    const { count } = await s
+      .from("plan_reviews")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", org)
+      .gte("conducted_at", fy.start)
+      .lte("conducted_at", `${fy.end}T23:59:59.999Z`);
+    return count ?? 0;
+  },
 };
 
 /**
@@ -257,9 +290,13 @@ export const PLAN_METRIC_META: Record<string, PlanMetricMeta> = {
   active_teens: { label: "Active teens", unit: "" },
   dollars_raised_fy26: { label: "Raised toward the committed floor", unit: "$" },
   dollars_ceiling_fy26: { label: "Raised toward the ceiling", unit: "$" },
-  weighted_pipeline_fy26: { label: "Weighted pipeline (FY26)", unit: "$" },
+  weighted_pipeline_fy26: { label: "Weighted pipeline (fiscal year)", unit: "$" },
   corporate_raised: { label: "Corporate raised", unit: "$" },
   cash_runway_months: { label: "Cash runway (months)", unit: "months" },
+  anchor_gifts_closed: { label: "Anchor gifts ($150K+) closed", unit: "" },
+  gifts_10k_closed: { label: "Gifts of $10,000+ closed", unit: "" },
+  monthly_donors: { label: "Monthly donors", unit: "" },
+  ogsm_reviews_held: { label: "OGSM reviews held (fiscal year)", unit: "" },
 };
 
 export type PlanMetricOption = {

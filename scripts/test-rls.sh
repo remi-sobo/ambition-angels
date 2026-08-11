@@ -210,6 +210,7 @@ ordered=(
   create_game_pool.sql
   create_cut_rooms.sql
   create_game_daily.sql
+  create_plan_archives.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

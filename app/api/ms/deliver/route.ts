@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Email is not configured" }, { status: 500 });
   }
 
-  const deckUrl = `https://www.ambitionangels.org/ms/deck/${session.claim_code}`;
+  const deckUrl = `https://www.ambitionangels.org/teens/built-for/deck/${session.claim_code}`;
   try {
     await new Resend(resendKey).emails.send({
       from: "Ambition Angels <careers@mail.ambitionangels.org>",

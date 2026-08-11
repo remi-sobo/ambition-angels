@@ -265,7 +265,7 @@ export default function UpdatePage() {
                 They don&apos;t just learn about careers. They try them.
               </h2>
               <p style={{ fontSize:15, color:"#4B5563", lineHeight:1.75, marginBottom:16 }}>
-                On the Ambition App, students complete 30-day simulated internships across business, tech, health, creative fields, and more. 15 minutes a day. Real tasks. Real skills. Partners decide how to recognize and reward their own students, often without money, and we keep a focused reward pot for the highest-need teens their partners serve. By the end of 30 days, they know what a career actually feels like.
+                On Ambition, students complete 30-day simulated internships across business, tech, health, creative fields, and more. 15 minutes a day. Real tasks. Real skills. On the web during class or program time, on the phone everywhere else — and every adult around them gets a dashboard showing what each teen is working on. By the end of 30 days, they know what a career actually feels like.
               </p>
               <p style={{ fontSize:15, color:"#4B5563", lineHeight:1.75, marginBottom:0 }}>
                 The rhythm is four internships a year, one a quarter. That means four real careers a teen has tried on by year&apos;s end.

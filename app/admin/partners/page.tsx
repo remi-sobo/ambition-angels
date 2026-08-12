@@ -1,6 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
-import StatCard from "../_components/StatCard";
 import PageHeader from "../_components/PageHeader";
 import { NewPartnerForm } from "./_components/PartnerControls";
 import { type Partner } from "./_lib/partners";
@@ -82,21 +81,6 @@ export default async function PartnersPage() {
     overdue_tasks: overdueTasks.get(p.id) ?? 0,
   }));
 
-  // ── KPIs ──
-  const in90 = new Date(Date.now() + 90 * 86400_000).toISOString().slice(0, 10);
-  const cut30 = new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10);
-  const live = partners.filter((p) => p.status !== "lapsed");
-  const active = partners.filter((p) => p.status === "active" || p.status === "anchor");
-  const emerging = partners.filter((p) => p.status === "outreach" || p.status === "pilot");
-  const prospects = partners.filter((p) => p.status === "prospect");
-  const mouExpiring = live.filter(
-    (p) => p.mou_status === "signed" && p.mou_end && p.mou_end >= today && p.mou_end <= in90
-  );
-  const mouExpired = live.filter(
-    (p) => p.mou_status === "signed" && p.mou_end && p.mou_end < today
-  );
-  const staleTouch = active.filter((p) => !p.last_touch_at || p.last_touch_at < cut30);
-
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <PageHeader
@@ -105,32 +89,9 @@ export default async function PartnersPage() {
         actions={<NewPartnerForm />}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        <StatCard label="Active partners" value={active.length} sub={`${live.length} live in pipeline`} />
-        <StatCard label="Emerging" value={emerging.length} sub="in outreach / piloting" muted={emerging.length === 0} />
-        <StatCard label="Prospects" value={prospects.length} sub="cold + inbound" muted={prospects.length === 0} />
-        <StatCard
-          label="Need a touch"
-          value={staleTouch.length + mouExpiring.length + mouExpired.length}
-          sub={
-            mouExpired.length > 0
-              ? `${mouExpired.length} MOU expired`
-              : mouExpiring.length > 0
-              ? `${mouExpiring.length} MOU expiring`
-              : "active, 30+ days quiet"
-          }
-          muted={staleTouch.length + mouExpiring.length + mouExpired.length === 0}
-        />
-      </div>
-
-      {partners.length === 0 ? (
-        <p className="text-sm text-ink-2">
-          No partners yet — add your first school or nonprofit partner, or wait for the public
-          signup form to feed prospects in.
-        </p>
-      ) : (
-        <PartnersWorkspace partners={partners} />
-      )}
+      {/* KPI boxes + list live together in the client workspace so the
+          "Active partners" stat box can filter the rows below it. */}
+      <PartnersWorkspace partners={partners} />
     </div>
   );
 }

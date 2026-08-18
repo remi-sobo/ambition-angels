@@ -1,6 +1,7 @@
 "use client";
 
-// The Schools & Partners workspace: two tabs (Pipeline vs Prospects), a
+// The Schools & Partners workspace: KPI stat boxes (the "Active partners"
+// box doubles as a filter toggle), two tabs (Pipeline vs Prospects), a
 // filter bar (search · type · area), and rows you can advance a stage,
 // log a touch, or open. Mirrors the donors list ergonomics; filtering is
 // client-side since the partner set is small.
@@ -13,7 +14,9 @@ import {
   TAB_STATUSES, NEXT_STATUS, type TabKey, type PartnerStatus,
 } from "../_lib/status";
 import { KIND_LABELS, type Partner } from "../_lib/partners";
+import { computePartnerKpis, isActivePartner } from "../_lib/kpis";
 import { scoreBand, SCORE_BAND_STYLE } from "../_lib/rubric";
+import StatCard from "../../_components/StatCard";
 import PartnersBoard from "./PartnersBoard";
 
 const TABS: { key: TabKey; label: string }[] = [
@@ -29,6 +32,11 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
   const [kind, setKind] = useState<string>("all");
   const [region, setRegion] = useState<string>("all");
   const [taskFilter, setTaskFilter] = useState<"all" | "open" | "overdue">("all");
+  // The "Active partners" stat box is a toggle: on → only active/anchor rows,
+  // regardless of which tab is selected (so the filter always shows results).
+  const [activeOnly, setActiveOnly] = useState(false);
+
+  const kpis = useMemo(() => computePartnerKpis(partners), [partners]);
 
   // Area chips from whatever geography we have (region preferred).
   const regions = useMemo(() => {
@@ -53,7 +61,9 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
     const needle = q.trim().toLowerCase();
     const allowed = TAB_STATUSES[tab] as readonly string[];
     return partners.filter((p) => {
-      if (!allowed.includes(p.status)) return false;
+      if (activeOnly) {
+        if (!isActivePartner(p)) return false;
+      } else if (!allowed.includes(p.status)) return false;
       if (kind !== "all" && p.kind !== kind) return false;
       if (region !== "all" && (p.region || "") !== region) return false;
       if (taskFilter === "open" && !(p.open_tasks && p.open_tasks > 0)) return false;
@@ -64,13 +74,14 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
       }
       return true;
     });
-  }, [partners, tab, q, kind, region, taskFilter]);
+  }, [partners, tab, q, kind, region, taskFilter, activeOnly]);
 
   // Board view spans every status as a column, so it ignores the tab's status
   // restriction but honours the search / type / area / task filters.
   const boardItems = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return partners.filter((p) => {
+      if (activeOnly && !isActivePartner(p)) return false;
       if (kind !== "all" && p.kind !== kind) return false;
       if (region !== "all" && (p.region || "") !== region) return false;
       if (taskFilter === "open" && !(p.open_tasks && p.open_tasks > 0)) return false;
@@ -81,7 +92,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
       }
       return true;
     });
-  }, [partners, q, kind, region, taskFilter]);
+  }, [partners, q, kind, region, taskFilter, activeOnly]);
 
   // Highest-fit first, then unscored, then alphabetical.
   const byScore = (a: Partner, b: Partner) => {
@@ -90,19 +101,62 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
     return a.name.localeCompare(b.name);
   };
 
-  // Group by stage (pipeline/all) or flat (prospects).
+  // Group by stage (pipeline/all/active-only) or flat (prospects).
   const groups = useMemo(() => {
-    if (tab === "prospects") {
+    if (tab === "prospects" && !activeOnly) {
       return [{ status: "prospect" as PartnerStatus, rows: [...filtered].sort(byScore) }];
     }
-    const order = STATUS_ORDER.filter((s) => (TAB_STATUSES[tab] as readonly string[]).includes(s));
+    const order = STATUS_ORDER.filter(
+      (s) => activeOnly || (TAB_STATUSES[tab] as readonly string[]).includes(s)
+    );
     return order
       .map((status) => ({ status, rows: filtered.filter((p) => p.status === status).sort(byScore) }))
       .filter((g) => g.rows.length > 0);
-  }, [filtered, tab]);
+  }, [filtered, tab, activeOnly]);
 
   return (
     <div className="space-y-5">
+      {/* KPI boxes. "Active partners" is a toggle — click filters the list
+          below to active/anchor orgs, click again clears. */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        <button
+          type="button"
+          onClick={() => setActiveOnly((v) => !v)}
+          aria-pressed={activeOnly}
+          title={activeOnly ? "Click to show all partners" : "Click to show only active partners"}
+          className={`text-left w-full rounded-card-lg transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-orange/60 ${
+            activeOnly ? "ring-2 ring-orange" : "hover:ring-2 hover:ring-orange/30"
+          }`}
+        >
+          <StatCard
+            label="Active partners"
+            value={kpis.active}
+            sub={activeOnly ? "filtering — click to clear" : `${kpis.live} live in pipeline`}
+          />
+        </button>
+        <StatCard label="Emerging" value={kpis.emerging} sub="in outreach / piloting" muted={kpis.emerging === 0} />
+        <StatCard label="Prospects" value={kpis.prospects} sub="cold + inbound" muted={kpis.prospects === 0} />
+        <StatCard
+          label="Need a touch"
+          value={kpis.staleTouch + kpis.mouExpiring + kpis.mouExpired}
+          sub={
+            kpis.mouExpired > 0
+              ? `${kpis.mouExpired} MOU expired`
+              : kpis.mouExpiring > 0
+              ? `${kpis.mouExpiring} MOU expiring`
+              : "active, 30+ days quiet"
+          }
+          muted={kpis.staleTouch + kpis.mouExpiring + kpis.mouExpired === 0}
+        />
+      </div>
+
+      {partners.length === 0 ? (
+        <p className="text-sm text-ink-2">
+          No partners yet — add your first school or nonprofit partner, or wait for the public
+          signup form to feed prospects in.
+        </p>
+      ) : (
+        <>
       {/* Tabs (list only) + view toggle */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div
@@ -142,6 +196,11 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-2">
+        {activeOnly && (
+          <Chip active onClick={() => setActiveOnly(false)}>
+            Active partners only <span className="opacity-60">✕</span>
+          </Chip>
+        )}
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -176,7 +235,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
 
       {/* Cross-tab pointer: a newly-added partner defaults to Prospect, which
           the Pipeline tab hides — so it can look "lost". Surface it. */}
-      {view === "list" && tab !== "prospects" && tabCounts.prospects > 0 && (
+      {view === "list" && !activeOnly && tab !== "prospects" && tabCounts.prospects > 0 && (
         <button
           onClick={() => setTab("prospects")}
           className="block w-full text-left text-xs text-ink-2 bg-tile border-[1.5px] border-outline rounded-lg px-4 py-2 hover:border-orange/40 hover:text-ink-1 transition-colors"
@@ -190,12 +249,14 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
       {view === "board" ? (
         <PartnersBoard partners={boardItems} />
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-ink-2 py-6">No partners match these filters.</p>
+        <p className="text-sm text-ink-2 py-6">
+          {activeOnly ? "No active partners yet." : "No partners match these filters."}
+        </p>
       ) : (
         <div className="space-y-6">
           {groups.map((g) => (
             <section key={g.status}>
-              {tab !== "prospects" && (
+              {(activeOnly || tab !== "prospects") && (
                 <h3 className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-2">
                   {STATUS_LABELS[g.status]} ({g.rows.length})
                 </h3>
@@ -206,6 +267,8 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
             </section>
           ))}
         </div>
+      )}
+        </>
       )}
     </div>
   );

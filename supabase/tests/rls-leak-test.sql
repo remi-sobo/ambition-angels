@@ -1170,4 +1170,195 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+
+-- ════ Comms story bank (comms_phase1_story_schema.sql) ════════════════════
+-- Two gates stack here, and the second one is the point of the whole module:
+--   comms.manage        — owner/admin/staff. No key at all for board_viewer,
+--                         finance, or a non-member.
+--   comms.subjects.read — owner/admin ONLY. This is the first deliberate split
+--                         off the staff bundle: staff see the story, but not
+--                         WHICH participant it is about, and not the consent
+--                         rows naming that participant's guardian.
+-- The consent gate is the subtle one — it keys off the PARENT subject's type
+-- through a SECURITY DEFINER helper, because asking the question with a plain
+-- exists() would invert into a leak for exactly the callers it must deny.
+reset role;
+reset request.jwt.claim.sub;
+
+do $$
+declare
+  aa uuid; t2 uuid;
+  s_participant uuid; s_partner uuid; t2_story uuid;
+  sub_participant uuid; sub_partner uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+  select id into t2 from orgs where slug = 'tenant-two';
+
+  -- AA: one story about a minor participant, one about a partner org.
+  insert into stories (org_id, title, body, outcome, status)
+  values (aa, 'leak-test-participant-story', 'A teen did a thing.',
+          'She got the internship.', 'approved')
+  returning id into s_participant;
+
+  insert into stories (org_id, title, body, status)
+  values (aa, 'leak-test-partner-story', 'A school signed on.', 'raw')
+  returning id into s_partner;
+
+  insert into story_subjects (org_id, story_id, subject_type, display_label, is_minor)
+  values (aa, s_participant, 'participant', 'Marcus', true)
+  returning id into sub_participant;
+
+  insert into story_subjects (org_id, story_id, subject_type, display_label)
+  values (aa, s_partner, 'partner', 'Eastside High')
+  returning id into sub_partner;
+
+  -- A granted consent on the participant, and one on the partner. Only the
+  -- first should be invisible to staff.
+  insert into story_consents (org_id, story_subject_id, scope, granted_by, granted_at, expires_at)
+  values (aa, sub_participant, array['first_name','photo'], 'guardian: A. Reed',
+          current_date, current_date + 365);
+  insert into story_consents (org_id, story_subject_id, scope, granted_by, granted_at)
+  values (aa, sub_partner, array['full_name'], 'self', current_date);
+
+  insert into story_media (org_id, story_id, storage_path, mime, kind)
+  values (aa, s_participant, aa || '/' || s_participant || '/photo.jpg', 'image/jpeg', 'photo');
+
+  -- Tenant two: one story that must never appear in an AA session.
+  insert into stories (org_id, title, body, status)
+  values (t2, 'leak-test-t2-story', 'Another tenant''s win.', 'approved')
+  returning id into t2_story;
+  insert into story_subjects (org_id, story_id, subject_type, display_label)
+  values (t2, t2_story, 'participant', 'Someone Else');
+end $$;
+
+set role authenticated;
+
+-- AA owner: everything AA, nothing from tenant two.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  if (select count(*) from stories where title like 'leak-test-%-story') <> 2 then
+    raise exception 'AA owner should see 2 AA stories, saw %',
+      (select count(*) from stories where title like 'leak-test-%-story');
+  end if;
+  if (select count(*) from stories where title = 'leak-test-t2-story') <> 0 then
+    raise exception 'LEAK: AA owner reads a tenant-two story';
+  end if;
+  if (select count(*) from story_subjects where display_label = 'Marcus') <> 1 then
+    raise exception 'owner with comms.subjects.read cannot read a participant subject';
+  end if;
+  if (select count(*) from story_subjects where display_label = 'Someone Else') <> 0 then
+    raise exception 'LEAK: AA owner reads a tenant-two story subject';
+  end if;
+  if (select count(*) from story_consents) <> 2 then
+    raise exception 'owner should see both consent rows, saw %',
+      (select count(*) from story_consents);
+  end if;
+  if (select count(*) from story_media) <> 1 then
+    raise exception 'owner cannot read story_media';
+  end if;
+end $$;
+
+-- AA staff: comms.manage but NOT comms.subjects.read. Sees both stories and
+-- the partner subject; sees ZERO participant subjects and ZERO of that
+-- participant's consent rows.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$
+declare n int;
+begin
+  if (select count(*) from stories where title like 'leak-test-%-story') <> 2 then
+    raise exception 'staff with comms.manage cannot read stories, saw %',
+      (select count(*) from stories where title like 'leak-test-%-story');
+  end if;
+  if (select count(*) from story_subjects where subject_type = 'participant') <> 0 then
+    raise exception 'LEAK: staff without comms.subjects.read reads a participant subject';
+  end if;
+  if (select count(*) from story_subjects where display_label = 'Eastside High') <> 1 then
+    raise exception 'staff cannot read a non-participant subject (the gate is too wide)';
+  end if;
+  -- The consent gate inherits the parent subject's type. Staff see the
+  -- partner's consent, never the participant's.
+  if (select count(*) from story_consents) <> 1 then
+    raise exception 'staff should see exactly the partner consent row, saw %',
+      (select count(*) from story_consents);
+  end if;
+  if (select count(*) from story_consents where granted_by like 'guardian:%') <> 0 then
+    raise exception 'LEAK: staff without comms.subjects.read reads a participant consent row';
+  end if;
+  -- Writes are gated the same way: staff cannot create a participant subject.
+  begin
+    insert into story_subjects (org_id, story_id, subject_type, display_label)
+    select org_id, id, 'participant', 'Sneaky' from stories where title = 'leak-test-partner-story';
+    raise exception 'LEAK: staff without comms.subjects.read inserted a participant subject';
+  exception when insufficient_privilege then null; -- expected
+  end;
+  -- But staff CAN capture and edit stories — that is the whole supply side.
+  insert into stories (org_id, title, body)
+  select id, 'leak-test-staff-capture', 'Captured from a phone.'
+  from orgs where slug = 'ambition-angels';
+  select count(*) into n from stories where title = 'leak-test-staff-capture';
+  if n <> 1 then raise exception 'staff with comms.manage cannot capture a story'; end if;
+  delete from stories where title = 'leak-test-staff-capture';
+end $$;
+
+-- Board viewer: no comms.* key at all. Sees nothing, writes nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$ begin
+  if (select count(*) from stories) <> 0 then
+    raise exception 'LEAK: board_viewer reads stories';
+  end if;
+  if (select count(*) from story_subjects) <> 0 then
+    raise exception 'LEAK: board_viewer reads story_subjects';
+  end if;
+  if (select count(*) from story_consents) <> 0 then
+    raise exception 'LEAK: board_viewer reads story_consents';
+  end if;
+  if (select count(*) from story_media) <> 0 then
+    raise exception 'LEAK: board_viewer reads story_media';
+  end if;
+end $$;
+do $$ begin
+  insert into stories (org_id, title)
+  select id, 'leak-test-board-write' from orgs where slug = 'ambition-angels';
+  raise exception 'LEAK: board_viewer wrote a story';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- Tenant-two owner: their own story only, never AA's.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$ begin
+  if (select count(*) from stories where title = 'leak-test-t2-story') <> 1 then
+    raise exception 'tenant-two owner cannot read their own story';
+  end if;
+  if (select count(*) from stories where title like 'leak-test-p%-story') <> 0 then
+    raise exception 'LEAK: tenant-two owner reads AA stories';
+  end if;
+  if (select count(*) from story_subjects where display_label = 'Marcus') <> 0 then
+    raise exception 'LEAK: tenant-two owner reads an AA participant subject';
+  end if;
+end $$;
+
+-- Non-member session and anon: nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from stories) <> 0 then
+    raise exception 'LEAK: non-member reads stories';
+  end if;
+  if (select count(*) from story_consents) <> 0 then
+    raise exception 'LEAK: non-member reads story_consents';
+  end if;
+end $$;
+reset role;
+set role anon;
+do $$ begin
+  if (select count(*) from stories) <> 0 then
+    raise exception 'LEAK: anon reads stories';
+  end if;
+  if (select count(*) from story_media) <> 0 then
+    raise exception 'LEAK: anon reads story_media';
+  end if;
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

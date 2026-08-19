@@ -55,6 +55,7 @@ const TENANT_TABLES = new Set([
   "relationships", "research_runs", "review_competencies", "review_cycles", "review_feedback",
   "review_manager_notes", "review_summaries", "rhythm_sessions", "segments", "soft_credits",
   "staff", "staff_goals", "staff_kpi_snapshots", "staff_kpis", "stewardship_rules",
+  "stories", "story_consents", "story_media", "story_subjects",
   "strategy_angles", "strategy_room_meta", "students", "user_org_state", "ygb_attendance",
   "ygb_registrations",
 ]);
@@ -83,7 +84,16 @@ function walk(dir: string): string[] {
 }
 
 function serviceRoleFiles(): string[] {
-  const roots = [join(REPO, "app/admin"), join(REPO, "app/api/admin"), join(REPO, "lib/admin")];
+  // lib/comms is in scope because the story bank deliberately makes one narrow
+  // service-role read (the redacted participant fill-in in
+  // lib/comms/stories-server.ts). A read that bypasses RLS by design is exactly
+  // the kind this guard has to watch.
+  const roots = [
+    join(REPO, "app/admin"),
+    join(REPO, "app/api/admin"),
+    join(REPO, "lib/admin"),
+    join(REPO, "lib/comms"),
+  ];
   const files: string[] = [];
   for (const root of roots) {
     for (const abs of walk(root)) {

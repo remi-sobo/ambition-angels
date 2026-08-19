@@ -211,6 +211,7 @@ ordered=(
   create_cut_rooms.sql
   create_game_daily.sql
   create_plan_archives.sql
+  comms_phase1_story_schema.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

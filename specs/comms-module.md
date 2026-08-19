@@ -45,7 +45,7 @@ The existing send path is reused, not duplicated. Publishing an edition compiles
 
 **In**
 - Tables: `stories`, `story_subjects`, `story_consents`, `story_media`, `comms_formats`, `comms_editions`, `comms_edition_slots`, `comms_outputs`. All org-scoped, RLS'd, no column defaults on `org_id`.
-- Two new permission keys: `comms.manage` (create/edit/rank stories, build editions, run composer) and `comms.subjects.view` (see and link identifiable participant subjects). The second is the first split off the staff bundle.
+- Two new permission keys: `comms.manage` (create/edit/rank stories, build editions, run composer) and `comms.subjects.read` (see and link identifiable participant subjects). The second is the first split off the staff bundle.
 - Story capture (mobile-first modal), bank list with drag rank plus computed suggestions, story detail, consent recording and status chips.
 - Composer for short-form outputs (LinkedIn post, thank-you paragraph, grant anecdote) with metric grounding and the redaction boundary.
 - Format library (4 starter formats seeded per org at enable time, including the news flash), a format editor (add/remove/rename/reorder slots, change kinds, toggle required), edition builder, edition compile to `email_campaigns`.
@@ -76,7 +76,7 @@ All tables: `org_id uuid not null` (no default), populated from session context.
 **story_subjects** — who the story is about. Zero or more per story.
 - `id`, `org_id`, `story_id references stories`, `subject_type text` check in (`participant`, `constituent`, `partner`, `staff`, `none`), `subject_id uuid null` (points at `students.id`, `constituents.id`, or `partners.id` depending on type; validated in the API layer, not a hard FK, same polymorphic pattern as acknowledgments v2), `display_label text` (what the story may call them under current consent, e.g. "Marcus" or "a 16-year-old participant")
 - `is_minor boolean not null default false`. When true, the redaction boundary is unconditional.
-- Rows with `subject_type = 'participant'` are readable only under `comms.subjects.view`; without it the API returns the story with subjects collapsed to their anonymous `display_label`.
+- Rows with `subject_type = 'participant'` are readable only under `comms.subjects.read`; without it the API returns the story with subjects collapsed to their anonymous `display_label`.
 
 **story_consents** — one or more per subject.
 - `id`, `org_id`, `story_subject_id references story_subjects`, `scope text[] not null` (any of `first_name`, `full_name`, `photo`, `video`, `quote`, `outcome_details`)
@@ -119,7 +119,9 @@ Both with `security_invoker = on` (house rule; plain views run as owner and bypa
 
 Two new keys in `role_permissions`:
 - `comms.manage`: seeded to owner, admin, staff. Gates all writes across the eight tables and all comms UI.
-- `comms.subjects.view`: seeded to owner and admin only. Gates reading `story_subjects` rows where `subject_type = 'participant'` and any consent evidence documents. Staff see the story; the participant link renders as the anonymous label.
+- `comms.subjects.read`: seeded to owner and admin only. Gates reading `story_subjects` rows where `subject_type = 'participant'`, and the `story_consents` rows hanging off one (they carry the guardian's name and the evidence pointer). Staff see the story; the participant link renders as an anonymous placeholder with its consent state intact, so a blocked story still explains itself.
+
+*(Named `.read`, not `.view`, per Remi at Phase 1: read/write/manage/admin/delete is the verb set every other domain uses, and a permission string baked into RLS policy bodies is expensive to rename later. Phase 0 findings §11-D.)*
 
 RLS pattern per table (see appendix for full SQL): select requires `has_permission(org_id, 'comms.manage')` or the tighter key for subject rows; insert/update/delete require the same plus `org_id` matching session org context. Board viewers get no comms access in v1.
 
@@ -162,7 +164,7 @@ Top-level **Comms** section in the sidebar (not nested under Fundraising: progra
 - **The list is the product.** A single calm column of story cards on cream, generous margin. Each card: title (heading weight), first line of body (ink-2), a subject chip, a consent chip, tag chips, a small photo thumb when present. Healthy recedes; problems advance: a card with expiring consent carries the ochre chip, expired/revoked carries the sparing brick chip and a muted "blocked from use" label. In grayscale the chips still read via label text and outline weight.
 - **Verdict line at the top**, deterministic: "12 stories ready. 3 need consent before you can use them. Your best unused story is 6 weeks old." One sentence, worst true thing, then the list.
 - **Rank by drag.** Cards drag vertically; drop writes `rank_order`. Unranked cards sit below a taupe hairline labeled "suggested", ordered by the computed score, each with a quiet "why" hover (fresh, unused, on-goal). Dragging one above the line adopts it into the ranked set. No confetti, a quiet saved tick.
-- **Capture: 15 seconds, phone-first.** A single persistent "+ Capture a win" button (orange, rounded-full, house style) opens a bottom-sheet modal: title field autofocused, one textarea ("What happened, and what changed because of it? Rough is fine."), an add-photo tap target, an optional "Who's it about?" typeahead (only shown to users with `comms.subjects.view`; others get a plain text label field), save. Everything else (tags, goal link, consent) is deferred to the detail view. The modal never blocks on completeness; a raw story beats no story.
+- **Capture: 15 seconds, phone-first.** A single persistent "+ Capture a win" button (orange, rounded-full, house style) opens a bottom-sheet modal: title field autofocused, one textarea ("What happened, and what changed because of it? Rough is fine."), an add-photo tap target, an optional "Who's it about?" typeahead (only shown to users with `comms.subjects.read`; others get a plain text label field), save. Everything else (tags, goal link, consent) is deferred to the detail view. The modal never blocks on completeness; a raw story beats no story.
 - **Story detail** is one altitude down: full body editable, subjects panel, consent panel (add consent: scopes as toggle chips, dates, upload the release into `documents`), media strip, tag editor, goal link, and the composer launcher ("Turn this into…"). Status advances raw → drafted → approved with a single control; approval is the human gate before anything is publishable.
 
 ### 7.3 Consent panel
@@ -219,7 +221,7 @@ Phases 1 and 2 are independently shippable and useful with zero AI. Phase 3 is w
 - A quarterly edition built from the seeded format compiles into an `email_campaigns` draft that test-sends through the existing path, honoring `email_suppressions`.
 - A second tenant renames "Program spotlight" to its own vocabulary, adds a slot, and reorders the format entirely through the Settings editor, with zero code changes; an edition already in `drafting` is unaffected by the edit, and the next edition created reflects it.
 - `select column_default from information_schema.columns where table_name='bv_newsletter_subscribers' and column_name='org_id'` returns null, and the pg_attrdef cross-check agrees.
-- All four new views/tables sets pass the RLS probe: a session without `comms.manage` reads zero rows; a staff session without `comms.subjects.view` reads stories but zero participant subject rows.
+- All four new views/tables sets pass the RLS probe: a session without `comms.manage` reads zero rows; a staff session without `comms.subjects.read` reads stories but zero participant subject rows.
 - Every new view shows `security_invoker=on` in `pg_views` reloptions.
 - Board viewer role sees no Comms nav item and gets 403 on comms routes.
 
@@ -236,7 +238,7 @@ Phases 1 and 2 are independently shippable and useful with zero AI. Phase 3 is w
 
 ## 11. Open decisions (with recommendations, all previously accepted by Remi)
 
-1. **Participant-identifying data in the bank: yes**, gated behind `comms.subjects.view`, the first split off the staff bundle. Decided.
+1. **Participant-identifying data in the bank: yes**, gated behind `comms.subjects.read`, the first split off the staff bundle. Decided.
 2. **Social publishing: export only** in v1. Decided.
 3. **HTML rendering: deferred**, compile stays plain text through the existing sender. Decided.
 4. **IA: top-level Comms.** Decided.
@@ -247,108 +249,40 @@ Phases 1 and 2 are independently shippable and useful with zero AI. Phase 3 is w
 
 ### Migration 1 (Phase 1): core story tables, permissions, trap fix
 
-```sql
--- 1a. Fix the comms-adjacent org_id default trap
-alter table public.bv_newsletter_subscribers alter column org_id drop default;
+**Applied.** The reviewable SQL is now the real file —
+`supabase/migrations/comms_phase1_story_schema.sql` — rather than a sketch, because the draft below
+would not have survived CI. It creates `stories`, `story_subjects`, `story_consents`, and
+`story_media`, seeds the two permission keys, and drops the `org_id` default on
+`bv_newsletter_subscribers`. Read that file; the deviations from this appendix's original draft,
+each from the Phase 0 recon, are:
 
--- 1b. Permission keys
-insert into public.role_permissions (role, permission) values
-  ('owner','comms.manage'), ('admin','comms.manage'), ('staff','comms.manage'),
-  ('owner','comms.subjects.view'), ('admin','comms.subjects.view')
-on conflict do nothing;
--- NOTE: confirm role_permissions column names in Phase 0 recon before applying.
+- **Idempotency.** Every `create table` / `create index` uses `if not exists`, and every policy is
+  `drop policy if exists` then `create policy`. `tests/migrations.test.ts` fails the build
+  otherwise, and the whole point of the convention is that re-applying the folder is always safe.
+- **The right `has_permission`.** Policies call `(select private.has_permission(org_id, …))`, the
+  form every other policy in this database uses — the `select` wrapper is what lets Postgres cache
+  it as an InitPlan instead of re-evaluating per row. `public.has_permission` is the app layer's
+  RPC shim (Reed's), not a policy primitive.
+- **`comms.subjects.read`**, not `.view` (see §6.3).
+- **`strategic_goal_id … on delete set null`.** The annual OGSM reseed deletes every `plan_goals`
+  row for an org; a restricting FK would block it. The link is a suggestion-score bonus, so losing
+  it on a reseed is correct. The FK cannot express "same org," so the API proves that separately
+  before writing.
+- **A `private.story_subject_is_participant()` helper**, SECURITY DEFINER, because the consent
+  policy has to ask about its parent subject's type. Asking with a plain `exists()` would invert
+  into a leak: `story_subjects` has its own RLS, so for a caller without `comms.subjects.read` the
+  participant row is invisible, the `exists()` returns false, and the policy concludes "not a
+  participant" — granting exactly the access it was written to deny.
+- **A scope vocabulary constraint** on `story_consents.scope`, so an unknown scope string cannot be
+  stored and later read as permission.
+- **`storage_path` is `{org_id}/{story_id}/{filename}`** in a `comms-media` bucket, not
+  `comms/{org_id}/…`. Every bucket here puts the org id first because storage RLS keys off
+  `(storage.foldername(name))[1]::uuid`; a literal first segment makes that policy form impossible.
+  The bucket is created in the dashboard, not the migration — `storage.buckets` does not exist on
+  the scratch Postgres the RLS harness runs against.
 
--- 1c. stories
-create table public.stories (
-  id uuid primary key default gen_random_uuid(),
-  org_id uuid not null,                       -- no default, ever
-  title text not null,
-  body text,
-  outcome text,
-  status text not null default 'raw'
-    check (status in ('raw','drafted','approved','used','retired')),
-  tags text[] not null default '{}',
-  happened_on date,
-  captured_by text,
-  rank_order integer,
-  strategic_goal_id uuid references public.plan_goals(id),
-  source text not null default 'manual' check (source in ('manual','reed','import')),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-create index stories_org_rank_idx on public.stories (org_id, rank_order nulls last);
-create index stories_org_status_idx on public.stories (org_id, status);
-
--- 1d. story_subjects
-create table public.story_subjects (
-  id uuid primary key default gen_random_uuid(),
-  org_id uuid not null,
-  story_id uuid not null references public.stories(id) on delete cascade,
-  subject_type text not null
-    check (subject_type in ('participant','constituent','partner','staff','none')),
-  subject_id uuid,                            -- polymorphic; validated in API layer
-  display_label text not null,
-  is_minor boolean not null default false,
-  created_at timestamptz not null default now()
-);
-create index story_subjects_story_idx on public.story_subjects (story_id);
-
--- 1e. story_consents
-create table public.story_consents (
-  id uuid primary key default gen_random_uuid(),
-  org_id uuid not null,
-  story_subject_id uuid not null references public.story_subjects(id) on delete cascade,
-  scope text[] not null,
-  requested_at date,
-  granted_by text,
-  granted_at date,
-  expires_at date,
-  constraint consent_requested_or_granted check (requested_at is not null or granted_at is not null),
-  revoked_at timestamptz,
-  evidence_document_id uuid references public.documents(id),
-  notes text,
-  created_at timestamptz not null default now()
-);
-
--- 1f. story_media
-create table public.story_media (
-  id uuid primary key default gen_random_uuid(),
-  org_id uuid not null,
-  story_id uuid not null references public.stories(id) on delete cascade,
-  storage_path text not null,
-  mime text,
-  size_bytes bigint,
-  caption text,
-  kind text not null default 'photo' check (kind in ('photo','video')),
-  created_at timestamptz not null default now()
-);
-
--- 1g. RLS (pattern shown for stories; repeat per table)
-alter table public.stories enable row level security;
-create policy stories_select on public.stories for select
-  using (public.has_permission(org_id, 'comms.manage'));
-create policy stories_write on public.stories for all
-  using (public.has_permission(org_id, 'comms.manage'))
-  with check (public.has_permission(org_id, 'comms.manage'));
-
-alter table public.story_subjects enable row level security;
-create policy story_subjects_select on public.story_subjects for select
-  using (
-    public.has_permission(org_id, 'comms.manage')
-    and (subject_type <> 'participant'
-         or public.has_permission(org_id, 'comms.subjects.view'))
-  );
-create policy story_subjects_write on public.story_subjects for all
-  using (public.has_permission(org_id, 'comms.manage')
-         and (subject_type <> 'participant'
-              or public.has_permission(org_id, 'comms.subjects.view')))
-  with check (public.has_permission(org_id, 'comms.manage')
-         and (subject_type <> 'participant'
-              or public.has_permission(org_id, 'comms.subjects.view')));
--- story_consents and story_media follow the stories pattern,
--- with consents additionally requiring comms.subjects.view when the
--- parent subject is a participant (enforced via exists() subquery).
-```
+Registered in `scripts/test-rls.sh`'s ordered list, with cross-role assertions in
+`supabase/tests/rls-leak-test.sql`.
 
 ### Migration 2 (Phase 2): views
 

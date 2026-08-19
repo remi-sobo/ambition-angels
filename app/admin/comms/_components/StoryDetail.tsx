@@ -7,6 +7,8 @@ import PageHeader from "@/app/admin/_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
 import type { LoadedStory } from "@/lib/comms/stories-server";
 import { SUBJECT_TYPES, type SubjectType } from "@/lib/comms/stories";
+import { CHANNEL_SPECS, type Channel } from "@/lib/comms/channels";
+import ComposerSheet from "./ComposerSheet";
 import ConsentPanel from "./ConsentPanel";
 import { ConsentChip, StoryStatusChip, TagChip } from "./StoryChips";
 
@@ -31,10 +33,17 @@ export default function StoryDetail({
   story,
   canSeeSubjects,
   goals,
+  metrics,
+  aiEnabled,
+  outputs,
 }: {
   story: LoadedStory;
   canSeeSubjects: boolean;
   goals: Array<{ id: string; title: string }>;
+  metrics: Array<{ id: string; name: string; unit: string | null; latest: number | null; stale: boolean }>;
+  /** ai.reed — the Grow-tier switch behind the Draft action. */
+  aiEnabled: boolean;
+  outputs: Array<{ id: string; channel: string; body: string; status: string; created_at: string }>;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(story.title);
@@ -52,6 +61,7 @@ export default function StoryDetail({
   const [subjectLabel, setSubjectLabel] = useState("");
   const [isMinor, setIsMinor] = useState(true);
 
+  const [composing, setComposing] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const dirty =
@@ -153,6 +163,18 @@ export default function StoryDetail({
         actions={
           <div className="flex items-center gap-2">
             {note && <span className="text-[11px] text-ink-3">{note}</span>}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setComposing(true)}
+              title={
+                story.publishable
+                  ? undefined
+                  : "Approve the story and get consent before drafting from it."
+              }
+            >
+              Turn this into…
+            </Button>
             {nextStatus && (
               <Button
                 size="sm"
@@ -478,6 +500,38 @@ export default function StoryDetail({
           </div>
         )}
       </section>
+
+      {/* ── Drafts made from this story ──────────────────────────────────── */}
+      {outputs.length > 0 && (
+        <section className={SECTION}>
+          <span className={TYPE.cardLabel}>Drafts from this story</span>
+          <ul className="mt-2 space-y-2">
+            {outputs.map((o) => (
+              <li key={o.id} className="rounded-card border border-hairline bg-tile px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold text-ink-1">
+                    {CHANNEL_SPECS[o.channel as Channel]?.label ?? o.channel}
+                  </span>
+                  <span className="text-[11px] text-ink-3">{o.status}</span>
+                </div>
+                <p className="mt-1 text-xs text-ink-2 line-clamp-3 leading-relaxed">{o.body}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <ComposerSheet
+        open={composing}
+        onClose={() => setComposing(false)}
+        storyId={story.id}
+        storyTitle={story.title}
+        storyText={[story.body, story.outcome].filter(Boolean).join("\n\n")}
+        metrics={metrics}
+        aiEnabled={aiEnabled}
+        publishable={story.publishable}
+        blockedReason={story.blocked_reason}
+      />
     </div>
   );
 }

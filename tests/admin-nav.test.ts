@@ -3,6 +3,7 @@ import {
   NAV_SECTIONS,
   activeHref,
   resolveSectionNav,
+  visibleSections,
   type NavSection,
 } from "@/lib/admin/nav";
 import type { FeatureKey } from "@/lib/admin/entitlements";
@@ -200,5 +201,64 @@ describe("admin section sub-topic nav", () => {
     // Overview owns /admin, so utility pages under it carry Command Center.
     expect(activeHref("/admin/settings")).toBe("/admin");
     expect(sectionRow("/admin/settings")[0]).toBe("Overview");
+  });
+});
+
+// ── Permission gating (comms) ────────────────────────────────────────────────
+// The first nav entries gated on a PERMISSION rather than an entitlement. An
+// org holds `modules.comms`; a board viewer inside that org holds no `comms.*`
+// key at all, and a section that only ever 403s is worse than no section.
+//
+// Hiding is an affordance, not the boundary — app/admin/comms/layout.tsx and
+// RLS still refuse a direct URL. These tests pin the affordance.
+
+const OWNER_PERMS = ["comms.manage", "comms.subjects.read", "fundraising.read", "ops.read"];
+const BOARD_PERMS = ["board.read", "reports.read", "metrics.read"];
+
+describe("permission-gated nav entries", () => {
+  const labels = (perms: string[] | null) =>
+    visibleSections(ALL_FEATURES, perms)
+      .flatMap((s) => s.items.map((i) => i.label));
+
+  test("a member with comms.manage sees the Comms section", () => {
+    expect(labels(OWNER_PERMS)).toContain("Stories");
+  });
+
+  test("a board viewer sees no Comms entry at all", () => {
+    expect(labels(BOARD_PERMS)).not.toContain("Stories");
+    expect(labels(BOARD_PERMS)).not.toContain("Editions");
+  });
+
+  test("the whole Comms section disappears rather than rendering empty", () => {
+    const sections = visibleSections(ALL_FEATURES, BOARD_PERMS).map((s) => s.label);
+    expect(sections).not.toContain("Comms");
+    expect(visibleSections(ALL_FEATURES, OWNER_PERMS).map((s) => s.label)).toContain("Comms");
+  });
+
+  test("entitlement and permission are ANDed — either one missing hides it", () => {
+    const noModule = ALL_FEATURES.filter((f) => f !== "modules.comms");
+    expect(
+      visibleSections(noModule, OWNER_PERMS).flatMap((s) => s.items.map((i) => i.label))
+    ).not.toContain("Stories");
+  });
+
+  test("null perms (pre-auth) keeps the full IA, matching how features behaves", () => {
+    expect(labels(null)).toContain("Stories");
+  });
+
+  test("no sub-topic bar on a comms route for someone without the permission", () => {
+    expect(
+      resolveSectionNav("/admin/comms", { features: ALL_FEATURES, perms: BOARD_PERMS })
+    ).toBeNull();
+  });
+
+  test("permission gating leaves every other section untouched", () => {
+    const before = visibleSections(ALL_FEATURES, null)
+      .flatMap((s) => s.items.map((i) => i.label))
+      .filter((l) => l !== "Stories" && l !== "Editions");
+    const after = visibleSections(ALL_FEATURES, BOARD_PERMS).flatMap((s) =>
+      s.items.map((i) => i.label)
+    );
+    expect(after).toEqual(before);
   });
 });

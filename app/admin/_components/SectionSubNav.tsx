@@ -15,6 +15,7 @@ import { resolveSectionNav } from "@/lib/admin/nav";
 export default function SectionSubNav({
   features,
   terms,
+  perms,
 }: {
   /** Enabled entitlement keys for the session org — tabs whose module the org
    *  lacks are dropped, matching the sidebar (core fence spec §6b). */
@@ -22,9 +23,12 @@ export default function SectionSubNav({
   /** Resolved terminology labels (term key → display label), so the pills read
    *  "Scholars"/"Chapters" wherever the sidebar does. */
   terms?: Record<string, string> | null;
+  /** The member's permission keys, so a section they can't open never gets a
+   *  bar. Mirrors the sidebar's filter. */
+  perms?: string[] | null;
 }) {
   const pathname = usePathname() ?? "";
-  const nav = resolveSectionNav(pathname, { features, terms });
+  const nav = resolveSectionNav(pathname, { features, terms, perms });
   if (!nav) return null;
 
   return (

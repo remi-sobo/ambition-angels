@@ -15,6 +15,7 @@ import { AdminBadgesProvider } from "./_components/AdminBadges";
 import { getAdminUser, getOrgContext, getUserOrgs } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
+import { getMyPermissions } from "@/lib/admin/permissions";
 import { getNavTermLabels } from "@/lib/admin/terminology";
 
 export const metadata: Metadata = {
@@ -94,6 +95,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // the nav reads "Scholars"/"Chapters"/"Team" when an org has renamed terms.
   const terms = authed && orgId ? await getNavTermLabels() : null;
 
+  // The member's own permission set, for nav entries gated on a permission
+  // rather than an entitlement (Comms). Null pre-auth, same as `features`, so
+  // the login screen keeps the full IA.
+  const perms = authed ? await getMyPermissions() : null;
+
   // The user's orgs feed the sidebar-footer switcher (C1) — it only renders
   // with 2+ memberships, so single-org users never see it.
   const orgs = authed ? await getUserOrgs() : [];
@@ -118,6 +124,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         terms={terms}
         orgName={ctx?.orgName ?? null}
         features={features}
+        perms={perms}
         orgs={orgs}
         activeOrgId={orgId}
       />
@@ -131,7 +138,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               only Fundraising used to show sibling sub-topics. Authed only:
               the pre-auth /admin login screen carries no section. */}
           <main className="admin-main flex-1 min-w-0 overflow-y-auto">
-            {authed && <SectionSubNav features={features} terms={terms} />}
+            {authed && <SectionSubNav features={features} terms={terms} perms={perms} />}
             {children}
           </main>
           {authed && <Rail reedEnabled={reedEnabled} />}

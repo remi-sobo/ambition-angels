@@ -212,6 +212,7 @@ ordered=(
   create_game_daily.sql
   create_plan_archives.sql
   comms_phase1_story_schema.sql
+  comms_phase2_views.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"
@@ -236,6 +237,11 @@ psql "$DATABASE_URL" -q -f "$mig/create_audit_log.sql" 2>&1 | grep -v "^$" | tai
 #     the platform stub does not provide — so it can't apply to the scratch DB.
 #   grant_shannon_owner.sql      — a data migration (UPDATE memberships for one
 #     real user) that depends on seeded auth.users/orgs rows absent here.
+#   comms_phase2_storage.sql     — creates the comms-media bucket and its
+#     storage.objects policies. The platform stub provides no `storage` schema,
+#     so it cannot apply here. Its gate is the same
+#     has_permission(org_id, 'comms.manage') the story_media table policies use,
+#     and those ARE exercised by the matrix.
 #   bloomos_staff_phase1..4.sql  — mix schema with seed rows keyed to the real
 #     AA org id ('17c75da8-…'), which doesn't exist in the scratch DB, so the
 #     seed inserts violate the orgs FK. Their RLS follows the standard
@@ -247,7 +253,7 @@ psql "$DATABASE_URL" -q -f "$mig/create_audit_log.sql" 2>&1 | grep -v "^$" | tai
 #     migration chain and must not be applied to the scratch DB.
 missing=$(ls "$mig"/*.sql | xargs -n1 basename |
   grep -v -F -x -f <(printf '%s\n' "${ordered[@]}" create_audit_log.sql pin_function_search_path.sql \
-    bloomos_global_search_phase3.sql grant_shannon_owner.sql \
+    bloomos_global_search_phase3.sql grant_shannon_owner.sql comms_phase2_storage.sql \
     bloomos_staff_phase1.sql bloomos_staff_phase2.sql bloomos_staff_phase3.sql bloomos_staff_phase4.sql) |
   grep -v -E '\.MANUAL\.sql$' || true)
 if [ -n "$missing" ]; then

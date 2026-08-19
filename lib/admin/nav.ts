@@ -26,7 +26,8 @@ export type IconName =
   | "finance" | "revenue" | "expenses" | "budget" | "cashflow"
   | "webanalytics" | "appanalytics" | "studentanalytics" | "surveys"
   | "week" | "tasks" | "monday" | "friday" | "projects" | "meetings" | "team" | "documents"
-  | "board" | "compliance" | "kpis" | "strategy";
+  | "board" | "compliance" | "kpis" | "strategy"
+  | "stories" | "editions";
 
 /** One pill in a horizontal sub-topic bar. */
 export type SectionTab = {
@@ -36,6 +37,8 @@ export type SectionTab = {
    *  wizards under My Week, or /admin/intake under Students). */
   match?: string[];
   feature?: FeatureKey;
+  /** Permission key gating this entry — see NavItem.perm. */
+  perm?: string;
   /** Terminology key (core fence spec B3) — see NavItem.term. */
   term?: string;
 };
@@ -46,6 +49,18 @@ export type NavItem = {
   href?: string;
   soon?: boolean;
   feature?: FeatureKey;
+  /**
+   * Permission key required to SEE this entry. Distinct from `feature`:
+   * an entitlement says the ORG bought the module, a permission says THIS
+   * MEMBER may use it. Comms is the first entry that needs the difference —
+   * an org holds `modules.comms` while a board viewer holds no `comms.*` key
+   * at all, and showing them a section that only 403s is worse than not
+   * showing it.
+   *
+   * Hiding is an affordance, never the boundary: the module layout's gate and
+   * RLS still refuse a direct URL.
+   */
+  perm?: string;
   /** Terminology key (core fence spec B3): when the org has renamed this term
    *  (org_terminology → entity_types fallback, resolved server-side in the
    *  admin layout), the resolved label replaces `label`. */
@@ -139,6 +154,34 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Pipeline", icon: "majorgifts", href: "/admin/fundraising", feature: "modules.fundraising" },
       { label: "Grants", icon: "grants", href: "/admin/fundraising/grants", feature: "modules.fundraising" },
       { label: "Campaigns", icon: "campaigns", href: "/admin/fundraising/campaigns", feature: "modules.fundraising" },
+    ],
+  },
+  {
+    label: "Comms",
+    // Top-level, NOT nested under Fundraising (spec §7.1): program staff are
+    // the supply side of the story bank, and they should never have to walk
+    // through the donor pipeline to log a win.
+    //
+    // Every entry carries `perm: "comms.manage"` as well as the module
+    // entitlement — comms is the first product with a permission that not
+    // every member of an entitled org holds.
+    items: [
+      {
+        label: "Stories",
+        icon: "stories",
+        href: "/admin/comms",
+        feature: "modules.comms",
+        perm: "comms.manage",
+        match: ["/admin/comms/stories"],
+      },
+      {
+        label: "Editions",
+        icon: "editions",
+        href: "/admin/comms/editions",
+        feature: "modules.comms",
+        perm: "comms.manage",
+        soon: true,
+      },
     ],
   },
   {
@@ -272,18 +315,28 @@ export function itemLabel(
   return (entry.term && terms?.[entry.term]) || entry.label;
 }
 
-function allowed(entry: { feature?: FeatureKey }, features?: string[] | null): boolean {
-  // null features = no session yet (login screen) — show the full IA rather
-  // than a stripped nav; B2 de-AAs the pre-auth shell.
-  return !features || !entry.feature || features.includes(entry.feature);
+function allowed(
+  entry: { feature?: FeatureKey; perm?: string },
+  features?: string[] | null,
+  perms?: string[] | null
+): boolean {
+  // null features/perms = no session yet (login screen) — show the full IA
+  // rather than a stripped nav; B2 de-AAs the pre-auth shell.
+  const entitled = !features || !entry.feature || features.includes(entry.feature);
+  const permitted = !perms || !entry.perm || perms.includes(entry.perm);
+  return entitled && permitted;
 }
 
-/** The sidebar sections with entitlement-filtered items, empty sections dropped. */
-export function visibleSections(features?: string[] | null): NavSection[] {
-  if (!features) return NAV_SECTIONS;
+/** The sidebar sections filtered by entitlement AND permission, empty sections
+ *  dropped. */
+export function visibleSections(
+  features?: string[] | null,
+  perms?: string[] | null
+): NavSection[] {
+  if (!features && !perms) return NAV_SECTIONS;
   return NAV_SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter((item) => allowed(item, features)),
+    items: section.items.filter((item) => allowed(item, features, perms)),
   })).filter((section) => section.items.length > 0);
 }
 
@@ -302,10 +355,15 @@ export type ResolvedSectionNav = {
  */
 export function resolveSectionNav(
   pathname: string,
-  opts?: { features?: string[] | null; terms?: Record<string, string> | null }
+  opts?: {
+    features?: string[] | null;
+    terms?: Record<string, string> | null;
+    perms?: string[] | null;
+  }
 ): ResolvedSectionNav | null {
   const features = opts?.features ?? null;
   const terms = opts?.terms ?? null;
+  const perms = opts?.perms ?? null;
 
   const href = activeHref(pathname);
   if (!href) return null;
@@ -315,7 +373,7 @@ export function resolveSectionNav(
   if (!section || !item) return null;
   // The route's own module is gated off for this org — the page renders the
   // not-authorized panel, so don't crown it with a nav bar.
-  if (!allowed(item, features)) return null;
+  if (!allowed(item, features, perms)) return null;
 
   const rows: ResolvedSectionNav["rows"] = [];
 
@@ -335,9 +393,10 @@ export function resolveSectionNav(
         label: i.label,
         match: i.match,
         feature: i.feature,
+        perm: i.perm,
         term: i.term,
       }))
-  ).filter((t) => allowed(t, features));
+  ).filter((t) => allowed(t, features, perms));
   // A lone sub-topic is not navigation — skip the row (Finance and Data each
   // have one sidebar item).
   if (sectionTabs.length > 1) {
@@ -345,7 +404,7 @@ export function resolveSectionNav(
   }
 
   // Row 2 — the active sub-topic's own tabs (Work, Meetings, Finance, Students).
-  const itemTabs = (item.tabs ?? []).filter((t) => allowed(t, features));
+  const itemTabs = (item.tabs ?? []).filter((t) => allowed(t, features, perms));
   if (itemTabs.length > 1) {
     rows.push({ label: itemLabel(item, terms), tabs: mark(itemTabs) });
   }

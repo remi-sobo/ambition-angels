@@ -28,7 +28,18 @@
 -- landing in Ambition Angels. supabase/tests/tenant-default-ratchet.sql fails
 -- the build if that ever regresses.
 --
--- Apply via the Supabase dashboard. Project: Ambition-Angels (kzzdtibbwsucloaoqpqa).
+-- APPLIED 2026-08-19 to Ambition-Angels (kzzdtibbwsucloaoqpqa), migration
+-- version 20260819163509. Verified live: four tables with RLS on, eight
+-- policies stored as written, both permission keys seeded, no org_id default
+-- anywhere (bv_newsletter_subscribers included), and a real-session probe —
+-- seeded and rolled back in one transaction — confirming a staff member at
+-- SafeSpace reads the story and the partner subject but zero participant
+-- subjects and zero of that participant's consent rows, while an admin reads
+-- both. No new Supabase security advisories.
+--
+-- STILL NEEDED BEFORE PHASE 2: the `comms-media` storage bucket (private) plus
+-- its storage RLS, created in the dashboard. Nothing writes story_media yet,
+-- so Phase 1 does not depend on it.
 
 -- ── 1. Trap fix: the one comms-adjacent org_id default ───────────────────────
 -- 13 public tables still default org_id to AA's uuid. This is the one that

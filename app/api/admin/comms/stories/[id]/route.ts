@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { audit } from "@/lib/audit";
-import { loadSubjectsByStory, requireComms } from "@/lib/comms/stories-server";
+import { loadStory, requireComms, STORY_COLUMNS } from "@/lib/comms/stories-server";
 import {
   isStoryStatus,
   normalizeTags,
@@ -8,7 +8,6 @@ import {
   MAX_OUTCOME,
   MAX_TITLE,
 } from "@/lib/comms/stories";
-import { blockedReason, isStoryPublishable, storyConsentState } from "@/lib/comms/consent";
 
 /** One story with its subjects, consents, and media (specs/comms-module.md §7.2). */
 
@@ -17,9 +16,6 @@ const isUuid = (v: unknown): v is string =>
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
-const STORY_COLS =
-  "id, title, body, outcome, status, tags, happened_on, captured_by, rank_order, strategic_goal_id, source, created_at, updated_at";
-
 // ── GET /api/admin/comms/stories/[id] ───────────────────────────────────────
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
@@ -27,36 +23,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (!g.ok) return g.res;
   const { ctx, supabase, perms } = g;
 
-  const { data: story } = await supabase
-    .from("stories")
-    .select(STORY_COLS)
-    .eq("id", params.id)
-    .eq("org_id", ctx.orgId)
-    .maybeSingle();
+  const story = await loadStory(supabase, ctx.orgId, params.id, perms);
   if (!story) return NextResponse.json({ error: "Story not found" }, { status: 404 });
-
-  const [subjectsByStory, mediaRes] = await Promise.all([
-    loadSubjectsByStory(supabase, ctx.orgId, [params.id], perms),
-    supabase
-      .from("story_media")
-      .select("id, storage_path, mime, size_bytes, caption, kind, created_at")
-      .eq("org_id", ctx.orgId)
-      .eq("story_id", params.id)
-      .order("created_at", { ascending: true }),
-  ]);
-  const subjects = subjectsByStory.get(params.id) ?? [];
-
-  return NextResponse.json({
-    story: {
-      ...story,
-      subjects,
-      media: mediaRes.data ?? [],
-      consent_state: storyConsentState(subjects),
-      publishable: isStoryPublishable(story.status as string, subjects),
-      blocked_reason: blockedReason(story.status as string, subjects),
-    },
-    can_see_subjects: perms.subjects,
-  });
+  return NextResponse.json({ story, can_see_subjects: perms.subjects });
 }
 
 // ── PATCH /api/admin/comms/stories/[id] ─────────────────────────────────────
@@ -147,7 +116,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     .update(update)
     .eq("id", params.id)
     .eq("org_id", ctx.orgId)
-    .select(STORY_COLS)
+    .select(STORY_COLUMNS)
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: "Story not found" }, { status: 404 });

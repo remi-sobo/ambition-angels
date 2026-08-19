@@ -141,6 +141,17 @@ const SEVERITY: Record<ConsentState, number> = {
 export type SubjectLike = {
   subject_type: string;
   consents?: readonly ConsentRow[] | null;
+  /**
+   * A pre-computed state, used in preference to `consents` when present.
+   *
+   * This exists because a REDACTED subject deliberately arrives with no
+   * consent rows at all — the guardian's name and dates are exactly what
+   * comms.subjects.read withholds — but it still carries its state so the
+   * chip can explain why a story is blocked. Deriving the story verdict from
+   * `consents` alone therefore read "no consent" for every participant story
+   * a staff user looked at, blocking stories that were perfectly consented.
+   */
+  consent_state?: ConsentState | null;
 };
 
 /**
@@ -158,7 +169,7 @@ export function storyConsentState(
   if (identifiable.length === 0) return null;
   let worst: ConsentState = "current";
   for (const s of identifiable) {
-    const st = subjectConsentState(s.consents ?? [], today);
+    const st = s.consent_state ?? subjectConsentState(s.consents ?? [], today);
     if (SEVERITY[st] < SEVERITY[worst]) worst = st;
   }
   return worst;
@@ -200,6 +211,9 @@ export function blockedReason(
     case "pending":
       return "Consent was requested but not granted yet.";
     default:
-      return "No consent on record for the person in this story.";
+      // Deliberately not "the person": a subject can be a partner school or a
+      // donor organisation, and the bank showed "No consent on record for the
+      // person in this story" under a card about a high school.
+      return "No consent on record for the subject of this story.";
   }
 }

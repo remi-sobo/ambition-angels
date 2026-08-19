@@ -175,9 +175,11 @@ export const NAV_SECTIONS: NavSection[] = [
         match: ["/admin/comms/stories"],
       },
       {
+        // No href on purpose: the Sidebar only renders the muted "Soon"
+        // treatment for an item without one. Giving it a link now would 404
+        // until Phase 4 builds the route.
         label: "Editions",
         icon: "editions",
-        href: "/admin/comms/editions",
         feature: "modules.comms",
         perm: "comms.manage",
         soon: true,

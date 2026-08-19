@@ -156,6 +156,42 @@ describe("storyConsentState — the worst subject wins", () => {
   });
 });
 
+describe("storyConsentState with a redacted subject — the regression", () => {
+  // A subject a staff user may not identify arrives with NO consent rows: the
+  // guardian's name and dates are exactly what comms.subjects.read withholds.
+  // It carries its computed state instead. Deriving the story verdict from the
+  // rows alone made every participant story read "no consent" for the people
+  // who capture them, and blocked stories that were perfectly consented.
+  const redacted = {
+    subject_type: "participant",
+    consent_state: "current" as const,
+    // consents deliberately absent, exactly as viewSubject() returns it
+  };
+
+  test("a redacted subject's own state decides the story's verdict", () => {
+    expect(storyConsentState([redacted], TODAY)).toBe("current");
+    expect(isStoryPublishable("approved", [redacted], TODAY)).toBe(true);
+    expect(blockedReason("approved", [redacted], TODAY)).toBeNull();
+  });
+
+  test("a redacted subject that really is blocked still blocks", () => {
+    const pending = { subject_type: "participant", consent_state: "pending" as const };
+    expect(storyConsentState([pending], TODAY)).toBe("pending");
+    expect(isStoryPublishable("approved", [pending], TODAY)).toBe(false);
+  });
+
+  test("the worst subject still wins across a mix of redacted and visible", () => {
+    const visible = { subject_type: "partner", consents: [row({ granted_at: "2026-08-01" })] };
+    const lapsed = { subject_type: "participant", consent_state: "expired" as const };
+    expect(storyConsentState([redacted, visible, lapsed], TODAY)).toBe("expired");
+  });
+
+  test("rows are still used when no pre-computed state is given", () => {
+    const fromRows = { subject_type: "participant", consents: [row({ granted_at: "2026-08-01" })] };
+    expect(storyConsentState([fromRows], TODAY)).toBe("current");
+  });
+});
+
 describe("isStoryPublishable — approval AND consent, never one or the other", () => {
   const ok = [{ subject_type: "participant", consents: [row({ granted_at: "2026-08-01" })] }];
 

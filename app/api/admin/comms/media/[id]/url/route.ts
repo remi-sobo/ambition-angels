@@ -16,7 +16,8 @@ const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
 
 const BUCKET = "comms-media";
-export const SIGNED_URL_TTL_SECONDS = 300;
+// Not exported: Next only allows its own reserved fields as route exports.
+const SIGNED_URL_TTL_SECONDS = 300;
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });

@@ -1361,4 +1361,129 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+
+-- ════ Comms views (comms_phase2_views.sql) ════════════════════════════════
+-- v_publishable_stories is the enforceable half of the consent claim, so it
+-- gets the same scrutiny as a table: it must be security_invoker (a plain view
+-- runs as its owner and would hand every caller every tenant's rows), and its
+-- revocation rule must dominate a still-valid blanket release.
+reset role;
+reset request.jwt.claim.sub;
+
+do $$
+declare n int;
+begin
+  select count(*) into n from pg_class c
+  join pg_namespace ns on ns.oid = c.relnamespace
+  where ns.nspname = 'public'
+    and c.relname in ('v_publishable_stories', 'v_story_suggestions')
+    -- Postgres preserves the spelling the view was written with, so accept
+    -- either form rather than pinning one.
+    and exists (
+      select 1 from unnest(c.reloptions) o
+      where o in ('security_invoker=on', 'security_invoker=true')
+    );
+  if n <> 2 then
+    raise exception 'comms views must be security_invoker (found % of 2)', n;
+  end if;
+end $$;
+
+do $$
+declare
+  aa uuid; s_ok uuid; s_revoked uuid; s_org uuid; s_draft uuid;
+  sub_ok uuid; sub_revoked uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+
+  -- Approved, consented, and about a participant: publishable.
+  insert into stories (org_id, title, status)
+  values (aa, 'pubtest-ok', 'approved') returning id into s_ok;
+  insert into story_subjects (org_id, story_id, subject_type, display_label, is_minor)
+  values (aa, s_ok, 'participant', 'pubtest-kid-a', true) returning id into sub_ok;
+  insert into story_consents (org_id, story_subject_id, scope, granted_by, granted_at, expires_at)
+  values (aa, sub_ok, array['first_name','photo'], 'guardian', current_date, current_date + 365);
+
+  -- The case the spec's draft SQL got wrong: a broad, unexpired blanket intake
+  -- release PLUS a later revocation. Revocation must win.
+  insert into stories (org_id, title, status)
+  values (aa, 'pubtest-revoked', 'approved') returning id into s_revoked;
+  insert into story_subjects (org_id, story_id, subject_type, display_label, is_minor)
+  values (aa, s_revoked, 'participant', 'pubtest-kid-b', true) returning id into sub_revoked;
+  insert into story_consents (org_id, story_subject_id, scope, granted_by, granted_at)
+  values (aa, sub_revoked, array['first_name','photo','quote'], 'intake release', current_date - 30);
+  insert into story_consents (org_id, story_subject_id, scope, granted_by, granted_at, revoked_at)
+  values (aa, sub_revoked, array['photo'], 'guardian', current_date - 10, now());
+
+  -- No subject at all: publishes on approval alone.
+  insert into stories (org_id, title, status)
+  values (aa, 'pubtest-orgwin', 'approved') returning id into s_org;
+
+  -- Consented but not approved: never publishable.
+  insert into stories (org_id, title, status)
+  values (aa, 'pubtest-draft', 'drafted') returning id into s_draft;
+end $$;
+
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  if (select count(*) from v_publishable_stories where title = 'pubtest-ok') <> 1 then
+    raise exception 'a consented, approved story is not publishable';
+  end if;
+  if (select count(*) from v_publishable_stories where title = 'pubtest-orgwin') <> 1 then
+    raise exception 'a subject-free org win is not publishable on approval alone';
+  end if;
+  if (select count(*) from v_publishable_stories where title = 'pubtest-revoked') <> 0 then
+    raise exception 'LEAK: a revoked story is publishable — a live blanket release outvoted the revocation';
+  end if;
+  if (select count(*) from v_publishable_stories where title = 'pubtest-draft') <> 0 then
+    raise exception 'LEAK: an unapproved story is publishable';
+  end if;
+  if (select count(*) from v_story_suggestions where id in
+        (select id from stories where title like 'pubtest-%')) <> 4 then
+    raise exception 'suggestions view is missing non-retired stories';
+  end if;
+end $$;
+
+-- A revocation recorded AFTER the fact removes the story immediately — the
+-- spec's §10 promise, verified rather than asserted.
+reset role;
+reset request.jwt.claim.sub;
+do $$
+declare sub uuid;
+begin
+  select ss.id into sub from story_subjects ss
+  join stories st on st.id = ss.story_id
+  where st.title = 'pubtest-ok';
+  update story_consents set revoked_at = now() where story_subject_id = sub;
+end $$;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  if (select count(*) from v_publishable_stories where title = 'pubtest-ok') <> 0 then
+    raise exception 'revoking consent did not immediately remove the story from v_publishable_stories';
+  end if;
+end $$;
+
+-- The views inherit RLS from their base tables, so a non-member and anon see
+-- nothing through them either.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from v_publishable_stories) <> 0 then
+    raise exception 'LEAK: non-member reads v_publishable_stories';
+  end if;
+end $$;
+reset role;
+set role anon;
+do $$ begin
+  if (select count(*) from v_publishable_stories) <> 0 then
+    raise exception 'LEAK: anon reads v_publishable_stories';
+  end if;
+  if (select count(*) from v_story_suggestions) <> 0 then
+    raise exception 'LEAK: anon reads v_story_suggestions';
+  end if;
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

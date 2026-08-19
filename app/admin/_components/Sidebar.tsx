@@ -25,6 +25,21 @@ import { TYPE } from "@/lib/admin/typeScale";
 // ── Icons ────────────────────────────────────────────────────────────────────
 
 const ICON_NODES: Record<IconName, ReactNode> = {
+  // Comms — a stack of captured wins, and a folded newsletter.
+  stories: (
+    <>
+      <path d="M4 6.5A1.5 1.5 0 0 1 5.5 5H12v14H5.5A1.5 1.5 0 0 1 4 17.5v-11z" />
+      <path d="M12 5h6.5A1.5 1.5 0 0 1 20 6.5v11a1.5 1.5 0 0 1-1.5 1.5H12" />
+      <path d="M7 9h2M15 9h2M15 12.5h2" />
+    </>
+  ),
+  editions: (
+    <>
+      <path d="M4 6h13a1 1 0 0 1 1 1v11H5a1 1 0 0 1-1-1V6z" />
+      <path d="M18 9h1.5A1.5 1.5 0 0 1 21 10.5v6a1.5 1.5 0 0 1-1.5 1.5H18" />
+      <path d="M7 9.5h7M7 12.5h7M7 15.5h4" />
+    </>
+  ),
   overview: (
     <>
       <path d="M3.5 11 12 4l8.5 7" />
@@ -279,6 +294,7 @@ export default function Sidebar({
   terms,
   orgName,
   features,
+  perms,
   orgs,
   activeOrgId,
 }: {
@@ -306,6 +322,9 @@ export default function Sidebar({
    * stripped nav; B2 de-AAs the pre-auth shell.
    */
   features?: string[] | null;
+  /** The member's permission keys — nav entries carrying `perm` are hidden
+   *  when it's absent. Null pre-auth (full IA on the login screen). */
+  perms?: string[] | null;
 }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -345,7 +364,7 @@ export default function Sidebar({
 
   // Entitlement filter: drop items whose org lacks the key, then sections
   // left empty. Unknown keys are off by design (core fence spec §6b).
-  const sections = visibleSections(features);
+  const sections = visibleSections(features, perms);
 
   const navPanel = (
     <>

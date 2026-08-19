@@ -1486,4 +1486,102 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+
+-- ════ Comms outputs (comms_phase3_outputs.sql) ════════════════════════════
+-- Composer drafts. Same gate as the stories they come from: comms.manage and
+-- nothing wider. A draft is already redacted by construction, so it needs no
+-- tighter key than the story — but it must not leak across tenants or to a
+-- board viewer, and its grounding record must not be readable by either.
+reset role;
+reset request.jwt.claim.sub;
+
+do $$
+declare aa uuid; t2 uuid; s_aa uuid; s_t2 uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+  select id into t2 from orgs where slug = 'tenant-two';
+
+  insert into stories (org_id, title, status)
+  values (aa, 'outputtest-aa-story', 'approved') returning id into s_aa;
+  insert into stories (org_id, title, status)
+  values (t2, 'outputtest-t2-story', 'approved') returning id into s_t2;
+
+  insert into comms_outputs (org_id, story_id, channel, body, model_grounding)
+  values (aa, s_aa, 'linkedin', 'outputtest-aa-draft',
+          '{"redactions":[{"from":"Marcus","to":"a young person","count":1}]}'::jsonb);
+  insert into comms_outputs (org_id, story_id, channel, body)
+  values (t2, s_t2, 'thank_you', 'outputtest-t2-draft');
+
+  -- Stashed so the board_viewer write below is a genuine RLS refusal. Reading
+  -- the ids back through `insert ... select` would return zero rows for them
+  -- (they cannot read stories), and a zero-row insert is not a refusal.
+  create temp table outputtest_ids as select aa as org_id, s_aa as story_id;
+end $$;
+
+set role authenticated;
+
+-- AA owner: their draft only.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  if (select count(*) from comms_outputs where body = 'outputtest-aa-draft') <> 1 then
+    raise exception 'AA owner cannot read their own composer draft';
+  end if;
+  if (select count(*) from comms_outputs where body = 'outputtest-t2-draft') <> 0 then
+    raise exception 'LEAK: AA owner reads a tenant-two composer draft';
+  end if;
+end $$;
+
+-- Staff hold comms.manage, so drafts are theirs too — the draft is redacted,
+-- which is exactly why it needs no tighter gate than the story.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$ begin
+  if (select count(*) from comms_outputs where body = 'outputtest-aa-draft') <> 1 then
+    raise exception 'staff with comms.manage cannot read a composer draft';
+  end if;
+end $$;
+
+-- Board viewer: no comms key at all.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$ begin
+  if (select count(*) from comms_outputs) <> 0 then
+    raise exception 'LEAK: board_viewer reads composer drafts';
+  end if;
+end $$;
+do $$
+declare o uuid; st uuid;
+begin
+  select org_id, story_id into o, st from outputtest_ids;
+  insert into comms_outputs (org_id, story_id, channel, body)
+  values (o, st, 'linkedin', 'outputtest-board-write');
+  raise exception 'LEAK: board_viewer wrote a composer draft';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- Tenant two sees only theirs; non-member and anon see nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$ begin
+  if (select count(*) from comms_outputs where body = 'outputtest-t2-draft') <> 1 then
+    raise exception 'tenant-two owner cannot read their own draft';
+  end if;
+  if (select count(*) from comms_outputs where body = 'outputtest-aa-draft') <> 0 then
+    raise exception 'LEAK: tenant-two owner reads an AA composer draft';
+  end if;
+end $$;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from comms_outputs) <> 0 then
+    raise exception 'LEAK: non-member reads composer drafts';
+  end if;
+end $$;
+reset role;
+set role anon;
+do $$ begin
+  if (select count(*) from comms_outputs) <> 0 then
+    raise exception 'LEAK: anon reads composer drafts';
+  end if;
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

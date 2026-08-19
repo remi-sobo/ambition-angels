@@ -213,6 +213,7 @@ ordered=(
   create_plan_archives.sql
   comms_phase1_story_schema.sql
   comms_phase2_views.sql
+  comms_phase3_outputs.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

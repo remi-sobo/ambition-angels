@@ -253,12 +253,36 @@ describe("permission-gated nav entries", () => {
   });
 
   test("permission gating leaves every other section untouched", () => {
+    // Derive the comms entries from the IA rather than naming them, so adding
+    // a fourth Comms item doesn't quietly turn this into a different test.
+    const commsLabels = new Set(
+      visibleSections(ALL_FEATURES, null)
+        .filter((s) => s.label === "Comms")
+        .flatMap((s) => s.items.map((i) => i.label))
+    );
+    expect(commsLabels.size).toBeGreaterThan(0);
+
     const before = visibleSections(ALL_FEATURES, null)
       .flatMap((s) => s.items.map((i) => i.label))
-      .filter((l) => l !== "Stories" && l !== "Editions");
+      .filter((l) => !commsLabels.has(l));
     const after = visibleSections(ALL_FEATURES, BOARD_PERMS).flatMap((s) =>
       s.items.map((i) => i.label)
     );
     expect(after).toEqual(before);
+  });
+
+  test("Stories' href is a prefix of the others and still loses to them", () => {
+    // /admin/comms owns the bank, so every deeper Comms route matches it too.
+    // Longest-prefix is what keeps the sidebar pointing at the page you are on.
+    expect(activeHref("/admin/comms")).toBe("/admin/comms");
+    expect(activeHref("/admin/comms/stories/abc")).toBe("/admin/comms");
+    expect(activeHref("/admin/comms/editions")).toBe("/admin/comms/editions");
+    expect(activeHref("/admin/comms/editions/abc")).toBe("/admin/comms/editions");
+    expect(activeHref("/admin/comms/settings")).toBe("/admin/comms/settings");
+  });
+
+  test("every Comms entry carries the permission — none can be reached without it", () => {
+    const comms = visibleSections(ALL_FEATURES, null).find((s) => s.label === "Comms")!;
+    for (const item of comms.items) expect(item.perm).toBe("comms.manage");
   });
 });

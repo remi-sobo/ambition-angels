@@ -40,6 +40,12 @@ const ICON_NODES: Record<IconName, ReactNode> = {
       <path d="M7 9.5h7M7 12.5h7M7 15.5h4" />
     </>
   ),
+  settings: (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 3v2.5M12 18.5V21M21 12h-2.5M5.5 12H3M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4L5.6 5.6" />
+    </>
+  ),
   overview: (
     <>
       <path d="M3.5 11 12 4l8.5 7" />

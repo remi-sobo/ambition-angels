@@ -1584,4 +1584,124 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+
+-- ════ Comms formats and editions (comms_phase4_editions.sql) ══════════════
+-- comms.manage on all three, and the structural invariants that make the
+-- format editor safe: an edition holds its OWN slot snapshot, and a format
+-- with editions cannot be deleted out from under them.
+reset role;
+reset request.jwt.claim.sub;
+
+do $$
+declare aa uuid; t2 uuid; f_aa uuid; f_t2 uuid; e_aa uuid; e_t2 uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+  select id into t2 from orgs where slug = 'tenant-two';
+
+  insert into comms_formats (org_id, name, cadence, slots)
+  values (aa, 'edtest-aa-format', 'quarterly',
+    '[{"key":"work","label":"The work","kind":"story","required":true}]'::jsonb)
+  returning id into f_aa;
+  insert into comms_formats (org_id, name, cadence, slots)
+  values (t2, 'edtest-t2-format', 'monthly', '[]'::jsonb) returning id into f_t2;
+
+  insert into comms_editions (org_id, format_id, title)
+  values (aa, f_aa, 'edtest-aa-edition') returning id into e_aa;
+  insert into comms_editions (org_id, format_id, title)
+  values (t2, f_t2, 'edtest-t2-edition') returning id into e_t2;
+
+  insert into comms_edition_slots (org_id, edition_id, slot_key, slot_def, position)
+  values (aa, e_aa, 'work',
+    '{"key":"work","label":"The work","kind":"story","required":true}'::jsonb, 0);
+  insert into comms_edition_slots (org_id, edition_id, slot_key, slot_def, position)
+  values (t2, e_t2, 'work', '{"key":"work","label":"Work","kind":"story","required":true}'::jsonb, 0);
+
+  -- A format with editions must not be deletable: the edition's provenance
+  -- outlives the format someone archives.
+  begin
+    delete from comms_formats where id = f_aa;
+    raise exception 'a format with editions was deleted — on delete restrict is missing';
+  exception when foreign_key_violation then null; -- expected
+  end;
+
+  -- The snapshot is independent: renaming the format's slot must not touch an
+  -- edition already created from it.
+  update comms_formats
+     set slots = '[{"key":"work","label":"RENAMED","kind":"story","required":true}]'::jsonb
+   where id = f_aa;
+  if (select slot_def->>'label' from comms_edition_slots
+      where edition_id = e_aa and slot_key = 'work') <> 'The work' then
+    raise exception 'renaming a format slot rewrote an existing edition';
+  end if;
+
+  create temp table edtest_ids as select aa as org_id, f_aa as format_id, e_aa as edition_id;
+end $$;
+
+set role authenticated;
+
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  if (select count(*) from comms_formats where name = 'edtest-aa-format') <> 1 then
+    raise exception 'AA owner cannot read their own format';
+  end if;
+  if (select count(*) from comms_formats where name = 'edtest-t2-format') <> 0 then
+    raise exception 'LEAK: AA owner reads a tenant-two format';
+  end if;
+  if (select count(*) from comms_editions where title = 'edtest-t2-edition') <> 0 then
+    raise exception 'LEAK: AA owner reads a tenant-two edition';
+  end if;
+  if (select count(*) from comms_edition_slots) <> 1 then
+    raise exception 'AA owner should see exactly their own edition slot, saw %',
+      (select count(*) from comms_edition_slots);
+  end if;
+end $$;
+
+-- Staff hold comms.manage: formats and editions are theirs too.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$ begin
+  if (select count(*) from comms_editions where title = 'edtest-aa-edition') <> 1 then
+    raise exception 'staff with comms.manage cannot read an edition';
+  end if;
+end $$;
+
+-- Board viewer: nothing, and no writes.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$ begin
+  if (select count(*) from comms_formats) <> 0 then raise exception 'LEAK: board_viewer reads formats'; end if;
+  if (select count(*) from comms_editions) <> 0 then raise exception 'LEAK: board_viewer reads editions'; end if;
+  if (select count(*) from comms_edition_slots) <> 0 then raise exception 'LEAK: board_viewer reads edition slots'; end if;
+end $$;
+do $$
+declare o uuid; f uuid;
+begin
+  select org_id, format_id into o, f from edtest_ids;
+  insert into comms_editions (org_id, format_id, title) values (o, f, 'edtest-board-write');
+  raise exception 'LEAK: board_viewer created an edition';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- Tenant two sees only theirs; non-member and anon see nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$ begin
+  if (select count(*) from comms_editions where title = 'edtest-t2-edition') <> 1 then
+    raise exception 'tenant-two owner cannot read their own edition';
+  end if;
+  if (select count(*) from comms_editions where title = 'edtest-aa-edition') <> 0 then
+    raise exception 'LEAK: tenant-two owner reads an AA edition';
+  end if;
+end $$;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from comms_formats) <> 0 then raise exception 'LEAK: non-member reads formats'; end if;
+end $$;
+reset role;
+set role anon;
+do $$ begin
+  if (select count(*) from comms_editions) <> 0 then raise exception 'LEAK: anon reads editions'; end if;
+  if (select count(*) from comms_edition_slots) <> 0 then raise exception 'LEAK: anon reads edition slots'; end if;
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

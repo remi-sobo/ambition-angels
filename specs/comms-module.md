@@ -141,7 +141,16 @@ Composer AI features are tier-gated to Bloom Grow (they ride the Reed/AI entitle
 
 ### 6.5 Send path reuse
 
-Compile does three things: resolves each slot to final text (slot `content` wins; story body is the fallback), stitches slots in format order with the org's footer from `org_comms_settings`, and inserts an `email_campaigns` draft with the edition title as name. From there the existing UI owns segment attachment, test send, and send. When the campaign's status flips to sent, a lightweight sync marks the edition `sent`, stamps `sent_at`, and flips each slotted story to `used`. One sender, one suppression list, one deliverability reputation.
+Compile does three things: resolves each slot to final text (slot `content` wins; story body is the fallback), stitches slots in format order, and inserts an `email_campaigns` draft with the edition title as name. From there the existing UI owns segment attachment, test send, and send. When the campaign's status flips to sent, a lightweight sync marks the edition `sent`, stamps `sent_at`, and flips each slotted story to `used`. One sender, one suppression list, one deliverability reputation.
+
+**Correction, applied in Phase 5.** This paragraph originally said compile stitches "with the org's
+footer from `org_comms_settings`". It must not. `buildCampaignEmail()`
+(`lib/fundraising/comms-email.ts`) already appends `footer_text`, the mailing address, and the
+unsubscribe link at send time, for campaigns and journeys alike — pre-stitching them at compile
+would print each of them twice in every email. Phase 0 caught this (findings §11-F) and the built
+compile follows the code. Compile also re-validates every slotted story against
+`v_publishable_stories` at the moment of compiling, which is what makes §10's consent-expires-mid-
+edition mitigation real rather than advisory.
 
 ### 6.6 Tenant genericity check
 

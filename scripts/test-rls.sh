@@ -215,6 +215,7 @@ ordered=(
   comms_phase2_views.sql
   comms_phase3_outputs.sql
   comms_phase4_editions.sql
+  comms_phase6_loop.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

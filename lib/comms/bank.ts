@@ -19,6 +19,7 @@ export type BankStory = {
   publishable: boolean;
   blocked_reason: string | null;
   suggestion_score?: number | null;
+  tags?: string[] | null;
 };
 
 /**
@@ -108,6 +109,8 @@ export function humanAge(fromISO: string, today: string = todayISO()): string {
 export function bankVerdict(
   stories: readonly BankStory[],
   today: string = todayISO(),
+  /** The learned sentence from leadStyleNote(); appended verbatim when set. */
+  leadNote: string | null = null,
 ): string {
   if (stories.length === 0) {
     return "Wins evaporate. Capture one now — rough is fine.";
@@ -165,6 +168,8 @@ export function bankVerdict(
       parts.push(`Your best unused story is ${humanAge(best.happened_on, today)} old.`);
     }
   }
+
+  if (leadNote) parts.push(leadNote);
 
   return parts.join(" ");
 }

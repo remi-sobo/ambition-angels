@@ -1701,6 +1701,62 @@ do $$ begin
   if (select count(*) from comms_edition_slots) <> 0 then raise exception 'LEAK: anon reads edition slots'; end if;
 end $$;
 
+-- ════ Suggestion score learns from use (comms_phase6_loop.sql) ════════════
+-- A story that rode in a RECENTLY sent edition must score below an identical
+-- unused one, and a story sent long ago must have earned its way back. This is
+-- behavior, not access control — but it is the promise that makes flipping
+-- stories to `used` on send safe, so it is pinned here where the fixtures are.
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare aa uuid; f uuid; e_recent uuid; e_old uuid;
+        s_fresh uuid; s_recent uuid; s_old uuid;
+        sc_fresh numeric; sc_recent numeric; sc_old numeric;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into comms_formats (org_id, name, cadence, slots)
+  values (aa, 'looptest-format', 'adhoc',
+          '[{"key":"flash","label":"What happened","kind":"story","required":true}]'::jsonb)
+  returning id into f;
+
+  -- Three stories identical in every scored dimension except use.
+  insert into stories (org_id, title, status, happened_on)
+  values (aa, 'looptest-fresh',  'approved', current_date - 30) returning id into s_fresh;
+  insert into stories (org_id, title, status, happened_on)
+  values (aa, 'looptest-recent', 'used',     current_date - 30) returning id into s_recent;
+  insert into stories (org_id, title, status, happened_on)
+  values (aa, 'looptest-old',    'used',     current_date - 30) returning id into s_old;
+
+  insert into comms_editions (org_id, format_id, title, status, sent_at)
+  values (aa, f, 'looptest-recent-ed', 'sent', now() - interval '7 days')
+  returning id into e_recent;
+  insert into comms_editions (org_id, format_id, title, status, sent_at)
+  values (aa, f, 'looptest-old-ed', 'sent', now() - interval '170 days')
+  returning id into e_old;
+  insert into comms_edition_slots (org_id, edition_id, slot_key, slot_def, story_id, position)
+  values (aa, e_recent, 'flash', '{"key":"flash","label":"What happened","kind":"story","required":true}'::jsonb, s_recent, 0),
+         (aa, e_old,    'flash', '{"key":"flash","label":"What happened","kind":"story","required":true}'::jsonb, s_old, 0);
+
+  select suggestion_score into sc_fresh  from v_story_suggestions where id = s_fresh;
+  select suggestion_score into sc_recent from v_story_suggestions where id = s_recent;
+  select suggestion_score into sc_old    from v_story_suggestions where id = s_old;
+
+  if sc_recent >= sc_fresh then
+    raise exception 'a story sent 7 days ago scores % — not below the unused twin''s %',
+      sc_recent, sc_fresh;
+  end if;
+  if sc_old <= sc_recent then
+    raise exception 'a story sent 170 days ago scores % — no recovery over the recent %',
+      sc_old, sc_recent;
+  end if;
+  -- The recovery is nearly complete at 170/180 days.
+  if sc_fresh - sc_old > 3 then
+    raise exception 'a story sent 170 days ago still trails its unused twin by % pts',
+      sc_fresh - sc_old;
+  end if;
+end $$;
+
 -- ════ Comms compile → email_campaigns (Phase 5, no new tables) ════════════
 -- Compile writes into the FUNDRAISING domain. comms.manage does not carry
 -- fundraising.write, and the app must not pretend otherwise: the route checks

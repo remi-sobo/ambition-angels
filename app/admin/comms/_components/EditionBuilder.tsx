@@ -17,6 +17,7 @@ import {
   type FilledSlot,
 } from "@/lib/comms/formats";
 import type { EditionDetail, EditionRow } from "@/lib/comms/editions-server";
+import { performanceVerdict, type EditionPerformance } from "@/lib/comms/loop";
 
 /** What GET on the compile route answers with. */
 type CompilePreview = {
@@ -73,10 +74,13 @@ export default function EditionBuilder({
   detail,
   stories,
   metrics,
+  performance = null,
 }: {
   detail: EditionDetail;
   stories: PickableStory[];
   metrics: PickableMetric[];
+  /** After-send numbers; only ever set on a sent edition. */
+  performance?: EditionPerformance | null;
 }) {
   const router = useRouter();
   const { edition, format } = detail;
@@ -264,6 +268,12 @@ export default function EditionBuilder({
             </div>
             {def.hint && <p className="text-[11px] text-ink-3 leading-relaxed">{def.hint}</p>}
 
+            {/* On a sent edition the slot is a record, not a control: name the
+                story that rode in it and nothing else. */}
+            {def.kind === "story" && sent && story && (
+              <p className="text-[11px] text-ink-3">Story: {story.title}</p>
+            )}
+
             {/* Story slots: the picker reads publishable stories only. */}
             {def.kind === "story" && !sent && (
               <div className="space-y-2">
@@ -421,7 +431,12 @@ export default function EditionBuilder({
         );
       })}
 
-      <CompilePanel edition={edition} completeness={completeness} lapsed={lapsed} />
+      <CompilePanel
+        edition={edition}
+        completeness={completeness}
+        lapsed={lapsed}
+        performance={performance}
+      />
     </div>
   );
 }
@@ -441,11 +456,13 @@ function CompilePanel({
   edition,
   completeness,
   lapsed,
+  performance,
 }: {
   edition: EditionRow;
   completeness: Completeness;
   /** Labels of slots holding a story that is no longer publishable. */
   lapsed: string[];
+  performance: EditionPerformance | null;
 }) {
   const router = useRouter();
   const [preview, setPreview] = useState<CompilePreview | null>(null);
@@ -491,16 +508,40 @@ function CompilePanel({
   }
 
   if (sent) {
+    // The after-the-fact panel (spec §8 phase 6): sends and failures from the
+    // campaign, and gifts from recipients inside the attribution window. It
+    // claims correlation, in those words — never why anyone gave. No opens:
+    // the sender doesn't record them, and decision 6 keeps pixels out of v1.
     return (
-      <section className="rounded-card-lg border border-hairline bg-surface p-4">
-        <span className={TYPE.cardLabel}>Sent</span>
-        <p className="mt-1 text-sm text-ink-2 leading-relaxed">
-          This edition went out through the campaign it compiled into. Every story it used is
-          marked used in the bank.
-        </p>
+      <section className="rounded-card-lg border border-hairline bg-surface p-4 space-y-3">
+        <span className={TYPE.cardLabel}>How it did</span>
+        {performance ? (
+          <>
+            <p className="text-sm text-ink-1 leading-relaxed">
+              {performanceVerdict(performance)}
+            </p>
+            {performance.storyTitles.length > 0 && (
+              <p className="text-[11px] text-ink-3 leading-relaxed">
+                Rode in this edition: {performance.storyTitles.join(" · ")}. Each is marked used
+                in the bank and earns its way back into the suggestions over the next six months.
+              </p>
+            )}
+            {performance.gifts && performance.gifts.count > 0 && (
+              <p className="text-[11px] text-ink-3 leading-relaxed">
+                “Gave” means a recipient of this send gave within {performance.gifts.windowDays}{" "}
+                days — a correlation worth watching, not proof of why.
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-ink-2 leading-relaxed">
+            This edition went out through the campaign it compiled into. Its numbers live on the
+            comms page.
+          </p>
+        )}
         <Link
           href="/admin/fundraising/comms"
-          className="mt-2 inline-block text-[11px] text-ink-2 hover:text-ink-1 underline underline-offset-2"
+          className="inline-block text-[11px] text-ink-2 hover:text-ink-1 underline underline-offset-2"
         >
           Open it on the comms page →
         </Link>

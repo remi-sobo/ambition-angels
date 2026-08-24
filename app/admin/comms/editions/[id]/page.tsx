@@ -7,6 +7,7 @@ import { TYPE } from "@/lib/admin/typeScale";
 import { getMetricCatalog } from "@/lib/admin/metrics/catalog";
 import { loadStoryPerms } from "@/lib/comms/stories-server";
 import { loadEdition } from "@/lib/comms/editions-server";
+import { loadEditionPerformance } from "@/lib/comms/loop-server";
 import EditionBuilder, {
   type PickableStory,
 } from "../../_components/EditionBuilder";
@@ -40,6 +41,14 @@ export default async function EditionPage({ params }: { params: { id: string } }
 
   const detail = await loadEdition(supabase, ctx.orgId, params.id);
   if (!detail) notFound();
+
+  // Sent editions get their after-the-fact numbers (spec §8 phase 6). Null for
+  // anything unsent, and null again when fundraising RLS says no — the panel
+  // simply says less.
+  const performance =
+    detail.edition.status === "sent"
+      ? await loadEditionPerformance(supabase, ctx.orgId, detail.edition, detail.slots)
+      : null;
 
   const [{ data: publishable }, catalog] = await Promise.all([
     supabase
@@ -76,7 +85,12 @@ export default async function EditionPage({ params }: { params: { id: string } }
         ← Editions
       </Link>
       <div className="mt-2">
-        <EditionBuilder detail={detail} stories={stories} metrics={metrics} />
+        <EditionBuilder
+          detail={detail}
+          stories={stories}
+          metrics={metrics}
+          performance={performance}
+        />
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "@/app/admin/_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
 import { loadBankStories, loadStoryPerms } from "@/lib/comms/stories-server";
+import { loadLastLead } from "@/lib/comms/loop-server";
 import StoryBank from "./_components/StoryBank";
 
 /**
@@ -42,7 +43,10 @@ export default async function CommsStoriesPage() {
     );
   }
 
-  const stories = await loadBankStories(supabase, ctx.orgId, perms);
+  const [stories, lastLead] = await Promise.all([
+    loadBankStories(supabase, ctx.orgId, perms),
+    loadLastLead(supabase, ctx.orgId),
+  ]);
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-4xl">
@@ -50,7 +54,7 @@ export default async function CommsStoriesPage() {
         title="Stories"
         subtitle="The raw material for every newsletter, post, and donor update."
       />
-      <StoryBank stories={stories} />
+      <StoryBank stories={stories} lastLead={lastLead} />
     </div>
   );
 }

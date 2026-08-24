@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "@/app/admin/_components/Button";
 import PageHeader from "@/app/admin/_components/PageHeader";
@@ -11,10 +12,19 @@ import {
   editionCompleteness,
   isSlotFilled,
   SLOT_KIND_LABEL,
+  type Completeness,
   type EditionStatus,
   type FilledSlot,
 } from "@/lib/comms/formats";
-import type { EditionDetail } from "@/lib/comms/editions-server";
+import type { EditionDetail, EditionRow } from "@/lib/comms/editions-server";
+
+/** What GET on the compile route answers with. */
+type CompilePreview = {
+  body: string;
+  warnings: string[];
+  blocked: string[];
+  subject: string;
+};
 
 /**
  * The edition builder (spec §7.4).
@@ -134,6 +144,13 @@ export default function EditionBuilder({
 
   const storyById = new Map(stories.map((s) => [s.id, s]));
 
+  // Slots pointing at a story the publishable view no longer answers for.
+  // Compile refuses these server-side; naming them here keeps the button from
+  // inviting a click that can only fail.
+  const lapsed = slots
+    .filter((s) => s.story_id && !storyById.has(s.story_id))
+    .map((s) => s.slot_def.label);
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -250,6 +267,27 @@ export default function EditionBuilder({
             {/* Story slots: the picker reads publishable stories only. */}
             {def.kind === "story" && !sent && (
               <div className="space-y-2">
+                {/* story_id set but not in the publishable list means consent
+                    lapsed since this slot was filled (spec §10). Rendering the
+                    empty state here would hide a revocation behind a "Pick a
+                    story" button — the one thing this module must never do. */}
+                {slot.story_id && !story && (
+                  <div className="rounded-card border border-status-watch-text/30 bg-status-watch-bg px-3 py-2">
+                    <p className="text-[11px] text-status-watch-text leading-relaxed">
+                      The story in this slot can&apos;t be used any more — it needs to be approved,
+                      and everyone in it needs current consent. Compiling is blocked until you
+                      remove it or fix it in the bank.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => saveSlot(slot.slot_key, { story_id: null })}
+                      className="mt-1 text-[11px] text-ink-2 hover:text-ink-1 underline underline-offset-2"
+                    >
+                      Remove it from this slot
+                    </button>
+                  </div>
+                )}
                 {story ? (
                   <div className="flex flex-wrap items-center gap-2 rounded-card border border-hairline bg-tile px-3 py-2">
                     <span className="text-xs text-ink-1">{story.title}</span>
@@ -263,16 +301,18 @@ export default function EditionBuilder({
                     </button>
                   </div>
                 ) : (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={busy}
-                    onClick={() =>
-                      setOpenPicker(openPicker === slot.slot_key ? null : slot.slot_key)
-                    }
-                  >
-                    Pick a story
-                  </Button>
+                  !slot.story_id && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={busy}
+                      onClick={() =>
+                        setOpenPicker(openPicker === slot.slot_key ? null : slot.slot_key)
+                      }
+                    >
+                      Pick a story
+                    </Button>
+                  )
                 )}
 
                 {openPicker === slot.slot_key && (
@@ -380,7 +420,190 @@ export default function EditionBuilder({
           </section>
         );
       })}
+
+      <CompilePanel edition={edition} completeness={completeness} lapsed={lapsed} />
     </div>
+  );
+}
+
+/**
+ * Compile (spec §6.5, §7.4).
+ *
+ * Preview first, always. The preview and the compile run the same code on the
+ * server, so what you read here is what lands in the campaign — and consent is
+ * re-checked at this moment, not at the moment each slot was filled.
+ *
+ * After compiling, this hands off. The existing comms page owns segments, test
+ * sends, suppression, and the send itself; there is one sender in this product
+ * and this is not a second one.
+ */
+function CompilePanel({
+  edition,
+  completeness,
+  lapsed,
+}: {
+  edition: EditionRow;
+  completeness: Completeness;
+  /** Labels of slots holding a story that is no longer publishable. */
+  lapsed: string[];
+}) {
+  const router = useRouter();
+  const [preview, setPreview] = useState<CompilePreview | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [campaignId, setCampaignId] = useState<string | null>(edition.email_campaign_id);
+
+  const sent = edition.status === "sent";
+
+  async function load() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/comms/editions/${edition.id}/compile`);
+      const json = (await res.json().catch(() => null)) as (CompilePreview & { error?: string }) | null;
+      if (!res.ok || !json) {
+        setError(json?.error ?? "Could not build a preview.");
+        return;
+      }
+      setPreview(json);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function compile() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/comms/editions/${edition.id}/compile`, { method: "POST" });
+      const json = (await res.json().catch(() => null)) as
+        | { error?: string; campaign_id?: string }
+        | null;
+      if (!res.ok || !json?.campaign_id) {
+        setError(json?.error ?? "Could not create the email draft.");
+        return;
+      }
+      setCampaignId(json.campaign_id);
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (sent) {
+    return (
+      <section className="rounded-card-lg border border-hairline bg-surface p-4">
+        <span className={TYPE.cardLabel}>Sent</span>
+        <p className="mt-1 text-sm text-ink-2 leading-relaxed">
+          This edition went out through the campaign it compiled into. Every story it used is
+          marked used in the bank.
+        </p>
+        <Link
+          href="/admin/fundraising/comms"
+          className="mt-2 inline-block text-[11px] text-ink-2 hover:text-ink-1 underline underline-offset-2"
+        >
+          Open it on the comms page →
+        </Link>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-card-lg border border-hairline bg-surface p-4 space-y-3">
+      <span className={TYPE.cardLabel}>Compile</span>
+      <p className="text-sm text-ink-2 leading-relaxed">
+        Compiling turns this edition into an email draft on the comms page. Nothing sends here —
+        you still attach a segment, send yourself a test, and press send there.
+      </p>
+
+      {!completeness.canCompile && (
+        <p className="text-[11px] text-ink-3">
+          Fill every required slot first. Still needs: {completeness.requiredMissing.join(", ")}.
+        </p>
+      )}
+
+      {lapsed.length > 0 && (
+        <p className="text-[11px] text-status-watch-text">
+          Consent lapsed on the story in {lapsed.join(", ")}. Fix it in the bank or take it out of
+          the slot — this edition can&apos;t compile until then.
+        </p>
+      )}
+
+      {error && (
+        <p className="text-xs text-status-critical-text bg-status-critical-bg rounded-card px-3 py-2">
+          {error}
+        </p>
+      )}
+
+      {campaignId ? (
+        <div className="rounded-card border border-hairline bg-tile px-3 py-2 space-y-1">
+          <p className="text-xs text-ink-1">The email draft exists.</p>
+          <Link
+            href="/admin/fundraising/comms"
+            className="text-[11px] text-ink-2 hover:text-ink-1 underline underline-offset-2"
+          >
+            Attach a segment and send it →
+          </Link>
+          <p className="text-[11px] text-ink-3 leading-relaxed">
+            Changes here don&apos;t reach it on their own. Compile again to rewrite that same draft
+            — you won&apos;t end up with two.
+          </p>
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" variant="secondary" disabled={busy} onClick={load}>
+          {preview ? "Refresh preview" : "Preview"}
+        </Button>
+        <Button
+          size="sm"
+          disabled={
+            busy ||
+            !completeness.canCompile ||
+            lapsed.length > 0 ||
+            (preview?.blocked.length ?? 0) > 0
+          }
+          onClick={compile}
+        >
+          {campaignId ? "Compile again" : "Create the email draft"}
+        </Button>
+      </div>
+
+      {preview && (
+        <div className="space-y-2">
+          {preview.blocked.length > 0 && (
+            <ul className="rounded-card bg-status-critical-bg px-3 py-2 space-y-1">
+              {preview.blocked.map((b) => (
+                <li key={b} className="text-[11px] text-status-critical-text leading-relaxed">
+                  {b}
+                </li>
+              ))}
+            </ul>
+          )}
+          {preview.warnings.length > 0 && (
+            <ul className="rounded-card bg-status-watch-bg px-3 py-2 space-y-1">
+              {preview.warnings.map((w) => (
+                <li key={w} className="text-[11px] text-status-watch-text leading-relaxed">
+                  {w}
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="rounded-card border border-hairline bg-tile px-3 py-2">
+            <p className="text-[11px] text-ink-3">
+              Subject: <span className="text-ink-2">{preview.subject}</span>
+            </p>
+          </div>
+          <pre className="rounded-card border border-hairline bg-tile px-3 py-2 text-xs text-ink-1 whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto font-body">
+            {preview.body || "Nothing to send yet."}
+          </pre>
+          <p className="text-[11px] text-ink-3 leading-relaxed">
+            Your footer, mailing address, and unsubscribe link are added when it sends — they
+            aren&apos;t missing here, they just aren&apos;t part of the body.
+          </p>
+        </div>
+      )}
+    </section>
   );
 }
 

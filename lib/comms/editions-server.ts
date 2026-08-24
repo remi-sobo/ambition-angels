@@ -102,6 +102,101 @@ export async function loadFormats(
   return (inserted ?? []) as unknown as FormatRow[];
 }
 
+/**
+ * Sync editions from the campaigns they compiled into (spec §6.5).
+ *
+ * The existing sender owns sending. It knows nothing about editions and is not
+ * going to learn — that is the hard rule for this module. So the edition finds
+ * out the same way a person would: by looking at the campaign. When the
+ * campaign reads `sent`, the edition is marked sent, stamped with the
+ * campaign's own `sent_at`, and every story it used is flipped to `used`.
+ *
+ * Idempotent by construction. The edition update is guarded on not already
+ * being sent and the story update on being `approved`, so a second render
+ * writes nothing — and a story a human has since retired is never dragged back
+ * into circulation.
+ *
+ * Reading email_campaigns needs `fundraising.read`. A caller without it gets
+ * their editions back unsynced rather than an error: the status is stale, not
+ * wrong, and the next visit by someone with fundraising access fixes it.
+ */
+export async function syncSentEditions(
+  supabase: SupabaseClient,
+  orgId: string,
+  editions: EditionRow[],
+): Promise<EditionRow[]> {
+  const pending = editions.filter(
+    (e) => e.email_campaign_id && e.status !== "sent" && e.status !== "archived",
+  );
+  if (pending.length === 0) return editions;
+
+  const { data: campaigns } = await supabase
+    .from("email_campaigns")
+    .select("id, status, sent_at")
+    .eq("org_id", orgId)
+    .in(
+      "id",
+      pending.map((e) => e.email_campaign_id as string),
+    );
+
+  const sentAtByCampaign = new Map(
+    ((campaigns ?? []) as Array<{ id: string; status: string; sent_at: string | null }>)
+      .filter((c) => c.status === "sent")
+      .map((c) => [c.id, c.sent_at]),
+  );
+  const flipped = pending.filter((e) => sentAtByCampaign.has(e.email_campaign_id as string));
+  if (flipped.length === 0) return editions;
+
+  const now = new Date().toISOString();
+  const stampByEdition = new Map(
+    flipped.map((e) => [e.id, sentAtByCampaign.get(e.email_campaign_id as string) ?? now]),
+  );
+
+  // One update per edition, because each carries its campaign's own timestamp.
+  await Promise.all(
+    flipped.map((e) =>
+      supabase
+        .from("comms_editions")
+        .update({ status: "sent", sent_at: stampByEdition.get(e.id) })
+        .eq("id", e.id)
+        .eq("org_id", orgId)
+        .neq("status", "sent"),
+    ),
+  );
+
+  const { data: usedSlots } = await supabase
+    .from("comms_edition_slots")
+    .select("story_id")
+    .eq("org_id", orgId)
+    .in(
+      "edition_id",
+      flipped.map((e) => e.id),
+    )
+    .not("story_id", "is", null);
+
+  const storyIds = Array.from(
+    new Set(
+      ((usedSlots ?? []) as Array<{ story_id: string | null }>)
+        .map((r) => r.story_id)
+        .filter((v): v is string => !!v),
+    ),
+  );
+  if (storyIds.length > 0) {
+    await supabase
+      .from("stories")
+      .update({ status: "used" })
+      .eq("org_id", orgId)
+      .in("id", storyIds)
+      .eq("status", "approved");
+  }
+
+  return editions.map((e) =>
+    stampByEdition.has(e.id)
+      ? { ...e, status: "sent", sent_at: stampByEdition.get(e.id) ?? now }
+      : e,
+  );
+}
+
 /** Editions with their format name and a filled-slot count. */
 export async function loadEditions(
   supabase: SupabaseClient,
@@ -118,8 +213,9 @@ export async function loadEditions(
     supabase.from("comms_formats").select("id, name").eq("org_id", orgId),
   ]);
 
-  const editions = (eds ?? []) as unknown as EditionRow[];
-  if (editions.length === 0) return [];
+  const raw = (eds ?? []) as unknown as EditionRow[];
+  if (raw.length === 0) return [];
+  const editions = await syncSentEditions(supabase, orgId, raw);
 
   const { data: slotRows } = await supabase
     .from("comms_edition_slots")
@@ -164,7 +260,7 @@ export async function loadEdition(
     .eq("org_id", orgId)
     .maybeSingle();
   if (!ed) return null;
-  const edition = ed as unknown as EditionRow;
+  const [edition] = await syncSentEditions(supabase, orgId, [ed as unknown as EditionRow]);
 
   const [{ data: slotRows }, { data: fmt }] = await Promise.all([
     supabase

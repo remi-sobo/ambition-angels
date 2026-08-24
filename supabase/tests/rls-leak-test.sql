@@ -1701,6 +1701,55 @@ do $$ begin
   if (select count(*) from comms_edition_slots) <> 0 then raise exception 'LEAK: anon reads edition slots'; end if;
 end $$;
 
+-- ════ Comms compile → email_campaigns (Phase 5, no new tables) ════════════
+-- Compile writes into the FUNDRAISING domain. comms.manage does not carry
+-- fundraising.write, and the app must not pretend otherwise: the route checks
+-- the permission explicitly so the refusal is a sentence rather than a 500.
+-- These assertions pin the boundary the route is checking against.
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare aa uuid;
+begin
+  -- Read the org the same way every other block does. The edtest_ids temp
+  -- table belongs to the role that created it and is not readable here.
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into email_campaigns (org_id, name, subject, body, status)
+  values (aa, 'edtest-campaign', 'edtest subject', 'body', 'draft');
+  -- Proves the row exists, so the board-viewer and tenant-two zero-counts
+  -- below are refusals rather than assertions about nothing.
+  if (select count(*) from email_campaigns where name = 'edtest-campaign') <> 1 then
+    raise exception 'the compile fixture campaign was not created';
+  end if;
+end $$;
+
+-- Board viewer holds neither comms.manage nor fundraising.write: they can
+-- neither read the compiled campaign nor create one.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$ begin
+  if (select count(*) from email_campaigns where name = 'edtest-campaign') <> 0 then
+    raise exception 'LEAK: board_viewer reads a compiled campaign';
+  end if;
+end $$;
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into email_campaigns (org_id, name, subject, body, status)
+  values (aa, 'edtest-board-campaign', 's', 'b', 'draft');
+  raise exception 'LEAK: board_viewer compiled an edition into a campaign';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- Tenant two cannot see AA's compiled campaign.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$ begin
+  if (select count(*) from email_campaigns where name = 'edtest-campaign') <> 0 then
+    raise exception 'LEAK: tenant-two owner reads an AA compiled campaign';
+  end if;
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

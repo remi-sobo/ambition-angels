@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/app/admin/_components/Button";
 import { TYPE } from "@/lib/admin/typeScale";
 import { bankVerdict, splitBank, type BankStory } from "@/lib/comms/bank";
+import { leadStyleNote, type LeadStory } from "@/lib/comms/loop";
 import type { LoadedStory } from "@/lib/comms/stories-server";
 import CaptureSheet from "./CaptureSheet";
 import { ConsentChip, StoryStatusChip, SubjectChip, TagChip } from "./StoryChips";
@@ -111,7 +112,14 @@ function StoryCard({
   );
 }
 
-export default function StoryBank({ stories }: { stories: LoadedStory[] }) {
+export default function StoryBank({
+  stories,
+  lastLead = null,
+}: {
+  stories: LoadedStory[];
+  /** The most recent sent edition's lead story — the verdict line learns from it. */
+  lastLead?: LeadStory | null;
+}) {
   const router = useRouter();
   const [capturing, setCapturing] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -136,10 +144,10 @@ export default function StoryBank({ stories }: { stories: LoadedStory[] }) {
     };
   }, [stories, order]);
 
-  const verdict = useMemo(
-    () => bankVerdict(stories as unknown as BankStory[]),
-    [stories],
-  );
+  const verdict = useMemo(() => {
+    const bank = stories as unknown as BankStory[];
+    return bankVerdict(bank, undefined, leadStyleNote(lastLead, bank));
+  }, [stories, lastLead]);
 
   async function persist(ids: string[]) {
     setSaving(true);

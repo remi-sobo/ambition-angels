@@ -1,6 +1,6 @@
 # Spec: Calendar & Time Blocking (the week grid)
 
-Status: Draft 2026-09-02, pre-Phase-0. Design researched against the live codebase and against the shipped Wild Wanderers schedule feature (`wildwanderers-app`, `schedule_blocks` + `ScheduleGrid`), whose task-in-block mechanics this borrows — structural inspiration only, no code or data crosses the entity boundary. Builds directly on `specs/bloomos-agenda.md` (calendar cache, delegation) and `specs/bloomos-operating-rhythm-v2.md` (My Week, planner, task blocks); where those specs shipped something, this spec upgrades it rather than rebuilding it.
+Status: **SHIPPED 2026-09-02** (all six phases, same day as the draft — see the ship notes on §7 and the recon findings in §12). Design researched against the live codebase and against the shipped Wild Wanderers schedule feature (`wildwanderers-app`, `schedule_blocks` + `ScheduleGrid`), whose task-in-block mechanics this borrows — structural inspiration only, no code or data crosses the entity boundary. Builds directly on `specs/bloomos-agenda.md` (calendar cache, delegation) and `specs/bloomos-operating-rhythm-v2.md` (My Week, planner, task blocks); where those specs shipped something, this spec upgrades it rather than rebuilding it. Supabase project kzzdtibbwsucloaoqpqa; the Phase 1 migration is applied live.
 
 ## The idea in one screen
 
@@ -166,15 +166,18 @@ One migration + script pass: every `ops_tasks` row with `calendar_event_id` beco
 ## 7. Staged build order
 
 Phase 0 — Recon gate (no code). Verify against the live project: the actual `calendar_events.source` CHECK; whether any `ops_tasks.calendar_event_id` rows exist to backfill; `agenda_delegations` contents beyond the AA seed; which `staff` rows carry `user_id` and `reports_to` (the manager arm is only as real as this data); Google grant scopes; any drift on `open-blocks.ts` callers. Findings appended below; corrections folded into phases.
+**[2026-09-02: DONE — findings in §12. Two plan changes: the backfill is a no-op (zero linked tasks live, because the source CHECK made every mirror write fail), and the RLS scratch DB excludes the staff migrations, so `manages_user` guards on `to_regclass('public.staff')` and the leak test seeds a minimal staff fixture.]**
 
 Phase 1 — Schema. `work_blocks` + `work_block_tasks` + `calendar_prefs` + widened `source` CHECK + `private.manages_user` + RLS + leak-test cases. Useful alone: the constraint drift is fixed and the manager read arm lights up delegated agenda surfaces immediately.
 Commit: `BloomOS calendar: work-block schema, prefs, manager read (Phase 1)`
+**[2026-09-02: SHIPPED and applied to the live project via MCP (`create_work_blocks_and_calendar_prefs`). Full leak suite passes locally against a scratch Postgres, tenant-default ratchet included.]**
 
 Phase 2 — Read-only week grid. `/admin/calendar` + nav entry rendering meetings, existing task blocks, open time, now line, freshness chip; prefs card in Settings; `computeOpenBlocks` takes prefs. No block writes yet.
 Commit: `BloomOS calendar: week grid read view + working-hours prefs (Phase 2)`
 
 Phase 3 — Blocks live. `work-blocks.ts` service + routes + grid create/move/resize/delete + Google mirror + flow-back + backfill of single-task blocks.
 Commit: `BloomOS calendar: draggable work blocks synced to Google (Phase 3)`
+**[2026-09-02: Phases 2–3 SHIPPED as one commit (`week grid read view + block write engine`) — with zero existing blocks, the read-only slice alone had no standalone value, and the server engine is the reviewable unit. Deviations, deliberate: Google sync is best-effort (a user without a connection gets a local block flagged "not on Google yet" instead of the old hard 409 — Shannon can block time before ever connecting); no backfill shipped (nothing to backfill, see Phase 0); the summary strip and the owner switcher landed here rather than Phase 5, since the week-view assembler computes both anyway.]**
 
 Phase 4 — Fill the block. Panel with checklist (completion through the existing task PATCH), sorted/filtered picker, one-home move semantics, `planned_day` stamping; `WeekPlanner` ScheduleCell rerouted through the new service.
 Commit: `BloomOS calendar: fill-the-block task checklist + picker (Phase 4)`
@@ -184,6 +187,7 @@ Commit: `BloomOS calendar: manager week view + time summary (Phase 5)`
 
 Phase 6 — Rhythm wiring. Monday Days step links to the grid and uses prefs-based open hours; Friday verdict gains block accounting; carryover picks up unfinished block tasks.
 Commit: `BloomOS calendar: weekly rhythm integration (Phase 6)`
+**[2026-09-02: Phases 4–6 SHIPPED as one commit (`draggable blocks, fill-the-block, rhythm wiring`). The block sheet is a right-side panel (grid stays visible while filling); sort pills are Smart / Priority / Due with search + a project filter; on-block mini-checkboxes complete tasks in place. Weekends were counted as open time in the first cut — fixed: open-time math and gap affordances are Mon–Fri only, matching the planner. WeekPlanner's ScheduleCell was NOT rerouted — the legacy one-task path still works and now succeeds (the CHECK fix), so retiring it is follow-up cleanup, not a blocker. Carryover already picks up unfinished block tasks via `planned_week`, no extra wiring needed. Verified end-to-end in the running app against a Supabase mock (per `.claude/skills/verify`): login, grid render, panel, drag-create all exercised with screenshots.]**
 
 ## 8. Definition of done
 
@@ -217,6 +221,17 @@ Commit: `BloomOS calendar: weekly rhythm integration (Phase 6)`
 5. **Does a manager see task detail or just titles?** Recommendation: title, priority, due, done-state — the coaching conversation needs that much; task description/notes stay out of the manager read in v1.
 6. **Block colors/kinds.** A `kind` enum (deep work / admin / comms) with per-user colors, à la the reference build's block types? Recommendation: defer; title is enough until someone asks, and the status-color rule limits the palette anyway.
 
-## 11. Phase 0 kickoff prompt
+## 11. Phase 0 kickoff prompt (historical — recon is done, findings in §12)
 
 > Run Phase 0 recon for `specs/bloomos-calendar-time-blocking.md` against the live Supabase project. Report, with evidence: (1) the actual CHECK constraint on `calendar_events.source` and whether any rows carry `'bloomos'`; (2) all `ops_tasks` rows with non-null `calendar_event_id` (count + sample) for backfill sizing; (3) full contents of `agenda_delegations`; (4) which `staff` rows have `user_id` set and what `reports_to` edges exist — can the manager arm work today for anyone; (5) the Google OAuth scopes on active `connections` rows; (6) every caller of `computeOpenBlocks` and of `scheduleTaskBlock`/`moveTaskBlock`/`unscheduleTaskBlock`; (7) any schema drift on `ops_tasks`/`calendar_events` versus the committed migrations. Append findings to the spec under "Phase 0 recon findings" and flag anything that changes the phase plan. No code changes.
+
+## 12. Phase 0 recon findings (2026-09-02, live project kzzdtibbwsucloaoqpqa)
+
+1. **`calendar_events.source` CHECK was still `('google','booking')`** and zero rows carried `'bloomos'` — meaning every mirror write from `scheduleTaskBlock` since Agenda Phase 4 has failed the constraint. The "adjacent landmine" was live. Phase 1 widened it; the legacy path works again as a side effect.
+2. **Zero `ops_tasks` rows had `calendar_event_id` set** (consequence of #1) — the planned backfill is a no-op and was dropped.
+3. **`agenda_delegations`** holds exactly the AA seed (Remi → Shannon).
+4. **`staff.reports_to` is real in both orgs**: AA has Shannon → Remi; the second tenant has a full org chart (five reports_to edges), all rows with `user_id` set — the manager arm lights up with live data on day one, in both tenants.
+5. **Google connections**: Remi's AA calendar is the primary; a second user carries a stack of non-AA personal/family calendars (entity-bleed adjacency — untouched by this feature, `is_primary` selection already isolates it, but worth eyes on a future pass).
+6. **`private` helpers** available: `has_permission`, `is_org_member`, `shares_org` — `manages_user(p_owner, p_org)` joined them, `security definer stable, search_path = ''`, matching house style.
+7. **The RLS scratch harness (`scripts/test-rls.sh`) excludes `bloomos_staff_phase1..4.sql`** (their seeds FK the real AA org id). Consequences folded in: `manages_user` returns false when `public.staff` doesn't exist (`to_regclass` guard), and the leak test creates a minimal staff fixture to exercise the manager arm.
+8. **`npm run build` needs env** (`UNSUBSCRIBE_SECRET`, Stripe, Supabase publics) for pre-existing routes at page-data collection — CI gates on typecheck + lint + tests; the build runs green with those set (verified against the mock).

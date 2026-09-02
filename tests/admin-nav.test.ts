@@ -148,7 +148,7 @@ describe("admin section sub-topic nav", () => {
   test("a product with its own tabs gets a second row under the section row", () => {
     const ops = nav("/admin/ops/projects")!;
     expect(ops.rows.map((r) => r.label)).toEqual(["Operations", "Work"]);
-    expect(ops.rows[1].tabs.map((t) => t.label)).toEqual(["My Week", "Tasks", "Projects"]);
+    expect(ops.rows[1].tabs.map((t) => t.label)).toEqual(["My Week", "Calendar", "Tasks", "Projects"]);
     expect(activeLabel("/admin/ops/projects", 1)).toBe("Projects");
     // The Monday/Friday wizards belong to My Week.
     expect(activeLabel("/admin/ops/monday", 1)).toBe("My Week");

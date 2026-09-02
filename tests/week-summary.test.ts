@@ -70,6 +70,21 @@ describe("computeWeekSummary", () => {
     expect(summary.openMin).toBe(480 - 30);
   });
 
+  it("keeps weekend meetings in totals but out of open time", () => {
+    const summary = computeWeekSummary({
+      days: [
+        { meetings: [], blocks: [], workday: true },
+        { meetings: [{ startMin: 600, endMin: 660 }], blocks: [], workday: false }, // Saturday
+      ],
+      workStartMin: 540,
+      workEndMin: 1020,
+      blockTasksTotal: 0,
+      blockTasksDone: 0,
+    });
+    expect(summary.meetingMin).toBe(60); // still reported
+    expect(summary.openMin).toBe(480); // one working day, untouched
+  });
+
   it("formats hour labels", () => {
     expect(formatHours(45)).toBe("45m");
     expect(formatHours(120)).toBe("2h");

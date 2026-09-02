@@ -5,7 +5,13 @@ import type { OrgContext } from "@/lib/admin/auth";
 import { getAgenda } from "@/lib/agenda/service";
 import { getCalendarPrefs, type CalendarPrefs } from "@/lib/agenda/prefs";
 import { getDisplayNames } from "@/lib/admin/profile";
-import { addDays, dayStartInstant, laDateOf, weekDays } from "@/lib/admin/ops/week";
+import {
+  addDays,
+  dayStartInstant,
+  laDateOf,
+  weekDays,
+  weekdayIndex,
+} from "@/lib/admin/ops/week";
 import { computeOpenBlocks, type Interval } from "@/lib/admin/ops/open-blocks";
 import { computeWeekSummary, type WeekSummary } from "@/lib/agenda/week-summary";
 import type {
@@ -239,9 +245,16 @@ export async function getWeekView(args: {
     });
   }
 
-  // Open gaps per day: working hours minus meetings and blocks.
+  // Open gaps per day: working hours minus meetings and blocks. Weekends are
+  // not working days — blocks can still be drawn there, but nothing there
+  // reads as "open time" (matches the planner and the rhythm math).
+  const isWorkday = (day: string) => {
+    const dow = weekdayIndex(day);
+    return dow >= 1 && dow <= 5;
+  };
   const openGaps: GridOpenGap[] = [];
   for (const day of days) {
+    if (!isWorkday(day)) continue;
     const midnight = Date.parse(dayStartInstant(day));
     const busy: Interval[] = [
       ...timed
@@ -346,6 +359,7 @@ export async function getWeekView(args: {
       blocks: blocks
         .filter((b) => b.day === day)
         .map((b) => ({ startMin: b.startMin, endMin: b.endMin })),
+      workday: isWorkday(day),
     })),
     workStartMin: prefs.dayStartMinute,
     workEndMin: prefs.dayEndMinute,

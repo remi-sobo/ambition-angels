@@ -211,6 +211,7 @@ ordered=(
   create_cut_rooms.sql
   create_game_daily.sql
   create_plan_archives.sql
+  create_work_blocks_and_calendar_prefs.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

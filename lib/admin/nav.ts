@@ -125,6 +125,7 @@ export const NAV_SECTIONS: NavSection[] = [
     // including Prospects, the Ask Log, and fundraising Strategy.
     tabs: [
       { href: "/admin/fundraising/today", label: "Today's Moves" },
+      { href: "/admin/fundraising/plan", label: "Plan" },
       { href: "/admin/fundraising/donors", label: "Donors" },
       { href: "/admin/fundraising", label: "Pipeline" },
       { href: "/admin/fundraising/prospects", label: "Prospects" },
@@ -135,6 +136,7 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
     items: [
       { label: "Today's Moves", icon: "tasks", href: "/admin/fundraising/today", feature: "modules.fundraising" },
+      { label: "Plan", icon: "strategy", href: "/admin/fundraising/plan", feature: "modules.fundraising" },
       { label: "Donors", icon: "donors", href: "/admin/fundraising/donors", feature: "modules.fundraising" },
       { label: "Pipeline", icon: "majorgifts", href: "/admin/fundraising", feature: "modules.fundraising" },
       { label: "Grants", icon: "grants", href: "/admin/fundraising/grants", feature: "modules.fundraising" },

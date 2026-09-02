@@ -85,6 +85,7 @@ describe("admin section sub-topic nav", () => {
   test("Fundraising keeps its exact tab set, order, and active matching", () => {
     const expected = [
       "Today's Moves",
+      "Plan",
       "Donors",
       "Pipeline",
       "Prospects",
@@ -96,6 +97,8 @@ describe("admin section sub-topic nav", () => {
     expect(nav("/admin/fundraising/today")!.rows).toHaveLength(1);
     expect(sectionRow("/admin/fundraising/today")).toEqual(expected);
     expect(activeLabel("/admin/fundraising/today")).toBe("Today's Moves");
+    expect(activeLabel("/admin/fundraising/plan")).toBe("Plan");
+    expect(activeLabel("/admin/fundraising/plan/abc")).toBe("Plan");
     expect(activeLabel("/admin/fundraising")).toBe("Pipeline");
     expect(activeLabel("/admin/fundraising/prospects/abc")).toBe("Prospects");
     expect(activeLabel("/admin/fundraising/donors/abc")).toBe("Donors");

@@ -12,6 +12,8 @@ import { hasEntitlement } from "@/lib/admin/entitlements";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { TYPE } from "@/lib/admin/typeScale";
 import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
+import { fetchAskMoments } from "@/lib/fundraising/plan-moments";
+import type { AskMoment } from "@/lib/fundraising/plan";
 
 // Today's Fundraising Moves (Phase 2) — the operator home screen. Answers "who
 // needs me today," assembled deterministically from the spine (opportunities +
@@ -87,7 +89,7 @@ export default async function TodaysMovesPage() {
     "id, amount, gift_date, acknowledgment_status, " +
     "constituent:constituents ( id, type, first_name, last_name, org_name )";
 
-  const [overdueRes, closingRes, unownedRes, acksRes, recentRes] = await Promise.all([
+  const [overdueRes, closingRes, unownedRes, acksRes, recentRes, askMoments] = await Promise.all([
     // Overdue next steps on open asks.
     supabase
       .from("opportunities")
@@ -136,6 +138,10 @@ export default async function TodaysMovesPage() {
       .gte("gift_date", recentSince)
       .order("gift_date", { ascending: false })
       .limit(50),
+    // Scheduled ask moments in the next 7 days — expected closes, grant
+    // deadlines, pledge installments (specs/fundraising-plan.md). Grants and
+    // pledges have no other seat on this page.
+    fetchAskMoments(supabase, ctx.orgId, today, 7),
   ]);
 
   const overdue = (overdueRes.data ?? []) as unknown as OppRow[];
@@ -179,6 +185,11 @@ export default async function TodaysMovesPage() {
       )}
 
       <div className="space-y-4">
+        <MomentQueue
+          title="Asks due soon"
+          hint="Expected closes, grant deadlines, and pledge installments in the next 7 days."
+          rows={askMoments}
+        />
         <OppQueue
           title="Overdue next steps"
           hint="Open asks whose next step is past due — do these first."
@@ -267,6 +278,42 @@ function QueueShell({
       </div>
       {count === 0 ? <p className="px-5 py-4 text-ink-3 text-sm">Nothing here — nice.</p> : children}
     </section>
+  );
+}
+
+const MOMENT_KIND_LABELS: Record<AskMoment["kind"], string> = {
+  opportunity_close: "Ask",
+  grant_requirement: "Grant",
+  pledge_installment: "Pledge",
+};
+
+function MomentQueue({ title, hint, rows }: { title: string; hint: string; rows: AskMoment[] }) {
+  const shown = rows.slice(0, 8);
+  return (
+    <QueueShell title={title} hint={hint} count={rows.length} href="/admin/fundraising/plan" hrefLabel="Plan calendar →">
+      <ul className="divide-y divide-hairline">
+        {shown.map((m, i) => (
+          <li key={`${m.kind}-${i}`} className="px-5 py-2.5 flex items-center gap-3 text-sm">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3 w-12 flex-shrink-0">
+              {MOMENT_KIND_LABELS[m.kind]}
+            </span>
+            <Link href={m.href} className="font-medium text-ink-1 hover:text-orange transition-colors truncate max-w-[220px]">
+              {m.label}
+            </Link>
+            <span className="text-xs text-ink-2 truncate">
+              {m.detail}
+              {m.amount != null && (
+                <span className="text-ink-1 font-semibold ml-2 [font-variant-numeric:tabular-nums]">{money(m.amount)}</span>
+              )}
+            </span>
+            <span className="text-xs text-ink-3 ml-auto whitespace-nowrap">{fmtDate(m.date)}</span>
+          </li>
+        ))}
+      </ul>
+      {rows.length > shown.length && (
+        <p className="px-5 py-2 text-[11px] text-ink-3">+{rows.length - shown.length} more</p>
+      )}
+    </QueueShell>
   );
 }
 

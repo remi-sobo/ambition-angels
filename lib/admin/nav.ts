@@ -89,13 +89,14 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: "week",
         href: "/admin/ops/my-week",
         feature: "modules.ops",
-        match: ["/admin/ops"],
+        match: ["/admin/ops", "/admin/calendar"],
         tabs: [
           {
             href: "/admin/ops/my-week",
             label: "My Week",
             match: ["/admin/ops/monday", "/admin/ops/friday"],
           },
+          { href: "/admin/calendar", label: "Calendar" },
           { href: "/admin/ops", label: "Tasks" },
           { href: "/admin/ops/projects", label: "Projects" },
         ],

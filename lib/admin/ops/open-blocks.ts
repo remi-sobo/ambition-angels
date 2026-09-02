@@ -10,8 +10,14 @@
 export type Interval = { start: number; end: number }; // epoch ms
 export type OpenBlock = { startMinute: number; endMinute: number }; // minutes from local midnight
 
-const WORK_START_MIN = 9 * 60; // 09:00
-const WORK_END_MIN = 17 * 60; // 17:00
+export type WorkingHours = { startMinute: number; endMinute: number };
+
+/** Fallback when the user has no calendar_prefs row (matches the DB defaults). */
+export const DEFAULT_WORKING_HOURS: WorkingHours = {
+  startMinute: 9 * 60, // 09:00
+  endMinute: 17 * 60, // 17:00
+};
+
 const MIN_BLOCK_MIN = 30; // ignore slivers shorter than this
 
 /**
@@ -19,10 +25,15 @@ const MIN_BLOCK_MIN = 30; // ignore slivers shorter than this
  *   dayStartInstant(dayISO)). Minutes are returned relative to it, matching the
  *   start_minute the block-write route expects.
  * @param busy busy intervals as epoch ms (events + existing task blocks).
+ * @param hours per-user working hours (calendar_prefs); defaults to 9–5.
  */
-export function computeOpenBlocks(dayMidnightMs: number, busy: Interval[]): OpenBlock[] {
-  const workStart = dayMidnightMs + WORK_START_MIN * 60_000;
-  const workEnd = dayMidnightMs + WORK_END_MIN * 60_000;
+export function computeOpenBlocks(
+  dayMidnightMs: number,
+  busy: Interval[],
+  hours: WorkingHours = DEFAULT_WORKING_HOURS
+): OpenBlock[] {
+  const workStart = dayMidnightMs + hours.startMinute * 60_000;
+  const workEnd = dayMidnightMs + hours.endMinute * 60_000;
 
   const merged: Interval[] = [];
   const clipped = busy

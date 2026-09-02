@@ -14,7 +14,7 @@ export type AgendaItemView = {
   allDay: boolean;
   location: string | null;
   isExternal: boolean;
-  source: "google" | "booking";
+  source: "google" | "booking" | "bloomos";
 };
 
 export type AgendaLane = { userId: string; label: string };

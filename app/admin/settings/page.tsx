@@ -6,8 +6,10 @@ import { getCalendarConnectionStatus, type CalendarConnectionStatus } from "@/li
 import { createServerSupabase } from "@/lib/supabase/server";
 import { spendSummary } from "@/lib/ai/ledger";
 import { orgMonthlyCapUsd } from "@/lib/ai/cap";
+import { getCalendarPrefs } from "@/lib/agenda/prefs";
 import PageHeader from "../_components/PageHeader";
 import { DisplayNameForm, ConnectCalendarControls, ChangePasswordForm, SignOutAllButton } from "./_components/AccountControls";
+import CalendarPrefsCard from "./_components/CalendarPrefsCard";
 import HubspotSyncPanel from "./_components/HubspotSyncPanel";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -63,6 +65,9 @@ export default async function SettingsPage({
   } catch {
     calendarStatus = null;
   }
+
+  // Working-hours prefs for the week grid (defaults when no row yet).
+  const calPrefs = await getCalendarPrefs(ctx.userId);
 
   // Month-to-date AI spend for this org, from the unified ledger. RLS-scoped
   // via the session client; returns an empty summary if the read fails.
@@ -154,6 +159,19 @@ export default async function SettingsPage({
               Calendar status is unavailable right now (the server isn&apos;t fully configured). Try again shortly.
             </p>
           )}
+        </Card>
+
+        <Card
+          title="Working hours"
+          description="The window your week grid shows and what counts as open time on the Calendar."
+        >
+          <CalendarPrefsCard
+            initial={{
+              day_start_minute: calPrefs.dayStartMinute,
+              day_end_minute: calPrefs.dayEndMinute,
+              default_block_minute: calPrefs.defaultBlockMinute,
+            }}
+          />
         </Card>
 
         <Card

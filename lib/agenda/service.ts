@@ -26,7 +26,7 @@ export type AgendaItem = {
   allDay: boolean;
   location: string | null;
   isExternal: boolean;
-  source: "google" | "booking";
+  source: "google" | "booking" | "bloomos";
 };
 
 export type Agenda = {
@@ -96,7 +96,7 @@ export async function getAgenda(range: { start: Date; end: Date }): Promise<Agen
       allDay: !!r.all_day,
       location: (r.location as string) ?? null,
       isExternal: !!r.is_external,
-      source: ((r.source as string) ?? "google") as "google" | "booking",
+      source: ((r.source as string) ?? "google") as AgendaItem["source"],
     };
   });
 

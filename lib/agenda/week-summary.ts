@@ -8,8 +8,10 @@
 export type MinuteInterval = { startMin: number; endMin: number };
 
 export type WeekSummaryInput = {
-  /** Per day (Mon..Sun): timed meetings and work blocks, minutes from midnight. */
-  days: Array<{ meetings: MinuteInterval[]; blocks: MinuteInterval[] }>;
+  /** Per day (Mon..Sun): timed meetings and work blocks, minutes from midnight.
+   *  `workday: false` (weekends) keeps the day's meetings/blocks in the totals
+   *  but contributes no working hours to the open figure. Default true. */
+  days: Array<{ meetings: MinuteInterval[]; blocks: MinuteInterval[]; workday?: boolean }>;
   workStartMin: number;
   workEndMin: number;
   blockTasksTotal: number;
@@ -60,19 +62,22 @@ export function computeWeekSummary(input: WeekSummaryInput): WeekSummary {
   let meetingMin = 0;
   let blockedMin = 0;
   let busyInWorkMin = 0;
+  let workdays = 0;
 
   const workLen = Math.max(0, input.workEndMin - input.workStartMin);
 
   for (const day of input.days) {
     meetingMin += totalMin(mergeIntervals(day.meetings));
     blockedMin += totalMin(mergeIntervals(day.blocks));
+    if (day.workday === false) continue; // weekends never count toward open time
+    workdays += 1;
     const busy = mergeIntervals(
       clip([...day.meetings, ...day.blocks], input.workStartMin, input.workEndMin)
     );
     busyInWorkMin += totalMin(busy);
   }
 
-  const openMin = Math.max(0, workLen * input.days.length - busyInWorkMin);
+  const openMin = Math.max(0, workLen * workdays - busyInWorkMin);
 
   return {
     meetingMin,

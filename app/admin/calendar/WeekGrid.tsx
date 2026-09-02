@@ -1,36 +1,51 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TYPE } from "@/lib/admin/typeScale";
 import { addDays, ORG_TZ } from "@/lib/admin/ops/week";
 import {
+  clampMin,
   formatDuration,
   formatMinuteRange,
   layoutLanes,
   PX_PER_MIN,
+  SNAP_MIN,
+  snapMin,
   type GridBlock,
+  type GridBlockTask,
   type GridEvent,
 } from "@/lib/agenda/week-grid";
 import { formatHours } from "@/lib/agenda/week-summary";
 import type { WeekViewData } from "@/lib/agenda/week-view";
+import BlockPanel from "./BlockPanel";
 
 /**
  * The week grid: seven day columns on an hour axis. Meetings render as fixed,
- * read-only cards; work blocks as BloomOS-owned cards; open working-hours
- * gaps stay quiet. Overlaps share the column via lane layout (equal-width
- * lanes inside an overlap cluster). All positions are org-TZ minutes computed
- * server-side — this component does pixel math only.
+ * read-only cards; work blocks are BloomOS-owned and, on your own week,
+ * pointer-driven — draw one into a gap, drag it to move, pull its bottom edge
+ * to resize, click to open the panel and fill it with tasks. One handler
+ * unifies click and drag: a pointer that never moved is a click.
+ *
+ * All positions are org-TZ minutes computed server-side; this component does
+ * pixel math only. Writes are optimistic (local state first, then the API,
+ * then router.refresh() to reconcile).
  */
 
 const GUTTER_PX = 56;
 const MIN_COL_PX = 118;
+const RESIZE_STRIP_PX = 7;
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 type DayItem =
   | { kind: "event"; startMin: number; endMin: number; event: GridEvent }
   | { kind: "block"; startMin: number; endMin: number; block: GridBlock };
+
+type Drag =
+  | { kind: "create"; dayIdx: number; anchor: number; startMin: number; endMin: number; moved: boolean }
+  | { kind: "move"; id: string; dayIdx: number; startMin: number; len: number; grabOffset: number; moved: boolean }
+  | { kind: "resize"; id: string; dayIdx: number; startMin: number; endMin: number; moved: boolean };
 
 /** Current org-TZ day + minutes-from-midnight, for the now line. */
 function laNow(): { day: string; min: number } {
@@ -68,6 +83,26 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
   const isSelf = view.owner.relation === "self";
   const [refreshing, setRefreshing] = useState(false);
 
+  // Optimistic layers over the server props: block geometry/list and task
+  // status. Fresh server data (router.refresh) resets both.
+  const [blocks, setBlocks] = useState<GridBlock[]>(view.blocks);
+  const [statusOverride, setStatusOverride] = useState<Record<string, string>>({});
+  const [removedLinks, setRemovedLinks] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    setBlocks(view.blocks);
+    setStatusOverride({});
+    setRemovedLinks(new Set());
+  }, [view.blocks, view.blockTasks]);
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [drag, setDrag] = useState<Drag | null>(null);
+  const dragRef = useRef<Drag | null>(null);
+  const columnsRef = useRef<HTMLDivElement | null>(null);
+  const setDragBoth = useCallback((d: Drag | null) => {
+    dragRef.current = d;
+    setDrag(d);
+  }, []);
+
   // The now line renders only after mount so SSR never bakes in a clock.
   const [nowStamp, setNowStamp] = useState<{ day: string; min: number } | null>(null);
   useEffect(() => {
@@ -85,46 +120,336 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
       start = Math.min(start, Math.floor(e.startMin / 60) * 60);
       end = Math.max(end, Math.ceil(e.endMin / 60) * 60);
     }
-    for (const b of view.blocks) {
+    for (const b of blocks) {
       start = Math.min(start, Math.floor(b.startMin / 60) * 60);
       end = Math.max(end, Math.ceil(b.endMin / 60) * 60);
     }
     return { gridStart: start, gridEnd: end };
-  }, [view.events, view.blocks, view.prefs]);
+  }, [view.events, blocks, view.prefs]);
   const gridHeight = (gridEnd - gridStart) * PX_PER_MIN;
 
   // One lane pass per day over meetings AND blocks together, so a block beside
-  // a meeting shares the column instead of hiding under it.
+  // a meeting shares the column instead of hiding under it. A block being
+  // dragged is excluded — the preview stands in for it.
   const dayLayouts = useMemo(() => {
+    const draggingId = drag && drag.kind !== "create" ? drag.id : null;
     return view.days.map((day) => {
       const items: DayItem[] = [
         ...view.events
           .filter((e) => e.day === day)
           .map((e) => ({ kind: "event" as const, startMin: e.startMin, endMin: e.endMin, event: e })),
-        ...view.blocks
-          .filter((b) => b.day === day)
+        ...blocks
+          .filter((b) => b.day === day && b.id !== draggingId)
           .map((b) => ({ kind: "block" as const, startMin: b.startMin, endMin: b.endMin, block: b })),
       ];
       return { day, items, placed: layoutLanes(items) };
     });
-  }, [view.days, view.events, view.blocks]);
+  }, [view.days, view.events, blocks, drag]);
 
   const tasksByBlock = useMemo(() => {
-    const map = new Map<string, typeof view.blockTasks>();
+    const map = new Map<string, GridBlockTask[]>();
     for (const t of view.blockTasks) {
+      if (removedLinks.has(t.linkId)) continue;
+      const status = statusOverride[t.taskId] ?? t.status;
       const list = map.get(t.blockId) ?? [];
-      list.push(t);
+      list.push({ ...t, status });
       map.set(t.blockId, list);
     }
     map.forEach((list) => list.sort((a, b) => a.position - b.position));
     return map;
-  }, [view.blockTasks]);
+  }, [view.blockTasks, statusOverride, removedLinks]);
 
   const hourMarks = useMemo(() => {
     const marks: number[] = [];
     for (let m = Math.ceil(gridStart / 60) * 60; m <= gridEnd; m += 60) marks.push(m);
     return marks;
   }, [gridStart, gridEnd]);
+
+  // ── API writes (optimistic; refresh reconciles) ──────────────────────────
+
+  const refresh = useCallback(() => router.refresh(), [router]);
+
+  const apiCreateBlock = useCallback(
+    async (day: string, startMin: number, durationMin: number) => {
+      try {
+        const r = await fetch("/api/admin/calendar/blocks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ day, start_minute: startMin, duration_minute: durationMin }),
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const body = (await r.json()) as {
+          block: { id: string; title: string; google_event_id: string | null };
+          synced: boolean;
+        };
+        setBlocks((prev) => [
+          ...prev,
+          {
+            id: body.block.id,
+            day,
+            startMin,
+            endMin: startMin + durationMin,
+            title: body.block.title,
+            synced: body.synced,
+          },
+        ]);
+        setSelectedId(body.block.id);
+        refresh();
+      } catch (e) {
+        console.error("Create block failed:", e);
+        alert("Couldn't create the block. Try again.");
+        refresh();
+      }
+    },
+    [refresh]
+  );
+
+  const apiMoveBlock = useCallback(
+    async (id: string, day: string, startMin: number, durationMin: number) => {
+      setBlocks((prev) =>
+        prev.map((b) =>
+          b.id === id ? { ...b, day, startMin, endMin: startMin + durationMin } : b
+        )
+      );
+      try {
+        const r = await fetch(`/api/admin/calendar/blocks/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ day, start_minute: startMin, duration_minute: durationMin }),
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        refresh();
+      } catch (e) {
+        console.error("Move block failed:", e);
+        alert("Couldn't move the block. Try again.");
+        refresh();
+      }
+    },
+    [refresh]
+  );
+
+  const apiDeleteBlock = useCallback(
+    async (id: string) => {
+      setBlocks((prev) => prev.filter((b) => b.id !== id));
+      setSelectedId(null);
+      try {
+        const r = await fetch(`/api/admin/calendar/blocks/${id}`, { method: "DELETE" });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        refresh();
+      } catch (e) {
+        console.error("Delete block failed:", e);
+        alert("Couldn't delete the block. Try again.");
+        refresh();
+      }
+    },
+    [refresh]
+  );
+
+  const apiRetitleBlock = useCallback(
+    async (id: string, title: string) => {
+      setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, title } : b)));
+      try {
+        const r = await fetch(`/api/admin/calendar/blocks/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title }),
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        refresh();
+      } catch (e) {
+        console.error("Retitle block failed:", e);
+        refresh();
+      }
+    },
+    [refresh]
+  );
+
+  const apiToggleTask = useCallback(
+    async (taskId: string, done: boolean) => {
+      setStatusOverride((prev) => ({ ...prev, [taskId]: done ? "done" : "todo" }));
+      try {
+        const r = await fetch(`/api/admin/ops/tasks/${taskId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: done ? "done" : "todo" }),
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        refresh();
+      } catch (e) {
+        console.error("Toggle task failed:", e);
+        setStatusOverride((prev) => ({ ...prev, [taskId]: done ? "todo" : "done" }));
+      }
+    },
+    [refresh]
+  );
+
+  const apiAddTask = useCallback(
+    async (blockId: string, taskId: string) => {
+      try {
+        const r = await fetch(`/api/admin/calendar/blocks/${blockId}/tasks`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task_id: taskId }),
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        refresh();
+      } catch (e) {
+        console.error("Add task failed:", e);
+        alert("Couldn't add the task. Try again.");
+      }
+    },
+    [refresh]
+  );
+
+  const apiRemoveTask = useCallback(
+    async (blockId: string, taskId: string, linkId: string) => {
+      setRemovedLinks((prev) => new Set(prev).add(linkId));
+      try {
+        const r = await fetch(
+          `/api/admin/calendar/blocks/${blockId}/tasks?task_id=${encodeURIComponent(taskId)}`,
+          { method: "DELETE" }
+        );
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        refresh();
+      } catch (e) {
+        console.error("Remove task failed:", e);
+        refresh();
+      }
+    },
+    [refresh]
+  );
+
+  // ── Pointer machinery (own week only) ────────────────────────────────────
+
+  const pointFrom = useCallback(
+    (ev: PointerEvent | React.PointerEvent): { dayIdx: number; min: number } | null => {
+      const el = columnsRef.current;
+      if (!el) return null;
+      const rect = el.getBoundingClientRect();
+      const dayIdx = clampMin(Math.floor(((ev.clientX - rect.left) / rect.width) * 7), 0, 6);
+      const min = clampMin(
+        gridStart + (ev.clientY - rect.top) / PX_PER_MIN,
+        gridStart,
+        gridEnd
+      );
+      return { dayIdx, min };
+    },
+    [gridStart, gridEnd]
+  );
+
+  const beginCreate = useCallback(
+    (ev: React.PointerEvent) => {
+      if (!isSelf || ev.button !== 0) return;
+      const p = pointFrom(ev);
+      if (!p) return;
+      const anchor = snapMin(p.min);
+      setDragBoth({
+        kind: "create",
+        dayIdx: p.dayIdx,
+        anchor,
+        startMin: anchor,
+        endMin: anchor + SNAP_MIN,
+        moved: false,
+      });
+    },
+    [isSelf, pointFrom, setDragBoth]
+  );
+
+  const beginBlockDrag = useCallback(
+    (ev: React.PointerEvent, block: GridBlock) => {
+      if (!isSelf || ev.button !== 0) return;
+      ev.stopPropagation();
+      const p = pointFrom(ev);
+      if (!p) return;
+      const rect = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+      const dayIdx = view.days.indexOf(block.day);
+      if (ev.clientY >= rect.bottom - RESIZE_STRIP_PX) {
+        setDragBoth({
+          kind: "resize",
+          id: block.id,
+          dayIdx,
+          startMin: block.startMin,
+          endMin: block.endMin,
+          moved: false,
+        });
+      } else {
+        setDragBoth({
+          kind: "move",
+          id: block.id,
+          dayIdx,
+          startMin: block.startMin,
+          len: block.endMin - block.startMin,
+          grabOffset: p.min - block.startMin,
+          moved: false,
+        });
+      }
+    },
+    [isSelf, pointFrom, setDragBoth, view.days]
+  );
+
+  useEffect(() => {
+    if (!drag) return;
+    const onMove = (ev: PointerEvent) => {
+      const d = dragRef.current;
+      const p = pointFrom(ev);
+      if (!d || !p) return;
+      if (d.kind === "create") {
+        const m = snapMin(p.min);
+        setDragBoth({
+          ...d,
+          dayIdx: p.dayIdx,
+          startMin: Math.min(d.anchor, m),
+          endMin: Math.max(d.anchor, m) || d.anchor + SNAP_MIN,
+          moved: d.moved || m !== d.anchor || p.dayIdx !== d.dayIdx,
+        });
+      } else if (d.kind === "move") {
+        const start = snapMin(clampMin(p.min - d.grabOffset, gridStart, gridEnd - d.len));
+        setDragBoth({
+          ...d,
+          dayIdx: p.dayIdx,
+          startMin: start,
+          moved: d.moved || start !== d.startMin || p.dayIdx !== d.dayIdx,
+        });
+      } else {
+        const end = snapMin(clampMin(p.min, d.startMin + SNAP_MIN, gridEnd));
+        setDragBoth({ ...d, endMin: end, moved: d.moved || end !== d.endMin });
+      }
+    };
+    const onUp = () => {
+      const d = dragRef.current;
+      setDragBoth(null);
+      if (!d) return;
+      const day = view.days[d.dayIdx];
+      if (d.kind === "create") {
+        const len = d.moved
+          ? Math.max(d.endMin - d.startMin, SNAP_MIN)
+          : Math.min(view.defaultBlockMinute, gridEnd - d.startMin);
+        if (len < SNAP_MIN) return;
+        void apiCreateBlock(day, d.startMin, len);
+      } else if (d.kind === "move") {
+        if (!d.moved) {
+          setSelectedId(d.id);
+          return;
+        }
+        void apiMoveBlock(d.id, day, d.startMin, d.len);
+      } else {
+        if (!d.moved) {
+          setSelectedId(d.id);
+          return;
+        }
+        void apiMoveBlock(d.id, day, d.startMin, d.endMin - d.startMin);
+      }
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    // dragRef mirrors drag so the handlers read fresh state without re-binding
+    // on every pixel; the effect only cares whether a drag is in flight.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drag !== null, pointFrom, gridStart, gridEnd, view.days, view.defaultBlockMinute]);
 
   const goToWeek = (weekStart: string) => {
     const params = new URLSearchParams();
@@ -135,6 +460,7 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
 
   const freshness = syncedLabel(view.syncedAt);
   const s = view.summary;
+  const selectedBlock = selectedId ? blocks.find((b) => b.id === selectedId) ?? null : null;
 
   return (
     <div>
@@ -181,6 +507,12 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
               </option>
             ))}
           </select>
+        )}
+
+        {!isSelf && (
+          <span className="text-[11px] font-semibold text-ink-2 bg-tile border border-outline rounded-full px-2 py-0.5">
+            read-only
+          </span>
         )}
 
         <div className="ml-auto flex items-center gap-4">
@@ -276,15 +608,16 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
               </div>
 
               {/* Day columns */}
-              <div className="relative flex flex-1" style={{ height: gridHeight }}>
-                {dayLayouts.map(({ day, items, placed }) => {
+              <div ref={columnsRef} className="relative flex flex-1" style={{ height: gridHeight }}>
+                {dayLayouts.map(({ day, items, placed }, dayIdx) => {
                   const isToday = day === view.todayISO;
                   return (
                     <div
                       key={day}
+                      onPointerDown={beginCreate}
                       className={`relative flex-1 min-w-0 border-l border-hairline first:border-l-0 ${
                         isToday ? "bg-orange-light/25" : ""
-                      }`}
+                      } ${isSelf ? "cursor-crosshair" : ""}`}
                       style={{
                         backgroundImage:
                           "repeating-linear-gradient(to bottom, rgba(199,177,140,0.28) 0, rgba(199,177,140,0.28) 1px, transparent 1px, transparent 52px)",
@@ -338,7 +671,8 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
                           return (
                             <div
                               key={`ev-${e.id}`}
-                              className={`absolute rounded-md border bg-tile px-1.5 py-1 overflow-hidden shadow-tile ${
+                              onPointerDown={(ev) => ev.stopPropagation()}
+                              className={`absolute rounded-md border bg-tile px-1.5 py-1 overflow-hidden shadow-tile cursor-default ${
                                 e.isExternal ? "border-orange/40" : "border-hairline"
                               }`}
                               style={{
@@ -368,7 +702,10 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
                         return (
                           <div
                             key={`blk-${b.id}`}
-                            className="absolute rounded-md border border-orange/35 bg-orange-light px-1.5 py-1 overflow-hidden shadow-tile"
+                            onPointerDown={(ev) => beginBlockDrag(ev, b)}
+                            className={`absolute rounded-md border bg-orange-light px-1.5 py-1 overflow-hidden shadow-tile select-none ${
+                              selectedId === b.id ? "border-orange ring-1 ring-orange/50" : "border-orange/35"
+                            } ${isSelf ? "cursor-grab active:cursor-grabbing" : ""}`}
                             style={{ ...laneStyle, borderLeftWidth: 3, borderLeftColor: "#E8500A" }}
                             title={b.synced ? b.title : `${b.title} · not on Google yet`}
                           >
@@ -391,21 +728,31 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
                             )}
                             {height >= 62 && tasks.length > 0 && (
                               <ul className="mt-0.5 space-y-px">
-                                {tasks.slice(0, Math.floor((height - 44) / 15)).map((t) => (
-                                  <li key={t.linkId} className="flex items-center gap-1 text-[10px] leading-[14px] truncate">
-                                    <span
-                                      className={`w-2.5 h-2.5 rounded-full border shrink-0 flex items-center justify-center ${
+                                {tasks.slice(0, Math.floor((height - 44) / 16)).map((t) => (
+                                  <li
+                                    key={t.linkId}
+                                    className="flex items-center gap-1 text-[10px] leading-4 truncate"
+                                  >
+                                    <button
+                                      onPointerDown={(ev) => ev.stopPropagation()}
+                                      onClick={(ev) => {
+                                        ev.stopPropagation();
+                                        if (isSelf) void apiToggleTask(t.taskId, t.status !== "done");
+                                      }}
+                                      disabled={!isSelf}
+                                      aria-label={t.status === "done" ? "Mark not done" : "Mark done"}
+                                      className={`w-3 h-3 rounded-full border shrink-0 flex items-center justify-center ${
                                         t.status === "done"
                                           ? "bg-status-healthy-bg border-status-healthy/40 text-status-healthy-text"
-                                          : "border-outline"
+                                          : "border-outline hover:border-orange/70"
                                       }`}
                                     >
                                       {t.status === "done" && (
-                                        <svg viewBox="0 0 16 16" className="w-1.5 h-1.5" fill="none" stroke="currentColor" strokeWidth="3">
+                                        <svg viewBox="0 0 16 16" className="w-2 h-2" fill="none" stroke="currentColor" strokeWidth="3">
                                           <path d="M3 8l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
                                       )}
-                                    </span>
+                                    </button>
                                     <span className={t.status === "done" ? "text-ink-3 line-through truncate" : "text-ink-2 truncate"}>
                                       {t.title}
                                     </span>
@@ -413,9 +760,33 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
                                 ))}
                               </ul>
                             )}
+                            {isSelf && (
+                              <div className="absolute inset-x-0 bottom-0 h-[7px] cursor-ns-resize" />
+                            )}
                           </div>
                         );
                       })}
+
+                      {/* Drag preview for this column */}
+                      {drag && drag.dayIdx === dayIdx && (
+                        <div
+                          className="absolute left-0.5 right-0.5 rounded-md border-2 border-dashed border-orange bg-orange/10 pointer-events-none z-20 flex items-start px-1.5 py-0.5"
+                          style={{
+                            top: (drag.startMin - gridStart) * PX_PER_MIN,
+                            height:
+                              (drag.kind === "move"
+                                ? drag.len
+                                : Math.max(drag.endMin - drag.startMin, SNAP_MIN)) * PX_PER_MIN,
+                          }}
+                        >
+                          <span className="text-[10px] font-semibold text-orange tabular-nums">
+                            {formatMinuteRange(
+                              drag.startMin,
+                              drag.kind === "move" ? drag.startMin + drag.len : drag.endMin
+                            )}
+                          </span>
+                        </div>
+                      )}
 
                       {/* Now line */}
                       {nowStamp?.day === day && nowStamp.min >= gridStart && nowStamp.min <= gridEnd && (
@@ -435,11 +806,16 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
           </div>
         </div>
 
-        {/* Footer: freshness */}
+        {/* Footer: freshness + hint */}
         <div className="flex items-center justify-between border-t border-hairline px-4 py-2">
           <span className={`text-[11px] ${freshness.stale ? "text-orange" : "text-ink-3"}`}>
             {freshness.text}
           </span>
+          {isSelf && (
+            <span className="hidden sm:block text-[11px] text-ink-3">
+              Drag on empty space to draw a work block · click a block to fill it
+            </span>
+          )}
           <button
             onClick={async () => {
               setRefreshing(true);
@@ -461,6 +837,23 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
           </button>
         </div>
       </div>
+
+      {/* Block panel */}
+      {selectedBlock && (
+        <BlockPanel
+          block={selectedBlock}
+          tasks={tasksByBlock.get(selectedBlock.id) ?? []}
+          openTasks={view.openTasks}
+          projectNames={view.projectNames}
+          readOnly={!isSelf}
+          onClose={() => setSelectedId(null)}
+          onRetitle={(title) => apiRetitleBlock(selectedBlock.id, title)}
+          onDelete={() => apiDeleteBlock(selectedBlock.id)}
+          onToggleTask={(taskId, done) => apiToggleTask(taskId, done)}
+          onAddTask={(taskId) => apiAddTask(selectedBlock.id, taskId)}
+          onRemoveTask={(taskId, linkId) => apiRemoveTask(selectedBlock.id, taskId, linkId)}
+        />
+      )}
     </div>
   );
 }

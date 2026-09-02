@@ -1170,4 +1170,215 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+-- ════ Work blocks: owner / delegate / manager visibility ══════════════════
+-- create_work_blocks_and_calendar_prefs.sql. Read = own OR delegated OR you
+-- directly manage the owner (staff.reports_to); write = own, always. The
+-- staff migrations are excluded from this scratch run (see test-rls.sh), so
+-- seed the minimal staff shape private.manages_user() joins against.
+
+create table if not exists public.staff (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs(id),
+  user_id uuid not null references auth.users(id),
+  full_name text not null,
+  reports_to uuid references public.staff(id),
+  status text not null default 'active',
+  unique (org_id, user_id)
+);
+
+do $$
+declare aa uuid; t2 uuid; remi_staff uuid; remi_blk uuid; shannon_blk uuid;
+        t2_blk uuid; task1 uuid; task2 uuid; shannon_ev uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+  select id into t2 from orgs where slug = 'tenant-two';
+
+  -- Org chart: shannon reports to remi in AA; t2 owner stands alone.
+  insert into public.staff (org_id, user_id, full_name)
+  values (aa, '00000000-0000-0000-0000-000000000001', 'Remi')
+  on conflict (org_id, user_id) do nothing;
+  select id into remi_staff from public.staff
+    where org_id = aa and user_id = '00000000-0000-0000-0000-000000000001';
+  insert into public.staff (org_id, user_id, full_name, reports_to)
+  values (aa, '00000000-0000-0000-0000-000000000002', 'Shannon', remi_staff)
+  on conflict (org_id, user_id) do nothing;
+  insert into public.staff (org_id, user_id, full_name)
+  values (t2, '00000000-0000-0000-0000-000000000004', 'T2 Owner')
+  on conflict (org_id, user_id) do nothing;
+
+  -- Delegation between the TEST principals (the migration seed uses the live
+  -- uuids): remi grants shannon his calendar, EA-style.
+  insert into agenda_delegations (org_id, grantor_user_id, grantee_user_id)
+  values (aa, '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002')
+  on conflict (org_id, grantor_user_id, grantee_user_id) do nothing;
+
+  -- Blocks: one each for remi, shannon, and the t2 owner.
+  insert into work_blocks (org_id, owner_user_id, day, start_minute, duration_minute, title)
+  values (aa, '00000000-0000-0000-0000-000000000001', '2026-09-07', 540, 90, 'leak-test-remi-block')
+  returning id into remi_blk;
+  insert into work_blocks (org_id, owner_user_id, day, start_minute, duration_minute, title)
+  values (aa, '00000000-0000-0000-0000-000000000002', '2026-09-07', 600, 60, 'leak-test-shannon-block')
+  returning id into shannon_blk;
+  insert into work_blocks (org_id, owner_user_id, day, start_minute, duration_minute, title)
+  values (t2, '00000000-0000-0000-0000-000000000004', '2026-09-07', 540, 60, 'leak-test-t2-block')
+  returning id into t2_blk;
+
+  -- Checklist links ride block visibility.
+  insert into ops_tasks (org_id, title, category, created_by)
+  values (aa, 'leak-test-blocked-task-remi', 'operations', 'remi')
+  returning id into task1;
+  insert into ops_tasks (org_id, title, category, created_by)
+  values (aa, 'leak-test-blocked-task-shannon', 'operations', 'shannon')
+  returning id into task2;
+  insert into work_block_tasks (org_id, block_id, task_id, position)
+  values (aa, remi_blk, task1, 0);
+  insert into work_block_tasks (org_id, block_id, task_id, position)
+  values (aa, shannon_blk, task2, 0);
+
+  -- A calendar event on shannon's calendar: the manager arm should open it
+  -- to remi (previously only a delegation could).
+  insert into calendar_events (org_id, owner_user_id, title, start_time, end_time)
+  values (aa, '00000000-0000-0000-0000-000000000002', 'leak-test-shannon-event',
+          '2026-09-07T17:00:00Z', '2026-09-07T18:00:00Z')
+  returning id into shannon_ev;
+
+  -- Prefs rows for remi and the t2 owner.
+  insert into calendar_prefs (user_id, org_id) values
+    ('00000000-0000-0000-0000-000000000001', aa)
+  on conflict (user_id) do nothing;
+  insert into calendar_prefs (user_id, org_id) values
+    ('00000000-0000-0000-0000-000000000004', t2)
+  on conflict (user_id) do nothing;
+end $$;
+
+set role authenticated;
+
+-- Remi (owner; manages shannon): own block + shannon's via the manager arm,
+-- both checklists, shannon's calendar event — and zero tenant-two rows.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  if (select count(*) from work_blocks where title = 'leak-test-remi-block') <> 1 then
+    raise exception 'owner cannot read his own work block';
+  end if;
+  if (select count(*) from work_blocks where title = 'leak-test-shannon-block') <> 1 then
+    raise exception 'manager cannot read a direct report''s work block';
+  end if;
+  if (select count(*) from work_blocks where title = 'leak-test-t2-block') <> 0 then
+    raise exception 'LEAK: AA owner reads a tenant-two work block';
+  end if;
+  if (select count(*) from work_block_tasks) <> 2 then
+    raise exception 'manager cannot read block checklists (expected 2 links, saw %)',
+      (select count(*) from work_block_tasks);
+  end if;
+  if (select count(*) from calendar_events where title = 'leak-test-shannon-event') <> 1 then
+    raise exception 'manager cannot read a direct report''s calendar event';
+  end if;
+  if (select count(*) from calendar_prefs) <> 1 then
+    raise exception 'calendar_prefs is not self-only for the owner (saw %)',
+      (select count(*) from calendar_prefs);
+  end if;
+end $$;
+
+-- Managers look, never touch: an update to the report's block moves 0 rows,
+-- and inserting a block AS the report is denied by WITH CHECK.
+do $$
+declare n int;
+begin
+  with upd as (
+    update work_blocks set title = 'hijack' where title = 'leak-test-shannon-block' returning 1
+  )
+  select count(*) into n from upd;
+  if n <> 0 then raise exception 'LEAK: manager updated a report''s work block'; end if;
+end $$;
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into work_blocks (org_id, owner_user_id, day, start_minute, duration_minute)
+  values (aa, '00000000-0000-0000-0000-000000000002', '2026-09-08', 540, 30);
+  raise exception 'LEAK: manager inserted a work block onto a report''s calendar';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- Shannon (staff; delegate of remi, NOT his manager): own block + remi's via
+-- the delegation arm; writes to remi's block are denied; own writes work.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$
+declare aa uuid; own_blk uuid; own_task uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from work_blocks where title = 'leak-test-shannon-block') <> 1 then
+    raise exception 'staff cannot read her own work block';
+  end if;
+  if (select count(*) from work_blocks where title = 'leak-test-remi-block') <> 1 then
+    raise exception 'delegate cannot read the grantor''s work block';
+  end if;
+  -- Her own writes work end to end: block + checklist link.
+  insert into work_blocks (org_id, owner_user_id, day, start_minute, duration_minute, title)
+  values (aa, '00000000-0000-0000-0000-000000000002', '2026-09-08', 780, 60, 'leak-test-shannon-write')
+  returning id into own_blk;
+  select id into own_task from ops_tasks where title = 'leak-test-blocked-task-shannon';
+  update work_block_tasks set block_id = own_blk, position = 0 where task_id = own_task;
+end $$;
+do $$
+declare n int;
+begin
+  with upd as (
+    update work_blocks set title = 'hijack' where title = 'leak-test-remi-block' returning 1
+  )
+  select count(*) into n from upd;
+  if n <> 0 then raise exception 'LEAK: delegate updated the grantor''s work block'; end if;
+end $$;
+-- Prefs stay self-only even for a delegate/report.
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from calendar_prefs
+      where user_id = '00000000-0000-0000-0000-000000000001') <> 0 then
+    raise exception 'LEAK: staff reads another user''s calendar_prefs';
+  end if;
+  insert into calendar_prefs (user_id, org_id)
+  values ('00000000-0000-0000-0000-000000000002', aa)
+  on conflict (user_id) do update set updated_at = now();
+end $$;
+
+-- Tenant-two owner: its own block only; the AA org chart grants it nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$ begin
+  if (select count(*) from work_blocks where title like 'leak-test-%block') <> 1
+     or (select count(*) from work_blocks where title = 'leak-test-t2-block') <> 1 then
+    raise exception 'LEAK: tenant-two work block visibility is wrong';
+  end if;
+  if (select count(*) from work_block_tasks) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA block checklists';
+  end if;
+end $$;
+
+-- Stranger: nothing, and no write anywhere.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from work_blocks) <> 0 then
+    raise exception 'LEAK: non-member reads work_blocks';
+  end if;
+  if (select count(*) from work_block_tasks) <> 0 then
+    raise exception 'LEAK: non-member reads work_block_tasks';
+  end if;
+  if (select count(*) from calendar_prefs) <> 0 then
+    raise exception 'LEAK: non-member reads calendar_prefs';
+  end if;
+end $$;
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into work_blocks (org_id, owner_user_id, day, start_minute, duration_minute)
+  values (aa, '00000000-0000-0000-0000-000000000003', '2026-09-08', 540, 30);
+  raise exception 'LEAK: non-member inserted a work block';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

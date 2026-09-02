@@ -42,6 +42,11 @@ export type FridayCounts = {
   open: number;
   /** This-week meetings still at needs_follow_up. */
   followUpsNeeded: number;
+  /** Hours blocked on the week grid this week (work_blocks). 0 = none drawn. */
+  blockedHours?: number;
+  /** Tasks placed on this week's blocks, and how many closed (time accounting). */
+  blockTasksTotal?: number;
+  blockTasksDone?: number;
 };
 
 export type StatusSegment = { key: string; text: string; flare: boolean };
@@ -113,11 +118,27 @@ export function buildFridayStatus(role: Role, c: FridayCounts): WeekStatus {
     { key: "planned", text: `${c.planned} planned`, flare: false },
   ];
 
+  // Time accounting (Calendar & Time Blocking, Phase 6): did the blocked hours
+  // produce the work. Only present when blocks were actually drawn, so a
+  // week without time blocking keeps the classic sentence.
+  if ((c.blockedHours ?? 0) > 0) {
+    const total = c.blockTasksTotal ?? 0;
+    const doneInBlocks = c.blockTasksDone ?? 0;
+    segments.push({
+      key: "blocked",
+      text:
+        total > 0
+          ? `${c.blockedHours}h blocked with ${doneInBlocks} of ${total} block ${plural(total, "task", "tasks")} done`
+          : `${c.blockedHours}h blocked`,
+      flare: total > 0 && doneInBlocks < total,
+    });
+  }
+
   // Both reads lead with what didn't close; staff keeps follow-through ahead of
   // the done/planned tally a touch more, owner surfaces the open work sooner.
   const order =
     role === "staff"
-      ? ["follow", "open", "planned", "done"]
-      : ["follow", "open", "done", "planned"];
+      ? ["follow", "open", "planned", "done", "blocked"]
+      : ["follow", "open", "done", "planned", "blocked"];
   return assemble("This week:", ordered(segments, order));
 }

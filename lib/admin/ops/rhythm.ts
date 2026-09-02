@@ -107,11 +107,47 @@ export async function loadRhythmSnapshot(
 
   const plannedRows = (plannedRes.data as Array<{ status: string }> | null) ?? [];
   const done = plannedRows.filter((r) => r.status === "done").length;
+
+  // Time accounting (Calendar & Time Blocking, Phase 6): the week's drawn
+  // blocks and whether their tasks closed. Zero blocks keeps the classic line.
+  let blockedHours = 0;
+  let blockTasksTotal = 0;
+  let blockTasksDone = 0;
+  const { data: blockRows } = await sb
+    .from("work_blocks")
+    .select("id, duration_minute")
+    .eq("org_id", who.orgId)
+    .eq("owner_user_id", who.userId)
+    .gte("day", mondayISO)
+    .lt("day", nextMonday());
+  const blocks = (blockRows ?? []) as Array<{ id: string; duration_minute: number }>;
+  if (blocks.length > 0) {
+    blockedHours = Math.round(blocks.reduce((sum, b) => sum + b.duration_minute, 0) / 60);
+    const { data: linkRows } = await sb
+      .from("work_block_tasks")
+      .select("task_id, ops_tasks(status)")
+      .in(
+        "block_id",
+        blocks.map((b) => b.id)
+      );
+    for (const l of linkRows ?? []) {
+      const t = (Array.isArray(l.ops_tasks) ? l.ops_tasks[0] : l.ops_tasks) as {
+        status: string;
+      } | null;
+      if (!t) continue;
+      blockTasksTotal += 1;
+      if (t.status === "done") blockTasksDone += 1;
+    }
+  }
+
   const counts: FridayCounts = {
     planned: plannedRows.length,
     done,
     open: plannedRows.length - done,
     followUpsNeeded: followUpRes.count ?? 0,
+    blockedHours,
+    blockTasksTotal,
+    blockTasksDone,
   };
   return { mode, weekOf: mondayISO, who, counts };
 }

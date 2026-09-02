@@ -7,6 +7,7 @@ import {
   type GoogleCalendarConnection,
 } from "@/lib/google/connection";
 import { laDateOf, mondayOf } from "@/lib/admin/ops/week";
+import { blockPatchFromInstants } from "@/lib/agenda/work-blocks";
 
 /**
  * Service-role Google Calendar → calendar_events sync (BloomOS Agenda Phase 2,
@@ -25,9 +26,15 @@ import { laDateOf, mondayOf } from "@/lib/admin/ops/week";
  */
 
 const TAG_KEY = "bloomos_task_id";
+const BLOCK_TAG_KEY = "bloomos_block_id"; // multi-task work blocks (Phase 3)
 
 function bloomTaskId(e: calendar_v3.Schema$Event): string | null {
   const t = e.extendedProperties?.private?.[TAG_KEY];
+  return typeof t === "string" && t ? t : null;
+}
+
+function bloomBlockId(e: calendar_v3.Schema$Event): string | null {
+  const t = e.extendedProperties?.private?.[BLOCK_TAG_KEY];
   return typeof t === "string" && t ? t : null;
 }
 
@@ -80,10 +87,13 @@ function mapEvent(
   const isExternal = attendees.some(
     (a) => a.email && !a.email.toLowerCase().endsWith(`@${domain}`)
   );
-  // Echo prevention: an event BloomOS wrote carries bloomos_task_id. Mark it
-  // 'bloomos' so it's never re-ingested as a fresh external meeting, and so the
-  // google stale-delete (source='google' only) never removes it.
-  const isBloomOwned = !!e.extendedProperties?.private?.bloomos_task_id;
+  // Echo prevention: an event BloomOS wrote carries bloomos_task_id (legacy
+  // single-task blocks) or bloomos_block_id (work blocks). Mark it 'bloomos'
+  // so it's never re-ingested as a fresh external meeting, and so the google
+  // stale-delete (source='google' only) never removes it.
+  const isBloomOwned =
+    !!e.extendedProperties?.private?.bloomos_task_id ||
+    !!e.extendedProperties?.private?.bloomos_block_id;
   return {
     org_id: conn.orgId,
     owner_user_id: conn.userId,
@@ -165,8 +175,9 @@ async function fetchEvents(
 }
 
 // A google event vanished (cancelled/deleted). If it was a BloomOS-owned block,
-// unschedule its task first (flow-back) — never delete the task — then drop the
-// mirror row. Plain google rows just drop.
+// unschedule first (flow-back) — a single-task block clears its task's link, a
+// work block unschedules its checklist tasks and drops the work_blocks row —
+// never delete a task — then drop the mirror row. Plain google rows just drop.
 async function handleDeleted(
   sb: SupabaseClient,
   conn: GoogleCalendarConnection,
@@ -186,6 +197,31 @@ async function handleDeleted(
       .update({ calendar_event_id: null, planned_day: null })
       .eq("calendar_event_id", r.id)
       .eq("org_id", conn.orgId);
+
+    // Work block behind this event? Unschedule its tasks, then drop the block
+    // (the FK cascade clears the checklist links).
+    const { data: block } = await sb
+      .from("work_blocks")
+      .select("id")
+      .eq("google_event_id", googleEventId)
+      .eq("owner_user_id", conn.userId)
+      .eq("org_id", conn.orgId)
+      .maybeSingle();
+    if (block?.id) {
+      const { data: links } = await sb
+        .from("work_block_tasks")
+        .select("task_id")
+        .eq("block_id", block.id as string);
+      const taskIds = (links ?? []).map((l) => l.task_id as string);
+      if (taskIds.length > 0) {
+        await sb
+          .from("ops_tasks")
+          .update({ planned_day: null })
+          .in("id", taskIds)
+          .eq("org_id", conn.orgId);
+      }
+      await sb.from("work_blocks").delete().eq("id", block.id as string);
+    }
   }
   await sb.from("calendar_events").delete().eq("id", r.id);
   return true;
@@ -228,6 +264,39 @@ export async function syncUserCalendar(
       .update({ planned_day: day, planned_week: mondayOf(day) })
       .eq("id", taskId)
       .eq("org_id", conn.orgId);
+  }
+
+  // Flow-back for multi-task work blocks: a Google move/resize re-stamps the
+  // work_blocks row and its linked tasks' planned day. BloomOS stays
+  // authoritative for everything else about the block.
+  for (const e of active) {
+    const blockId = bloomBlockId(e);
+    const startIso = eventStartIso(e);
+    if (!blockId || !startIso) continue;
+    const endIso = e.end?.dateTime ?? null;
+    const patch = blockPatchFromInstants(startIso, endIso);
+    const { data: updated } = await sb
+      .from("work_blocks")
+      .update({ ...patch, updated_at: syncedAt })
+      .eq("id", blockId)
+      .eq("org_id", conn.orgId)
+      .eq("owner_user_id", conn.userId)
+      .select("id")
+      .maybeSingle();
+    if (updated) {
+      const { data: links } = await sb
+        .from("work_block_tasks")
+        .select("task_id")
+        .eq("block_id", blockId);
+      const taskIds = (links ?? []).map((l) => l.task_id as string);
+      if (taskIds.length > 0) {
+        await sb
+          .from("ops_tasks")
+          .update({ planned_day: patch.day, planned_week: mondayOf(patch.day) })
+          .in("id", taskIds)
+          .eq("org_id", conn.orgId);
+      }
+    }
   }
 
   // Deletions reported in the delta (incremental) or implied by the window (full).

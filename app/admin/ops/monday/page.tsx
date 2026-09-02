@@ -17,6 +17,8 @@ import {
 } from "@/lib/admin/ops/week";
 import { computeOpenBlocks, type OpenBlock, type Interval } from "@/lib/admin/ops/open-blocks";
 import { getAgenda } from "@/lib/agenda/service";
+import { getCalendarPrefs } from "@/lib/agenda/prefs";
+import Link from "next/link";
 import WeekPlanner, {
   type PlannerDay,
   type PlannerEvent,
@@ -46,7 +48,7 @@ export default async function MondayPlanPage() {
 
   // Org fence: the service-role client bypasses RLS, so every read below MUST
   // filter by the active org. No org (no session) → nothing to plan.
-  if (!orgId) {
+  if (!me || !orgId) {
     return (
       <div className="px-4 lg:px-8 py-6 lg:py-8">
         <h1 className={TYPE.pageTitle}>Monday plan</h1>
@@ -169,6 +171,13 @@ export default async function MondayPlanPage() {
   }
 
   // Open blocks (free gaps in working hours) + block↔meeting conflicts per day.
+  // Working hours come from the user's calendar_prefs (Calendar & Time
+  // Blocking, Phase 6) instead of the old hardcoded 9–5.
+  const calPrefs = await getCalendarPrefs(me.userId);
+  const workingHours = {
+    startMinute: calPrefs.dayStartMinute,
+    endMinute: calPrefs.dayEndMinute,
+  };
   const openBlocksByDay = new Map<string, OpenBlock[]>();
   const conflicts: Record<string, boolean> = {};
   for (const dayISO of weekDayList) {
@@ -198,7 +207,7 @@ export default async function MondayPlanPage() {
         }
       }
     }
-    openBlocksByDay.set(dayISO, computeOpenBlocks(dayMidnightMs, busy));
+    openBlocksByDay.set(dayISO, computeOpenBlocks(dayMidnightMs, busy, workingHours));
   }
 
   // Split this-week tasks into per-day buckets and a not-yet-scheduled tray.
@@ -341,14 +350,24 @@ export default async function MondayPlanPage() {
   );
 
   const days = (
-    <WeekPlanner
-      days={plannerDays}
-      unscheduled={unscheduled}
-      projectNames={projectNamesObj}
-      scheduled={scheduled}
-      conflicts={conflicts}
-      prepEventIds={Array.from(prepEventIds)}
-    />
+    <div className="space-y-3">
+      <div className="flex items-center justify-end">
+        <Link
+          href="/admin/calendar"
+          className="text-[12px] font-semibold text-orange hover:text-orange-dark"
+        >
+          Open the week grid →
+        </Link>
+      </div>
+      <WeekPlanner
+        days={plannerDays}
+        unscheduled={unscheduled}
+        projectNames={projectNamesObj}
+        scheduled={scheduled}
+        conflicts={conflicts}
+        prepEventIds={Array.from(prepEventIds)}
+      />
+    </div>
   );
 
   return (

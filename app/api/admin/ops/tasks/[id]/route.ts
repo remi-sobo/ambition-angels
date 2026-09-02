@@ -262,6 +262,15 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update task" }, { status: 500 });
   }
 
+  // Two truths for "when" (calendar spec §9): once a task sits on a work
+  // block, the block's day is authoritative. A direct planned_day edit here
+  // (the planner's DayPicker, Friday's push) is the human overriding that —
+  // detach the task from its block so the two never silently disagree. RLS
+  // scopes the delete to blocks the caller owns; the task itself is untouched.
+  if ("planned_day" in updates && updates.planned_day !== current.planned_day) {
+    await supabase.from("work_block_tasks").delete().eq("task_id", params.id);
+  }
+
   // Touch the project (or projects, if the task moved).
   const newRow = updated as OpsTask;
   await touchProject(supabase, current.project_id);

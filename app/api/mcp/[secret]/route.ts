@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { ingestTask } from "@/lib/admin/ops/ingest";
+import { getResidentOrgId } from "@/lib/admin/orgs";
 
 /**
  * BloomOS MCP connector (remote, Streamable HTTP, stateless).
@@ -93,9 +94,16 @@ async function handle(msg: Rpc, req: NextRequest, supabase: SupabaseClient): Pro
     if (name === "list_my_tasks") {
       const assignee =
         typeof args.assignee === "string" && args.assignee.trim() ? args.assignee.trim().toLowerCase() : "shannon";
+      // Org fence. This is a service-role read on an external surface, and the
+      // secret is a deployment fact for ONE org (the same resident-org
+      // resolution ingestTask uses on the write side). Without it, a handle
+      // shared across tenants ("remi" exists in more than one org) returned
+      // every tenant's tasks to the caller.
+      const orgId = await getResidentOrgId();
       const { data } = await supabase
         .from("ops_tasks")
         .select("title, due_date, priority")
+        .eq("org_id", orgId)
         .eq("assigned_to", assignee)
         .neq("status", "done")
         .is("archived_at", null)

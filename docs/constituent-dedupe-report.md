@@ -3,8 +3,11 @@
 **Read-only report**, generated 2026-09-03 against the production database. Nothing has been
 applied; the companion SQL (`supabase/migrations/merge_duplicate_hubspot_org_constituents.MANUAL.sql`)
 is for Remi to review and run by hand. This is data hygiene ahead of the identity backfill — merging
-these three pairs collapses all three `ambiguous` partner matches in `docs/identity-backfill-dryrun.md`
-to `probable`.
+the three partner-side pairs collapses all three `ambiguous` partner matches in
+`docs/identity-backfill-dryrun.md` to `probable`. A fourth pair, **Sobrato**, was added at Remi's
+direction from the wider duplicate scan: it is a live funder (the anchor ask in the V2 design's
+sample data), and a split record means two people can work it from different rows without seeing
+each other's history.
 
 ---
 
@@ -35,11 +38,11 @@ and `import_rows.created_entity_id` / `matched_entity_id` — rewriting them wou
 happened. `households` is a parent of constituents, not a child; none of the six rows has a
 `household_id`.
 
-Every one of these columns was queried for the six ids. The complete set of live references:
+Every one of these columns was queried for the eight ids. The complete set of live references:
 
 | Reference | Rows | Points at |
 |---|---:|---|
-| `external_refs.entity_id` | 6 (one per constituent) | all six |
+| `external_refs.entity_id` | 8 (one per constituent) | all eight |
 | `opportunities.constituent_id` | 1 | `997d0505` (Friends of the Children) |
 | everything else | **0** | — |
 
@@ -47,9 +50,9 @@ The duplicates are nearly bare shells, which is what makes this merge cheap.
 
 ---
 
-## 2. The three pairs, side by side
+## 2. The four pairs, side by side
 
-All six rows: `org_id` = ambition-angels, `type = organization`, `source = hubspot_import`,
+All eight rows: `org_id` = ambition-angels, `type = organization`, `source = hubspot_import`,
 **identical `created_at` (2026-06-12 01:52:48 — one import batch)**, empty `emails`, empty `tags`,
 empty `custom_fields`, no notes, no household, not archived. The *only* distinguishing data is
 `external_ids.hubspot_company` — each pair maps to **two distinct HubSpot company records with the
@@ -89,6 +92,23 @@ break the tie; the HubSpot records behind them can.
 | `external_refs` | 1 | 1 |
 | child rows | none | none |
 
+### Sobrato (added from the wider scan at Remi's direction)
+
+| | `61279495-60d2-45fc-a37b-f9ebbd742ad5` | `47f87b3c-22de-4ca9-ba24-3b29d3a63774` |
+|---|---|---|
+| `emails` / `tags` | `[]` / `[]` | `[]` / `[]` |
+| HubSpot company | `15855299727` | `17150382166` |
+| — created in HubSpot | 2023-05-25 | 2023-08-29 |
+| — domain / industry | **sobrato.org** / PROFESSIONAL_TRAINING_COACHING | **sobrato.com** / REAL_ESTATE |
+| `external_refs` | 1 | 1 |
+| child rows | none | none |
+
+One honest caveat on this pair: unlike the other three, the two HubSpot records point at
+**different domains** — sobrato.org (Sobrato Philanthropies, the funder) and sobrato.com (the
+real-estate arm). They are two facets of the same family enterprise and Remi has called the merge,
+so it proceeds; the archived row keeps its HubSpot id under `hubspot_company_premerge`, so if the
+real-estate arm ever needs its own record it can be un-archived rather than recreated.
+
 ---
 
 ## 3. Proposed survivors
@@ -101,6 +121,7 @@ HubSpot company record is more complete (domain/industry); (3) else the older Hu
 | Enterprise for Youth | `8629367d` | No children either side; its HubSpot company (30727001508) is the older record and the correctly classified one. |
 | Friends of the Children | `997d0505` | It carries the live opportunity, and its HubSpot company (284228510405) is the deal's primary company — the working identity. |
 | Street Code | `5d3c57c4` | No children either side; its HubSpot company (17150747757) has the domain and industry — the fleshed-out record. |
+| Sobrato | `61279495` | No children either side; its HubSpot company (15855299727) is the older record and carries sobrato.org — the philanthropy, which is the relationship this record exists for. |
 
 ---
 
@@ -141,7 +162,8 @@ mirror data, so this is theoretical — but it's the reason the loser keeps the 
 
 ## 5. Are there more duplicates? Yes — reported, not merged
 
-Per the brief, merges are proposed only for the three pairs above; the wider scan is counts only.
+Merges are proposed only for the four pairs above (the three from the backfill's ambiguous tier
+plus Sobrato, promoted out of this list by Remi); the rest of the scan is counts only.
 
 **People: zero.** No two `person` rows in the same org share a normalized full name *and* an
 overlapping email address. The person side of the spine is clean by this test.
@@ -170,7 +192,7 @@ proposing 19 more merges. The full list:
 | next gen personal finance | 2 | |
 | rescue a generation | 2 | |
 | rushordertees | 2 | vendor shell |
-| sobrato | 2 | |
+| sobrato | 2 | **merged in this PR** (live funder — Remi's call) |
 | the hidden genius project los angeles | 2 | |
 | think of us | 2 | only group with two spellings ("Think of us" / "Think of Us") |
 | university of notre dame | 2 | |
@@ -188,4 +210,42 @@ here. The `/admin/fundraising/duplicates` queue is the natural home for the rest
 Once this merge is applied, re-running the dry-run matching collapses Enterprise for Youth,
 Friends of the Children, and Street Code from `ambiguous` (two candidates) to `probable` (one
 candidate each — the survivor), taking the backfill's ambiguous count from 5 to 2 (the two board
-members, which remain genuine per-row decisions).
+members, which remain genuine per-row decisions). The Sobrato merge doesn't touch the backfill —
+it is funder-record hygiene so the anchor ask works off one history.
+
+---
+
+## 7. `fr_prospect` family hardening (proposed, not applied)
+
+Follow-up to §1's missing-FK observation, at Remi's direction — one migration covering both gaps
+in that family: `supabase/migrations/fr_prospect_family_fks_and_org_not_null.sql`.
+
+**The gaps, verified live:**
+
+| Table | Gap | Live damage today |
+|---|---|---|
+| `fr_prospects.constituent_id` | no FK to `constituents` | 9 linked rows, **0 orphaned** |
+| `fr_prospect_promoted.constituent_id` | no FK to `constituents` | 0 rows in table |
+| `fr_prospect_promoted.org_id` | nullable, **and no FK to `orgs`** | **0 NULL rows** (0 rows total) |
+| `fr_prospect_disqualified.org_id` | nullable (FK to orgs exists) | 20 rows, **0 NULL** |
+
+So there is no data damage to repair — the constraints can go straight on. The NULL-org_id risk is
+real, though: both tables are RLS-scoped by `org_id` (`rls_reed_phase1_four_tables.sql`), so a row
+inserted with NULL `org_id` is invisible to every tenant including its owner. Today nothing hits
+it — the current promote/disqualify API routes write `fr_prospects` (org-explicit), and no
+TypeScript code writes the two legacy tables anymore — but the schema shouldn't depend on that
+staying true.
+
+**The proposed migration** (registered in the RLS harness ordered list, after
+`rls_reed_phase1_four_tables.sql` which backfills any historical NULLs):
+
+- adds `fr_prospects.constituent_id` → `constituents(id) on delete set null`
+- adds `fr_prospect_promoted.constituent_id` → `constituents(id) on delete set null`
+- adds the missing `fr_prospect_promoted.org_id` → `orgs(id)` FK
+- sets `org_id NOT NULL` on `fr_prospect_promoted` and `fr_prospect_disqualified` — with **no
+  default**, per the tenant-default ratchet: an insert omitting `org_id` should fail loudly, not
+  vanish behind RLS
+
+Not covered on purpose: `fr_prospect_promoted.opportunity_id` also lacks an FK; same family,
+same fix pattern, left out because the brief scoped this to the constituent FKs and the org_id
+nullability — one line here so it isn't forgotten.

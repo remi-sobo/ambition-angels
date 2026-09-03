@@ -1,4 +1,4 @@
--- Merge the three duplicate HubSpot-imported organization constituents
+-- Merge the four duplicate HubSpot-imported organization constituents
 -- (docs/constituent-dedupe-report.md). MANUAL data migration: reviewed and
 -- run by hand in the Supabase SQL editor against production — it assumes
 -- these six specific rows exist and fails loudly if they don't. Not part of
@@ -18,6 +18,10 @@
 --                                                      archive 9a891ff1
 --   Street Code             keep 5d3c57c4 (HubSpot company 17150747757 has
 --                           domain + industry)         archive e8a4297d
+--   Sobrato                 keep 61279495 (HubSpot company 15855299727,
+--                           sobrato.org — the philanthropy, i.e. the live
+--                           funder; the other record is sobrato.com, the
+--                           real-estate arm)           archive 47f87b3c
 --
 -- HubSpot identity handling: external_refs rows for BOTH company ids are
 -- repointed to the survivor (the unique index is on (org_id, entity_type,
@@ -46,7 +50,10 @@ begin
        '9a891ff1-eba4-40a9-bd5a-9469ec8c1ec5'::uuid),
       ('Street Code',
        '5d3c57c4-1c30-4470-a0c7-6cb24e396bdc'::uuid,
-       'e8a4297d-b683-4d11-82c8-b1407860bc3f'::uuid)
+       'e8a4297d-b683-4d11-82c8-b1407860bc3f'::uuid),
+      ('Sobrato',
+       '61279495-60d2-45fc-a37b-f9ebbd742ad5'::uuid,
+       '47f87b3c-22de-4ca9-ba24-3b29d3a63774'::uuid)
     ) as t(label, survivor, loser)
   loop
     -- Re-run guard: once the loser is archived this pair is done.
@@ -146,7 +153,7 @@ begin
   end loop;
 end $$;
 
--- Post-merge verification (read-only; expect three rows, all zeros).
+-- Post-merge verification (read-only; expect four rows, all zeros).
 select l.id as archived_loser, l.org_name,
        (select count(*) from opportunities  where constituent_id = l.id) as opportunities,
        (select count(*) from external_refs  where entity_type = 'constituent' and entity_id = l.id) as external_refs,
@@ -156,4 +163,5 @@ select l.id as archived_loser, l.org_name,
 from constituents l
 where l.id in ('5d005bf6-10fb-46a5-bc3a-aa32a2fe6d13',
                '9a891ff1-eba4-40a9-bd5a-9469ec8c1ec5',
-               'e8a4297d-b683-4d11-82c8-b1407860bc3f');
+               'e8a4297d-b683-4d11-82c8-b1407860bc3f',
+               '47f87b3c-22de-4ca9-ba24-3b29d3a63774');

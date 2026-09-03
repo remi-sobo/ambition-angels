@@ -213,6 +213,7 @@ ordered=(
   create_plan_archives.sql
   fundraising_plan.sql
   create_work_blocks_and_calendar_prefs.sql
+  create_program_partners.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

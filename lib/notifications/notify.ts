@@ -149,5 +149,6 @@ async function emailRecipient(row: NotificationRow): Promise<void> {
   await admin
     .from("notifications")
     .update({ emailed_at: new Date().toISOString() })
+    .eq("org_id", row.org_id)
     .eq("id", row.id);
 }

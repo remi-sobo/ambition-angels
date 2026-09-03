@@ -64,32 +64,34 @@ Phase 0.5, 2026-09-03 · read-and-report only. Companion to `docs/v2-recon.md` a
 
 These 45 rows cluster into **11 rulings**: prospect research (11 tables), meet/booking (6), comms/email (4), reviews (5), Reed archive (2), strategy room (3), teen-games gates (2), Demo Day (2), YGB (2), participant spine visibility (2), and singletons (`stewardship_rules`, `quiz_submissions`, `plan_archives`, `entity_comments`, `segments`, `bv_*`).
 
+**Status 2026-09-03, second pass:** draft rulings (`docs/v2-draft-rulings.md`) are staged in the `ruling` column below as `PROPOSED (unsigned)` — the gate stays closed until each is signed. Still genuinely open after the draft: the R1 **sixth-tab vs. drawer** choice, the R5 **Reed history list vs. dormant** choice, the R8 **November front door** question, and **three tables the draft does not cover**: `quiz_submissions` (49 rows), `bv_newsletter_subscribers`, `bv_showcase_submissions`. The codebase review of the draft (two corrections, one omission) is appended to the draft-rulings file.
+
 ---
 
 ## The ledger
 
-One row per logical table, alphabetical. `ruling` is empty everywhere — Remi fills it; it is **required** for every `NEEDS RULING` and `dormant` row before Phase 1.
+One row per logical table, alphabetical. The `ruling` column now carries the staged draft proposals as `PROPOSED (unsigned)` — a ruling counts only once Remi signs it; a signed line is **required** for every `NEEDS RULING` and `dormant` row before Phase 1.
 
 | table | rows | written_by | read_by | disposition | ruling |
 |---|---|---|---|---|---|
 | ack_templates | 6 | X/fundraising/ack-templates | A/fundraising/acknowledgments/templates, L/fundraising/stewardship | settings — Settings → Fundraising (ack templates) | |
 | acknowledgments | 1 | X/acknowledgments/{log,mark,send} | A/fundraising/donors/[id], L/fundraising/stewardship | bound — Fundraising → Today ("Thank someone") | |
-| agenda_delegations | 1 | L/agenda/service | L/agenda/week-view | **NEEDS RULING** — meet/agenda family | |
+| agenda_delegations | 1 | L/agenda/service | L/agenda/week-view | **NEEDS RULING** — meet/agenda family | PROPOSED R2 (unsigned) — live scheduling surfaces in Work → Meetings |
 | appeals | 3 | X/appeals | A/fundraising/campaigns, A/fundraising/donors/[id] | bound — Fundraising → Campaigns | |
 | applications | 0 | P/apply (public form), X/applications/[id] | A/intake | bound — Programs → Intake | |
 | ask_documents | 0 | X/asks/[id]/documents | A/fundraising/asks/[id], L/fundraising/grantCoachDocs | bound — Fundraising → Pipeline (ask drawer) | |
 | asks | 3 | X/asks | A/fundraising/asks, A/fundraising/grants/[id] | bound — Fundraising → Pipeline (ask log, merged) | |
 | attendance | 231 | X/sessions/[id]/attendance | A/cohorts, A/students/[id], L/admin/briefing/gather | bound — Programs → Attendance | |
 | audit_log (+4 monthly partitions) | 610 | L/audit (every audited mutation) | L/admin/history, L/briefing, P/cron/weekly-digest | bound — Contract 7 audit history (close/waiver record on Finance → Transactions) | |
-| blackouts | 1 | X/meet/blackouts | A/meetings/booking-page, L/availability | **NEEDS RULING** — meet family | |
+| blackouts | 1 | X/meet/blackouts | A/meetings/booking-page, L/availability | **NEEDS RULING** — meet family | PROPOSED R2 (unsigned) — Settings → Calendar (booking config); public `/meet` route stays live, unlinked |
 | bloomos_briefing_narrative | 9 | L/admin/briefing/narrate | same | bound — Home → Today (briefing) | |
 | bloomos_briefing_state | 6 | X/briefing/decision | L/admin/briefing/gather | bound — Home → Today (briefing) | |
 | board_meetings | 5 | X/board/meetings | A/board | bound — Organization → Board | |
 | board_members | 12 | X/board/members | A/board | bound — Organization → Board | |
-| bookings | 4 | P/meet/book (public), X/meet/connections/[id]/book | A/meetings, P/cron/meet-reminders, X/search | **NEEDS RULING** — meet family (public booking flow writes it) | |
+| bookings | 4 | P/meet/book (public), X/meet/connections/[id]/book | A/meetings, P/cron/meet-reminders, X/search | **NEEDS RULING** — meet family (public booking flow writes it) | PROPOSED R2 (unsigned) — live scheduling surfaces in Work → Meetings |
 | briefings | 0 | L/briefing | A/briefing/weekly | bound — Home → Today (briefing store; note: `/admin/briefing/weekly` itself is NO V2 HOME) | |
-| bv_newsletter_subscribers | 0 | — (no code references) | — | **NEEDS RULING** — `aa.bv`, orphaned | |
-| bv_showcase_submissions | 0 | — (no code references) | — | **NEEDS RULING** — `aa.bv`, orphaned | |
+| bv_newsletter_subscribers | 0 | — (no code references) | — | **NEEDS RULING** — `aa.bv`, orphaned | NOT COVERED BY THE DRAFT — still needs a ruling |
+| bv_showcase_submissions | 0 | — (no code references) | — | **NEEDS RULING** — `aa.bv`, orphaned | NOT COVERED BY THE DRAFT — still needs a ruling |
 | calendar_events | 283 | L/agenda/calendar-sync (Google sync) | L/agenda/*, L/meetings/*, A/ops/monday | bound — Work → My Week | |
 | calendar_prefs | 0 | X/calendar/prefs | L/agenda/prefs | settings — Settings → Calendar (working hours) | |
 | calendar_sync_jobs | 217 | L/agenda/calendar-sync | L/google/connection | settings — Settings → Data sources (sync log) | |
@@ -98,28 +100,28 @@ One row per logical table, alphabetical. `ruling` is empty everywhere — Remi f
 | cohort_members | 75 | X/cohorts/[id]/members, X/applications/[id]/accept | A/cohorts, A/intake, A/students/[id] | bound — Programs → Cohorts | |
 | cohort_sessions | 39 | X/cohorts/[id]/sessions | A/cohorts, L/admin/briefing/gather | bound — Programs → Attendance | |
 | cohorts | 9 | X/cohorts | A/cohorts, A/intake, P/apply | bound — Programs → Cohorts | |
-| comms_edition_slots | 0 | (comms module, unbuilt UI writes) | A/fundraising/comms area | dormant — `specs/comms-v2-mail-merge.md` | |
-| comms_editions | 0 | same | same | dormant — `specs/comms-v2-mail-merge.md` | |
-| comms_formats | 0 | same | same | dormant — `specs/comms-v2-mail-merge.md` | |
-| comms_outputs | 0 | same | same | dormant — `specs/comms-v2-mail-merge.md` | |
+| comms_edition_slots | 0 | (comms module, unbuilt UI writes) | A/fundraising/comms area | dormant — `specs/comms-v2-mail-merge.md` | PROPOSED R3 (unsigned) — reserved seat: section of Fundraising → Campaigns when Comms builds (`modules.comms`); `story_consents` contractual under SafeSpace |
+| comms_editions | 0 | same | same | dormant — `specs/comms-v2-mail-merge.md` | PROPOSED R3 (unsigned) — reserved seat: section of Fundraising → Campaigns when Comms builds (`modules.comms`); `story_consents` contractual under SafeSpace |
+| comms_formats | 0 | same | same | dormant — `specs/comms-v2-mail-merge.md` | PROPOSED R3 (unsigned) — reserved seat: section of Fundraising → Campaigns when Comms builds (`modules.comms`); `story_consents` contractual under SafeSpace |
+| comms_outputs | 0 | same | same | dormant — `specs/comms-v2-mail-merge.md` | PROPOSED R3 (unsigned) — reserved seat: section of Fundraising → Campaigns when Comms builds (`modules.comms`); `story_consents` contractual under SafeSpace |
 | compliance_filings | 7 | X/compliance/[id]/filings | A/compliance/[id] | bound — Organization → Compliance (named preservation: Contract 3's resolve path must write it) | |
 | compliance_items | 20 | X/compliance | A/compliance, L/briefing, P/cron/daily-reminders | bound — Organization → Compliance | |
-| connection_candidates | 58 | L/fundraising/gmail-sync | A/meetings/connections, X/meet/connection-candidates | **NEEDS RULING** — meetings-connections family | |
+| connection_candidates | 58 | L/fundraising/gmail-sync | A/meetings/connections, X/meet/connection-candidates | **NEEDS RULING** — meetings-connections family | OMITTED FROM DRAFT R2 — 58 rows, the family's largest; review proposes it follows the Work → Meetings side. Needs its own line |
 | connections | 16 | L/google/connection, L/hubspot/connection (OAuth tokens) | A/fundraising/settings, X/integrations/hubspot | settings — Settings → Data sources (integration connections; note: the gate filed this under "meet" — the code says it is OAuth storage) | |
 | constituents | 3,631 | X/constituents/*, imports, L/fundraising/promote-hs-contact | A/fundraising/donors, A/fundraising/volunteers, A/students, X/search, 40+ more | bound — Fundraising → Donors & Funders (+ Donor 360) | |
-| custom_field_defs | 16 | (seeded; registry per participant-spine spec) | L/admin/customFields | **NEEDS RULING** — People design shows fixed columns; per-org fields unrepresented | |
+| custom_field_defs | 16 | (seeded; registry per participant-spine spec) | L/admin/customFields | **NEEDS RULING** — People design shows fixed columns; per-org fields unrepresented | PROPOSED R10 (unsigned) — flip to bound: People/Intake must render per-org custom fields and stages; goes into the Programs phase definition of done |
 | cut_players | 4 | P/games/the-cut/room/[code]/join | P/games/the-cut/* | bound — site: `/teens/the-cut` (ephemeral by design) | |
 | cut_rooms | 5 | P/games/the-cut/room | P/games/the-cut/* | bound — site: `/teens/the-cut` (ephemeral) | |
 | cut_votes | 16 | P/games/the-cut/room/[code]/vote | P/games/the-cut/room/[code]/resolve | bound — site: `/teens/the-cut` (ephemeral) | |
-| demoday_notes | 1 | X/demoday/notes | same | **NEEDS RULING** — Demo Day pinned view undesigned | |
-| demoday_signups | 14 | P/demoday/signup (site) | X/demoday/signups | **NEEDS RULING** — Demo Day pinned view undesigned | |
+| demoday_notes | 1 | X/demoday/notes | same | **NEEDS RULING** — Demo Day pinned view undesigned | PROPOSED R8 (unsigned) — pinned Group view per Handoff Spec; November front-door question stays open; include in the org_id-default cleanup |
+| demoday_signups | 14 | P/demoday/signup (site) | X/demoday/signups | **NEEDS RULING** — Demo Day pinned view undesigned | PROPOSED R8 (unsigned) — pinned Group view per Handoff Spec; November front-door question stays open; include in the org_id-default cleanup |
 | document_links | 9 | X/documents/[id]/links | L/agents/reed/tools, L/fundraising/grantCoachDocs | bound — Work → Documents ("attached to") | |
 | documents | 19 | X/documents | A/documents, L/agents/reed/tools, P/reed | bound — Work → Documents | |
 | donations | 2 | P/save-donation + P/stripe-webhook (site) | L/admin/overview/sources (V1 cockpit) | bound — site: `/donate` flow (note: its only admin reader is the V1 cockpit, which dies — verify the Stripe→gifts reconciliation path replaces it) | |
-| email_campaigns | 4 | X/comms | A/fundraising/comms, L/admin/plan/metrics | **NEEDS RULING** — `modules.comms` has no V2 seat | |
-| email_sends | 13 | X/comms/[id]/send | same | **NEEDS RULING** — comms family | |
+| email_campaigns | 4 | X/comms | A/fundraising/comms, L/admin/plan/metrics | **NEEDS RULING** — `modules.comms` has no V2 seat | PROPOSED R3 (unsigned) — dormant module, reserved seat as a Campaigns section (`modules.comms`). Gate caveat: non-zero rows are unreachable until it builds — signed line must accept that or name a read-only surface |
+| email_sends | 13 | X/comms/[id]/send | same | **NEEDS RULING** — comms family | PROPOSED R3 (unsigned) — dormant module, reserved seat as a Campaigns section (`modules.comms`). Gate caveat: non-zero rows are unreachable until it builds — signed line must accept that or name a read-only surface |
 | email_suppressions | 0 | P/unsubscribe (public), P/cron/journeys | L/fundraising/segments | settings — email infrastructure (legally required unsubscribe list; survives regardless of comms ruling) | |
-| entity_comments | 0 | X/comments | X/comments/[id] | **NEEDS RULING** — comments unmapped in V2 | |
+| entity_comments | 0 | X/comments | X/comments/[id] | **NEEDS RULING** — comments unmapped in V2 | PROPOSED R11 (unsigned) — dormant, seat in Inbox alongside Messages |
 | entity_types | 22 | (seeded) | L/admin/entities (terminology fallback) | settings — terminology infrastructure | |
 | external_refs | 4,376 | X/imports/[id]/{stage,commit} | same (dedup/reconciliation) | settings — import/dedup infrastructure (`specs/bloomos-import-layer.md`; also the HubSpot reconciliation spine) | |
 | fin_budget | 76 | X/finance/budget/import | A/finance/budget, A/finance/report | bound — Finance → Budget | |
@@ -130,20 +132,20 @@ One row per logical table, alphabetical. `ruling` is empty everywhere — Remi f
 | fin_reconciliation_items | 1 | X/finance/reconciliation, finance-reconcile skill | A/finance/reconcile | bound — Finance → Transactions (exception queue) | |
 | fin_revenue_commitments | 14 | X/finance/revenue | A/finance/revenue, X/search | bound — Finance → Forecast (committed tier) | |
 | fin_transactions | 544 | X/finance/import, X/finance/categorize | A/finance/transactions, A/finance/close, L/admin/finance | bound — Finance → Transactions | |
-| fr_agent_activity_log | 14 | X/fundraising/{next-move,research,strategy/discover} | same | **NEEDS RULING** — prospect-research family | |
-| fr_email_drafts | 0 | (prospect-research agent) | — | **NEEDS RULING** — prospect-research family (zero rows) | |
-| fr_funding_opportunities | 0 | (prospect-research agent) | — | **NEEDS RULING** — prospect-research family (zero rows) | |
-| fr_nba_suggestions | 0 | X/fundraising/next-best-action | L/admin/briefing/fundraising | **NEEDS RULING** — prospect-research family (zero rows) | |
-| fr_prospect_briefs | 1 | X/fundraising/research/[id] | A/fundraising/prospects/[id], A/fundraising/donors/[id] | **NEEDS RULING** — prospect-research family | |
-| fr_prospect_disqualified | 20 | X/fundraising/prospects/disqualify | A/fundraising/prospects | **NEEDS RULING** — prospect-research family | |
-| fr_prospect_promoted | 0 | X/fundraising/prospects/promote | — | **NEEDS RULING** — prospect-research family (zero rows) | |
-| fr_prospect_scores | 3 | X/prospects/[id]/score | A/fundraising/prospects | **NEEDS RULING** — prospect-research family | |
-| fr_prospects | 550 | X/fundraising/prospects/{add,import,promote}, strategy/discover | A/fundraising/prospects, X/search, L/fundraising/grantCoachDocs | **NEEDS RULING** — demoted to a saved view with no design; 550 rows | |
-| fr_touches | 0 | (deprecated per code comment in L/admin/rail/needs-you) | — | **NEEDS RULING** — prospect-research family (zero rows) | |
-| funder_angles | 8 | X/strategy/funder-angles | A/fundraising/strategy, A/fundraising/prospects/[id], L/fundraising/link-prospect-angle | **NEEDS RULING** — strategy room unmapped | |
+| fr_agent_activity_log | 14 | X/fundraising/{next-move,research,strategy/discover} | same | **NEEDS RULING** — prospect-research family | PROPOSED R1 (unsigned) — keep the research pipeline behind `ai.prospect_research`; promoted prospects become a Donors & Funders saved view. Open choice: sixth tab vs. full-height drawer (draft + review lean drawer) |
+| fr_email_drafts | 0 | (prospect-research agent) | — | **NEEDS RULING** — prospect-research family (zero rows) | PROPOSED R1 (unsigned) — keep the research pipeline behind `ai.prospect_research`; promoted prospects become a Donors & Funders saved view. Open choice: sixth tab vs. full-height drawer (draft + review lean drawer) |
+| fr_funding_opportunities | 0 | (prospect-research agent) | — | **NEEDS RULING** — prospect-research family (zero rows) | PROPOSED R1 (unsigned) — keep the research pipeline behind `ai.prospect_research`; promoted prospects become a Donors & Funders saved view. Open choice: sixth tab vs. full-height drawer (draft + review lean drawer) |
+| fr_nba_suggestions | 0 | X/fundraising/next-best-action | L/admin/briefing/fundraising | **NEEDS RULING** — prospect-research family (zero rows) | PROPOSED R1 (unsigned) — keep the research pipeline behind `ai.prospect_research`; promoted prospects become a Donors & Funders saved view. Open choice: sixth tab vs. full-height drawer (draft + review lean drawer) |
+| fr_prospect_briefs | 1 | X/fundraising/research/[id] | A/fundraising/prospects/[id], A/fundraising/donors/[id] | **NEEDS RULING** — prospect-research family | PROPOSED R1 (unsigned) — keep the research pipeline behind `ai.prospect_research`; promoted prospects become a Donors & Funders saved view. Open choice: sixth tab vs. full-height drawer (draft + review lean drawer) |
+| fr_prospect_disqualified | 20 | X/fundraising/prospects/disqualify | A/fundraising/prospects | **NEEDS RULING** — prospect-research family | PROPOSED R1 (unsigned) — keep the research pipeline behind `ai.prospect_research`; promoted prospects become a Donors & Funders saved view. Open choice: sixth tab vs. full-height drawer (draft + review lean drawer) |
+| fr_prospect_promoted | 0 | X/fundraising/prospects/promote | — | **NEEDS RULING** — prospect-research family (zero rows) | PROPOSED R1 (unsigned) — keep the research pipeline behind `ai.prospect_research`; promoted prospects become a Donors & Funders saved view. Open choice: sixth tab vs. full-height drawer (draft + review lean drawer) |
+| fr_prospect_scores | 3 | X/prospects/[id]/score | A/fundraising/prospects | **NEEDS RULING** — prospect-research family | PROPOSED R1 (unsigned) — keep the research pipeline behind `ai.prospect_research`; promoted prospects become a Donors & Funders saved view. Open choice: sixth tab vs. full-height drawer (draft + review lean drawer) |
+| fr_prospects | 550 | X/fundraising/prospects/{add,import,promote}, strategy/discover | A/fundraising/prospects, X/search, L/fundraising/grantCoachDocs | **NEEDS RULING** — demoted to a saved view with no design; 550 rows | PROPOSED R1 (unsigned) — keep the research pipeline behind `ai.prospect_research`; promoted prospects become a Donors & Funders saved view. Open choice: sixth tab vs. full-height drawer (draft + review lean drawer) |
+| fr_touches | 0 | (deprecated per code comment in L/admin/rail/needs-you) | — | **NEEDS RULING** — prospect-research family (zero rows) | PROPOSED R1 (unsigned) — keep the research pipeline behind `ai.prospect_research`; promoted prospects become a Donors & Funders saved view. Open choice: sixth tab vs. full-height drawer (draft + review lean drawer) |
+| funder_angles | 8 | X/strategy/funder-angles | A/fundraising/strategy, A/fundraising/prospects/[id], L/fundraising/link-prospect-angle | **NEEDS RULING** — strategy room unmapped | PROPOSED R6 (unsigned) — fold into Fundraising (the R1 drawer), not Organization → Strategy |
 | funds | 3 | (seeded/edited with gifts coding) | A/fundraising/donors/[id], A/fundraising/reports, X/gifts/export | bound — Finance → Snapshot (restricted/unrestricted split) | |
-| game_daily | 67 | A+X/careers/daily (human scheduling) | P/games/daily (site) | **NEEDS RULING** — `/admin/careers/daily` NO V2 HOME (proposal: Programs → Content section) | |
-| game_pool | 217 | A+X/careers/pool (human gate) | P/games/{daily,higher-wage,the-cut} (site) | **NEEDS RULING** — `/admin/careers/pool` NO V2 HOME (proposal: Programs → Content section) | |
+| game_daily | 67 | A+X/careers/daily (human scheduling) | P/games/daily (site) | **NEEDS RULING** — `/admin/careers/daily` NO V2 HOME (proposal: Programs → Content section) | PROPOSED R7 (unsigned) — admin gates become Programs → Content sections behind an `aa.*` key; the tables stay site-owned |
+| game_pool | 217 | A+X/careers/pool (human gate) | P/games/{daily,higher-wage,the-cut} (site) | **NEEDS RULING** — `/admin/careers/pool` NO V2 HOME (proposal: Programs → Content section) | PROPOSED R7 (unsigned) — admin gates become Programs → Content sections behind an `aa.*` key; the tables stay site-owned |
 | gifts | 317 | X/gifts, imports, stripe path | A/fundraising/{today,donors,campaigns,plan}, A/finance, A/board, 30+ more | bound — Fundraising → Today / Donors & Funders; Finance → Forecast (received tier) | |
 | gmail_sync_jobs | 2 | L/fundraising/gmail-sync | same | settings — Settings → Data sources | |
 | grant_contacts | 0 | L/fundraising/grantContacts | same | bound — Fundraising → Grants (contacts) | |
@@ -163,10 +165,10 @@ One row per logical table, alphabetical. `ruling` is empty everywhere — Remi f
 | journey_enrollments | 0 | X/journeys/[id]/enroll, P/cron/journeys | A/fundraising/journeys, A/fundraising/donors/[id] | dormant — `specs/donor-lifecycle-journeys.md` (gate note: "saved view" is a functional downgrade of a state machine) | |
 | journey_steps | 0 | X/journeys | same | dormant — `specs/donor-lifecycle-journeys.md` | |
 | journeys | 0 | X/journeys | same | dormant — `specs/donor-lifecycle-journeys.md` | |
-| meeting_exclusions | 0 | L/meetings/exclusions | same | **NEEDS RULING** — meet family (zero rows) | |
+| meeting_exclusions | 0 | L/meetings/exclusions | same | **NEEDS RULING** — meet family (zero rows) | PROPOSED R2 (unsigned) — live scheduling surfaces in Work → Meetings |
 | meeting_records | 23 | X/meetings/[id], transcript ingestion | A/ops/friday, L/meetings/*, L/admin/ops/rhythm | bound — Work → Meetings | |
 | meeting_suggested_tasks | 11 | X/meetings/[id]/{suggestions,transcript} | A/ops/friday, L/meetings/read | bound — Work → Meetings ("decisions waiting on follow-up") | |
-| meeting_types | 9 | X/meet/types | P/meet/* (public scheduler), A/meetings/booking-page | **NEEDS RULING** — `/admin/meet` NO V2 HOME; the public `/meet` scheduler depends on it | |
+| meeting_types | 9 | X/meet/types | P/meet/* (public scheduler), A/meetings/booking-page | **NEEDS RULING** — `/admin/meet` NO V2 HOME; the public `/meet` scheduler depends on it | PROPOSED R2 (unsigned) — Settings → Calendar (booking config); public `/meet` route stays live, unlinked |
 | memberships | 14 | X/org/switch, invite flow | L/admin/auth, 8 more libs | settings — auth/tenancy infrastructure | |
 | message_reactions | 7 | L/messaging/threads | same | bound — Inbox → Messages (gate flagged as unmapped; reactions ride the Messages tab) | |
 | message_thread_members | 13 | L/messaging/threads | same | bound — Inbox → Messages | |
@@ -184,21 +186,21 @@ One row per logical table, alphabetical. `ruling` is empty everywhere — Remi f
 | opportunities | 598 | X/opportunities, promote flow | A/fundraising (pipeline board), A/fundraising/today, forecast math | bound — Fundraising → Pipeline | |
 | ops_projects | 28 | X/ops/projects, X/grants/[id]/seed-tasks, X/report | A/ops/projects, A/strategic-plan | bound — Work → Projects | |
 | ops_tasks | 441 | 15+ writers (see recon §A.1): X/ops/tasks, capture, report, Reed, crons, templates | A/ops, queue/briefing/cockpit, `v_action_items`, `work_block_tasks` | bound — Work → Tasks (+ Home → Today via the obligation view) | |
-| org_comms_settings | 2 | X/comms/settings | L/comms/settings | **NEEDS RULING** — comms family (carries live per-org config incl. SafeSpace) | |
+| org_comms_settings | 2 | X/comms/settings | L/comms/settings | **NEEDS RULING** — comms family (carries live per-org config incl. SafeSpace) | PROPOSED R3 (unsigned) — dormant module, reserved seat as a Campaigns section (`modules.comms`). Gate caveat: non-zero rows are unreachable until it builds — signed line must accept that or name a read-only surface |
 | org_email_allowlist | 12 | (seeded) | L/email/operator | settings — email infrastructure | |
 | org_entitlements | 63 | (seeded by hand per tenant) | L/admin/entitlements, L/admin/actionQueue | settings — the module fence | |
 | org_settings | 1 | (seeded) | L/fundraising/steward | settings | |
 | org_terminology | 13 | X/staff/terminology | L/admin/entities | settings — Settings → Terminology | |
 | orgs | 4 | (seeded) | L/admin/orgs, shell, crons | settings — tenancy | |
 | page_views | 4,239 | P/analytics/pageview (site) | X/analytics | bound — Impact → Analytics (site visits) | |
-| participant_stages | 22 | (seeded per org) | L/admin/program/stages | **NEEDS RULING** — per-org lifecycle unrepresented in the People design | |
+| participant_stages | 22 | (seeded per org) | L/admin/program/stages | **NEEDS RULING** — per-org lifecycle unrepresented in the People design | PROPOSED R10 (unsigned) — flip to bound: People/Intake must render per-org custom fields and stages; goes into the Programs phase definition of done |
 | partner_contacts | 135 | X/partners/contacts | A/partners, L/meetings/match | bound — Programs → Partners | |
 | partner_interactions | 0 | X/partners/interactions | A/partners/[id], L/meetings/* | bound — Programs → Partners | |
 | partner_waitlist | 4 | P/partner-waitlist (site form) | X/partners | bound — Programs → Partners (waitlist intake) | |
 | partners | 149 | X/partners, P/program-partner-signup | A/partners, X/search, L/meetings/* | bound — Programs → Partners | |
 | pipeline_stages | 59 | X/pipeline-stages | A/fundraising/settings/stages, L/fundraising/stages, L/hubspot/sync-out | settings — Settings → Fundraising (stage config) | |
 | pipelines | 7 | X/pipeline-stages | L/fundraising/stages | settings — Settings → Fundraising | |
-| plan_archives | 1 | manual migration (`2027_ogsm_v3_phase1_archive.MANUAL.sql`) | — (nothing reads it) | **NEEDS RULING** — write-only archive | |
+| plan_archives | 1 | manual migration (`2027_ogsm_v3_phase1_archive.MANUAL.sql`) | — (nothing reads it) | **NEEDS RULING** — write-only archive | PROPOSED R11 (unsigned) — Settings, read-only |
 | plan_foundation | 2 | X/plan/foundation | A/strategic-plan, Reed | bound — Organization → Strategy | |
 | plan_goals | 19 | X/plan/goals | A/strategic-plan/*, L/admin/briefing/gather | bound — Organization → Strategy | |
 | plan_initiatives | 55 | X/plan/initiatives | A/strategic-plan, A/ops/projects/[id] | bound — Organization → Strategy (+ Work → Projects "serves objective") | |
@@ -212,44 +214,44 @@ One row per logical table, alphabetical. `ruling` is empty everywhere — Remi f
 | pledges | 2 | X/pledges | A/fundraising/pledges | bound — Finance → Forecast (pledges-due tier) | |
 | profiles | 12 | X/account/profile | L/admin/auth, L/admin/profile, 6 more | settings — account infrastructure | |
 | programs | 7 | L/admin/program/programs | same | bound — Programs → Cohorts (program parent, participant-spine spec) | |
-| quiz_submissions | 49 | P/quiz-submit (site) | X/stats, X/submissions | **NEEDS RULING** — `aa.quiz` has no V2 home | |
+| quiz_submissions | 49 | P/quiz-submit (site) | X/stats, X/submissions | **NEEDS RULING** — `aa.quiz` has no V2 home | NOT COVERED BY THE DRAFT — still needs a ruling |
 | recurring_plans | 7 | X/recurring, P/stripe-webhook | A/fundraising/recurring, A/fundraising/donors, P/cron/journeys | bound — Fundraising → Donors & Funders (recurring view — depends on the `segments` ruling) | |
 | reed_activity_log | 12 | P/reed/ask | same | settings — Reed audit infrastructure | |
 | reed_drafts | 0 | Reed (L/agents/reed/tools) | A/reed, P/reed/drafts | bound — Inbox (Reed approvals) + Reed panel | |
-| reed_messages | 24 | P/reed/ask | A/reed, L/meetings/dossier | **NEEDS RULING** — `/admin/reed` removed with no archive plan | |
+| reed_messages | 24 | P/reed/ask | A/reed, L/meetings/dossier | **NEEDS RULING** — `/admin/reed` removed with no archive plan | PROPOSED R5 (unsigned) — preserve; surface as a history list inside the Reed panel. Fallback: dormant/unreachable. Open choice |
 | reed_next_moves | 0 | X/fundraising/next-move | same | dormant — `specs/bloomos-reed-strategy.md` | |
 | reed_plan_proposals | 0 | P/reed/proposals | A/reed, Reed tools | dormant — `specs/reeds-proposal-review.md` | |
 | reed_suggestions | 2 | Reed tools | A/reed, P/reed/suggestions/[id] (accept → task) | bound — Reed panel (suggestion → task flow) | |
-| reed_threads | 8 | P/reed/ask | A/reed, L/meetings/dossier | **NEEDS RULING** — Reed archive, with reed_messages | |
+| reed_threads | 8 | P/reed/ask | A/reed, L/meetings/dossier | **NEEDS RULING** — Reed archive, with reed_messages | PROPOSED R5 (unsigned) — preserve; surface as a history list inside the Reed panel. Fallback: dormant/unreachable. Open choice |
 | relationships | 0 | X/constituents/merge | X/search/profile | dormant — `specs/fundraising-v2.md` (Donor 360 "Connected") | |
-| research_runs | 0 | X/fundraising/research/[id]/run | X/fundraising/research/[id] | **NEEDS RULING** — prospect-research family (zero rows) | |
-| review_competencies | 5 | (seeded) | A/staff reviews lib | **NEEDS RULING** — reviews family | |
-| review_cycles | 0 | X/staff/reviews | A/staff reviews lib | **NEEDS RULING** — reviews family (zero rows) | |
-| review_feedback | 0 | X/staff/reviews/feedback | A/staff reviews lib, `v_review_feedback_visible` | **NEEDS RULING** — reviews family (zero rows) | |
-| review_manager_notes | 0 | X/staff/reviews summary | A/staff reviews lib | **NEEDS RULING** — reviews family (zero rows) | |
-| review_summaries | 0 | X/staff/reviews summary | A/staff reviews lib | **NEEDS RULING** — reviews family (zero rows) | |
+| research_runs | 0 | X/fundraising/research/[id]/run | X/fundraising/research/[id] | **NEEDS RULING** — prospect-research family (zero rows) | PROPOSED R1 (unsigned) — keep the research pipeline behind `ai.prospect_research`; promoted prospects become a Donors & Funders saved view. Open choice: sixth tab vs. full-height drawer (draft + review lean drawer) |
+| review_competencies | 5 | (seeded) | A/staff reviews lib | **NEEDS RULING** — reviews family | PROPOSED R4 (unsigned) — dormant, reserved seat: section of Organization → Team (`modules.reviews`); the 5 competency rows are seed config |
+| review_cycles | 0 | X/staff/reviews | A/staff reviews lib | **NEEDS RULING** — reviews family (zero rows) | PROPOSED R4 (unsigned) — dormant, reserved seat: section of Organization → Team (`modules.reviews`); the 5 competency rows are seed config |
+| review_feedback | 0 | X/staff/reviews/feedback | A/staff reviews lib, `v_review_feedback_visible` | **NEEDS RULING** — reviews family (zero rows) | PROPOSED R4 (unsigned) — dormant, reserved seat: section of Organization → Team (`modules.reviews`); the 5 competency rows are seed config |
+| review_manager_notes | 0 | X/staff/reviews summary | A/staff reviews lib | **NEEDS RULING** — reviews family (zero rows) | PROPOSED R4 (unsigned) — dormant, reserved seat: section of Organization → Team (`modules.reviews`); the 5 competency rows are seed config |
+| review_summaries | 0 | X/staff/reviews summary | A/staff reviews lib | **NEEDS RULING** — reviews family (zero rows) | PROPOSED R4 (unsigned) — dormant, reserved seat: section of Organization → Team (`modules.reviews`); the 5 competency rows are seed config |
 | rhythm_sessions | 3 | X/ops/rhythm | A/ops/monday, A/ops/friday | bound — Work → Plan & Close (named preservation: carry semantics) | |
 | role_permissions | 105 | (seeded) | L/admin/auth | settings — auth infrastructure | |
-| segments | 0 | X/segments | A/fundraising/comms, A/fundraising/reports, X/comms send | **NEEDS RULING** — the saved-view backbone has zero rows and no builder UI; Phase-1 scope decision | |
+| segments | 0 | X/segments | A/fundraising/comms, A/fundraising/reports, X/comms send | **NEEDS RULING** — the saved-view backbone has zero rows and no builder UI; Phase-1 scope decision | PROPOSED R11 (unsigned) — flip to bound: Donors & Funders, with the saved-view builder in Phase 1 scope |
 | soft_credits | 0 | X/gifts/[id]/soft-credits | A/fundraising/donors/[id] | bound — Fundraising → Donor 360 (gift detail) | |
 | staff | 8 | X/staff | A/staff, A/strategic-plan/review, L/agenda/week-view | bound — Organization → Team | |
 | staff_goals | 0 | X/staff/[id]/goals | A/staff | bound — Organization → Team | |
 | staff_kpi_snapshots | 0 | X/staff kpis snapshot | L/admin/staff/metrics | bound — Organization → Team (per-person measures) | |
 | staff_kpis | 0 | X/staff/[id]/kpis | A/staff, L/admin/staff/metrics | bound — Organization → Team | |
-| stewardship_rules | 11 | (seeded) | L/fundraising/stewardship (drives P/cron/stewardship-milestones) | **NEEDS RULING** — appears in no design file; its cron writes obligations | |
-| stories | 0 | (comms/stories module, unbuilt) | `v_publishable_stories`, `v_story_suggestions` | dormant — `specs/comms-v2-mail-merge.md` | |
-| story_consents | 0 | same | same | dormant — comms spec; **contractual requirement under the SafeSpace agreement** (gate) | |
-| story_media | 0 | same | same | dormant — comms spec | |
-| story_subjects | 0 | same | same | dormant — comms spec | |
-| strategy_angles | 8 | X/strategy/angles, strategy/discover | A/fundraising/strategy, **public `/strategy` page** | **NEEDS RULING** — strategy room family (public consumer exists) | |
-| strategy_room_meta | 1 | X/strategy/room-meta | A/fundraising/strategy, public `/strategy` | **NEEDS RULING** — strategy room family | |
+| stewardship_rules | 11 | (seeded) | L/fundraising/stewardship (drives P/cron/stewardship-milestones) | **NEEDS RULING** — appears in no design file; its cron writes obligations | PROPOSED R11 (unsigned) — Settings → Fundraising, automation-rules editor (rules run today; the editor is the off switch) |
+| stories | 0 | (comms/stories module, unbuilt) | `v_publishable_stories`, `v_story_suggestions` | dormant — `specs/comms-v2-mail-merge.md` | PROPOSED R3 (unsigned) — reserved seat: section of Fundraising → Campaigns when Comms builds (`modules.comms`); `story_consents` contractual under SafeSpace |
+| story_consents | 0 | same | same | dormant — comms spec; **contractual requirement under the SafeSpace agreement** (gate) | PROPOSED R3 (unsigned) — reserved seat: section of Fundraising → Campaigns when Comms builds (`modules.comms`); `story_consents` contractual under SafeSpace |
+| story_media | 0 | same | same | dormant — comms spec | PROPOSED R3 (unsigned) — reserved seat: section of Fundraising → Campaigns when Comms builds (`modules.comms`); `story_consents` contractual under SafeSpace |
+| story_subjects | 0 | same | same | dormant — comms spec | PROPOSED R3 (unsigned) — reserved seat: section of Fundraising → Campaigns when Comms builds (`modules.comms`); `story_consents` contractual under SafeSpace |
+| strategy_angles | 8 | X/strategy/angles, strategy/discover | A/fundraising/strategy, **public `/strategy` page** | **NEEDS RULING** — strategy room family (public consumer exists) | PROPOSED R6 (unsigned) — fold into Fundraising (the R1 drawer), not Organization → Strategy |
+| strategy_room_meta | 1 | X/strategy/room-meta | A/fundraising/strategy, public `/strategy` | **NEEDS RULING** — strategy room family | PROPOSED R6 (unsigned) — fold into Fundraising (the R1 drawer), not Organization → Strategy |
 | students | 70 | X/students, X/applications/[id]/accept, imports | A/students, A/cohorts/[id], X/search, L/admin/plan/metrics | bound — Programs → People | |
 | user_org_state | 3 | (org switcher) | L/admin/statusLine | settings — tenancy infrastructure | |
 | webhook_events | 0 | P/webhooks/hubspot | same | settings — integration infrastructure | |
 | work_block_tasks | 0 | L/agenda/work-blocks | L/agenda/week-view, L/admin/ops/rhythm, X/ops/tasks/[id] | bound — Work → My Week (named preservation: FK into ops_tasks verified live) | |
 | work_blocks | 0 | L/agenda/work-blocks | L/agenda/*, L/admin/ops/rhythm | bound — Work → My Week | |
-| ygb_attendance | 0 | X/ygb/attendance | same | **NEEDS RULING** — `aa.ygb` family (zero rows) | |
-| ygb_registrations | 8 | P/ygb/register, P/ygb/showcase-rsvp (site) | X/ygb/{registrations,attendance} | **NEEDS RULING** — YGB pinned view undesigned | |
+| ygb_attendance | 0 | X/ygb/attendance | same | **NEEDS RULING** — `aa.ygb` family (zero rows) | PROPOSED R9 (unsigned) — pinned Group view, same as Demo Day; YGB-tenant sidebar is a separate question |
+| ygb_registrations | 8 | P/ygb/register, P/ygb/showcase-rsvp (site) | X/ygb/{registrations,attendance} | **NEEDS RULING** — YGB pinned view undesigned | PROPOSED R9 (unsigned) — pinned Group view, same as Demo Day; YGB-tenant sidebar is a separate question |
 
 ---
 
@@ -279,4 +281,4 @@ These don't block the gate (nothing to preserve), but two of them are live route
 
 ---
 
-*Stop point. No rulings proposed beyond what the gate itself pre-names. Phase 1 remains blocked until the 45 `NEEDS RULING` rows carry signed rulings.*
+*Stop point. Draft rulings are staged as `PROPOSED (unsigned)` per `docs/v2-draft-rulings.md`; none is a decision. Phase 1 remains blocked until every `NEEDS RULING` and `dormant` row carries a signed ruling — including the three tables the draft does not cover and the three open choices (R1 tab/drawer, R5 Reed history/dormant, R8 November).*

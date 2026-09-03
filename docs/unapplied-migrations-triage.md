@@ -20,7 +20,7 @@ references were traced for anything absent.
 | Class | Files | Meaning |
 |---|---|---|
 | `legacy-applied` | **36** | Production already has every object or row the file produces (in a few cases under a different index name or with a reconstruction inaccuracy noted below). The file is harmless. |
-| `never-applied-unused` | **1** | Production lacks the effect; no shipped code depends on it. |
+| `never-applied-PRODUCT` | **1** | Production lacks the effect; no code path depends on it, but the product does (169 of 598 opportunities). Reclassified 2026-09-03, see section 4. |
 | `never-applied-BREAKING` | **3** | Production lacks the object and shipped code reads or writes it. |
 
 **No additional breaking files beyond the three already known.** But one of the
@@ -40,7 +40,7 @@ Of the 225 objects checked, 10 are absent from production:
 | `partner_waitlist_created_at_idx`, `partner_waitlist_role_idx` | `create_partner_waitlist.sql` | legacy-applied (reconstruction; the `role` column exists, the indexes never did) |
 | `ops_tasks_parent_id_idx` | `upgrade_ops_tasks_priority_subtasks_labels.sql` | legacy-applied (production has the same index as `ops_tasks_parent_idx`) |
 | `bookings.google_meet_url` | `add_meeting_location_options.sql` | legacy-applied (absent because the rename to `meeting_url` ran; expected) |
-| rows with `pipeline = 'archived_partnership'` | `archive_migrated_partnership_opportunities.sql` | never-applied-unused |
+| rows with `pipeline = 'archived_partnership'` | `archive_migrated_partnership_opportunities.sql` | never-applied-PRODUCT |
 
 Everything else (32 tables, 22 columns, 61 indexes, 3 constraints, 11
 policies, 2 functions, 12 triggers, 1 view, 32 RLS flags, and every seed
@@ -91,7 +91,7 @@ This is the one that was understated. `createJob` in
 | Surface | Failure |
 |---|---|
 | `POST /api/admin/hubspot/sync` (the "Sync now" button on `/admin/settings`) | `createJob` throws, route returns **500 "Could not start sync"**. |
-| `/api/cron/hubspot-sync` (Vercel cron, `0 7,19 * * *`) | `createJob(null)` throws on every tick. Twice a day, every day, since the deploy. |
+| `/api/cron/hubspot-sync` (Vercel cron, `0 7,19 * * *`) | Never reaches `createJob`: every invocation returns **401** (14 in the last 7 days). Correction 2026-09-03: the cron has never authenticated, see `docs/interaction-capture-diagnostic.md` §1.4. The `totals` failure breaks the manual button only. |
 | HubSpot sync panel on `/admin/settings` | Shows the last job from 2026-07-30 (status `partial`) forever. |
 
 Production evidence: `hs_sync_jobs` holds 19 rows, the newest started
@@ -177,25 +177,40 @@ the 40.
 | `participant_aa_custom_fields.MANUAL.sql` | 6 AA `custom_field_defs` (grade, school, dob, guardian_name/email/phone); 10 students carry values |
 | `participant_aa_stage_rename.MANUAL.sql` | AA `participant_stages` labels are New / Exploring / Practicing / Connecting / Launched / Alumni / Inactive |
 
-## 4. The one `never-applied-unused` file
+## 4. The one `never-applied-PRODUCT` file (reclassified)
 
-`archive_migrated_partnership_opportunities.sql` sets `pipeline =
-'archived_partnership'` on every opportunity in the retired HubSpot partnership
-pipeline `59855776`. Production has **169 opportunities still in `59855776`**
-(119 identify, 21 cultivate, 14 lost, 12 steward, 3 solicit; created 06-12 to
-06-26, last updated 06-29) and **0 in `archived_partnership`**. The
-`archived_partnership` pipeline itself exists in `pipelines` (seeded by the
-ledger's `fundraising_pipeline_config`) and `59855776` is labeled "Partnership
-Pipeline (retired)" there.
+`archive_migrated_partnership_opportunities.sql` is one statement:
+`update opportunities set pipeline = 'archived_partnership' where pipeline = '59855776'`.
+It was first classed "unused" because no code path filters on
+`archived_partnership`. That was the wrong test. Production holds **598
+opportunities: 421 in `default`, 169 in `59855776`, 8 in `727459407`**. 28% of
+the pipeline sits in a pipeline labeled "Partnership Pipeline (retired)" in
+`pipelines`. Unused in code, used in product.
 
-Whether it was never run or was run and then undone cannot be told from the
-data: `fr_sync_exclude_partnership_pipeline.sql`'s header says the HubSpot sync
-used to reset these rows back to `59855776`, "undoing the Phase 4 archive",
-and every row's `updated_at` predates the fix. Either way production does not
-carry the effect. Not breaking: `lib/hubspot/stage-map.ts` knows both pipeline
-ids, nothing filters on `archived_partnership`, and the retired pipeline is
-labeled as such in the UI. Re-running it would now stick, since the sync no
-longer resets those rows (and, per 2.3, is not running at all).
+What the migration would do to the 169 rows (119 `identify`, 21 `cultivate`,
+14 `lost`, 12 `steward`, 3 `solicit`; all `external_source = 'hubspot'`,
+created 06-12 to 06-26, untouched since 06-29; 134 linked to a constituent, 64
+with a `partners` row from the consolidation, 1 with an ask, sum of asks $60k):
+
+- The update succeeds. `opportunities_stage_fk` is `(org_id, pipeline, stage)
+  → pipeline_stages`, and `archived_partnership` carries the same six stage
+  keys as `59855776` (`identify`, `qualify`, `cultivate`, `solicit`, `steward`,
+  `lost`), seeded by the ledger's `fundraising_pipeline_config`.
+- On the Major Gifts board (`app/admin/fundraising/page.tsx`), which shows one
+  pipeline at a time from the `pipelines` table, the 169 move from the
+  "Partnership Pipeline (retired)" tab to the "Archived Partnership" tab. The
+  default (Sales) tab is unaffected either way.
+- Nothing numeric changes: `v_revenue_schedule` includes 0 of them (its
+  pipeline tier needs an ask and a future `expected_close`; none qualify), and
+  the overview's cold-prospect check sees 1 open ≥$10k row before and after.
+- It is not undone afterwards: `fr_sync_hubspot_to_spine` excludes pipeline
+  `59855776` since `fr_sync_exclude_partnership_pipeline.sql`, and the sync is
+  not running regardless (section 2.3).
+- It is reversible with the inverse update.
+
+Whether it was applied in June and then reset by the sync, or never applied,
+still cannot be told from the data; either way production is not in the state
+the file describes.
 
 ## 5. What this means for the next step
 
@@ -206,6 +221,6 @@ longer resets those rows (and, per 2.3, is not running at all).
   (`is_volunteer`, `leader_id`) are one feature and should be treated as a
   pair. The third has taken the HubSpot integration down since 2026-07-30 and
   is the most urgent live defect found in either audit.
-- The archive data migration is a judgment call, not a defect.
+- The archive data migration is a product decision about 28% of the pipeline, not a defect.
 
 No file was written or applied. Remediation order stays with Remi.

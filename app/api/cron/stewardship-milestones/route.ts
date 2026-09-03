@@ -63,8 +63,24 @@ async function ensureMilestoneTask(
 
 export async function GET(req: NextRequest) {
   if (!isAuthed(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const admin = getSupabaseAdmin();
+
+  // Per-org iteration. Every read inside detectOrg is fenced to one org; the
+  // task is created under that same org. Never "enumerate every tenant's
+  // gifts, act per row".
+  const { data: orgs, error } = await admin.from("orgs").select("id");
+  if (error) return NextResponse.json({ error: `orgs: ${error.message}` }, { status: 500 });
+  let created = 0;
+  const perOrg: Record<string, number> = {};
+  for (const o of (orgs ?? []) as { id: string }[]) {
+    const n = await detectOrg(admin, o.id);
+    perOrg[o.id] = n;
+    created += n;
+  }
+  return NextResponse.json({ ok: true, created, perOrg });
+}
+
+async function detectOrg(admin: Admin, orgId: string): Promise<number> {
   const today = todayInTZ();
   const dueDate = addDays(today, 2);
   let created = 0;
@@ -78,6 +94,7 @@ export async function GET(req: NextRequest) {
   const { data: giftsOnDates } = await admin
     .from("gifts")
     .select("org_id, constituent_id, gift_date")
+    .eq("org_id", orgId)
     .in("gift_date", Array.from(anniversaryDates.keys()))
     .not("constituent_id", "is", null)
     .limit(2000);
@@ -117,17 +134,19 @@ export async function GET(req: NextRequest) {
   const { data: recent } = await admin
     .from("gifts")
     .select("constituent_id")
+    .eq("org_id", orgId)
     .gte("gift_date", twoDaysAgo)
     .not("constituent_id", "is", null)
     .limit(5000);
   const recentIds = Array.from(new Set((recent ?? []).map((g) => g.constituent_id as string)));
 
   for (const id of recentIds) {
-    const { count } = await admin.from("gifts").select("id", { count: "exact", head: true }).eq("constituent_id", id);
+    const { count } = await admin.from("gifts").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("constituent_id", id);
     if ((count ?? 0) !== 2) continue;
     const { data: con } = await admin
       .from("constituents")
       .select("org_id, type, first_name, last_name, org_name")
+      .eq("org_id", orgId)
       .eq("id", id)
       .maybeSingle();
     if (!con) continue;
@@ -149,6 +168,7 @@ export async function GET(req: NextRequest) {
   const { data: thankedGifts } = await admin
     .from("gifts")
     .select("id, org_id, amount, constituent_id, constituent:constituents(type, first_name, last_name, org_name)")
+    .eq("org_id", orgId)
     .eq("acknowledgment_status", "sent")
     .gte("acknowledged_at", lower)
     .lte("acknowledged_at", upper)
@@ -172,6 +192,5 @@ export async function GET(req: NextRequest) {
     });
     if (ok) created++;
   }
-
-  return NextResponse.json({ ok: true, created });
+  return created;
 }

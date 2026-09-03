@@ -67,11 +67,12 @@ export async function GET(req: NextRequest) {
     return settingsCache.get(orgId)!;
   };
   const stepCache = new Map<string, Step[]>();
-  const stepsFor = async (journeyId: string): Promise<Step[]> => {
+  const stepsFor = async (journeyId: string, orgId: string): Promise<Step[]> => {
     if (stepCache.has(journeyId)) return stepCache.get(journeyId)!;
     const { data } = await admin
       .from("journey_steps")
       .select("step_order, delay_days, subject, body")
+      .eq("org_id", orgId)
       .eq("journey_id", journeyId)
       .order("step_order", { ascending: true });
     const steps = (data ?? []) as Step[];
@@ -80,7 +81,7 @@ export async function GET(req: NextRequest) {
   };
 
   for (const j of (journeys ?? []) as Array<{ id: string; org_id: string; trigger: string }>) {
-    const steps = await stepsFor(j.id);
+    const steps = await stepsFor(j.id, j.org_id);
     if (steps.length === 0) continue;
     const step0Delay = steps[0].delay_days;
 
@@ -112,22 +113,31 @@ export async function GET(req: NextRequest) {
   }
 
   // ── Execution: advance due enrollments by one step ──
-  const { data: due } = await admin
-    .from("journey_enrollments")
-    .select("id, journey_id, constituent_id, current_step")
-    .eq("status", "active")
-    .lte("next_run_at", nowIso())
-    .limit(300);
-
+  // Org fence: enrollments are read per active journey org, and every by-id
+  // update below re-asserts that org. A row from another tenant can neither
+  // be selected here nor touched by these updates.
   const activeJourneyIds = new Set((journeys ?? []).map((j) => j.id));
   const triggerById = new Map((journeys ?? []).map((j) => [j.id, j.trigger]));
   const orgById = new Map((journeys ?? []).map((j) => [j.id, j.org_id as string]));
+  const journeyOrgIds = Array.from(new Set(Array.from(orgById.values())));
+  const due: Array<{ id: string; journey_id: string; constituent_id: string; current_step: number }> = [];
+  for (const orgId of journeyOrgIds) {
+    const { data } = await admin
+      .from("journey_enrollments")
+      .select("id, journey_id, constituent_id, current_step")
+      .eq("org_id", orgId)
+      .eq("status", "active")
+      .lte("next_run_at", nowIso())
+      .limit(300);
+    for (const row of (data ?? []) as typeof due) due.push(row);
+  }
 
-  for (const e of (due ?? []) as Array<{ id: string; journey_id: string; constituent_id: string; current_step: number }>) {
+  for (const e of due) {
     if (!activeJourneyIds.has(e.journey_id)) continue; // journey paused → hold
-    const steps = await stepsFor(e.journey_id);
+    const eOrg = orgById.get(e.journey_id)!;
+    const steps = await stepsFor(e.journey_id, eOrg);
     if (e.current_step >= steps.length) {
-      await admin.from("journey_enrollments").update({ status: "completed" }).eq("id", e.id);
+      await admin.from("journey_enrollments").update({ status: "completed" }).eq("org_id", eOrg).eq("id", e.id);
       continue;
     }
     const step = steps[e.current_step];
@@ -135,12 +145,12 @@ export async function GET(req: NextRequest) {
     const { data: c } = await admin
       .from("constituents")
       .select("emails, first_name, do_not_contact")
-      .eq("org_id", orgById.get(e.journey_id)!)
+      .eq("org_id", eOrg)
       .eq("id", e.constituent_id)
       .maybeSingle();
     const email = ((c?.emails as string[] | null) ?? [])[0];
     if (!c || c.do_not_contact || !email) {
-      await admin.from("journey_enrollments").update({ status: "cancelled" }).eq("id", e.id);
+      await admin.from("journey_enrollments").update({ status: "cancelled" }).eq("org_id", eOrg).eq("id", e.id);
       continue;
     }
 
@@ -150,11 +160,11 @@ export async function GET(req: NextRequest) {
     const { data: sup } = await admin
       .from("email_suppressions")
       .select("id")
-      .eq("org_id", orgById.get(e.journey_id)!)
+      .eq("org_id", eOrg)
       .eq("email", email)
       .maybeSingle();
     if (sup) {
-      await admin.from("journey_enrollments").update({ status: "cancelled" }).eq("id", e.id);
+      await admin.from("journey_enrollments").update({ status: "cancelled" }).eq("org_id", eOrg).eq("id", e.id);
       continue;
     }
 
@@ -167,7 +177,7 @@ export async function GET(req: NextRequest) {
       const { data: recentAck } = await admin
         .from("gifts")
         .select("id")
-        .eq("org_id", orgById.get(e.journey_id)!)
+        .eq("org_id", eOrg)
         .eq("constituent_id", e.constituent_id)
         .eq("acknowledgment_status", "sent")
         .gte("acknowledged_at", new Date(Date.now() - 3 * 86_400_000).toISOString())
@@ -178,24 +188,24 @@ export async function GET(req: NextRequest) {
           await admin
             .from("journey_enrollments")
             .update({ status: "completed", current_step: nextStep, last_step_at: nowIso() })
-            .eq("id", e.id);
+            .eq("org_id", eOrg).eq("id", e.id);
         } else {
           await admin
             .from("journey_enrollments")
             .update({ current_step: nextStep, last_step_at: nowIso(), next_run_at: plusDaysIso(steps[nextStep].delay_days) })
-            .eq("id", e.id);
+            .eq("org_id", eOrg).eq("id", e.id);
         }
         continue;
       }
     }
 
-    const settings = await settingsFor(orgById.get(e.journey_id)!);
+    const settings = await settingsFor(eOrg);
     if (sendBlocker(settings) || !settings) {
       // No sending identity for this org — hold the enrollment and retry
       // tomorrow rather than sending from a constant or dropping the step.
       failed++;
       console.error(`[cron/journeys] send blocked for org ${orgById.get(e.journey_id)}: ${sendBlocker(settings)}`);
-      await admin.from("journey_enrollments").update({ next_run_at: plusDaysIso(1) }).eq("id", e.id);
+      await admin.from("journey_enrollments").update({ next_run_at: plusDaysIso(1) }).eq("org_id", eOrg).eq("id", e.id);
       continue;
     }
 
@@ -213,15 +223,15 @@ export async function GET(req: NextRequest) {
       sent++;
       const nextStep = e.current_step + 1;
       if (nextStep >= steps.length) {
-        await admin.from("journey_enrollments").update({ status: "completed", current_step: nextStep, last_step_at: nowIso() }).eq("id", e.id);
+        await admin.from("journey_enrollments").update({ status: "completed", current_step: nextStep, last_step_at: nowIso() }).eq("org_id", eOrg).eq("id", e.id);
       } else {
-        await admin.from("journey_enrollments").update({ current_step: nextStep, last_step_at: nowIso(), next_run_at: plusDaysIso(steps[nextStep].delay_days) }).eq("id", e.id);
+        await admin.from("journey_enrollments").update({ current_step: nextStep, last_step_at: nowIso(), next_run_at: plusDaysIso(steps[nextStep].delay_days) }).eq("org_id", eOrg).eq("id", e.id);
       }
     } catch (err) {
       failed++;
       console.error("[cron/journeys] send failed:", (err as Error).message);
       // Throttle a failing enrollment so it doesn't retry every run.
-      await admin.from("journey_enrollments").update({ next_run_at: plusDaysIso(1) }).eq("id", e.id);
+      await admin.from("journey_enrollments").update({ next_run_at: plusDaysIso(1) }).eq("org_id", eOrg).eq("id", e.id);
     }
   }
 

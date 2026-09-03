@@ -32,6 +32,15 @@
 -- .maybeSingle()) stops resolving the archived row and never sees two rows;
 -- the survivor records the absorbed id under hubspot_company_merged.
 --
+-- ORDERING REQUIREMENT: run this only on a database that already carries
+-- fr_sync_resolve_companies_via_external_refs.sql. Before that migration,
+-- fr_sync_hubspot_to_spine resolved companies solely through
+-- external_ids->>'hubspot_company', so the rename would let the next sync
+-- cron re-insert each archived loser as a fresh duplicate (caught in review
+-- on PR #454). With it, the sync honors the repointed external_refs rows:
+-- no recreation, and the merged company's future deals attach to the
+-- survivor. Migrations deploy with the PR; this file is run by hand after.
+--
 -- Idempotent: a pair whose loser is already archived is skipped, so the
 -- script can be re-run safely.
 

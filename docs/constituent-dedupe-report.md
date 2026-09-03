@@ -150,13 +150,18 @@ harness, which cannot hold these production rows). Per pair it:
 
 A read-only verification query at the bottom should return three rows of zeros after the run.
 
-One caveat recorded for honesty: the one-time backfill in
-`supabase/migrations/import_hubspot_to_constituents.sql` guards inserts on
-`external_ids->>'hubspot_company'`, so on a hypothetical re-run against a database holding
-`hs_companies` data it could recreate a constituent for the retired company id (the archived loser
-no longer claims it). Migrations don't re-run in production and the scratch DB holds no HubSpot
-mirror data, so this is theoretical — but it's the reason the loser keeps the id under
-`hubspot_company_premerge` rather than losing it entirely.
+Review caught a real recreation path here (credit: the Bugbot finding on PR #454): the *recurring*
+sync function `fr_sync_hubspot_to_spine` — run by the HubSpot sync cron, not just the one-time
+import — inserted an org constituent for any mirror company whose id no constituent claimed via
+`external_ids->>'hubspot_company'`, so the rename would have let the next sync re-insert every
+archived loser as a fresh duplicate. Fixed in this PR by
+`supabase/migrations/fr_sync_resolve_companies_via_external_refs.sql`: the sync now also honors
+the `external_refs` provenance ledger (which the merge repoints to the survivor) both when
+deciding whether a company already exists and when resolving a deal's primary company — so a
+merged company's future deals attach to the survivor. **The merge must therefore be run only
+after that migration is applied**; the MANUAL file's header says the same. The one-time
+`import_hubspot_to_constituents.sql` backfill retains the old guard, but migrations don't re-run
+in production and the scratch DB holds no mirror data, so that path stays theoretical.
 
 ---
 

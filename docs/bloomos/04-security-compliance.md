@@ -89,3 +89,14 @@ The service-role client (`lib/supabase/admin.ts`) bypasses RLS, so a write it ma
 | `lib/messaging/threads.ts` | Other **thread members** (DM / group) | A sender writes the shared thread, the membership rows for the other participants, and the message; under RLS a sender cannot write a `thread_member` row for someone else. Confined to this one module after an app-level membership check; notifications still fan out through `notify()`. |
 
 **Rule.** Before adding a new service-role write that acts on another user's behalf, add it to this table with its justification. The notifications invariant is enforced in CI; treat this table as the allowlist for the rest.
+
+## 8. Known exceptions (with expiry conditions)
+
+Exceptions to the one-org-per-credential rule. Each carries the condition
+under which it stops being acceptable; the exception is retired when the
+condition is met, not renegotiated.
+
+| Exception | Where | Why it is acceptable today | Expires when |
+|---|---|---|---|
+| `HUB_SNAPSHOT_SECRET` resolves to two orgs, `ambition-angels` and `young-life-epa` | `app/api/hub/v1/snapshot/route.ts` | One household: the hub serves Remi's and Kendra's own work across both orgs, restricted to their two profile ids, read-only. | Young Life EPA becomes a real customer: any admin outside the household exists on that org, or anyone outside the household holds a hub token. At that point the hub needs one secret per org and the snapshot serves one org per call. |
+

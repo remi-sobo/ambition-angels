@@ -42,6 +42,7 @@ export const FEATURE_KEYS = [
   "modules.messages",
   "modules.documents",
   "modules.metrics",
+  "modules.content", // program content production (career library; V2 Programs → Content). Seeded for AA; default off.
   // Feature/tier switches.
   "ai.reed",
   "ai.prospect_research",

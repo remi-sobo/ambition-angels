@@ -97,7 +97,7 @@ The parallel model means the project carries **two navigation models** from B1 u
 
 The two B1 gating fixes (Career Library → `modules.content`, Volunteers → `modules.program`) were applied to the doomed model **on purpose**: V1 is what users see until B3+, so its gates had to be corrected in place even though the model they live in is scheduled for deletion.
 
-**B2 — the redirect map.** All 42 Stage 0 rows as 308s, plus the two deep-link choke points: `lib/admin/actionQueue.ts`'s source-to-route table and `lib/admin/entities.ts`'s entity-URL resolver. Ships before any screen moves. Starts only after #453 and #458 merge and #458 retargets to `main`, so the redirect work is not a third-level stack. Full kickoff in the appendix. Commit: `spec-b: permanent redirects for all V1 routes`.
+**B2 — the redirect map.** All 42 Stage 0 rows as 308s, plus the two deep-link choke points: `lib/admin/actionQueue.ts`'s source-to-route table and `lib/admin/entities.ts`'s entity-URL resolver. Ships before any screen moves. Both #453 and #458 merged (with #458 retargeted to `main`) is a precondition, so the redirect work is not a third-level stack — but the stage begins only when Remi pastes the kickoff, never because the precondition cleared. Reference copy in the appendix. Commit: `spec-b: permanent redirects for all V1 routes`.
 
 **B3 — the shell.** Sidebar, single tab row, page header, Reed launcher, the `(v2)` route group and flag. V1 pages render inside it. Commit: `spec-b: V2 shell with V1 pages hosted`.
 
@@ -156,7 +156,7 @@ The two B1 gating fixes (Career Library → `modules.content`, Volunteers → `m
 >
 > One PR. Do not touch `app/admin/` rendering, do not add redirects, do not start B2.
 
-## Appendix — B2 kickoff prompt (Remi, 2026-09-03; starts after #453 and #458 are merged)
+## Appendix — B2 kickoff prompt (Remi, 2026-09-03; reference copy — the stage begins only when Remi issues the kickoff, not when its preconditions clear)
 
 > Spec B, stage B2: the redirect map. Read Spec B's architecture section, `docs/v2-preservation-ledger.md`, and the Stage 0 route map in the design bundle.
 >

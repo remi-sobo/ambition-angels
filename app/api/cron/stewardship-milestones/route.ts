@@ -35,6 +35,7 @@ async function ensureMilestoneTask(
   const { data: existing } = await admin
     .from("ops_tasks")
     .select("id")
+    .eq("org_id", opts.orgId)
     .contains("labels", [milestoneLabel])
     .is("archived_at", null)
     .limit(1);
@@ -87,6 +88,7 @@ export async function GET(req: NextRequest) {
     const { data: earlier } = await admin
       .from("gifts")
       .select("id")
+      .eq("org_id", g.org_id)
       .eq("constituent_id", g.constituent_id)
       .lt("gift_date", g.gift_date)
       .limit(1);
@@ -96,6 +98,7 @@ export async function GET(req: NextRequest) {
     const { data: con } = await admin
       .from("constituents")
       .select("type, first_name, last_name, org_name")
+      .eq("org_id", g.org_id)
       .eq("id", g.constituent_id)
       .maybeSingle();
     const name = con ? constituentName(con as Donor) : "this donor";

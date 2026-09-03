@@ -32,6 +32,7 @@ async function tryEnroll(admin: Admin, journeyId: string, orgId: string, constit
   const { data: c } = await admin
     .from("constituents")
     .select("emails, do_not_contact")
+    .eq("org_id", orgId)
     .eq("id", constituentId)
     .maybeSingle();
   if (!c || c.do_not_contact) return;
@@ -84,22 +85,24 @@ export async function GET(req: NextRequest) {
     const step0Delay = steps[0].delay_days;
 
     if (j.trigger === "first_gift") {
+      // Org fence: a journey enrolls ITS org's donors only. Without the
+      // filter every tenant's recent donors would be enrolled (and emailed).
       const { data: recent } = await admin
-        .from("gifts").select("constituent_id").gte("gift_date", daysAgo(2)).not("constituent_id", "is", null).limit(5000);
+        .from("gifts").select("constituent_id").eq("org_id", j.org_id).gte("gift_date", daysAgo(2)).not("constituent_id", "is", null).limit(5000);
       const ids = Array.from(new Set((recent ?? []).map((g) => g.constituent_id as string)));
       for (const id of ids) {
-        const { count } = await admin.from("gifts").select("id", { count: "exact", head: true }).eq("constituent_id", id);
+        const { count } = await admin.from("gifts").select("id", { count: "exact", head: true }).eq("org_id", j.org_id).eq("constituent_id", id);
         if ((count ?? 0) === 1) { await tryEnroll(admin, j.id, j.org_id, id, step0Delay); enrolled++; }
       }
     } else if (j.trigger === "lapsed") {
       const { data: gifts } = await admin
-        .from("gifts").select("constituent_id, gift_date").not("constituent_id", "is", null).limit(20000);
+        .from("gifts").select("constituent_id, gift_date").eq("org_id", j.org_id).not("constituent_id", "is", null).limit(20000);
       const byDonor = new Map<string, string[]>();
       for (const g of gifts ?? []) {
         const id = g.constituent_id as string;
         (byDonor.get(id) ?? byDonor.set(id, []).get(id)!).push(g.gift_date as string);
       }
-      const { data: plans } = await admin.from("recurring_plans").select("constituent_id").eq("status", "active");
+      const { data: plans } = await admin.from("recurring_plans").select("constituent_id").eq("org_id", j.org_id).eq("status", "active");
       const activePlan = new Set((plans ?? []).map((p) => p.constituent_id as string));
       for (const [id, dates] of Array.from(byDonor.entries())) {
         const { flags } = analyzeDonor(dates, today, activePlan.has(id));
@@ -132,6 +135,7 @@ export async function GET(req: NextRequest) {
     const { data: c } = await admin
       .from("constituents")
       .select("emails, first_name, do_not_contact")
+      .eq("org_id", orgById.get(e.journey_id)!)
       .eq("id", e.constituent_id)
       .maybeSingle();
     const email = ((c?.emails as string[] | null) ?? [])[0];
@@ -163,6 +167,7 @@ export async function GET(req: NextRequest) {
       const { data: recentAck } = await admin
         .from("gifts")
         .select("id")
+        .eq("org_id", orgById.get(e.journey_id)!)
         .eq("constituent_id", e.constituent_id)
         .eq("acknowledgment_status", "sent")
         .gte("acknowledged_at", new Date(Date.now() - 3 * 86_400_000).toISOString())

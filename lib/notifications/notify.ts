@@ -103,6 +103,20 @@ async function emailRecipient(row: NotificationRow): Promise<void> {
 
   // Email isn't in profiles — it lives on the auth user, reachable only via
   // the service-role admin API.
+  // Org fence: the recipient must be a member of the org the notification
+  // belongs to. The caller chose both, but this is a service-role path with
+  // no RLS behind it, so the pairing is re-checked before anything leaves.
+  const { data: member } = await admin
+    .from("memberships")
+    .select("user_id")
+    .eq("org_id", row.org_id)
+    .eq("user_id", row.recipient_id)
+    .maybeSingle();
+  if (!member) {
+    console.error("[notify] recipient is not a member of the notification's org; not emailing:", row.recipient_id, row.org_id);
+    return;
+  }
+
   const { data, error } = await admin.auth.admin.getUserById(row.recipient_id);
   const email = data?.user?.email;
   if (error || !email) {

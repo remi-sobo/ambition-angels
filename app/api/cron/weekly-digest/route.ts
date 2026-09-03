@@ -181,10 +181,12 @@ export async function GET(req: NextRequest) {
   const subject = `🌱 Your week: ${gifts.length} gift${gifts.length === 1 ? "" : "s"}${giftTotal > 0 ? ` (${fmtUsd(giftTotal)})` : ""}, ${due.length} deadline${due.length === 1 ? "" : "s"} ahead`;
   const headline = briefing.headline ?? "Good morning, Ambition Angels";
 
-  // One personalised email per operator: their overdue CRM tasks (+ the
-  // unassigned ones, so nothing falls through). Unmatched recipients get the
-  // org-wide list.
-  const operators = await getOperatorEmails();
+  // One personalised email per operator OF THIS ORG: their overdue CRM tasks
+  // (+ the unassigned ones, so nothing falls through). Unmatched recipients
+  // get the org-wide list. The roster is fenced to the same org the body was
+  // gathered for — the allowlist holds every tenant's admins, and an unscoped
+  // read here would send the resident org's Monday digest to them all.
+  const operators = await getOperatorEmails(orgId);
   let sent = 0;
   for (const email of operators) {
     const who = assigneeFromEmail(email);

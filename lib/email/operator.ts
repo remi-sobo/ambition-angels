@@ -3,32 +3,65 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { adminUrl } from "@/lib/origins";
 
 /**
- * Email to the org's operators (the allowlist is the recipient roster —
- * owner/admin emails, currently Remi + Shannon). Used by the daily
- * deadline reminders and the Monday digest. Failure policy mirrors
- * lib/audit.ts: notification sends must never break the caller.
+ * Email to ONE org's operators. The recipient roster is that org's
+ * owner/admin rows in org_email_allowlist — never the whole table. The
+ * allowlist holds every tenant's operators side by side, so an unscoped read
+ * here would mail one organization's grants, pipeline and compliance items to
+ * another organization's admins (this happened in code once; see
+ * tests/operator-email-scope.test.ts). Every roster lookup therefore takes the
+ * org explicitly, and a caller with no org in scope is a bug, not a reason to
+ * broadcast.
+ *
+ * Failure policy mirrors lib/audit.ts: notification sends must never break
+ * the caller.
  */
-export async function getOperatorEmails(): Promise<string[]> {
-  const { data } = await getSupabaseAdmin()
-    .from("org_email_allowlist")
-    .select("email, role")
-    .in("role", ["owner", "admin"]);
-  return (data ?? []).map((r) => r.email);
+export const OPERATOR_ROLES = ["owner", "admin"] as const;
+
+export type AllowlistRow = { email: string; role: string; org_id: string };
+
+/** Pure: the operator addresses for `orgId` out of a set of allowlist rows.
+ *  Filters on org AND role, dedupes case-insensitively, keeps first spelling. */
+export function selectOperatorRecipients(rows: readonly AllowlistRow[], orgId: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of rows) {
+    if (r.org_id !== orgId) continue;
+    if (!(OPERATOR_ROLES as readonly string[]).includes(r.role)) continue;
+    const key = r.email.trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(r.email.trim());
+  }
+  return out;
 }
 
-export async function sendOperatorEmail(subject: string, html: string): Promise<boolean> {
+export async function getOperatorEmails(orgId: string): Promise<string[]> {
+  if (!orgId) throw new Error("getOperatorEmails: orgId is required — operator rosters are per-org");
+  const { data } = await getSupabaseAdmin()
+    .from("org_email_allowlist")
+    .select("email, role, org_id")
+    .eq("org_id", orgId)
+    .in("role", [...OPERATOR_ROLES]);
+  // The query is already fenced; the pure filter is the belt to that brace.
+  return selectOperatorRecipients((data ?? []) as AllowlistRow[], orgId);
+}
+
+/** One message to every operator of `orgId`. */
+export async function sendOperatorEmail(orgId: string, subject: string, html: string): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
     console.error("sendOperatorEmail: RESEND_API_KEY not set");
     return false;
   }
-  const to = await getOperatorEmails();
+  const to = await getOperatorEmails(orgId);
   if (to.length === 0) return false;
   return sendTo(key, to, subject, html);
 }
 
 // Single-recipient send — used when the body is personalised per operator
-// (e.g. the assignee-scoped Monday digest).
+// (e.g. the assignee-scoped Monday digest) or addressed to a specific user
+// (notifications). The caller is responsible for having resolved `to` inside
+// the org whose data the body carries.
 export async function sendOperatorEmailTo(to: string, subject: string, html: string): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key) {

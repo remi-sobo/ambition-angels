@@ -69,24 +69,12 @@ const GLOBAL_ALLOW = new Set([
 ]);
 
 // Audited exceptions: `${relPath}::${table}` → reason. Each must be justified.
-const EXCEPTIONS = new Map<string, string>([
-  // Cron routes iterate rows that each carry their own org_id and act per row
-  // (the write stamps that row's org). These reads are not org-filtered
-  // because they are the enumeration step itself; everything downstream of
-  // them is scoped to the enumerated row's org.
-  ["app/api/cron/stewardship-milestones/route.ts::gifts",
-    "anniversary/second-gift enumeration across orgs; each task is created with the gift's own org_id"],
-  ["app/api/cron/stewardship-milestones/route.ts::constituents",
-    "by-id lookups already fenced with .eq(org_id, g.org_id) where g is the enumerated gift; the remaining one takes org from the row"],
-  ["app/api/cron/meet-reminders/route.ts::bookings",
-    "sends to the booking's own attendee; host identity resolved per row from bookings.org_id; flag update is by the row's id"],
-  ["app/api/cron/journeys/route.ts::journey_steps",
-    "child rows keyed by journey_id of a journey that was itself selected per org"],
-  ["app/api/cron/journeys/route.ts::journey_enrollments",
-    "due-list rows carry org_id and are filtered to active journeys; updates are by the id of a row from that list"],
-  ["lib/notifications/notify.ts::notifications",
-    "emailed_at stamp on the row this function just inserted, by its id"],
-]);
+// Deliberately EMPTY. Two cross-tenant leaks of the "enumerate across orgs,
+// act per row" shape shipped while this list held six entries for exactly
+// that pattern; the pattern was replaced with per-org iteration instead. An
+// exception is the mechanism by which the next leak gets in — add one only
+// with a reason a reviewer would accept in an incident report.
+const EXCEPTIONS = new Map<string, string>([]);
 
 /** Recursively collect *.ts / *.tsx files under a directory. */
 function walk(dir: string): string[] {

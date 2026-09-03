@@ -24,6 +24,11 @@ begin
   return new;
 end;
 $$;
+-- `create or replace` wipes the function's SET clause, so re-pin the
+-- search_path that pin_function_search_path.sql put on the production copy
+-- (Supabase lint 0011); without this line, applying this file would silently
+-- un-harden every set_updated_at trigger in the database.
+alter function public.set_updated_at() set search_path = public, extensions, pg_temp;
 
 create table if not exists fr_plan_strategies (
   id uuid primary key default gen_random_uuid(),

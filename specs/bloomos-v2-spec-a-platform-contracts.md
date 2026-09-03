@@ -117,7 +117,9 @@ Each stage is one PR. A1's SQL is applied by Remi in the dashboard before A2 ope
 
 ## Failure modes
 
-**The dedup index fails to create** because duplicates already exist. Expected. A1 reports them before the migration rather than after.
+**The dedup index fails to create** because duplicates already exist. Expected. A1 reports them before the migration rather than after. *(A1 outcome: one true `grant_requirements` pair, resolved by hand before apply; the `compliance_items` collision was two real obligations, so that index shipped partial — see the next mode.)*
+
+**Custom compliance items have no database-level dedup at all.** The A1 data showed two genuinely different `kind='custom'` items sharing `(org, jurisdiction, due_date)` ("RRF-1 CA DOJ" and "CA State Franchise Tax Report"), so the compliance dedup index excludes `kind='custom'` — the right call, approved by Remi. The consequence is stated plainly rather than treated as solved: for custom items the only dedup is `upsert_obligation()` keying on `title`, **and title is a weak key because titles get edited**. An importer that re-runs after someone renames "RRF-1 CA DOJ" to "CA RRF-1" will create a second obligation and nothing in the database will stop it. A3 must document this in the RPC itself; if custom-item duplication shows up in practice, the fix is a stable `dedup_key` column on `compliance_items` (additive), not a wider index.
 
 **`upsert_obligation()` gets bypassed.** The likeliest real failure, since the existing 20 write sites keep working by design. Mitigation: A3 converts the automation paths specifically (`cron/stewardship-milestones`, `grants/[id]/seed-tasks`, `reed/suggestions/[id]`, `meetings/[id]/suggestions`) since those are the ones that create duplicates. Human-created tasks may keep the direct path.
 
@@ -127,11 +129,11 @@ Each stage is one PR. A1's SQL is applied by Remi in the dashboard before A2 ope
 
 **`connection_candidates` gets added to the view later by someone who reads the column list and assumes it belongs.** Mitigated by the comment in the view definition and the ledger note.
 
-## Open decisions
+## Open decisions — all resolved at A1 (2026-09-03)
 
-1. **Duplicate `monthly_donors`.** Two rows, different departments. Which survives, or do both become distinct keys? Blocks A1.
-2. **`origin_path` placement.** New column on `ops_tasks`, or reuse `linked_label`. Recommend the new column; `linked_label` means something else.
-3. **Waiver permission key.** `reports.approve` does not exist yet in `role_permissions`. Recommend adding it in A1 rather than overloading `org.manage`.
+1. **Duplicate `monthly_donors` — closed, no cleanup.** The A1 check showed the two rows live in different orgs (YGB manual, AA computed); a full scan found zero `(org_id, metric_key)` collisions. The recon's flag was org-blind and this spec copied it — the error was upstream. The index created cleanly in the A1 migration.
+2. **`origin_path` — new column**, shipped in A1 on `ops_tasks`. `linked_label` keeps its own meaning.
+3. **Waiver permission key — `reports.approve`, owner + admin only, and it stays that way.** Do not widen to finance: Contract 7 gates two different risk levels with one rule — waiving a conflicted figure into a funder report is an executive decision, while closing a month with an unresolved reconciliation item is bookkeeping. **Follow-up (not now):** if period close needs to happen without an admin present, that is a separate `finance.close` permission with its own gating rule, not a wider `reports.approve`.
 
 ---
 

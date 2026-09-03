@@ -89,7 +89,15 @@ Below 1024px the sidebar becomes a drawer. Bottom bar is Today, Work, plus, Prog
 
 **B1 — the nav model.** Rewrite `NAV_SECTIONS` to seven destinations with one tab row. Implement first-entitled-tab resolution and zero-tab hiding. Fix the two V1 gating quirks: Career Library moves off `aa.quiz` to its own content key, Volunteers stops being gated on `modules.fundraising`. No rendering changes yet; the model is testable on its own. Commit: `spec-b: seven-destination nav model with entitlement resolution`.
 
-**B2 — the redirect map.** All 42 Stage 0 rows as 308s, plus the `actionQueue.ts` source-to-route table. Ships before any screen moves. Commit: `spec-b: permanent redirects for all V1 routes`.
+> **As built (accepted, Remi, 2026-09-03).** The kickoff's "rewrite `NAV_SECTIONS`" and "no rendering changes" cannot both hold while V1's sidebar renders that constant directly, so the V2 model landed as **parallel exports** (`V2_DESTINATIONS`, `V2_INBOX`, `resolveV2Destination()`, `resolveV2Nav()`) alongside an untouched `NAV_SECTIONS`. This preserves DoD 8 and lets B3 swap the consumer rather than the model. The obligation that comes with it is the named cleanup below.
+
+### Named cleanup: delete `NAV_SECTIONS` when V1 retires
+
+The parallel model means the project carries **two navigation models** from B1 until the last destination spec cuts its screens over. That state is temporary by contract: when V1 retires, `NAV_SECTIONS` (and `visibleSections()`, and every V1-only consumer) must be **deleted**, not left as a second source of truth — two live nav models drift. This cleanup is owed at the end of the destination specs and is not done until the delete lands.
+
+The two B1 gating fixes (Career Library → `modules.content`, Volunteers → `modules.program`) were applied to the doomed model **on purpose**: V1 is what users see until B3+, so its gates had to be corrected in place even though the model they live in is scheduled for deletion.
+
+**B2 — the redirect map.** All 42 Stage 0 rows as 308s, plus the two deep-link choke points: `lib/admin/actionQueue.ts`'s source-to-route table and `lib/admin/entities.ts`'s entity-URL resolver. Ships before any screen moves. Starts only after #453 and #458 merge and #458 retargets to `main`, so the redirect work is not a third-level stack. Full kickoff in the appendix. Commit: `spec-b: permanent redirects for all V1 routes`.
 
 **B3 — the shell.** Sidebar, single tab row, page header, Reed launcher, the `(v2)` route group and flag. V1 pages render inside it. Commit: `spec-b: V2 shell with V1 pages hosted`.
 
@@ -125,8 +133,8 @@ Below 1024px the sidebar becomes a drawer. Bottom bar is Today, Work, plus, Prog
 ## Open decisions
 
 1. **Flag granularity.** Per-user or per-org. Recommend per-user so you and Shannon can run V2 while external tenants stay on V1.
-2. **The Career Library content key.** `aa.quiz` is wrong. Recommend a new `modules.content` key seeded for AA only, which also gives Programs → Content a proper gate for future tenants.
-3. **Unentitled-route behavior.** Redirect to Home, or a permission-limited screen per Stage 5. Recommend the Stage 5 screen for routes a colleague might legitimately link, Home for everything else.
+2. **The Career Library content key.** ~~`aa.quiz` is wrong. Recommend a new `modules.content` key seeded for AA only, which also gives Programs → Content a proper gate for future tenants.~~ **RESOLVED (B1, accepted 2026-09-03):** `modules.content` shipped in `FEATURE_KEYS`, seeded for AA by `supabase/migrations/seed_aa_modules_content.sql`.
+3. **Unentitled-route behavior.** ~~Redirect to Home, or a permission-limited screen per Stage 5. Recommend the Stage 5 screen for routes a colleague might legitimately link, Home for everything else.~~ **RESOLVED (B2 kickoff, Remi, 2026-09-03):** the Stage 5 permission-limited screen for routes a colleague might legitimately link, Home for everything else. B2 must state which routes went in which bucket and why.
 
 ---
 
@@ -147,3 +155,29 @@ Below 1024px the sidebar becomes a drawer. Bottom bar is Today, Work, plus, Prog
 > Add tests asserting the landing rule and the zero-tab rule against fixture entitlement sets, including a fixture with a destination resolving to zero tabs even though no live org hits that case today.
 >
 > One PR. Do not touch `app/admin/` rendering, do not add redirects, do not start B2.
+
+## Appendix — B2 kickoff prompt (Remi, 2026-09-03; starts after #453 and #458 are merged)
+
+> Spec B, stage B2: the redirect map. Read Spec B's architecture section, `docs/v2-preservation-ledger.md`, and the Stage 0 route map in the design bundle.
+>
+> Every V1 route gets a server-side 308 permanent redirect to its V2 home. Client-side rewrites are insufficient: `notifications.url` holds relative `/admin/...` paths written by `lib/notifications/notify.ts`, those rows persist forever, and operator emails already sitting in inboxes carry V1 paths. Redirects ship before any destination cuts over and are never removed.
+>
+> Scope:
+>
+> 1. All 42 rows of the Stage 0 map, in `next.config.mjs` or middleware, whichever the codebase already prefers. Preserve query parameters, including `?student=` and equivalents.
+> 2. `lib/admin/actionQueue.ts`'s source-to-route table, which is the single choke point for every obligation deep link. Its nine entries move all queue links at once. Update it here rather than in each destination spec.
+> 3. `lib/admin/entities.ts`'s entity-URL resolver, the second choke point, which serves `ops_tasks.linked_entity_*` and `notifications.linked_entity_*`.
+>
+> Two behaviors to get right:
+>
+> - A route the current org is not entitled to must not 404 and must not redirect into a destination that is hidden for them. Per Spec B open decision 3: render the Stage 5 permission-limited screen for routes a colleague might legitimately link, and redirect to Home otherwise. State which routes you put in which bucket and why.
+> - No redirect may point at a V2 screen that does not exist yet. Until a destination cuts over in its own spec, its V1 route redirects to the V2 shell hosting the V1 page, not to a dead path.
+>
+> Verify before opening the PR:
+>
+> 1. An automated crawl of all 42 source routes confirming each returns 308 and terminates, with no loops. This is a test, not a manual pass.
+> 2. Take a real `notifications.url` value written in June and confirm it resolves to the correct V2 destination.
+> 3. Take an `ops_tasks` row with a non-null `linked_entity_type` (24 exist: 12 `constituent`, 9 `grant`, 3 `partner`) and confirm its resolved URL still opens the right record.
+> 4. Run the crawl as each of the four orgs and report any route whose behavior differs, since entitlement changes what a redirect target resolves to.
+>
+> One PR. Do not touch the shell, do not start B3.

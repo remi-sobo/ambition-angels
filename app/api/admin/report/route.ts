@@ -230,7 +230,7 @@ export async function POST(req: NextRequest) {
     }
     <p style="margin:16px 0 0;"><a href="${projectLink}" style="display:inline-block;background:#E8500A;color:#fff;text-decoration:none;font-weight:600;font-size:13px;padding:8px 16px;border-radius:999px;">Open BloomOS Upgrades →</a></p>
   `;
-  await sendOperatorEmail(`${meta.emoji} BloomOS report: ${summaryLine}`.slice(0, 120), operatorEmailShell("New BloomOS report", body)).catch(
+  await sendOperatorEmail(ctx.orgId, `${meta.emoji} BloomOS report: ${summaryLine}`.slice(0, 120), operatorEmailShell("New BloomOS report", body)).catch(
     (e) => console.error("[report] email failed:", e)
   );
 

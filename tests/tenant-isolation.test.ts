@@ -104,6 +104,11 @@ function serviceRoleFiles(): string[] {
     join(REPO, "app/admin"),
     join(REPO, "app/api/admin"),
     join(REPO, "app/api/cron"),
+    // External surfaces: a secret or bearer token, no session, service-role
+    // reads. These leave the building, so they are scanned too.
+    join(REPO, "app/api/mcp"),
+    join(REPO, "app/api/hub"),
+    join(REPO, "app/api/ingest"),
     join(REPO, "lib/admin"),
     join(REPO, "lib/email"),
     join(REPO, "lib/notifications"),

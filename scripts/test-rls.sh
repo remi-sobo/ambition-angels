@@ -215,6 +215,7 @@ ordered=(
   create_work_blocks_and_calendar_prefs.sql
   create_program_partners.sql
   spec_a_platform_contracts.sql
+  seed_aa_modules_content.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

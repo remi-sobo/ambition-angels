@@ -24,7 +24,9 @@ import { TYPE } from "@/lib/admin/typeScale";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
-const ICON_NODES: Record<IconName, ReactNode> = {
+// Exported for the V2 shell (B3): one icon set for both chromes, deleted
+// together with NAV_SECTIONS when V1 retires. No rendered change here.
+export const ICON_NODES: Record<IconName, ReactNode> = {
   overview: (
     <>
       <path d="M3.5 11 12 4l8.5 7" />
@@ -232,7 +234,7 @@ const ICON_NODES: Record<IconName, ReactNode> = {
   ),
 };
 
-function Icon({ name, className }: { name: IconName; className?: string }) {
+export function Icon({ name, className }: { name: IconName; className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"

@@ -221,6 +221,7 @@ ordered=(
   spec_a_v_obligations.sql
   spec_a_obligation_rpcs.sql
   spec_a_seed_contract2_metrics.sql
+  spec_b_v2_shell_flag.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

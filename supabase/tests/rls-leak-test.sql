@@ -1434,6 +1434,121 @@ do $$ begin
   end if;
 end $$;
 
+-- ════ Spec A A3: obligation RPCs (dispatch + permission fences) ═══════════
+-- SECURITY DEFINER functions bypass RLS, so the permission checks INSIDE
+-- them are the only fence: a member without the domain's .write must be
+-- refused, cross-org calls must be refused, and the service path
+-- (auth.uid() IS NULL — no EXECUTE for anon) must work.
+reset role;
+reset request.jwt.claim.sub;
+
+-- Service path (uid null): upsert an AA obligation. Also the fixture the
+-- cross-org refusal below targets.
+create temp table if not exists a3_fixture (task_id uuid, aa_org uuid);
+do $$
+declare aa uuid; r jsonb;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  r := public.upsert_obligation(aa, 'ops_task', 'a3-svc obligation', 'importer', current_date + 14);
+  if (r->>'deduped')::boolean then raise exception 'a3: service upsert reported deduped on first insert'; end if;
+  -- Stash the id where the tenant-two block can read it: RLS (correctly)
+  -- hides the AA row itself from that session.
+  insert into a3_fixture values ((r->>'id')::uuid, aa);
+end $$;
+grant select on a3_fixture to authenticated;
+
+-- AA owner: create → dedup → snooze (hides from the view) → resolve (done).
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare aa uuid; r jsonb; v_task uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  r := public.upsert_obligation(aa, 'ops_task', 'a3-owner obligation', 'reed', current_date + 7);
+  v_task := (r->>'id')::uuid;
+  r := public.upsert_obligation(aa, 'ops_task', 'a3-owner obligation', 'reed', current_date + 7);
+  if not (r->>'deduped')::boolean or (r->>'id')::uuid <> v_task then
+    raise exception 'a3: ops_task upsert did not dedup on (org, title, due)';
+  end if;
+  r := public.snooze_obligation('ops_task', v_task, current_date + 3);
+  if exists (select 1 from v_obligations where id = 'ops_task:' || v_task) then
+    raise exception 'a3: snoozed obligation still visible in v_obligations';
+  end if;
+  r := public.resolve_obligation('ops_task', v_task);
+  if (select status from public.ops_tasks where id = v_task) <> 'done'
+     or (select completed_at from public.ops_tasks where id = v_task) is null then
+    raise exception 'a3: resolve_obligation did not complete the ops task';
+  end if;
+  r := public.resolve_obligation('ops_task', v_task);
+  if not (r->>'already_resolved')::boolean then
+    raise exception 'a3: double-resolve was not a saying-so no-op';
+  end if;
+end $$;
+
+-- AA owner: compliance filing rolls the calendar and leaves a history row.
+do $$
+declare aa uuid; r jsonb; v_ci uuid; v_due date := current_date + 30;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  r := public.upsert_obligation(aa, 'compliance_item', 'a3 filing', 'importer',
+                                v_due, null, null, null, null, null, 'custom', 'CA', 'annual');
+  v_ci := (r->>'id')::uuid;
+  r := public.upsert_obligation(aa, 'compliance_item', 'a3 filing', 'importer',
+                                v_due, null, null, null, null, null, 'custom', 'CA', 'annual');
+  if not (r->>'deduped')::boolean then
+    raise exception 'a3: custom compliance upsert did not dedup on title-inclusive key';
+  end if;
+  r := public.resolve_obligation('compliance_item', v_ci);
+  if (select count(*) from public.compliance_filings
+      where item_id = v_ci and period_due_date = v_due) <> 1 then
+    raise exception 'a3: filing left no history row';
+  end if;
+  if (select due_date from public.compliance_items where id = v_ci) <> v_due + interval '1 year'
+     or (select status from public.compliance_items where id = v_ci) <> 'upcoming' then
+    raise exception 'a3: annual recur did not roll due_date forward and reset status';
+  end if;
+end $$;
+
+-- Tenant-two owner: refused on AA rows and refused writing into AA.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare aa uuid; v_task uuid;
+begin
+  -- Both ids come from the fixture: RLS (correctly) hides AA's org row and
+  -- task row from this session entirely.
+  select task_id, aa_org into v_task, aa from a3_fixture;
+  begin
+    perform public.resolve_obligation('ops_task', v_task);
+    raise exception 'LEAK: tenant-two resolved an AA obligation';
+  exception when insufficient_privilege then null; -- expected
+  end;
+  begin
+    perform public.snooze_obligation('ops_task', v_task, current_date + 5);
+    raise exception 'LEAK: tenant-two snoozed an AA obligation';
+  exception when insufficient_privilege then null; -- expected
+  end;
+  begin
+    perform public.upsert_obligation(aa, 'ops_task', 'a3 intruder', 'reed', current_date + 1);
+    raise exception 'LEAK: tenant-two wrote an obligation into AA';
+  exception when insufficient_privilege then null; -- expected
+  end;
+end $$;
+
+-- Unresolvable / unsnoozable arms fail loudly, not silently.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$ begin
+  begin
+    perform public.resolve_obligation('metric_stale', gen_random_uuid());
+    raise exception 'a3: metric_stale was resolvable through resolve_obligation';
+  exception when raise_exception then null; -- expected: its own surface resolves it
+  end;
+  begin
+    perform public.snooze_obligation('acknowledgment', gen_random_uuid(), current_date + 5);
+    raise exception 'a3: acknowledgment was snoozable';
+  exception when raise_exception then null; -- expected
+  end;
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

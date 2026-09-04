@@ -40,7 +40,22 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Reed reads the spine (spec #6, Phase 1) — the wiring invariants.
 
-const sb = {} as SupabaseClient;
+// get_needs_you_queue's participant fence reads v_obligations through the
+// session client; this stub is configurable per test (rows = the flagged ids
+// the DB would return, error = a failed read → the fence must fail closed).
+const obligationsFlagged: { rows: { id: string }[]; error: unknown } = { rows: [], error: null };
+const sb = {
+  from: (table: string) => ({
+    select: () => ({
+      eq: () => ({
+        eq: () =>
+          obligationsFlagged.error
+            ? Promise.resolve({ data: null, error: obligationsFlagged.error })
+            : Promise.resolve({ data: table === "v_obligations" ? obligationsFlagged.rows : [], error: null }),
+      }),
+    }),
+  }),
+} as unknown as SupabaseClient;
 const tool = (name: string) => {
   const t = buildReedTools(sb, "org-1", "remi@test").find((x) => x.name === name);
   if (!t) throw new Error(`tool ${name} not registered`);
@@ -88,6 +103,8 @@ const CATALOG = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  obligationsFlagged.rows = [];
+  obligationsFlagged.error = null;
   vi.mocked(hasPermission).mockResolvedValue(true);
   vi.mocked(getStatusLine).mockResolvedValue(STATUS);
   vi.mocked(getOutlook).mockResolvedValue(OUTLOOK as never);
@@ -130,6 +147,46 @@ describe("get_needs_you_queue", () => {
     expect(out.returned).toBe(2);
     expect(out.items).toEqual(QUEUE.slice(0, 2));
     expect(out.note).toContain("top 2 of 3");
+  });
+
+  // Contract 3 participant fence (specs/spec-a-a2-participant-obligations-
+  // amendment.md): no row the DB flags contains_participant_data reaches the
+  // model, and a failed flag read fails CLOSED, never open.
+  const APP_ROW = {
+    source: "application_pending", sourceId: "a1", title: "Application: Jamie Doe",
+    module: "program", dueDate: null, priority: "medium", status: "new",
+    ownerRef: null, ownerId: null, entity: null, href: "/admin/intake",
+  };
+  const SESSION_ROW = {
+    source: "session_unrecorded", sourceId: "s1", title: "Record attendance: Crew A",
+    module: "program", dueDate: "2000-01-05", priority: "medium", status: "scheduled",
+    ownerRef: null, ownerId: null, entity: null, href: "/admin/cohorts",
+  };
+
+  test("participant fence: rows flagged contains_participant_data never reach the model", async () => {
+    vi.mocked(getActionQueue).mockResolvedValue([...QUEUE, APP_ROW, SESSION_ROW] as never);
+    obligationsFlagged.rows = [
+      { id: "application_pending:a1" },
+      { id: "session_unrecorded:s1" },
+    ];
+    const out = (await tool("get_needs_you_queue").run({})) as {
+      total: number; items: { source: string }[];
+    };
+    expect(out.total).toBe(QUEUE.length);
+    expect(out.items).toEqual(QUEUE);
+    expect(out.items.some((i) => i.source === "application_pending")).toBe(false);
+    expect(out.items.some((i) => i.source === "session_unrecorded")).toBe(false);
+  });
+
+  test("participant fence fails CLOSED when the flag read errors (view missing, RLS denial)", async () => {
+    vi.mocked(getActionQueue).mockResolvedValue([...QUEUE, APP_ROW, SESSION_ROW] as never);
+    obligationsFlagged.error = new Error("relation v_obligations does not exist");
+    const out = (await tool("get_needs_you_queue").run({})) as {
+      total: number; items: { source: string }[];
+    };
+    // Both participant-sourced arms drop wholesale; everything else survives.
+    expect(out.total).toBe(QUEUE.length);
+    expect(out.items).toEqual(QUEUE);
   });
 });
 

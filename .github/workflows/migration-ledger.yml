@@ -1,0 +1,57 @@
+# Migration-ledger drift guard — runs on EVERY pull request.
+#
+# Production records what was applied in supabase_migrations.schema_migrations;
+# the repo records what can be rebuilt in supabase/migrations/. Nothing compared
+# them, and they drifted both ways while CI stayed green: 50 org_id default
+# drops applied and never committed (unreconciled for seven weeks), and three
+# migrations committed and never applied (which broke three shipped features).
+# See docs/schema-drift-audit.md and docs/unapplied-migrations-triage.md.
+#
+# On a pull_request, not a schedule: a nightly job tells you after the fact,
+# and the whole point is to catch the drift on the change that introduces it.
+#
+# Required repository secret:
+#   MIGRATION_LEDGER_DATABASE_URL — connection string for the read-only role in
+#     supabase/roles/migration_ledger_reader.sql. Scoped to
+#     supabase_migrations; it can read no application data. Do NOT point this
+#     at SUPABASE_DB_URL.
+#
+# Secrets are unavailable to pull requests from forks, where this job fails
+# with the "secret is not set" message. This repo takes no fork PRs today; if
+# that changes, gate the job on `github.event.pull_request.head.repo.fork`.
+
+name: Migration ledger
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: migration-ledger-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Postgres client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Compare ledger with supabase/migrations/
+        env:
+          MIGRATION_LEDGER_DATABASE_URL: ${{ secrets.MIGRATION_LEDGER_DATABASE_URL }}
+          # The script is ESM TypeScript run by Node's native type stripping;
+          # package.json has no "type": "module" (Next owns it), so silence the
+          # one guess-the-module-kind warning rather than all warnings.
+          NODE_OPTIONS: --disable-warning=MODULE_TYPELESS_PACKAGE_JSON
+        run: npm run check:ledger

@@ -194,7 +194,15 @@ export function kpiHealth(current: number, target: number | null): string {
   return "behind";
 }
 
-export type RefreshResult = { updated: number; results: { key: string; value: number }[] };
+export type RefreshResult = {
+  updated: number;
+  results: { key: string; value: number }[];
+  /** Auto KPIs whose metric_key has no registered compute — Contract 2 (A4):
+   *  a definition marked computed without a resolver is a FINDING, never a
+   *  silent skip. Surfaced here and error-logged; the fix is a resolver (or
+   *  flipping the KPI to source='manual'), never ignoring it. */
+  unresolved: string[];
+};
 
 /**
  * Recompute every auto KPI for one org and write current + last_updated_at +
@@ -214,9 +222,17 @@ export async function refreshOrgPlanMetrics(
     .not("metric_key", "is", null);
 
   const results: { key: string; value: number }[] = [];
+  const unresolved: string[] = [];
   for (const k of (kpis ?? []) as { id: string; metric_key: string; target: number | null; metric_id: string | null }[]) {
     const fn = PLAN_METRICS[k.metric_key];
-    if (!fn) continue;
+    if (!fn) {
+      unresolved.push(k.metric_key);
+      console.error(
+        `[plan-metrics] auto KPI "${k.metric_key}" has NO resolver — its value cannot refresh. ` +
+          "Register one in PLAN_METRICS or set the KPI to source='manual'.",
+      );
+      continue;
+    }
     const value = await fn(supabase, orgId);
     if (value === null) continue;
     const { error } = await supabase
@@ -251,7 +267,7 @@ export async function refreshOrgPlanMetrics(
       }
     }
   }
-  return { updated: results.length, results };
+  return { updated: results.length, results, unresolved };
 }
 
 /**

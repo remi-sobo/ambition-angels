@@ -219,6 +219,7 @@ ordered=(
   spec_a_platform_contracts.sql
   seed_aa_modules_content.sql
   spec_a_v_obligations.sql
+  spec_a_obligation_rpcs.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

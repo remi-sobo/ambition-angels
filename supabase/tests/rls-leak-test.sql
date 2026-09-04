@@ -1549,6 +1549,36 @@ do $$ begin
   end;
 end $$;
 
+-- ── Spec A / A6: the Contract 2 seed landed as specified ────────────────────
+-- spec_a_seed_contract2_metrics.sql runs against this scratch DB too (slug
+-- resolution finds the fixture's ambition-angels org), so assert the shape:
+-- exactly the eight keys, the two deliberate conflicts, and no computed row
+-- without a source_key (the A4 "silent no-op" it must never introduce).
+reset role;
+reset request.jwt.claim.sub;
+do $$
+declare aa uuid; n int;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select count(*) into n from public.metric_definitions
+    where org_id = aa and metric_key in
+      ('reached_all_time','active_on_platform','enrolled_in_cohort','finish_30_days',
+       'second_track_rate','attendance_rate','cost_per_teen','active_guides');
+  if n <> 8 then
+    raise exception 'a6: expected 8 seeded Contract 2 metrics, found %', n;
+  end if;
+  select count(*) into n from public.metric_definitions
+    where org_id = aa and confirmed_state = 'conflict'
+      and metric_key in ('finish_30_days','second_track_rate');
+  if n <> 2 then
+    raise exception 'a6: finish_30_days + second_track_rate must seed as conflict, found %', n;
+  end if;
+  if exists (select 1 from public.metric_definitions
+             where org_id = aa and source_kind = 'computed' and source_key is null) then
+    raise exception 'a6: a computed definition was seeded without a source_key';
+  end if;
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

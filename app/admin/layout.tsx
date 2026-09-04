@@ -12,10 +12,15 @@ import { ReedLauncherProvider } from "./_components/reed/ReedLauncherProvider";
 import AdminPWA from "./_components/AdminPWA";
 import { AdminUserProvider } from "./_components/AdminUserContext";
 import { AdminBadgesProvider } from "./_components/AdminBadges";
+import V2Sidebar from "./_components/v2/V2Sidebar";
+import V2TabZone from "./_components/v2/V2TabZone";
+import V2ReedEdge from "./_components/v2/V2ReedEdge";
 import { getAdminUser, getOrgContext, getUserOrgs } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
 import { getNavTermLabels } from "@/lib/admin/terminology";
+import { getV2ShellEnabled } from "@/lib/admin/v2shell";
+import { resolveShellNav } from "@/lib/admin/v2shellNav";
 
 export const metadata: Metadata = {
   title: {
@@ -97,6 +102,53 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // The user's orgs feed the sidebar-footer switcher (C1) — it only renders
   // with 2+ memberships, so single-org users never see it.
   const orgs = authed ? await getUserOrgs() : [];
+
+  // ── The V2 shell (Spec B, B3) ─────────────────────────────────────────
+  // Per-user flag (profiles.v2_shell, open decision 1). With the flag OFF —
+  // the default, and always pre-auth — the V1 chrome below renders exactly
+  // as before (DoD 8: byte-for-byte). With it ON, the same routes render
+  // inside the V2 chrome: seven-destination sidebar (B1 model × B2 live
+  // seats), the tab slot (V1 secondary nav until a destination cuts over),
+  // and Reed as a right-edge tab. V1 pages are what render inside — no
+  // destination screens exist yet.
+  if (authed && (await getV2ShellEnabled())) {
+    const nav = resolveShellNav(features, terms);
+    return (
+      <AdminUserProvider value={{ user, isOwner: ctx?.role === "owner" }}>
+      <AdminBadgesProvider orgId={orgId} enabled={authed}>
+      <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
+        <AdminPWA />
+        <V2Sidebar
+          nav={nav}
+          displayName={displayName}
+          role={ctx?.role ?? null}
+          orgName={ctx?.orgName ?? null}
+          orgs={orgs}
+          activeOrgId={orgId}
+        />
+        <ReedLauncherProvider enabled={reedEnabled}>
+          <RailEntityProvider>
+            {/* 52px right gutter at xl clears the Reed edge tab (spec). The
+                V1 right rail deliberately does NOT mount in the V2 shell —
+                its jobs consolidate into Today + the Reed panel. */}
+            <main
+              className={`admin-main flex-1 min-w-0 overflow-y-auto${reedEnabled ? " xl:pr-[52px]" : ""}`}
+            >
+              <V2TabZone nav={nav} features={features} terms={terms} />
+              {children}
+            </main>
+          </RailEntityProvider>
+          <V2ReedEdge />
+          {/* Phones keep the V1 tab bar until B5 ships the mobile shell. */}
+          <MobileTabBar currentUser={user} reedEnabled={reedEnabled} features={features} />
+        </ReedLauncherProvider>
+        <QuickAddButton currentUser={user} />
+        <GlobalSearch />
+      </div>
+      </AdminBadgesProvider>
+      </AdminUserProvider>
+    );
+  }
 
   // The shell (sidebar + main column) renders on every /admin/* visit,
   // including the unauthed login screen at /admin. Earlier this layout

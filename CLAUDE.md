@@ -12,7 +12,7 @@ npm test           # vitest run (unit tests in tests/*.test.ts)
 npm run qa:visual  # Playwright visual QA (e2e/, auth-gated, run on a real session)
 ```
 
-Tests live in `tests/*.test.ts` (vitest) and run in CI via `.github/workflows/ci.yml` (typecheck + lint + `npm test`). A separate `.github/workflows/rls-test.yml` applies every migration to a throwaway Postgres and runs the cross-role leak assertions in `supabase/tests/rls-leak-test.sql`. `tests/migrations.test.ts` enforces that every `create table` / `create index` is idempotent (`if not exists`). The public site's only standalone test is `tests/availability.test.ts`; the rest cover BloomOS (finance runway, constituent resolution, briefing, stewardship, and more).
+Tests live in `tests/*.test.ts` (vitest) and run in CI via `.github/workflows/ci.yml` (typecheck + lint + `npm test`). A separate `.github/workflows/rls-test.yml` applies every migration to a throwaway Postgres and runs the cross-role leak assertions in `supabase/tests/rls-leak-test.sql`. `.github/workflows/migration-ledger.yml` runs on every PR and diffs production's applied-migration ledger (`supabase_migrations.schema_migrations`, read through a role scoped to that one table) against `supabase/migrations/` in both directions, so DDL applied without a committed file — and a migration committed without being applied — fails the build (`scripts/check-migration-ledger.ts`). `tests/migrations.test.ts` enforces that every `create table` / `create index` is idempotent (`if not exists`). The public site's only standalone test is `tests/availability.test.ts`; the rest cover BloomOS (finance runway, constituent resolution, briefing, stewardship, and more).
 
 ## Stack
 

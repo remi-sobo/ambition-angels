@@ -26,6 +26,43 @@ const nextConfig = {
       // parent/mentor content is now a section there, so old Guide links
       // land on the page that replaced it.
       { source: "/for-adults", destination: "/schools", permanent: true },
+      // ── BloomOS V2 redirect map (Spec B, stage B2) ────────────────────
+      // Permanent (308) V1 → V2 moves for the 1:1 rows of the Stage 0 map
+      // (docs/v2-recon.md §F.1). Every destination is a live host page
+      // rendering the V1 screen behind the same module gate, so nothing
+      // 404s and nothing is lost. Server-side is mandatory: notifications
+      // rows and sent emails carry V1 paths forever. NEVER removed.
+      //
+      // Canonical map + activation states: lib/admin/v2routes.ts.
+      // tests/redirects-v2.test.ts asserts this list and the map agree —
+      // when activating an at-cutover row, edit both.
+      //
+      // uuid-child rows match only uuid-shaped children on purpose, so
+      // named siblings that are NOT moving yet (/admin/staff/reviews,
+      // /admin/meetings/connections, /admin/meetings/booking-page) stay put
+      // without a fragile exclusion list.
+      { source: "/admin/strategic-plan", destination: "/admin/organization/strategy", permanent: true },
+      { source: "/admin/ops", destination: "/admin/work/tasks", permanent: true },
+      { source: "/admin/ops/my-week", destination: "/admin/work/my-week", permanent: true },
+      { source: "/admin/ops/projects/:path*", destination: "/admin/work/projects/:path*", permanent: true },
+      { source: "/admin/meetings", destination: "/admin/work/meetings", permanent: true },
+      { source: "/admin/meetings/:id([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})", destination: "/admin/work/meetings/:id", permanent: true },
+      { source: "/admin/meetings/upcoming/:path*", destination: "/admin/work/meetings/upcoming/:path*", permanent: true },
+      { source: "/admin/staff", destination: "/admin/organization/team", permanent: true },
+      { source: "/admin/staff/:id([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})", destination: "/admin/organization/team/:id", permanent: true },
+      { source: "/admin/documents/:path*", destination: "/admin/work/documents/:path*", permanent: true },
+      { source: "/admin/finance", destination: "/admin/finance/snapshot", permanent: true },
+      { source: "/admin/finance/report", destination: "/admin/finance/reports", permanent: true },
+      { source: "/admin/analytics", destination: "/admin/impact/analytics", permanent: true },
+      { source: "/admin/kpis", destination: "/admin/impact/kpis", permanent: true },
+      { source: "/admin/students/:path*", destination: "/admin/programs/people/:path*", permanent: true },
+      { source: "/admin/intake", destination: "/admin/programs/intake", permanent: true },
+      { source: "/admin/cohorts/:path*", destination: "/admin/programs/cohorts/:path*", permanent: true },
+      { source: "/admin/program", destination: "/admin/programs/overview", permanent: true },
+      { source: "/admin/partners/:path*", destination: "/admin/programs/partners/:path*", permanent: true },
+      { source: "/admin/careers", destination: "/admin/programs/content", permanent: true },
+      { source: "/admin/board/:path*", destination: "/admin/organization/board/:path*", permanent: true },
+      { source: "/admin/compliance/:path*", destination: "/admin/organization/compliance/:path*", permanent: true },
     ];
   },
   async rewrites() {

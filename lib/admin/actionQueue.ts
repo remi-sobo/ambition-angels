@@ -3,6 +3,7 @@ import { cache } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { resolveEntities } from "@/lib/admin/entities";
+import { v2Href } from "@/lib/admin/v2routes";
 import { ACK_LABEL, parseGiftId } from "@/lib/fundraising/ack-tasks";
 
 /**
@@ -75,17 +76,23 @@ export type QueueItem = {
 };
 
 // Where a row leads when it has no (routable) linked entity — each source's
-// own surface, where the item can actually be worked.
+// own surface, where the item can actually be worked. This table is the
+// single choke point for every obligation deep link (Spec B B2): the V1
+// paths below pipe through v2Href(), so each entry lands on its V2 seat the
+// moment lib/admin/v2routes.ts activates that row — no per-destination-spec
+// edits here, ever. Entries whose V2 seat isn't built yet (acknowledgment →
+// Fundraising → Today's "Thank someone", reconciliation → the merged
+// Transactions) keep resolving to their live V1 screens until then.
 const SOURCE_FALLBACK_HREF: Record<ActionItemRow["source"], string> = {
-  ops_task: "/admin/ops",
-  grant_requirement: "/admin/fundraising/grants",
-  compliance_item: "/admin/compliance",
-  acknowledgment: "/admin/fundraising/acknowledgments",
-  reconciliation_item: "/admin/finance/reconcile",
-  document_renewal: "/admin/documents",
-  metric_stale: "/admin/kpis",
-  application_pending: "/admin/intake",
-  session_unrecorded: "/admin/cohorts",
+  ops_task: v2Href("/admin/ops"),
+  grant_requirement: v2Href("/admin/fundraising/grants"),
+  compliance_item: v2Href("/admin/compliance"),
+  acknowledgment: v2Href("/admin/fundraising/acknowledgments"),
+  reconciliation_item: v2Href("/admin/finance/reconcile"),
+  document_renewal: v2Href("/admin/documents"),
+  metric_stale: v2Href("/admin/kpis"),
+  application_pending: v2Href("/admin/intake"),
+  session_unrecorded: v2Href("/admin/cohorts"),
 };
 
 const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };

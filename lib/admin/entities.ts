@@ -3,6 +3,7 @@ import { cache } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
+import { v2Href } from "@/lib/admin/v2routes";
 
 /**
  * Operating Spine — entity resolution (spec #1, Phase 1).
@@ -166,8 +167,14 @@ function warnUnknownType(type: string) {
 }
 
 function buildUrl(pattern: string, id: string | null): string {
-  // A pattern without {id} is a list page and needs no id.
-  return id ? pattern.replace("{id}", id) : pattern.replace(/\/\{id\}$/, "");
+  // A pattern without {id} is a list page and needs no id. The built URL is
+  // translated through the V2 redirect map (Spec B B2): this resolver is the
+  // second deep-link choke point — every ops_tasks.linked_entity_* and
+  // notifications.linked_entity_* link moves to its V2 seat the moment
+  // lib/admin/v2routes.ts activates that row, with the registry's V1
+  // route_patterns left untouched as data.
+  const url = id ? pattern.replace("{id}", id) : pattern.replace(/\/\{id\}$/, "");
+  return v2Href(url);
 }
 
 /**

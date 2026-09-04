@@ -1378,6 +1378,62 @@ begin
 exception when insufficient_privilege then null; -- expected
 end $$;
 
+-- ════ Spec A A2: v_obligations (Contract 3 read) ═════════════════════════
+-- Same construction as v_action_items: security_invoker over the nine
+-- RLS-gated sources. If the invoker option were dropped, tenants would
+-- merge; if an arm forgot the participant flag, the Reed fence would leak.
+reset role;
+reset request.jwt.claim.sub;
+
+do $$ begin
+  if (select coalesce(array_position(reloptions, 'security_invoker=on'), 0)
+      from pg_class where relname = 'v_obligations' and relnamespace = 'public'::regnamespace) = 0 then
+    raise exception 'v_obligations is not security_invoker — tenants would merge';
+  end if;
+end $$;
+
+set role authenticated;
+
+-- AA owner: sees AA's open obligations, nothing of tenant-two's, and the
+-- participant flag is never NULL (every arm sets an explicit literal).
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare t2 uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  if (select count(*) from v_obligations where type = 'ops_task') = 0 then
+    raise exception 'AA owner cannot read AA ops tasks through v_obligations';
+  end if;
+  if (select count(*) from v_obligations where org_id = t2) <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two obligations';
+  end if;
+  if (select count(*) from v_obligations where contains_participant_data is null) <> 0 then
+    raise exception 'v_obligations: contains_participant_data is NULL on some arm — the Reed fence has a hole';
+  end if;
+end $$;
+
+-- Tenant-two owner: only its own obligations, zero AA rows.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from v_obligations where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA obligations through v_obligations';
+  end if;
+  if (select count(*) from v_obligations) = 0 then
+    raise exception 'tenant-two owner cannot read its OWN obligations';
+  end if;
+end $$;
+
+-- Stranger (session, no membership): empty, not an error.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from v_obligations) <> 0 then
+    raise exception 'LEAK: non-member reads obligations';
+  end if;
+end $$;
+
 reset role;
 reset request.jwt.claim.sub;
 

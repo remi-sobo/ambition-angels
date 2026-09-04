@@ -208,7 +208,7 @@ const TARGET_GATES: Record<string, string> = {
 describe("per-org host behavior (gate keys mirror the V1 sections)", () => {
   test("every gate key is declared in each host layout on disk", () => {
     const app = join(__dirname, "..", "app");
-    for (const [target, gate] of Object.entries(TARGET_GATES)) {
+    for (const target of Object.keys(TARGET_GATES)) {
       if (target.startsWith("/admin/finance/")) continue; // inherits finance/layout.tsx
       const layout = join(app, ...target.split("/").filter(Boolean), "layout.tsx");
       expect(existsSync(layout), `missing gate layout for ${target}`).toBe(true);

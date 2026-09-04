@@ -36,6 +36,7 @@ const DISPLAY_BLACK_ALLOWLIST: { file: string; reason: string }[] = [
   { file: "app/admin/_components/rail/RailAgenda.tsx", reason: "rail clock numeral on dark chrome" },
   { file: "app/admin/_components/LoginScreen.tsx", reason: "D5 exemption: marketing-style dark surface" },
   { file: "app/admin/_components/Sidebar.tsx", reason: "brand marks (BloomOS wordmark, collapsed mark)" },
+  { file: "app/admin/_components/v2/V2Sidebar.tsx", reason: "brand marks (BloomOS wordmark + mobile bar title, same voice as the V1 sidebar it replaces)" },
   { file: "app/admin/AnalyticsView.tsx", reason: "display metrics (orange stat numerals)" },
   { file: "app/admin/finance/model/page.tsx", reason: "display metric (model numerals)" },
   { file: "app/admin/finance/_components/ReconcileCard.tsx", reason: "display metric (computed cash)" },

@@ -467,7 +467,34 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
       },
       run: async (input) => {
         const limit = typeof input.limit === "number" ? Math.max(1, Math.min(100, input.limit)) : 40;
-        const queue = await getActionQueue();
+        const raw = await getActionQueue();
+        // Contract 3 participant fence (specs/spec-a-a2-participant-obligations-
+        // amendment.md): rows the database flags contains_participant_data must
+        // never reach the model. The flag lives on v_obligations (the DB is the
+        // source of truth, so an arm added later with the flag set is fenced
+        // without touching this file). If that read fails for any reason, the
+        // fence fails CLOSED by dropping the participant-sourced arms wholesale.
+        let queue = raw;
+        let fenced = false;
+        try {
+          const { data, error } = await sb
+            .from("v_obligations")
+            .select("id")
+            .eq("org_id", orgId)
+            .eq("contains_participant_data", true);
+          if (!error && data) {
+            const blocked = new Set((data as { id: string }[]).map((r) => r.id));
+            queue = raw.filter((it) => !blocked.has(`${it.source}:${it.sourceId}`));
+            fenced = true;
+          }
+        } catch {
+          // fall through to the fail-closed filter below
+        }
+        if (!fenced) {
+          queue = raw.filter(
+            (it) => it.source !== "application_pending" && it.source !== "session_unrecorded",
+          );
+        }
         const today = new Date().toISOString().slice(0, 10);
         const overdueCount = queue.filter((it) => it.dueDate != null && it.dueDate < today).length;
         return {

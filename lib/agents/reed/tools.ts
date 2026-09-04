@@ -1,13 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hasPermission } from "@/lib/admin/permissions";
-import {
-  computeRunway,
-  endOfMonthISO,
-  summarizePledges,
-} from "@/lib/finance/runway";
-import { loadRevenueSchedule, scheduleToRunwayPledges } from "@/lib/finance/schedule";
+import { getFinanceSnapshot } from "@/lib/admin/finance";
+import { getForecast } from "@/lib/admin/overview/sources";
 import type { ReedTool } from "./client";
-import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { loadConstituentDossier, loadMeetingBrief, loadPartnerDossier } from "@/lib/meetings/dossier";
 import { getActionQueue } from "@/lib/admin/actionQueue";
 import { getStatusLine } from "@/lib/admin/statusLine";
@@ -18,7 +13,6 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { DOCUMENTS_BUCKET } from "@/lib/documents/config";
 import { FINANCE_FORMULA_OVERLAY, METRIC_KEY_ALIASES, TOOL_FIELD_GLOSSARY } from "./metricGlossary";
 import { EXTRACTION_DOMAIN, parseExtractionPayload } from "./extraction";
-import { OPEN_STAGE_LIST, isWonStage } from "@/lib/fundraising/stage-sets";
 
 /**
  * Reed's read-only tool set (Phase 4).
@@ -27,16 +21,11 @@ import { OPEN_STAGE_LIST, isWonStage } from "@/lib/fundraising/stage-sets";
  * to the asking user; (2) is internally gated by the matching has_permission, so
  * a user without finance.read gets a clean refusal rather than an empty result;
  * (3) returns REAL query output — Reed narrates these numbers, it never computes
- * them itself. The money formulas are copied verbatim from the locked sources
- * (lib/admin/finance.ts getFinanceSnapshot, lib/admin/overview/sources.ts
- * getForecast) so Reed's numbers match the deterministic dashboards by
- * construction. Those sources hardcode the service-role client, which Reed may
- * never use — hence the deliberate re-implementation on the session client.
- *
- * The forward-runway math is shared, not copied: both this module and the
- * admin snapshot import computeRunway/summarizePledges from lib/finance/runway
- * (a pure, DB-free module), so the three runway tiers can't drift between Reed
- * and the dashboard. If you change a still-copied formula, change it here too.
+ * them itself. Spec A A4 ended the copied-math era: get_finance_snapshot and
+ * get_fundraising_forecast call the CANONICAL loaders (getFinanceSnapshot,
+ * getForecast — the exact computations the Finance dashboard and CEO cockpit
+ * render) instead of carrying verbatim re-implementations that had to be kept
+ * in sync by hand. One formula, one answer; drift is structurally impossible.
  *
  * Spine tools (spec #6) are the deliberate exception to the no-transitive-
  * service-role rule above: get_status_and_outlook calls the canonical
@@ -58,16 +47,6 @@ import { OPEN_STAGE_LIST, isWonStage } from "@/lib/fundraising/stage-sets";
  * that envelope content is data, never instructions.
  */
 
-// Copied from lib/admin/finance.ts (pure; not imported, to keep this module free
-// of any transitive service-role-client import).
-function fiscalYearBounds(year: number, startMonth: number): { start: string; end: string } {
-  if (startMonth === 1) return { start: `${year}-01-01`, end: `${year}-12-31` };
-  const sm = String(startMonth).padStart(2, "0");
-  const lastDay = new Date(year, startMonth - 1, 0).getDate();
-  const em = String(startMonth - 1).padStart(2, "0");
-  return { start: `${year - 1}-${sm}-01`, end: `${year}-${em}-${String(lastDay).padStart(2, "0")}` };
-}
-
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 type Denied = { error: "permission_denied"; message: string };
@@ -76,28 +55,6 @@ const deny = (perm: string): Denied => ({
   message: `The asking user does not have ${perm} access, so this data can't be shown.`,
 });
 
-async function loadFinConfig(sb: SupabaseClient, orgId: string) {
-  const { data } = await sb
-    .from("fin_config")
-    .select(
-      "current_year, fiscal_year_start_month, fundraising_goal, cash_starting_balance, cash_starting_date, cash_reconciled_at, monthly_burn_baseline, forward_horizon_months",
-    )
-    .eq("org_id", orgId)
-    .maybeSingle();
-  return {
-    year: typeof data?.current_year === "number" ? data.current_year : new Date().getFullYear(),
-    startMonth: typeof data?.fiscal_year_start_month === "number" ? data.fiscal_year_start_month : 1,
-    goal: Number(data?.fundraising_goal ?? 0),
-    startBal: Number(data?.cash_starting_balance ?? 0),
-    startDate: (data?.cash_starting_date as string | null) ?? null,
-    reconciledAt: (data?.cash_reconciled_at as string | null) ?? null,
-    baseline:
-      data?.monthly_burn_baseline === null || data?.monthly_burn_baseline === undefined
-        ? null
-        : Number(data.monthly_burn_baseline),
-    horizon: typeof data?.forward_horizon_months === "number" ? data.forward_horizon_months : 3,
-  };
-}
 
 // Document-read size gates (spec #6 Phase 0 confirm #4): the API accepts
 // PDFs to 32 MB / 100 pages, but the binding constraint is Reed's monthly
@@ -173,95 +130,33 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
       input_schema: { type: "object", properties: {}, additionalProperties: false },
       run: async () => {
         if (!(await hasPermission(sb, orgId, "finance.read"))) return deny("finance.read");
-        const cfg = await loadFinConfig(sb, orgId);
-        const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
-
-        const now = new Date();
-        // Org fence: sb is the RLS session client today, but every read is
-        // ALSO scoped to the tool's orgId so a future switch to the
-        // service-role client can't silently widen it.
-        const [txnsRes, cashRes, scheduleRows] = await Promise.all([
-          sb
-            .from("fin_transactions")
-            .select("txn_date, amount, exclude_from_runway")
-            .eq("org_id", orgId)
-            .gte("txn_date", fy.start)
-            .lte("txn_date", fy.end),
-          cfg.startDate
-            ? sb.from("fin_transactions").select("amount").eq("org_id", orgId).gt("txn_date", cfg.startDate)
-            : Promise.resolve({ data: [] as Array<{ amount: number }> }),
-          loadRevenueSchedule(sb, orgId),
-        ]);
-
-        const txns = (txnsRes.data ?? []).map((t) => ({
-          txn_date: t.txn_date as string,
-          amount: Number(t.amount),
-          excluded: Boolean(t.exclude_from_runway),
-        }));
-        const revenueYTD = txns.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
-        const expenseYTD = txns.filter((t) => t.amount < 0).reduce((s, t) => s - t.amount, 0);
-        const cashOnHand = cfg.startBal + (cashRes.data ?? []).reduce((s, r) => s + Number(r.amount), 0);
-
-        // Monthly buckets → trailing 3-active-month burn, netting out
-        // exclude-from-runway one-offs (matches lib/admin/finance.ts).
-        const monthMap = new Map<string, { revenue: number; expense: number; excludedExpense: number }>();
-        for (const t of txns) {
-          const key = t.txn_date.slice(0, 7);
-          const b = monthMap.get(key) ?? { revenue: 0, expense: 0, excludedExpense: 0 };
-          if (t.amount > 0) b.revenue += t.amount;
-          else {
-            b.expense -= t.amount;
-            if (t.excluded) b.excludedExpense -= t.amount;
-          }
-          monthMap.set(key, b);
-        }
-        const active = Array.from(monthMap.values()).filter((b) => b.revenue > 0 || b.expense > 0);
-        const last3 = active.slice(-3);
-        const burn3mo = last3.length > 0 ? last3.reduce((s, b) => s + b.expense - b.excludedExpense, 0) / last3.length : 0;
-
-        // Forward runway — shared engine (lib/finance/runway), so these three
-        // tiers match the Finance dashboard exactly.
+        // Spec A A4: the canonical snapshot IS the answer — same spine-
+        // exception shape as get_status_and_outlook (session-client
+        // permission check first, then the canonical loader, which uses the
+        // service-role client internally and resolves the same session org).
+        const fin = await getFinanceSnapshot();
+        if (fin.orgId !== orgId) return deny("finance.read"); // never serve another org's numbers
+        const cfg = fin.cfg;
         const baselineSource: "config" | "trailing" =
           cfg.baseline != null && cfg.baseline > 0 ? "config" : "trailing";
-        const effectiveBaseline = baselineSource === "config" ? (cfg.baseline as number) : burn3mo;
-        const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-        const mtdSpend = txns
-          .filter((t) => t.amount < 0 && !t.excluded && t.txn_date.slice(0, 7) === thisMonth)
-          .reduce((s, t) => s - t.amount, 0);
-        // Runway pledge list from the canonical schedule: committed at full
-        // value, open pipeline weighted, restricted carved out by summarize.
-        // Matches lib/admin/finance.ts — Reed never reads hs_deals.
-        const { duePledges, projPledges } = summarizePledges(
-          scheduleToRunwayPledges(scheduleRows),
-          endOfMonthISO(now, 0),
-          endOfMonthISO(now, cfg.horizon),
-        );
-        const runway = computeRunway({
-          baseline: effectiveBaseline,
-          baselineSource,
-          bankBalance: cashOnHand,
-          mtdSpend,
-          duePledges,
-          projPledges,
-          horizonMonths: cfg.horizon,
-        });
+        const effectiveBaseline = baselineSource === "config" ? (cfg.baseline as number) : fin.burn3mo;
         const m = (v: number | null) => (v == null ? null : round2(v));
 
         return {
           fiscalYear: cfg.year,
           goal: cfg.goal,
-          cashOnHand: round2(cashOnHand),
-          revenueYTD: round2(revenueYTD),
-          expenseYTD: round2(expenseYTD),
-          netYTD: round2(revenueYTD - expenseYTD),
-          burn3moMonthly: round2(burn3mo),
+          cashOnHand: round2(fin.cashOnHand),
+          revenueYTD: round2(fin.revenueYTD),
+          expenseYTD: round2(fin.expenseYTD),
+          netYTD: round2(fin.netYTD),
+          burn3moMonthly: round2(fin.burn3mo),
           burnBaselineMonthly: round2(effectiveBaseline),
           burnBaselineSource: baselineSource,
-          runwayMonths: m(runway.cash.months),
-          dueRunwayMonths: m(runway.due.months),
-          projectedRunwayMonths: m(runway.projected.months),
+          runwayMonths: m(fin.runway.cash.months),
+          dueRunwayMonths: m(fin.runway.due.months),
+          projectedRunwayMonths: m(fin.runway.projected.months),
           forwardHorizonMonths: cfg.horizon,
-          pctToGoal: cfg.goal > 0 ? round2((revenueYTD / cfg.goal) * 100) : null,
+          pctToGoal: cfg.goal > 0 ? round2((fin.revenueYTD / cfg.goal) * 100) : null,
           cashReconciledAt: cfg.reconciledAt,
           note:
             "runwayMonths is the cash tier (months beyond now). dueRunwayMonths/projectedRunwayMonths add unreceived pledges due by month-end / within the horizon. revenueYTD is bank-reconciled ledger revenue; for pipeline/forecast use get_fundraising_forecast.",
@@ -278,43 +173,19 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
       input_schema: { type: "object", properties: {}, additionalProperties: false },
       run: async () => {
         if (!(await hasPermission(sb, orgId, "fundraising.read"))) return deny("fundraising.read");
-        const cfg = await loadFinConfig(sb, orgId);
-        const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
-
-        // Org fence: sb is the RLS session client today, but both reads are
-        // ALSO scoped to the tool's orgId so a future switch to the
-        // service-role client can't silently widen them.
-        const [giftsRes, oppsRes] = await Promise.all([
-          sb.from("gifts").select("amount").eq("org_id", orgId).gte("gift_date", fy.start).lte("gift_date", fy.end),
-          sb.from("opportunities").select("stage, ask_amount, probability").eq("org_id", orgId).neq("stage", "lost").or(EXCLUDE_PARTNERSHIP_OPPS),
-        ]);
-
-        const raised = (giftsRes.data ?? []).reduce((s, g) => s + Number(g.amount), 0);
-        let weightedOpen = 0;
-        let committedSteward = 0;
-        let openAskCount = 0;
-        for (const o of oppsRes.data ?? []) {
-          const ask = Number(o.ask_amount ?? 0);
-          if (isWonStage(o.stage as string)) {
-            committedSteward += ask;
-          } else if (OPEN_STAGE_LIST.includes(o.stage as string)) {
-            openAskCount += 1;
-            const p = o.probability == null ? 50 : Number(o.probability);
-            weightedOpen += ask * (p / 100);
-          }
-        }
-        const committed = raised + committedSteward;
-        const forecast = committed + weightedOpen;
-        const goal = cfg.goal;
+        // Spec A A4: calls the canonical cockpit forecast (session client,
+        // RLS-scoped to the asking user's org) instead of carrying a verbatim
+        // copy of its math.
+        const f = await getForecast();
         return {
-          goal,
-          raised: round2(raised),
-          committedSteward: round2(committedSteward),
-          committed: round2(committed),
-          weightedOpen: round2(weightedOpen),
-          forecast: round2(forecast),
-          gap: round2(goal - forecast),
-          openAskCount,
+          goal: f.goal,
+          raised: round2(f.raised),
+          committedSteward: round2(f.committedSteward),
+          committed: round2(f.committed),
+          weightedOpen: round2(f.weightedOpen),
+          forecast: round2(f.forecast),
+          gap: round2(f.gap),
+          openAskCount: f.openAskCount,
         };
       },
     },
@@ -535,8 +406,9 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
         "The org's Metric Catalog with freshness — every active metric's key, name, department, definition, " +
         "owner, cadence, latest value + capture date, days since capture, stale flag, and target. Use for " +
         "AUDIT questions: 'which metrics are stale', 'what am I behind on updating', 'which metrics have no " +
-        "owner'. Staleness is decided by the catalog's cadence rules, not by you. Metrics without an owner " +
-        "are findings to report, never omissions.",
+        "owner'. Staleness is decided by the catalog's cadence rules, not by you. Metrics without an owner, " +
+        "and computed metrics with no registered resolver (unresolved: they can never refresh), are findings " +
+        "to report, never omissions.",
       input_schema: { type: "object", properties: {}, additionalProperties: false },
       run: async () => {
         if (!(await hasPermission(sb, orgId, "metrics.read"))) return deny("metrics.read");
@@ -563,11 +435,13 @@ export function buildReedTools(sb: SupabaseClient, orgId: string, createdBy: str
             ? Math.floor((today - new Date(m.latest.captured_on + "T00:00:00Z").getTime()) / 86400000)
             : null,
           stale: m.stale,
+          unresolved: m.unresolved,
         }));
         return {
           count: metrics.length,
           staleCount: metrics.filter((m) => m.stale).length,
           unownedCount: metrics.filter((m) => m.unowned).length,
+          unresolvedCount: metrics.filter((m) => m.unresolved).length,
           inactiveCount: catalog.length - active.length,
           metrics,
         };

@@ -84,20 +84,22 @@ const CATALOG = [
     description: "Months of cash left at the current burn, from the canonical finance snapshot.",
     department: "finance", unit: "months", direction: "up" as const, cadence: "weekly",
     source_kind: "computed" as const, source_key: "cash_runway_months", target: 6, baseline: null,
-    owner_id: "u1", active: true, latest: { value: 4.2, captured_on: "2026-07-10" }, stale: false, history: [],
+    owner_id: "u1", active: true, latest: { value: 4.2, captured_on: "2026-07-10" }, stale: false,
+    unresolved: false, history: [],
   },
   {
     id: "m2", metric_key: "active_teens", name: "Active teens",
     description: "Teens active in the program this term.",
     department: "program", unit: "count", direction: "up" as const, cadence: "monthly",
     source_kind: "manual" as const, source_key: null, target: 500, baseline: null,
-    owner_id: null, active: true, latest: { value: 350, captured_on: "2026-03-01" }, stale: true, history: [],
+    owner_id: null, active: true, latest: { value: 350, captured_on: "2026-03-01" }, stale: true,
+    unresolved: false, history: [],
   },
   {
     id: "m3", metric_key: "retired_metric", name: "Retired",
     description: null, department: null, unit: null, direction: "up" as const, cadence: "monthly",
     source_kind: "manual" as const, source_key: null, target: null, baseline: null,
-    owner_id: null, active: false, latest: null, stale: false, history: [],
+    owner_id: null, active: false, latest: null, stale: false, unresolved: false, history: [],
   },
 ];
 

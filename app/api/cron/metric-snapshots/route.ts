@@ -32,9 +32,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const admin = getSupabaseAdmin();
-  const [planUpdated, unlinkedWritten] = await Promise.all([
+  const [planUpdated, capture] = await Promise.all([
     refreshAllPlanMetrics(admin),
     captureUnlinkedComputedMetrics(admin),
   ]);
-  return NextResponse.json({ ok: true, planUpdated, unlinkedWritten });
+  // unresolved keys are findings (Contract 2, A4): surfaced in the response
+  // (and error-logged by the loaders) so a broken binding shows up in the
+  // cron history, never as a silent skip.
+  return NextResponse.json({
+    ok: true,
+    planUpdated,
+    unlinkedWritten: capture.written,
+    unresolved: capture.unresolved,
+  });
 }

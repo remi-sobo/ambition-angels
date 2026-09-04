@@ -7,6 +7,11 @@ vi.mock("react", async (importOriginal) => {
   const mod = await importOriginal<typeof import("react")>();
   return { ...mod, cache: (mod as { cache?: unknown }).cache ?? (<T,>(fn: T) => fn) };
 });
+// tools.ts imports the canonical finance/forecast loaders (Spec A A4), which
+// reach server-only modules; shim it and mock the loaders whole.
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/admin/finance", () => ({ getFinanceSnapshot: vi.fn() }));
+vi.mock("@/lib/admin/overview/sources", () => ({ getForecast: vi.fn() }));
 
 // The spine loaders and permission check ride along in tools.ts — mock them
 // out (they're covered by tests/reed-spine-tools.test.ts).

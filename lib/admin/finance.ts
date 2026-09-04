@@ -33,18 +33,11 @@ import {
 
 const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/**
- * Fiscal-year bounds. startMonth is 1..12. startMonth=1 (calendar year) →
- * YYYY-01-01..YYYY-12-31. Non-calendar (e.g. start=7) → Jul of (year-1)..Jun of
- * year, matching how US nonprofits name FY YYYY (the year it ends).
- */
-export function fiscalYearBounds(year: number, startMonth: number): { start: string; end: string } {
-  if (startMonth === 1) return { start: `${year}-01-01`, end: `${year}-12-31` };
-  const sm = String(startMonth).padStart(2, "0");
-  const lastDay = new Date(year, startMonth - 1, 0).getDate();
-  const em = String(startMonth - 1).padStart(2, "0");
-  return { start: `${year - 1}-${sm}-01`, end: `${year}-${em}-${String(lastDay).padStart(2, "0")}` };
-}
+// Fiscal-year bounds moved to the pure lib/admin/fiscal.ts (Spec A A4) so
+// Reed's session-side tools can share it without a copied function or a
+// transitive service-role import. Re-exported for existing callers.
+import { fiscalYearBounds } from "@/lib/admin/fiscal";
+export { fiscalYearBounds };
 
 const monthLabel = (yyyymm: string) => MONTH_ABBR[Number(yyyymm.slice(5, 7)) - 1] ?? "";
 

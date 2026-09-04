@@ -30,6 +30,10 @@ export type CatalogMetric = {
   active: boolean;
   latest: { value: number; captured_on: string } | null;
   stale: boolean;
+  /** Computed definition with no registered resolver (or no source_key):
+   *  its value can never refresh. A finding, surfaced everywhere the catalog
+   *  renders (Contract 2, A4) — never a silent no-op. */
+  unresolved: boolean;
   /** Oldest→newest, for trend sparks. */
   history: { captured_on: string; value: number }[];
 };
@@ -77,6 +81,7 @@ export const getMetricCatalog = cache(async (): Promise<CatalogMetric[]> => {
       baseline: d.baseline != null ? Number(d.baseline) : null,
       latest,
       stale: d.active ? isStale(latest?.captured_on ?? null, d.cadence) : false,
+      unresolved: d.source_kind === "computed" && (!d.source_key || !(d.source_key in METRIC_RESOLVERS)),
       history: [...desc].reverse(),
     };
   });
@@ -90,7 +95,14 @@ export const getMetricCatalog = cache(async (): Promise<CatalogMetric[]> => {
  * here rather than double-computed. Service-role client; caller authorizes
  * (the cron route).
  */
-export async function captureUnlinkedComputedMetrics(admin: SupabaseClient): Promise<number> {
+export type CaptureResult = {
+  written: number;
+  /** source_keys marked computed with no registered resolver — findings
+   *  (Contract 2, A4), error-logged and returned, never silently skipped. */
+  unresolved: string[];
+};
+
+export async function captureUnlinkedComputedMetrics(admin: SupabaseClient): Promise<CaptureResult> {
   const [{ data: defs }, { data: linked }] = await Promise.all([
     admin
       .from("metric_definitions")
@@ -104,11 +116,16 @@ export async function captureUnlinkedComputedMetrics(admin: SupabaseClient): Pro
   const today = new Date().toISOString().slice(0, 10);
 
   let written = 0;
+  const unresolved: string[] = [];
   for (const d of (defs ?? []) as { id: string; org_id: string; source_key: string }[]) {
     if (linkedIds.has(d.id)) continue;
     const resolver = METRIC_RESOLVERS[d.source_key];
     if (!resolver) {
-      console.warn(`[metrics] no resolver for source_key "${d.source_key}" — skipping`);
+      unresolved.push(d.source_key);
+      console.error(
+        `[metrics] computed definition "${d.source_key}" has NO resolver — it can never capture. ` +
+          "Register one in METRIC_RESOLVERS or set the definition to source_kind='manual'.",
+      );
       continue;
     }
     const value = await resolver(admin, d.org_id);
@@ -125,5 +142,5 @@ export async function captureUnlinkedComputedMetrics(admin: SupabaseClient): Pro
     if (error) console.error(`[metrics] snapshot upsert failed for ${d.source_key}:`, error.message);
     else written += 1;
   }
-  return written;
+  return { written, unresolved };
 }

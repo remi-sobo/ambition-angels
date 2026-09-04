@@ -19,7 +19,19 @@ sale, no profiling — donor and program data never leave this list.
 | **HubSpot** | CRM of record (read-only mirror into BloomOS) | Fundraising contacts, companies, deals, engagement history | US | SOC 2 (published) |
 | **Google Workspace** | Calendar + Gmail for `/meet` scheduling | Meeting bookings: attendee name, email, meeting times | US | ISO 27001 / SOC 2 / SOC 3 (published) |
 | **Zoom** | Video meeting links for `/meet` bookings | Meeting join links only (no recordings stored by us) | US | SOC 2 (published) |
-| **GitHub** | Source code; encrypted nightly database backups (Actions artifacts) | Backup dumps encrypted with a passphrase held outside GitHub; 30-day retention | US | SOC reports (published) |
+| **GitHub** | Source code. (Encrypted nightly database backups are configured but **not yet operational** — see note below.) | Source code only, today. Backup dumps, once running: encrypted with a passphrase held outside GitHub; 30-day retention | US | SOC reports (published) |
+
+## Open item: off-platform backups are not yet running
+
+`.github/workflows/db-backup.yml` takes a nightly encrypted `pg_dump` to
+GitHub Actions artifacts. It has never completed: the `SUPABASE_DB_URL`
+repository secret was never set, so all 85 scheduled runs between
+2026-06-12 and 2026-09-04 failed at the first step. **The only backups that
+exist today are Supabase's on-platform 7-day dailies.**
+
+Do not describe off-platform backups as a control in any external document
+until a run of that workflow has gone green and a restore has been
+rehearsed from the resulting artifact.
 
 ## Change process
 
@@ -27,4 +39,4 @@ Additions to this list require: purpose justification, data-category
 review, DPA/terms check, and (once districts are customers) the NDPA
 subprocessor flow-down + advance-notice obligation.
 
-_Last reviewed: 2026-06-11 (initial draft)._
+_Last reviewed: 2026-09-04 (backup control corrected; still a draft)._

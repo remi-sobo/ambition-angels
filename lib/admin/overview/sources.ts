@@ -349,6 +349,8 @@ export type ForecastData = {
   forecast: number;
   goal: number;
   gap: number;
+  /** Open-stage asks counted into weightedOpen (Reed narrates this). */
+  openAskCount: number;
 };
 
 /**
@@ -360,7 +362,8 @@ export type ForecastData = {
  */
 export const getForecast = cache(async (): Promise<ForecastData> => {
   const ctx = await getOrgContext();
-  if (!ctx) return { raised: 0, committedSteward: 0, committed: 0, weightedOpen: 0, forecast: 0, goal: 0, gap: 0 };
+  if (!ctx)
+    return { raised: 0, committedSteward: 0, committed: 0, weightedOpen: 0, forecast: 0, goal: 0, gap: 0, openAskCount: 0 };
   const sb = createServerSupabase();
   const fin = await getFinance();
   const fy = fiscalYearBounds(fin.cfg.year, fin.cfg.startMonth);
@@ -379,11 +382,13 @@ export const getForecast = cache(async (): Promise<ForecastData> => {
 
   let weightedOpen = 0;
   let committedSteward = 0;
+  let openAskCount = 0;
   for (const o of oppsRes.data ?? []) {
     const ask = Number(o.ask_amount ?? 0);
     if (isWonStage(o.stage as string)) {
       committedSteward += ask;
     } else if (OPEN_STAGE_LIST.includes(o.stage as string)) {
+      openAskCount += 1;
       const p = o.probability == null ? 50 : Number(o.probability);
       weightedOpen += ask * (p / 100);
     }
@@ -392,7 +397,7 @@ export const getForecast = cache(async (): Promise<ForecastData> => {
   const committed = raised + committedSteward;
   const forecast = committed + weightedOpen;
   const goal = fin.cfg.goal;
-  return { raised, committedSteward, committed, weightedOpen, forecast, goal, gap: goal - forecast };
+  return { raised, committedSteward, committed, weightedOpen, forecast, goal, gap: goal - forecast, openAskCount };
 });
 
 // ── Moves only you can make ──────────────────────────────────────────────────

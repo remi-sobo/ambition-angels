@@ -217,6 +217,7 @@ ordered=(
   fr_prospect_family_fks_and_org_not_null.sql
   fr_sync_resolve_companies_via_external_refs.sql
   spec_a_platform_contracts.sql
+  seed_aa_modules_content.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

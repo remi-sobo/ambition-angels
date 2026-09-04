@@ -11,7 +11,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "qa:visual": "playwright test"
+    "qa:visual": "playwright test",
+    "check:ledger": "node scripts/check-migration-ledger.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.113.0",

@@ -324,3 +324,24 @@ rather than its thirtieth.
   the job errors as history.
 
 No fix in this document has been applied. Stop.
+
+## 9. Step 1 applied (2026-09-03): schedules staged, orphans closed
+
+`vercel.json` now carries only the safe tier from Stage 1: `gmail-sync`,
+`calendar-sync`, `calendar-watch-renew`, `metric-snapshots`. JSON cannot carry
+a comment, so the removed entries are recorded here; each returns in a later
+PR, one tier at a time, after `CRON_SECRET` is verified working in production:
+
+| Removed schedule | Was | Returns |
+|---|---|---|
+| `stewardship-milestones` | `30 13 * * *` | Stage 2 (creates `ops_tasks`, no mail) |
+| `hubspot-sync` | `0 7,19 * * *` | Held. Throws on the missing `hs_sync_jobs.totals` column, and HubSpot is being retired, so it needs a decision rather than a schedule. |
+| `meet-reminders` | `0 * * * *` | Stage 3, first sender (Gmail path, 0 sends today) |
+| `daily-reminders` | `0 14 * * *` | Stage 3, after Resend is verified and the 16 overdue items are decided |
+| `weekly-digest` | `30 14 * * 1` | Stage 3, after `daily-reminders` |
+| `journeys` | `15 * * * *` | Stage 3, last, only once a journey is deliberately defined |
+
+The three orphaned `running` rows (section 6) are closed by
+`docs/ops/2026-09-03-mark-orphaned-sync-jobs-failed.sql`, a one-off data fix
+pasted by hand after review; it is not a migration. `gmail_sync_jobs`
+`236a6e7a` stays `running` on purpose so the first authenticated tick resumes it.

@@ -18,9 +18,18 @@
 --
 -- What it can do: connect, and SELECT supabase_migrations.schema_migrations.
 -- What it cannot do: read any application table. It holds no membership in
--- anon / authenticated / service_role and is granted no privilege in `public`,
--- so every row of tenant data stays out of reach. It keeps the catalog
--- visibility every Postgres role has (table names, not contents).
+-- anon / authenticated / service_role and no table privilege in `public`, so
+-- every row of tenant data stays out of reach. It does carry USAGE on schema
+-- `public` — that is Postgres's implicit grant to PUBLIC, not something this
+-- file grants, and it confers nothing without a table privilege to pair it
+-- with. It keeps the catalog visibility every Postgres role has (table names,
+-- not contents).
+--
+-- APPLIED 2026-09-04 to project kzzdtibbwsucloaoqpqa. Verified on creation:
+--   rolsuper=f rolbypassrls=f rolcreatedb=f rolcreaterole=f connlimit=4
+--   select on schema_migrations = t, insert = f
+--   select on public.constituents = f, public.gifts = f, memberships = 0
+-- Re-running this file is a no-op; it will not reset the password.
 --
 -- To rotate: `alter role migration_ledger_reader with password '<NEW>';` and
 -- update the secret. To revoke: `drop role migration_ledger_reader;`.

@@ -105,12 +105,12 @@ Each stage is one PR. Remi merges every PR and starts every stage.
 
 **Redirect loop.** `/admin/fundraising/today` is both a 308 target and a kept path — the fixed-point test covers it the moment the rows activate.
 
-## Open decisions (need Remi's ruling before their stage)
+## Open decisions — all resolved (Remi, 2026-09-08, as recommended)
 
-1. **"Why they matter" (Donor 360) — recon marks it UNBOUND.** Recommend: an additive `constituents.why_matters` text column, written by a human in the 360; Reed may draft into `reed_drafts` for approval but never writes the column directly. Needed by F2.
-2. **Do fundraising follow-ups join `v_obligations`?** Overdue next-steps and unacknowledged gifts are obligations in every honest sense, and Home's Needs-you is the one door now. Recommend: yes — two additive arms (owner-required, capped like `metric_stale`, honest `why_it_matters` lines), shipped as an A-style additive migration in F5, so Fundraising Today becomes the *detail* surface and Home stays the *decision* surface. Needed by F5.
-3. **Lapsed view definition.** "Lapsed" needs a rule (recommend: gave in a prior fiscal year, nothing in the current one — computed, not stored). Needed by F1.
+1. **"Why they matter" (Donor 360) — RESOLVED: additive column.** `constituents.why_matters` text, written by a human in the 360; Reed may draft into `reed_drafts` for approval but never writes the column directly.
+2. **Fundraising follow-ups join `v_obligations` — RESOLVED: yes.** Two additive arms (overdue next-steps, unacknowledged gifts) — owner-required, capped like `metric_stale`, honest `why_it_matters` lines — as an A-style additive migration in F5. Fundraising Today becomes the *detail* surface; Home stays the *decision* surface.
+3. **Lapsed — RESOLVED: computed.** Gave in a prior fiscal year, nothing in the current one; a rule in code, never a stored flag.
 
 ---
 
-*Drafted 2026-09-08, pending Remi's approval. F1 begins only on his kickoff.*
+*Spec approved 2026-09-08. F1 kicked off the same day.*

@@ -101,6 +101,27 @@ The two B1 gating fixes (Career Library → `modules.content`, Volunteers → `m
 
 **B3 — the shell.** Sidebar, single tab row, page header, Reed launcher, the `(v2)` route group and flag. V1 pages render inside it. Commit: `spec-b: V2 shell with V1 pages hosted`.
 
+> **As built (B3, 2026-09-04 — pending Remi's acceptance).** Four implementation
+> facts to know:
+> 1. **No literal `(v2)` route group.** V1 and V2 URLs interleave under
+>    `/admin` (B2's hosts sit beside V1 pages), and Next.js route groups
+>    cannot overlap paths — a real `(v2)/` group would force moving every V1
+>    page into a sibling group. Instead `app/admin/layout.tsx` branches on the
+>    flag: OFF renders the untouched V1 chrome (DoD 8), ON renders the V2
+>    chrome around the same routes. Same semantics, no mass file move.
+> 2. **The flag is per-user as recommended** (open decision 1):
+>    `profiles.v2_shell`, flipped at `/admin/v2`, unapplied migration
+>    `spec_b_v2_shell_flag.sql`; the reader tolerates the missing column so
+>    code and migration can land in either order.
+> 3. **Every shell tab links its LIVE seat** (`liveSeatFor` over the B2 map);
+>    canonical tabs whose screens don't exist yet are hidden until their
+>    destination spec ships (pinned set: organization-health, attendance,
+>    outcomes, impact/reports). Consequence, stated: the 9-key orgs' Impact
+>    lands on KPIs pre-cutover (the model says Outcomes, whose screen doesn't
+>    exist yet) — self-corrects at the Impact cutover.
+> 4. **The V1 right rail does not mount in the V2 chrome** (its jobs
+>    consolidate into Today + Reed), and phones keep the V1 tab bar until B5.
+
 **B4 — terminology.** Tab labels and sidebar rows resolve through `itemLabel()`. Commit: `spec-b: tenant terminology on nav labels`.
 
 **B5 — mobile.** Drawer, top bar, bottom bar, More sheet with entitlement filtering. Commit: `spec-b: mobile shell`.

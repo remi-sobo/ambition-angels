@@ -191,6 +191,64 @@ export function v2Href(v1Url: string): string {
   return best.row.v2 + best.suffix + query;
 }
 
+// ── B3: the shell's live-seat resolution ────────────────────────────────────
+// The V2 nav model's tab hrefs are CANONICAL routes; several have no screen
+// until their destination spec builds it. The shell must never link a dead
+// path, so each tab resolves to its LIVE seat:
+//   - an ACTIVE row's v2 target exists as a host page → the canonical path;
+//   - a kept-in-place path (V1 path IS the V2 path) → itself;
+//   - an at-cutover merge → the FIRST v1 source in map order (the live V1
+//     screen that will 308 here when the seat is built);
+//   - anything else has no seat yet → null, and the shell hides the tab
+//     until its destination spec ships (tests/v2-shell.test.ts pins the
+//     exact seatless set so it can only shrink).
+
+/** V1 paths that are already their own V2 seat (the map's kept-in-place
+ *  comment, as data). /admin/reset-password is chrome-less and never a tab. */
+export const KEPT_IN_PLACE: readonly string[] = [
+  "/admin/inbox",
+  "/admin/settings",
+  "/admin/fundraising/today",
+  "/admin/fundraising/grants",
+  "/admin/fundraising/campaigns",
+  "/admin/finance/budget",
+];
+
+/** The live screen for a canonical V2 path today, or null when none exists
+ *  yet (pre-cutover, the tab is hidden rather than linked dead). */
+export function liveSeatFor(v2Path: string): string | null {
+  if (ACTIVE.some((r) => r.v2 === v2Path)) return v2Path;
+  if (KEPT_IN_PLACE.includes(v2Path)) return v2Path;
+  const rows = AT_CUTOVER.filter((r) => r.v2 === v2Path);
+  // A same-path row (v1 IS the future seat, e.g. /admin/finance/forecast
+  // absorbing /model at cutover) beats other sources merging into it.
+  if (rows.some((r) => r.v1 === v2Path)) return v2Path;
+  if (rows.length > 0) return rows[0].v1;
+  return null;
+}
+
+/**
+ * A live path's canonical V2 seat, for active-destination matching in the
+ * shell: ACTIVE rows translate like v2Href; at-cutover rows translate to the
+ * seat their v1 will eventually 308 to; everything else is itself. This is
+ * a HIGHLIGHTING read only — never used to build a link (at-cutover seats
+ * don't exist yet).
+ */
+export function canonicalSeat(path: string): string {
+  const active = v2Href(path);
+  if (active !== path) return active.split("?")[0];
+  let best: V2RouteRow | null = null;
+  for (const row of AT_CUTOVER) {
+    if (!row.v2) continue;
+    const hit =
+      row.kind === "exact"
+        ? path === row.v1
+        : path === row.v1 || path.startsWith(row.v1 + "/");
+    if (hit && (!best || row.v1.length > best.v1.length)) best = row;
+  }
+  return best?.v2 ?? path;
+}
+
 /**
  * The active rows as next.config-shaped redirect entries. next.config.mjs
  * cannot import TS, so it carries its own copy of this list;

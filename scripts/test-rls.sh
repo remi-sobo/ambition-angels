@@ -222,6 +222,7 @@ ordered=(
   spec_a_obligation_rpcs.sql
   spec_a_seed_contract2_metrics.sql
   spec_b_v2_shell_flag.sql
+  create_board_portal.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"
@@ -271,3 +272,6 @@ run "$root/supabase/tests/rls-leak-test.sql"
 
 echo "── Running tenant-default ratchet"
 run "$root/supabase/tests/tenant-default-ratchet.sql"
+
+echo "── Running board notes isolation"
+run "$root/supabase/tests/board-notes-isolation.sql"

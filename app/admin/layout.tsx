@@ -15,6 +15,7 @@ import { AdminBadgesProvider } from "./_components/AdminBadges";
 import V2Sidebar from "./_components/v2/V2Sidebar";
 import V2TabZone from "./_components/v2/V2TabZone";
 import V2ReedEdge from "./_components/v2/V2ReedEdge";
+import V2MobileBar from "./_components/v2/V2MobileBar";
 import { getAdminUser, getOrgContext, getUserOrgs } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
@@ -143,8 +144,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             </main>
           </RailEntityProvider>
           <V2ReedEdge />
-          {/* Phones keep the V1 tab bar until B5 ships the mobile shell. */}
-          <MobileTabBar currentUser={user} reedEnabled={reedEnabled} features={features} />
+          {/* B5: the V2 bottom bar — Today · Work · ＋ · Programs · More,
+              derived from the same resolved nav as the sidebar. */}
+          <V2MobileBar nav={nav} currentUser={user} reedEnabled={reedEnabled} />
         </ReedLauncherProvider>
         <QuickAddButton currentUser={user} />
         <GlobalSearch />

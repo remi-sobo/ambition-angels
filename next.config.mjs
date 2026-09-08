@@ -63,6 +63,10 @@ const nextConfig = {
       { source: "/admin/careers", destination: "/admin/programs/content", permanent: true },
       { source: "/admin/board/:path*", destination: "/admin/organization/board/:path*", permanent: true },
       { source: "/admin/compliance/:path*", destination: "/admin/organization/compliance/:path*", permanent: true },
+      // Home cutover (Spec Home, H3). /admin itself is NOT here: it hosts the
+      // login UI, so its forward is auth-aware in app/admin/page.tsx.
+      { source: "/admin/queue", destination: "/admin/today", permanent: true },
+      { source: "/admin/briefing", destination: "/admin/today", permanent: true },
     ];
   },
   async rewrites() {

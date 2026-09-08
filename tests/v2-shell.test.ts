@@ -46,13 +46,14 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
     expect(seatless.sort()).toEqual([
       "/admin/impact/outcomes",       // Impact spec builds Outcomes
       "/admin/impact/reports",        // Impact spec builds Reports
-      "/admin/organization-health",   // Home spec builds Organization Health
       "/admin/programs/attendance",   // Programs spec builds Attendance
+      // /admin/organization-health left the set at Spec Home H3.
     ]);
   });
 
   test("merge seats resolve to their FIRST live V1 source in map order", () => {
-    expect(liveSeatFor("/admin/today")).toBe("/admin"); // Home's seat is the V1 cockpit
+    // /admin/today graduated at H3: it is an ACTIVE target now, so it seats
+    // itself (asserted with the active hosts below).
     expect(liveSeatFor("/admin/work/plan-close")).toBe("/admin/ops/monday");
     expect(liveSeatFor("/admin/fundraising/donors-funders")).toBe("/admin/fundraising/donors");
     expect(liveSeatFor("/admin/fundraising/pipeline")).toBe("/admin/fundraising/asks");
@@ -72,6 +73,8 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
       "/admin/finance/transactions", // same-path at-cutover row
       "/admin/finance/forecast",
       "/admin/inbox",
+      "/admin/today",               // ACTIVE target since H3
+      "/admin/organization-health", // V2-only screen: its own path IS the seat (H3)
     ]) {
       expect(liveSeatFor(path), path).toBe(path);
     }
@@ -101,10 +104,11 @@ describe("resolveShellNav: the four orgs (DoD 1, shell level)", () => {
     expect(nine.tabs.map((t) => t.key)).toEqual(["board", "compliance"]);
   });
 
-  test("Home is visible for every org and lands on the V1 cockpit pre-cutover", () => {
+  test("Home is visible for every org and lands on Today (cut over at H3)", () => {
     for (const features of [AA, YGB, NINE_KEY]) {
       const home = resolveShellNav(features).destinations.find((d) => d.key === "home")!;
-      expect(home.href).toBe("/admin");
+      expect(home.href).toBe("/admin/today");
+      expect(home.tabs.map((t) => t.key)).toEqual(["today", "organization-health"]);
     }
   });
 
@@ -151,8 +155,10 @@ describe("activeShellKey: sidebar highlight + tab-slot routing", () => {
     expect(activeShellKey("/admin/howto", nav)).toBeNull();
   });
 
-  test("at-cutover merges highlight the destination that will absorb them", () => {
-    expect(activeShellKey("/admin/queue", nav)).toBe("home");
+  test("absorbed and at-cutover paths highlight their destination", () => {
+    expect(activeShellKey("/admin/today", nav)).toBe("home");
+    expect(activeShellKey("/admin/organization-health", nav)).toBe("home");
+    expect(activeShellKey("/admin/queue", nav)).toBe("home"); // ACTIVE since H3
     expect(activeShellKey("/admin/briefing", nav)).toBe("home");
     expect(activeShellKey("/admin/fundraising/prospects", nav)).toBe("fundraising");
     expect(activeShellKey("/admin/finance/reconcile", nav)).toBe("finance");
@@ -166,8 +172,8 @@ describe("activeShellKey: sidebar highlight + tab-slot routing", () => {
 });
 
 describe("B3 shell invariants", () => {
-  test("no destination has cut over yet — the tab slot renders the V1 secondary nav everywhere", () => {
-    expect(V2_CUTOVER_DESTINATIONS.size).toBe(0);
+  test("Home is the one cut-over destination — its tab slot renders the V2 single row", () => {
+    expect(Array.from(V2_CUTOVER_DESTINATIONS)).toEqual(["home"]);
   });
 
   test("DoD 7 structurally: the V2 tab row cannot wrap at any tenant's tab count", () => {

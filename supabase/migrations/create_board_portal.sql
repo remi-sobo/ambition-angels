@@ -21,7 +21,8 @@
 -- on that table below, and application code must reach it only through the
 -- user-scoped client (lib/supabase/server.ts) so RLS actually applies — the
 -- service-role client bypasses RLS and would silently defeat this.
--- tests/board-notes-isolation.test.ts guards the application half.
+-- tests/board-portal.test.ts guards the application half, and
+-- supabase/tests/board-notes-isolation.sql proves it in the database.
 
 -- ── Who is the signed-in director? ────────────────────────────────────────
 -- Directors are identified by email against the roster, not by a user_id
@@ -151,8 +152,13 @@ create table if not exists public.minutes (
 );
 
 -- Approved minutes are the corporate record. Freeze the body once approved.
+-- search_path pinned (the pin_function_search_path.sql convention, and the
+-- Supabase linter's 0011 rule): the body touches only NEW/OLD, so an empty
+-- path costs nothing and closes the shadowing hole by construction.
 create or replace function public.minutes_freeze_when_approved()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql
+set search_path = ''
+as $$
 begin
   if old.approved_at is not null and new.body is distinct from old.body then
     raise exception 'minutes % are approved and immutable', old.id;

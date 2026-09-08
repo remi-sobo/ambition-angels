@@ -18,14 +18,8 @@ declare
   aa        uuid;
   mtg       uuid;   -- September 9, 2026
   mar       uuid;   -- March 12, 2026
-  m_todd    uuid;
-  m_lara    uuid;
-  m_michelle uuid;
-  m_jerrel  uuid;
-  m_remi    uuid;
-  m_shannon uuid;
+  m_jerrel  uuid;   -- the one director whose 2026 COI is outstanding
   d         record;
-  item      uuid;
 begin
   select id into aa from orgs where slug = 'ambition-angels';
   if aa is null then raise exception 'ambition-angels org not found'; end if;
@@ -71,12 +65,7 @@ begin
     name = excluded.name, officer_role = excluded.officer_role, title = excluded.title,
     is_voting = excluded.is_voting, is_staff = excluded.is_staff, status = excluded.status;
 
-  select id into m_todd     from board_members where org_id = aa and email = 'toddsingleton@gmail.com';
-  select id into m_lara     from board_members where org_id = aa and email = 'lara.sellers@gmail.com';
-  select id into m_michelle from board_members where org_id = aa and email = 'michelle@webuildpower.org';
-  select id into m_jerrel   from board_members where org_id = aa and email = 'jerrelbrown@ymail.com';
-  select id into m_remi     from board_members where org_id = aa and email = 'remi@ambitionangels.org';
-  select id into m_shannon  from board_members where org_id = aa and email = 'shannon@ambitionangels.org';
+  select id into m_jerrel from board_members where org_id = aa and email = 'jerrelbrown@ymail.com';
 
   -- ── Sign-in provisioning ────────────────────────────────────────────────
   -- The magic link creates the auth user; on_auth_user_created reads this
@@ -299,10 +288,15 @@ begin
     end if;
   end loop;
 
-  -- Directors who have already told Remi they are coming. Attendance is not
-  -- private — quorum is the board's business — so this tally shows to everyone.
-  update meeting_attendance set rsvp = 'yes'
-   where meeting_id = mtg and board_member_id in (m_todd, m_lara, m_remi, m_michelle);
+  -- No RSVP is seeded. An RSVP is a director's own affirmative act on the
+  -- record, and quorum is 3 of 5 — so "has not answered" and "said yes" are
+  -- different facts, and the tally on the meeting page is what the Chair
+  -- reads to know whether Wednesday is quorate. Pre-filling four yeses nobody
+  -- gave would show a confirmed quorum that does not exist. Directors answer
+  -- in the portal; Shannon can set one by hand for anyone who replies by
+  -- email:
+  --   update meeting_attendance set rsvp = 'yes'
+  --    where meeting_id = <meeting> and board_member_id = <member>;
 
   raise notice 'Board portal seeded: meeting %, 6 members, 7 agenda items.', mtg;
 end $$;

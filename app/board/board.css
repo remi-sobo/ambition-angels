@@ -37,6 +37,15 @@
   .board-sticky { position: sticky; top: 104px; }
 }
 
+/* The header's prep progress is a convenience for someone who landed on a
+   meeting from a calendar link. Below the two-column breakpoint the nav wraps
+   and it is the first thing to overflow the row, so it steps aside — Home
+   carries the same progress far more prominently, and it is one tap away. */
+.board-prep-pill { display: none; }
+@media (min-width: 900px) {
+  .board-prep-pill { display: flex; }
+}
+
 /* ── The live indicator, the one place a second accent is permitted ──── */
 .board-pulse { animation: board-pulse 2s ease-in-out infinite; }
 @keyframes board-pulse {

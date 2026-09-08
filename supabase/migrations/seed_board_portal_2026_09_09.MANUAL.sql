@@ -252,7 +252,7 @@ begin
   select aa, mar,
     'That, based on the results of the 2026 Board election, the following individuals are elected as officers effective July 14, 2026: Todd Singleton as Chair, Michelle Vilchez as Vice Chair, Lara Sellers as Secretary, and Jerrel Brown as Treasurer, to serve until their successors are duly elected and qualified.',
     null, null, null, null, '{}', true,
-    'Adopted by written ballot circulated to all directors outside a meeting under Bylaws and California Corporations Code Section 5211. Final ballot received July 14, 2026; certified by Lara Sellers, Secretary, July 24, 2026.'
+    'Adopted by written ballot, July 14, 2026. Circulated to all directors outside a meeting under the Bylaws and California Corporations Code Section 5211; certified by Lara Sellers, Secretary, on July 24, 2026.'
   where not exists (
     select 1 from resolutions r
     where r.meeting_id = mar and r.motion_text like 'That, based on the results of the 2026 Board election%');

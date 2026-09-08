@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { MeetingDoc, Resolution, FollowUp } from "@/lib/board/data";
-import { fileSize, shortDate, followUpLabel } from "@/lib/board/format";
+import { fileSize, shortDate, followUpLabel, tallyLabel, firstSentence } from "@/lib/board/format";
 import { C, F, card, eyebrow } from "./tokens";
 
 /** Running header for the printed minute book. Screen-hidden, print-fixed. */
@@ -132,11 +132,18 @@ export function SinceWeLastMet({
                   {r.motion_text}
                 </p>
                 <span style={{ flex: "none", width: 150, fontSize: 15, color: C.muted, textAlign: "right" }}>
-                  {r.passed ? "Passed" : "Failed"} {r.votes_for ?? 0} to {r.votes_against ?? 0}
+                  {tallyLabel(r)}
                   {r.abstentions?.length ? (
                     <>
                       <br />
                       {r.abstentions.map((a) => a.split(/\s+/).slice(-1)[0]).join(", ")} abstained
+                    </>
+                  ) : typeof r.votes_for !== "number" && r.notes ? (
+                    // A motion with no tally needs to say HOW it was adopted,
+                    // or "Carried" alone reads as a missing vote count.
+                    <>
+                      <br />
+                      {firstSentence(r.notes)}
                     </>
                   ) : null}
                 </span>

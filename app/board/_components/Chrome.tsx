@@ -119,6 +119,7 @@ export function Header({
             {showPrep && (
               <Link
                 href="/board"
+                className="board-prep-pill"
                 style={{
                   display: "flex",
                   alignItems: "center",

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getBoardContext } from "@/lib/board/auth";
 import { getAllMeetings, getResolutions } from "@/lib/board/data";
-import { dateOnly } from "@/lib/board/format";
+import { dateOnly, tallyLabel } from "@/lib/board/format";
 import { Header, Footer } from "../_components/Chrome";
 import { MeetingTabs } from "../_components/MeetingTabs";
 import DecisionsRegister from "../_components/DecisionsRegister";
@@ -118,7 +118,7 @@ export default async function ArchivePage({ searchParams }: { searchParams: { ta
               fiscal: byMeeting.get(r.meeting_id)?.fiscal_label ?? "",
               date: dateOnly(byMeeting.get(r.meeting_id)?.meeting_date ?? null, "plain"),
               year: (byMeeting.get(r.meeting_id)?.meeting_date ?? "").slice(0, 4),
-              tally: `${r.passed ? "Carried" : "Failed"} ${r.votes_for ?? 0} to ${r.votes_against ?? 0}`,
+              tally: tallyLabel(r),
               abstain: r.abstentions?.length ? `${r.abstentions.join(", ")} abstained` : "",
               meetingId: r.meeting_id,
             }))}

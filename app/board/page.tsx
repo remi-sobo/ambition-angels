@@ -8,7 +8,7 @@ import {
   type AgendaItem,
 } from "@/lib/board/data";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { heroDate, timeRange, dateOnly } from "@/lib/board/format";
+import { heroDate, timeRange, dateOnly, prepHeading } from "@/lib/board/format";
 import { Header, Footer } from "./_components/Chrome";
 import PrepList from "./_components/PrepList";
 import { C, F, card, eyebrow } from "./_components/tokens";
@@ -182,11 +182,11 @@ export default async function BoardHome() {
         {/* ── Prep, and the main question ────────────────────────────── */}
         <div className="board-two-col" style={{ marginTop: 24 }}>
           {ctx.memberId && prep.length > 0 ? (
-            <PrepList meetingId={meeting.id} items={prep} />
+            <PrepList meetingId={meeting.id} items={prep} heading={prepHeading(meeting.starts_at)} />
           ) : (
             <section style={{ ...card, padding: 32 }}>
               <h2 style={{ margin: 0, fontFamily: F.heading, fontSize: 24, fontWeight: 600, color: C.ink }}>
-                Before the meeting
+                {prepHeading(meeting.starts_at)}
               </h2>
               <p style={{ margin: "12px 0 0", fontSize: 17, lineHeight: 1.6, color: C.muted }}>
                 {ctx.isStaff

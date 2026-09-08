@@ -28,12 +28,14 @@ import { fiscalYearBounds as financeFiscalYearBounds } from "@/lib/admin/finance
 // registry, add it HERE with its resolver — this list only grows.
 const PROD_COMPUTED_SOURCE_KEYS = [
   "anchor_gifts_closed",
+  "attendance_rate", // A6 seed (spec_a_seed_contract2_metrics.sql)
   "cash_runway_months",
   "corporate_dollars_ytd",
   "corporate_raised",
   "dollars_ceiling_fy26",
   "dollars_raised_fy26",
   "dollars_raised_grants_ytd",
+  "enrolled_in_cohort", // A6 seed (spec_a_seed_contract2_metrics.sql)
   "gifts_10k_closed",
   "gifts_this_month",
   "grants_submitted_ytd",

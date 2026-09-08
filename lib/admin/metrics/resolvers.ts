@@ -41,6 +41,65 @@ export const METRIC_RESOLVERS: Record<string, MetricResolver> = {
       .gte("gift_date", monthStart);
     return count ?? 0;
   },
+
+  // Contract 2 seed (A6): distinct students enrolled in an ACTIVE cohort —
+  // "teens on a facilitated roster, current term". Same membership read the
+  // Groups page rolls up (cohort_members.status='enrolled'), scoped to
+  // status='active' cohorts because "current term" is what the metric asks.
+  enrolled_in_cohort: async (s: SupabaseClient, orgId: string) => {
+    const { data: cohorts } = await s
+      .from("cohorts")
+      .select("id")
+      .eq("org_id", orgId)
+      .eq("status", "active");
+    const ids = (cohorts ?? []).map((c) => c.id as string);
+    if (ids.length === 0) return 0;
+    const { data: members } = await s
+      .from("cohort_members")
+      .select("student_id")
+      .eq("org_id", orgId)
+      .eq("status", "enrolled")
+      .in("cohort_id", ids);
+    return new Set((members ?? []).map((m) => m.student_id as string)).size;
+  },
+
+  // Contract 2 seed (A6): attendance rate over the trailing 3 weeks, active
+  // cohorts, held sessions — by the HOUSE rule (app/admin/cohorts/_lib/
+  // rollups.ts): (present + late) / (present + late + absent); excused and
+  // unmarked never count against anyone. Returns a 0–100 pct (unit 'pct'),
+  // null when no countable marks exist in the window (an honest gap, not 0%).
+  attendance_rate: async (s: SupabaseClient, orgId: string) => {
+    const windowStart = new Date(Date.now() - 21 * 86400000).toISOString().slice(0, 10);
+    const { data: cohorts } = await s
+      .from("cohorts")
+      .select("id")
+      .eq("org_id", orgId)
+      .eq("status", "active");
+    const cohortIds = (cohorts ?? []).map((c) => c.id as string);
+    if (cohortIds.length === 0) return null;
+    const { data: sessions } = await s
+      .from("cohort_sessions")
+      .select("id")
+      .eq("org_id", orgId)
+      .eq("status", "held")
+      .gte("session_date", windowStart)
+      .in("cohort_id", cohortIds);
+    const sessionIds = (sessions ?? []).map((x) => x.id as string);
+    if (sessionIds.length === 0) return null;
+    const { data: marks } = await s
+      .from("attendance")
+      .select("status")
+      .eq("org_id", orgId)
+      .in("session_id", sessionIds);
+    let attended = 0;
+    let absent = 0;
+    for (const m of marks ?? []) {
+      if (m.status === "present" || m.status === "late") attended++;
+      else if (m.status === "absent") absent++;
+    }
+    const counted = attended + absent;
+    return counted > 0 ? (attended / counted) * 100 : null;
+  },
 };
 
 export const RESOLVER_KEYS = Object.keys(METRIC_RESOLVERS);

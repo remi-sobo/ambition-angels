@@ -105,8 +105,7 @@ describe("v2Href: the translation the choke points ride", () => {
 
   test("at-cutover merges and kept-in-place paths are untouched until their spec", () => {
     for (const path of [
-      "/admin", // Home cutover owns this (it also hosts the login UI)
-      "/admin/queue",
+      "/admin", // hosts the login UI: forwards in-page at H3, never a config 308
       "/admin/fundraising/donors",
       "/admin/fundraising/prospects",
       "/admin/finance/reconcile",
@@ -151,7 +150,9 @@ describe("the whole F.1 delta is accounted for", () => {
     expect(v2Href(`/admin/ops/projects/${UUID}`)).toBe(`/admin/work/projects/${UUID}`);
     expect(v2Href("/admin/fundraising/grants")).toBe("/admin/fundraising/grants");
     expect(v2Href("/admin/compliance")).toBe("/admin/organization/compliance");
-    expect(v2Href("/admin/queue")).toBe("/admin/queue"); // moves with the Home spec
+    expect(v2Href("/admin/queue")).toBe("/admin/today"); // moved with Spec Home (H3)
+    expect(v2Href("/admin/briefing")).toBe("/admin/today");
+    expect(v2Href("/admin/briefing/weekly")).toBe("/admin/briefing/weekly"); // NO_HOME, exact rows leave it
   });
 
   test("every notifications.url shape stored in production has a map contract", () => {

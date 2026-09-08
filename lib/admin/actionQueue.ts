@@ -83,7 +83,9 @@ export type QueueItem = {
 // edits here, ever. Entries whose V2 seat isn't built yet (acknowledgment →
 // Fundraising → Today's "Thank someone", reconciliation → the merged
 // Transactions) keep resolving to their live V1 screens until then.
-const SOURCE_FALLBACK_HREF: Record<ActionItemRow["source"], string> = {
+// Exported for Home → Today (H1): the obligation feed's per-source deep
+// links ride this same table, so activating a map row moves every consumer.
+export const SOURCE_FALLBACK_HREF: Record<ActionItemRow["source"], string> = {
   ops_task: v2Href("/admin/ops"),
   grant_requirement: v2Href("/admin/fundraising/grants"),
   compliance_item: v2Href("/admin/compliance"),

@@ -32,5 +32,9 @@ export async function GET(req: NextRequest) {
     }
     console.error("Auth callback error:", error.message);
   }
-  return NextResponse.redirect(new URL("/admin?auth_error=1", req.nextUrl.origin));
+  // Bounce failures back to the surface the link was for. A director whose
+  // link expired must land on the board sign-in screen, not on the BloomOS
+  // admin login, which would read as "you don't have access".
+  const failure = safeNext.startsWith("/board") ? "/board/signin?auth_error=1" : "/admin?auth_error=1";
+  return NextResponse.redirect(new URL(failure, req.nextUrl.origin));
 }

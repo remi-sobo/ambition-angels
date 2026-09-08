@@ -235,7 +235,11 @@ export async function middleware(req: NextRequest) {
   // straight through on every other host — marketing behavior is unchanged,
   // and updateSession() never runs where it didn't before this guard existed.
   const gated =
-    pathname.startsWith("/admin/") || DEMODAY_PATHS.has(pathname) || pathname === "/strategy";
+    pathname.startsWith("/admin/") ||
+    pathname === "/board" ||
+    pathname.startsWith("/board/") ||
+    DEMODAY_PATHS.has(pathname) ||
+    pathname === "/strategy";
   if (!gated) return NextResponse.next();
 
   // Refresh the Supabase session on every matched request and learn whether
@@ -265,6 +269,27 @@ export async function middleware(req: NextRequest) {
     });
   }
 
+  // ── Board portal gate ─────────────────────────────────────────────────
+  // Everything under /board requires a session. /board/signin is the way in,
+  // so it must stay reachable signed-out; a signed-in director who lands
+  // there goes straight to the portal rather than re-requesting a link.
+  // A signed-out visit to a deep link (an emailed /board/meetings/[id]) keeps
+  // its destination in ?next so the magic link returns her to the page she
+  // actually wanted, not to the home screen.
+  if (pathname === "/board" || pathname.startsWith("/board/")) {
+    if (pathname === "/board/signin") {
+      if (hasUser) return NextResponse.redirect(new URL("/board", req.url));
+      return response;
+    }
+    if (!hasUser) {
+      const url = new URL("/board/signin", req.url);
+      const dest = pathname + (req.nextUrl.search || "");
+      if (dest !== "/board") url.searchParams.set("next", dest);
+      return NextResponse.redirect(url);
+    }
+    return response;
+  }
+
   // ── Admin gate ────────────────────────────────────────────────────────
   // /admin handles its own login UI; let it through to avoid a redirect loop.
   if (pathname === "/admin") {
@@ -283,6 +308,10 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path+",
+    // The board portal: every path under /board needs a session, and
+    // /board/signin needs the refreshed session to know to bounce inward.
+    "/board",
+    "/board/:path*",
     // Session-backed API surfaces: refreshed (not gated) so a long-open tab's
     // fetch re-auths instead of 401ing on an expired token. Cron API routes
     // authenticate with a secret, not a session, so they're deliberately out.

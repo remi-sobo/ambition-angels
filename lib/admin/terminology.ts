@@ -80,6 +80,56 @@ export async function getNavTermLabels(): Promise<Record<string, string>> {
   };
 }
 
+/**
+ * Spec B, stage B4 — the V2 shell's term map, pure for testability.
+ *
+ * The V2 nav renamed several surfaces (Students → People, Staff → Team), so
+ * the V1 map above would clobber those names with generic registry nouns
+ * ("Schools & Partners", "Staff"). The V2 rule:
+ *
+ *   - The V2 TAB LABEL is the code default.
+ *   - An org's OWN rename (org_terminology) always wins — Groups/Crews/
+ *     Kids/Scholars/Committee read through with no code change.
+ *   - The registry (entity_types.display_name) fills in ONLY where the V2
+ *     label IS the term's generic noun (cohort → "Cohorts", partner →
+ *     "Partners"); it must never replace a V2 rename, so student/staff/
+ *     board are override-only here.
+ *
+ * cohort/partner/student pluralize; staff/board are collective nouns and
+ * stay as-is. AA has zero org_terminology rows by design, so every value
+ * falls through to the registry/code default — the fallback chain is
+ * exercised, not assumed (tests/nav-terminology.test.ts).
+ */
+export function shellTermLabels(
+  overrides: ReadonlyMap<string, string>,
+  registryNames: ReadonlyMap<string, string>,
+): Record<string, string> {
+  const chained = (key: string, fallback: string) =>
+    pluralizeTerm(resolveTermLabel(key, fallback, overrides, registryNames));
+  const overrideOnly = (key: string, fallback: string, plural: boolean) => {
+    const own = overrides.get(key)?.trim();
+    if (!own) return fallback;
+    return plural ? pluralizeTerm(own) : own;
+  };
+  return {
+    cohort: chained("cohort", "Cohort"),
+    partner: chained("partner", "Partner"),
+    student: overrideOnly("student", "People", true),
+    staff: overrideOnly("staff", "Team", false),
+    board: overrideOnly("board", "Board", false),
+  };
+}
+
+/** The async wrapper the V2 shell layout calls (session-client reads, so
+ *  RLS scopes both tables to the active org). */
+export async function getShellTermLabels(): Promise<Record<string, string>> {
+  const [overrides, registry] = await Promise.all([getTerminology(), getEntityTypes()]);
+  const registryNames = new Map(
+    Array.from(registry, ([key, row]) => [key, row.display_name] as const),
+  );
+  return shellTermLabels(overrides, registryNames);
+}
+
 /** The program module's vocabulary (participant spine spec #4 §6d). */
 export type ProgramTerms = {
   student: string; students: string;

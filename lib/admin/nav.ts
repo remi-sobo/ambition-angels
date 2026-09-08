@@ -431,7 +431,10 @@ export const V2_DESTINATIONS: V2Destination[] = [
     icon: "students",
     tabs: [
       { key: "overview", label: "Overview", href: "/admin/programs/overview", feature: "modules.program" },
-      { key: "people", label: "People", href: "/admin/programs/people", feature: "modules.program" },
+      // term "student": only an org's OWN rename relabels People (B4 —
+      // shellTermLabels is override-only here, so the registry's generic
+      // "Student" never clobbers the V2 name).
+      { key: "people", label: "People", href: "/admin/programs/people", feature: "modules.program", term: "student" },
       { key: "intake", label: "Intake", href: "/admin/programs/intake", feature: "modules.program" },
       { key: "cohorts", label: "Cohorts", href: "/admin/programs/cohorts", feature: "modules.program", term: "cohort" },
       { key: "attendance", label: "Attendance", href: "/admin/programs/attendance", feature: "modules.program" },

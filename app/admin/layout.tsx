@@ -18,7 +18,7 @@ import V2ReedEdge from "./_components/v2/V2ReedEdge";
 import { getAdminUser, getOrgContext, getUserOrgs } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
-import { getNavTermLabels } from "@/lib/admin/terminology";
+import { getNavTermLabels, getShellTermLabels } from "@/lib/admin/terminology";
 import { getV2ShellEnabled } from "@/lib/admin/v2shell";
 import { resolveShellNav } from "@/lib/admin/v2shellNav";
 
@@ -112,7 +112,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // and Reed as a right-edge tab. V1 pages are what render inside — no
   // destination screens exist yet.
   if (authed && (await getV2ShellEnabled())) {
-    const nav = resolveShellNav(features, terms);
+    // B4: the shell resolves its labels through the V2 term map (an org's
+    // own renames win; V2 names like People/Team are never clobbered by
+    // generic registry nouns). The V1 map (`terms`) still feeds the
+    // SectionSubNav fallback inside V2TabZone, whose rows ARE V1 nav.
+    const nav = resolveShellNav(features, await getShellTermLabels());
     return (
       <AdminUserProvider value={{ user, isOwner: ctx?.role === "owner" }}>
       <AdminBadgesProvider orgId={orgId} enabled={authed}>

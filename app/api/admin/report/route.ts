@@ -4,6 +4,7 @@ import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { getOrgOwnerHandle } from "@/lib/admin/assignees-server";
 import { sendOperatorEmail, operatorEmailShell } from "@/lib/email/operator";
 import { adminUrl } from "@/lib/origins";
+import { sanitizeOriginPath } from "@/lib/admin/originPath";
 
 /**
  * In-app issue reporter (the FAB "Report" action). Shannon or Remi snap a photo
@@ -86,6 +87,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // B6 (preservation gate upgrade): the /admin path the reporter was on,
+  // stored structured on the task (ops_tasks.origin_path, A1 column) instead
+  // of buried in the synthesized prompt text. Optional and validated.
+  const originPath = sanitizeOriginPath(form.get("origin_path"));
+
   if (!description && !debugPrompt && !(photo instanceof File && photo.size > 0)) {
     return NextResponse.json({ error: "Add a description or a photo." }, { status: 400 });
   }
@@ -152,7 +158,7 @@ export async function POST(req: NextRequest) {
   // record. A 'claude-prompt' label flags it so the UI can offer a one-tap copy.
   const summaryLine = (reportTitle || description || `${meta.label} report`).split("\n")[0].trim();
   const title = `${meta.label}: ${summaryLine}`.slice(0, 140);
-  const reporterLine = `Reported by ${reporter[0].toUpperCase()}${reporter.slice(1)} via the in-app reporter.`;
+  const reporterLine = `Reported by ${reporter[0].toUpperCase()}${reporter.slice(1)} via the in-app reporter${originPath ? ` from ${originPath}` : ""}.`;
 
   let taskDescription: string;
   const labels = ["report", type];
@@ -200,6 +206,7 @@ export async function POST(req: NextRequest) {
       project_id: projectId,
       labels,
       pinned_for_today: false,
+      origin_path: originPath,
     })
     .select("id")
     .single();

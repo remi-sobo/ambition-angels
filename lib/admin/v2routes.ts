@@ -85,13 +85,15 @@ const ACTIVE: V2RouteRow[] = [
   { v1: "/admin/careers", v2: "/admin/programs/content", kind: "exact", activation: "now", disposition: "re-homed", note: "daily/pool stay at V1 paths (no-home rows)" },
   { v1: "/admin/board", v2: "/admin/organization/board", kind: "prefix", activation: "now", disposition: "re-homed" },
   { v1: "/admin/compliance", v2: "/admin/organization/compliance", kind: "prefix", activation: "now", disposition: "re-homed" },
+  // ── Home cutover (Spec Home, H3) — the first at-cutover activations ──────
+  // exact on purpose: /admin/briefing/weekly is NO_HOME and stays put.
+  { v1: "/admin/queue", v2: "/admin/today", kind: "exact", activation: "now", disposition: "merged", note: "View-all resolved as expand-in-place on Today (Spec Home decision 1)" },
+  { v1: "/admin/briefing", v2: "/admin/today", kind: "exact", activation: "now", disposition: "merged", note: "the briefing engine feeds Today's orientation line" },
 ];
 
 // ── AT CUTOVER: merges and settings moves, activated by destination specs ───
 const AT_CUTOVER: V2RouteRow[] = [
-  { v1: "/admin", v2: "/admin/today", kind: "exact", activation: "at-cutover", disposition: "re-homed (recomposed)", note: "/admin also hosts the signed-out login UI — moves with the Home spec" },
-  { v1: "/admin/queue", v2: "/admin/today", kind: "exact", activation: "at-cutover", disposition: "merged", note: "View-all screen undesigned" },
-  { v1: "/admin/briefing", v2: "/admin/today", kind: "exact", activation: "at-cutover", disposition: "merged" },
+  { v1: "/admin", v2: "/admin/today", kind: "exact", activation: "at-cutover", disposition: "re-homed (recomposed)", note: "ACTIVATED at H3 as an in-page auth-aware forward (app/admin/page.tsx): /admin hosts the signed-out login UI and a config 308 can't branch on auth. Never becomes a config redirect; this row stays for canonicalSeat/highlighting." },
   { v1: "/admin/messages", v2: "/admin/inbox/messages", kind: "exact", activation: "at-cutover", disposition: "merged" },
   { v1: "/admin/strategic-plan/objective", v2: "/admin/organization/strategy", kind: "prefix", activation: "at-cutover", disposition: "merged" },
   { v1: "/admin/strategic-plan/review", v2: "/admin/organization/strategy", kind: "exact", activation: "at-cutover", disposition: "merged" },
@@ -212,6 +214,8 @@ export const KEPT_IN_PLACE: readonly string[] = [
   "/admin/fundraising/grants",
   "/admin/fundraising/campaigns",
   "/admin/finance/budget",
+  // V2-only screens (no V1 source): their own path IS the seat (Spec Home H3).
+  "/admin/organization-health",
 ];
 
 /** The live screen for a canonical V2 path today, or null when none exists

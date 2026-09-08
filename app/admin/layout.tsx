@@ -15,10 +15,12 @@ import { AdminBadgesProvider } from "./_components/AdminBadges";
 import V2Sidebar from "./_components/v2/V2Sidebar";
 import V2TabZone from "./_components/v2/V2TabZone";
 import V2ReedEdge from "./_components/v2/V2ReedEdge";
+import V2MobileBar from "./_components/v2/V2MobileBar";
+import V2QuickAdd from "./_components/v2/V2QuickAdd";
 import { getAdminUser, getOrgContext, getUserOrgs } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
-import { getNavTermLabels } from "@/lib/admin/terminology";
+import { getNavTermLabels, getShellTermLabels } from "@/lib/admin/terminology";
 import { getV2ShellEnabled } from "@/lib/admin/v2shell";
 import { resolveShellNav } from "@/lib/admin/v2shellNav";
 
@@ -112,7 +114,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // and Reed as a right-edge tab. V1 pages are what render inside — no
   // destination screens exist yet.
   if (authed && (await getV2ShellEnabled())) {
-    const nav = resolveShellNav(features, terms);
+    // B4: the shell resolves its labels through the V2 term map (an org's
+    // own renames win; V2 names like People/Team are never clobbered by
+    // generic registry nouns). The V1 map (`terms`) still feeds the
+    // SectionSubNav fallback inside V2TabZone, whose rows ARE V1 nav.
+    const nav = resolveShellNav(features, await getShellTermLabels());
     return (
       <AdminUserProvider value={{ user, isOwner: ctx?.role === "owner" }}>
       <AdminBadgesProvider orgId={orgId} enabled={authed}>
@@ -139,10 +145,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             </main>
           </RailEntityProvider>
           <V2ReedEdge />
-          {/* Phones keep the V1 tab bar until B5 ships the mobile shell. */}
-          <MobileTabBar currentUser={user} reedEnabled={reedEnabled} features={features} />
+          {/* B5: the V2 bottom bar — Today · Work · ＋ · Programs · More,
+              derived from the same resolved nav as the sidebar. */}
+          <V2MobileBar nav={nav} currentUser={user} reedEnabled={reedEnabled} />
+          {/* B6: the shell-level Quick Add — capture, report-an-issue, and
+              the search overlay, at every desktop width (V2 has no rail). */}
+          <V2QuickAdd currentUser={user} reedEnabled={reedEnabled} />
         </ReedLauncherProvider>
-        <QuickAddButton currentUser={user} />
         <GlobalSearch />
       </div>
       </AdminBadgesProvider>

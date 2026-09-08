@@ -97,12 +97,12 @@ Each stage is one PR. Remi merges every PR and starts every stage.
 
 **Redirect loop.** `/admin/today` must never redirect anywhere (it's an ACTIVE target; the fixed-point test covers it the moment the rows activate).
 
-## Open decisions
+## Open decisions — all resolved (Remi, 2026-09-08, as recommended)
 
-1. **View all.** `/admin/queue` maps to "Today → View all," which the design bundle never drew. Recommend: expand-in-place (a "show all N" toggle on Needs-you), no new screen, `/admin/queue` 308s to `/admin/today`. The alternative is a real `/admin/today/all` route.
-2. **Recent movement.** UNBOUND as a feed (recon §G); buildable as a query union over `gifts`/`opportunities`/`cohort_members`/`interactions`. Recommend: defer — ship Today without it, add as its own stage when a destination needs it.
-3. **Cause sentences.** Composed deterministically in code vs. Reed-drafted. Recommend: composed — same input, same sentence, testable; Reed can narrate on top later.
+1. **View all — RESOLVED: expand-in-place.** A "show all N" toggle on Needs-you; no new screen; `/admin/queue` 308s to `/admin/today` at cutover.
+2. **Recent movement — RESOLVED: deferred.** Today ships without it; it becomes its own stage when a destination needs the feed.
+3. **Cause sentences — RESOLVED: composed.** Deterministic code — same input, same sentence, testable. Reed can narrate on top later.
 
 ---
 
-*No code until Remi approves this spec. H1 begins on his kickoff.*
+*Spec approved 2026-09-08. H1 kicked off the same day.*

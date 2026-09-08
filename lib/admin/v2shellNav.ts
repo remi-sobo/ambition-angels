@@ -91,6 +91,33 @@ export function resolveShellNav(
 }
 
 /**
+ * Spec B, stage B5 — the mobile split. The bottom bar is Today, Work, [+],
+ * Programs, More (spec §Mobile); everything else lives in the More sheet,
+ * "filtered by entitlement like everything else". Both halves derive from
+ * resolveShellNav, so a destination an org isn't entitled to is absent from
+ * the bar AND the sheet by construction — a tenant without Work simply gets
+ * a narrower bar (the fifth-tenant rule, same as the sidebar).
+ */
+export const MOBILE_BAR_KEYS: readonly string[] = ["home", "work", "programs"];
+
+export function shellMobileSplit(nav: ShellNav): {
+  /** Bar slots in order (Home renders as "Today"). */
+  bar: ShellDestination[];
+  /** More-sheet destinations: the rest, then Inbox. Settings and Reed are
+   *  chrome, appended by the component (Reed behind ai.reed). */
+  more: ShellDestination[];
+} {
+  const bar = MOBILE_BAR_KEYS.map((k) => nav.destinations.find((d) => d.key === k)).filter(
+    (d): d is ShellDestination => d !== undefined,
+  );
+  const more = [
+    ...nav.destinations.filter((d) => !MOBILE_BAR_KEYS.includes(d.key)),
+    ...(nav.inbox ? [nav.inbox] : []),
+  ];
+  return { bar, more };
+}
+
+/**
  * Which destination owns the current path — sidebar highlight + tab-slot
  * routing. Matches the pathname AND its canonical translation against each
  * tab's live seat and canonical route, longest match wins. "/admin" (Home's

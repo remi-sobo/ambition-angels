@@ -228,7 +228,6 @@ export const BASELINE: { ledgerOnly: string[]; fileOnly: string[] } = {
     "partner_interactions_external_idx_full",
     "prospect_scores_briefs_by_prospect_id",
     "reed_has_permission_revoke_anon",
-    "spec_a_v_obligations",
     "strategy_objective_soft_delete",
   ],
   // In the folder, never applied. Classified in

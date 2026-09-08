@@ -138,6 +138,19 @@ The two B1 gating fixes (Career Library → `modules.content`, Volunteers → `m
 
 **B6 — Quick Add and report an issue.** Quick Add sheet, search overlay trigger, the report modal rehomed with `origin_path`. Commit: `spec-b: quick add and issue reporting in the shell`.
 
+> **As built (B6, 2026-09-08 — pending Remi's acceptance).** `V2QuickAdd` is
+> the V2 desktop capture affordance at every width from lg up (the V2 chrome
+> has no rail, so one FAB carries Add task, Report an issue, the search
+> overlay, and Ask Reed behind `ai.reed`); phones reach the same actions via
+> the mobile bar's ＋, and Report an issue also sits in the More sheet
+> (DoD 5's two triggers). `ReportModal` carries forward whole — the guided
+> interview, photo, prompt synthesis, bucket, operator email, and BloomOS
+> Upgrades filing are untouched — with the one addition: `origin_path` is
+> sent as a structured field, validated (`sanitizeOriginPath`: app-relative
+> `/admin` paths only), and written to `ops_tasks.origin_path` (the A1
+> column). With B6, Spec B's build stages are complete; the named
+> `NAV_SECTIONS` cleanup stays owed at the end of the destination specs.
+
 ---
 
 ## Definition of done

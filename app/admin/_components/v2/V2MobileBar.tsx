@@ -222,6 +222,19 @@ export default function V2MobileBar({
                 </Svg>
                 <span className="font-heading font-semibold text-[13px]">Settings</span>
               </Link>
+              {/* Report an issue lives in the More sheet too (DoD 5: the
+                  trigger works from Quick Add AND mobile More). */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSheet(null);
+                  setModal("report");
+                }}
+                className="flex min-h-[52px] items-center gap-3 rounded-card px-3 py-2 text-left transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
+              >
+                <span className="w-5 shrink-0 text-center" aria-hidden>🐞</span>
+                <span className="font-heading font-semibold text-[13px]">Report an issue</span>
+              </button>
               {reedEnabled && (
                 <button
                   type="button"

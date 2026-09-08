@@ -165,6 +165,9 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
       fd.append("debugPrompt", opts.debugPrompt);
       if (opts.title) fd.append("title", opts.title);
       fd.append("transcript", JSON.stringify(turns));
+      // B6: the page the reporter was on, as a structured field (the
+      // preservation gate's origin_path upgrade) — not just prompt text.
+      if (pathname) fd.append("origin_path", pathname);
       if (file) fd.append("photo", file);
       const r = await fetch("/api/admin/report", { method: "POST", body: fd });
       if (!r.ok) {

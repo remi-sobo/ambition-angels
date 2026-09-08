@@ -24,6 +24,10 @@ export type CatalogMetric = {
   cadence: string;
   source_kind: "manual" | "computed";
   source_key: string | null;
+  /** Contract 2 classification (A1 column). NULL = not yet classified —
+   *  pre-contract rows stay honest rather than being asserted confirmed.
+   *  'conflict' | 'stale' block export under Contract 7 (A5 gate). */
+  confirmed_state: "confirmed" | "unconfirmed" | "conflict" | "stale" | null;
   target: number | null;
   baseline: number | null;
   owner_id: string | null;
@@ -52,7 +56,7 @@ export const getMetricCatalog = cache(async (): Promise<CatalogMetric[]> => {
     supabase
       .from("metric_definitions")
       .select(
-        "id, metric_key, name, description, department, unit, direction, cadence, source_kind, source_key, target, baseline, owner_id, active",
+        "id, metric_key, name, description, department, unit, direction, cadence, source_kind, source_key, confirmed_state, target, baseline, owner_id, active",
       )
       .eq("org_id", ctx.orgId)
       .order("department")

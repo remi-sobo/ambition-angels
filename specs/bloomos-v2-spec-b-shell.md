@@ -126,6 +126,16 @@ The two B1 gating fixes (Career Library → `modules.content`, Volunteers → `m
 
 **B5 — mobile.** Drawer, top bar, bottom bar, More sheet with entitlement filtering. Commit: `spec-b: mobile shell`.
 
+> **As built (B5, 2026-09-08 — pending Remi's acceptance).** The drawer and
+> top bar shipped with B3's sidebar and carry forward unchanged. B5 adds the
+> bottom bar (Today · Work · ＋ · Programs · More, ≥52px targets) and the
+> More sheet, both derived from `resolveShellNav` via `shellMobileSplit`, so
+> entitlement filtering is by construction — a tenant missing a bar
+> destination gets a narrower bar, never a dead link. The ＋ opens the V1
+> action sheet's affordances (add task / report an issue / Reed) until B6
+> rehomes Quick Add and the report trigger; Reed rides `ai.reed` in both the
+> More sheet and the ＋ badge.
+
 **B6 — Quick Add and report an issue.** Quick Add sheet, search overlay trigger, the report modal rehomed with `origin_path`. Commit: `spec-b: quick add and issue reporting in the shell`.
 
 ---

@@ -88,7 +88,8 @@ export default async function PrintPage({
             {meeting.title}
           </h1>
           <div style={{ fontSize: 14, color: C.charcoal, marginTop: 8, lineHeight: 1.6 }}>
-            {kind === "minutes" ? "Minutes of the meeting" : "Agenda"} held {dateLabel}
+            {kind === "minutes" ? "Minutes of the meeting held " : "Agenda for the meeting of "}
+            {dateLabel}
             {meeting.starts_at ? `, ${timeRange(meeting.starts_at, meeting.ends_at)}` : ""}
             {meeting.location ? `, ${meeting.location}` : ""}.
             <br />
@@ -109,7 +110,15 @@ export default async function PrintPage({
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: "block", fontFamily: F.heading, fontSize: 15, fontWeight: 600 }}>{a.title}</span>
                     <span style={{ display: "block", fontSize: 13, color: C.muted, marginTop: 2 }}>
-                      {[a.owner, a.duration_minutes ? `${a.duration_minutes} min` : null, a.item_type].filter(Boolean).join(" · ")}
+                      {[
+                        a.owner,
+                        a.duration_minutes ? `${a.duration_minutes} min` : null,
+                        // Sentence case, not the raw enum: this is a filed
+                        // corporate document, not a debug view.
+                        a.item_type.charAt(0).toUpperCase() + a.item_type.slice(1),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </span>
                     {a.description && (
                       <span style={{ display: "block", fontSize: 13, color: C.charcoal, marginTop: 4, lineHeight: 1.55 }}>

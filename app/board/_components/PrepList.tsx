@@ -16,7 +16,15 @@ import { C, F, card } from "./tokens";
  * Hick's-law finding was that four identically-weighted buttons hide the fact
  * that reading the brief is the only item that changes how a director votes.
  */
-export default function PrepList({ meetingId, items }: { meetingId: string; items: PrepItem[] }) {
+export default function PrepList({
+  meetingId,
+  items,
+  heading,
+}: {
+  meetingId: string;
+  items: PrepItem[];
+  heading: string;
+}) {
   const [rows, setRows] = useState(items);
   const [, startTransition] = useTransition();
 
@@ -47,7 +55,7 @@ export default function PrepList({ meetingId, items }: { meetingId: string; item
       <div style={{ padding: "32px 32px 20px" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <h2 style={{ margin: 0, fontFamily: F.heading, fontSize: 24, fontWeight: 600, letterSpacing: "-0.01em", color: C.ink }}>
-            Before the meeting
+            {heading}
           </h2>
           <span style={{ fontSize: 15, color: C.muted, whiteSpace: "nowrap" }}>
             {done} of {rows.length} done

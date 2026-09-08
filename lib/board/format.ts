@@ -117,3 +117,39 @@ export function daysUntil(dateOnlyValue: string | null): number | null {
   const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   return Math.round((then - today) / 86_400_000);
 }
+
+/**
+ * How a motion's outcome reads.
+ *
+ * Not every board action has a vote count. The 2026 officer election was
+ * adopted by written ballot under Corporations Code §5211, where there is no
+ * for/against tally to record — and rendering that as "Passed 0 to 0" states
+ * something false about a corporate record. A null tally therefore reads as
+ * the outcome alone, and the mechanism goes in the notes beside it.
+ */
+export function tallyLabel(r: {
+  passed: boolean | null;
+  votes_for: number | null;
+  votes_against: number | null;
+}): string {
+  const outcome = r.passed === false ? "Failed" : "Carried";
+  if (typeof r.votes_for !== "number") return outcome;
+  return `${outcome} ${r.votes_for} to ${r.votes_against ?? 0}`;
+}
+
+/** "Before Wednesday" while the meeting is inside the coming week, which is
+ *  when a director is actually preparing; "Before the meeting" once naming a
+ *  weekday would be ambiguous (or the meeting has passed). */
+export function prepHeading(startsAt: string | null): string {
+  if (!startsAt) return "Before the meeting";
+  const days = Math.ceil((new Date(startsAt).getTime() - Date.now()) / 86_400_000);
+  if (days < 0 || days > 6) return "Before the meeting";
+  return `Before ${fmt({ weekday: "long" }).format(new Date(startsAt))}`;
+}
+
+/** The one-line explanation beside a motion with no vote tally. */
+export function firstSentence(text: string | null): string {
+  if (!text) return "";
+  const m = text.match(/^[^.]+\./);
+  return (m ? m[0] : text).trim();
+}

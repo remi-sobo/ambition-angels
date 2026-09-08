@@ -73,6 +73,16 @@ money (`getFinanceSnapshot`), fundraising (`gifts` + `opportunities` vs. goal), 
 
 **H3 — cutover.** Steps 1–5 above, plus verification: the four-org resolved-nav printout showing Home landing `/admin/today`, a live crawl of `/admin/queue` and `/admin/briefing` 308s, the `/admin` auth-door behavior both ways, and the June `notifications.url` shapes re-checked. Commit: `spec-home: cutover`.
 
+> **As built (H3, 2026-09-08 — pending Remi's acceptance).** All five steps
+> landed as specced. Two mechanics worth naming: `/admin/organization-health`
+> seats via `KEPT_IN_PLACE` (a V2-only screen with no V1 source — its own
+> path is the seat), and the `/admin` map row stays `at-cutover` with a note
+> that its activation is the in-page auth-aware forward, never a config 308.
+> The `/admin/queue` and `/admin/briefing` rows are the map's first
+> at-cutover→ACTIVE graduations, `exact` on purpose so `/admin/briefing/
+> weekly` (NO_HOME) stays put — verified by live crawl (308s, query strings
+> surviving) alongside the fixed-point and config↔map tests.
+
 Each stage is one PR. Remi merges every PR and starts every stage.
 
 ## Definition of done

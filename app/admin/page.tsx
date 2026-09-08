@@ -1,13 +1,15 @@
+import { redirect } from "next/navigation";
 import { getOrgContext } from "@/lib/admin/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
 import LoginScreen from "./_components/LoginScreen";
-import CommandCenter from "./_components/CommandCenter";
 
-// /admin is the Command Center (Overview in the BloomOS sidebar). Unauthed
-// visitors get the login screen in the same slot — middleware deliberately
-// leaves /admin itself ungated so this page can host both states. The
-// previous client-side dashboard lives on at /admin/legacy until its tables
-// move into their module pages.
+// /admin is the AUTH DOOR (Spec Home, H3): signed-in users are forwarded to
+// Today; unauthed visitors get the login screen, byte-for-byte as before —
+// middleware deliberately leaves /admin ungated so this page can host both
+// states, and a config 308 can't branch on auth, which is why the forward
+// lives here instead of next.config (the map row's note says the same).
+// The V1 Command Center component stays on disk, unrouted, per the
+// nothing-is-deleted rule.
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage({
@@ -30,5 +32,5 @@ export default async function AdminPage({
       />
     );
   }
-  return <CommandCenter />;
+  redirect("/admin/today");
 }

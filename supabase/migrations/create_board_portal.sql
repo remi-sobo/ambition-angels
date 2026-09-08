@@ -152,8 +152,13 @@ create table if not exists public.minutes (
 );
 
 -- Approved minutes are the corporate record. Freeze the body once approved.
+-- search_path pinned (the pin_function_search_path.sql convention, and the
+-- Supabase linter's 0011 rule): the body touches only NEW/OLD, so an empty
+-- path costs nothing and closes the shadowing hole by construction.
 create or replace function public.minutes_freeze_when_approved()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql
+set search_path = ''
+as $$
 begin
   if old.approved_at is not null and new.body is distinct from old.body then
     raise exception 'minutes % are approved and immutable', old.id;

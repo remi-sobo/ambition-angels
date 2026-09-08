@@ -32,6 +32,10 @@ export default function SiteChrome({
     false;
   const standalone =
     (pathname?.startsWith("/admin") ||
+      // The board portal carries its own header and footer end to end, and a
+      // fixed marketing nav over a governance surface would be wrong twice:
+      // visually, and because /board is private and never advertises the site.
+      pathname?.startsWith("/board") ||
       teensGameScreen ||
       pathname?.startsWith("/ygb") ||
       pathname?.startsWith("/shannon") ||

@@ -1,0 +1,178 @@
+/*
+ * Board portal layout and print rules.
+ *
+ * The portal is built with inline styles (see _components/tokens.ts for why),
+ * which cannot express media queries. Everything responsive or print-related
+ * therefore lives here, keyed off a handful of class names.
+ *
+ * Design principle from the spec: a director reads this on a phone at 9pm the
+ * night before. Every screen must work at 390px first.
+ */
+
+/* ── Two-column blocks collapse to one on narrow screens ─────────────── */
+.board-two-col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.board-stat-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+/* The meeting page: agenda left at ~62%, materials/attendance right. */
+.board-meeting-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .board-two-col { grid-template-columns: 1fr 1fr; }
+  .board-stat-row { grid-template-columns: repeat(3, 1fr); }
+  .board-meeting-grid { grid-template-columns: 62fr 38fr; }
+  /* The right rail follows the director down a long agenda. */
+  .board-sticky { position: sticky; top: 104px; }
+}
+
+/* The header's prep progress is a convenience for someone who landed on a
+   meeting from a calendar link. Below the two-column breakpoint the nav wraps
+   and it is the first thing to overflow the row, so it steps aside — Home
+   carries the same progress far more prominently, and it is one tap away. */
+.board-prep-pill { display: none; }
+@media (min-width: 900px) {
+  .board-prep-pill { display: flex; }
+}
+
+/* ── The live indicator, the one place a second accent is permitted ──── */
+.board-pulse { animation: board-pulse 2s ease-in-out infinite; }
+@keyframes board-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-pulse { animation: none; }
+}
+
+/* ── Rows that look clickable are clickable across their full width ───── */
+/* The V2 audit's single most likely source of "I clicked it and nothing
+   happened": archive and materials rows responded at row level, library rows
+   only on the word Open. One rule, applied everywhere. */
+.board-row { transition: background-color .12s ease; }
+.board-row:hover { background: #FAFAF8; }
+
+/* Every Open / Undo affordance clears a 32px target without moving a pixel. */
+.board-open { padding: 7px 4px; margin: -7px -4px; display: inline-block; }
+
+/* ── Minute book export (spec §5.9) ──────────────────────────────────────
+ * A legal requirement, not a convenience: California corporate code obliges
+ * the organization to keep a minute book that can be produced and printed at
+ * any time. These rules are what make Ctrl-P on the meeting page produce a
+ * filing-quality document, so the export is a print stylesheet over the real
+ * HTML rather than a second rendering path that can drift from it.
+ */
+@page {
+  size: letter;
+  margin: 0.75in 0.75in 0.9in;
+}
+
+@media print {
+  /* Navigation, controls and anything interactive leave the page. */
+  .board-chrome,
+  .board-noprint {
+    display: none !important;
+  }
+
+  html, body {
+    background: #FFFFFF !important;
+    font-size: 11pt;
+  }
+
+  /* Cards become plain sections: borders and radii are screen furniture and
+     waste ink and vertical space in a filed document. */
+  .board-print-flat,
+  .board-print-flat * {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .board-print-flat {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 0 18pt !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* The running header the minute book needs: organization name and meeting
+     date on every page. Fixed-position blocks repeat per printed page. */
+  .board-print-header {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    font-family: "Poppins", sans-serif;
+    font-size: 9pt;
+    color: #3D3D3D;
+    border-bottom: 0.5pt solid #C8C6BE;
+    padding-bottom: 4pt;
+  }
+  .board-print-header .spread {
+    display: flex;
+    justify-content: space-between;
+    gap: 24pt;
+  }
+  /* Clears the fixed header on every page. */
+  .board-print-body { padding-top: 26pt; }
+
+  /* Page numbers. CSS counters are the only mechanism that survives every
+     browser's print path without a server-side PDF renderer. */
+  .board-print-footer {
+    display: block !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    font-family: "DM Sans", sans-serif;
+    font-size: 9pt;
+    color: #6B6960;
+    border-top: 0.5pt solid #C8C6BE;
+    padding-top: 4pt;
+    text-align: right;
+  }
+  .board-print-footer::after {
+    counter-increment: page;
+    content: "Page " counter(page);
+  }
+
+  /* Never split a motion across a page break: a decision must be readable as
+     one block in the filed record. */
+  .board-decision,
+  .board-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  h1, h2, h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Links print as text; a URL in a minute book is noise. */
+  a { text-decoration: none !important; color: #0E0E0E !important; }
+
+  .board-print-only { display: block !important; }
+}
+
+/* Print-only blocks stay hidden on screen. */
+.board-print-header,
+.board-print-footer,
+.board-print-only {
+  display: none;
+}

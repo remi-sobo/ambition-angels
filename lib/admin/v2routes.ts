@@ -135,6 +135,12 @@ const ACTIVE: V2RouteRow[] = [
   // seat is the one-list's volunteers view (P3). First destination carrying
   // a canonical query; v2Href merges a source query with "&". ──
   { v1: "/admin/fundraising/volunteers", v2: "/admin/fundraising/donors-funders?view=volunteers", kind: "exact", activation: "now", disposition: "merged", note: "re-aimed at P4 (decision 1): the volunteers view of the one list, not People" },
+  // ── Impact cutover (Spec Impact, I4). One move: the KPI scorecard onto
+  // KPIs, which embeds the owner cards since I3 (decision 3: a working
+  // surface is absorbed, not parked). Exact on purpose: the other
+  // strategic-plan children are Organization's rows (objective/review/setup
+  // at-cutover; narrative/people NO_HOME) and stay put. ──
+  { v1: "/admin/strategic-plan/scorecard", v2: "/admin/impact/kpis", kind: "exact", activation: "now", disposition: "merged", note: "KPIs embeds the owner cards since I3; editing travels" },
 ];
 
 // ── AT CUTOVER: merges and settings moves, activated by destination specs ───
@@ -143,7 +149,7 @@ const AT_CUTOVER: V2RouteRow[] = [
   { v1: "/admin/messages", v2: "/admin/inbox/messages", kind: "exact", activation: "at-cutover", disposition: "merged" },
   { v1: "/admin/strategic-plan/objective", v2: "/admin/organization/strategy", kind: "prefix", activation: "at-cutover", disposition: "merged" },
   { v1: "/admin/strategic-plan/review", v2: "/admin/organization/strategy", kind: "exact", activation: "at-cutover", disposition: "merged" },
-  { v1: "/admin/strategic-plan/scorecard", v2: "/admin/impact/kpis", kind: "exact", activation: "at-cutover", disposition: "merged" },
+  // scorecard graduated to ACTIVE at Spec Impact I4.
   { v1: "/admin/strategic-plan/setup", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
   // Work's four moves (monday, friday, calendar, connections) graduated to
   // ACTIVE at Spec Work W4; booking-page stays the one true settings row.

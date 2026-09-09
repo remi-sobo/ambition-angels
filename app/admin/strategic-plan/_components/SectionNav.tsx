@@ -12,6 +12,12 @@ import { usePathname } from "next/navigation";
 // simply covers this bar.
 
 const BASE = "/admin/strategic-plan";
+// Spec Org O1: the objective detail and monthly review live at the Strategy
+// seat too (/admin/organization/strategy/*). Same bar, both path families:
+// chips keep linking the V1 paths (they 308 through once the O2 rows
+// activate), and active-matching understands the V2 twin. The landing hides
+// the bar in both families — it carries the menu in its own header.
+const V2_BASE = "/admin/organization/strategy";
 
 const SECTIONS = [
   { href: `${BASE}/scorecard`, label: "KPI Scorecard" },
@@ -23,7 +29,7 @@ const SECTIONS = [
 
 export default function SectionNav() {
   const pathname = usePathname();
-  if (!pathname || pathname === BASE) return null;
+  if (!pathname || pathname === BASE || pathname === V2_BASE) return null;
 
   return (
     <nav
@@ -37,7 +43,10 @@ export default function SectionNav() {
         ← Strategic Plan
       </Link>
       {SECTIONS.map((s) => {
-        const active = pathname === s.href || pathname.startsWith(`${s.href}/`);
+        const v2 = s.href.replace(BASE, V2_BASE);
+        const active =
+          pathname === s.href || pathname.startsWith(`${s.href}/`) ||
+          pathname === v2 || pathname.startsWith(`${v2}/`);
         return (
           <Link
             key={s.href}

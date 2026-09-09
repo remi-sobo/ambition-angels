@@ -91,11 +91,11 @@ Each stage is one PR. Remi merges every PR and starts every stage.
 
 **Tier double-counting.** A committed pledge with a recorded gift must not appear in two tiers. The existing dedup migrations (`dedup_commitments_against_gifts`, `surface_committed_deals_in_revenue_schedule`) own this rule — Forecast composes them, never re-derives.
 
-## Open decisions (need Remi's ruling before their stage)
+## Open decisions — both resolved (Remi, 2026-09-09, as recommended)
 
-1. **Forecast scenarios ("Sobrato slips") — UNBOUND.** Recommend: **defer**, exactly like Home's recent-movement feed — Forecast ships as tiers without a scenario store, and scenarios become their own stage when a real decision needs one. Needed by N2.
-2. **Where do generated reports live? — UNBOUND.** Recommend: **the file cabinet** — a generated report is a `documents` row (entity_type `fin_report` registered in the spine), so exports live where every other file lives, RLS included, and `export_waivers.artifact_id` points at the document. No new table. Needed by N3.
+1. **Forecast scenarios — RESOLVED: deferred.** Forecast ships as tiers without a scenario store; scenarios become their own stage when a real decision needs one (the recent-movement precedent).
+2. **Generated reports — RESOLVED: the file cabinet.** A generated report is a `documents` row (entity_type `fin_report` registered in the spine); `export_waivers.artifact_id` points at the document. No new table.
 
 ---
 
-*Drafted 2026-09-09, pending Remi's approval. N1 begins only on his kickoff.*
+*Spec approved 2026-09-09. N1 kicked off the same day.*

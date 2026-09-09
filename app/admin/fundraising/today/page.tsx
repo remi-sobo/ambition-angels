@@ -14,6 +14,7 @@ import { TYPE } from "@/lib/admin/typeScale";
 import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 import { fetchAskMoments } from "@/lib/fundraising/plan-moments";
 import type { AskMoment } from "@/lib/fundraising/plan";
+import AckQueue from "../acknowledgments/AckQueue";
 
 // Today's Fundraising Moves (Phase 2) — the operator home screen. Answers "who
 // needs me today," assembled deterministically from the spine (opportunities +
@@ -227,14 +228,11 @@ export default async function TodaysMovesPage() {
             </>
           )}
         />
-        <GiftQueue
-          title="Thank-yous due"
-          hint="Gifts awaiting an acknowledgment."
-          rows={acks}
-          accent="text-orange"
-          href="/admin/fundraising/acknowledgments"
-          hrefLabel="Acknowledgments →"
-        />
+        {/* Thank someone — absorbed at Spec Fundraising F5: the REAL
+            acknowledgment queue (reconciliation, composer, generated receipt
+            language), not a passive list. Same component the V1
+            acknowledgments page renders standalone until its F6 308. */}
+        <AckQueue embedded />
         <GiftQueue
           title="Recently engaged"
           hint="New gifts in the last 14 days — worth a personal touch."

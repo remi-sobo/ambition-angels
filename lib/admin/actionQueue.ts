@@ -42,7 +42,10 @@ export type ActionItemRow = {
     | "document_renewal"
     | "metric_stale"
     | "application_pending"
-    | "session_unrecorded";
+    | "session_unrecorded"
+    // The F5 arm (v_obligations only — v_action_items never emits it; the
+    // union widens so SOURCE_FALLBACK_HREF covers every Contract 3 type).
+    | "fr_next_step";
   source_id: string;
   title: string;
   entity_type: string | null;
@@ -95,6 +98,10 @@ export const SOURCE_FALLBACK_HREF: Record<ActionItemRow["source"], string> = {
   metric_stale: v2Href("/admin/kpis"),
   application_pending: v2Href("/admin/intake"),
   session_unrecorded: v2Href("/admin/cohorts"),
+  // A next move lives on the pipeline: /admin/fundraising hosts the board
+  // today, and its F6 activation carries this to Fundraising → Today, whose
+  // overdue-moves list is the detail surface.
+  fr_next_step: v2Href("/admin/fundraising"),
 };
 
 const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };

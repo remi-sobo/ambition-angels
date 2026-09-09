@@ -31,6 +31,7 @@ export type ObligationRow = {
 const SOURCE_WEIGHT: Record<string, number> = {
   ops_task: 0,
   grant_requirement: 0,
+  fr_next_step: 1, // a dated human move (F5) — always dated, so this is a tiebreak
   compliance_item: 1,
   reconciliation_item: 2,
   acknowledgment: 3,
@@ -86,6 +87,8 @@ export function whyFallback(row: ObligationRow, today: string): string {
       return `Compliance filing — ${due}.`;
     case "acknowledgment":
       return `A gift is waiting on its thank-you (${due}).`;
+    case "fr_next_step":
+      return `A move you set on an open ask — ${due}.`;
     case "reconciliation_item":
       return "A reconciliation proposal is waiting for review.";
     case "document_renewal":

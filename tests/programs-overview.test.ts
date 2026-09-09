@@ -17,6 +17,24 @@ describe("P2 structural pins", () => {
     expect(src).toMatch(/force-dynamic/);
   });
 
+  test("regression: cf/fullName come from the SERVER-SAFE module, never the client one", () => {
+    // Production crash (Vercel digest 573398458): this server component
+    // imported cf from the "use client" StudentControls module — in the
+    // build that export is a client reference, and the page threw
+    // `(0, c.cf) is not a function` at render. The pure helpers live in
+    // students/_lib/studentFields now; StudentControls re-exports for its
+    // client importers.
+    expect(src).toMatch(/from "@\/app\/admin\/students\/_lib\/studentFields"/);
+    expect(src).not.toMatch(/from "@\/app\/admin\/students\/_components\/StudentControls"/);
+    const fields = readFileSync(
+      join(app, "admin", "students", "_lib", "studentFields.ts"),
+      "utf8",
+    );
+    // A directive only counts at the top of the file; the header comment may
+    // quote it while telling the story.
+    expect(fields.startsWith('"use client"')).toBe(false);
+  });
+
   test("bound data only — the UNBOUND funnel stays out (decision 3, failure mode 2)", () => {
     // No metric_snapshots read, no funnel stages: the landing never fakes a
     // platform-app number.

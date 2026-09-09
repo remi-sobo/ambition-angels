@@ -106,13 +106,17 @@ export function resolveShellNav(
 
 /**
  * Spec B, stage B5 — the mobile split. The bottom bar is Today, Work, [+],
- * Programs, More (spec §Mobile); everything else lives in the More sheet,
- * "filtered by entitlement like everything else". Both halves derive from
+ * Fundraising, More; everything else lives in the More sheet, "filtered by
+ * entitlement like everything else". Both halves derive from
  * resolveShellNav, so a destination an org isn't entitled to is absent from
  * the bar AND the sheet by construction — a tenant without Work simply gets
  * a narrower bar (the fifth-tenant rule, same as the sidebar).
+ *
+ * The B5 spec's third slot was Programs; Remi swapped it for Fundraising
+ * (2026-09-09) — fundraising is the phone-first work, Programs lives in
+ * More.
  */
-export const MOBILE_BAR_KEYS: readonly string[] = ["home", "work", "programs"];
+export const MOBILE_BAR_KEYS: readonly string[] = ["home", "work", "fundraising"];
 
 export function shellMobileSplit(nav: ShellNav): {
   /** Bar slots in order (Home renders as "Today"). */

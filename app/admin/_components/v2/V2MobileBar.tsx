@@ -10,7 +10,7 @@ import {
   type ShellDestination,
   type ShellNav,
 } from "@/lib/admin/v2shellNav";
-import { Icon } from "../Sidebar";
+import { Icon } from "../Icon";
 import QuickAddModal from "../QuickAddModal";
 import ReportModal from "../ReportModal";
 import { useReedLauncher } from "../reed/ReedLauncherProvider";

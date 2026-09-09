@@ -45,7 +45,13 @@ export default function RhythmWizard({
   function go(i: number) {
     const next = Math.min(Math.max(i, 0), steps.length - 1);
     setIndex(next);
-    router.replace(`${pathname}?step=${steps[next].key}`, { scroll: false });
+    // Preserve the rest of the query when writing ?step= — on Plan & Close
+    // (Spec Work W1) ?ritual= rides the URL, and dropping it would flip the
+    // screen back to the time default mid-ritual. No-op on the V1 routes,
+    // which carry no other params.
+    const q = new URLSearchParams(sp);
+    q.set("step", steps[next].key);
+    router.replace(`${pathname}?${q.toString()}`, { scroll: false });
   }
 
   const step = steps[clamped];

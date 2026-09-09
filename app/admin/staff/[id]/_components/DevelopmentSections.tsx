@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import SectionHeading from "../../../_components/SectionHeading";
 import EmptyState from "../../../_components/EmptyState";
 import { StatusChip } from "../../../_components/StatusChip";
@@ -56,6 +58,7 @@ function GoalsSection({
   canApprove: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ title: "", period: "", target_date: "", metric_type: "qualitative" });
@@ -71,7 +74,7 @@ function GoalsSection({
       if (res.ok) router.refresh();
       else {
         const b = (await res.json().catch(() => null)) as { error?: string } | null;
-        alert(b?.error ?? "Something went wrong.");
+        toast.error(userMessage(res, b));
       }
     } finally {
       setBusy(false);
@@ -227,6 +230,7 @@ function KpisSection({
   autoOptions: AutoOption[];
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
   const [logId, setLogId] = useState<string | null>(null);
@@ -245,7 +249,7 @@ function KpisSection({
       if (res.ok) router.refresh();
       else {
         const b = (await res.json().catch(() => null)) as { error?: string } | null;
-        alert(b?.error ?? "Something went wrong.");
+        toast.error(userMessage(res, b));
       }
     } finally {
       setBusy(false);

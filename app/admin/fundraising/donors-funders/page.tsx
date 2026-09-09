@@ -5,8 +5,9 @@ import SavedViews from "./_components/SavedViews";
 import { money } from "../../finance/_components/charts";
 import { getDonorsFunders, type DfRow, type ProspectRow } from "@/lib/admin/donorsFunders";
 import { constituentName } from "@/lib/fundraising/display";
-import { BUILT_IN_VIEWS, isLapsed, toDefinition } from "@/lib/fundraising/views";
+import { BUILT_IN_VIEWS, RESEARCH_VIEWS, isLapsed, toDefinition } from "@/lib/fundraising/views";
 import { hasEntitlement } from "@/lib/admin/entitlements";
+import ResearchDrawer from "./_components/ResearchDrawer";
 import { todayISO } from "../../ops/_types/ops";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -33,11 +34,14 @@ export default async function DonorsFundersPage({
   searchParams?: Record<string, string | undefined>;
 }) {
   const def = toDefinition(searchParams ?? {});
-  // The prospect bench keeps V1's fence (F2 correction): its section is
-  // gated ai.prospect_research, so the view is too — an org without the
-  // key never sees the pill, and a forced URL degrades to All.
-  const prospectsEnabled = await hasEntitlement("ai.prospect_research");
-  if (def.view === "prospects" && !prospectsEnabled) delete def.view;
+  // The research views keep V1's fence: the bench section is gated
+  // ai.prospect_research, so Prospects and Promoted (R1's saved view of
+  // promoted prospects, F4) are too — an org without the key never sees
+  // either pill, and a forced URL degrades to All. The same key gates the
+  // R1 drawer below.
+  const researchEnabled = await hasEntitlement("ai.prospect_research");
+  if (def.view && RESEARCH_VIEWS.has(def.view) && !researchEnabled) delete def.view;
+  const drawerOpen = researchEnabled && searchParams?.drawer === "research";
   const page = Math.max(0, Number.parseInt(searchParams?.page ?? "0", 10) || 0);
   const today = todayISO();
   const data = await getDonorsFunders(def, page, today);
@@ -78,12 +82,26 @@ export default async function DonorsFundersPage({
           subtitle={`${data.total} ${view === "prospects" ? "prospect" : "constituent"}${
             data.total === 1 ? "" : "s"
           } · one list, every relationship`}
+          actions={
+            researchEnabled ? (
+              <Link
+                href={`${BASE}?${new URLSearchParams({
+                  ...extra,
+                  ...(view !== "all" ? { view } : {}),
+                  drawer: "research",
+                }).toString()}`}
+                className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+              >
+                Prospect research →
+              </Link>
+            ) : undefined
+          }
         />
 
         {/* ── Views + filters (URL-driven, server-rendered) ── */}
         <div className="flex flex-wrap items-center gap-3">
           <FilterTabs
-            options={BUILT_IN_VIEWS.filter((v) => v.value !== "prospects" || prospectsEnabled).map(
+            options={BUILT_IN_VIEWS.filter((v) => researchEnabled || !RESEARCH_VIEWS.has(v.value)).map(
               (v) => ({ value: v.value, label: v.label }),
             )}
             current={view}
@@ -147,6 +165,14 @@ export default async function DonorsFundersPage({
               <span className="text-ink-3">Older →</span>
             )}
           </div>
+        )}
+
+        {/* The R1 drawer (F4): full-height, URL-driven, entitlement-gated. */}
+        {drawerOpen && (
+          <ResearchDrawer
+            searchParams={{ show: searchParams?.show }}
+            closeHref={pageHref(page)}
+          />
         )}
 
         <p className="text-xs text-ink-3 px-1 leading-relaxed max-w-4xl">

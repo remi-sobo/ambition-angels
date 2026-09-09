@@ -118,6 +118,31 @@ export async function getDonorsFunders(
     };
   }
 
+  // Promoted (F4, R1: "promoted prospects become a saved view"): the id set
+  // comes from the bench — constituents that a promoted fr_prospects row
+  // points at. An empty set short-circuits to an empty page rather than an
+  // unfiltered list.
+  let promotedIds: string[] | null = null;
+  if (view === "promoted") {
+    const { data: promotedRows } = await supabase
+      .from("fr_prospects")
+      .select("constituent_id")
+      .eq("org_id", ctx.orgId)
+      .eq("status", "promoted")
+      .not("constituent_id", "is", null)
+      .limit(1000);
+    promotedIds = Array.from(
+      new Set(((promotedRows ?? []) as { constituent_id: string }[]).map((r) => r.constituent_id)),
+    );
+    if (promotedIds.length === 0) {
+      const savedViewsRes = await savedViewsQ;
+      return {
+        view, rows: [], prospects: [], total: 0, page, pageSize: PAGE_SIZE,
+        savedViews: (savedViewsRes.data ?? []) as SavedView[], error: null,
+      };
+    }
+  }
+
   let q = supabase
     .from("v_fr_rollups")
     .select(
@@ -126,6 +151,7 @@ export async function getDonorsFunders(
     )
     .eq("org_id", ctx.orgId)
     .is("archived_at", null); // archived hidden everywhere (matchesView)
+  if (promotedIds) q = q.in("id", promotedIds);
   // These filters must stay equivalent to matchesView() in
   // lib/fundraising/views.ts — the tested contract for the view semantics.
   if (view === "donors") q = q.gt("gift_count", 0);

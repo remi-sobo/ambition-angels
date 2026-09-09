@@ -172,8 +172,18 @@ describe("activeShellKey: sidebar highlight + tab-slot routing", () => {
 });
 
 describe("B3 shell invariants", () => {
-  test("Home and Fundraising are the cut-over destinations — their tab slots render the V2 single row", () => {
-    expect(Array.from(V2_CUTOVER_DESTINATIONS)).toEqual(["home", "fundraising"]);
+  test("Home, Fundraising and Finance are the cut-over destinations — their tab slots render the V2 single row", () => {
+    expect(Array.from(V2_CUTOVER_DESTINATIONS)).toEqual(["home", "fundraising", "finance"]);
+  });
+
+  test("Finance lands on Snapshot with the five-tab V2 row for every org (N4)", () => {
+    for (const features of [AA, YGB, NINE_KEY]) {
+      const fin = resolveShellNav(features).destinations.find((d) => d.key === "finance")!;
+      expect(fin.href).toBe("/admin/finance/snapshot");
+      expect(fin.tabs.map((t) => t.key)).toEqual([
+        "snapshot", "transactions", "budget", "forecast", "reports",
+      ]);
+    }
   });
 
   test("Fundraising lands on Today's Moves with the five-tab V2 row for every org (F6)", () => {

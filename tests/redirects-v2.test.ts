@@ -56,9 +56,12 @@ describe("every active redirect terminates at a live host, no loops", () => {
     const noBasePage = new Set(["/admin/work/meetings/upcoming"]);
     const checks: string[] = [];
     for (const row of active) {
-      if ((row.kind === "exact" || row.kind === "prefix") && !noBasePage.has(row.v2!))
-        checks.push(pageFor(row.v2!));
-      if (row.kind === "uuid-child") checks.push(pageFor(`${row.v2}/[id]`));
+      // A destination may carry a canonical query (P4: volunteers →
+      // ?view=volunteers) — the screen on disk is the path.
+      const base = row.v2!.split("?")[0];
+      if ((row.kind === "exact" || row.kind === "prefix") && !noBasePage.has(base))
+        checks.push(pageFor(base));
+      if (row.kind === "uuid-child") checks.push(pageFor(`${base}/[id]`));
     }
     // Deep prefix children that must exist for stored deep links to land:
     checks.push(pageFor("/admin/work/projects/[id]"));
@@ -148,6 +151,22 @@ describe("v2Href: the translation the choke points ride", () => {
     // The weekly briefing's NO_HOME ruling stands (decision 4): the ritual
     // rows are exact, so it never rides their 308s.
     expect(v2Href("/admin/briefing/weekly")).toBe("/admin/briefing/weekly");
+  });
+
+  test("P4: volunteers re-aims at the one-list's view; the October rows stay put", () => {
+    // decision 1, resolved: constituents, not students — so Donors &
+    // Funders' volunteers view, not People. The first query-bearing
+    // destination; a source query merges with "&", never a second "?".
+    expect(v2Href("/admin/fundraising/volunteers")).toBe(
+      "/admin/fundraising/donors-funders?view=volunteers",
+    );
+    expect(v2Href("/admin/fundraising/volunteers?q=lee")).toBe(
+      "/admin/fundraising/donors-funders?view=volunteers&q=lee",
+    );
+    // R8/R9 honored (decision 4) and NO_HOME stands: nothing else moved.
+    expect(v2Href("/admin/demoday")).toBe("/admin/demoday");
+    expect(v2Href("/admin/careers/daily")).toBe("/admin/careers/daily");
+    expect(v2Href("/admin/careers/pool")).toBe("/admin/careers/pool");
   });
 
   test("F6: the Fundraising moves resolve, and the deliberately-narrowed children stay live", () => {

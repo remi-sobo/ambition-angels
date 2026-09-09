@@ -226,6 +226,7 @@ ordered=(
   spec_fr_donors_funders_rollups.sql
   spec_fr_why_matters.sql
   spec_fr_next_step_obligations.sql
+  create_shared_notes.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

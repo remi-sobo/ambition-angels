@@ -74,6 +74,61 @@ describe("member_notes privacy", () => {
   });
 });
 
+describe("sharing a note does not weaken member_notes", () => {
+  const share = code(
+    readFileSync(join(ROOT, "app/api/board/meetings/[id]/notes/share/route.ts"), "utf8"),
+  );
+
+  test("the share route reads notes as the caller, never as service-role", () => {
+    expect(share).toContain("createServerSupabase");
+    expect(share).not.toContain("getSupabaseAdmin");
+    // The read is pinned to the caller's own row, so RLS and the query agree.
+    expect(share).toContain("board_member_id\", ctx.memberId");
+  });
+
+  test("the shared copy takes its text from the note, not from the request", () => {
+    // The request names agenda items only. If body text could arrive in the
+    // payload, a client could put words in a director's mouth.
+    expect(share).toContain("agendaItemIds");
+    expect(share).not.toMatch(/body:\s*(payload|parsed)\./);
+    expect(share).toContain("n.body.trim()");
+  });
+
+  test("sending copies into shared_notes and never touches member_notes", () => {
+    expect(share).toContain('from("shared_notes").insert');
+    // No update, no delete, no select of anyone else's notes.
+    expect(share).not.toMatch(/from\("member_notes"\)\s*\.\s*(update|delete|upsert)/);
+  });
+
+  test("shared_notes lets the author insert only as herself", () => {
+    const sql = readFileSync(join(ROOT, "supabase/migrations/create_shared_notes.sql"), "utf8");
+    const insert = sql.slice(sql.indexOf('create policy "author sends note"'));
+    const insertPolicy = insert.slice(0, insert.indexOf(";"));
+    expect(insertPolicy).toContain("for insert");
+    expect(insertPolicy).toContain("private.board_member_id(org_id)");
+    // board.write may read what was sent; it may never write a row as
+    // somebody else, which would forge a director's words.
+    expect(insertPolicy).not.toContain("board.write");
+  });
+
+  test("shared_notes has no update or delete policy for anyone", () => {
+    const sql = readFileSync(join(ROOT, "supabase/migrations/create_shared_notes.sql"), "utf8");
+    expect(sql).not.toMatch(/for\s+update/);
+    expect(sql).not.toMatch(/for\s+delete/);
+    expect(sql).not.toMatch(/for\s+all/);
+  });
+
+  test("the admin read path is on shared_notes and nothing else", () => {
+    const sql = readFileSync(join(ROOT, "supabase/migrations/create_shared_notes.sql"), "utf8");
+    // Every board.write mention in this migration must be about shared_notes.
+    for (const line of sql.split("\n")) {
+      if (line.includes("board.write") && !line.trim().startsWith("--")) {
+        expect(sql.slice(0, sql.indexOf(line))).toContain("on public.shared_notes");
+      }
+    }
+  });
+});
+
 describe("sign-in does not reveal the roster", () => {
   const src = code(readFileSync(join(ROOT, "app/api/board/signin/route.ts"), "utf8"));
 

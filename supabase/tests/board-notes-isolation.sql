@@ -120,6 +120,79 @@ begin
   end if;
 end $$;
 
+-- ── Sharing: a deliberate copy, not a hole in the wall ────────────────────
+-- Lara sends her note on. The private note must be untouched by it, and the
+-- admin must be able to read the COPY while still reading none of the source.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a2';
+do $$
+declare
+  v_org   uuid;
+  v_mtg   uuid;
+  v_item  uuid;
+  v_other uuid;
+begin
+  -- Taken from the fixture row rather than hardcoded, so this block cannot
+  -- pass for the wrong reason if the fixture ids change.
+  select org_id, meeting_id, agenda_item_id into v_org, v_mtg, v_item
+  from member_notes limit 1;
+
+  insert into shared_notes (org_id, meeting_id, agenda_item_id, board_member_id, body)
+  select org_id, meeting_id, agenda_item_id, board_member_id, body from member_notes;
+
+  -- She can read back what she sent.
+  if (select count(*) from shared_notes) <> 1 then
+    raise exception 'FAIL: the author cannot read the note she sent (got %)',
+      (select count(*) from shared_notes);
+  end if;
+
+  -- Sending copies. It does not move, delete or alter the private note.
+  if (select count(*) from member_notes) <> 1 then
+    raise exception 'FAIL: sending changed member_notes (got % rows)',
+      (select count(*) from member_notes);
+  end if;
+
+  -- She cannot send as somebody else. A real director's id, so this is
+  -- refused by the policy and not by a foreign key.
+  select id into v_other from board_members
+  where org_id = v_org and id <> private.board_member_id(v_org) limit 1;
+  if v_other is null then
+    raise exception 'FIXTURE: expected a second board member to forge against';
+  end if;
+  begin
+    insert into shared_notes (org_id, meeting_id, agenda_item_id, board_member_id, body)
+    values (v_org, v_mtg, v_item, v_other, 'forged');
+    raise exception 'FAIL: a director can send a note as another director';
+  exception when insufficient_privilege then
+    null;
+  end;
+end $$;
+
+-- ── As Todd: another director sees no part of a note sent to the Chair ─────
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a3';
+do $$
+begin
+  if (select count(*) from shared_notes) <> 0 then
+    raise exception 'FAIL: another director can read a sent note (got % rows)',
+      (select count(*) from shared_notes);
+  end if;
+end $$;
+
+-- ── As board_admin: the copy YES, the private note still NO ───────────────
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';
+do $$
+begin
+  if (select count(*) from shared_notes) <> 1 then
+    raise exception 'FAIL: board_admin cannot read a note sent to it (got %)',
+      (select count(*) from shared_notes);
+  end if;
+
+  -- The whole point. Sharing one note must not have opened member_notes.
+  if (select count(*) from member_notes) <> 0 then
+    raise exception 'FAIL: board_admin gained a read path to member_notes (got % rows)',
+      (select count(*) from member_notes);
+  end if;
+end $$;
+
 -- ── As anon: nothing, obviously ───────────────────────────────────────────
 reset role;
 reset request.jwt.claim.sub;
@@ -128,6 +201,9 @@ do $$
 begin
   if (select count(*) from member_notes) <> 0 then
     raise exception 'FAIL: anonymous can read member_notes';
+  end if;
+  if (select count(*) from shared_notes) <> 0 then
+    raise exception 'FAIL: anonymous can read shared_notes';
   end if;
 end $$;
 

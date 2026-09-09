@@ -265,31 +265,30 @@ describe("the whole F.1 delta is accounted for", () => {
     expect(v2Href("/admin/briefing/weekly")).toBe("/admin/briefing/weekly"); // NO_HOME, exact rows leave it
   });
 
-  test("every notifications.url shape stored in production has a map contract", () => {
+  test("every notifications.url shape stored in production RESOLVES — the map's oldest contract, discharged (X2)", () => {
     // The four shapes that exist in prod as of 2026-09-04 (all June/July
-    // rows). The two fundraising shapes CUT OVER at Spec Fundraising F6:
-    // they now resolve to the Donor 360, which handles both id spaces. The
-    // messages shapes stay at-cutover merges until Inbox's spec.
+    // rows). The two fundraising shapes cut over at F6 (the Donor 360
+    // handles both id spaces); the two messages shapes — pinned "stays live
+    // until its seat exists" through six cutovers — landed at Spec Inbox X2,
+    // ?t= riding the 308 so a stored pointer opens its thread.
     expect(v2Href(`/admin/fundraising/prospects/${UUID}`)).toBe(
       `/admin/fundraising/donors-funders/${UUID}`,
     );
     expect(v2Href(`/admin/fundraising/donors/${UUID}`)).toBe(
       `/admin/fundraising/donors-funders/${UUID}`,
     );
-    const stored = [
-      { shape: `/admin/messages?t=${UUID}`, future: "/admin/inbox/messages" },
-      { shape: "/admin/messages", future: "/admin/inbox/messages" },
-    ];
-    for (const { shape, future } of stored) {
-      expect(v2Href(shape), `${shape} must stay live until its seat exists`).toBe(shape);
-      const path = shape.split("?")[0].replace(`/${UUID}`, "");
-      const row = V2_ROUTE_MAP.filter(
-        (r) =>
-          r.activation === "at-cutover" &&
-          (r.kind === "exact" ? r.v1 === path : r.v1 === path || path.startsWith(r.v1 + "/")),
-      ).sort((a, b) => b.v1.length - a.v1.length)[0];
-      expect(row, `no at-cutover contract for ${shape}`).toBeTruthy();
-      expect(row!.v2, shape).toBe(future);
+    expect(v2Href(`/admin/messages?t=${UUID}`)).toBe(`/admin/inbox/messages?t=${UUID}`);
+    expect(v2Href("/admin/messages")).toBe("/admin/inbox/messages");
+    // And with it: no at-cutover MERGE remains anywhere in the map — every
+    // surviving at-cutover row is a settings-null awaiting the Settings
+    // destination, or /admin itself (the auth-aware in-page forward), or the
+    // signed October rows (demoday R8).
+    for (const row of V2_ROUTE_MAP.filter((r) => r.activation === "at-cutover")) {
+      const allowed =
+        row.v2 === null ||
+        row.v1 === "/admin" ||
+        row.v1 === "/admin/demoday";
+      expect(allowed, `${row.v1} should have graduated or be settings/no-target`).toBe(true);
     }
   });
 });

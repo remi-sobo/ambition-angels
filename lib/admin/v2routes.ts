@@ -119,6 +119,16 @@ const ACTIVE: V2RouteRow[] = [
   { v1: "/admin/finance/model", v2: "/admin/finance/forecast", kind: "exact", activation: "now", disposition: "merged", note: "aa.finance_model fenced since N2" },
   { v1: "/admin/finance/revenue", v2: "/admin/finance/forecast", kind: "exact", activation: "now", disposition: "merged", note: "commitments tier" },
   { v1: "/admin/fundraising/pledges", v2: "/admin/finance/forecast", kind: "exact", activation: "now", disposition: "merged", note: "narrowed from prefix at N4: pledges/[id] stays live" },
+  // ── Work cutover (Spec Work, W4). The two ritual routes merge onto Plan &
+  // Close (both flows live there since W1); Calendar folds into My Week (W2,
+  // Handoff Spec); connections graduates settings → merged per decision 3
+  // (the R2 addendum binds connection_candidates to Work → Meetings — the
+  // queue is workflow, not settings) and goes EXACT: it has no children, and
+  // booking-page stays a true settings row. ──
+  { v1: "/admin/ops/monday", v2: "/admin/work/plan-close", kind: "exact", activation: "now", disposition: "merged", note: "Plan & Close hosts both rituals since W1" },
+  { v1: "/admin/ops/friday", v2: "/admin/work/plan-close", kind: "exact", activation: "now", disposition: "merged", note: "?ritual=close deep-links the Friday flow" },
+  { v1: "/admin/calendar", v2: "/admin/work/my-week", kind: "exact", activation: "now", disposition: "kept", note: "Handoff Spec folds Calendar into My Week (W2); ?week=/?owner= ride the 308" },
+  { v1: "/admin/meetings/connections", v2: "/admin/work/meetings", kind: "exact", activation: "now", disposition: "merged", note: "settings → merged at W4 (decision 3, R2 addendum); Meetings embeds the pipeline since W3" },
 ];
 
 // ── AT CUTOVER: merges and settings moves, activated by destination specs ───
@@ -129,10 +139,8 @@ const AT_CUTOVER: V2RouteRow[] = [
   { v1: "/admin/strategic-plan/review", v2: "/admin/organization/strategy", kind: "exact", activation: "at-cutover", disposition: "merged" },
   { v1: "/admin/strategic-plan/scorecard", v2: "/admin/impact/kpis", kind: "exact", activation: "at-cutover", disposition: "merged" },
   { v1: "/admin/strategic-plan/setup", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
-  { v1: "/admin/ops/monday", v2: "/admin/work/plan-close", kind: "exact", activation: "at-cutover", disposition: "merged", note: "Plan & Close must host both rituals first" },
-  { v1: "/admin/ops/friday", v2: "/admin/work/plan-close", kind: "exact", activation: "at-cutover", disposition: "merged" },
-  { v1: "/admin/calendar", v2: "/admin/work/my-week", kind: "exact", activation: "at-cutover", disposition: "kept", note: "Handoff Spec folds Calendar into My Week" },
-  { v1: "/admin/meetings/connections", v2: null, kind: "prefix", activation: "at-cutover", disposition: "settings" },
+  // Work's four moves (monday, friday, calendar, connections) graduated to
+  // ACTIVE at Spec Work W4; booking-page stays the one true settings row.
   { v1: "/admin/meetings/booking-page", v2: null, kind: "prefix", activation: "at-cutover", disposition: "settings" },
   // Fundraising's eight moves graduated at F6; pledges graduated at Spec
   // Finance N4 once Forecast absorbed its tier.

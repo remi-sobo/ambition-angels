@@ -68,6 +68,17 @@ Rows activating: `/admin/strategic-plan/scorecard` → `/admin/impact/kpis` (exa
 
 **I4 — cutover.** The scorecard row activates in map + config, `"impact"` joins the set, the deviation test retires, verification: four-org printout (AA four tabs, everyone else three, everyone landing Outcomes), live crawl (the scorecard 308; analytics/kpis' existing 308s intact). Commit: `spec-impact: cutover`.
 
+> **As built (I4, 2026-09-09 — pending Remi's acceptance).** The one row
+> graduated, exact on purpose: the other strategic-plan children are
+> Organization's (objective/review/setup at-cutover; narrative/people
+> NO_HOME) and the crawl proves they stay put — only the scorecard 308s,
+> query surviving. The deviation test had already retired at I1 per the
+> staging correction; I4's shell work was the cutover set and the tab-row
+> pins. Verified by the four-org printout (Impact → Outcomes everywhere;
+> Outcomes · KPIs · Analytics · Reports for AA, the same three without
+> Analytics for YGB and the 9-key orgs) and the live crawl (one 308 with
+> query survival; every seat and every stay-put sibling 307-only).
+
 Each stage is one PR. Remi merges every PR and starts every stage.
 
 ## Definition of done

@@ -22,7 +22,9 @@ export async function GET() {
   return NextResponse.json({ segments: data ?? [] });
 }
 
-const FILTER_KEYS = ["q", "type", "source", "tag", "min_total", "since"] as const;
+// "view" is the Donors & Funders built-in view key (Spec Fundraising F1,
+// saved views per R11) — V1 consumers of a definition simply ignore it.
+const FILTER_KEYS = ["q", "type", "source", "tag", "min_total", "since", "view"] as const;
 
 export async function POST(req: NextRequest) {
   const ctx = await getOrgContext();

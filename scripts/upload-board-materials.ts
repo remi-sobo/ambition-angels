@@ -41,8 +41,8 @@ const ORG_SLUG = "ambition-angels";
 
 /** filename fragment (lowercased) → how it should appear to a director. */
 const MANIFEST: { match: string; title: string; docType: string }[] = [
-  { match: "preread", title: "Board pre-read, FY26 Q2", docType: "board_packet" },
-  { match: "pre-read", title: "Board pre-read, FY26 Q2", docType: "board_packet" },
+  { match: "preread", title: "Board pre-read, 2026 Annual Meeting", docType: "board_packet" },
+  { match: "pre-read", title: "Board pre-read, 2026 Annual Meeting", docType: "board_packet" },
   { match: "price_sheet", title: "Schools and Organizations price sheet", docType: "board_packet" },
   { match: "price-sheet", title: "Schools and Organizations price sheet", docType: "board_packet" },
   { match: "runway", title: "Weekly runway report, September 8, 2026", docType: "financial" },

@@ -87,7 +87,9 @@ export default async function ArchivePage({ searchParams }: { searchParams: { ta
                         flexWrap: "wrap",
                       }}
                     >
-                      <span style={{ flex: "none", width: 100, fontFamily: F.heading, fontSize: 17, fontWeight: 600 }}>
+                      {/* Wide enough for a named meeting ("2026 Annual
+                          Meeting"), not just a "FY26 Q1" quarter tag. */}
+                      <span style={{ flex: "none", width: 150, fontFamily: F.heading, fontSize: 17, fontWeight: 600, lineHeight: 1.3 }}>
                         {m.fiscal_label ?? "—"}
                       </span>
                       <span style={{ flex: "1 1 200px", minWidth: 0 }}>

@@ -124,7 +124,7 @@ export default async function BoardHome() {
             </div>
             {meeting.meeting_type === "annual" && (
               <div style={{ fontSize: 15, lineHeight: 1.5, color: C.muted, marginTop: 6 }}>
-                {meeting.fiscal_label}, and the 2026 annual meeting under Section 6 of the Bylaws
+                Designated the annual meeting under Section 6 of the Bylaws
               </div>
             )}
             {meeting.zoom_room && (

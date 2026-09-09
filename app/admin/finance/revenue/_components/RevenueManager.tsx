@@ -7,6 +7,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 import type { RevenueScheduleRow } from "@/lib/finance/schedule";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -69,6 +71,7 @@ export default function RevenueManager({
   receivedGiftsTotal: number;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -155,14 +158,20 @@ export default function RevenueManager({
     const j = await r.json().catch(() => ({}));
     setBusy(false);
     if (!r.ok) {
-      setError(j.error ?? "Failed to save commitment");
+      setError(userMessage(r, j));
       return;
     }
     resetForm();
     router.refresh();
   }
   async function remove(id: string) {
-    if (!confirm("Delete this commitment?")) return;
+    const ok = await confirm({
+      title: "Delete this commitment?",
+      body: "Its scheduled revenue leaves the runway.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     await fetch(`/api/admin/finance/revenue/${id}`, { method: "DELETE" });
     setBusy(false);

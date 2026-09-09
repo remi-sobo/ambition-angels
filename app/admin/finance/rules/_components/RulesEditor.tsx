@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import type { FinCategory } from "@/lib/finance/types";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -25,6 +26,7 @@ const PATTERN_TYPES: Array<Rule["pattern_type"]> = ["contains", "starts_with", "
 
 export default function RulesEditor({ initialRules, categories }: Props) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [rules, setRules] = useState<Rule[]>(initialRules);
   const [newPattern, setNewPattern] = useState("");
   const [newType, setNewType] = useState<Rule["pattern_type"]>("contains");
@@ -142,9 +144,13 @@ export default function RulesEditor({ initialRules, categories }: Props) {
   }
 
   async function remove(id: string) {
-    if (!confirm("Delete this rule? Transactions it already matched will keep their category.")) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Delete this rule?",
+      body: "Transactions it already matched will keep their category.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     const prev = rules;
     setRules((rs) => rs.filter((r) => r.id !== id));
     const res = await fetch(`/api/admin/finance/rules/${id}`, { method: "DELETE" });

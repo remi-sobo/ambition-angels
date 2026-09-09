@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
 
 export type ReconItem = {
@@ -30,6 +32,7 @@ const fmtMoney = (n: number | null) =>
   n == null ? "" : n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 function Card({ item, onResolve }: { item: ReconItem; onResolve: (id: string, action: "accept" | "dismiss") => void }) {
+  const toast = useToast();
   const [busy, setBusy] = useState<null | "accept" | "dismiss">(null);
   const src = SOURCE_META[item.source] ?? SOURCE_META.manual;
 
@@ -42,10 +45,14 @@ function Card({ item, onResolve }: { item: ReconItem; onResolve: (id: string, ac
         body: JSON.stringify({ action }),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d?.error ?? "Failed");
+      if (!r.ok) {
+        toast.error(userMessage(r, d));
+        setBusy(null);
+        return;
+      }
       onResolve(item.id, action);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Could not save — try again.");
+    } catch {
+      toast.error(networkMessage());
       setBusy(null);
     }
   }

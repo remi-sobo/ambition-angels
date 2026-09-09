@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { userMessage } from "@/lib/admin/errors";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageHeader from "../../../_components/PageHeader";
@@ -114,7 +115,7 @@ export default function QbBudgetImportPage() {
     const j = await r.json().catch(() => ({}));
     setBusy("idle");
     if (!r.ok) {
-      setError(j.error ?? `Preview failed (${r.status})`);
+      setError(userMessage(r, j));
       return;
     }
     setPreview(j.preview as PreviewResponse);
@@ -135,7 +136,7 @@ export default function QbBudgetImportPage() {
     const j = await r.json().catch(() => ({}));
     setBusy("idle");
     if (!r.ok) {
-      setError(j.error ?? `Commit failed (${r.status})`);
+      setError(userMessage(r, j));
       return;
     }
     setSuccess(

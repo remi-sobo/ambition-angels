@@ -89,6 +89,23 @@ const ACTIVE: V2RouteRow[] = [
   // exact on purpose: /admin/briefing/weekly is NO_HOME and stays put.
   { v1: "/admin/queue", v2: "/admin/today", kind: "exact", activation: "now", disposition: "merged", note: "View-all resolved as expand-in-place on Today (Spec Home decision 1)" },
   { v1: "/admin/briefing", v2: "/admin/today", kind: "exact", activation: "now", disposition: "merged", note: "the briefing engine feeds Today's orientation line" },
+  // ── Fundraising cutover (Spec Fundraising, F6). Three rows narrowed from
+  // the Stage 0 prefix shape so no child 308s into a 404 (the uuid-child
+  // mechanism exists for exactly this): plan and acknowledgments go EXACT
+  // (plan/[id] and acknowledgments/{letters,templates} stay live until
+  // Campaigns absorbs the plan detail and Settings seats the templates), and
+  // prospects splits exact + uuid-child (import and by-hubspot/* stay live —
+  // the R1 drawer links them). asks stays a true prefix: its only child is
+  // [id], seated at /admin/fundraising/pipeline/[id]. ──
+  { v1: "/admin/fundraising", v2: "/admin/fundraising/today", kind: "exact", activation: "now", disposition: "merged" },
+  { v1: "/admin/fundraising/plan", v2: "/admin/fundraising/campaigns", kind: "exact", activation: "now", disposition: "merged", note: "narrowed from prefix at F6: plan/[id] stays live" },
+  { v1: "/admin/fundraising/donors", v2: "/admin/fundraising/donors-funders", kind: "prefix", activation: "now", disposition: "merged" },
+  { v1: "/admin/fundraising/prospects", v2: "/admin/fundraising/donors-funders", kind: "exact", activation: "now", disposition: "merged", note: "Prospects view + R1 drawer" },
+  { v1: "/admin/fundraising/prospects", v2: "/admin/fundraising/donors-funders", kind: "uuid-child", activation: "now", disposition: "merged", note: "lands on the Donor 360's prospect variant (both id spaces)" },
+  { v1: "/admin/fundraising/asks", v2: "/admin/fundraising/pipeline", kind: "prefix", activation: "now", disposition: "merged" },
+  { v1: "/admin/fundraising/acknowledgments", v2: "/admin/fundraising/today", kind: "exact", activation: "now", disposition: "merged", note: "narrowed from prefix at F6: letters/templates stay live pending their Settings seat" },
+  { v1: "/admin/fundraising/recurring", v2: "/admin/fundraising/donors-funders", kind: "exact", activation: "now", disposition: "merged", note: "the Recurring view" },
+  { v1: "/admin/fundraising/journeys", v2: "/admin/fundraising/donors-funders", kind: "exact", activation: "now", disposition: "merged", note: "journey surface seat stays reserved and empty (signed ruling)" },
 ];
 
 // ── AT CUTOVER: merges and settings moves, activated by destination specs ───
@@ -104,15 +121,10 @@ const AT_CUTOVER: V2RouteRow[] = [
   { v1: "/admin/calendar", v2: "/admin/work/my-week", kind: "exact", activation: "at-cutover", disposition: "kept", note: "Handoff Spec folds Calendar into My Week" },
   { v1: "/admin/meetings/connections", v2: null, kind: "prefix", activation: "at-cutover", disposition: "settings" },
   { v1: "/admin/meetings/booking-page", v2: null, kind: "prefix", activation: "at-cutover", disposition: "settings" },
-  { v1: "/admin/fundraising", v2: "/admin/fundraising/today", kind: "exact", activation: "at-cutover", disposition: "merged" },
-  { v1: "/admin/fundraising/plan", v2: "/admin/fundraising/campaigns", kind: "prefix", activation: "at-cutover", disposition: "merged" },
-  { v1: "/admin/fundraising/donors", v2: "/admin/fundraising/donors-funders", kind: "prefix", activation: "at-cutover", disposition: "merged" },
-  { v1: "/admin/fundraising/prospects", v2: "/admin/fundraising/donors-funders", kind: "prefix", activation: "at-cutover", disposition: "merged", note: "saved view" },
-  { v1: "/admin/fundraising/asks", v2: "/admin/fundraising/pipeline", kind: "prefix", activation: "at-cutover", disposition: "merged" },
-  { v1: "/admin/fundraising/acknowledgments", v2: "/admin/fundraising/today", kind: "prefix", activation: "at-cutover", disposition: "merged", note: "templates → Settings" },
+  // Fundraising's eight moves graduated to ACTIVE at Spec Fundraising F6;
+  // pledges stays here — its activation belongs to Finance's spec (Forecast
+  // must absorb the pledges tier first).
   { v1: "/admin/fundraising/pledges", v2: "/admin/finance/forecast", kind: "prefix", activation: "at-cutover", disposition: "merged" },
-  { v1: "/admin/fundraising/recurring", v2: "/admin/fundraising/donors-funders", kind: "exact", activation: "at-cutover", disposition: "merged", note: "saved view" },
-  { v1: "/admin/fundraising/journeys", v2: "/admin/fundraising/donors-funders", kind: "exact", activation: "at-cutover", disposition: "merged", note: "saved views; journey surface, explicitly not a saved view (signed ruling)" },
   { v1: "/admin/fundraising/duplicates", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
   { v1: "/admin/fundraising/import", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
   { v1: "/admin/fundraising/settings", v2: null, kind: "prefix", activation: "at-cutover", disposition: "settings" },

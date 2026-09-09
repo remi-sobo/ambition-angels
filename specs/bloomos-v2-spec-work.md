@@ -94,16 +94,16 @@ Each stage is one PR. Remi merges every PR and starts every stage.
 
 **The 9-key row dead-links.** My Week and Meetings vanish for orgs without `modules.meetings` by the entitlement rule — the cutover printout must show four tabs, not six with two dead.
 
-## Open decisions (recommendations inline — nothing starts until Remi rules)
+## Open decisions — all four resolved (Remi, 2026-09-09, as recommended)
 
-1. **Plan & Close's switch.** One screen, both rituals — but does the non-default ritual live behind a URL-driven switch (`?ritual=plan|close`, linkable, the house pattern for screen state) or client-side tabs? **Recommendation: URL-driven** — `/admin/work/plan-close?ritual=close` is linkable from Home's Friday nudges and survives refresh mid-ritual; default (no param) follows `rhythmModeForToday()`.
+1. **Plan & Close's switch — RESOLVED: URL-driven.** `?ritual=plan|close`, linkable and refresh-safe; default (no param) follows `rhythmModeForToday()`.
 
-2. **Tasks' two UNBOUND-additives** — the five-value size/estimate column (the Handoff design's 9h30m-unscheduled math depends on it) and the general task-template store (Board meeting, Staff onboarding — today only grant work-back instantiation exists). **Recommendation: defer both** (the scenarios precedent from Finance). Each becomes its own stage when a real need lands; neither blocks the cutover, and Tasks hosting the V1 screen is the Grants/Campaigns shape that has worked twice.
+2. **Tasks' two UNBOUND-additives — RESOLVED: both deferred.** The size/estimate column and the template store each become their own stage when a real need lands (the scenarios precedent from Finance). Tasks keeps hosting the V1 screen.
 
-3. **The connections pipeline's home.** The map parked `/admin/meetings/connections` as a settings row, but it isn't settings — it's a working queue (email-detected candidates, suggest-then-confirm, the scheduling backlog), and R2's signed addendum binds `connection_candidates` to Work → Meetings. Leaving it unlisted after cutover hides a workflow. **Recommendation: absorb it onto Meetings at W3** and activate the row at W4 (disposition settings → merged); `booking-page` alone stays settings.
+3. **The connections pipeline's home — RESOLVED: Meetings.** Absorbed at W3, row activates at W4 (disposition settings → merged); `booking-page` alone stays settings.
 
-4. **The weekly briefing.** `/admin/briefing/weekly` is the recon's remaining NO V2 HOME in Work's orbit (nearest seat: Plan & Close's Friday). Folding the narrated weekly into the Friday close is tempting but is a product decision about the briefing, not a routing decision. **Recommendation: stays put** — live, unlisted, un-redirected; revisit when the briefing product gets its own look (the journeys precedent: dormant with a named nearest seat, not squatted into a screen mid-cutover).
+4. **The weekly briefing — RESOLVED: stays put.** Live, unlisted, un-redirected; NO V2 HOME stands until the briefing product gets its own look.
 
 ---
 
-*Drafted 2026-09-09, pending Remi's approval. W1 begins only on his kickoff.*
+*Spec approved 2026-09-09. W1 kicked off the same day.*

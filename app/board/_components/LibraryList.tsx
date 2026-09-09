@@ -40,7 +40,7 @@ const GROUPS: { section: string; blurb: string; groups: { name: string; types: s
       "The current version of every governing document, in force today. History lives in the corporate minutes book, which Shannon keeps and every director can reach.",
     groups: [
       {
-        name: "Corporate",
+        name: "Governing documents",
         types: ["corporate"],
         note: "Bylaws, articles of incorporation and the IRS determination letter — the documents that constitute the corporation.",
       },

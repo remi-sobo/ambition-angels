@@ -138,7 +138,7 @@ export default function NewMessageModal({
           {isGroup && (
             <div className="mt-4">
               <div className={`${TYPE.cardLabel} mb-2`}>
-                Group name <span className="text-ink-3/70 normal-case tracking-normal">(optional)</span>
+                Group name <span className="text-ink-3 normal-case tracking-normal">(optional)</span>
               </div>
               <input
                 value={title}

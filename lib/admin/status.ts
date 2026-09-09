@@ -87,7 +87,7 @@ export function scoreToStatus(score: number | null | undefined): Status {
 // survives only as a small dot. Kept muted-but-distinct and legible on cream.
 export const CATEGORY_DOT: Record<string, string> = {
   fundraising: "#C0703C", // clay
-  program: "#2F7D5B", // green
+  program: "#2D7857", // green
   product: "#5B6BB5", // indigo
   finance: "#A56A1B", // amber
   operations: "#8A5A12", // deep amber
@@ -95,7 +95,7 @@ export const CATEGORY_DOT: Record<string, string> = {
   board: "#7A5BA8", // purple
   recruitment: "#2F7D8A", // teal
   admin: "#6B5C4E", // ink-2
-  other: "#9A8B7C", // ink-3
+  other: "#796A5C", // ink-3
 };
 
 export function categoryDot(category: string): string {

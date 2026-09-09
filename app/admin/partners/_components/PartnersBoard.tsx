@@ -102,7 +102,7 @@ function PartnerCardBody({ partner: p }: { partner: Partner }) {
         {p.priority_score != null && (
           <span
             title="Fit score"
-            className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${SCORE_BAND_STYLE[scoreBand(p.priority_score)]}`}
+            className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${SCORE_BAND_STYLE[scoreBand(p.priority_score)]}`}
           >
             {p.priority_score}
           </span>
@@ -123,7 +123,7 @@ function PartnerCardBody({ partner: p }: { partner: Partner }) {
         </span>
         {typeof p.open_tasks === "number" && p.open_tasks > 0 && (
           <span
-            className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${
+            className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
               p.overdue_tasks ? "bg-expense-bg text-expense" : "bg-orange/15 text-orange"
             }`}
           >
@@ -133,7 +133,7 @@ function PartnerCardBody({ partner: p }: { partner: Partner }) {
         )}
         {p.mou_status === "signed" && (
           <span
-            className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${
+            className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
               mouExpired ? "bg-expense-bg text-expense" : "bg-revenue-bg text-revenue"
             }`}
           >

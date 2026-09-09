@@ -44,7 +44,7 @@ function Door({
           {eyebrow}
         </span>
         {active && (
-          <span className="text-[9px] uppercase tracking-wider font-semibold text-orange-dark border border-orange/40 rounded-full px-1.5 py-px">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-orange-dark border border-orange/40 rounded-full px-1.5 py-px">
             Now
           </span>
         )}

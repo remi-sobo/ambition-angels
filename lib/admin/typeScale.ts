@@ -16,9 +16,10 @@
 export const TYPE = {
   /** Page name — one per page, rendered only via PageHeader. */
   pageTitle: "font-heading font-bold text-2xl text-ink-1",
-  /** Small uppercase eyebrow above a group of rows/cards (SectionHeading). */
+  /** Small uppercase eyebrow above a group of rows/cards (SectionHeading).
+   *  12px — the Quality Floor Q4 minimum for muted-small roles. */
   sectionHeader:
-    "font-heading font-semibold text-[11px] uppercase tracking-[0.14em] text-ink-3",
+    "font-heading font-semibold text-xs uppercase tracking-[0.14em] text-ink-3",
   /** Visible mid-weight section title inside a page (was ad-hoc text-lg). */
   sectionTitle: "font-heading font-bold text-lg text-ink-1",
   /** Title of a card / panel (was ad-hoc text-sm, 45+ sites). */
@@ -28,13 +29,13 @@ export const TYPE = {
   /** The big number on a stat card. */
   cardMetric:
     "font-heading font-semibold text-[28px] leading-none tracking-tight tabular-nums text-ink-1",
-  /** Uppercase label above a metric. */
+  /** Uppercase label above a metric (12px floor, Q4). */
   cardLabel:
-    "text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3",
+    "text-xs font-heading font-semibold uppercase tracking-[0.12em] text-ink-3",
   /** Primary reading text. */
   body: "text-sm text-ink-1",
   /** Supporting / descriptive text — the de-facto admin default. */
   bodyMuted: "text-sm text-ink-2",
-  /** Secondary metadata (dates, owners, hints). */
-  metadata: "text-[11px] text-ink-2",
+  /** Secondary metadata (dates, owners, hints) — 12px floor, Q4. */
+  metadata: "text-xs text-ink-2",
 } as const;

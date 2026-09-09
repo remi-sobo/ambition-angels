@@ -219,7 +219,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
                         </div>
                       ))}
                       {rest.length > 0 && (
-                        <div className="flex items-baseline justify-between text-[12px] text-ink-3/80">
+                        <div className="flex items-baseline justify-between text-[12px] text-ink-3">
                           <span>+ {rest.length} more</span>
                           <span className="tabular-nums shrink-0">{formatUsd(restSum)}</span>
                         </div>

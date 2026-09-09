@@ -55,15 +55,17 @@ The one canonical type scale is the ten-role `TYPE` in `lib/admin/typeScale.ts` 
 | Role | Classes | Use |
 |---|---|---|
 | `pageTitle` | `font-heading font-bold text-2xl text-ink-1` | Page name — one per page, rendered only via `PageHeader` |
-| `sectionHeader` | `font-heading font-semibold text-[11px] uppercase tracking-[0.14em] text-ink-3` | Small uppercase eyebrow above a group of rows/cards (`SectionHeading`) |
+| `sectionHeader` | `font-heading font-semibold text-xs uppercase tracking-[0.14em] text-ink-3` | Small uppercase eyebrow above a group of rows/cards (`SectionHeading`) |
 | `sectionTitle` | `font-heading font-bold text-lg text-ink-1` | Visible mid-weight section title inside a page |
 | `cardTitle` | `font-heading font-bold text-sm text-ink-1` | Title of a card / panel |
 | `modalTitle` | `font-heading font-bold text-lg text-ink-1` | Title of a modal / sheet |
 | `cardMetric` | `font-heading font-semibold text-[28px] leading-none tracking-tight tabular-nums text-ink-1` | The big number on a stat card |
-| `cardLabel` | `text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3` | Uppercase label above a metric |
+| `cardLabel` | `text-xs font-heading font-semibold uppercase tracking-[0.12em] text-ink-3` | Uppercase label above a metric |
 | `body` | `text-sm text-ink-1` | Primary reading text |
 | `bodyMuted` | `text-sm text-ink-2` | Supporting / descriptive text — the de-facto admin default |
-| `metadata` | `text-[11px] text-ink-2` | Dates, owners, hints |
+| `metadata` | `text-xs text-ink-2` | Dates, owners, hints |
+
+**Quality Floor Q4 (contrast + type floor):** every text token clears WCAG AA (4.5:1) as small text on all three admin backgrounds (`app`/`surface`/`tile`) — `ink-3` is `#796A5C` (the lightest value ≥4.5 on `app`; it was `#9A8B7C` at 2.88), `revenue`/`status.healthy` are `#2D7857` and `expense`/`status.critical` are `#B0462E` (each also ≥4.5 on its own pale `-bg`, the toast pairs), and `status.due-text` `#96582F` / `status.healthy-text` complete the `-text` steps. Muted-small roles sit on a 12px floor (`sectionHeader`, `cardLabel`, `metadata`), and nothing in `app/admin` renders below 10px. The contrast gate in `tests/design-tokens.test.ts` computes the ratios in CI, so a token can't slide back below the floor.
 
 `sectionTitle` and `modalTitle` are intentionally identical strings today — separate roles so they can diverge without a migration. Margins/layout utilities are never part of the scale (append them: `` className={`${TYPE.cardTitle} mb-2`} ``). Roles carry their ink color; on dark/accent surfaces keep the role and append an important override (`!text-orange`, `!text-cream`) rather than forking the scale. Deliberate exemptions (D5): `LoginScreen`, the strategic-plan narrative deck, `Greeting.tsx` (starts from `TYPE.pageTitle`, appends `sm:text-3xl tracking-tight`), and `font-mono` for timestamps/amounts.
 

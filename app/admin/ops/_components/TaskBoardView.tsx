@@ -182,7 +182,7 @@ function BoardCard({
         )}
         {task.assigned_to && (
           <span
-            className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[9px] font-bold uppercase"
+            className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[10px] font-bold uppercase"
             title={`Assigned to ${task.assigned_to}`}
           >
             {task.assigned_to.charAt(0)}

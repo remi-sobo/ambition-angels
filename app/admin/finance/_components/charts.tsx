@@ -102,7 +102,7 @@ export function Donut({
                 x={size / 2}
                 y={size / 2 + 18}
                 textAnchor="middle"
-                className="fill-[#9A8B7C]"
+                className="fill-ink-3"
                 fontSize={11}
                 letterSpacing={1.5}
               >
@@ -329,7 +329,7 @@ export function CashFlowChart({
                 width={innerBarW}
                 height={revH}
                 rx={2}
-                fill="#2F7D5B"
+                fill="#2D7857"
                 opacity={0.85}
               />
             )}
@@ -340,7 +340,7 @@ export function CashFlowChart({
                 width={innerBarW}
                 height={expH}
                 rx={2}
-                fill="#B5482F"
+                fill="#B0462E"
                 opacity={0.85}
               />
             )}
@@ -348,7 +348,7 @@ export function CashFlowChart({
               x={cx}
               y={height - pad.bottom + 16}
               textAnchor="middle"
-              className="fill-[#9A8B7C]"
+              className="fill-ink-3"
               fontSize={10}
               letterSpacing={1}
             >
@@ -374,13 +374,13 @@ export function CashFlowChart({
       })}
 
       {/* y-axis labels (left = ±max for bars, right = balance) */}
-      <text x={pad.left - 8} y={zeroY - innerH * 0.5 + 4} textAnchor="end" className="fill-[#9A8B7C]" fontSize={10}>
+      <text x={pad.left - 8} y={zeroY - innerH * 0.5 + 4} textAnchor="end" className="fill-ink-3" fontSize={10}>
         +{money(yMax)}
       </text>
-      <text x={pad.left - 8} y={zeroY + 4} textAnchor="end" className="fill-[#9A8B7C]" fontSize={10}>
+      <text x={pad.left - 8} y={zeroY + 4} textAnchor="end" className="fill-ink-3" fontSize={10}>
         0
       </text>
-      <text x={pad.left - 8} y={zeroY + innerH * 0.5 + 4} textAnchor="end" className="fill-[#9A8B7C]" fontSize={10}>
+      <text x={pad.left - 8} y={zeroY + innerH * 0.5 + 4} textAnchor="end" className="fill-ink-3" fontSize={10}>
         −{money(yMax)}
       </text>
       <text
@@ -394,11 +394,11 @@ export function CashFlowChart({
 
       {/* Legend */}
       <g transform={`translate(${pad.left} ${pad.top - 12})`}>
-        <Swatch x={0} fill="#2F7D5B" label="Revenue" />
-        <Swatch x={90} fill="#B5482F" label="Expense" />
+        <Swatch x={0} fill="#2D7857" label="Revenue" />
+        <Swatch x={90} fill="#B0462E" label="Expense" />
         <g transform="translate(180 0)">
           <line x1={0} x2={16} y1={4} y2={4} stroke="#2A201A" strokeWidth={2} />
-          <text x={22} y={8} className="fill-[#9A8B7C]" fontSize={10}>
+          <text x={22} y={8} className="fill-ink-3" fontSize={10}>
             Ending balance
           </text>
         </g>
@@ -411,7 +411,7 @@ function Swatch({ x, fill, label }: { x: number; fill: string; label: string }) 
   return (
     <g transform={`translate(${x} 0)`}>
       <rect width={10} height={10} rx={2} fill={fill} />
-      <text x={16} y={9} className="fill-[#9A8B7C]" fontSize={10}>
+      <text x={16} y={9} className="fill-ink-3" fontSize={10}>
         {label}
       </text>
     </g>
@@ -429,7 +429,7 @@ export function ProgressBar({
   intent?: "ok" | "warn" | "over";
   height?: number;
 }) {
-  const c = intent === "over" ? "#B5482F" : intent === "warn" ? "#B5762A" : "#C0703C";
+  const c = intent === "over" ? "#B0462E" : intent === "warn" ? "#B5762A" : "#C0703C";
   const trackC = "#E7DCC9";
   const fillPct = Math.min(1, Math.max(0, pct));
   const overflow = pct > 1 ? Math.min(1, pct - 1) : 0;
@@ -445,7 +445,7 @@ export function ProgressBar({
       {overflow > 0 && (
         <div
           className="absolute inset-y-0 right-0 rounded-full"
-          style={{ width: `${overflow * 100}%`, background: "#B5482F", opacity: 0.7 }}
+          style={{ width: `${overflow * 100}%`, background: "#B0462E", opacity: 0.7 }}
         />
       )}
     </div>

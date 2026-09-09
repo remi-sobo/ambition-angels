@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import EmptyState from "../_components/EmptyState";
 import { getOrgContext } from "@/lib/admin/auth";
 import StatCard from "../_components/StatCard";
 import PageHeader from "../_components/PageHeader";
@@ -95,9 +96,10 @@ export default async function CompliancePage() {
         <Section title="Later" rows={later} />
         <Section title="Filed / waived" rows={closed} />
         {items.length === 0 && (
-          <p className="text-sm text-ink-2">
-            No compliance items — the seed template didn&apos;t load. Add your first deadline above.
-          </p>
+          <EmptyState
+            label="compliance items"
+            hint="Filings, renewals, and policy deadlines all live here. Add the first deadline with the button above and it rolls forward each time you file."
+          />
         )}
       </div>
     </div>

@@ -1,4 +1,6 @@
 import TaskRow from "./TaskRow";
+import Link from "next/link";
+import EmptyState from "../../_components/EmptyState";
 import type { OpsTask } from "../_types/ops";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -34,9 +36,16 @@ export default function ThisWeekView({
       </header>
 
       {tasks.length === 0 ? (
-        <p className="text-sm text-ink-2">
-          Nothing pinned for this week yet.
-        </p>
+        <EmptyState
+          label="pinned tasks"
+          title="Nothing pinned for this week yet"
+          hint="Pin tasks to the week from their row menu, or plan the whole week in one pass."
+          action={
+            <Link href="/admin/work/plan-close" className="text-xs font-semibold text-orange hover:text-orange-dark">
+              Open Plan the Week
+            </Link>
+          }
+        />
       ) : (
         <div className="space-y-5">
           {anytime.length > 0 && (

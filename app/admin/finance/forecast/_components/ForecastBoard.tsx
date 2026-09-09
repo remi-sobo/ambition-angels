@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import EmptyState from "../../../_components/EmptyState";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // Scenario forecast. Projects cash month-by-month from today's cash at the
@@ -165,7 +166,10 @@ export default function ForecastBoard({
         </div>
 
         {levers.length === 0 ? (
-          <p className="text-sm text-ink-2">No what-ifs yet — add one above, or this is just the baseline burn-down.</p>
+          <EmptyState
+            label="what-ifs"
+            hint="Stack a hire, a grant landing, or a slip with the buttons above — until then this is the baseline burn-down."
+          />
         ) : (
           <ul className="space-y-2">
             {levers.map((l) => (

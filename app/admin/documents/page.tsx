@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../_components/EmptyState";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { resolveEntities } from "@/lib/admin/entities";
@@ -92,7 +93,7 @@ export default async function DocumentsHubPage({
     query = query.not("expires_at", "is", null).lte("expires_at", cutoff);
   }
 
-  const [{ data: docsData }, { data: askDocsData }, { count: activeCount }, { count: expiringCount }] =
+  const [{ data: docsData }, { data: askDocsData }, { count: activeCount }, { count: expiringCount }, { count: orgDocCount }] =
     await Promise.all([
       query,
       supabase
@@ -113,7 +114,14 @@ export default async function DocumentsHubPage({
         .eq("status", "active")
         .not("expires_at", "is", null)
         .lte("expires_at", new Date(Date.now() + EXPIRING_WINDOW_DAYS * 86_400_000).toISOString().slice(0, 10)),
+      // Any document at all, any status — the first-run signal for Q5's
+      // EmptyState (a filtered-to-zero view is not a first run).
+      supabase
+        .from("documents")
+        .select("*", { count: "exact", head: true })
+        .eq("org_id", ctx.orgId),
     ]);
+  const totalDocs = orgDocCount ?? 0;
 
   const docs = (docsData ?? []) as unknown as DocRow[];
   const askDocs = (askDocsData ?? []) as AskDocRow[];
@@ -204,9 +212,18 @@ export default async function DocumentsHubPage({
 
       <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden mb-8">
         {docs.length === 0 ? (
-          <p className="p-5 text-sm text-ink-2">
-            {view === "expiring" ? "Nothing expires in the window — all current." : "No documents match."}
-          </p>
+          view === "expiring" ? (
+            <p className="p-5 text-sm text-ink-2">Nothing expires in the window — all current.</p>
+          ) : totalDocs === 0 ? (
+            <div className="p-4">
+              <EmptyState
+                label="documents"
+                hint="Award letters, MOUs, board packets, policies — every file attached to the record it belongs to. Upload the first one with the button above."
+              />
+            </div>
+          ) : (
+            <p className="p-5 text-sm text-ink-2">No documents match.</p>
+          )
         ) : (
           <ul className="divide-y divide-hairline">
             {docs.map((d) => {

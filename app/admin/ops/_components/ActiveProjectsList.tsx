@@ -57,7 +57,7 @@ export default function ActiveProjectsList({
                   <div className="flex items-center gap-3">
                     {p.assigned_to && (
                       <span className="inline-flex items-center gap-1">
-                        <span className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[9px] font-bold uppercase">
+                        <span className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[10px] font-bold uppercase">
                           {p.assigned_to.charAt(0)}
                         </span>
                         <span>{p.assigned_to}</span>

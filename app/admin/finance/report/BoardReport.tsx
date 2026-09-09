@@ -62,7 +62,7 @@ export default async function BoardReport() {
   const functionalSegs: DonutSeg[] = [
     { label: "Program", value: fn.program, color: "#C0703C" },
     { label: "Admin", value: fn.admin, color: "#2A201A" },
-    { label: "Fundraising", value: fn.fundraising, color: "#2F7D5B" },
+    { label: "Fundraising", value: fn.fundraising, color: "#2D7857" },
     { label: "Uncategorized", value: fn.uncategorized, color: "#B5762A" },
   ].filter((s) => s.value > 0.0001);
 

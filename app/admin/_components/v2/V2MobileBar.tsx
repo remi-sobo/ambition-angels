@@ -167,7 +167,7 @@ export default function V2MobileBar({
               <Svg className="w-[22px] h-[22px]">{MORE_ICON}</Svg>
               {unread + msgUnread > 0 && (
                 <span
-                  className="absolute -top-1 -right-1.5 min-w-[15px] h-[15px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-[9px] font-bold leading-none ring-2 ring-navy"
+                  className="absolute -top-1 -right-1.5 min-w-[15px] h-[15px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-[10px] font-bold leading-none ring-2 ring-navy"
                   aria-label={`${unread + msgUnread} unread`}
                 >
                   {unread + msgUnread > 9 ? "9+" : unread + msgUnread}

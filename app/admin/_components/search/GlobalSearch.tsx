@@ -416,7 +416,7 @@ export default function GlobalSearch() {
                       )}
                     </span>
                     {hit.badge && (
-                      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-ink-3 border border-outline rounded-full px-1.5 py-px">
+                      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-ink-3 border border-outline rounded-full px-1.5 py-px">
                         {hit.badge}
                       </span>
                     )}

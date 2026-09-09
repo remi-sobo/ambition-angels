@@ -226,7 +226,7 @@ export default async function ProjectsListPage({
                     <td className="py-2.5 pr-4">
                       {p.assigned_to ? (
                         <span className="inline-flex items-center gap-1 text-ink-2">
-                          <span className="inline-flex w-4 h-4 rounded-full bg-tile items-center justify-center text-[9px] font-bold uppercase">
+                          <span className="inline-flex w-4 h-4 rounded-full bg-tile items-center justify-center text-[10px] font-bold uppercase">
                             {p.assigned_to.charAt(0)}
                           </span>
                           <span className="text-xs">{p.assigned_to}</span>

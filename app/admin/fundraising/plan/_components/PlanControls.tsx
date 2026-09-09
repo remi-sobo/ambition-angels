@@ -9,6 +9,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { generateGiftLevels, type GiftLevel } from "@/lib/fundraising/plan";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -26,11 +29,11 @@ async function call(path: string, method: string, body?: unknown): Promise<strin
     });
     if (!res.ok) {
       const j = (await res.json().catch(() => ({}))) as { error?: string };
-      return j.error ?? `HTTP ${res.status}`;
+      return userMessage(res, j);
     }
     return null;
   } catch {
-    return "Network error — try again";
+    return networkMessage();
   }
 }
 
@@ -152,16 +155,24 @@ export function EditStrategyPanel({
   strategy: { id: string; name: string; goal: number; owner: string | null; notes: string | null };
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const remove = async () => {
-    if (!confirm(`Delete the "${strategy.name}" strategy? Linked asks, grants, and campaigns are released, never deleted.`)) return;
+    const ok = await confirm({
+      title: `Delete the "${strategy.name}" strategy?`,
+      body: "Linked asks, grants, and campaigns are released, never deleted.",
+      confirmLabel: "Delete strategy",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     const err = await call(`/api/admin/fundraising/plan?id=${strategy.id}`, "DELETE");
     setBusy(false);
     if (err) {
-      alert(err);
+      toast.error(err);
       return;
     }
     router.push("/admin/fundraising/plan");
@@ -312,6 +323,7 @@ export function AssignButton({
   label: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   return (
     <button
@@ -325,7 +337,7 @@ export function AssignButton({
           strategy_id: strategyId,
         });
         setBusy(false);
-        if (err) alert(err);
+        if (err) toast.error(err);
         else router.refresh();
       }}
     >

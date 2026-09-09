@@ -8,6 +8,9 @@
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 export type FunderRow = {
   id: string;
@@ -75,6 +78,7 @@ export default function StrategyBoard({ angleId, funders }: { angleId: string; f
 
 function AddFunder({ angleId }: { angleId: string }) {
   const router = useRouter();
+  const toast = useToast();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [busy, setBusy] = useState(false);
@@ -109,16 +113,19 @@ function AddFunder({ angleId }: { angleId: string }) {
       });
       const d = await r.json().catch(() => ({}));
       if (r.status === 409) {
-        alert("That funder is already on this angle.");
+        toast.error("That funder is already on this angle.");
         return;
       }
-      if (!r.ok) throw new Error(d?.error ?? "Failed");
-      if (d?.warning) alert(d.warning);
+      if (!r.ok) {
+        toast.error(userMessage(r, d));
+        return;
+      }
+      if (d?.warning) toast.info(d.warning);
       setQ("");
       setResults([]);
       router.refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Could not add funder.");
+    } catch {
+      toast.error(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -175,6 +182,8 @@ function AddFunder({ angleId }: { angleId: string }) {
 
 function FunderCard({ funder }: { funder: FunderRow }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [decision, setDecision] = useState(funder.decision ?? "");
   const [notes, setNotes] = useState(funder.fitNotes ?? "");
   const [busy, setBusy] = useState(false);
@@ -187,38 +196,58 @@ function FunderCard({ funder }: { funder: FunderRow }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!r.ok) throw new Error();
+      if (!r.ok) {
+        toast.error(userMessage(r, await r.json().catch(() => null)));
+        return;
+      }
       if (refresh) router.refresh();
     } catch {
-      alert("Could not save — try again.");
+      toast.error(networkMessage());
     } finally {
       setBusy(false);
     }
   };
 
   const remove = async () => {
-    if (!confirm(`Remove ${funder.name} from this angle? (The donor record is kept.)`)) return;
+    const ok = await confirm({
+      title: `Remove ${funder.name} from this angle?`,
+      body: "The donor record is kept.",
+      confirmLabel: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const r = await fetch(`/api/admin/strategy/funder-angles/${funder.id}`, { method: "DELETE" });
-      if (!r.ok) throw new Error();
+      if (!r.ok) {
+        toast.error(userMessage(r, await r.json().catch(() => null)));
+        return;
+      }
       router.refresh();
     } catch {
-      alert("Could not remove — try again.");
+      toast.error(networkMessage());
     } finally {
       setBusy(false);
     }
   };
 
   const pursue = async () => {
-    if (!confirm(`Create an opportunity for ${funder.name} and move to Pursuing?`)) return;
+    const ok = await confirm({
+      title: `Create an opportunity for ${funder.name}?`,
+      body: "They move to Pursuing and appear in the pipeline.",
+      confirmLabel: "Create opportunity",
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const r = await fetch(`/api/admin/strategy/funder-angles/${funder.id}/pursue`, { method: "POST" });
-      if (!r.ok) throw new Error();
+      if (!r.ok) {
+        toast.error(userMessage(r, await r.json().catch(() => null)));
+        return;
+      }
       router.refresh();
     } catch {
-      alert("Could not create the opportunity — try again.");
+      toast.error(networkMessage());
     } finally {
       setBusy(false);
     }

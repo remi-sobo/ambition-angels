@@ -6,6 +6,8 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 import FunderPicker, { type FunderChoice } from "../../_components/FunderPicker";
 import {
   ASK_FORMS,
@@ -91,13 +93,16 @@ export function NewAskForm({
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
       setTitle(""); setAmount(""); setAskDate(""); setStatus("draft");
       if (!fixedFunder) setFunder({ funderId: null, funderName: "" });
       setOpen(false);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to log ask");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -276,11 +281,14 @@ export function EditableAskDetails({ ask }: { ask: AskDetails }) {
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
       setEditing(false);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save ask");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -394,6 +402,7 @@ const fmtSize = (n: number | null) => {
 
 export function AskDocuments({ askId, documents }: { askId: string; documents: AskDocument[] }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [label, setLabel] = useState("");
@@ -408,19 +417,27 @@ export function AskDocuments({ askId, documents }: { askId: string; documents: A
       if (label.trim()) fd.set("label", label.trim());
       const res = await fetch(`/api/admin/asks/${askId}/documents`, { method: "POST", body: fd });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
       setLabel("");
       if (fileRef.current) fileRef.current.value = "";
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
   };
 
   const remove = async (docId: string) => {
-    if (!confirm("Remove this document?")) return;
+    const ok = await confirm({
+      title: "Remove this document?",
+      confirmLabel: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await fetch(`/api/admin/asks/${askId}/documents/${docId}`, { method: "DELETE" });
@@ -498,12 +515,19 @@ export function AskDocuments({ askId, documents }: { askId: string; documents: A
 
 export function DeleteAskButton({ askId }: { askId: string }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   return (
     <button
       disabled={busy}
       onClick={async () => {
-        if (!confirm("Delete this ask and all its documents? This can't be undone.")) return;
+        const ok = await confirm({
+          title: "Delete this ask and all its documents?",
+          body: "This can't be undone.",
+          confirmLabel: "Delete ask",
+          destructive: true,
+        });
+        if (!ok) return;
         setBusy(true);
         try {
           const res = await fetch(`/api/admin/asks/${askId}`, { method: "DELETE" });

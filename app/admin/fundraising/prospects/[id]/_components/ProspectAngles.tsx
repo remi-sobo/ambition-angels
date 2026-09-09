@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TYPE } from "@/lib/admin/typeScale";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 
 // Which strategy angles this prospect is on, plus add-to-angle. A prospect can
 // belong to several angles (many-to-many) — this is the prospect side of the
@@ -22,6 +23,7 @@ export default function ProspectAngles({
   allAngles: AngleLite[];
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [sel, setSel] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -41,7 +43,7 @@ export default function ProspectAngles({
       setSel("");
       router.refresh();
     } catch {
-      alert("Could not add to angle — try again.");
+      toast.error("Could not add to the angle. Try again.");
     } finally {
       setBusy(false);
     }

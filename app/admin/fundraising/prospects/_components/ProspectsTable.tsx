@@ -13,6 +13,8 @@ import { useRouter } from "next/navigation";
 import DataTable, { type Column, type BulkAction } from "../../../_components/DataTable";
 import TaskComposer, { type TaskTarget } from "../../_components/TaskComposer";
 import { CategoryTag, ScoreBadge } from "@/app/admin/_components/StatusChip";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import AddProspectModal from "./AddProspectModal";
 
 export type ProspectRow = {
@@ -68,6 +70,8 @@ export default function ProspectsTable({
   disqualifiedView?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [lifecycle, setLifecycle] = useState("");
   const [owner, setOwner] = useState("");
   const [scored, setScored] = useState(false);
@@ -79,9 +83,14 @@ export default function ProspectsTable({
   // the "Promote to pipeline" bulk action and the per-row "No lifecycle" cell —
   // a prospect with no lifecycle has never entered the pipeline, so clicking it
   // is the natural "mark as Identified" gesture.
-  const identifyOne = (r: ProspectRow) => {
+  const identifyOne = async (r: ProspectRow) => {
     if (identifying) return;
-    if (!confirm(`Mark ${displayName(r)} as Identified and move into the pipeline?`)) return;
+    const ok = await confirm({
+      title: `Move ${displayName(r)} into the pipeline?`,
+      body: "They'll be marked Identified and leave the bench.",
+      confirmLabel: "Move to pipeline",
+    });
+    if (!ok) return;
     setIdentifying(r.id);
     void fetch("/api/admin/fundraising/prospects/promote", {
       method: "POST",
@@ -90,10 +99,10 @@ export default function ProspectsTable({
     })
       .then((res) => res.json())
       .then((d: { promoted?: number }) => {
-        if (!d?.promoted) alert("Already in the pipeline.");
+        if (!d?.promoted) toast.info("Already in the pipeline.");
         router.refresh();
       })
-      .catch(() => alert("Could not move into the pipeline — try again."))
+      .catch(() => toast.error("Could not move into the pipeline. Try again."))
       .finally(() => setIdentifying(null));
   };
 
@@ -152,7 +161,7 @@ export default function ProspectsTable({
         ) : (
           <button
             type="button"
-            onClick={() => identifyOne(r)}
+            onClick={() => void identifyOne(r)}
             disabled={identifying === r.id}
             title="Mark as Identified and move into the pipeline"
             className="inline-flex items-center gap-1 text-[11px] font-semibold text-ink-2 hover:text-orange border border-dashed border-outline hover:border-orange/50 rounded-full px-2 py-0.5 transition-colors disabled:opacity-50"
@@ -228,13 +237,13 @@ export default function ProspectsTable({
       run: (selected) => {
         const emails = selected.map((r) => r.email).filter((e): e is string => !!e);
         if (emails.length === 0) {
-          alert("None of the selected prospects have an email on file.");
+          toast.info("None of the selected prospects have an email on file.");
           return;
         }
         void navigator.clipboard
           .writeText(emails.join(", "))
-          .then(() => alert(`Copied ${emails.length} email${emails.length === 1 ? "" : "s"} to the clipboard.`))
-          .catch(() => alert("Could not access the clipboard."));
+          .then(() => toast.success(`Copied ${emails.length} email${emails.length === 1 ? "" : "s"} to the clipboard.`))
+          .catch(() => toast.error("Could not access the clipboard."));
       },
     },
     // Promote: open an Identify-stage opportunity for each and move them off the
@@ -244,14 +253,13 @@ export default function ProspectsTable({
       : [
           {
             label: "Promote to pipeline →",
-            run: (selected: ProspectRow[]) => {
-              if (
-                !confirm(
-                  `Promote ${selected.length} prospect${selected.length === 1 ? "" : "s"} into the pipeline at the Identify stage? ` +
-                    `They'll move off the bench and appear in Pipeline.`
-                )
-              )
-                return;
+            run: async (selected: ProspectRow[]) => {
+              const ok = await confirm({
+                title: `Promote ${selected.length} prospect${selected.length === 1 ? "" : "s"} to the pipeline?`,
+                body: "They'll enter at the Identify stage, move off the bench, and appear in Pipeline.",
+                confirmLabel: "Promote",
+              });
+              if (!ok) return;
               void fetch("/api/admin/fundraising/prospects/promote", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -260,11 +268,11 @@ export default function ProspectsTable({
                 .then((r) => r.json())
                 .then((d: { promoted?: number }) => {
                   if (typeof d?.promoted === "number" && d.promoted < selected.length) {
-                    alert(`Promoted ${d.promoted} of ${selected.length}. Some may already be in the pipeline.`);
+                    toast.info(`Promoted ${d.promoted} of ${selected.length}. Some may already be in the pipeline.`);
                   }
                   router.refresh();
                 })
-                .catch(() => alert("Could not promote — try again."));
+                .catch(() => toast.error("Could not promote. Try again."));
             },
           } as BulkAction<ProspectRow>,
         ]),
@@ -281,8 +289,13 @@ export default function ProspectsTable({
         }
       : {
           label: "Disqualify",
-          run: (selected) => {
-            if (!confirm(`Remove ${selected.length} prospect(s) from the bench? You can requalify them later.`)) return;
+          run: async (selected) => {
+            const ok = await confirm({
+              title: `Disqualify ${selected.length} prospect${selected.length === 1 ? "" : "s"}?`,
+              body: "They leave the bench. You can requalify them later.",
+              confirmLabel: "Disqualify",
+            });
+            if (!ok) return;
             void fetch("/api/admin/fundraising/prospects/disqualify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
 import { type OpportunityRow } from "./pipeline-stages";
 import { type PipelineStage } from "@/lib/fundraising/stages";
@@ -23,6 +25,7 @@ export default function OpportunityEditModal({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
 
   const [name, setName] = useState(opp.label);
   const [stage, setStage] = useState(opp.stage);
@@ -74,31 +77,39 @@ export default function OpportunityEditModal({
       });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        setError(userMessage(r, body));
+        return;
       }
       router.refresh();
       onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed");
+    } catch {
+      setError(networkMessage());
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete() {
-    if (!confirm(`Delete the ask "${opp.label}"? This can't be undone.`)) return;
+    const ok = await confirm({
+      title: `Delete the ask "${opp.label}"?`,
+      body: "This can't be undone.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setDeleting(true);
     setError(null);
     try {
       const r = await fetch(`/api/admin/opportunities/${opp.id}`, { method: "DELETE" });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        setError(userMessage(r, body));
+        return;
       }
       router.refresh();
       onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Delete failed");
+    } catch {
+      setError(networkMessage());
       setDeleting(false);
     }
   }

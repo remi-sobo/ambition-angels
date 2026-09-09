@@ -5,6 +5,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 const TYPES = [
   ["solicitor", "Solicitor"],
@@ -20,6 +22,7 @@ const inputCls =
 
 export function AddSoftCredit({ giftId }: { giftId: string }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [name, setName] = useState("");
@@ -37,10 +40,10 @@ export function AddSoftCredit({ giftId }: { giftId: string }) {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
         return;
       }
-      if (j.warning) alert(j.warning);
+      if (j.warning) toast.info(j.warning);
       setName("");
       setOpen(false);
       router.refresh();
@@ -90,6 +93,7 @@ export function SoftCreditChip({
   label: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   return (
     <span className="group/sc inline-flex items-center gap-1 text-[11px] bg-tile border-[1.5px] border-outline rounded-full pl-2.5 pr-1.5 py-0.5 text-ink-2">
@@ -103,7 +107,7 @@ export function SoftCreditChip({
             const res = await fetch(`/api/admin/gifts/${giftId}/soft-credits?soft_credit_id=${id}`, { method: "DELETE" });
             if (!res.ok) {
               const j = await res.json().catch(() => ({}));
-              alert(j.error ?? `HTTP ${res.status}`);
+              toast.error(userMessage(res, j));
               return;
             }
             router.refresh();

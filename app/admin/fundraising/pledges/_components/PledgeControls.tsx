@@ -5,6 +5,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 type Option = { id: string; name: string };
 
@@ -21,6 +23,7 @@ const FREQS = [
 
 export function NewPledgeForm({ campaigns, funds }: { campaigns: Option[]; funds: Option[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -51,11 +54,15 @@ export function NewPledgeForm({ campaigns, funds }: { campaigns: Option[]; funds
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
-      if (j.warning) alert(j.warning);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        setBusy(false);
+        return;
+      }
+      if (j.warning) toast.info(j.warning);
       router.push(`/admin/fundraising/pledges/${j.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create pledge");
+    } catch {
+      setError(networkMessage());
       setBusy(false);
     }
   };
@@ -141,6 +148,7 @@ export type WonOpportunity = {
 // a manual pledge, just pre-filled from the opportunity.
 export function ConvertOpportunityForm({ opportunities }: { opportunities: WonOpportunity[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -186,11 +194,15 @@ export function ConvertOpportunityForm({ opportunities }: { opportunities: WonOp
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
-      if (j.warning) alert(j.warning);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        setBusy(false);
+        return;
+      }
+      if (j.warning) toast.info(j.warning);
       router.push(`/admin/fundraising/pledges/${j.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to convert");
+    } catch {
+      setError(networkMessage());
       setBusy(false);
     }
   };
@@ -275,6 +287,7 @@ export function PledgeStatusSelect({ pledgeId, status }: { pledgeId: string; sta
 
 export function PaymentActions({ paymentId, status }: { paymentId: string; status: string }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const act = async (action: "paid" | "skip" | "reset") => {
     setBusy(true);
@@ -286,7 +299,7 @@ export function PaymentActions({ paymentId, status }: { paymentId: string; statu
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
         return;
       }
       router.refresh();

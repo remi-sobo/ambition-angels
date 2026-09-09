@@ -6,6 +6,9 @@
 
 import { useEffect, useState } from "react";
 import SectionHeading from "../../../_components/SectionHeading";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 type Segment = {
   id: string;
@@ -23,7 +26,12 @@ function toQuery(def: Record<string, string>): string {
 }
 
 export default function SegmentExportPanel() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
+  // null = the segment-name input is closed (prompt() is banned; this inline
+  // input is its replacement).
+  const [segName, setSegName] = useState<string | null>(null);
   const [segments, setSegments] = useState<Segment[]>([]);
   const [q, setQ] = useState("");
   const [type, setType] = useState("");
@@ -49,7 +57,7 @@ export default function SegmentExportPanel() {
   };
 
   const saveSegment = async () => {
-    const name = prompt("Segment name (e.g. “$250+ donors this year”):")?.trim();
+    const name = segName?.trim();
     if (!name) return;
     setBusy(true);
     try {
@@ -59,10 +67,12 @@ export default function SegmentExportPanel() {
         body: JSON.stringify({ name, definition: def() }),
       });
       if (res.ok) {
+        setSegName(null);
+        toast.success(`Saved the “${name}” segment.`);
         const r = await fetch("/api/admin/segments");
         if (r.ok) setSegments((await r.json()).segments ?? []);
       } else {
-        alert("Could not save segment");
+        toast.error(userMessage(res, await res.json().catch(() => null)));
       }
     } finally {
       setBusy(false);
@@ -70,7 +80,13 @@ export default function SegmentExportPanel() {
   };
 
   const deleteSegment = async (id: string) => {
-    if (!confirm("Delete this segment?")) return;
+    const ok = await confirm({
+      title: "Delete this segment?",
+      body: "The saved filters are removed. Donors themselves are untouched.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     await fetch(`/api/admin/segments/${id}`, { method: "DELETE" });
     setSegments((s) => s.filter((x) => x.id !== id));
   };
@@ -124,13 +140,36 @@ export default function SegmentExportPanel() {
         >
           Export CSV
         </button>
-        <button
-          onClick={() => void saveSegment()}
-          disabled={busy}
-          className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors disabled:opacity-50"
-        >
-          Save as segment
-        </button>
+        {segName === null ? (
+          <button
+            onClick={() => setSegName("")}
+            disabled={busy}
+            className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors disabled:opacity-50"
+          >
+            Save as segment
+          </button>
+        ) : (
+          <span className="inline-flex items-center gap-1.5">
+            <input
+              autoFocus
+              className={inputCls + " w-56"}
+              placeholder="Segment name (e.g. “$250+ donors this year”)"
+              value={segName}
+              onChange={(e) => setSegName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") void saveSegment(); if (e.key === "Escape") setSegName(null); }}
+            />
+            <button
+              onClick={() => void saveSegment()}
+              disabled={busy || !segName.trim()}
+              className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-2 rounded-full transition-colors disabled:opacity-50"
+            >
+              Save
+            </button>
+            <button onClick={() => setSegName(null)} className="text-xs text-ink-2 hover:text-ink-1 px-1">
+              Cancel
+            </button>
+          </span>
+        )}
         {segments.map((s) => (
           <span
             key={s.id}

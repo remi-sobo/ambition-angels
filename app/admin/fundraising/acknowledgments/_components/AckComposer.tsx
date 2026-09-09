@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 import { ACK_CHANNELS, CHANNEL_LABEL, type AckChannel } from "@/lib/fundraising/ack-channels";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -38,6 +40,7 @@ export default function AckComposer({
   orgName: string;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   // Honor the donor's preferred channel when they have one.
   const [channel, setChannel] = useState<AckChannel>(defaultChannel ?? "email");
@@ -67,10 +70,13 @@ export default function AckComposer({
         body: JSON.stringify({ gift_id: giftId }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
       setNote(j.draft);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Draft failed");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy("");
     }
@@ -86,18 +92,26 @@ export default function AckComposer({
         body: JSON.stringify({ gift_id: giftId, subject, personal_note: note }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
       if (j.warning) setError(j.warning);
       router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Send failed");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy("");
     }
   };
 
   const log = async () => {
-    if (!confirm(`Log this thank-you as ${CHANNEL_LABEL[channel].toLowerCase()}?`)) return;
+    const ok = await confirm({
+      title: `Log this thank-you as ${CHANNEL_LABEL[channel].toLowerCase()}?`,
+      body: "The gift is marked acknowledged. No email is sent.",
+      confirmLabel: "Log thank-you",
+    });
+    if (!ok) return;
     setBusy("log");
     setError("");
     try {
@@ -107,11 +121,14 @@ export default function AckComposer({
         body: JSON.stringify({ gift_id: giftId, channel, note }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
       if (j.warning) setError(j.warning);
       router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy("");
     }

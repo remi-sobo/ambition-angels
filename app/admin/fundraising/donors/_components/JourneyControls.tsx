@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 // Manual journey enrollment from the donor profile (spec Phase 3). The
 // server passes this org's active journeys and why enrollment is blocked
@@ -39,7 +42,7 @@ export function EnrollInJourney({
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Could not enroll — try again.");
+        setError(userMessage(res, data));
         return;
       }
       router.refresh();
@@ -81,10 +84,18 @@ export function EnrollInJourney({
 
 export function CancelEnrollment({ enrollmentId, journeyName }: { enrollmentId: string; journeyName: string }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
 
   const cancel = async () => {
-    if (!confirm(`Cancel this enrollment? ${journeyName} will stop sending to this donor.`)) return;
+    const ok = await confirm({
+      title: "Cancel this enrollment?",
+      body: `${journeyName} will stop sending to this donor.`,
+      confirmLabel: "Cancel enrollment",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/admin/journeys/enrollments/${enrollmentId}`, {
@@ -94,7 +105,7 @@ export function CancelEnrollment({ enrollmentId, journeyName }: { enrollmentId: 
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        alert(data.error ?? "Could not cancel the enrollment.");
+        toast.error(userMessage(res, data));
         return;
       }
       router.refresh();

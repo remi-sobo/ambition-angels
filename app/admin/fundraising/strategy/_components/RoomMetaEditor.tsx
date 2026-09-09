@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TYPE } from "@/lib/admin/typeScale";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 // Editor for the Strategy Room's presentation copy — the hero (eyebrow,
 // headline, accent, subtitle), the stat chips, and the "what we're doing this
@@ -29,6 +31,7 @@ const label = "block text-[11px] font-semibold uppercase tracking-wider text-ink
 
 export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -52,7 +55,7 @@ export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
         body: JSON.stringify(f),
       });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok) { alert(j.error ?? `HTTP ${r.status}`); return; }
+      if (!r.ok) { toast.error(userMessage(r, j)); return; }
       setDirty(false);
       router.refresh();
     } finally { setBusy(false); }

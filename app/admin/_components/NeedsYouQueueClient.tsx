@@ -58,6 +58,7 @@ const SOURCE_LABEL: Record<QueueItem["source"], string> = {
   metric_stale: "Metric update",
   application_pending: "Application",
   session_unrecorded: "Attendance",
+  fr_next_step: "Next move", // F5 arm — v_obligations only, never in this V1 queue
 };
 
 const todayISO = () => new Date().toISOString().slice(0, 10);

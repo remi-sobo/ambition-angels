@@ -5,7 +5,7 @@ import { getBoardContext } from "@/lib/board/auth";
 import {
   getMeeting, getAgenda, getFollowUps, getResolutions, getAttendance,
   getMeetingDocuments, getMinutes, getMyNotes, getMyQuestions, getPrepItems,
-  getAllMeetings,
+  getAllMeetings, getMySharedNotes, getSharedNotes,
 } from "@/lib/board/data";
 import { longDate, timeRange, dateOnly, plainDate } from "@/lib/board/format";
 import { Header, Footer } from "../../_components/Chrome";
@@ -14,8 +14,10 @@ import AgendaList from "../../_components/AgendaList";
 import RsvpControl from "../../_components/RsvpControl";
 import QuestionBox from "../../_components/QuestionBox";
 import ChairBar from "../../_components/ChairBar";
-import AddMaterials from "../../_components/AddMaterials";
+import FileUpload from "../../_components/FileUpload";
 import MinutesView from "../../_components/MinutesView";
+import ShareNotes from "../../_components/ShareNotes";
+import SharedNotesInbox from "../../_components/SharedNotesInbox";
 import { MaterialsList, SinceWeLastMet, PrintHeader, PrintFooter } from "../../_components/MeetingParts";
 import { C, F, card, eyebrow } from "../../_components/tokens";
 
@@ -60,9 +62,20 @@ export default async function MeetingPage({ params }: { params: { id: string } }
     getAllMeetings(ctx.orgId),
   ]);
 
-  const [notes, questions] = ctx.memberId
-    ? await Promise.all([getMyNotes(meeting.id, ctx.memberId), getMyQuestions(meeting.id, ctx.memberId)])
-    : [{}, []];
+  // Typed rather than inferred: the empty-object fallback for a signed-in
+  // staffer who is not on the roster otherwise widens these to `{}`.
+  const noNotes: Record<string, string> = {};
+  const [notes, questions, sharedByMe] = ctx.memberId
+    ? await Promise.all([
+        getMyNotes(meeting.id, ctx.memberId),
+        getMyQuestions(meeting.id, ctx.memberId),
+        getMySharedNotes(meeting.id, ctx.memberId),
+      ])
+    : [noNotes, [] as Awaited<ReturnType<typeof getMyQuestions>>, noNotes];
+
+  // RLS returns another director's sent note only to the designated
+  // recipient, so this is empty for everyone else — board admins included.
+  const sharedToMe = ctx.isNotesRecipient ? await getSharedNotes(meeting.id) : [];
 
   // Continuity comes from the meeting immediately before this one.
   const prior = allMeetings.find((m) => m.meeting_date < meeting.meeting_date) ?? null;
@@ -239,6 +252,23 @@ export default async function MeetingPage({ params }: { params: { id: string } }
                 />
               </>
             )}
+
+            {/* Sending is a separate act from writing. member_notes is
+                untouched by it — see the route and the migration comment. */}
+            {ctx.memberId && !ctx.isStaff && (
+              <ShareNotes
+                meetingId={meeting.id}
+                recipient="Remi"
+                notes={agenda
+                  .filter((a) => (notes[a.id] ?? "").trim())
+                  .map((a) => ({
+                    agendaItemId: a.id,
+                    itemTitle: a.title,
+                    body: notes[a.id],
+                    sentAt: sharedByMe[a.id] ?? null,
+                  }))}
+              />
+            )}
           </div>
 
           <aside className="board-sticky board-noprint" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
@@ -246,7 +276,21 @@ export default async function MeetingPage({ params }: { params: { id: string } }
 
             {/* Filing materials lives here because /admin/documents cannot
                 attach a document to a meeting — see the route's comment. */}
-            {ctx.isAdmin && <AddMaterials meetingId={meeting.id} />}
+            {ctx.isNotesRecipient && (
+              <SharedNotesInbox
+                notes={sharedToMe}
+                titleOf={(id) => agenda.find((a) => a.id === id)?.title ?? "The meeting"}
+              />
+            )}
+
+            {ctx.isAdmin && (
+              <FileUpload
+                endpoint={`/api/board/meetings/${meeting.id}/materials`}
+                heading="File materials"
+                blurb="Attaches to this meeting and appears under Materials for every director. Directors cannot see this panel."
+                defaultType="board_packet"
+              />
+            )}
 
             {!isClosed && (
               <section style={{ ...card, padding: 28 }}>

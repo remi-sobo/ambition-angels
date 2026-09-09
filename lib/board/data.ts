@@ -334,6 +334,61 @@ export async function getMyNotes(
   return out;
 }
 
+/** A note a director chose to send on. Never derived from member_notes at
+ *  read time — this is the frozen copy she sent, in its own table. */
+export type SharedNote = {
+  id: string;
+  agenda_item_id: string | null;
+  body: string;
+  created_at: string;
+  author: string | null;
+};
+
+/** What this director has already sent for this meeting, keyed by agenda item,
+ *  so the send panel can say "sent" rather than offering it again. */
+export async function getMySharedNotes(
+  meetingId: string,
+  memberId: string,
+): Promise<Record<string, string>> {
+  const supabase = createServerSupabase();
+  const { data } = await supabase
+    .from("shared_notes")
+    .select("agenda_item_id, created_at")
+    .eq("meeting_id", meetingId)
+    .eq("board_member_id", memberId)
+    .order("created_at", { ascending: false });
+  const out: Record<string, string> = {};
+  for (const r of (data ?? []) as { agenda_item_id: string | null; created_at: string }[]) {
+    if (r.agenda_item_id && !out[r.agenda_item_id]) out[r.agenda_item_id] = r.created_at;
+  }
+  return out;
+}
+
+/** Every note sent to the Chair for this meeting. RLS is the gate: this
+ *  returns rows only to a caller holding board.write, so no isAdmin check
+ *  here would add anything the database is not already enforcing. */
+export async function getSharedNotes(meetingId: string): Promise<SharedNote[]> {
+  const supabase = createServerSupabase();
+  const { data } = await supabase
+    .from("shared_notes")
+    .select("id, agenda_item_id, body, created_at, board_members(name)")
+    .eq("meeting_id", meetingId)
+    .order("created_at", { ascending: false });
+  return ((data ?? []) as unknown as {
+    id: string;
+    agenda_item_id: string | null;
+    body: string;
+    created_at: string;
+    board_members: { name: string } | null;
+  }[]).map((r) => ({
+    id: r.id,
+    agenda_item_id: r.agenda_item_id,
+    body: r.body,
+    created_at: r.created_at,
+    author: r.board_members?.name ?? null,
+  }));
+}
+
 export type Question = {
   id: string;
   body: string;

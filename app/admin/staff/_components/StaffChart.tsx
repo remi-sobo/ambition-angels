@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import { Avatar } from "../../messages/_components/Avatar";
 import type { StaffNode, StaffRow, PendingInvite } from "../_lib/read";
 
@@ -102,6 +104,7 @@ export default function StaffChart({
   pendingInvites: PendingInvite[];
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [dept, setDept] = useState<string>("");
   const [type, setType] = useState<string>("");
   const [arrange, setArrange] = useState(false);
@@ -139,7 +142,7 @@ export default function StaffChart({
         body: JSON.stringify(bodyObj),
       });
       if (res.ok) router.refresh();
-      else alert(((await res.json().catch(() => null)) as { error?: string })?.error ?? "Failed.");
+      else toast.error(userMessage(res, (await res.json().catch(() => null)) as { error?: string } | null));
     } finally {
       setBusy(false);
       setDragging(null);
@@ -154,7 +157,7 @@ export default function StaffChart({
     if (!dragged || !target) return setDragging(null);
     // Can't move a node under its own descendant.
     if (isAncestor(draggedId, targetId)) {
-      alert("Can't move a person under one of their own reports.");
+      toast.error("Can't move a person under one of their own reports.");
       return setDragging(null);
     }
     if ((dragged.reports_to ?? null) === (target.reports_to ?? null)) {

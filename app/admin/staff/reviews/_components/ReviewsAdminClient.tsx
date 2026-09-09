@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import { StatusChip } from "../../../_components/StatusChip";
 import EmptyState from "../../../_components/EmptyState";
 import type { ReviewCycle } from "../../_lib/reviews";
@@ -39,6 +41,7 @@ export default function ReviewsAdminClient({
   canManage: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ name: "", anonymity_mode: "confidential", min_raters_for_anonymity: "3" });
   const [warnings, setWarnings] = useState<Record<string, SubjectAssignment[]>>({});
@@ -55,7 +58,7 @@ export default function ReviewsAdminClient({
       if (res.ok) {
         setForm({ name: "", anonymity_mode: "confidential", min_raters_for_anonymity: "3" });
         router.refresh();
-      } else alert(((await res.json().catch(() => null)) as { error?: string })?.error ?? "Failed.");
+      } else toast.error(userMessage(res, (await res.json().catch(() => null)) as { error?: string } | null));
     } finally {
       setBusy(false);
     }
@@ -71,7 +74,7 @@ export default function ReviewsAdminClient({
       if (res.ok && body?.subjects) {
         setWarnings((w) => ({ ...w, [cycleId]: body.subjects!.filter((s) => s.thinGroup) }));
         router.refresh();
-      } else alert(body?.error ?? "Failed.");
+      } else toast.error(userMessage(res, body));
     } finally {
       setBusy(false);
     }

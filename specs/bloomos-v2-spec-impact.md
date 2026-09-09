@@ -60,7 +60,7 @@ Rows activating: `/admin/strategic-plan/scorecard` → `/admin/impact/kpis` (exa
 
 ## Staged build order
 
-**I1 — Outcomes.** The provenance-first surface + `KEPT_IN_PLACE` seat; the seatless set empties; the deviation test dies at I4, not here (pre-cutover the tab slot is still V1). Commit: `spec-impact: outcomes`.
+**I1 — Outcomes.** The provenance-first surface + `KEPT_IN_PLACE` seat. Seating the tab changes the landing at once — `resolveShellNav` lands a destination on its first entitled tab *with a live seat*, so every org's Impact points at Outcomes from I1 (dark-launched behind the V1 tab slot until I4), and the 9-key deviation test retires here, not at I4. Commit: `spec-impact: outcomes`.
 
 **I2 — Reports.** The renderer generalization (fin output pinned byte-identical), the Impact builder + gated export route, the `impact_report` entity_types migration (applied via MCP). Commit: `spec-impact: reports`.
 

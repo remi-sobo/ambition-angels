@@ -70,6 +70,17 @@ Rows activating: `/admin/ops/monday` → plan-close (exact), `/admin/ops/friday`
 
 **W4 — cutover.** Rows activate in map + config (matching order), `"work"` joins the cutover set, verification: four-org printout (AA/YGB six tabs, 9-key four tabs, everyone landing Plan & Close), live crawl (308s, query survival on the calendar move), booking-page and briefing/weekly still live and unlisted. Commit: `spec-work: cutover`.
 
+> **As built (W4, 2026-09-09 — pending Remi's acceptance).** All four rows
+> graduated, all exact; `connections` went settings → merged per decision 3
+> and `booking-page` alone stays at-cutover (the one true settings row).
+> Verified by live crawl (the four moves 308 to their exact seats;
+> `?week=&owner=` survives the calendar hop; every seat, booking-page, and
+> briefing/weekly answer only the pre-existing auth 307) and the four-org
+> printout (Work → Plan & Close everywhere; six tabs for AA/YGB, four for
+> the 9-key orgs). One drift correction along the way: the redirects test's
+> per-org gate table still said My Week was ops-gated — W2 moved it to
+> `modules.meetings`, and the table + 9-key panelled list now say so.
+
 Each stage is one PR. Remi merges every PR and starts every stage.
 
 ## Definition of done

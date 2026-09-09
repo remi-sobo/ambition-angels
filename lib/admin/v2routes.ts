@@ -147,8 +147,14 @@ const ACTIVE: V2RouteRow[] = [
 const AT_CUTOVER: V2RouteRow[] = [
   { v1: "/admin", v2: "/admin/today", kind: "exact", activation: "at-cutover", disposition: "re-homed (recomposed)", note: "ACTIVATED at H3 as an in-page auth-aware forward (app/admin/page.tsx): /admin hosts the signed-out login UI and a config 308 can't branch on auth. Never becomes a config redirect; this row stays for canonicalSeat/highlighting." },
   { v1: "/admin/messages", v2: "/admin/inbox/messages", kind: "exact", activation: "at-cutover", disposition: "merged" },
-  { v1: "/admin/strategic-plan/objective", v2: "/admin/organization/strategy", kind: "prefix", activation: "at-cutover", disposition: "merged" },
-  { v1: "/admin/strategic-plan/review", v2: "/admin/organization/strategy", kind: "exact", activation: "at-cutover", disposition: "merged" },
+  // Re-targeted at Spec Org O1 (decision 1): the Stage 0 targets pointed at
+  // the bare Strategy landing — activating them as written would 308
+  // objective/<id> into a 404 and the review ritual into a page that doesn't
+  // contain it (the F6 discipline). Child hosts exist since O1; dispositions
+  // corrected merged → re-homed, the honest word for a screen keeping its
+  // shape.
+  { v1: "/admin/strategic-plan/objective", v2: "/admin/organization/strategy/objective", kind: "prefix", activation: "at-cutover", disposition: "re-homed" },
+  { v1: "/admin/strategic-plan/review", v2: "/admin/organization/strategy/review", kind: "exact", activation: "at-cutover", disposition: "re-homed" },
   // scorecard graduated to ACTIVE at Spec Impact I4.
   { v1: "/admin/strategic-plan/setup", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
   // Work's four moves (monday, friday, calendar, connections) graduated to

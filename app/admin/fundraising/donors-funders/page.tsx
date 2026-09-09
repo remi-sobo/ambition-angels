@@ -6,6 +6,7 @@ import { money } from "../../finance/_components/charts";
 import { getDonorsFunders, type DfRow, type ProspectRow } from "@/lib/admin/donorsFunders";
 import { constituentName } from "@/lib/fundraising/display";
 import { BUILT_IN_VIEWS, isLapsed, toDefinition } from "@/lib/fundraising/views";
+import { hasEntitlement } from "@/lib/admin/entitlements";
 import { todayISO } from "../../ops/_types/ops";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -15,9 +16,9 @@ import { TYPE } from "@/lib/admin/typeScale";
 // named filters. Reachable by URL only until F6 — the tab still resolves to
 // the V1 donors page (its merge seat) and no redirect exists yet.
 //
-// Row links open the live V1 profiles (donors/[id], prospects/[id]) — the
-// F6 308s will carry those same URLs to Donor 360 once F2 builds it, so no
-// link written here ever dies.
+// Row links open the Donor 360 (donors-funders/[id], built at F2) — one URL
+// shape for both id spaces; the F6 308s will carry stored V1 detail URLs to
+// the same place.
 export const dynamic = "force-dynamic";
 
 const BASE = "/admin/fundraising/donors-funders";
@@ -32,6 +33,11 @@ export default async function DonorsFundersPage({
   searchParams?: Record<string, string | undefined>;
 }) {
   const def = toDefinition(searchParams ?? {});
+  // The prospect bench keeps V1's fence (F2 correction): its section is
+  // gated ai.prospect_research, so the view is too — an org without the
+  // key never sees the pill, and a forced URL degrades to All.
+  const prospectsEnabled = await hasEntitlement("ai.prospect_research");
+  if (def.view === "prospects" && !prospectsEnabled) delete def.view;
   const page = Math.max(0, Number.parseInt(searchParams?.page ?? "0", 10) || 0);
   const today = todayISO();
   const data = await getDonorsFunders(def, page, today);
@@ -77,7 +83,9 @@ export default async function DonorsFundersPage({
         {/* ── Views + filters (URL-driven, server-rendered) ── */}
         <div className="flex flex-wrap items-center gap-3">
           <FilterTabs
-            options={BUILT_IN_VIEWS.map((v) => ({ value: v.value, label: v.label }))}
+            options={BUILT_IN_VIEWS.filter((v) => v.value !== "prospects" || prospectsEnabled).map(
+              (v) => ({ value: v.value, label: v.label }),
+            )}
             current={view}
             paramKey="view"
             basePath={BASE}
@@ -183,7 +191,7 @@ function ConstituentsTable({ rows, today }: { rows: DfRow[]; today: string }) {
               <tr key={r.id} className="hover:bg-orange/5 transition-colors">
                 <td className="px-4 py-3">
                   <Link
-                    href={`/admin/fundraising/donors/${r.id}`}
+                    href={`/admin/fundraising/donors-funders/${r.id}`}
                     className="font-semibold text-ink-1 hover:text-orange transition-colors"
                   >
                     {constituentName(r)}
@@ -277,7 +285,7 @@ function ProspectsTable({ prospects }: { prospects: ProspectRow[] }) {
             <tr key={p.id} className="hover:bg-orange/5 transition-colors">
               <td className="px-4 py-3">
                 <Link
-                  href={`/admin/fundraising/prospects/${p.id}`}
+                  href={`/admin/fundraising/donors-funders/${p.id}`}
                   className="font-semibold text-ink-1 hover:text-orange transition-colors"
                 >
                   {p.name}

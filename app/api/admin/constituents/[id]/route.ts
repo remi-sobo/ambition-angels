@@ -23,7 +23,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const update: Record<string, unknown> = {};
   if (body.type === "person" || body.type === "organization") update.type = body.type;
-  for (const f of ["first_name", "last_name", "org_name", "street", "city", "state", "postal_code", "notes"] as const) {
+  // why_matters is the Donor 360 narrative (Spec Fundraising decision 1,
+  // signed): HUMAN-written through this route only. Reed may draft into
+  // reed_drafts for approval but never writes the column.
+  for (const f of ["first_name", "last_name", "org_name", "street", "city", "state", "postal_code", "notes", "why_matters"] as const) {
     if (typeof body[f] === "string") update[f] = (body[f] as string).trim() || null;
   }
   const emails = strArr(body.emails);

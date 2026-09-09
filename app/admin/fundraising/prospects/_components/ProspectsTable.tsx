@@ -128,12 +128,12 @@ export default function ProspectsTable({
             {displayName(r)}
           </Link>
           {r.type && r.type !== "individual" && (
-            <span className="text-[9px] uppercase tracking-wide text-ink-3 border border-outline rounded px-1 py-px">
+            <span className="text-[10px] uppercase tracking-wide text-ink-3 border border-outline rounded px-1 py-px">
               {r.type === "foundation" ? "Foundation" : r.type === "corporate" ? "Corp" : r.type}
             </span>
           )}
-          {r.source === "manual" && <span className="text-[9px] uppercase tracking-wide text-orange/80">added</span>}
-          {r.source === "research" && <span className="text-[9px] uppercase tracking-wide text-revenue">AI</span>}
+          {r.source === "manual" && <span className="text-[10px] uppercase tracking-wide text-orange/80">added</span>}
+          {r.source === "research" && <span className="text-[10px] uppercase tracking-wide text-revenue">AI</span>}
         </span>
       ),
     },

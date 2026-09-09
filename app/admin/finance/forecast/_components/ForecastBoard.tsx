@@ -284,8 +284,8 @@ function Chart({ baseline, scenario }: { baseline: number[]; scenario: number[] 
     <div className="overflow-x-auto">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 560 }} role="img" aria-label="Projected cash chart">
         {/* zero line */}
-        <line x1={padL} y1={zeroY} x2={W - padR} y2={zeroY} stroke="#B5482F" strokeWidth="1" strokeDasharray="4 3" opacity="0.7" />
-        <text x={W - padR} y={zeroY - 3} textAnchor="end" fontSize="10" fill="#B5482F">$0</text>
+        <line x1={padL} y1={zeroY} x2={W - padR} y2={zeroY} stroke="#B0462E" strokeWidth="1" strokeDasharray="4 3" opacity="0.7" />
+        <text x={W - padR} y={zeroY - 3} textAnchor="end" fontSize="10" fill="#B0462E">$0</text>
         {/* baseline */}
         <path d={line(baseline)} fill="none" stroke="#9A8B7C" strokeWidth="1.5" opacity="0.55" />
         {/* scenario */}
@@ -293,13 +293,13 @@ function Chart({ baseline, scenario }: { baseline: number[]; scenario: number[] 
         {/* cross-zero marker */}
         {crossIdx > -1 && (
           <>
-            <line x1={x(crossIdx)} y1={padT} x2={x(crossIdx)} y2={H - padB} stroke="#B5482F" strokeWidth="1" opacity="0.4" />
-            <circle cx={x(crossIdx)} cy={y(scenario[crossIdx])} r="3.5" fill="#B5482F" />
+            <line x1={x(crossIdx)} y1={padT} x2={x(crossIdx)} y2={H - padB} stroke="#B0462E" strokeWidth="1" opacity="0.4" />
+            <circle cx={x(crossIdx)} cy={y(scenario[crossIdx])} r="3.5" fill="#B0462E" />
           </>
         )}
         {/* x labels every 3 months */}
         {Array.from({ length: HORIZON }, (_, i) => i).filter((i) => i % 3 === 0).map((i) => (
-          <text key={i} x={x(i)} y={H - 6} textAnchor="middle" fontSize="9" fill="#9A8B7C">
+          <text key={i} x={x(i)} y={H - 6} textAnchor="middle" fontSize="10" className="fill-ink-3">
             {monthLabel(i)}
           </text>
         ))}

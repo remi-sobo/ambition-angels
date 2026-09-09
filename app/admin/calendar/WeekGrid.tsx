@@ -657,7 +657,7 @@ export default function WeekGrid({
                               height: (g.endMin - g.startMin) * PX_PER_MIN - 2,
                             }}
                           >
-                            <span className="mt-1 text-[9px] uppercase tracking-[0.08em] text-ink-3/80">
+                            <span className="mt-1 text-[10px] uppercase tracking-[0.08em] text-ink-3">
                               {formatDuration(g.endMin - g.startMin)} open
                             </span>
                           </div>

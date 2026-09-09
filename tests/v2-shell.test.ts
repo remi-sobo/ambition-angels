@@ -46,8 +46,8 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
     expect(seatless.sort()).toEqual([
       "/admin/impact/outcomes",       // Impact spec builds Outcomes
       "/admin/impact/reports",        // Impact spec builds Reports
-      "/admin/programs/attendance",   // Programs spec builds Attendance
-      // /admin/organization-health left the set at Spec Home H3.
+      // /admin/organization-health left the set at Spec Home H3;
+      // /admin/programs/attendance at Spec Programs P1.
     ]);
   });
 

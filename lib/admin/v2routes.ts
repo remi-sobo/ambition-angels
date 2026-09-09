@@ -242,6 +242,7 @@ export const KEPT_IN_PLACE: readonly string[] = [
   "/admin/finance/budget",
   // V2-only screens (no V1 source): their own path IS the seat (Spec Home H3).
   "/admin/organization-health",
+  "/admin/programs/attendance", // Spec Programs P1: the cross-cohort session surface
 ];
 
 /** The live screen for a canonical V2 path today, or null when none exists

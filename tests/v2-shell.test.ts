@@ -44,10 +44,10 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
       }
     }
     expect(seatless.sort()).toEqual([
-      "/admin/impact/outcomes",       // Impact spec builds Outcomes
-      "/admin/impact/reports",        // Impact spec builds Reports
+      "/admin/impact/reports",        // Impact spec builds Reports (I2)
       // /admin/organization-health left the set at Spec Home H3;
-      // /admin/programs/attendance at Spec Programs P1.
+      // /admin/programs/attendance at Spec Programs P1;
+      // /admin/impact/outcomes at Spec Impact I1.
     ]);
   });
 
@@ -113,10 +113,16 @@ describe("resolveShellNav: the four orgs (DoD 1, shell level)", () => {
     }
   });
 
-  test("pre-cutover deviation, stated: the 9-key orgs' Impact lands on KPIs (the model lands Outcomes, whose screen doesn't exist yet)", () => {
-    const impact = resolveShellNav(NINE_KEY).destinations.find((d) => d.key === "impact")!;
-    expect(impact.href).toBe("/admin/impact/kpis");
-    expect(impact.tabs.map((t) => t.key)).toEqual(["kpis"]);
+  test("the 9-key deviation is RETIRED (Spec Impact I1): with Outcomes seated, the model's landing holds for every org", () => {
+    // Until I1, the 9-key orgs landed Impact on KPIs because Outcomes had no
+    // screen — a stated deviation this test used to pin. Building the screen
+    // is what retires it.
+    for (const features of [AA, YGB, NINE_KEY]) {
+      const impact = resolveShellNav(features).destinations.find((d) => d.key === "impact")!;
+      expect(impact.href).toBe("/admin/impact/outcomes");
+    }
+    const nine = resolveShellNav(NINE_KEY).destinations.find((d) => d.key === "impact")!;
+    expect(nine.tabs.map((t) => t.key)).toEqual(["outcomes", "kpis"]);
   });
 
   test("9-key orgs: Work lands on Plan & Close itself (W4); Inbox keeps only its own tab", () => {

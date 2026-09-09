@@ -12,7 +12,7 @@ import { EntityDocuments } from "../../_components/EntityDocuments";
 import { CommentThread } from "../../_components/CommentThread";
 import { EntityHistory } from "../../_components/EntityHistory";
 import { TYPE } from "@/lib/admin/typeScale";
-import { fullName, cf, type Student } from "../_components/StudentControls";
+import { fullName, cf, type Student } from "../_lib/studentFields";
 import { StageControls, EditStudentProfile } from "./_components/StudentProfileControls";
 
 // Student profile (governance-profile-views phase 2): the full record behind

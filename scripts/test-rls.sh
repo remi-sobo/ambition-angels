@@ -224,6 +224,7 @@ ordered=(
   spec_b_v2_shell_flag.sql
   create_board_portal.sql
   spec_fr_donors_funders_rollups.sql
+  spec_fr_why_matters.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

@@ -13,6 +13,13 @@ export type LibraryDoc = {
   doc_type: string | null;
   expires_at: string | null;
   created_at: string;
+  /** The date the document itself carries — adopted, issued, effective. The
+   *  policies were adopted 31 August 2023 and uploaded in 2026, and a library
+   *  that prints the upload date states the wrong one. */
+  issued_at?: string | null;
+  /** Filed against a board meeting, so it is meeting material rather than a
+   *  corporate record. Set by the library page from document_links. */
+  forMeeting?: boolean;
 };
 
 /**
@@ -70,7 +77,11 @@ export default function LibraryList({ docs }: { docs: LibraryDoc[] }) {
     });
   }, [docs, query]);
 
-  const claimed = new Set<string>();
+  // Meeting material is answered first and separately: it is claimed before
+  // the corporate groups get a look, so a pre-read can never land under
+  // "Corporate records" because its doc_type happened to match.
+  const meetingDocs = matches.filter((d) => d.forMeeting);
+  const claimed = new Set<string>(meetingDocs.map((d) => d.id));
   const sections = GROUPS.map((s) => ({
     ...s,
     groups: s.groups
@@ -103,6 +114,18 @@ export default function LibraryList({ docs }: { docs: LibraryDoc[] }) {
   return (
     <>
       <SearchBox value={query} onChange={setQuery} />
+      {meetingDocs.length > 0 && (
+        <section style={{ marginTop: 48 }}>
+          <h2 style={{ margin: 0, fontFamily: F.heading, fontSize: 24, fontWeight: 600, letterSpacing: "-0.01em", color: C.ink }}>
+            Meeting materials
+          </h2>
+          <p style={{ margin: "8px 0 0", fontSize: 15, lineHeight: 1.6, color: C.muted, maxWidth: "68ch" }}>
+            Filed against a meeting — packets, pre-reads and financials. These also appear on the
+            meeting itself, which is where you will usually want them.
+          </p>
+          <Group name="Filed to a meeting" rows={meetingDocs} />
+        </section>
+      )}
       {sections.map((s) => (
         <section key={s.section} style={{ marginTop: 48 }}>
           <h2 style={{ margin: 0, fontFamily: F.heading, fontSize: 24, fontWeight: 600, letterSpacing: "-0.01em", color: C.ink }}>
@@ -183,7 +206,12 @@ function Group({ name, note, rows }: { name: string; note?: string; rows: Librar
                 {d.title || d.filename}
               </span>
               <span style={{ display: "block", fontSize: 15, color: C.muted, marginTop: 3 }}>
-                {[d.mime?.includes("pdf") ? "PDF" : null, `Filed ${plainDate(d.created_at)}`].filter(Boolean).join(" · ")}
+                {[
+                  d.mime?.includes("pdf") ? "PDF" : null,
+                  d.issued_at ? `Adopted ${plainDate(d.issued_at)}` : `Filed ${plainDate(d.created_at)}`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
             </span>
             <span style={{ flex: "none", fontSize: 15, color: C.muted, width: 80, textAlign: "right" }}>

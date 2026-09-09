@@ -116,9 +116,9 @@ describe("saved-view definitions (R11): validate on the way in, degrade never cr
     expect(toDefinition({ q: "a,b(c)" }).q).toBe("a b c");
   });
 
-  test("the built-in view strip is the spec's five plus Promoted (F4, R1)", () => {
+  test("the built-in view strip is the spec's five plus Promoted (F4, R1) plus Volunteers (Spec Programs P3)", () => {
     expect(BUILT_IN_VIEWS.map((v) => v.value)).toEqual([
-      "all", "donors", "prospects", "promoted", "recurring", "lapsed",
+      "all", "donors", "prospects", "promoted", "recurring", "lapsed", "volunteers",
     ]);
   });
 

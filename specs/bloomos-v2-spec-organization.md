@@ -82,14 +82,14 @@ Each stage is one PR. Remi merges every PR and starts every stage.
 
 **"While we're in there" rework.** Four live screens, zero redesign budget in this spec. Board packet-gating and the Team reviews section are named future work; a cutover that sneaks either in breaks the pattern that has shipped six destinations safely.
 
-## Open decisions (recommendations inline — nothing starts until Remi rules)
+## Open decisions — all three resolved (Remi, 2026-09-09, as recommended)
 
-1. **The children's shape.** Absorb review as a section ON the Strategy landing (extraction pattern) vs seat it as a child host. **Recommendation: child hosts** — the plan landing is already a dense 434-line screen with its own information architecture; bolting the monthly review onto it is a redesign decision this spec refuses. Hosts move the URLs, change nothing else, and leave absorption open for a real Strategy pass later.
+1. **The children's shape — RESOLVED: child hosts.** Move the URLs, change nothing else; absorbing the review onto the plan landing stays open for a real Strategy pass later.
 
-2. **Narrative and People.** Both NO_HOME, both reachable through the plan page's menu. **Recommendation: stands** — narrative's "nearest: Strategy detail" note stays a note; folding a presenter-mode builder into a tab is its own project.
+2. **Narrative and People — RESOLVED: NO_HOME stands.** Reachable through the plan page's own menu.
 
-3. **Staff reviews (`modules.reviews`).** The recon's flagged key with no V2 home; nearest seat is Team-as-a-section, undesigned. **Recommendation: stands as NO_HOME** — the route stays live at `/admin/staff/reviews` (the uuid-child staff rows deliberately never matched it), and the Team-section question goes to the same October-ish pile as the pinned Group views rather than being answered by a routing spec.
+3. **Staff reviews — RESOLVED: NO_HOME stands.** The Team-as-a-section question joins the October pile; the route stays live.
 
 ---
 
-*Drafted 2026-09-09, pending Remi's approval. O1 begins only on his kickoff.*
+*Spec approved 2026-09-09. O1 kicked off the same day.*

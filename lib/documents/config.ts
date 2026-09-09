@@ -65,7 +65,7 @@ export const DOC_TYPE_LABEL: Record<string, string> = {
   mou: "MOU",
   board_packet: "Board packet",
   minutes: "Minutes",
-  corporate: "Corporate document",
+  corporate: "Governing document",
   policy: "Policy",
   report: "Report",
   grant_narrative: "Grant narrative",

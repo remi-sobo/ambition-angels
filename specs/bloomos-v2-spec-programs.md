@@ -74,6 +74,19 @@ Rows activating: `/admin/fundraising/volunteers` → its decision-1 target (exac
 
 **P4 — cutover.** The volunteers row activates in map + config, `"programs"` joins the cutover set, verification: four-org printout (AA seven tabs, YGB/9-key six, everyone landing Overview), live crawl (the volunteers 308, demoday/daily/pool still live and un-redirected). Commit: `spec-programs: cutover`.
 
+> **As built (P4, 2026-09-09 — pending Remi's acceptance).** The volunteers
+> row graduated RE-AIMED per decision 1: `/admin/fundraising/volunteers`
+> 308s to `/admin/fundraising/donors-funders?view=volunteers` — the map's
+> first query-bearing destination, so `v2Href` learned to merge a source
+> query with `&` (crawl-verified: `?q=lee` lands as
+> `?q=lee&view=volunteers`). Demo Day kept its at-cutover row (note updated:
+> "deliberately NOT moved at the P4 cutover"), and careers/daily|pool stay
+> NO_HOME, reachable through Content's own links. Verified by the four-org
+> printout (Programs → Overview everywhere; seven tabs for AA, six for
+> YGB and the 9-key orgs — Content is the only entitlement-varied tab) and
+> the live crawl (one 308 with query merge; demoday, daily, pool, and every
+> seat answering only the pre-existing auth 307).
+
 Each stage is one PR. Remi merges every PR and starts every stage.
 
 ## Definition of done

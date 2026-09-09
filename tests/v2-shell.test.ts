@@ -173,8 +173,27 @@ describe("activeShellKey: sidebar highlight + tab-slot routing", () => {
 });
 
 describe("B3 shell invariants", () => {
-  test("Home, Fundraising, Finance and Work are the cut-over destinations — their tab slots render the V2 single row", () => {
-    expect(Array.from(V2_CUTOVER_DESTINATIONS)).toEqual(["home", "fundraising", "finance", "work"]);
+  test("Home, Fundraising, Finance, Work and Programs are the cut-over destinations — their tab slots render the V2 single row", () => {
+    expect(Array.from(V2_CUTOVER_DESTINATIONS)).toEqual([
+      "home", "fundraising", "finance", "work", "programs",
+    ]);
+  });
+
+  test("Programs lands on Overview — seven tabs for AA, six without modules.content (P4, DoD 1)", () => {
+    const aa = resolveShellNav(AA).destinations.find((d) => d.key === "programs")!;
+    expect(aa.href).toBe("/admin/programs/overview");
+    expect(aa.tabs.map((t) => t.key)).toEqual([
+      "overview", "people", "intake", "cohorts", "attendance", "partners", "content",
+    ]);
+    // YGB and the 9-key orgs lack modules.content: the Content tab vanishes
+    // by the entitlement rule, everything else identical.
+    for (const features of [YGB, NINE_KEY]) {
+      const prog = resolveShellNav(features).destinations.find((d) => d.key === "programs")!;
+      expect(prog.href).toBe("/admin/programs/overview");
+      expect(prog.tabs.map((t) => t.key)).toEqual([
+        "overview", "people", "intake", "cohorts", "attendance", "partners",
+      ]);
+    }
   });
 
   test("Work lands on Plan & Close with six tabs for AA/YGB, four for the 9-key orgs (W4, DoD 1)", () => {

@@ -129,6 +129,12 @@ const ACTIVE: V2RouteRow[] = [
   { v1: "/admin/ops/friday", v2: "/admin/work/plan-close", kind: "exact", activation: "now", disposition: "merged", note: "?ritual=close deep-links the Friday flow" },
   { v1: "/admin/calendar", v2: "/admin/work/my-week", kind: "exact", activation: "now", disposition: "kept", note: "Handoff Spec folds Calendar into My Week (W2); ?week=/?owner= ride the 308" },
   { v1: "/admin/meetings/connections", v2: "/admin/work/meetings", kind: "exact", activation: "now", disposition: "merged", note: "settings → merged at W4 (decision 3, R2 addendum); Meetings embeds the pipeline since W3" },
+  // ── Programs cutover (Spec Programs, P4). One move: volunteers RE-AIMED
+  // per decision 1 — Stage 0 said Programs → People, but volunteers are
+  // constituents (is_volunteer) and People runs on students, so the honest
+  // seat is the one-list's volunteers view (P3). First destination carrying
+  // a canonical query; v2Href merges a source query with "&". ──
+  { v1: "/admin/fundraising/volunteers", v2: "/admin/fundraising/donors-funders?view=volunteers", kind: "exact", activation: "now", disposition: "merged", note: "re-aimed at P4 (decision 1): the volunteers view of the one list, not People" },
 ];
 
 // ── AT CUTOVER: merges and settings moves, activated by destination specs ───
@@ -153,8 +159,8 @@ const AT_CUTOVER: V2RouteRow[] = [
   { v1: "/admin/finance/upload", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
   { v1: "/admin/finance/budget/import", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
   { v1: "/admin/imports", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
-  { v1: "/admin/fundraising/volunteers", v2: "/admin/programs/people", kind: "exact", activation: "at-cutover", disposition: "merged", note: "volunteer view of People" },
-  { v1: "/admin/demoday", v2: "/admin/programs/cohorts", kind: "exact", activation: "at-cutover", disposition: "merged", note: "pinned Group view (signed ruling R8) — mechanism undesigned, revisit October" },
+  // volunteers graduated (re-aimed) to ACTIVE at Spec Programs P4.
+  { v1: "/admin/demoday", v2: "/admin/programs/cohorts", kind: "exact", activation: "at-cutover", disposition: "merged", note: "pinned Group view (signed ruling R8) — mechanism undesigned, revisit October; deliberately NOT moved at the P4 cutover" },
   { v1: "/admin/reed", v2: null, kind: "exact", activation: "at-cutover", disposition: "merged (utility)", note: "becomes the contextual panel" },
   { v1: "/admin/howto", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings", note: "Help" },
 ];
@@ -216,7 +222,12 @@ export function v2Href(v1Url: string): string {
     }
   }
   if (!best || !best.row.v2) return v1Url;
-  return best.row.v2 + best.suffix + query;
+  const dest = best.row.v2 + best.suffix;
+  if (!query) return dest;
+  // A destination may carry a canonical query of its own (first case: the
+  // P4 volunteers row lands on Donors & Funders ?view=volunteers). The
+  // source's query still rides along — appended, never a second "?".
+  return dest + (dest.includes("?") ? "&" + query.slice(1) : query);
 }
 
 // ── B3: the shell's live-seat resolution ────────────────────────────────────

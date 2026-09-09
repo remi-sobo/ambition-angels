@@ -8,7 +8,7 @@
 
 const PALETTE: { bg: string; fg: string }[] = [
   { bg: "#F3E6DD", fg: "#A85E30" }, // terracotta
-  { bg: "#E2EFE5", fg: "#2F7D5B" }, // green
+  { bg: "#E2EFE5", fg: "#2D7857" }, // green
   { bg: "#F4E8D0", fg: "#8A5A12" }, // amber
   { bg: "#E7DCC9", fg: "#6B5C4E" }, // sand
   { bg: "#F6E3DC", fg: "#9E3A24" }, // clay-red

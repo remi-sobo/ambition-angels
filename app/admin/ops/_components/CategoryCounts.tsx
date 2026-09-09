@@ -67,7 +67,7 @@ export default function CategoryCounts({
               }`}
             >
               <div
-                className={`inline-block px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(cat)} mb-2`}
+                className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(cat)} mb-2`}
               >
                 {categoryLabel(cat)}
               </div>

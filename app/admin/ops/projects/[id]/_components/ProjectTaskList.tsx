@@ -292,7 +292,7 @@ export default function ProjectTaskList({
                   </button>
                   {t.assigned_to && (
                     <span
-                      className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[9px] font-bold uppercase"
+                      className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[10px] font-bold uppercase"
                       title={`Assigned to ${t.assigned_to}`}
                     >
                       {t.assigned_to.charAt(0)}

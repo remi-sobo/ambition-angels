@@ -24,9 +24,12 @@ const config: Config = {
           DEFAULT: "rgb(var(--c-ink) / <alpha-value>)",
           // Text-on-cream ramp for the BloomOS admin (cream workspace).
           // Plain hexes — admin-only, never consumed by the public site.
-          1: "#2A201A", // primary ink
-          2: "#6B5C4E", // secondary
-          3: "#9A8B7C", // tertiary / uppercase labels
+          // Every step clears WCAG AA (4.5:1) as small text on app/surface/
+          // tile — the contrast gate in tests/design-tokens.test.ts enforces
+          // it, so a value here can't quietly slide below the floor again.
+          1: "#2A201A", // primary ink (13.88 on app)
+          2: "#6B5C4E", // secondary (5.61 on app)
+          3: "#796A5C", // tertiary / uppercase labels — the LIGHTEST value ≥4.5 on app (4.55; Quality Floor Q4, was #9A8B7C at 2.88)
         },
         // Raised-surface dark for cards on ink backgrounds (public site).
         "ink-soft": "#1A1A1A",
@@ -39,11 +42,15 @@ const config: Config = {
         hairline: "#E7DCC9", // internal dividers, chart axes, progress tracks
         outline: "#C7B18C", // stronger card outline
         revenue: {
-          DEFAULT: "#2F7D5B", // revenue green (deepened for cream)
+          // Lightest green ≥4.5 as small text on app/surface/tile AND on its
+          // own pale bg (the success-toast pair; Q4, was #2F7D5B at 4.36/app).
+          DEFAULT: "#2D7857", // revenue green (4.66 on app, 4.50 on revenue-bg)
           bg: "#E2EFE5", // pale revenue background
         },
         expense: {
-          DEFAULT: "#B5482F", // expense / overdue red (deepened for cream)
+          // Same rule for the red (the error-toast pair sat at 4.31 on
+          // expense-bg; Q4, was #B5482F).
+          DEFAULT: "#B0462E", // expense / overdue red (4.87 on app, 4.50 on expense-bg)
           bg: "#F6E3DC", // pale expense background
         },
         // ── BloomOS five-value status scale (spec Phase 0, AA-verified) ─────
@@ -53,15 +60,17 @@ const config: Config = {
         // chip tint (ink-1 label reads AAA on every tint). Nothing outside
         // this scale gets a status color — otherwise it is `neutral`.
         status: {
-          critical: "#B5482F",
-          "critical-text": "#9E3A24", // 6.70 AA on surface
+          critical: "#B0462E", // = expense (4.87 AA on app — safe as text too)
+          "critical-text": "#9E3A24", // 5.94 on app, 5.49 on critical-bg
           "critical-bg": "#F6E3DC",
-          watch: "#B5762A",
-          "watch-text": "#8A5A12", // 4.87 AA on watch-bg
+          watch: "#B5762A", // fill/border/dot only (3.28 on app)
+          "watch-text": "#8A5A12", // 5.16 on app, 4.87 on watch-bg
           "watch-bg": "#F4E8D0",
-          due: "#C0703C", // clay — fill/border/dot only (AA-large as text)
+          due: "#C0703C", // clay — fill/border/dot only (3.26 on app)
+          "due-text": "#96582F", // Q4: due finally gets its text step (4.91 on app, 4.51 on due-bg)
           "due-bg": "#F6E3D2",
-          healthy: "#2F7D5B", // 4.91 AA on surface
+          healthy: "#2D7857", // = revenue (4.66 AA on app)
+          "healthy-text": "#2D7857", // Q4: the calendar already used this class; now it exists
           "healthy-bg": "#E2EFE5",
           neutral: "#6B5C4E", // = ink-2
           "neutral-bg": "#FBF6EC", // = tile

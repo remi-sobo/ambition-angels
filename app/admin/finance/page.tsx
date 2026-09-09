@@ -141,7 +141,7 @@ export default async function FinanceDashboardPage() {
   const functionalSegs: DonutSeg[] = [
     { label: "Program", value: functionalTotals.program, color: "#C0703C" },
     { label: "Admin", value: functionalTotals.admin, color: "#2A201A" },
-    { label: "Fundraising", value: functionalTotals.fundraising, color: "#2F7D5B" },
+    { label: "Fundraising", value: functionalTotals.fundraising, color: "#2D7857" },
     { label: "Uncategorized", value: functionalTotals.uncategorized, color: "#B5762A" },
   ].filter((s) => s.value > 0.0001);
 
@@ -182,7 +182,7 @@ export default async function FinanceDashboardPage() {
     sourceTotals.set(src, (sourceTotals.get(src) ?? 0) + t.amount);
   }
   const SOURCE_COLOR: Record<string, string> = {
-    foundation: "#2F7D5B",
+    foundation: "#2D7857",
     individual: "#C0703C",
     corporate: "#B5762A",
     government: "#2A201A",
@@ -341,7 +341,7 @@ export default async function FinanceDashboardPage() {
             pct={receivedPct}
             value={`${Math.round(receivedPct * 100)}%`}
             label="goal"
-            color="#2F7D5B"
+            color="#2D7857"
           />
         </Hero>
         <Hero
@@ -368,7 +368,7 @@ export default async function FinanceDashboardPage() {
             pct={budgetPct}
             value={`${Math.round(budgetPct * 100)}%`}
             label="budget"
-            color={budgetPct > 1 ? "#B5482F" : budgetPct > 0.8 ? "#B5762A" : "#C0703C"}
+            color={budgetPct > 1 ? "#B0462E" : budgetPct > 0.8 ? "#B5762A" : "#C0703C"}
           />
         </Hero>
       </section>

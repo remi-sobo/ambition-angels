@@ -147,7 +147,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
       <div className="flex items-start gap-2">
         <span className="text-sm font-heading font-semibold text-ink-1 leading-snug flex-1 min-w-0">{kpi.title}</span>
         <span
-          className={`text-[9px] uppercase tracking-wide rounded px-1 py-0.5 shrink-0 ${
+          className={`text-[10px] uppercase tracking-wide rounded px-1 py-0.5 shrink-0 ${
             prov.editable ? "text-ink-3 bg-tile" : "text-revenue bg-revenue-bg"
           }`}
         >

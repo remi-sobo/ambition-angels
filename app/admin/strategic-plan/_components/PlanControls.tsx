@@ -440,7 +440,7 @@ function StatusOverride({
           <option key={k} value={k} className="bg-surface text-ink-1">{v}</option>
         ))}
       </select>
-      {override && <span className="text-[9px] uppercase tracking-wide text-status-watch-text" title={reason ?? ""}>override</span>}
+      {override && <span className="text-[10px] uppercase tracking-wide text-status-watch-text" title={reason ?? ""}>override</span>}
       {pendingVal !== null && (
         <span className="flex items-center gap-1">
           <input
@@ -1330,15 +1330,15 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
         className="text-ink-1 flex-1 min-w-0 truncate"
       />
       <span
-        className={`hidden sm:inline text-[9px] tabular-nums ${fresh.stale ? "text-status-watch-text font-semibold" : "text-ink-3"}`}
+        className={`hidden sm:inline text-[10px] tabular-nums ${fresh.stale ? "text-status-watch-text font-semibold" : "text-ink-3"}`}
         title={kpi.source === "auto" ? "Refreshed from the spine" : "Last manual update"}
       >
         {fresh.text}
       </span>
       {kpi.source === "auto" ? (
-        <span className="text-[9px] uppercase tracking-wide text-revenue bg-revenue-bg rounded px-1 py-0.5" title={kpi.metric_key ?? "auto"}>auto</span>
+        <span className="text-[10px] uppercase tracking-wide text-revenue bg-revenue-bg rounded px-1 py-0.5" title={kpi.metric_key ?? "auto"}>auto</span>
       ) : (
-        <span className="text-[9px] uppercase tracking-wide text-ink-3 bg-tile rounded px-1 py-0.5">manual</span>
+        <span className="text-[10px] uppercase tracking-wide text-ink-3 bg-tile rounded px-1 py-0.5">manual</span>
       )}
       {editing ? (
         <span className="flex items-center gap-1">

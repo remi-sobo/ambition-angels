@@ -52,7 +52,7 @@ export default function InfoTip({
           if (open) hide();
           else show();
         }}
-        className="ml-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-outline text-[9px] font-bold leading-none text-ink-2 hover:text-ink-1 hover:border-ink-2 cursor-help transition-colors"
+        className="ml-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-outline text-[10px] font-bold leading-none text-ink-2 hover:text-ink-1 hover:border-ink-2 cursor-help transition-colors"
       >
         ?
       </button>

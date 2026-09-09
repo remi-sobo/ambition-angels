@@ -73,7 +73,7 @@ export default async function MyWeekPage({
             <span className="font-display font-black uppercase tracking-tight text-2xl leading-none text-orange-dark">
               {planLit ? "Plan" : "Close"}
             </span>
-            <span className="text-[9px] uppercase tracking-wider font-semibold text-orange-dark border border-orange/40 rounded-full px-1.5 py-px">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-orange-dark border border-orange/40 rounded-full px-1.5 py-px">
               Now
             </span>
           </span>

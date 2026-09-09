@@ -144,7 +144,7 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-heading font-semibold text-[14px] text-ink-1">{c.name}</span>
                     {c.org && <span className="text-[11px] text-ink-3">· {c.org}</span>}
-                    <span className="text-[9px] uppercase tracking-wide text-ink-3 border border-outline rounded px-1 py-px capitalize">{c.type}</span>
+                    <span className="text-[10px] uppercase tracking-wide text-ink-3 border border-outline rounded px-1 py-px capitalize">{c.type}</span>
                   </div>
                   <p className="text-xs text-ink-2 mt-1 leading-snug">{c.fit_rationale}</p>
                   {c.signal && <p className="text-[11px] text-revenue mt-0.5">{c.signal}</p>}

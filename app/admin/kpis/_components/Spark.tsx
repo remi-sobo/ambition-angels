@@ -38,7 +38,7 @@ export default function Spark({
       <polyline
         points={values.length > 1 ? points : `${pad},${height / 2} ${width - pad},${height / 2}`}
         fill="none"
-        stroke={up ? "#2F7D5B" : "#B5482F"}
+        stroke={up ? "#2D7857" : "#B0462E"}
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"

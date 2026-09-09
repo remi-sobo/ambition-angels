@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DOC_TYPES, DOC_TYPE_LABEL } from "@/lib/documents/config";
 import { C, F, card, eyebrow } from "./tokens";
@@ -8,24 +8,44 @@ import { C, F, card, eyebrow } from "./tokens";
 type Row = { name: string; state: "queued" | "uploading" | "done" | "error"; message?: string };
 
 /**
- * File materials against this meeting, from a browser.
+ * Put files into the portal from a browser. One component, two homes: the
+ * meeting page files materials against a meeting, and the library files
+ * corporate records against nothing.
  *
- * board_admin only. This is the surface Shannon uses before every meeting, and
- * it is deliberately here rather than in /admin/documents: the documents
+ * board_admin only in both cases, which is Remi and Shannon and nobody else —
+ * the four directors hold board.read alone. The server re-checks; this
+ * component being absent is a courtesy, not the gate.
+ *
+ * It exists rather than pointing Shannon at /admin/documents because that
  * upload modal has no way to attach a file to a meeting, so a document filed
- * there would land in the library and never appear on this page.
+ * there lands in the library and never reaches the meeting page.
  *
  * Uploads run one at a time rather than in parallel. Each file gets its own
  * row and its own error, so a single rejected file (wrong type, too large)
  * doesn't leave the others in an unknown state — which matters when the pack
  * is being filed an hour before a meeting.
  */
-export default function AddMaterials({ meetingId }: { meetingId: string }) {
+export default function FileUpload({
+  endpoint,
+  heading,
+  blurb,
+  defaultType,
+  doneLabel = "Filed",
+}: {
+  endpoint: string;
+  heading: string;
+  blurb: string;
+  defaultType: string;
+  doneLabel?: string;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<Row[]>([]);
-  const [docType, setDocType] = useState("board_packet");
+  const [docType, setDocType] = useState(defaultType);
   const [busy, setBusy] = useState(false);
+  // Two of these can share a page in principle; a fixed id would break the
+  // label association for the second one.
+  const selectId = useId();
 
   async function send(files: File[]) {
     setBusy(true);
@@ -37,7 +57,7 @@ export default function AddMaterials({ meetingId }: { meetingId: string }) {
       body.set("file", files[i]);
       body.set("doc_type", docType);
       try {
-        const res = await fetch(`/api/board/meetings/${meetingId}/materials`, { method: "POST", body });
+        const res = await fetch(endpoint, { method: "POST", body });
         const payload = (await res.json().catch(() => ({}))) as { error?: string };
         setRows((prev) =>
           prev.map((r, j) =>
@@ -64,20 +84,18 @@ export default function AddMaterials({ meetingId }: { meetingId: string }) {
     <section className="board-noprint" style={{ ...card, padding: 28 }}>
       <div style={eyebrow}>Board admin</div>
       <h3 style={{ margin: "10px 0 0", fontFamily: F.heading, fontSize: 20, fontWeight: 600, color: C.ink }}>
-        File materials
+        {heading}
       </h3>
-      <p style={{ margin: "6px 0 0", fontSize: 15, lineHeight: 1.55, color: C.muted }}>
-        Attaches to this meeting and appears under Materials for every director. Directors cannot see this.
-      </p>
+      <p style={{ margin: "6px 0 0", fontSize: 15, lineHeight: 1.55, color: C.muted }}>{blurb}</p>
 
       <label
-        htmlFor="material-type"
+        htmlFor={selectId}
         style={{ display: "block", fontFamily: F.heading, fontSize: 15, fontWeight: 500, color: C.ink, margin: "18px 0 8px" }}
       >
         Type
       </label>
       <select
-        id="material-type"
+        id={selectId}
         value={docType}
         onChange={(e) => setDocType(e.target.value)}
         disabled={busy}
@@ -128,7 +146,7 @@ export default function AddMaterials({ meetingId }: { meetingId: string }) {
                   fontWeight: r.state === "error" ? 600 : 400,
                 }}
               >
-                {r.state === "done" ? "Filed" : r.state === "error" ? "Failed" : r.state === "uploading" ? "Sending" : "Queued"}
+                {r.state === "done" ? doneLabel : r.state === "error" ? "Failed" : r.state === "uploading" ? "Sending" : "Queued"}
               </span>
               <span style={{ flex: 1, minWidth: 0, color: C.ink, wordBreak: "break-word" }}>
                 {r.name}

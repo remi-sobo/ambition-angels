@@ -31,6 +31,11 @@ export type BoardContext = {
   isStaff: boolean;
   /** Holds board.write — runs the meeting, answers questions. */
   isAdmin: boolean;
+  /** Receives notes directors choose to send on. Deliberately NOT the same as
+   *  isAdmin: board.write is Remi and Shannon, and a director told her note
+   *  goes to one person must not have it read by two. RLS is the real gate;
+   *  this only decides whether the inbox renders. */
+  isNotesRecipient: boolean;
 };
 
 export type RosterMember = {
@@ -60,7 +65,7 @@ export const getBoardContext = cache(async (): Promise<BoardContext | null> => {
   // RLS applies: board.read is required to see the roster at all.
   const { data: member } = await supabase
     .from("board_members")
-    .select("id, name, is_staff")
+    .select("id, name, is_staff, receives_shared_notes")
     .eq("org_id", ctx.orgId)
     .eq("status", "active")
     .ilike("email", ctx.email)
@@ -89,6 +94,7 @@ export const getBoardContext = cache(async (): Promise<BoardContext | null> => {
     memberName: (member?.name as string | undefined) ?? null,
     isStaff: !!member?.is_staff,
     isAdmin: !!perm,
+    isNotesRecipient: !!member?.receives_shared_notes,
   };
 });
 

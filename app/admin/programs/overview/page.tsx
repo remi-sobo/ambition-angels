@@ -4,7 +4,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { getProgramTerms } from "@/lib/admin/terminology";
 import { todayInTZ } from "@/lib/admin/ops/week";
 import { pct } from "@/app/admin/cohorts/_lib/rollups";
-import { cf, fullName, type Student } from "@/app/admin/students/_components/StudentControls";
+import { cf, fullName, type Student } from "@/app/admin/students/_lib/studentFields";
 import PageHeader from "@/app/admin/_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
 

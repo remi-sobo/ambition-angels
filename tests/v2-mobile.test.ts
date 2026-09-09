@@ -25,33 +25,34 @@ const NINE_KEY = [
 ];
 
 describe("shellMobileSplit: bar + More derive from one resolved nav", () => {
-  test("AA: the bar is Home/Work/Programs; More is the rest plus Inbox", () => {
+  test("AA: the bar is Home/Work/Fundraising (Remi's 2026-09-09 swap); More is the rest plus Inbox", () => {
     const { bar, more } = shellMobileSplit(resolveShellNav(AA));
-    expect(bar.map((d) => d.key)).toEqual(["home", "work", "programs"]);
+    expect(bar.map((d) => d.key)).toEqual(["home", "work", "fundraising"]);
     expect(more.map((d) => d.key)).toEqual([
-      "fundraising", "finance", "impact", "organization", "inbox",
+      "programs", "finance", "impact", "organization", "inbox",
     ]);
   });
 
   test("9-key orgs: same shape — every bar destination survives their entitlements", () => {
     const { bar, more } = shellMobileSplit(resolveShellNav(NINE_KEY));
-    expect(bar.map((d) => d.key)).toEqual(["home", "work", "programs"]);
+    expect(bar.map((d) => d.key)).toEqual(["home", "work", "fundraising"]);
     expect(more.map((d) => d.key)).toEqual([
-      "fundraising", "finance", "impact", "organization", "inbox",
+      "programs", "finance", "impact", "organization", "inbox",
     ]);
   });
 
   test("the fifth-tenant rule: a missing destination narrows the bar, never dead-links it", () => {
-    // No ops/meetings/documents keys → Work resolves to zero tabs and is
-    // hidden; the bar simply loses that slot.
+    // No ops/meetings/documents keys → Work hides; no fundraising key →
+    // Fundraising hides; the bar simply loses those slots.
     const { bar } = shellMobileSplit(resolveShellNav(["modules.program", "modules.finance"]));
-    expect(bar.map((d) => d.key)).toEqual(["home", "programs"]);
+    expect(bar.map((d) => d.key)).toEqual(["home"]);
   });
 
   test("More is entitlement-filtered like everything else", () => {
-    // No governance/metrics/fundraising keys → those More rows are absent.
+    // No governance/metrics/fundraising keys → those More rows are absent;
+    // Programs (in More since the bar swap) survives on modules.program.
     const { more } = shellMobileSplit(resolveShellNav(["modules.program", "modules.ops"]));
-    expect(more.map((d) => d.key)).toEqual(["inbox"]);
+    expect(more.map((d) => d.key)).toEqual(["programs", "inbox"]);
   });
 
   test("every bar and More entry carries a live href (no dead links on any org)", () => {
@@ -61,8 +62,8 @@ describe("shellMobileSplit: bar + More derive from one resolved nav", () => {
     }
   });
 
-  test("the bar order is pinned: Today, Work, Programs (the + and More are chrome)", () => {
-    expect(MOBILE_BAR_KEYS).toEqual(["home", "work", "programs"]);
+  test("the bar order is pinned: Today, Work, Fundraising (the + and More are chrome)", () => {
+    expect(MOBILE_BAR_KEYS).toEqual(["home", "work", "fundraising"]);
   });
 });
 

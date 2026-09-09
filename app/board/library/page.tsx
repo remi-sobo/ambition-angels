@@ -25,7 +25,7 @@ export default async function LibraryPage() {
   const supabase = createServerSupabase();
   const { data } = await supabase
     .from("documents")
-    .select("id, title, filename, mime, size_bytes, doc_type, expires_at, created_at, issued_at, document_links(entity_type)")
+    .select("id, title, filename, mime, size_bytes, doc_type, expires_at, created_at, issued_at, notes, document_links(entity_type)")
     .eq("org_id", ctx.orgId)
     .eq("status", "active")
     .eq("visibility", "org")

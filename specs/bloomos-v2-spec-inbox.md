@@ -54,6 +54,20 @@ One row activates: `/admin/messages` → `/admin/inbox/messages` (exact — alre
 
 **X2 — cutover.** The row activates in map + config, `"inbox"` joins the set, the stored-shapes contract discharges, verification: four-org printout (AA/YGB two tabs, 9-key orgs Inbox alone), live crawl (`/admin/messages?t=<uuid>` 308s with the param; the feed untouched). Commit: `spec-inbox: cutover`.
 
+> **As built (X2, 2026-09-09 — pending Remi's acceptance).** The last row
+> graduated; the crawl shows `/admin/messages?t=<uuid>` 308ing with the
+> thread param intact, and the stored-shapes test now asserts the
+> translation — the contract discharged, on the record. Two shell facts
+> worth naming: the merge-seat rule is now vacuously satisfied (a test
+> asserts EVERY canonical tab in the model seats itself), and no at-cutover
+> MERGE remains in the map — what survives at-cutover is settings-nulls
+> awaiting the Settings destination, `/admin` (the auth-aware in-page
+> forward), and the signed October demoday row. The four-org printout of
+> the WHOLE shell (all seven destinations + Inbox, every org) matches the
+> B1 model line for line. The V1 tab-slot fallback fires nowhere — the
+> `NAV_SECTIONS` deletion is now provably safe, and it is the rebuild's
+> last PR.
+
 Each stage is one PR. Remi merges every PR and starts every stage.
 
 ## Definition of done

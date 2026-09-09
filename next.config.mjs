@@ -112,6 +112,10 @@ const nextConfig = {
       // O1 child hosts; setup/narrative/people/staff-reviews stay put.
       { source: "/admin/strategic-plan/objective/:path*", destination: "/admin/organization/strategy/objective/:path*", permanent: true },
       { source: "/admin/strategic-plan/review", destination: "/admin/organization/strategy/review", permanent: true },
+      // Inbox cutover (Spec Inbox, X2) — the last activation of the rebuild.
+      // ?t=<threadId> rides the 308, so every stored Inbox pointer lands
+      // in-thread at the new seat.
+      { source: "/admin/messages", destination: "/admin/inbox/messages", permanent: true },
     ];
   },
   async rewrites() {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { TYPE } from "@/lib/admin/typeScale";
 
 /**
@@ -51,6 +52,7 @@ export default function MeetingRecap({ meetings }: { meetings: RecapMeeting[] })
 
 function MeetingCard({ meeting }: { meeting: RecapMeeting }) {
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
   const [busyKey, setBusyKey] = useState<string | null>(null);
   // Suggestions resolved optimistically so a card visibly empties as you work.
@@ -64,7 +66,7 @@ function MeetingCard({ meeting }: { meeting: RecapMeeting }) {
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Recap action failed:", e);
-      alert("Couldn't save that. Try again.");
+      toast.error("Couldn't save that. Try again.");
     } finally {
       setBusyKey(null);
     }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { TYPE } from "@/lib/admin/typeScale";
 
 /**
@@ -22,6 +23,7 @@ export default function MondayCommit({
   committedAt: string | null;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(committedAt);
@@ -40,7 +42,7 @@ export default function MondayCommit({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Commit failed:", e);
-      alert("Couldn't commit the week. Try again.");
+      toast.error("Couldn't commit the week. Try again.");
     } finally {
       setBusy(false);
     }

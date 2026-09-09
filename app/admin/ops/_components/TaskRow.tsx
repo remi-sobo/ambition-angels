@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { useState, useTransition } from "react";
 import TaskEditModal from "@/app/admin/_components/TaskEditModal";
 import {
@@ -55,6 +57,8 @@ export default function TaskRow({
   onToggleDone?: () => void;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -72,7 +76,7 @@ export default function TaskRow({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Task patch failed:", e);
-      alert("Couldn't save change. Try again.");
+      toast.error("Couldn't save the change. Try again.");
     } finally {
       setBusy(false);
       setShowMenu(false);
@@ -80,7 +84,12 @@ export default function TaskRow({
   }
 
   async function deleteTask() {
-    if (!confirm(`Delete task "${task.title}"?`)) return;
+    const ok = await confirm({
+      title: `Delete task "${task.title}"?`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const r = await fetch(`/api/admin/ops/tasks/${task.id}`, { method: "DELETE" });
@@ -88,7 +97,7 @@ export default function TaskRow({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Task delete failed:", e);
-      alert("Couldn't delete task.");
+      toast.error("Couldn't delete the task.");
     } finally {
       setBusy(false);
     }

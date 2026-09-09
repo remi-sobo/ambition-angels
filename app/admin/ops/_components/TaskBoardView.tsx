@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import Link from "next/link";
 import TaskEditModal from "@/app/admin/_components/TaskEditModal";
 import { PriorityFlag } from "./TaskRow";
@@ -34,6 +35,7 @@ export default function TaskBoardView({
   projectNames: Record<string, string>;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
 
   const [local, setLocal] = useState(tasks);
@@ -68,7 +70,7 @@ export default function TaskBoardView({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Status move failed:", e);
-      alert("Couldn't move task. Reloading.");
+      toast.error("Couldn't move the task. Reloading.");
       router.refresh();
     }
   }

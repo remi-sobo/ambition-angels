@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useState, useTransition } from "react";
 import {
   categoryBadgeClass,
@@ -94,6 +95,7 @@ export default function WeekPlanner({
   const projectName = (t: OpsTask) =>
     t.project_id ? projectNames[t.project_id] ?? null : null;
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [scheduling, setScheduling] = useState<string | null>(null); // task id with open form
@@ -112,14 +114,14 @@ export default function WeekPlanner({
         body: JSON.stringify({ task_id: taskId, day: dayISO, start_minute: startMinute, duration_minute: durationMinute }),
       });
       if (!r.ok) {
-        const msg = r.status === 409 ? "Connect a Google Calendar first." : `HTTP ${r.status}`;
-        throw new Error(msg);
+        toast.error(r.status === 409 ? "Connect a Google Calendar first." : "Couldn't schedule. Try again.");
+        return;
       }
       setScheduling(null);
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Schedule block failed:", e);
-      alert(e instanceof Error ? e.message : "Couldn't schedule. Try again.");
+      toast.error("Couldn't schedule. Try again.");
     } finally {
       setBusyId(null);
     }
@@ -135,7 +137,7 @@ export default function WeekPlanner({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Unschedule block failed:", e);
-      alert("Couldn't unschedule. Try again.");
+      toast.error("Couldn't unschedule. Try again.");
     } finally {
       setBusyId(null);
     }
@@ -153,7 +155,7 @@ export default function WeekPlanner({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Create prep failed:", e);
-      alert("Couldn't add prep task. Try again.");
+      toast.error("Couldn't add the prep task. Try again.");
     } finally {
       setPrepBusy(null);
     }
@@ -177,7 +179,7 @@ export default function WeekPlanner({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Planner patch failed:", e);
-      alert("Couldn't save change. Try again.");
+      toast.error("Couldn't save the change. Try again.");
     }
   }
 

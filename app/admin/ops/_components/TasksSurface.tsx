@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import type { AdminUser } from "@/lib/admin/auth";
 import TaskListView, { type GroupBy } from "./TaskListView";
 import TaskBoardView from "./TaskBoardView";
@@ -47,6 +48,7 @@ export default function TasksSurface({
   currentUser: AdminUser | null;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [scope, setScope] = useState<Scope>("active");
@@ -112,7 +114,7 @@ export default function TasksSurface({
       router.refresh();
     } catch (e) {
       console.error("Archive-all-done failed:", e);
-      alert("Couldn't archive some tasks. Try again.");
+      toast.error("Couldn't archive some tasks. Try again.");
     } finally {
       setArchiving(false);
     }

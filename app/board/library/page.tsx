@@ -25,7 +25,7 @@ export default async function LibraryPage() {
   const supabase = createServerSupabase();
   const { data } = await supabase
     .from("documents")
-    .select("id, title, filename, mime, size_bytes, doc_type, expires_at, created_at")
+    .select("id, title, filename, mime, size_bytes, doc_type, expires_at, created_at, issued_at, document_links(entity_type)")
     .eq("org_id", ctx.orgId)
     .eq("status", "active")
     .eq("visibility", "org")
@@ -33,7 +33,15 @@ export default async function LibraryPage() {
     .order("title")
     .limit(500);
 
-  const docs = ((data ?? []) as LibraryDoc[]).filter((d) => !(d.doc_type ?? "").startsWith("agenda:"));
+  // A document filed against a meeting is meeting material, not a corporate
+  // record. Both live in `documents`, so the link is the only thing that
+  // tells them apart — without it the pre-read sits next to the bylaws.
+  const docs = ((data ?? []) as (LibraryDoc & { document_links?: { entity_type: string }[] })[])
+    .filter((d) => !(d.doc_type ?? "").startsWith("agenda:"))
+    .map(({ document_links, ...d }) => ({
+      ...d,
+      forMeeting: (document_links ?? []).some((l) => l.entity_type === "board_meeting"),
+    }));
 
   return (
     <>

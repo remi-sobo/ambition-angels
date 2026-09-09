@@ -67,6 +67,19 @@ Rows activating: `/admin/finance/transactions` (same-path, exact — becomes rea
 
 **N4 — cutover.** Seven rows activate in map + config (matching order), `finance` joins the cutover set, verification: four-org printout, live crawl (308s, query survival, same-path fixed points), `/admin/fundraising/pledges` landing on the pledges tier. Commit: `spec-fin: cutover`.
 
+> **As built (N4, 2026-09-09 — pending Remi's acceptance).** All seven rows
+> graduated. One mechanism earned its first use: `activeRedirects()` now
+> SKIPS same-path rows (`v1 === v2`) — the transactions and forecast fixed
+> points live in the map (for `liveSeatFor` and the fixed-point tests) but
+> never reach `next.config.mjs`, where a self-redirect would loop.
+> `pledges` went **exact** as the spec ruled: `pledges/[id]` keeps its live
+> screen until Donor 360 absorbs pledge history. Settings rows
+> (rules/config/upload/budget-import, /admin/imports) stay at-cutover with
+> null targets, live and unlisted. Verified by live crawl (five moves 308
+> to their exact seats with query strings surviving; both same-path pages
+> and every fixed point return only the pre-existing auth 307) and the
+> four-org printout (Finance → Snapshot, five tabs, identical everywhere).
+
 Each stage is one PR. Remi merges every PR and starts every stage.
 
 ## Definition of done

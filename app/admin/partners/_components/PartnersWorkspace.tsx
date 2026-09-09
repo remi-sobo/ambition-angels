@@ -9,6 +9,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import {
   STATUS_ORDER, STATUS_LABELS, STATUS_SHORT, STATUS_STYLE,
   TAB_STATUSES, NEXT_STATUS, type TabKey, type PartnerStatus,
@@ -291,6 +293,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
 
 function PartnerRow({ partner: p }: { partner: Partner }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
 
   const patch = async (fields: Record<string, unknown>) => {
@@ -303,7 +306,7 @@ function PartnerRow({ partner: p }: { partner: Partner }) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
       }
       router.refresh();
     } finally {

@@ -6,6 +6,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { KIND_LABELS, inputCls } from "../../_lib/partners";
 import { STATUS_ORDER, STATUS_LABELS } from "../../_lib/status";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -27,6 +30,7 @@ export type ContactT = {
 
 function useBusy() {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const call = async (
     url: string,
@@ -42,7 +46,7 @@ function useBusy() {
         body: body ? JSON.stringify(body) : undefined,
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(j.error ?? `HTTP ${res.status}`); return false; }
+      if (!res.ok) { toast.error(userMessage(res, j)); return false; }
       if (redirect) router.push(redirect); else router.refresh();
       return true;
     } finally {
@@ -165,6 +169,7 @@ export function AddContactForm({ partnerId }: { partnerId: string }) {
 }
 
 export function ContactCard({ contact }: { contact: ContactT }) {
+  const confirm = useConfirm();
   const { busy, call } = useBusy();
   const [editing, setEditing] = useState(false);
   const [first, setFirst] = useState(contact.first_name ?? "");
@@ -225,7 +230,15 @@ export function ContactCard({ contact }: { contact: ContactT }) {
         )}
         <button onClick={() => setEditing(true)} className="text-[11px] px-2 py-1 rounded-md bg-tile hover:bg-[#EFE6D4] text-ink-2">Edit</button>
         <button
-          onClick={() => { if (confirm(`Remove ${name}?`)) call(`/api/admin/partners/contacts/${contact.id}`, "DELETE"); }}
+          onClick={async () => {
+            const ok = await confirm({
+              title: `Remove ${name}?`,
+              body: "The contact is removed from this partner.",
+              confirmLabel: "Remove",
+              destructive: true,
+            });
+            if (ok) void call(`/api/admin/partners/contacts/${contact.id}`, "DELETE");
+          }}
           disabled={busy} className="ml-auto text-[11px] px-2 py-1 rounded-md text-ink-3 hover:text-expense">Remove</button>
       </div>
     </div>

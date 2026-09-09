@@ -6,6 +6,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import {
   RUBRIC_FACTORS, RUBRIC_MAX, scoreFromFactors, scoreBand, SCORE_BAND_STYLE,
   type ScoreFactors,
@@ -16,6 +18,7 @@ export function RubricEditor({ partnerId, initial }: {
   initial: ScoreFactors | null;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [factors, setFactors] = useState<ScoreFactors>(initial ?? {});
@@ -41,7 +44,7 @@ export function RubricEditor({ partnerId, initial }: {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
       }
       setOpen(false);
       router.refresh();

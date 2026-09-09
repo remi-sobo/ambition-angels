@@ -3,11 +3,14 @@
 // One-tap "Move to <next stage>" button in the profile header.
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 export function AdvanceStage({ partnerId, next, label }: {
   partnerId: string; next: string; label: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   return (
     <button
@@ -21,7 +24,7 @@ export function AdvanceStage({ partnerId, next, label }: {
           });
           if (!res.ok) {
             const j = await res.json().catch(() => ({}));
-            alert(j.error ?? `HTTP ${res.status}`);
+            toast.error(userMessage(res, j));
           }
           router.refresh();
         } finally {

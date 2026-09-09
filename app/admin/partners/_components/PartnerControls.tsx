@@ -6,10 +6,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import { KIND_LABELS, inputCls } from "../_lib/partners";
 
 export function NewPartnerForm() {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [name, setName] = useState("");
@@ -35,7 +38,7 @@ export function NewPartnerForm() {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
         setBusy(false);
         return;
       }

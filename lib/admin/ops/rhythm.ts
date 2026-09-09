@@ -20,12 +20,11 @@ import type { MondayCounts, FridayCounts } from "./statusLine";
  * Monday Plan page.
  */
 
-export type RhythmMode = "monday_plan" | "friday_close";
-
-/** Mon–Wed lights Plan; Thu–Sun lights Close. dow: 0=Sun … 6=Sat. */
-export function rhythmModeForToday(dow: number = weekdayIndex()): RhythmMode {
-  return dow >= 1 && dow <= 3 ? "monday_plan" : "friday_close";
-}
+// The pure mode split lives in rhythmMode.ts (Spec Work W1); imported for
+// the snapshot loader below and re-exported so existing importers keep one
+// path.
+import { rhythmModeForToday, type RhythmMode } from "./rhythmMode";
+export { rhythmModeForToday, type RhythmMode };
 
 // Working window used for the (approximate) open-hours figure. Precise
 // open-block computation against real busy gaps lands with the day walk (P5);

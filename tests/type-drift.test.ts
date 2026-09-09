@@ -33,6 +33,7 @@ const DISPLAY_BLACK_ALLOWLIST: { file: string; reason: string }[] = [
   { file: "app/admin/ops/_components/MondayCommit.tsx", reason: "display metric (commit count)" },
   { file: "app/admin/ops/my-week/page.tsx", reason: "the two door-tile titles, state-colored, smaller than pageTitle" },
   { file: "app/admin/work/my-week/page.tsx", reason: "the one ritual-door title (Spec Work W2) — same voice as the doors page it replaces" },
+  { file: "app/admin/programs/overview/page.tsx", reason: "display metrics (headline band numerals, Spec Programs P2)" },
   { file: "app/admin/ops/friday/CloseSection.tsx", reason: "display metric (close count — the page body extracted at Spec Work W1, entry moved with it)" },
   { file: "app/admin/_components/rail/RailAgenda.tsx", reason: "rail clock numeral on dark chrome" },
   { file: "app/admin/_components/LoginScreen.tsx", reason: "D5 exemption: marketing-style dark surface" },

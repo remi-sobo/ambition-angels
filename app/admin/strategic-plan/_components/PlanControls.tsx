@@ -402,7 +402,7 @@ function StatusOverride({
   const [busy, setBusy] = useState(false);
   const effective = override ?? computed ?? stored ?? "not_started";
   // Overriding needs a stated reason (a funder-grade plan shows it); the old
-  // window.prompt became this inline input (prompt() is banned).
+  // native browser input became this inline one (the native dialogs are banned).
   const [pendingVal, setPendingVal] = useState<string | null>(null);
   const [reasonDraft, setReasonDraft] = useState("");
   const commit = async (body: Record<string, unknown>) => {

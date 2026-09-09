@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { networkMessage, userMessage } from "@/lib/admin/errors";
@@ -72,5 +72,46 @@ describe("Q2 structural pins", () => {
     expect(s).toMatch(/aria-modal="true"/);
     expect(s).toMatch(/Escape/); // escape and scrim both cancel
     expect(s).toMatch(/destructive\?/);
+  });
+});
+
+// ── Q3: the migration is complete and stays complete ────────────────────────
+// Every alert()/confirm()/prompt() call site (195 at the audit) moved onto
+// the Q2 layer, and ESLint's no-alert bans the natives across app/admin so a
+// new screen can't quietly reintroduce one (DoD 3). The source scan below is
+// the belt to that suspender: `confirm(` can't be scanned for (the useConfirm
+// binding deliberately shares the name, so a missed native call is a type
+// error), but the other shapes can.
+
+function walk(dir: string, out: string[] = []): string[] {
+  for (const name of readdirSync(dir)) {
+    const p = join(dir, name);
+    if (statSync(p).isDirectory()) walk(p, out);
+    else if (/\.tsx?$/.test(name)) out.push(p);
+  }
+  return out;
+}
+
+describe("Q3: no native dialog survives in app/admin (DoD 3)", () => {
+  const files = walk(join(app, "admin"));
+
+  test("no alert(), prompt(), or window.-prefixed native call anywhere", () => {
+    for (const f of files) {
+      const s = readFileSync(f, "utf8");
+      // Real calls carry an argument or a window. prefix; the feedback
+      // providers' own identifiers (useToast/useConfirm machinery) don't.
+      expect(s, f).not.toMatch(/(?<![.\w])alert\(/);
+      expect(s, f).not.toMatch(/(?<![.\w])prompt\(/);
+      expect(s, f).not.toMatch(/window\.(alert|confirm|prompt)\(/);
+    }
+  });
+
+  test("the ESLint ban is in force: no-alert errors, scoped to app/admin", () => {
+    const rc = JSON.parse(readFileSync(join(__dirname, "..", ".eslintrc.json"), "utf8"));
+    const override = (rc.overrides ?? []).find(
+      (o: { files?: string[] }) => (o.files ?? []).some((f: string) => f.includes("app/admin/**")),
+    );
+    expect(override, "app/admin override missing from .eslintrc.json").toBeTruthy();
+    expect(override.rules["no-alert"]).toBe("error");
   });
 });

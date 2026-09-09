@@ -99,7 +99,7 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
   const toast = useToast();
   const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
-  // null = the test-email input is closed (prompt() is banned; this inline
+  // null = the test-email input is closed (the native prompt is banned; this inline
   // input is its replacement).
   const [testEmail, setTestEmail] = useState<string | null>(null);
 

@@ -44,10 +44,9 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
       }
     }
     expect(seatless.sort()).toEqual([
-      "/admin/impact/reports",        // Impact spec builds Reports (I2)
-      // /admin/organization-health left the set at Spec Home H3;
-      // /admin/programs/attendance at Spec Programs P1;
-      // /admin/impact/outcomes at Spec Impact I1.
+      // EMPTY since Spec Impact I2: organization-health left at H3,
+      // programs/attendance at P1, impact/outcomes at I1, impact/reports at
+      // I2. Every canonical tab now resolves to a live screen.
     ]);
   });
 
@@ -122,7 +121,8 @@ describe("resolveShellNav: the four orgs (DoD 1, shell level)", () => {
       expect(impact.href).toBe("/admin/impact/outcomes");
     }
     const nine = resolveShellNav(NINE_KEY).destinations.find((d) => d.key === "impact")!;
-    expect(nine.tabs.map((t) => t.key)).toEqual(["outcomes", "kpis"]);
+    // Reports joined at I2; Analytics stays AA-only (aa.site_analytics).
+    expect(nine.tabs.map((t) => t.key)).toEqual(["outcomes", "kpis", "reports"]);
   });
 
   test("9-key orgs: Work lands on Plan & Close itself (W4); Inbox keeps only its own tab", () => {

@@ -6,6 +6,8 @@
 // ops_tasks system, so anything added here also shows up in Ops, Today, etc.
 
 import { useCallback, useEffect, useState } from "react";
+import { useToast } from "./feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import Link from "next/link";
 import { TASK_PRIORITIES, priorityFlagClass, taskHasAssignee, type OpsTask, type TaskPriority } from "../ops/_types/ops";
 import { useTaskComplete } from "../_lib/useTaskComplete";
@@ -30,6 +32,7 @@ export function EntityTasks({
   entityLabel: string;
   defaultCategory: string;
 }) {
+  const toast = useToast();
   const [tasks, setTasks] = useState<OpsTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -85,7 +88,7 @@ export function EntityTasks({
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(j.error ?? `HTTP ${res.status}`); return; }
+      if (!res.ok) { toast.error(userMessage(res, j)); return; }
       setTitle(""); setDue(""); setPriority("medium"); setAssignee("");
       setOpen(false);
       await load();

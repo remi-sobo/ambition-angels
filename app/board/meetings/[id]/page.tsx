@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getBoardContext } from "@/lib/board/auth";
@@ -19,6 +20,20 @@ import { MaterialsList, SinceWeLastMet, PrintHeader, PrintFooter } from "../../_
 import { C, F, card, eyebrow } from "../../_components/tokens";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * The browser title carries the meeting's own name, so a director with the
+ * agenda, the pre-read and the portal open at once can tell the tabs apart.
+ * The layout's static "Board portal · Ambition Angels" named every one of them
+ * identically. Still noindex — inherited from the layout's robots directive.
+ */
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const ctx = await getBoardContext();
+  if (!ctx) return { title: "Board portal · Ambition Angels" };
+  const meeting = await getMeeting(ctx.orgId, params.id);
+  if (!meeting) return { title: "Board portal · Ambition Angels" };
+  return { title: `${meeting.title} · Ambition Angels` };
+}
 
 /**
  * One meeting, three states, one URL (spec §10).
@@ -99,10 +114,10 @@ export default async function MeetingPage({ params }: { params: { id: string } }
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 40, flexWrap: "wrap" }}>
             <div style={{ minWidth: 0, flex: "1 1 340px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-                <span style={eyebrow}>
-                  {meeting.fiscal_label}
-                  {meeting.meeting_type === "annual" ? " · Annual meeting" : ""}
-                </span>
+                {/* The label IS the meeting's name ("2026 Annual Meeting"),
+                    so the old " · Annual meeting" suffix now repeats it. The
+                    Bylaws designation is stated once, in the facts below. */}
+                <span style={eyebrow}>{meeting.fiscal_label}</span>
                 {isLive && (
                   <span style={{ ...eyebrow, color: C.orangeDark, display: "inline-flex", alignItems: "center", gap: 8 }}>
                     <span className="board-pulse" style={{ width: 9, height: 9, borderRadius: 999, background: C.orange, display: "block" }} />
@@ -173,7 +188,7 @@ export default async function MeetingPage({ params }: { params: { id: string } }
           >
             <Fact label="Quorum" value={`${meeting.quorum_required} of 5 directors`} strong />
             {meeting.meeting_type === "annual" && (
-              <Fact label="Designated" value="The 2026 Annual Meeting under Section 6 of the Bylaws" />
+              <Fact label="Designated" value="Under Section 6 of the Bylaws" />
             )}
             <Fact label="Minutes" value="Shannon Fair" />
             {meeting.zoom_room && <Fact label="Zoom room" value={meeting.zoom_room} />}

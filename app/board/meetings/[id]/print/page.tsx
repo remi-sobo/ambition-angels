@@ -95,7 +95,7 @@ export default async function PrintPage({
             <br />
             {meeting.fiscal_label ? `${meeting.fiscal_label}. ` : ""}
             {meeting.meeting_type === "annual"
-              ? "Designated the 2026 Annual Meeting under Section 6 of the Bylaws. "
+              ? "Designated the annual meeting under Section 6 of the Bylaws. "
               : ""}
             Quorum is {meeting.quorum_required} of 5 directors.
           </div>

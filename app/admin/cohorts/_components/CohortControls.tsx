@@ -4,6 +4,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 
 
@@ -12,6 +14,7 @@ const inputCls =
 
 export function NewCohortForm({ programs = [] }: { programs?: string[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [name, setName] = useState("");
@@ -39,7 +42,7 @@ export function NewCohortForm({ programs = [] }: { programs?: string[] }) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
       }
       setName(""); setProgram(""); setTerm(""); setCapacity(""); setStartDate(""); setEndDate("");
       setOpen(false);

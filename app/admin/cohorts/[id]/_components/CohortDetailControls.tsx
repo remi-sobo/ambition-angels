@@ -7,6 +7,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 import { COHORT_STATUSES, COHORT_STATUS_LABELS } from "../../_lib/constants";
 
 const inputCls =
@@ -21,6 +24,7 @@ const MEMBER_STATUS_LABELS: Record<string, string> = {
 
 function useApi() {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const call = async (url: string, method: string, body?: unknown) => {
     setBusy(true);
@@ -32,7 +36,7 @@ function useApi() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
       }
       router.refresh();
     } finally {
@@ -54,15 +58,23 @@ export function CohortHeaderControls({
   acceptingApplications: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const { busy, call } = useApi();
 
   const remove = async () => {
-    if (!confirm(`Delete cohort "${name}"? Sessions and attendance go with it.`)) return;
+    const ok = await confirm({
+      title: `Delete cohort "${name}"?`,
+      body: "Sessions and attendance go with it.",
+      confirmLabel: "Delete cohort",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/admin/cohorts/${cohortId}`, { method: "DELETE" });
     if (res.ok) router.push("/admin/cohorts");
     else {
       const j = await res.json().catch(() => ({}));
-      alert(j.error ?? `HTTP ${res.status}`);
+      toast.error(userMessage(res, j));
     }
   };
 
@@ -118,6 +130,7 @@ export type MemberView = {
 };
 
 export function MemberRow({ cohortId, member }: { cohortId: string; member: MemberView }) {
+  const confirm = useConfirm();
   const { busy, call } = useApi();
   const m = member;
 
@@ -156,9 +169,13 @@ export function MemberRow({ cohortId, member }: { cohortId: string; member: Memb
         ))}
       </select>
       <button
-        onClick={() => {
-          if (confirm(`Remove ${m.name} from this cohort?`))
-            void call(`/api/admin/cohorts/${cohortId}/members`, "DELETE", { student_id: m.studentId });
+        onClick={async () => {
+          const ok = await confirm({
+            title: `Remove ${m.name} from this cohort?`,
+            confirmLabel: "Remove",
+            destructive: true,
+          });
+          if (ok) void call(`/api/admin/cohorts/${cohortId}/members`, "DELETE", { student_id: m.studentId });
         }}
         disabled={busy}
         className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
@@ -234,6 +251,7 @@ export function SessionRow({
   session: SessionView;
   enrolled: number;
 }) {
+  const confirm = useConfirm();
   const { busy, call } = useApi();
   const s = session;
   const time = s.starts_at ? `${s.starts_at.slice(0, 5)}–${s.ends_at?.slice(0, 5) ?? ""}` : null;
@@ -269,9 +287,14 @@ export function SessionRow({
         </button>
       )}
       <button
-        onClick={() => {
-          if (confirm(`Delete session on ${s.session_date}? Its attendance goes with it.`))
-            void call(`/api/admin/sessions/${s.id}`, "DELETE");
+        onClick={async () => {
+          const ok = await confirm({
+            title: `Delete session on ${s.session_date}?`,
+            body: "Its attendance goes with it.",
+            confirmLabel: "Delete session",
+            destructive: true,
+          });
+          if (ok) void call(`/api/admin/sessions/${s.id}`, "DELETE");
         }}
         disabled={busy}
         className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"

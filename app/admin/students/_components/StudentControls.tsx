@@ -22,24 +22,13 @@ const FALLBACK_STAGES: StageOption[] = STAGE_ORDER.map((s) => ({
   description: STAGE_DESCRIPTIONS[s] ?? null,
 }));
 
-export type Student = {
-  id: string;
-  first_name: string;
-  last_name: string | null;
-  email: string | null;
-  phone: string | null;
-  location: string | null;
-  stage: string;
-  notes: string | null;
-  last_activity_at: string | null;
-  external_source: string | null;
-  // Participant fields (grade / school / guardian_* / dob) live here now — the
-  // AA-specific columns were dropped in D5. The registry (custom_field_defs)
-  // defines which keys an org shows.
-  custom_fields: Record<string, unknown> | null;
-  // Assigned leader: a volunteer-flagged constituent of the same org.
-  leader_id: string | null;
-};
+// Student + the pure field helpers moved to ../_lib/studentFields (they must
+// be callable from SERVER components — imported from this "use client"
+// module they arrive as client references and throw at render; the
+// /admin/programs/overview crash). Re-exported so client importers keep one
+// path.
+export { cf, fullName, type Student } from "../_lib/studentFields";
+import { cf, fullName, type Student } from "../_lib/studentFields";
 
 /** Volunteer-flagged constituents of the org, for the leader picker. */
 export type LeaderOption = { id: string; name: string };
@@ -54,17 +43,6 @@ const SOURCE_LABELS: Record<string, string> = {
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
-
-export function fullName(s: Pick<Student, "first_name" | "last_name">) {
-  return [s.first_name, s.last_name].filter(Boolean).join(" ");
-}
-
-// Registry value read (spec #4): participant fields live in custom_fields,
-// keyed by the def's `key`. Returns "" for an unset field.
-export function cf(s: Student, key: string): string {
-  const v = (s.custom_fields ?? {})[key];
-  return v === null || v === undefined ? "" : String(v);
-}
 
 export function StudentRow({
   student,

@@ -17,11 +17,19 @@ export default function ExportControls({
   title,
   keys,
   gate,
+  // Shared with Impact → Reports since Spec Impact I2 (decision 2: one gate
+  // strip, parameterized). The defaults ARE the N3 finance behavior.
+  artifactType = ARTIFACT_TYPE,
+  exportUrl = "/api/admin/finance/reports/export",
+  backHref = "/admin/finance/reports",
 }: {
   rid: string;
   title: string;
   keys: string[];
   gate: { blocked: boolean; blockers: Blocker[]; waived: Blocker[]; unconfirmed: string[] };
+  artifactType?: string;
+  exportUrl?: string;
+  backHref?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -38,7 +46,7 @@ export default function ExportControls({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          artifact_type: ARTIFACT_TYPE,
+          artifact_type: artifactType,
           artifact_id: rid,
           metric_key: metricKey,
           reason: reason.trim() || null,
@@ -60,7 +68,7 @@ export default function ExportControls({
     setBusy(true);
     setErr(null);
     try {
-      const r = await fetch("/api/admin/finance/reports/export", {
+      const r = await fetch(exportUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rid, title, keys }),
@@ -84,7 +92,7 @@ export default function ExportControls({
         <a href={`/api/admin/documents/${done}/url`} className="font-semibold underline">
           Open the file
         </a>
-        <a href="/admin/finance/reports" className="ml-auto text-xs font-semibold text-ink-2 hover:text-ink-1">
+        <a href={backHref} className="ml-auto text-xs font-semibold text-ink-2 hover:text-ink-1">
           ← Reports
         </a>
       </div>

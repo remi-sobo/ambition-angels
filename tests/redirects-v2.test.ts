@@ -69,6 +69,9 @@ describe("every active redirect terminates at a live host, no loops", () => {
     checks.push(pageFor("/admin/organization/board/[id]"));
     checks.push(pageFor("/admin/organization/compliance/[id]"));
     checks.push(pageFor("/admin/work/meetings/upcoming/[eventId]"));
+    // F6: the donors prefix and asks prefix carry [id] children.
+    checks.push(pageFor("/admin/fundraising/donors-funders/[id]"));
+    checks.push(pageFor("/admin/fundraising/pipeline/[id]"));
     for (const p of checks) expect(existsSync(p), `missing host page: ${p}`).toBe(true);
   });
 });
@@ -106,13 +109,40 @@ describe("v2Href: the translation the choke points ride", () => {
   test("at-cutover merges and kept-in-place paths are untouched until their spec", () => {
     for (const path of [
       "/admin", // hosts the login UI: forwards in-page at H3, never a config 308
-      "/admin/fundraising/donors",
-      "/admin/fundraising/prospects",
+      "/admin/fundraising/pledges", // Finance's spec activates this one
       "/admin/finance/reconcile",
       "/admin/fundraising/grants", // kept: V1 path IS the V2 path
       "/admin/fundraising/today",
       "/admin/inbox",
       "/admin/settings",
+    ]) {
+      expect(v2Href(path), path).toBe(path);
+    }
+  });
+
+  test("F6: the Fundraising moves resolve, and the deliberately-narrowed children stay live", () => {
+    expect(v2Href("/admin/fundraising")).toBe("/admin/fundraising/today");
+    expect(v2Href("/admin/fundraising/plan")).toBe("/admin/fundraising/campaigns");
+    expect(v2Href("/admin/fundraising/donors")).toBe("/admin/fundraising/donors-funders");
+    expect(v2Href(`/admin/fundraising/donors/${UUID}?tab=notes`)).toBe(
+      `/admin/fundraising/donors-funders/${UUID}?tab=notes`,
+    );
+    expect(v2Href("/admin/fundraising/prospects")).toBe("/admin/fundraising/donors-funders");
+    expect(v2Href(`/admin/fundraising/prospects/${UUID}`)).toBe(
+      `/admin/fundraising/donors-funders/${UUID}`,
+    );
+    expect(v2Href(`/admin/fundraising/asks/${UUID}`)).toBe(`/admin/fundraising/pipeline/${UUID}`);
+    expect(v2Href("/admin/fundraising/acknowledgments")).toBe("/admin/fundraising/today");
+    expect(v2Href("/admin/fundraising/recurring")).toBe("/admin/fundraising/donors-funders");
+    expect(v2Href("/admin/fundraising/journeys")).toBe("/admin/fundraising/donors-funders");
+    // Narrowed on purpose (exact / uuid-child): these named children keep
+    // their live screens — no 308 into a 404, ever.
+    for (const path of [
+      `/admin/fundraising/plan/${UUID}`,
+      "/admin/fundraising/prospects/import",
+      "/admin/fundraising/prospects/by-hubspot/12345",
+      "/admin/fundraising/acknowledgments/letters",
+      "/admin/fundraising/acknowledgments/templates",
     ]) {
       expect(v2Href(path), path).toBe(path);
     }
@@ -125,8 +155,9 @@ describe("v2Href: the translation the choke points ride", () => {
     expect(v2Href("/admin/kpis")).toBe("/admin/impact/kpis");
     expect(v2Href("/admin/intake")).toBe("/admin/programs/intake");
     expect(v2Href("/admin/cohorts")).toBe("/admin/programs/cohorts");
-    // Seats not built yet keep their live V1 screens:
-    expect(v2Href("/admin/fundraising/acknowledgments")).toBe("/admin/fundraising/acknowledgments");
+    // Acknowledgments moved with Spec Fundraising F6 (Thank someone lives on
+    // Today's Moves); the finance seat isn't built yet; grants is kept.
+    expect(v2Href("/admin/fundraising/acknowledgments")).toBe("/admin/fundraising/today");
     expect(v2Href("/admin/finance/reconcile")).toBe("/admin/finance/reconcile");
     expect(v2Href("/admin/fundraising/grants")).toBe("/admin/fundraising/grants");
   });
@@ -156,15 +187,19 @@ describe("the whole F.1 delta is accounted for", () => {
   });
 
   test("every notifications.url shape stored in production has a map contract", () => {
-    // The four shapes that exist in prod as of 2026-09-04 (all June/July rows).
-    // Each is an at-cutover merge today: the URL keeps opening its live V1
-    // screen NOW, and the map row names the exact seat it will 308 to when
-    // that destination cuts over — never a dead path in between.
+    // The four shapes that exist in prod as of 2026-09-04 (all June/July
+    // rows). The two fundraising shapes CUT OVER at Spec Fundraising F6:
+    // they now resolve to the Donor 360, which handles both id spaces. The
+    // messages shapes stay at-cutover merges until Inbox's spec.
+    expect(v2Href(`/admin/fundraising/prospects/${UUID}`)).toBe(
+      `/admin/fundraising/donors-funders/${UUID}`,
+    );
+    expect(v2Href(`/admin/fundraising/donors/${UUID}`)).toBe(
+      `/admin/fundraising/donors-funders/${UUID}`,
+    );
     const stored = [
       { shape: `/admin/messages?t=${UUID}`, future: "/admin/inbox/messages" },
       { shape: "/admin/messages", future: "/admin/inbox/messages" },
-      { shape: `/admin/fundraising/prospects/${UUID}`, future: "/admin/fundraising/donors-funders" },
-      { shape: `/admin/fundraising/donors/${UUID}`, future: "/admin/fundraising/donors-funders" },
     ];
     for (const { shape, future } of stored) {
       expect(v2Href(shape), `${shape} must stay live until its seat exists`).toBe(shape);

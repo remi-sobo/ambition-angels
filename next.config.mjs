@@ -67,6 +67,19 @@ const nextConfig = {
       // login UI, so its forward is auth-aware in app/admin/page.tsx.
       { source: "/admin/queue", destination: "/admin/today", permanent: true },
       { source: "/admin/briefing", destination: "/admin/today", permanent: true },
+      // Fundraising cutover (Spec Fundraising, F6). Row-for-row with the
+      // canonical map, same order. prospects is exact + uuid-child so
+      // /prospects/import and /prospects/by-hubspot/* stay live; plan and
+      // acknowledgments are exact so their named children stay live too.
+      { source: "/admin/fundraising", destination: "/admin/fundraising/today", permanent: true },
+      { source: "/admin/fundraising/plan", destination: "/admin/fundraising/campaigns", permanent: true },
+      { source: "/admin/fundraising/donors/:path*", destination: "/admin/fundraising/donors-funders/:path*", permanent: true },
+      { source: "/admin/fundraising/prospects", destination: "/admin/fundraising/donors-funders", permanent: true },
+      { source: "/admin/fundraising/prospects/:id([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})", destination: "/admin/fundraising/donors-funders/:id", permanent: true },
+      { source: "/admin/fundraising/asks/:path*", destination: "/admin/fundraising/pipeline/:path*", permanent: true },
+      { source: "/admin/fundraising/acknowledgments", destination: "/admin/fundraising/today", permanent: true },
+      { source: "/admin/fundraising/recurring", destination: "/admin/fundraising/donors-funders", permanent: true },
+      { source: "/admin/fundraising/journeys", destination: "/admin/fundraising/donors-funders", permanent: true },
     ];
   },
   async rewrites() {

@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { useState, useTransition } from "react";
 import { useAssignees, withSelected } from "@/app/admin/_lib/useAssignees";
 import {
@@ -16,8 +18,8 @@ import {
  * Project header with inline editing. Every field commits to a PATCH on
  * change (or on blur for the title). Created date is shown read-only.
  *
- * Delete button at the bottom uses window.confirm() per the spec's "no
- * fancy modal" guidance for v1.
+ * Delete button at the bottom keeps its interruption through the house
+ * confirm dialog (Quality Floor Q3 replaced the v1 window.confirm()).
  */
 export type InitiativeOption = { id: string; label: string };
 
@@ -29,6 +31,8 @@ export default function ProjectHeader({
   initiatives?: InitiativeOption[];
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [, startTransition] = useTransition();
   const [titleEditing, setTitleEditing] = useState(false);
   const [titleDraft, setTitleDraft] = useState(project.title);
@@ -47,19 +51,20 @@ export default function ProjectHeader({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Project patch failed:", e);
-      alert("Couldn't save change. Try again.");
+      toast.error("Couldn't save the change. Try again.");
     } finally {
       setBusy(false);
     }
   }
 
   async function deleteProject() {
-    if (
-      !confirm(
-        `Delete project "${project.title}"?\n\nTasks tied to this project will be orphaned (kept, but un-linked).`
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: `Delete project "${project.title}"?`,
+      body: "Tasks tied to this project are kept, but un-linked.",
+      confirmLabel: "Delete project",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const r = await fetch(`/api/admin/ops/projects/${project.id}`, {
@@ -70,7 +75,7 @@ export default function ProjectHeader({
       router.refresh();
     } catch (e) {
       console.error("Project delete failed:", e);
-      alert("Couldn't delete project.");
+      toast.error("Couldn't delete the project.");
       setBusy(false);
     }
   }

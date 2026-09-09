@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useState, useTransition } from "react";
 import TaskEditModal from "@/app/admin/_components/TaskEditModal";
 import {
@@ -66,6 +67,7 @@ export default function TaskRowWithActions({
   completedTimestamp?: string | null;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -82,7 +84,7 @@ export default function TaskRowWithActions({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Task patch failed:", e);
-      alert("Couldn't save change. Try again.");
+      toast.error("Couldn't save the change. Try again.");
     } finally {
       setBusy(false);
     }

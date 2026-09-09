@@ -6,6 +6,8 @@ import { ReedLauncherProvider } from "./_components/reed/ReedLauncherProvider";
 import AdminPWA from "./_components/AdminPWA";
 import { AdminUserProvider } from "./_components/AdminUserContext";
 import { AdminBadgesProvider } from "./_components/AdminBadges";
+import ToastProvider from "./_components/feedback/ToastProvider";
+import ConfirmProvider from "./_components/feedback/ConfirmProvider";
 import V2Sidebar from "./_components/v2/V2Sidebar";
 import V2TabZone from "./_components/v2/V2TabZone";
 import V2ReedEdge from "./_components/v2/V2ReedEdge";
@@ -106,6 +108,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     return (
       <AdminUserProvider value={{ user, isOwner: ctx?.role === "owner" }}>
       <AdminBadgesProvider orgId={orgId} enabled={authed}>
+      {/* Quality Floor Q2: the feedback layer every client component reaches
+          — toasts replace alert(), the confirm dialog replaces confirm()
+          (call sites migrate at Q3). */}
+      <ToastProvider>
+      <ConfirmProvider>
       <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
         <AdminPWA />
         <V2Sidebar
@@ -138,6 +145,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </ReedLauncherProvider>
         <GlobalSearch />
       </div>
+      </ConfirmProvider>
+      </ToastProvider>
       </AdminBadgesProvider>
       </AdminUserProvider>
     );

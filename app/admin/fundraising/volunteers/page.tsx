@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../../_components/EmptyState";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getTermLabel, pluralizeTerm } from "@/lib/admin/terminology";
@@ -71,10 +72,10 @@ export default async function VolunteersPage() {
           </article>
         ))}
         {volunteers.length === 0 && (
-          <p className="text-sm text-ink-2">
-            No {terms.toLowerCase()} yet — add one above. {terms} are people
-            records in fundraising, so touches and notes work like any contact.
-          </p>
+          <EmptyState
+            label={terms.toLowerCase()}
+            hint={`Add one with the button above. ${terms} are people records in fundraising, so touches and notes work like any contact.`}
+          />
         )}
       </div>
     </div>

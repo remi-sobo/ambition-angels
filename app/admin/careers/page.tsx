@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../_components/EmptyState";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
@@ -54,16 +55,19 @@ export default async function CareersPage() {
       </p>
 
       {occupations.length === 0 ? (
-        <div className="bg-surface shadow-panel border-[1.5px] border-outline rounded-xl px-4 py-6 text-sm text-ink-2">
-          <p className="font-semibold text-ink-1 mb-1">Nothing imported yet.</p>
-          <p>
-            Run the import once from a machine with network access:&nbsp;
-            <code className="text-[12px] bg-tile px-1.5 py-0.5 rounded">
-              npx tsx scripts/import-onet.ts --onet-dir &lt;o*net text db&gt; --oews-csv &lt;national OEWS csv&gt;
-            </code>
-            &nbsp;— see the header of that script for where the files come from.
-          </p>
-        </div>
+        <EmptyState
+          label="occupations"
+          title="Nothing imported yet"
+          hint={
+            <>
+              Run the import once from a machine with network access:{" "}
+              <code className="text-[12px] bg-tile px-1.5 py-0.5 rounded">
+                npx tsx scripts/import-onet.ts --onet-dir &lt;o*net text db&gt; --oews-csv &lt;national OEWS csv&gt;
+              </code>{" "}
+              — see the header of that script for where the files come from.
+            </>
+          }
+        />
       ) : (
         <CareersControls occupations={occupations} cards={cards} />
       )}

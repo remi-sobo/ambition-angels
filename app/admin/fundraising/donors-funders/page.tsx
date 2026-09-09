@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../../_components/EmptyState";
 import PageHeader from "../../_components/PageHeader";
 import FilterTabs from "../_components/FilterTabs";
 import SavedViews from "./_components/SavedViews";
@@ -145,6 +146,18 @@ export default async function DonorsFundersPage({
 
         {view === "prospects" ? (
           <ProspectsTable prospects={data.prospects} />
+        ) : view === "all" && !def.q && !def.type && !def.min_total && data.total === 0 ? (
+          // The true first run — no rows in the org, not a filtered-to-zero
+          // view (Q5: name the missing thing, offer the creating action).
+          <EmptyState
+            label="constituents"
+            hint="Every donor, funder, and contact lives on this one list. Record a gift and its donor appears automatically, or bring your history in at once."
+            action={
+              <Link href="/admin/fundraising/import" className="text-xs font-semibold text-orange hover:text-orange-dark">
+                Import donors and gifts (CSV) →
+              </Link>
+            }
+          />
         ) : (
           <ConstituentsTable rows={data.rows} today={today} />
         )}

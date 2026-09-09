@@ -7,6 +7,7 @@
 // client-side since the partner set is small.
 
 import { useMemo, useState } from "react";
+import EmptyState from "../../_components/EmptyState";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
@@ -153,10 +154,10 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
       </div>
 
       {partners.length === 0 ? (
-        <p className="text-sm text-ink-2">
-          No partners yet — add your first school or nonprofit partner, or wait for the public
-          signup form to feed prospects in.
-        </p>
+        <EmptyState
+          label="partners"
+          hint="Add your first school or nonprofit partner with the button above, or wait for the public signup form to feed prospects in."
+        />
       ) : (
         <>
       {/* Tabs (list only) + view toggle */}

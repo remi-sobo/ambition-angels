@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../_components/EmptyState";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import type { Booking, MeetingType } from "@/lib/database.types";
@@ -246,12 +247,15 @@ export default async function MeetingsPage() {
       )}
 
       {past.length === 0 && (
-        <section className="rounded-card-lg border border-dashed border-outline bg-surface px-6 py-10 text-center">
-          <p className="text-sm text-ink-2">
-            No meeting records yet. Hit <span className="font-medium text-ink-1">Sync from calendar</span> to
-            pull your past external meetings in and match them to donors and partners.
-          </p>
-        </section>
+        <EmptyState
+          label="meeting records"
+          hint={
+            <>
+              Hit <span className="font-medium text-ink-1">Sync from calendar</span> above to pull
+              your past external meetings in and match them to donors and partners.
+            </>
+          }
+        />
       )}
 
       {/* Upcoming — grouped by day, scannable. Calendar meetings and booking-

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "@/app/admin/_components/EmptyState";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getMetricCatalog } from "@/lib/admin/metrics/catalog";
@@ -179,10 +180,13 @@ export default async function ImpactReportsPage({
           </h2>
         </div>
         {recent.length === 0 ? (
-          <p className={`p-6 ${TYPE.bodyMuted}`}>
-            Nothing exported yet. Exports live in the file cabinet (documents, type
-            &ldquo;impact_report&rdquo;) with their waivers on the record.
-          </p>
+          <div className="p-4">
+            <EmptyState
+              label="exports"
+              title="Nothing exported yet"
+              hint={`Compose a report above and export it; each export lands in the file cabinet (documents, type “impact_report”) with its waivers on the record.`}
+            />
+          </div>
         ) : (
           <ul className="divide-y divide-hairline">
             {recent.map((d) => (

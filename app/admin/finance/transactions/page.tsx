@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../../_components/EmptyState";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import type { FinCategory } from "@/lib/finance/types";
@@ -182,10 +183,20 @@ export default async function TransactionsPage({
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-10 text-center text-ink-2">
-                    {total === 0
-                      ? "No transactions yet — upload a CSV to get started."
-                      : "No transactions match these filters."}
+                  <td colSpan={5} className="px-3 py-4">
+                    {total === 0 ? (
+                      <EmptyState
+                        label="transactions"
+                        hint="The ledger fills from your bank exports; every number upstream (runway, burn, budget vs. actual) starts here."
+                        action={
+                          <a href="/admin/finance/upload" className="text-xs font-semibold text-orange hover:text-orange-dark">
+                            Import the first CSV →
+                          </a>
+                        }
+                      />
+                    ) : (
+                      <p className="py-6 text-center text-ink-2">No transactions match these filters.</p>
+                    )}
                   </td>
                 </tr>
               )}

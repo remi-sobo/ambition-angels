@@ -1,4 +1,5 @@
 import { getMetricCatalog, staleAfter, type CatalogMetric } from "@/lib/admin/metrics/catalog";
+import EmptyState from "../_components/EmptyState";
 import { fmtMetricValue as fmtValue } from "@/lib/admin/metrics/format";
 import { getDisplayNames } from "@/lib/admin/profile";
 import PageHeader from "../_components/PageHeader";
@@ -120,9 +121,21 @@ export default async function KpisPage({
 
       <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
         {rows.length === 0 ? (
-          <p className="p-5 text-sm text-ink-2">
-            {view === "stale" ? "Nothing is stale — every metric is inside its cadence." : "No metrics match."}
-          </p>
+          view === "stale" ? (
+            <p className="p-5 text-sm text-ink-2">Nothing is stale — every metric is inside its cadence.</p>
+          ) : (
+            <div className="p-4">
+              <EmptyState
+                label="metrics"
+                hint="Every number the org runs on gets one definition, one source, one owner. Measures added on the strategic plan land here automatically."
+                action={
+                  <a href="/admin/strategic-plan" className="text-xs font-semibold text-orange hover:text-orange-dark">
+                    Add measures on the plan →
+                  </a>
+                }
+              />
+            </div>
+          )
         ) : (
           <ul className="divide-y divide-hairline">
             {rows.map((m) => (

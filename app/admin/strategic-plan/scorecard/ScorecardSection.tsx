@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../../_components/EmptyState";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getOrgAssignees } from "@/lib/admin/assignees-server";
@@ -117,10 +118,15 @@ export default async function ScorecardSection({ embedded = false }: { embedded?
   // around them differs.
   const body =
     kpis.length === 0 ? (
-      <p className="text-sm text-ink-2">
-        No measures yet — add KPIs on the{" "}
-        <Link href="/admin/strategic-plan" className="text-orange hover:underline">plan</Link> or run setup.
-      </p>
+      <EmptyState
+        label="measures"
+        hint="The scorecard reads the strategic plan's KPIs, grouped by owner."
+        action={
+          <Link href="/admin/strategic-plan" className="text-xs font-semibold text-orange hover:text-orange-dark">
+            Add KPIs on the plan →
+          </Link>
+        }
+      />
     ) : (
       <div className="space-y-8">
         {owners.map((owner) => {

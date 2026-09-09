@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { TYPE } from "@/lib/admin/typeScale";
 import { addDays, ORG_TZ } from "@/lib/admin/ops/week";
 import {
@@ -89,6 +90,7 @@ export default function WeekGrid({
   basePath?: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const isSelf = view.owner.relation === "self";
   const [refreshing, setRefreshing] = useState(false);
 
@@ -206,11 +208,11 @@ export default function WeekGrid({
         refresh();
       } catch (e) {
         console.error("Create block failed:", e);
-        alert("Couldn't create the block. Try again.");
+        toast.error("Couldn't create the block. Try again.");
         refresh();
       }
     },
-    [refresh]
+    [refresh, toast]
   );
 
   const apiMoveBlock = useCallback(
@@ -230,11 +232,11 @@ export default function WeekGrid({
         refresh();
       } catch (e) {
         console.error("Move block failed:", e);
-        alert("Couldn't move the block. Try again.");
+        toast.error("Couldn't move the block. Try again.");
         refresh();
       }
     },
-    [refresh]
+    [refresh, toast]
   );
 
   const apiDeleteBlock = useCallback(
@@ -247,11 +249,11 @@ export default function WeekGrid({
         refresh();
       } catch (e) {
         console.error("Delete block failed:", e);
-        alert("Couldn't delete the block. Try again.");
+        toast.error("Couldn't delete the block. Try again.");
         refresh();
       }
     },
-    [refresh]
+    [refresh, toast]
   );
 
   const apiRetitleBlock = useCallback(
@@ -270,7 +272,7 @@ export default function WeekGrid({
         refresh();
       }
     },
-    [refresh]
+    [refresh, toast]
   );
 
   const apiToggleTask = useCallback(
@@ -289,7 +291,7 @@ export default function WeekGrid({
         setStatusOverride((prev) => ({ ...prev, [taskId]: done ? "todo" : "done" }));
       }
     },
-    [refresh]
+    [refresh, toast]
   );
 
   const apiAddTask = useCallback(
@@ -304,10 +306,10 @@ export default function WeekGrid({
         refresh();
       } catch (e) {
         console.error("Add task failed:", e);
-        alert("Couldn't add the task. Try again.");
+        toast.error("Couldn't add the task. Try again.");
       }
     },
-    [refresh]
+    [refresh, toast]
   );
 
   const apiRemoveTask = useCallback(
@@ -325,7 +327,7 @@ export default function WeekGrid({
         refresh();
       }
     },
-    [refresh]
+    [refresh, toast]
   );
 
   // ── Pointer machinery (own week only) ────────────────────────────────────

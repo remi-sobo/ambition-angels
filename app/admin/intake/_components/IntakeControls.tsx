@@ -6,6 +6,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 export type CohortOption = { id: string; name: string };
 
@@ -32,6 +35,7 @@ const PRIORITY_LABELS: Record<number, string> = { 1: "High", 2: "Standard", 3: "
 
 function useApi() {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const call = async (url: string, method: string, body?: unknown) => {
     setBusy(true);
@@ -43,7 +47,7 @@ function useApi() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
       }
       router.refresh();
     } finally {
@@ -84,7 +88,8 @@ export function ApplicationRow({
   app: ApplicationView;
   cohorts: CohortOption[];
 }) {
-  const { busy, call } = useApi();
+const confirm = useConfirm();
+    const { busy, call } = useApi();
   const [expanded, setExpanded] = useState(false);
   const patch = (fields: Record<string, unknown>) =>
     call(`/api/admin/applications/${app.id}`, "PATCH", fields);
@@ -213,9 +218,13 @@ export function ApplicationRow({
           label="Delete"
           tone="danger"
           disabled={busy}
-          onClick={() => {
-            if (confirm(`Delete ${app.name}'s application?`))
-              void call(`/api/admin/applications/${app.id}`, "DELETE");
+          onClick={async () => {
+            const ok = await confirm({
+              title: `Delete ${app.name}'s application?`,
+              confirmLabel: "Delete",
+              destructive: true,
+            });
+            if (ok) void call(`/api/admin/applications/${app.id}`, "DELETE");
           }}
         />
       </div>

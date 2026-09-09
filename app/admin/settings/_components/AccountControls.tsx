@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import type { CalendarConnectionStatus } from "@/lib/google/connection";
 
 const inputCls =
@@ -486,9 +487,16 @@ export function ChangePasswordForm() {
 
 export function SignOutAllButton() {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const run = async () => {
-    if (!confirm("Sign out of every device, including this one?")) return;
+    const ok = await confirm({
+      title: "Sign out of every device?",
+      body: "Every session ends, including this one.",
+      confirmLabel: "Sign out everywhere",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await fetch("/api/admin/account/signout-all", { method: "POST" });

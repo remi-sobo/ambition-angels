@@ -228,6 +228,7 @@ ordered=(
   spec_fr_next_step_obligations.sql
   spec_fin_seed_aa_finance_model.sql
   spec_fin_report_artifacts.sql
+  create_shared_notes.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

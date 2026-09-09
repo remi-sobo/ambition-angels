@@ -58,6 +58,11 @@ export const FEATURE_KEYS = [
   "aa.hubspot_mirror",
   "aa.app", // the Ambition App roadmap surface — AA-only, not a generic module
   "aa.internships", // AA internships surface — AA-only
+  // The founder finance model (env-configured Google Sheet) — AA-only. Added
+  // at Spec Finance N2: the /admin/finance/model numbers are AA's, and before
+  // this key the page rendered them for ANY finance-holding org (a
+  // cross-tenant leak the Forecast absorption would have widened).
+  "aa.finance_model",
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];

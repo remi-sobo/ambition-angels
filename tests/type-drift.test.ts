@@ -38,7 +38,7 @@ const DISPLAY_BLACK_ALLOWLIST: { file: string; reason: string }[] = [
   { file: "app/admin/_components/Sidebar.tsx", reason: "brand marks (BloomOS wordmark, collapsed mark)" },
   { file: "app/admin/_components/v2/V2Sidebar.tsx", reason: "brand marks (BloomOS wordmark + mobile bar title, same voice as the V1 sidebar it replaces)" },
   { file: "app/admin/AnalyticsView.tsx", reason: "display metrics (orange stat numerals)" },
-  { file: "app/admin/finance/model/page.tsx", reason: "display metric (model numerals)" },
+  { file: "app/admin/finance/model/ModelSection.tsx", reason: "display metric (model numerals — the page body extracted at Spec Finance N2, entry moved with it)" },
   { file: "app/admin/finance/_components/ReconcileCard.tsx", reason: "display metric (computed cash)" },
   { file: "app/admin/finance/_components/charts.tsx", reason: "display metric (chart value + axis label)" },
   { file: "app/admin/finance/_components/RunwayTiers.tsx", reason: "display metric (runway months)" },

@@ -1,0 +1,206 @@
+import { unstable_cache } from "next/cache";
+import { loadFinanceModel } from "@/lib/google/finance-sheet";
+import { hasEntitlement } from "@/lib/admin/entitlements";
+import PageHeader from "../../_components/PageHeader";
+import { TYPE } from "@/lib/admin/typeScale";
+
+/**
+ * /admin/finance/model — live KPIs from the founder finance model.
+ *
+ * Read-only. The full model lives in a Google Sheet that contains salaries,
+ * so the page renders just the four headline metrics Remi cares about at the
+ * top of every conversation. Anyone who needs the underlying math opens the
+ * sheet directly via the "View full model" link.
+ *
+ * Auth: gated by the admin cookie via middleware.ts (matcher: /admin/:path+).
+ * Data flow: server-side only via lib/google/finance-sheet.ts (service
+ * account, read-only scope). Sheet contents never reach the browser except
+ * as the four rendered numbers below.
+ *
+ * Caching: at most one Sheets API call per hour per deployment. Hitting the
+ * page right after updating the sheet won't reflect for up to an hour;
+ * that's the accepted tradeoff vs hammering Google. The V1 route keeps its
+ * revalidate=3600; the embedded render on Forecast (a force-dynamic page)
+ * gets the same promise from the unstable_cache wrapper below.
+ *
+ * Extracted at Spec Finance N2, and FENCED at the same time: the sheet is
+ * env-configured with no org in the data path — these are AA's numbers —
+ * so both variants render only under aa.finance_model (seeded for AA).
+ * Before N2 any finance-holding org could open the V1 page and read them;
+ * the absorption would have widened that leak, so it closes here instead.
+ */
+
+const loadFinanceModelHourly = unstable_cache(
+  async () => loadFinanceModel(),
+  ["finance-model-hourly"],
+  { revalidate: 3600 },
+);
+
+// USD with no cents — matches the rest of /admin/finance where headline
+// numbers are integer dollars and only transaction tables show cents.
+function money(n: number | null): string {
+  if (n === null) return "—";
+  const sign = n < 0 ? "−" : "";
+  return `${sign}$${Math.round(Math.abs(n)).toLocaleString("en-US")}`;
+}
+
+function months(n: number | null): string {
+  if (n === null) return "—";
+  return `${n.toFixed(1)} mo`;
+}
+
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+export default async function ModelSection({ embedded = false }: { embedded?: boolean }) {
+  if (!(await hasEntitlement("aa.finance_model"))) return null;
+  const status = embedded ? await loadFinanceModelHourly() : await loadFinanceModel();
+
+  return (
+    <div className={embedded ? "space-y-4" : "max-w-5xl px-4 lg:px-8 py-6 lg:py-8 space-y-6"}>
+      {embedded ? (
+        <div>
+          <h2 className={TYPE.cardTitle}>Model</h2>
+          <p className="text-[11px] text-ink-3 max-w-2xl">
+            The four numbers from the founder model sheet — refreshes hourly.
+          </p>
+        </div>
+      ) : (
+        <PageHeader
+          eyebrow="Live from the founder model"
+          title="Model"
+          subtitle={
+            <span className="block max-w-2xl">
+              The four numbers that decide whether we keep going. Pulled directly
+              from the source-of-truth Google Sheet — refreshes hourly.
+            </span>
+          }
+        />
+      )}
+
+      {status.kind === "not_configured" && (
+        <NotConfigured missing={status.missing} />
+      )}
+      {status.kind === "error" && <ErrorPanel message={status.message} />}
+      {status.kind === "ok" && (
+        <>
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card
+              label="Cash balance"
+              value={money(status.data.cashBalance)}
+              accent="orange"
+            />
+            <Card
+              label="Monthly burn"
+              value={`${money(status.data.monthlyBurn)}/mo`}
+            />
+            <Card label="Runway" value={months(status.data.runwayMonths)} />
+            <Card
+              label="Funding needed to survive"
+              value={money(status.data.fundingNeeded)}
+              tone={
+                (status.data.fundingNeeded ?? 0) > 0 ? "warn" : undefined
+              }
+            />
+          </section>
+
+          <footer className="flex items-center justify-between gap-3 text-xs text-ink-2 pt-2">
+            <span>Last fetched {fmtTime(status.data.fetchedAt)}</span>
+            <a
+              href={status.data.sheetUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-orange hover:text-orange-dark bg-orange/10 hover:bg-orange/15 border border-orange/30 px-3 py-2 rounded-lg whitespace-nowrap"
+            >
+              View full model ↗
+            </a>
+          </footer>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── UI bits ──────────────────────────────────────────────────────────────
+
+function Card({
+  label,
+  value,
+  accent,
+  tone,
+}: {
+  label: string;
+  value: string;
+  accent?: "orange";
+  tone?: "warn";
+}) {
+  const valueClass =
+    tone === "warn"
+      ? "text-[#A56A1B]"
+      : accent === "orange"
+      ? "text-orange"
+      : "text-ink-1";
+  return (
+    <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
+      <div className="text-[10px] uppercase tracking-widest text-ink-2">
+        {label}
+      </div>
+      <div
+        className={`mt-1 font-display font-black text-3xl leading-none ${valueClass}`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function NotConfigured({ missing }: { missing: string[] }) {
+  return (
+    <div className="rounded-card border border-[#D9BE86] bg-[#F4E8D0] p-6 space-y-3">
+      <div className="text-sm font-semibold text-amber-200">
+        Not configured yet
+      </div>
+      <p className="text-sm text-ink-1 leading-relaxed">
+        The Finance Model page is wired up but missing configuration. Once the
+        items below are set, this page will render live KPIs from the source
+        sheet on every visit (cached 1 hour).
+      </p>
+      <ul className="text-xs font-mono text-amber-100/90 space-y-1 pl-4 list-disc">
+        {missing.map((m) => (
+          <li key={m}>{m}</li>
+        ))}
+      </ul>
+      <p className="text-xs text-ink-2 leading-relaxed">
+        Env vars belong in Vercel (Production + Preview + Development).
+        The Apps Script Web App source lives at{" "}
+        <code className="text-ink-1">scripts/finance-model-webhook.gs</code>{" "}
+        — paste it into the sheet&apos;s Extensions → Apps Script editor.
+      </p>
+    </div>
+  );
+}
+
+function ErrorPanel({ message }: { message: string }) {
+  return (
+    <div className="rounded-card border border-expense/30 bg-expense-bg p-6 space-y-2">
+      <div className="text-sm font-semibold text-expense">
+        Couldn&apos;t reach the sheet
+      </div>
+      <p className="text-sm text-ink-1 leading-relaxed">
+        Google Sheets API returned an error. The most likely causes are:
+        the service account hasn&apos;t been granted Viewer on the spreadsheet,
+        the spreadsheet ID is wrong, or the private key newline escaping is
+        off. Full error below.
+      </p>
+      <pre className="mt-2 text-[11px] text-expense font-mono bg-surface border border-hairline rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">
+        {message}
+      </pre>
+    </div>
+  );
+}

@@ -62,10 +62,11 @@ describe("the shell triggers (structural)", () => {
     expect(src.match(/setModal\("report"\)/g)?.length).toBeGreaterThanOrEqual(2);
   });
 
-  test("the V2 layout mounts V2QuickAdd and drops the V1 FAB from the V2 branch only", () => {
+  test("the layout mounts V2QuickAdd; the V1 FAB retired with the V1 chrome", () => {
     const src = read("app", "admin", "layout.tsx");
     expect(src).toMatch(/<V2QuickAdd currentUser=\{user\} reedEnabled=\{reedEnabled\} \/>/);
-    // The V1 branch keeps its FAB untouched (DoD 8).
-    expect(src).toMatch(/\{authed && <QuickAddButton currentUser=\{user\} \/>\}/);
+    // The V1 branch (and its FAB) were deleted with NAV_SECTIONS — Spec B's
+    // named cleanup, discharged after Spec Inbox X2.
+    expect(src).not.toMatch(/QuickAddButton/);
   });
 });

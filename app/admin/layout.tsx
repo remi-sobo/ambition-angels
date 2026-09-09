@@ -1,13 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import Sidebar from "./_components/Sidebar";
-import SectionSubNav from "./_components/SectionSubNav";
-import QuickAddButton from "./_components/QuickAddButton";
-import Rail from "./_components/rail/Rail";
 import { RailEntityProvider } from "./_components/rail/RailEntityContext";
-import AskReedButton from "./_components/AskReedButton";
 import GlobalSearch from "./_components/search/GlobalSearch";
-import MobileTabBar from "./_components/MobileTabBar";
 import { ReedLauncherProvider } from "./_components/reed/ReedLauncherProvider";
 import AdminPWA from "./_components/AdminPWA";
 import { AdminUserProvider } from "./_components/AdminUserContext";
@@ -20,8 +14,7 @@ import V2QuickAdd from "./_components/v2/V2QuickAdd";
 import { getAdminUser, getOrgContext, getUserOrgs } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
-import { getNavTermLabels, getShellTermLabels } from "@/lib/admin/terminology";
-import { getV2ShellEnabled } from "@/lib/admin/v2shell";
+import { getShellTermLabels } from "@/lib/admin/terminology";
 import { resolveShellNav } from "@/lib/admin/v2shellNav";
 
 export const metadata: Metadata = {
@@ -96,28 +89,19 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // (Phase 4), so hiding it here is an affordance, not the security boundary.
   const reedEnabled = !!ents && hasFeature(ents, "ai.reed");
 
-  // Per-tenant vocabulary for the term-driven nav items (core fence spec B3):
-  // org_terminology override → entity_types.display_name → code default, so
-  // the nav reads "Scholars"/"Chapters"/"Team" when an org has renamed terms.
-  const terms = authed && orgId ? await getNavTermLabels() : null;
-
   // The user's orgs feed the sidebar-footer switcher (C1) — it only renders
   // with 2+ memberships, so single-org users never see it.
   const orgs = authed ? await getUserOrgs() : [];
 
-  // ── The V2 shell (Spec B, B3) ─────────────────────────────────────────
-  // Per-user flag (profiles.v2_shell, open decision 1). With the flag OFF —
-  // the default, and always pre-auth — the V1 chrome below renders exactly
-  // as before (DoD 8: byte-for-byte). With it ON, the same routes render
-  // inside the V2 chrome: seven-destination sidebar (B1 model × B2 live
-  // seats), the tab slot (V1 secondary nav until a destination cuts over),
-  // and Reed as a right-edge tab. V1 pages are what render inside — no
-  // destination screens exist yet.
-  if (authed && (await getV2ShellEnabled())) {
+  // ── The V2 shell (Spec B, B3) — the ONLY chrome since the V1 retirement
+  // (Spec Inbox X2 cut the last destination over; the per-user
+  // profiles.v2_shell flag and the V1 chrome branch were deleted with
+  // NAV_SECTIONS, Spec B's named cleanup). Pre-auth renders the bare login
+  // surface below — the V1 sidebar that used to frame it is gone.
+  if (authed) {
     // B4: the shell resolves its labels through the V2 term map (an org's
     // own renames win; V2 names like People/Team are never clobbered by
-    // generic registry nouns). The V1 map (`terms`) still feeds the
-    // SectionSubNav fallback inside V2TabZone, whose rows ARE V1 nav.
+    // generic registry nouns).
     const nav = resolveShellNav(features, await getShellTermLabels());
     return (
       <AdminUserProvider value={{ user, isOwner: ctx?.role === "owner" }}>
@@ -140,7 +124,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <main
               className={`admin-main flex-1 min-w-0 overflow-y-auto${reedEnabled ? " xl:pr-[52px]" : ""}`}
             >
-              <V2TabZone nav={nav} features={features} terms={terms} />
+              <V2TabZone nav={nav} />
               {children}
             </main>
           </RailEntityProvider>
@@ -159,52 +143,16 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     );
   }
 
-  // The shell (sidebar + main column) renders on every /admin/* visit,
-  // including the unauthed login screen at /admin. Earlier this layout
-  // skipped the shell when unauthed — but that meant logged-in users
-  // briefly saw the page without a sidebar during the /admin client-side
-  // auth flash, and the login form looked detached from the admin UI.
-  // The Sidebar component already handles currentUser={null} gracefully.
-  // The floating QuickAddButton is still gated on authed since its
-  // actions all require a valid session.
+  // Pre-auth: the bare login surface. The V1 chrome that used to frame it
+  // (Sidebar, SectionSubNav, the rail, the V1 FABs) retired with
+  // NAV_SECTIONS — the login screen is a self-contained full-page surface
+  // and needs no shell around it.
   return (
     <AdminUserProvider value={{ user, isOwner: ctx?.role === "owner" }}>
     <AdminBadgesProvider orgId={orgId} enabled={authed}>
-    <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
+    <div className="admin-shell min-h-screen bg-ink text-ink-1">
       <AdminPWA />
-      <Sidebar
-        currentUser={user}
-        displayName={displayName}
-        role={ctx?.role ?? null}
-        terms={terms}
-        orgName={ctx?.orgName ?? null}
-        features={features}
-        orgs={orgs}
-        activeOrgId={orgId}
-      />
-      {/* One Reed launcher shared by the rail (desktop capture-to-Reed) and the
-          FAB (mobile), so there's a single Reed drawer regardless of entry. */}
-      <ReedLauncherProvider enabled={reedEnabled}>
-        <RailEntityProvider>
-          {/* The horizontal sub-topic bar for whichever section the route
-              belongs to. It lives here, not in each route-group layout, so
-              every section gets one — that opt-in-per-layout wiring is why
-              only Fundraising used to show sibling sub-topics. Authed only:
-              the pre-auth /admin login screen carries no section. */}
-          <main className="admin-main flex-1 min-w-0 overflow-y-auto">
-            {authed && <SectionSubNav features={features} terms={terms} />}
-            {children}
-          </main>
-          {authed && <Rail reedEnabled={reedEnabled} />}
-        </RailEntityProvider>
-        {/* lg–xl tablets: the rail only mounts at xl, so the standalone FABs
-            still carry Reed + quick-add there. Phones get the unified tab bar
-            below instead (so the two FABs don't collide on small screens). */}
-        {reedEnabled && <AskReedButton />}
-        {authed && <MobileTabBar currentUser={user} reedEnabled={reedEnabled} features={features} />}
-      </ReedLauncherProvider>
-      {authed && <QuickAddButton currentUser={user} />}
-      {authed && <GlobalSearch />}
+      <main className="admin-main min-w-0">{children}</main>
     </div>
     </AdminBadgesProvider>
     </AdminUserProvider>

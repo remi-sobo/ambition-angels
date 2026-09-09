@@ -12,7 +12,19 @@ import { TYPE } from "@/lib/admin/typeScale";
 
 type MetricOpt = { key: string; name: string; state: string | null; stale: boolean };
 
-export default function ComposeForm({ metrics }: { metrics: MetricOpt[] }) {
+export default function ComposeForm({
+  metrics,
+  // Shared with Impact → Reports since Spec Impact I2 (decision 2: one
+  // compose flow, parameterized). The defaults ARE the N3 finance behavior.
+  basePath = "/admin/finance/reports",
+  defaultTitle = "Financial report",
+  titlePlaceholder = "Report title (e.g. FY27 Q1 funder update)",
+}: {
+  metrics: MetricOpt[];
+  basePath?: string;
+  defaultTitle?: string;
+  titlePlaceholder?: string;
+}) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -30,10 +42,10 @@ export default function ComposeForm({ metrics }: { metrics: MetricOpt[] }) {
     const params = new URLSearchParams({
       draft: "1",
       rid: crypto.randomUUID(),
-      title: title.trim() || "Financial report",
+      title: title.trim() || defaultTitle,
       keys: Array.from(selected).join(","),
     });
-    router.push(`/admin/finance/reports?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`);
   }
 
   return (
@@ -48,7 +60,7 @@ export default function ComposeForm({ metrics }: { metrics: MetricOpt[] }) {
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Report title (e.g. FY27 Q1 funder update)"
+          placeholder={titlePlaceholder}
           maxLength={120}
           className="w-full text-sm bg-surface border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange"
         />

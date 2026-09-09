@@ -52,8 +52,12 @@ describe("every active redirect terminates at a live host, no loops", () => {
     const app = join(__dirname, "..", "app");
     const pageFor = (urlPath: string) => join(app, ...urlPath.split("/").filter(Boolean), "page.tsx");
     // Bases with no V1 page of their own (V1 404s there too; only the
-    // dynamic child is real): /admin/meetings/upcoming has only [eventId].
-    const noBasePage = new Set(["/admin/work/meetings/upcoming"]);
+    // dynamic child is real): /admin/meetings/upcoming has only [eventId];
+    // /admin/strategic-plan/objective has only [id] (O2).
+    const noBasePage = new Set([
+      "/admin/work/meetings/upcoming",
+      "/admin/organization/strategy/objective",
+    ]);
     const checks: string[] = [];
     for (const row of active) {
       // A destination may carry a canonical query (P4: volunteers →
@@ -75,6 +79,8 @@ describe("every active redirect terminates at a live host, no loops", () => {
     // F6: the donors prefix and asks prefix carry [id] children.
     checks.push(pageFor("/admin/fundraising/donors-funders/[id]"));
     checks.push(pageFor("/admin/fundraising/pipeline/[id]"));
+    // O2: the objective prefix carries only the [id] child.
+    checks.push(pageFor("/admin/organization/strategy/objective/[id]"));
     for (const p of checks) expect(existsSync(p), `missing host page: ${p}`).toBe(true);
   });
 });
@@ -169,18 +175,27 @@ describe("v2Href: the translation the choke points ride", () => {
     expect(v2Href("/admin/careers/pool")).toBe("/admin/careers/pool");
   });
 
-  test("I4: the scorecard lands on KPIs; the strategic-plan siblings are Organization's and stay put", () => {
+  test("I4: the scorecard lands on KPIs; the stay-put strategic-plan siblings stay put", () => {
     expect(v2Href("/admin/strategic-plan/scorecard")).toBe("/admin/impact/kpis");
-    // Organization's rows (objective/review/setup at-cutover) and the
-    // NO_HOME pair (narrative, people) are untouched by Impact's cutover.
+    // The settings row and the NO_HOME pair survive every cutover
+    // (objective/review moved with Spec Org O2 — asserted below).
     for (const path of [
-      "/admin/strategic-plan/review",
       "/admin/strategic-plan/setup",
       "/admin/strategic-plan/narrative",
       "/admin/strategic-plan/people",
     ]) {
       expect(v2Href(path), path).toBe(path);
     }
+  });
+
+  test("O2: Strategy's children land on the O1 seats — never on the bare landing", () => {
+    expect(v2Href("/admin/strategic-plan/review")).toBe("/admin/organization/strategy/review");
+    expect(v2Href(`/admin/strategic-plan/objective/${UUID}?tab=goals`)).toBe(
+      `/admin/organization/strategy/objective/${UUID}?tab=goals`,
+    );
+    // The F6 discipline held: no child anywhere resolves to a path without a
+    // page (the on-disk host test above covers the bases; this is the shape).
+    expect(v2Href("/admin/staff/reviews")).toBe("/admin/staff/reviews"); // NO_HOME, modules.reviews
   });
 
   test("F6: the Fundraising moves resolve, and the deliberately-narrowed children stay live", () => {

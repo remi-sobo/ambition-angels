@@ -108,6 +108,10 @@ const nextConfig = {
       // KPIs (which embeds the owner cards since I3). Exact — the other
       // strategic-plan children are Organization's and stay put.
       { source: "/admin/strategic-plan/scorecard", destination: "/admin/impact/kpis", permanent: true },
+      // Organization cutover (Spec Org, O2). Strategy's children move to the
+      // O1 child hosts; setup/narrative/people/staff-reviews stay put.
+      { source: "/admin/strategic-plan/objective/:path*", destination: "/admin/organization/strategy/objective/:path*", permanent: true },
+      { source: "/admin/strategic-plan/review", destination: "/admin/organization/strategy/review", permanent: true },
     ];
   },
   async rewrites() {

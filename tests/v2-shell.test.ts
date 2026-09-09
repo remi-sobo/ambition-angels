@@ -179,10 +179,18 @@ describe("activeShellKey: sidebar highlight + tab-slot routing", () => {
 });
 
 describe("B3 shell invariants", () => {
-  test("Home, Fundraising, Finance, Work, Programs and Impact are the cut-over destinations — their tab slots render the V2 single row", () => {
+  test("all seven destinations are cut over — every tab slot renders the V2 single row", () => {
     expect(Array.from(V2_CUTOVER_DESTINATIONS)).toEqual([
-      "home", "fundraising", "finance", "work", "programs", "impact",
+      "home", "fundraising", "finance", "work", "programs", "impact", "organization",
     ]);
+  });
+
+  test("Organization's tab rows (O2, DoD 1): four tabs landing Strategy for AA/YGB; the 9-key pair pinned above", () => {
+    for (const features of [AA, YGB]) {
+      const org = resolveShellNav(features).destinations.find((d) => d.key === "organization")!;
+      expect(org.href).toBe("/admin/organization/strategy");
+      expect(org.tabs.map((t) => t.key)).toEqual(["strategy", "team", "board", "compliance"]);
+    }
   });
 
   test("Impact lands on Outcomes — four tabs for AA, three without aa.site_analytics (I4, DoD 1)", () => {

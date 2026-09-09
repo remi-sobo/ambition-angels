@@ -35,9 +35,7 @@ const DISPLAY_BLACK_ALLOWLIST: { file: string; reason: string }[] = [
   { file: "app/admin/work/my-week/page.tsx", reason: "the one ritual-door title (Spec Work W2) — same voice as the doors page it replaces" },
   { file: "app/admin/programs/overview/page.tsx", reason: "display metrics (headline band numerals, Spec Programs P2)" },
   { file: "app/admin/ops/friday/CloseSection.tsx", reason: "display metric (close count — the page body extracted at Spec Work W1, entry moved with it)" },
-  { file: "app/admin/_components/rail/RailAgenda.tsx", reason: "rail clock numeral on dark chrome" },
   { file: "app/admin/_components/LoginScreen.tsx", reason: "D5 exemption: marketing-style dark surface" },
-  { file: "app/admin/_components/Sidebar.tsx", reason: "brand marks (BloomOS wordmark, collapsed mark)" },
   { file: "app/admin/_components/v2/V2Sidebar.tsx", reason: "brand marks (BloomOS wordmark + mobile bar title, same voice as the V1 sidebar it replaces)" },
   { file: "app/admin/AnalyticsView.tsx", reason: "display metrics (orange stat numerals)" },
   { file: "app/admin/finance/model/ModelSection.tsx", reason: "display metric (model numerals — the page body extracted at Spec Finance N2, entry moved with it)" },
@@ -98,7 +96,6 @@ const FINGERPRINTS: { pattern: string; role: string; allow: { file: string; reas
     allow: [
       { file: "app/admin/_components/PageHeader.tsx", reason: "the primitive that defines the eyebrow treatment" },
       { file: "app/admin/_components/FeatureGate.tsx", reason: "standalone module-gate panel eyebrow (no PageHeader on this surface)" },
-      { file: "app/admin/_components/SectionSubNav.tsx", reason: "shared section breadcrumb-bar eyebrow (layout chrome, not a page header)" },
       { file: "app/admin/strategic-plan/narrative/_components/shared.tsx", reason: "D5 exemption: presentation deck eyebrow" },
     ],
   },

@@ -32,7 +32,7 @@ const DISPLAY_BLACK_ALLOWLIST: { file: string; reason: string }[] = [
   { file: "app/admin/ops/_components/CategoryCounts.tsx", reason: "display metric (category count)" },
   { file: "app/admin/ops/_components/MondayCommit.tsx", reason: "display metric (commit count)" },
   { file: "app/admin/ops/my-week/page.tsx", reason: "the two door-tile titles, state-colored, smaller than pageTitle" },
-  { file: "app/admin/ops/friday/page.tsx", reason: "display metric (close count)" },
+  { file: "app/admin/ops/friday/CloseSection.tsx", reason: "display metric (close count — the page body extracted at Spec Work W1, entry moved with it)" },
   { file: "app/admin/_components/rail/RailAgenda.tsx", reason: "rail clock numeral on dark chrome" },
   { file: "app/admin/_components/LoginScreen.tsx", reason: "D5 exemption: marketing-style dark surface" },
   { file: "app/admin/_components/Sidebar.tsx", reason: "brand marks (BloomOS wordmark, collapsed mark)" },

@@ -246,6 +246,18 @@
   animation: appear 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* ── Skeleton grace (Quality Floor Q1, decision 2) ───────────────────────
+   The loading skeleton stays invisible for 150ms, then fades in: a fast
+   load paints straight to content and never flashes a skeleton (the spec's
+   first failure mode — users read flashes as bugs). */
+@keyframes qf-skeleton-appear {
+  to { opacity: 1; }
+}
+.qf-skeleton {
+  opacity: 0;
+  animation: qf-skeleton-appear 0.2s ease 0.15s forwards;
+}
+
 /* ── Hover lift — cards that rise and deepen their shadow on hover ──────── */
 .hover-lift {
   transition:

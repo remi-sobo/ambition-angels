@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import type { AdminUser } from "@/lib/admin/auth";
 import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
@@ -223,7 +224,7 @@ export default function TaskListView({
       });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        throw new Error(userMessage(r, body));
       }
       setNewTitle("");
       startTransition(() => router.refresh());

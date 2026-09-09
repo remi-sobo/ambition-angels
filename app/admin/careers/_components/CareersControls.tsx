@@ -8,6 +8,7 @@
 // cannot be batched, and never will be.
 
 import { useMemo, useState } from "react";
+import { userMessage } from "@/lib/admin/errors";
 import { useRouter } from "next/navigation";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 
@@ -85,7 +86,7 @@ function useApi() {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setNotice(j.error ?? `That didn't work (HTTP ${res.status}). Try again.`);
+        setNotice(userMessage(res, j));
       }
       router.refresh();
       return res.ok;

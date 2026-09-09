@@ -10,6 +10,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
 import {
   emptyReconciliation,
@@ -146,7 +147,7 @@ export default function ImportWizard() {
           body: JSON.stringify({ rows: slice }),
         });
         const j = (await res.json().catch(() => ({}))) as Partial<CommitResult> & { error?: string };
-        if (!res.ok) throw new Error(`Batch ${b + 1} of ${batchCount}: ${j.error ?? `HTTP ${res.status}`}`);
+        if (!res.ok) throw new Error(`Batch ${b + 1} of ${batchCount}: ${userMessage(res, j)}`);
         totals.created += j.created ?? 0;
         totals.matched += j.matched ?? 0;
         totals.gifts += j.gifts ?? 0;

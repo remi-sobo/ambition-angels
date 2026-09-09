@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import Link from "next/link";
 import { TYPE } from "@/lib/admin/typeScale";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
@@ -53,7 +54,7 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
         body: JSON.stringify({ angle_id: angleId, type }),
       });
       const body = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(typeof body?.error === "string" ? body.error : `HTTP ${r.status}`);
+      if (!r.ok) throw new Error(userMessage(r, body));
       setCandidates((body.candidates ?? []) as Candidate[]);
       setWarning(typeof body.budgetWarning === "string" ? body.budgetWarning : null);
     } catch (e) {

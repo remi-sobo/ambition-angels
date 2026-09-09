@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
+import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
 
 /**
@@ -131,7 +132,7 @@ export default function GrantCoach({
         }),
       });
       const body = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(body?.error ?? `HTTP ${r.status}`);
+      if (!r.ok) throw new Error(userMessage(r, body));
       setRuns((prev) => [
         { key: nextKey.current++, label: body.label ?? promptId, text: body.text ?? "" },
         ...prev,
@@ -168,7 +169,7 @@ export default function GrantCoach({
         }),
       });
       const body = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(body?.error ?? `HTTP ${r.status}`);
+      if (!r.ok) throw new Error(userMessage(r, body));
       setDefendHistory([...history, { role: "assistant", content: body.text ?? "" }]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "The reviewer stalled — try again.");

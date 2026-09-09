@@ -114,7 +114,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
+        throw new Error(userMessage(res, j));
       }
       setEditing(false);
       router.refresh();
@@ -473,7 +473,7 @@ export function NewComplianceForm() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
+        throw new Error(userMessage(res, j));
       }
       setTitle(""); setDueDate(""); setJurisdiction(""); setAssignee("");
       setOpen(false);

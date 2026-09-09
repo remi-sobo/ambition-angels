@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 
 type BookingOption = {
   id: string;
@@ -60,7 +61,7 @@ export default function MarkBooked({ taskId }: { taskId: string }) {
         body: JSON.stringify({ booking_id: bookingId }),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d?.error ?? `HTTP ${r.status}`);
+      if (!r.ok) throw new Error(userMessage(r, d));
       setOpen(false);
       router.refresh();
     } catch (e) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { userMessage } from "@/lib/admin/errors";
 
 /**
  * HubSpot data sync — moved out of the sidebar into Settings so it stops
@@ -95,7 +96,7 @@ export default function HubspotSyncPanel() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ jobId: job.jobId }),
         });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (!r.ok) throw new Error(userMessage(r));
         setJob(await r.json());
       } catch (e) {
         setSyncError(e instanceof Error ? e.message : "Sync failed");
@@ -111,7 +112,7 @@ export default function HubspotSyncPanel() {
     setSyncError(null);
     try {
       const r = await fetch("/api/admin/hubspot/sync", { method: "POST" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) throw new Error(userMessage(r));
       setJob(await r.json());
     } catch (e) {
       setSyncError(e instanceof Error ? e.message : "Sync failed");

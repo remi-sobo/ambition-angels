@@ -28,7 +28,9 @@ export function Header({
 }) {
   const nav: { key: typeof active; label: string; href: string }[] = [
     { key: "home", label: "Home", href: "/board" },
-    { key: "meetings", label: "Meetings", href: "/board/archive" },
+    // /board/meetings resolves to the live or next meeting. Pointing this at
+    // the archive sent every click to Past meetings.
+    { key: "meetings", label: "Meetings", href: "/board/meetings" },
     { key: "library", label: "Library", href: "/board/library" },
     { key: "people", label: "Board", href: "/board/people" },
   ];
@@ -231,7 +233,7 @@ export function Footer() {
           </h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 15 }}>
             {[
-              ["Meetings", "/board/archive"],
+              ["Meetings", "/board/meetings"],
               ["Decisions", "/board/archive?tab=decisions"],
               ["Library", "/board/library"],
               ["Board", "/board/people"],

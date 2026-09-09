@@ -27,11 +27,13 @@ import { canonicalSeat, liveSeatFor } from "./v2routes";
 /** Destinations whose V2 screens have shipped — their spec adds the key
  *  here, flipping that destination's tab slot from the V1 fallback to the
  *  V2 single row. Empty at B3 by definition; Home joined at Spec Home H3;
- *  Fundraising at Spec Fundraising F6; Finance at Spec Finance N4. */
+ *  Fundraising at Spec Fundraising F6; Finance at Spec Finance N4; Work at
+ *  Spec Work W4. */
 export const V2_CUTOVER_DESTINATIONS: ReadonlySet<string> = new Set<string>([
   "home",
   "fundraising",
   "finance",
+  "work",
 ]);
 
 export type ShellTab = {

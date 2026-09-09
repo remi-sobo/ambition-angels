@@ -52,9 +52,9 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
   });
 
   test("merge seats resolve to their FIRST live V1 source in map order", () => {
-    // /admin/today graduated at H3, donors-funders and pipeline at F6: they
-    // are ACTIVE targets now and seat themselves (asserted below).
-    expect(liveSeatFor("/admin/work/plan-close")).toBe("/admin/ops/monday");
+    // /admin/today graduated at H3, donors-funders and pipeline at F6,
+    // plan-close at W4: they are ACTIVE targets now and seat themselves
+    // (asserted below). Inbox's is the last unbuilt merge seat.
     expect(liveSeatFor("/admin/inbox/messages")).toBe("/admin/messages");
   });
 
@@ -75,6 +75,7 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
       "/admin/organization-health", // V2-only screen: its own path IS the seat (H3)
       "/admin/fundraising/donors-funders", // ACTIVE target since F6
       "/admin/fundraising/pipeline",       // ACTIVE target since F6
+      "/admin/work/plan-close",            // ACTIVE target since W4
     ]) {
       expect(liveSeatFor(path), path).toBe(path);
     }
@@ -118,9 +119,9 @@ describe("resolveShellNav: the four orgs (DoD 1, shell level)", () => {
     expect(impact.tabs.map((t) => t.key)).toEqual(["kpis"]);
   });
 
-  test("9-key orgs: Work lands on Plan & Close's live seat; Inbox keeps only its own tab", () => {
+  test("9-key orgs: Work lands on Plan & Close itself (W4); Inbox keeps only its own tab", () => {
     const nav = resolveShellNav(NINE_KEY);
-    expect(nav.destinations.find((d) => d.key === "work")!.href).toBe("/admin/ops/monday");
+    expect(nav.destinations.find((d) => d.key === "work")!.href).toBe("/admin/work/plan-close");
     expect(nav.inbox!.tabs.map((t) => t.key)).toEqual(["inbox"]);
   });
 
@@ -172,8 +173,25 @@ describe("activeShellKey: sidebar highlight + tab-slot routing", () => {
 });
 
 describe("B3 shell invariants", () => {
-  test("Home, Fundraising and Finance are the cut-over destinations — their tab slots render the V2 single row", () => {
-    expect(Array.from(V2_CUTOVER_DESTINATIONS)).toEqual(["home", "fundraising", "finance"]);
+  test("Home, Fundraising, Finance and Work are the cut-over destinations — their tab slots render the V2 single row", () => {
+    expect(Array.from(V2_CUTOVER_DESTINATIONS)).toEqual(["home", "fundraising", "finance", "work"]);
+  });
+
+  test("Work lands on Plan & Close with six tabs for AA/YGB, four for the 9-key orgs (W4, DoD 1)", () => {
+    for (const features of [AA, YGB]) {
+      const work = resolveShellNav(features).destinations.find((d) => d.key === "work")!;
+      expect(work.href).toBe("/admin/work/plan-close");
+      expect(work.tabs.map((t) => t.key)).toEqual([
+        "plan-close", "my-week", "tasks", "projects", "meetings", "documents",
+      ]);
+    }
+    // No modules.meetings → My Week and Meetings vanish by the entitlement
+    // rule (never dead-link), and the landing stays Plan & Close.
+    const nine = resolveShellNav(NINE_KEY).destinations.find((d) => d.key === "work")!;
+    expect(nine.href).toBe("/admin/work/plan-close");
+    expect(nine.tabs.map((t) => t.key)).toEqual([
+      "plan-close", "tasks", "projects", "documents",
+    ]);
   });
 
   test("Finance lands on Snapshot with the five-tab V2 row for every org (N4)", () => {

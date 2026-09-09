@@ -272,7 +272,7 @@ export default async function MeetingPage({ params }: { params: { id: string } }
           </div>
 
           <aside className="board-sticky board-noprint" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
-            <MaterialsList docs={docs} />
+            <MaterialsList docs={docs} meetingId={meeting.id} canManage={ctx.isAdmin} />
 
             {/* Filing materials lives here because /admin/documents cannot
                 attach a document to a meeting — see the route's comment. */}

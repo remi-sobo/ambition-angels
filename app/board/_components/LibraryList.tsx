@@ -35,18 +35,26 @@ export type LibraryDoc = {
  */
 const GROUPS: { section: string; blurb: string; groups: { name: string; types: string[]; note?: string }[] }[] = [
   {
-    section: "Corporate records",
+    section: "Governance",
     blurb:
       "The current version of every governing document, in force today. History lives in the corporate minutes book, which Shannon keeps and every director can reach.",
     groups: [
-      { name: "Policies and governing documents", types: ["policy"] },
+      {
+        name: "Corporate",
+        types: ["corporate"],
+        note: "Bylaws, articles of incorporation and the IRS determination letter — the documents that constitute the corporation.",
+      },
+      { name: "Policies", types: ["policy"] },
+      {
+        name: "Compliance filings",
+        types: ["compliance"],
+        note: "The 990, RRF-1, CA 199, W-9, and state registrations for everywhere we operate or employ.",
+      },
       {
         name: "Insurance",
         types: ["insurance"],
         note: "Replaced each year at renewal, so what is here is always the coverage in force today.",
       },
-      { name: "Filings and registrations", types: ["compliance"] },
-      { name: "Minutes", types: ["minutes"] },
     ],
   },
   {
@@ -58,6 +66,7 @@ const GROUPS: { section: string; blurb: string; groups: { name: string; types: s
       { name: "Reports", types: ["report"] },
       { name: "Agreements", types: ["mou"] },
       { name: "Grants", types: ["award_letter", "grant_narrative"] },
+      { name: "Minutes", types: ["minutes"] },
     ],
   },
 ];

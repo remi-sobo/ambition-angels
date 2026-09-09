@@ -78,7 +78,16 @@ function syncedLabel(iso: string | null): { text: string; stale: boolean } {
   return { text: `synced ${Math.round(hrs / 24)} day(s) ago`, stale };
 }
 
-export default function WeekGrid({ view }: { view: WeekViewData }) {
+export default function WeekGrid({
+  view,
+  basePath = "/admin/calendar",
+}: {
+  view: WeekViewData;
+  /** Where the week/owner URL state lives (Spec Work W2): the V1 calendar
+   *  route by default; Work → My Week passes its own path so the grid's
+   *  navigation stays on the screen that embeds it. */
+  basePath?: string;
+}) {
   const router = useRouter();
   const isSelf = view.owner.relation === "self";
   const [refreshing, setRefreshing] = useState(false);
@@ -455,7 +464,7 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
     const params = new URLSearchParams();
     params.set("week", weekStart);
     if (!isSelf) params.set("owner", view.owner.userId);
-    router.push(`/admin/calendar?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`);
   };
 
   const freshness = syncedLabel(view.syncedAt);
@@ -496,7 +505,7 @@ export default function WeekGrid({ view }: { view: WeekViewData }) {
               const params = new URLSearchParams();
               params.set("week", view.weekStart);
               params.set("owner", e.target.value);
-              router.push(`/admin/calendar?${params.toString()}`);
+              router.push(`${basePath}?${params.toString()}`);
             }}
             className="text-[12px] font-semibold rounded-lg border border-outline bg-surface text-ink-1 px-2.5 py-1.5"
             aria-label="Whose calendar"

@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import FeatureGate from "@/app/admin/_components/FeatureGate";
 
-// B2 host (Spec B, lib/admin/v2routes.ts): /admin/ops/my-week 308s here; this V2 seat
-// renders the V1 page until its destination cuts over (B3+). The gate
-// mirrors the V1 section layout, so a direct hit behaves identically —
-// unentitled orgs get the permission-limited panel, never a 404.
+// Spec Work W2: My Week is the week grid now, and the grid pairs with the
+// Google calendar connection under the meetings module — so the gate follows
+// the model's tab feature (lib/admin/nav.ts: my-week ← modules.meetings),
+// not the ops gate the B2 host mirrored while it re-exported the doors page.
+// The two 9-key orgs lose the tab AND the direct hit together, deliberately.
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <FeatureGate feature="modules.ops" label="Operations">
+    <FeatureGate feature="modules.meetings" label="Meetings">
       {children}
     </FeatureGate>
   );

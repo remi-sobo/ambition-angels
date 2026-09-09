@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isOnRoster } from "@/lib/board/auth";
 import { audit } from "@/lib/audit";
+import { marketingOrigin } from "@/lib/origins";
 
 /**
  * Board portal sign-in. Magic link only (spec §4).
@@ -50,7 +51,14 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createServerSupabase();
-  const origin = req.nextUrl.origin;
+  // The CONFIGURED origin, never req.nextUrl.origin. Behind Vercel's edge the
+  // request origin can resolve to the deployment URL
+  // (ambition-angels-<hash>.vercel.app) rather than the public host. Supabase
+  // matches emailRedirectTo against its redirect allowlist and, on a miss,
+  // silently falls back to the project's Site URL — so the director clicks her
+  // link, gets a valid session, and lands in BloomOS instead of the portal
+  // with no error anywhere. lib/origins.ts exists for exactly this reason.
+  const origin = marketingOrigin();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {

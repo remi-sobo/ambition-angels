@@ -7,6 +7,7 @@ import { getDonorsFunders, type DfRow, type ProspectRow } from "@/lib/admin/dono
 import { constituentName } from "@/lib/fundraising/display";
 import { BUILT_IN_VIEWS, RESEARCH_VIEWS, isLapsed, toDefinition } from "@/lib/fundraising/views";
 import { hasEntitlement } from "@/lib/admin/entitlements";
+import { getTermLabel, pluralizeTerm } from "@/lib/admin/terminology";
 import ResearchDrawer from "./_components/ResearchDrawer";
 import { todayISO } from "../../ops/_types/ops";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -40,6 +41,10 @@ export default async function DonorsFundersPage({
   // either pill, and a forced URL degrades to All. The same key gates the
   // R1 drawer below.
   const researchEnabled = await hasEntitlement("ai.prospect_research");
+  // The volunteers pill speaks the org's vocabulary (Spec Programs P3) —
+  // the same getTermLabel the V1 /admin/fundraising/volunteers page used,
+  // so YL EPA keeps reading "Leaders" after the P4 308.
+  const volunteersLabel = pluralizeTerm(await getTermLabel("volunteer", "Volunteer"));
   if (def.view && RESEARCH_VIEWS.has(def.view) && !researchEnabled) delete def.view;
   const drawerOpen = researchEnabled && searchParams?.drawer === "research";
   const page = Math.max(0, Number.parseInt(searchParams?.page ?? "0", 10) || 0);
@@ -102,7 +107,7 @@ export default async function DonorsFundersPage({
         <div className="flex flex-wrap items-center gap-3">
           <FilterTabs
             options={BUILT_IN_VIEWS.filter((v) => researchEnabled || !RESEARCH_VIEWS.has(v.value)).map(
-              (v) => ({ value: v.value, label: v.label }),
+              (v) => ({ value: v.value, label: v.value === "volunteers" ? volunteersLabel : v.label }),
             )}
             current={view}
             paramKey="view"

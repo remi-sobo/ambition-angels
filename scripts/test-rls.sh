@@ -223,6 +223,7 @@ ordered=(
   spec_a_seed_contract2_metrics.sql
   spec_b_v2_shell_flag.sql
   create_board_portal.sql
+  spec_fr_donors_funders_rollups.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

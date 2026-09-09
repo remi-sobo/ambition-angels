@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { audit } from "@/lib/audit";
+import { appOrigin } from "@/lib/origins";
 
 /**
  * BloomOS sign-in, backed by Supabase Auth.
@@ -28,7 +29,10 @@ export async function POST(req: NextRequest) {
   const supabase = createServerSupabase();
 
   if (magic) {
-    const origin = req.nextUrl.origin;
+    // Configured origin, not req.nextUrl.origin — see the note in
+    // app/api/board/signin/route.ts. Same latent bug; it went unnoticed here
+    // because operators sign in with a password.
+    const origin = appOrigin();
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${origin}/auth/callback?next=/admin` },

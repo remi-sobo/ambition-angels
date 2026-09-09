@@ -98,6 +98,12 @@ const nextConfig = {
       { source: "/admin/ops/friday", destination: "/admin/work/plan-close", permanent: true },
       { source: "/admin/calendar", destination: "/admin/work/my-week", permanent: true },
       { source: "/admin/meetings/connections", destination: "/admin/work/meetings", permanent: true },
+      // Programs cutover (Spec Programs, P4). One move: volunteers re-aimed
+      // per decision 1 at the one-list's volunteers view (they are
+      // constituents, not students). Demo Day and careers/daily|pool
+      // deliberately stay put (R8/R9 October revisit; NO_HOME with Content's
+      // own links).
+      { source: "/admin/fundraising/volunteers", destination: "/admin/fundraising/donors-funders?view=volunteers", permanent: true },
     ];
   },
   async rewrites() {

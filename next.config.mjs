@@ -80,6 +80,15 @@ const nextConfig = {
       { source: "/admin/fundraising/acknowledgments", destination: "/admin/fundraising/today", permanent: true },
       { source: "/admin/fundraising/recurring", destination: "/admin/fundraising/donors-funders", permanent: true },
       { source: "/admin/fundraising/journeys", destination: "/admin/fundraising/donors-funders", permanent: true },
+      // Finance cutover (Spec Finance, N4). Row-for-row with the canonical
+      // map's redirect view: the same-path fixed points (transactions,
+      // forecast) are deliberately ABSENT (a self-redirect would loop);
+      // pledges is exact so pledges/[id] stays live.
+      { source: "/admin/finance/reconcile", destination: "/admin/finance/transactions", permanent: true },
+      { source: "/admin/finance/close", destination: "/admin/finance/transactions", permanent: true },
+      { source: "/admin/finance/model", destination: "/admin/finance/forecast", permanent: true },
+      { source: "/admin/finance/revenue", destination: "/admin/finance/forecast", permanent: true },
+      { source: "/admin/fundraising/pledges", destination: "/admin/finance/forecast", permanent: true },
     ];
   },
   async rewrites() {

@@ -117,12 +117,21 @@ export default async function TransactionsPage({
   const start = (page - 1) * PAGE_SIZE;
   qb = qb.range(start, start + PAGE_SIZE - 1);
 
-  const { data: rowsRaw, count, error } = await qb;
+  const [{ data: rowsRaw, count, error }, { count: orgTxnCount }] = await Promise.all([
+    qb,
+    // Any transaction at all, unfiltered — the first-run signal for Q5's
+    // EmptyState (a filtered-to-zero view is not a first run).
+    supabase
+      .from("fin_transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", orgId),
+  ]);
   if (error) {
     console.error("[finance/transactions] query failed:", error.message);
   }
   const rows = (rowsRaw ?? []) as TxnRow[];
   const total = count ?? rows.length;
+  const orgTotal = orgTxnCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
 
@@ -184,7 +193,7 @@ export default async function TransactionsPage({
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-3 py-4">
-                    {total === 0 ? (
+                    {orgTotal === 0 ? (
                       <EmptyState
                         label="transactions"
                         hint="The ledger fills from your bank exports; every number upstream (runway, burn, budget vs. actual) starts here."

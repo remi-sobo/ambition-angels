@@ -73,8 +73,9 @@ export default function SignInForm({ next, expired }: { next: string; expired: b
         </p>
         <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${C.rule}` }}>
           <p style={{ margin: 0, fontSize: 15, lineHeight: 1.55, color: C.muted }}>
-            Wrong address, or nothing arrives? Email shannon@ambitionangels.org and she will check the
-            roster.
+            Nothing after a minute or two? The most likely reason is a different address from the one
+            your board email was sent to — try that one. If it still does not arrive, email
+            shannon@ambitionangels.org and she will check the roster.
           </p>
         </div>
       </div>
@@ -86,6 +87,14 @@ export default function SignInForm({ next, expired }: { next: string; expired: b
       <h1 style={h1}>Board portal</h1>
       <p style={{ margin: "10px 0 0", fontSize: 17, lineHeight: 1.55, color: C.muted }}>
         Enter your email and we will send you a sign-in link. No password.
+      </p>
+      {/* Said before she types, not after. The roster holds one address per
+          director and the screen cannot say which — an unknown address gets
+          the same confirmation as a known one, on purpose. So the only useful
+          hint is the one a director can act on herself: the address her board
+          email arrived at is the address on the roster. */}
+      <p style={{ margin: "8px 0 0", fontSize: 15, lineHeight: 1.5, color: C.muted }}>
+        Use the address your board email was sent to.
       </p>
 
       {expired && (

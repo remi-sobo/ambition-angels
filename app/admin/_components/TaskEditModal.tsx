@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useConfirm } from "./feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 import { useEffect, useState } from "react";
 import {
   ASSIGNEE_REQUIRED_MESSAGE,
@@ -52,6 +54,7 @@ export default function TaskEditModal({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
 
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
@@ -270,19 +273,25 @@ export default function TaskEditModal({
       });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        setError(userMessage(r, body));
+        return;
       }
       router.refresh();
       onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed");
+    } catch {
+      setError(networkMessage());
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete() {
-    if (!confirm(`Delete task "${task.title}"?`)) return;
+    const ok = await confirm({
+      title: `Delete task "${task.title}"?`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setDeleting(true);
     setError(null);
     try {
@@ -291,12 +300,14 @@ export default function TaskEditModal({
       });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        setError(userMessage(r, body));
+        setDeleting(false);
+        return;
       }
       router.refresh();
       onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Delete failed");
+    } catch {
+      setError(networkMessage());
       setDeleting(false);
     }
   }

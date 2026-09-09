@@ -339,6 +339,11 @@ function BaselineForm({
 function StampButton({ lastClosedAt, onStamped }: { lastClosedAt: string | null; onStamped: () => void }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // Contract 7 (Spec Finance N1): the close is a gated exit. A 409 means
+  // reconciliation proposals are still pending; a reports.approve holder can
+  // waive on the record — the waiver names the period and travels with it.
+  const [blocked, setBlocked] = useState<{ pending: number; period: string; artifactType: string } | null>(null);
+  const [waiveReason, setWaiveReason] = useState("");
 
   async function stamp() {
     setBusy(true);
@@ -346,11 +351,44 @@ function StampButton({ lastClosedAt, onStamped }: { lastClosedAt: string | null;
     try {
       const r = await fetch("/api/admin/finance/close", { method: "POST" });
       const j = await r.json().catch(() => ({}));
+      if (r.status === 409 && j.blocked) {
+        setBlocked({ pending: j.pending, period: j.period, artifactType: j.artifact_type });
+        return;
+      }
       if (!r.ok) {
         setErr(j.error ?? "Failed to stamp");
         return;
       }
+      setBlocked(null);
       onStamped();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function waiveAndStamp() {
+    if (!blocked || busy) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const r = await fetch("/api/admin/export-waivers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          artifact_type: blocked.artifactType,
+          artifact_id: blocked.period,
+          reason: waiveReason.trim() || null,
+        }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        // RLS denial = the caller lacks reports.approve (owner + admin only).
+        setErr(j.error ?? "Waiver refused — reports.approve required.");
+        return;
+      }
+      setBusy(false);
+      await stamp();
+      return;
     } finally {
       setBusy(false);
     }
@@ -361,17 +399,44 @@ function StampButton({ lastClosedAt, onStamped }: { lastClosedAt: string | null;
     : null;
 
   return (
-    <div className="mt-4 flex items-center gap-3 flex-wrap">
-      <button
-        type="button"
-        disabled={busy}
-        onClick={stamp}
-        className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
-      >
-        {busy ? "Stamping…" : "Mark reconciled as of today"}
-      </button>
-      {stamped && <span className="text-xs text-revenue">Reconciled as of {stamped}</span>}
-      {err && <span className="text-xs text-expense">{err}</span>}
+    <div className="mt-4 space-y-3">
+      <div className="flex items-center gap-3 flex-wrap">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={stamp}
+          className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
+        >
+          {busy ? "Stamping…" : "Mark reconciled as of today"}
+        </button>
+        {stamped && <span className="text-xs text-revenue">Reconciled as of {stamped}</span>}
+        {err && <span className="text-xs text-expense">{err}</span>}
+      </div>
+      {blocked && (
+        <div className="rounded-xl border border-[#D9BE86] bg-[#F4E8D0] px-4 py-3 space-y-2 max-w-xl">
+          <p className="text-xs text-[#A56A1B] font-semibold">
+            {blocked.pending} reconciliation proposal{blocked.pending === 1 ? "" : "s"} still
+            pending for {blocked.period}. Resolve them in the inbox, or waive on the record.
+          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              value={waiveReason}
+              onChange={(e) => setWaiveReason(e.target.value)}
+              placeholder="Why close anyway? (goes in the audit record)"
+              maxLength={500}
+              className="flex-1 min-w-[220px] text-xs bg-surface border-[1.5px] border-outline rounded-lg px-3 py-1.5 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange"
+            />
+            <button
+              type="button"
+              disabled={busy}
+              onClick={waiveAndStamp}
+              className="text-xs font-semibold text-[#A56A1B] border-[1.5px] border-[#D9BE86] rounded-lg px-3 py-1.5 hover:bg-[#EFE6D4] transition-colors disabled:opacity-40"
+            >
+              Waive &amp; close (reports.approve)
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

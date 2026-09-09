@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 // Unassigned vital signs (Phase C): live registry metrics not yet attached to a
 // goal. Each is either proving a goal or parked here pending a decision — a
@@ -26,6 +28,7 @@ export default function UnassignedMetrics({
   goals: GoalOption[];
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [goalId, setGoalId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -50,7 +53,7 @@ export default function UnassignedMetrics({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
         return;
       }
       setOpenKey(null);

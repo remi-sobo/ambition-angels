@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import { deriveHealth } from "@/lib/admin/plan/health";
 import { measureFreshness } from "@/lib/admin/plan/freshness";
 import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
@@ -122,7 +124,12 @@ const fmtVal = (v: number | null, unit: string | null): string => {
   return `${v.toLocaleString()}${unit && unit !== "%" ? "" : unit === "%" ? "%" : ""}`;
 };
 
-async function api(url: string, method: string, body?: unknown): Promise<boolean> {
+async function apiRequest(
+  url: string,
+  method: string,
+  body: unknown,
+  onError: (message: string) => void,
+): Promise<boolean> {
   const res = await fetch(url, {
     method,
     headers: body ? { "Content-Type": "application/json" } : undefined,
@@ -130,10 +137,21 @@ async function api(url: string, method: string, body?: unknown): Promise<boolean
   });
   if (!res.ok) {
     const j = await res.json().catch(() => ({}));
-    alert(j.error ?? `HTTP ${res.status}`);
+    onError(userMessage(res, j));
     return false;
   }
   return true;
+}
+
+// Components bind the module helper to their toast: `const api = useApi();`
+// keeps every call site unchanged while failure copy flows through the Q2
+// layer instead of alert().
+function useApi() {
+  const toast = useToast();
+  return useCallback(
+    (url: string, method: string, body?: unknown) => apiRequest(url, method, body, toast.error),
+    [toast],
+  );
 }
 
 // ── Inline click-to-edit text ──────────────────────────────────────────────
@@ -342,6 +360,7 @@ function AssigneeSelect({
 // ── Refresh auto metrics (Phase 3) ─────────────────────────────────────────
 export function RefreshMetricsButton() {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   return (
     <button
@@ -352,7 +371,7 @@ export function RefreshMetricsButton() {
         try {
           const res = await fetch("/api/admin/plan/kpis/refresh", { method: "POST" });
           const j = await res.json().catch(() => ({}));
-          if (!res.ok) alert(j.error ?? `HTTP ${res.status}`);
+          if (!res.ok) toast.error(userMessage(res, j));
           router.refresh();
         } finally {
           setBusy(false);
@@ -379,19 +398,28 @@ function StatusOverride({
   stored: string;
 }) {
   const router = useRouter();
+  const api = useApi();
   const [busy, setBusy] = useState(false);
   const effective = override ?? computed ?? stored ?? "not_started";
-  const set = async (val: string) => {
-    let body: Record<string, unknown>;
-    if (!val) body = { status_override: null };
-    else {
-      const r = window.prompt("Why override the computed status? (a funder-grade plan shows the reason)", reason ?? "");
-      if (r === null) return; // cancelled
-      body = { status_override: val, status_override_reason: r.trim() };
-    }
+  // Overriding needs a stated reason (a funder-grade plan shows it); the old
+  // window.prompt became this inline input (prompt() is banned).
+  const [pendingVal, setPendingVal] = useState<string | null>(null);
+  const [reasonDraft, setReasonDraft] = useState("");
+  const commit = async (body: Record<string, unknown>) => {
     setBusy(true);
     try { await api(`/api/admin/plan/${entity}/${id}`, "PATCH", body); router.refresh(); }
     finally { setBusy(false); }
+  };
+  const set = (val: string) => {
+    if (!val) { setPendingVal(null); void commit({ status_override: null }); return; }
+    setPendingVal(val);
+    setReasonDraft(reason ?? "");
+  };
+  const saveOverride = () => {
+    if (pendingVal === null) return;
+    const body = { status_override: pendingVal, status_override_reason: reasonDraft.trim() };
+    setPendingVal(null);
+    void commit(body);
   };
   return (
     <span className={`flex items-center gap-1 ${busy ? "opacity-60" : ""}`}>
@@ -403,7 +431,7 @@ function StatusOverride({
       </span>
       <select
         value={override ?? ""}
-        onChange={(e) => void set(e.target.value)}
+        onChange={(e) => set(e.target.value)}
         title="Override the computed status"
         className="text-[10px] font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer bg-tile text-ink-2"
       >
@@ -413,6 +441,20 @@ function StatusOverride({
         ))}
       </select>
       {override && <span className="text-[9px] uppercase tracking-wide text-status-watch-text" title={reason ?? ""}>override</span>}
+      {pendingVal !== null && (
+        <span className="flex items-center gap-1">
+          <input
+            autoFocus
+            value={reasonDraft}
+            onChange={(e) => setReasonDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") saveOverride(); if (e.key === "Escape") setPendingVal(null); }}
+            placeholder="Why override the computed status?"
+            className="text-[11px] bg-cream border-[1.5px] border-outline rounded px-1.5 py-0.5 w-48 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+          />
+          <button type="button" onClick={saveOverride} className="text-[10px] font-semibold text-orange hover:text-orange-dark">Save</button>
+          <button type="button" onClick={() => setPendingVal(null)} className="text-[10px] text-ink-3 hover:text-ink-1">Cancel</button>
+        </span>
+      )}
     </span>
   );
 }
@@ -420,6 +462,7 @@ function StatusOverride({
 // ── Foundation (mission / vision / values / behaviors) ─────────────────────
 export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) {
   const router = useRouter();
+  const api = useApi();
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [mission, setMission] = useState(foundation?.mission ?? "");
@@ -535,6 +578,7 @@ export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) 
 // ── New objective ──────────────────────────────────────────────────────────
 export function NewObjectiveForm() {
   const router = useRouter();
+  const api = useApi();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState("");
@@ -607,6 +651,7 @@ export function ObjectiveCard({
   tasks?: PlanObjectiveTask[];
 }) {
   const router = useRouter();
+  const api = useApi();
   const [busy, setBusy] = useState(false);
   const { confirmDelete, confirmEl } = useConfirmDialog();
 
@@ -728,6 +773,7 @@ function ObjectiveTasks({
   team: TeamMember[];
 }) {
   const router = useRouter();
+  const api = useApi();
   const [busy, setBusy] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const { confirmDelete, confirmEl } = useConfirmDialog();
@@ -830,6 +876,7 @@ function ObjectiveTasks({
 // Permanent, timestamped commentary saved to plan_objective_notes.
 function ObjectiveNotes({ objectiveId, notes }: { objectiveId: string; notes: PlanObjectiveNote[] }) {
   const router = useRouter();
+  const api = useApi();
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState("");
   const { confirmDelete, confirmEl } = useConfirmDialog();
@@ -922,6 +969,7 @@ function ObjectiveNotes({ objectiveId, notes }: { objectiveId: string; notes: Pl
 // ── New goal (optionally scoped to an objective) ───────────────────────────
 export function NewGoalForm({ objectiveId, compact }: { objectiveId?: string; compact?: boolean }) {
   const router = useRouter();
+  const api = useApi();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState("");
@@ -987,6 +1035,7 @@ export function GoalCard({
   objectiveOptions?: { id: string; title: string }[];
 }) {
   const router = useRouter();
+  const api = useApi();
   const { isLeaving, complete } = useTaskComplete();
   const { confirmDelete, confirmEl } = useConfirmDialog();
   const [busy, setBusy] = useState(false);
@@ -1219,6 +1268,8 @@ export function GoalCard({
 // ── KPI row (inline current value + status) ────────────────────────────────
 function KpiRow({ kpi }: { kpi: PlanKpi }) {
   const router = useRouter();
+  const api = useApi();
+  const toast = useToast();
   const { confirmDelete, confirmEl } = useConfirmDialog();
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -1242,19 +1293,19 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
   };
   const saveVal = async () => {
     const n = val.trim() === "" ? null : Number(val);
-    if (n !== null && !Number.isFinite(n)) { alert("Enter a number"); return; }
+    if (n !== null && !Number.isFinite(n)) { toast.error("Enter a number"); return; }
     setEditing(false);
     await patch({ current: n });
   };
   const saveTarget = async () => {
     const n = tval.trim() === "" ? null : Number(tval);
-    if (n !== null && !Number.isFinite(n)) { alert("Enter a number"); return; }
+    if (n !== null && !Number.isFinite(n)) { toast.error("Enter a number"); return; }
     setEditingTarget(false);
     await patch({ target: n });
   };
   const saveBaseline = async () => {
     const n = bval.trim() === "" ? null : Number(bval);
-    if (n !== null && !Number.isFinite(n)) { alert("Enter a number"); return; }
+    if (n !== null && !Number.isFinite(n)) { toast.error("Enter a number"); return; }
     setEditingBaseline(false);
     await patch({ baseline: n });
   };
@@ -1430,6 +1481,7 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
 // "auto" never lands on a value nothing updates.
 function NewKpiForm({ goalId }: { goalId: string }) {
   const router = useRouter();
+  const api = useApi();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<"manual" | "auto">("manual");

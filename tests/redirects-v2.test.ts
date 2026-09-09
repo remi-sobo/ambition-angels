@@ -169,6 +169,20 @@ describe("v2Href: the translation the choke points ride", () => {
     expect(v2Href("/admin/careers/pool")).toBe("/admin/careers/pool");
   });
 
+  test("I4: the scorecard lands on KPIs; the strategic-plan siblings are Organization's and stay put", () => {
+    expect(v2Href("/admin/strategic-plan/scorecard")).toBe("/admin/impact/kpis");
+    // Organization's rows (objective/review/setup at-cutover) and the
+    // NO_HOME pair (narrative, people) are untouched by Impact's cutover.
+    for (const path of [
+      "/admin/strategic-plan/review",
+      "/admin/strategic-plan/setup",
+      "/admin/strategic-plan/narrative",
+      "/admin/strategic-plan/people",
+    ]) {
+      expect(v2Href(path), path).toBe(path);
+    }
+  });
+
   test("F6: the Fundraising moves resolve, and the deliberately-narrowed children stay live", () => {
     expect(v2Href("/admin/fundraising")).toBe("/admin/fundraising/today");
     expect(v2Href("/admin/fundraising/plan")).toBe("/admin/fundraising/campaigns");

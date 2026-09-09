@@ -104,6 +104,10 @@ const nextConfig = {
       // deliberately stay put (R8/R9 October revisit; NO_HOME with Content's
       // own links).
       { source: "/admin/fundraising/volunteers", destination: "/admin/fundraising/donors-funders?view=volunteers", permanent: true },
+      // Impact cutover (Spec Impact, I4). One move: the KPI scorecard onto
+      // KPIs (which embeds the owner cards since I3). Exact — the other
+      // strategic-plan children are Organization's and stay put.
+      { source: "/admin/strategic-plan/scorecard", destination: "/admin/impact/kpis", permanent: true },
     ];
   },
   async rewrites() {

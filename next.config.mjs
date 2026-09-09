@@ -89,6 +89,15 @@ const nextConfig = {
       { source: "/admin/finance/model", destination: "/admin/finance/forecast", permanent: true },
       { source: "/admin/finance/revenue", destination: "/admin/finance/forecast", permanent: true },
       { source: "/admin/fundraising/pledges", destination: "/admin/finance/forecast", permanent: true },
+      // Work cutover (Spec Work, W4). Row-for-row with the canonical map:
+      // both rituals land on Plan & Close (which hosts them since W1),
+      // Calendar folds into My Week (?week=/?owner= ride the 308), and
+      // connections lands on Meetings, which embeds the pipeline (W3).
+      // All exact; booking-page stays live and unlisted (settings row).
+      { source: "/admin/ops/monday", destination: "/admin/work/plan-close", permanent: true },
+      { source: "/admin/ops/friday", destination: "/admin/work/plan-close", permanent: true },
+      { source: "/admin/calendar", destination: "/admin/work/my-week", permanent: true },
+      { source: "/admin/meetings/connections", destination: "/admin/work/meetings", permanent: true },
     ];
   },
   async rewrites() {

@@ -91,15 +91,12 @@ describe("v2Href: the translation the choke points ride", () => {
   });
 
   test("named siblings that are NOT moving stay put (no fragile exclusions)", () => {
+    // monday/friday/calendar/connections left this list at W4 — they moved.
     for (const path of [
       "/admin/staff/reviews",
-      "/admin/meetings/connections",
       "/admin/meetings/booking-page",
       "/admin/careers/daily",
       "/admin/careers/pool",
-      "/admin/ops/monday",
-      "/admin/ops/friday",
-      "/admin/calendar",
       "/admin/strategic-plan/narrative",
     ]) {
       expect(v2Href(path), path).toBe(path);
@@ -136,6 +133,21 @@ describe("v2Href: the translation the choke points ride", () => {
     expect(config.some((r) => r.source === "/admin/finance/forecast")).toBe(false);
     // Narrowed on purpose: the pledge detail keeps its live screen.
     expect(v2Href(`/admin/fundraising/pledges/${UUID}`)).toBe(`/admin/fundraising/pledges/${UUID}`);
+  });
+
+  test("W4: the Work moves resolve — rituals onto Plan & Close, Calendar into My Week, connections onto Meetings", () => {
+    expect(v2Href("/admin/ops/monday")).toBe("/admin/work/plan-close");
+    expect(v2Href("/admin/ops/friday")).toBe("/admin/work/plan-close");
+    // The grid's URL contract survives the hop (DoD 3).
+    expect(v2Href(`/admin/calendar?week=2026-09-07&owner=${UUID}`)).toBe(
+      `/admin/work/my-week?week=2026-09-07&owner=${UUID}`,
+    );
+    // decision 3, resolved: settings → merged. booking-page alone stays.
+    expect(v2Href("/admin/meetings/connections")).toBe("/admin/work/meetings");
+    expect(v2Href("/admin/meetings/booking-page")).toBe("/admin/meetings/booking-page");
+    // The weekly briefing's NO_HOME ruling stands (decision 4): the ritual
+    // rows are exact, so it never rides their 308s.
+    expect(v2Href("/admin/briefing/weekly")).toBe("/admin/briefing/weekly");
   });
 
   test("F6: the Fundraising moves resolve, and the deliberately-narrowed children stay live", () => {
@@ -241,7 +253,8 @@ describe("the whole F.1 delta is accounted for", () => {
 const TARGET_GATES: Record<string, string> = {
   "/admin/organization/strategy": "modules.strategy",
   "/admin/work/tasks": "modules.ops",
-  "/admin/work/my-week": "modules.ops",
+  "/admin/work/plan-close": "modules.ops",
+  "/admin/work/my-week": "modules.meetings", // W2: the grid pairs with the calendar connection
   "/admin/work/projects": "modules.ops",
   "/admin/work/meetings": "modules.meetings",
   "/admin/work/documents": "modules.documents",
@@ -285,6 +298,7 @@ describe("per-org host behavior (gate keys mirror the V1 sections)", () => {
       "/admin/organization/team",      // modules.staff
       "/admin/programs/content",       // modules.content (AA-only)
       "/admin/work/meetings",          // modules.meetings
+      "/admin/work/my-week",           // modules.meetings since W2 (V1 calendar had no gate; the model's deliberate shape)
     ]);
   });
 });

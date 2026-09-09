@@ -14,7 +14,7 @@ import AgendaList from "../../_components/AgendaList";
 import RsvpControl from "../../_components/RsvpControl";
 import QuestionBox from "../../_components/QuestionBox";
 import ChairBar from "../../_components/ChairBar";
-import AddMaterials from "../../_components/AddMaterials";
+import FileUpload from "../../_components/FileUpload";
 import MinutesView from "../../_components/MinutesView";
 import { MaterialsList, SinceWeLastMet, PrintHeader, PrintFooter } from "../../_components/MeetingParts";
 import { C, F, card, eyebrow } from "../../_components/tokens";
@@ -246,7 +246,14 @@ export default async function MeetingPage({ params }: { params: { id: string } }
 
             {/* Filing materials lives here because /admin/documents cannot
                 attach a document to a meeting — see the route's comment. */}
-            {ctx.isAdmin && <AddMaterials meetingId={meeting.id} />}
+            {ctx.isAdmin && (
+              <FileUpload
+                endpoint={`/api/board/meetings/${meeting.id}/materials`}
+                heading="File materials"
+                blurb="Attaches to this meeting and appears under Materials for every director. Directors cannot see this panel."
+                defaultType="board_packet"
+              />
+            )}
 
             {!isClosed && (
               <section style={{ ...card, padding: 28 }}>

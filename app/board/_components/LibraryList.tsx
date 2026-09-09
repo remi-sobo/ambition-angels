@@ -16,7 +16,12 @@ export type LibraryDoc = {
 };
 
 /**
- * Grouping is by doc_type, which is what /admin/documents already sets.
+ * Grouping is by doc_type, which is what /admin/documents and the board
+ * library uploader both set. Every name below is a real member of DOC_TYPES —
+ * the first version of this map grouped on invented types ("bylaws",
+ * "articles", "rrf1", "990") that nothing in the system can produce, so those
+ * shelves could never hold anything and the documents fell through to "Other".
+ *
  * A document with no type still appears — under "Other" — because a file that
  * silently vanishes from the library because someone forgot a dropdown is a
  * worse failure than an untidy heading.
@@ -27,20 +32,25 @@ const GROUPS: { section: string; blurb: string; groups: { name: string; types: s
     blurb:
       "The current version of every governing document, in force today. History lives in the corporate minutes book, which Shannon keeps and every director can reach.",
     groups: [
-      { name: "Corporate", types: ["bylaws", "articles", "determination_letter", "resolution", "written_consent"] },
-      { name: "Insurance", types: ["insurance", "coi_certificate"], note: "Replaced each year at renewal, so what is here is always the coverage in force today." },
-      { name: "State registrations", types: ["registration", "rrf1", "statement_of_information"] },
-      { name: "Policies", types: ["policy"] },
-      { name: "Filings", types: ["990", "199", "filing"] },
+      { name: "Policies and governing documents", types: ["policy"] },
+      {
+        name: "Insurance",
+        types: ["insurance"],
+        note: "Replaced each year at renewal, so what is here is always the coverage in force today.",
+      },
+      { name: "Filings and registrations", types: ["compliance"] },
+      { name: "Minutes", types: ["minutes"] },
     ],
   },
   {
     section: "Board resources",
     blurb: "What you may want when you are introducing Ambition to a funder, a school, a partner or a supporter.",
     groups: [
-      { name: "For a funder", types: ["case_for_support", "one_pager", "impact"] },
-      { name: "For a school or program", types: ["price_sheet", "overview"] },
-      { name: "Brand and bio", types: ["brand", "bio"] },
+      { name: "Meeting packets", types: ["board_packet"] },
+      { name: "Financials", types: ["financial"] },
+      { name: "Reports", types: ["report"] },
+      { name: "Agreements", types: ["mou"] },
+      { name: "Grants", types: ["award_letter", "grant_narrative"] },
     ],
   },
 ];

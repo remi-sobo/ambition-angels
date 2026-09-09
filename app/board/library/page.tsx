@@ -3,6 +3,7 @@ import { getBoardContext } from "@/lib/board/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Header, Footer } from "../_components/Chrome";
 import LibraryList, { type LibraryDoc } from "../_components/LibraryList";
+import FileUpload from "../_components/FileUpload";
 import { C, F } from "../_components/tokens";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +47,20 @@ export default async function LibraryPage() {
           corporate minutes book holds the full history. Board resources are what you need when you are
           opening a door.
         </p>
+        {/* Filing a corporate record is the same act as filing meeting
+            materials, minus the link to a meeting. board.write only, which
+            here is Remi and Shannon; the route re-checks. */}
+        {ctx.isAdmin && (
+          <div style={{ maxWidth: 560, marginTop: 32 }}>
+            <FileUpload
+              endpoint="/api/board/library"
+              heading="File a document"
+              blurb="Goes into the library for every director. Not attached to any meeting. Directors cannot see this panel."
+              defaultType="policy"
+            />
+          </div>
+        )}
+
         <LibraryList docs={docs} />
       </main>
       <Footer />

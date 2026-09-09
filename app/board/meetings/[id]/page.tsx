@@ -210,7 +210,7 @@ export default async function MeetingPage({ params }: { params: { id: string } }
                   </h2>
                   <span style={{ fontSize: 15, color: C.muted }}>
                     {agenda.length} items · {agenda.reduce((a, i) => a + (i.duration_minutes ?? 0), 0)} minutes ·{" "}
-                    {agenda.filter((a) => a.item_type === "decision").length} decisions
+                    {agenda.filter((a) => a.item_type === "decision" && a.brief?.motion).length} votes
                   </span>
                 </div>
 

@@ -196,60 +196,105 @@ export default async function BoardHome() {
             </section>
           )}
 
-          <section style={{ ...card, padding: 32, alignSelf: "start" }}>
-            <div style={eyebrow}>The board&rsquo;s main question</div>
-            <h2
-              style={{
-                margin: "14px 0 0",
-                fontFamily: F.heading,
-                fontSize: 24,
-                fontWeight: 600,
-                lineHeight: 1.3,
-                letterSpacing: "-0.01em",
-                color: C.ink,
-              }}
-            >
-              {main ? questionFrom(main) : "The agenda is being finalised."}
-            </h2>
-            {main && (
-              <>
-                <p style={{ margin: "14px 0 0", fontSize: 17, lineHeight: 1.6, color: C.charcoal, maxWidth: "60ch" }}>
-                  {main.duration_minutes} of the {totalMinutes(agenda)} minutes are on this. It needs your
-                  judgment, not your assent.
-                </p>
-                <div style={{ marginTop: 20 }}>
-                  <Link
-                    href={`/board/meetings/${meeting.id}#item-${main.position}`}
-                    style={{
-                      fontSize: 17,
-                      fontWeight: 500,
-                      color: C.ink,
-                      borderBottom: `1px solid ${C.ruleStrong}`,
-                      paddingBottom: 2,
-                      textDecoration: "none",
-                    }}
-                  >
-                    Read the decision brief
-                  </Link>
-                </div>
-              </>
-            )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 24, alignSelf: "start" }}>
+            <section style={{ ...card, padding: 32 }}>
+              <div style={eyebrow}>The board&rsquo;s main question</div>
+              <h2
+                style={{
+                  margin: "14px 0 0",
+                  fontFamily: F.heading,
+                  fontSize: 24,
+                  fontWeight: 600,
+                  lineHeight: 1.3,
+                  letterSpacing: "-0.01em",
+                  color: C.ink,
+                }}
+              >
+                {main
+                  ? (main.brief?.question ?? questionFrom(main))
+                  : "The agenda is being finalised."}
+              </h2>
+              {main && (
+                <>
+                  <p style={{ margin: "14px 0 0", fontSize: 17, lineHeight: 1.6, color: C.charcoal, maxWidth: "60ch" }}>
+                    {main.brief?.subtitle ?? (
+                      <>
+                        {main.duration_minutes} of the {totalMinutes(agenda)} minutes are on this. It needs
+                        your judgment, not your assent.
+                      </>
+                    )}
+                  </p>
+                  <div style={{ marginTop: 20 }}>
+                    <Link
+                      href={`/board/meetings/${meeting.id}#item-${main.position}`}
+                      style={{
+                        fontSize: 17,
+                        fontWeight: 500,
+                        color: C.ink,
+                        borderBottom: `1px solid ${C.ruleStrong}`,
+                        paddingBottom: 2,
+                        textDecoration: "none",
+                      }}
+                    >
+                      Read the decision brief
+                    </Link>
+                  </div>
+                </>
+              )}
 
-            {decisions.length > 1 && (
-              <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${C.rule}` }}>
-                <div style={eyebrow}>Also on the agenda, routine</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
-                  {decisions
-                    .filter((d) => d.id !== main?.id)
-                    .map((d) => (
-                      <span key={d.id} style={{ fontSize: 15, lineHeight: 1.45, color: C.muted }}>
-                        {d.brief?.decision ?? d.title}
-                      </span>
-                    ))}
+              {decisions.length > 1 && (
+                <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${C.rule}` }}>
+                  <div style={eyebrow}>Also on the agenda, routine</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+                    {decisions
+                      .filter((d) => d.id !== main?.id)
+                      .map((d) => (
+                        <span key={d.id} style={{ fontSize: 15, lineHeight: 1.45, color: C.muted }}>
+                          {d.brief?.decision ?? d.title}
+                        </span>
+                      ))}
+                  </div>
                 </div>
-              </div>
+              )}
+            </section>
+
+            {/* What the 33 minutes are actually spent on. Deliberately NOT a
+                list of options to choose between — it is the shape of the
+                discussion, which is what makes the question above answerable. */}
+            {main?.brief?.considerations && main.brief.considerations.length > 0 && (
+              <section style={{ ...card, padding: 32 }}>
+                <div style={eyebrow}>What we&rsquo;ll work through</div>
+                <div style={{ display: "flex", flexDirection: "column", marginTop: 6 }}>
+                  {main.brief.considerations.map((c, i) => (
+                    <div
+                      key={c.label}
+                      style={{
+                        paddingTop: i === 0 ? 14 : 16,
+                        paddingBottom: i === main.brief!.considerations!.length - 1 ? 0 : 16,
+                        borderBottom:
+                          i === main.brief!.considerations!.length - 1 ? "none" : `1px solid ${C.rule}`,
+                      }}
+                    >
+                      <div style={{ fontFamily: F.heading, fontSize: 17, fontWeight: 600, color: C.ink }}>
+                        {c.label}
+                      </div>
+                      <p
+                        style={{
+                          margin: "4px 0 0",
+                          fontSize: 15,
+                          lineHeight: 1.55,
+                          color: C.charcoal,
+                          maxWidth: "60ch",
+                        }}
+                      >
+                        {c.note}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
             )}
-          </section>
+          </div>
         </div>
 
         {/* ── The organization at a glance ───────────────────────────── */}

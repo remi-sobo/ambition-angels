@@ -209,14 +209,14 @@ export default function AgendaList({
                   height: "fit-content",
                   padding: "5px 9px",
                   borderRadius: 4,
-                  // A DECISION chip is filled ink; the rest are rule-bordered.
+                  // A VOTE chip is filled ink; everything else is rule-bordered.
                   // Status is carried by weight and label, never by color.
-                  background: item.item_type === "decision" ? C.ink : "transparent",
-                  color: item.item_type === "decision" ? C.cream : C.charcoal,
-                  border: item.item_type === "decision" ? "none" : `1px solid ${C.rule}`,
+                  background: isVote(item) ? C.ink : "transparent",
+                  color: isVote(item) ? C.cream : C.charcoal,
+                  border: isVote(item) ? "none" : `1px solid ${C.rule}`,
                 }}
               >
-                {item.item_type}
+                {isVote(item) ? "Vote" : "No vote"}
               </span>
             </div>
 
@@ -274,9 +274,22 @@ export default function AgendaList({
   );
 }
 
+/**
+ * An item is a vote when the board is actually asked to move something: it is
+ * typed a decision AND carries motion text. "Annual meeting business" is the
+ * case this exists for — the officer election was completed by written ballot
+ * in July, so the item is a record, and a chip reading DECISION on it told
+ * directors they were voting on something already effective.
+ */
+function isVote(item: AgendaItem): boolean {
+  return item.item_type === "decision" && !!item.brief?.motion;
+}
+
 /** The decision brief: what is being decided, what staff recommends, why now,
- *  the tradeoff, and the motion text a director is actually voting on. */
+ *  the tradeoff, and the motion text a director is actually voting on. An item
+ *  with no motion renders the same block headed "For the record" instead. */
 function DecisionBrief({ brief }: { brief: NonNullable<AgendaItem["brief"]> }) {
+  const isRecord = !brief.motion;
   const rows: [string, string | undefined][] = [
     ["Decision", brief.decision],
     ["Staff recommends", brief.recommends],
@@ -288,7 +301,27 @@ function DecisionBrief({ brief }: { brief: NonNullable<AgendaItem["brief"]> }) {
       className="board-avoid-break"
       style={{ marginTop: 24, border: `1px solid ${C.rule}`, borderRadius: 3, padding: 24, background: C.white }}
     >
-      <div style={eyebrow}>Decision brief</div>
+      <div style={eyebrow}>{isRecord ? "For the record" : "Decision brief"}</div>
+
+      {brief.considerations && brief.considerations.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 14 }}>
+          {brief.considerations.map((c, i) => (
+            <div
+              key={c.label}
+              style={{
+                paddingTop: i === 0 ? 6 : 16,
+                paddingBottom: i === brief.considerations!.length - 1 ? 0 : 16,
+                borderBottom: i === brief.considerations!.length - 1 ? "none" : `1px solid ${C.rule}`,
+              }}
+            >
+              <div style={{ fontFamily: F.heading, fontSize: 16, fontWeight: 600, color: C.ink }}>{c.label}</div>
+              <p style={{ margin: "4px 0 0", fontSize: 15, lineHeight: 1.55, color: C.charcoal, maxWidth: "60ch" }}>
+                {c.note}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
       <dl className="board-brief-grid" style={{ margin: "20px 0 0", display: "grid", gridTemplateColumns: "minmax(120px,150px) 1fr", gap: "16px 24px" }}>
         {rows
           .filter(([, v]) => !!v)

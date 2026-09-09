@@ -113,9 +113,12 @@ export default async function PrintPage({
                       {[
                         a.owner,
                         a.duration_minutes ? `${a.duration_minutes} min` : null,
-                        // Sentence case, not the raw enum: this is a filed
-                        // corporate document, not a debug view.
-                        a.item_type.charAt(0).toUpperCase() + a.item_type.slice(1),
+                        // Whether the board is asked to move something, which
+                        // is what a director scanning a printed agenda needs.
+                        // An item typed a decision but carrying no motion (the
+                        // officer election, completed by written ballot in
+                        // July) is a record, not a vote.
+                        a.item_type === "decision" && a.brief?.motion ? "Vote" : "No vote",
                       ]
                         .filter(Boolean)
                         .join(" · ")}

@@ -46,6 +46,14 @@ export type Brief = {
   why?: string;
   tradeoff?: string;
   motion?: string;
+  /** The home screen's main-question card, authored per meeting rather than
+   *  derived from `decision`. A yes/no question about a finished document
+   *  invites assent; when the decision is genuinely open, the Chair writes
+   *  the question the board is actually there to answer. */
+  question?: string;
+  subtitle?: string;
+  /** "What we'll work through" — the shape of the discussion, not a vote. */
+  considerations?: { label: string; note: string }[];
 };
 
 export type Resolution = {

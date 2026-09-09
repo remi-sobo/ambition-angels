@@ -11,15 +11,22 @@
  * anyone else (DoD 2: one person, one row).
  */
 
-export type BuiltInView = "all" | "donors" | "prospects" | "recurring" | "lapsed";
+export type BuiltInView = "all" | "donors" | "prospects" | "promoted" | "recurring" | "lapsed";
 
 export const BUILT_IN_VIEWS: readonly { value: BuiltInView; label: string }[] = [
   { value: "all", label: "All" },
   { value: "donors", label: "Donors" },
   { value: "prospects", label: "Prospects" },
+  { value: "promoted", label: "Promoted" },
   { value: "recurring", label: "Recurring" },
   { value: "lapsed", label: "Lapsed" },
 ];
+
+/** Views that exist only under ai.prospect_research (R1): the un-promoted
+ *  bench, and "promoted prospects become a saved view" — constituents whose
+ *  id carries a promoted fr_prospects row. Orgs without the key see neither
+ *  pill, and a forced URL degrades to All. */
+export const RESEARCH_VIEWS: ReadonlySet<string> = new Set(["prospects", "promoted"]);
 
 /** Lapsed — RESOLVED: computed, never stored (spec decision 3). Gave in a
  *  prior calendar-fiscal year (the year vocabulary the V1 donors page
@@ -46,11 +53,13 @@ export type RollupRow = {
  * The view semantics, as one testable predicate. The page pushes the same
  * conditions into the database query (PostgREST filters) — this function is
  * the documented contract those filters must match, exercised on fixtures.
- * Prospects is not here on purpose: it reads a different table.
+ * Prospects is not here on purpose (it reads a different table), and
+ * Promoted is not either (it filters by the promoted-prospect id set, which
+ * lives in fr_prospects, not on the rollup row).
  */
 export function matchesView(
   row: RollupRow,
-  view: Exclude<BuiltInView, "prospects">,
+  view: Exclude<BuiltInView, "prospects" | "promoted">,
   todayISO: string,
 ): boolean {
   if (row.archived_at !== null) return false; // archived hidden everywhere

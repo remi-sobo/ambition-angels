@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { OrgContext } from "@/lib/admin/auth";
 import { activeShellKey, type ShellNav } from "@/lib/admin/v2shellNav";
-import { Icon } from "../Sidebar";
+import { Icon } from "../Icon";
 import OrgSwitcher from "../OrgSwitcher";
 import SearchTrigger from "../search/SearchTrigger";
 import { useAdminBadges } from "../AdminBadges";

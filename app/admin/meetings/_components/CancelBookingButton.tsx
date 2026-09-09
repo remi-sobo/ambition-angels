@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 // Inline cancel for a booking-page booking shown in the Upcoming list. Sits
 // outside the row's link so cancelling never requires opening the meeting.
@@ -9,11 +12,19 @@ import { useRouter } from "next/navigation";
 // the row out of Upcoming.
 export default function CancelBookingButton({ bookingId }: { bookingId: string }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
 
   async function cancel() {
     if (busy) return;
-    if (!confirm("Cancel this booking? Attendee will be emailed.")) return;
+    const ok = await confirm({
+      title: "Cancel this booking?",
+      body: "The attendee will be emailed.",
+      confirmLabel: "Cancel booking",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const r = await fetch(`/api/admin/meet/bookings/${bookingId}/cancel`, {
@@ -23,7 +34,7 @@ export default function CancelBookingButton({ bookingId }: { bookingId: string }
       });
       if (!r.ok) {
         const data = await r.json().catch(() => ({}));
-        alert(data.error ?? "Cancel failed");
+        toast.error(userMessage(r, data));
         return;
       }
       router.refresh();

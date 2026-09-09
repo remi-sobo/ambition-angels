@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import type { Blackout, MeetingType } from "@/lib/database.types";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -295,6 +297,8 @@ function Blackouts({
   types: MeetingType[];
   onChanged: (updated: Blackout[]) => void;
 }) {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [draft, setDraft] = useState({
     start_date: "",
     end_date: "",
@@ -339,14 +343,19 @@ function Blackouts({
   }
 
   async function remove(id: string) {
-    if (!confirm("Delete this blackout?")) return;
+    const ok = await confirm({
+      title: "Delete this blackout?",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(id);
     try {
       const r = await fetch(`/api/admin/meet/blackouts/${id}`, {
         method: "DELETE",
       });
       if (!r.ok) {
-        alert("Delete failed");
+        toast.error("Couldn't delete the blackout. Try again.");
         return;
       }
       onChanged(blackouts.filter((b) => b.id !== id));

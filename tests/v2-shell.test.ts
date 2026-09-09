@@ -50,11 +50,17 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
     ]);
   });
 
-  test("merge seats resolve to their FIRST live V1 source in map order", () => {
-    // /admin/today graduated at H3, donors-funders and pipeline at F6,
-    // plan-close at W4: they are ACTIVE targets now and seat themselves
-    // (asserted below). Inbox's is the last unbuilt merge seat.
-    expect(liveSeatFor("/admin/inbox/messages")).toBe("/admin/messages");
+  test("NO unbuilt merge seats remain (Spec Inbox X2): every canonical tab seats itself", () => {
+    // The rule ("a merge seat resolves to its first live V1 source") is now
+    // vacuously satisfied — Today (H3), donors-funders/pipeline (F6),
+    // plan-close (W4), and finally messages (X2) all graduated. Asserted
+    // exhaustively: every tab in the model resolves to its own canonical
+    // path.
+    for (const d of [...V2_DESTINATIONS, V2_INBOX]) {
+      for (const t of d.tabs) {
+        expect(liveSeatFor(t.href), t.href).toBe(t.href);
+      }
+    }
   });
 
   test("active hosts and kept-in-place paths resolve to themselves", () => {
@@ -179,10 +185,19 @@ describe("activeShellKey: sidebar highlight + tab-slot routing", () => {
 });
 
 describe("B3 shell invariants", () => {
-  test("all seven destinations are cut over — every tab slot renders the V2 single row", () => {
+  test("ALL destinations AND the Inbox utility are cut over — the V1 tab-slot fallback fires nowhere", () => {
     expect(Array.from(V2_CUTOVER_DESTINATIONS)).toEqual([
-      "home", "fundraising", "finance", "work", "programs", "impact", "organization",
+      "home", "fundraising", "finance", "work", "programs", "impact", "organization", "inbox",
     ]);
+  });
+
+  test("Inbox's tab rows (X2): Inbox · Messages for AA/YGB; the 9-key single tab pinned above", () => {
+    for (const features of [AA, YGB]) {
+      const inbox = resolveShellNav(features).inbox!;
+      expect(inbox.href).toBe("/admin/inbox");
+      expect(inbox.tabs.map((t) => t.key)).toEqual(["inbox", "messages"]);
+      expect(inbox.tabs.find((t) => t.key === "messages")!.href).toBe("/admin/inbox/messages");
+    }
   });
 
   test("Organization's tab rows (O2, DoD 1): four tabs landing Strategy for AA/YGB; the 9-key pair pinned above", () => {

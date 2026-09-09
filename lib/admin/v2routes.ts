@@ -148,12 +148,17 @@ const ACTIVE: V2RouteRow[] = [
   // page's own menu. ──
   { v1: "/admin/strategic-plan/objective", v2: "/admin/organization/strategy/objective", kind: "prefix", activation: "now", disposition: "re-homed", note: "re-targeted at O1: the Stage 0 target (the bare landing) would have 404'd the children" },
   { v1: "/admin/strategic-plan/review", v2: "/admin/organization/strategy/review", kind: "exact", activation: "now", disposition: "re-homed", note: "the monthly review keeps its screen at its Strategy seat (O1 host)" },
+  // ── Inbox cutover (Spec Inbox, X2) — the LAST activation of the rebuild.
+  // The map's oldest contract discharged: the two notifications.url shapes
+  // stored in production (/admin/messages, /admin/messages?t=<uuid>) now
+  // translate to the X1 seat, ?t= riding the 308. ──
+  { v1: "/admin/messages", v2: "/admin/inbox/messages", kind: "exact", activation: "now", disposition: "merged", note: "the last merge seat, built at X1; the stored ?t= shapes land in-thread" },
 ];
 
 // ── AT CUTOVER: merges and settings moves, activated by destination specs ───
 const AT_CUTOVER: V2RouteRow[] = [
   { v1: "/admin", v2: "/admin/today", kind: "exact", activation: "at-cutover", disposition: "re-homed (recomposed)", note: "ACTIVATED at H3 as an in-page auth-aware forward (app/admin/page.tsx): /admin hosts the signed-out login UI and a config 308 can't branch on auth. Never becomes a config redirect; this row stays for canonicalSeat/highlighting." },
-  { v1: "/admin/messages", v2: "/admin/inbox/messages", kind: "exact", activation: "at-cutover", disposition: "merged" },
+  // messages graduated to ACTIVE at Spec Inbox X2 — no at-cutover merges remain.
   // objective and review graduated (re-targeted at O1) to ACTIVE at Spec Org O2.
   // scorecard graduated to ACTIVE at Spec Impact I4.
   { v1: "/admin/strategic-plan/setup", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },

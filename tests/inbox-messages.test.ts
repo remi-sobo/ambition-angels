@@ -20,14 +20,16 @@ describe("X1 structural pins", () => {
     expect(layout).toMatch(/feature="modules\.messages"/);
   });
 
-  test("dark-launched: the row stays at-cutover, the stored shapes stay live until X2", () => {
+  test("X2: the contract discharged — the stored shapes land in-thread at the seat", () => {
     const row = V2_ROUTE_MAP.find((r) => r.v1 === "/admin/messages")!;
     expect(row.v2).toBe("/admin/inbox/messages");
-    expect(row.activation).toBe("at-cutover");
-    // The merge seat still resolves to its V1 source pre-X2 (the shell keeps
-    // linking the live screen), and the map's oldest contract holds.
-    expect(liveSeatFor("/admin/inbox/messages")).toBe("/admin/messages");
-    expect(v2Href(`/admin/messages?t=${UUID}`)).toBe(`/admin/messages?t=${UUID}`);
+    expect(row.activation).toBe("now");
+    // The last merge seat self-resolves, and the map's oldest contract is
+    // discharged, not deleted: both stored notifications.url shapes
+    // translate, ?t= riding the 308.
+    expect(liveSeatFor("/admin/inbox/messages")).toBe("/admin/inbox/messages");
+    expect(v2Href("/admin/messages")).toBe("/admin/inbox/messages");
+    expect(v2Href(`/admin/messages?t=${UUID}`)).toBe(`/admin/inbox/messages?t=${UUID}`);
   });
 
   test("the V1 chat is untouched — its own dark shell, its own gate", () => {

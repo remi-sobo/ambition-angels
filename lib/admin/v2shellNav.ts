@@ -29,7 +29,9 @@ import { canonicalSeat, liveSeatFor } from "./v2routes";
  *  V2 single row. Empty at B3 by definition; Home joined at Spec Home H3;
  *  Fundraising at Spec Fundraising F6; Finance at Spec Finance N4; Work at
  *  Spec Work W4; Programs at Spec Programs P4; Impact at Spec Impact I4;
- *  Organization at Spec Org O2. */
+ *  Organization at Spec Org O2; Inbox at Spec Inbox X2 — COMPLETE: every
+ *  destination and the utility render the V2 row; the V1 SectionSubNav
+ *  fallback is dead code app-wide (its deletion is the rebuild's last PR). */
 export const V2_CUTOVER_DESTINATIONS: ReadonlySet<string> = new Set<string>([
   "home",
   "fundraising",
@@ -38,6 +40,7 @@ export const V2_CUTOVER_DESTINATIONS: ReadonlySet<string> = new Set<string>([
   "programs",
   "impact",
   "organization",
+  "inbox",
 ]);
 
 export type ShellTab = {

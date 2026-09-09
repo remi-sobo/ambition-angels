@@ -109,15 +109,33 @@ describe("v2Href: the translation the choke points ride", () => {
   test("at-cutover merges and kept-in-place paths are untouched until their spec", () => {
     for (const path of [
       "/admin", // hosts the login UI: forwards in-page at H3, never a config 308
-      "/admin/fundraising/pledges", // Finance's spec activates this one
-      "/admin/finance/reconcile",
       "/admin/fundraising/grants", // kept: V1 path IS the V2 path
       "/admin/fundraising/today",
+      "/admin/finance/budget",
       "/admin/inbox",
       "/admin/settings",
     ]) {
       expect(v2Href(path), path).toBe(path);
     }
+  });
+
+  test("N4: the Finance moves resolve; the same-path rows are fixed points OUTSIDE the config", async () => {
+    expect(v2Href("/admin/finance/reconcile")).toBe("/admin/finance/transactions");
+    expect(v2Href("/admin/finance/close")).toBe("/admin/finance/transactions");
+    expect(v2Href("/admin/finance/model")).toBe("/admin/finance/forecast");
+    expect(v2Href("/admin/finance/revenue")).toBe("/admin/finance/forecast");
+    expect(v2Href("/admin/fundraising/pledges")).toBe("/admin/finance/forecast");
+    // Same-path ACTIVE rows: fixed points in the translation…
+    expect(v2Href("/admin/finance/transactions")).toBe("/admin/finance/transactions");
+    expect(v2Href("/admin/finance/forecast?year=2026")).toBe("/admin/finance/forecast?year=2026");
+    // …and NEVER config rows (a self-redirect would loop): no config source
+    // may equal its destination, and the two fixed points must be absent.
+    const config = await configAdminRedirects();
+    for (const r of config) expect(r.source, "self-redirect would loop").not.toBe(r.destination);
+    expect(config.some((r) => r.source === "/admin/finance/transactions")).toBe(false);
+    expect(config.some((r) => r.source === "/admin/finance/forecast")).toBe(false);
+    // Narrowed on purpose: the pledge detail keeps its live screen.
+    expect(v2Href(`/admin/fundraising/pledges/${UUID}`)).toBe(`/admin/fundraising/pledges/${UUID}`);
   });
 
   test("F6: the Fundraising moves resolve, and the deliberately-narrowed children stay live", () => {
@@ -156,9 +174,10 @@ describe("v2Href: the translation the choke points ride", () => {
     expect(v2Href("/admin/intake")).toBe("/admin/programs/intake");
     expect(v2Href("/admin/cohorts")).toBe("/admin/programs/cohorts");
     // Acknowledgments moved with Spec Fundraising F6 (Thank someone lives on
-    // Today's Moves); the finance seat isn't built yet; grants is kept.
+    // Today's Moves); reconcile moved with Spec Finance N4 (Transactions
+    // absorbed the inbox at N1); grants is kept.
     expect(v2Href("/admin/fundraising/acknowledgments")).toBe("/admin/fundraising/today");
-    expect(v2Href("/admin/finance/reconcile")).toBe("/admin/finance/reconcile");
+    expect(v2Href("/admin/finance/reconcile")).toBe("/admin/finance/transactions");
     expect(v2Href("/admin/fundraising/grants")).toBe("/admin/fundraising/grants");
   });
 });

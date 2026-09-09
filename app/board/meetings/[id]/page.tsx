@@ -13,6 +13,7 @@ import AgendaList from "../../_components/AgendaList";
 import RsvpControl from "../../_components/RsvpControl";
 import QuestionBox from "../../_components/QuestionBox";
 import ChairBar from "../../_components/ChairBar";
+import AddMaterials from "../../_components/AddMaterials";
 import MinutesView from "../../_components/MinutesView";
 import { MaterialsList, SinceWeLastMet, PrintHeader, PrintFooter } from "../../_components/MeetingParts";
 import { C, F, card, eyebrow } from "../../_components/tokens";
@@ -227,6 +228,10 @@ export default async function MeetingPage({ params }: { params: { id: string } }
 
           <aside className="board-sticky board-noprint" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
             <MaterialsList docs={docs} />
+
+            {/* Filing materials lives here because /admin/documents cannot
+                attach a document to a meeting — see the route's comment. */}
+            {ctx.isAdmin && <AddMaterials meetingId={meeting.id} />}
 
             {!isClosed && (
               <section style={{ ...card, padding: 28 }}>

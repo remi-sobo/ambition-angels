@@ -121,8 +121,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             {/* 52px right gutter at xl clears the Reed edge tab (spec). The
                 V1 right rail deliberately does NOT mount in the V2 shell —
                 its jobs consolidate into Today + the Reed panel. */}
+            {/* overflow-y-auto only at lg: below it the WINDOW scrolls, and
+                an overflow container here would capture the tab zone's
+                sticky context — anchoring it to main's content box (56px
+                below its padding, overlapping the page h1) and never
+                sticking at all, since main itself never scrolls. The
+                mobile clipping bug, 2026-09-09. */}
             <main
-              className={`admin-main flex-1 min-w-0 overflow-y-auto${reedEnabled ? " xl:pr-[52px]" : ""}`}
+              className={`admin-main flex-1 min-w-0 lg:overflow-y-auto${reedEnabled ? " xl:pr-[52px]" : ""}`}
             >
               <V2TabZone nav={nav} />
               {children}

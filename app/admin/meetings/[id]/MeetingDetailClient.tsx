@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
   type FollowUpStatus,
@@ -44,6 +45,7 @@ const STATUS_CHOICE_LABEL: Record<FollowUpStatus, string> = {
 
 export default function MeetingDetailClient({ detail }: { detail: Detail }) {
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -74,7 +76,7 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
       startTransition(() => router.refresh());
     } catch (e) {
       console.error(e);
-      alert("Couldn't update. Try again.");
+      toast.error("Couldn't update. Try again.");
     } finally {
       setBusy(false);
     }
@@ -92,7 +94,7 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
       startTransition(() => router.refresh());
     } catch (e) {
       console.error(e);
-      alert("Couldn't parse the transcript. Try again.");
+      toast.error("Couldn't parse the transcript. Try again.");
     } finally {
       setParsing(false);
     }
@@ -105,7 +107,7 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
       startTransition(() => router.refresh());
     } catch (e) {
       console.error(e);
-      alert("Couldn't save. Try again.");
+      toast.error("Couldn't save. Try again.");
     } finally {
       setBusy(false);
     }
@@ -340,6 +342,7 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
  */
 function ConnectEntity({ meetingId }: { meetingId: string }) {
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<ConnectResult[]>([]);
@@ -384,7 +387,7 @@ function ConnectEntity({ meetingId }: { meetingId: string }) {
       startTransition(() => router.refresh());
     } catch (e) {
       console.error(e);
-      alert("Couldn't connect. Try again.");
+      toast.error("Couldn't connect. Try again.");
     } finally {
       setSaving(false);
     }

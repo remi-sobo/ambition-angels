@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { useSpeechRecognition } from "@/lib/hooks/useSpeechRecognition";
 import { useIsOwner } from "./AdminUserContext";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -103,7 +104,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
         }),
       });
       const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(data?.error ?? `HTTP ${r.status}`);
+      if (!r.ok) throw new Error(userMessage(r, data));
 
       if (data.action === "ready") {
         const generated = String(data.prompt ?? "");
@@ -172,7 +173,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
       const r = await fetch("/api/admin/report", { method: "POST", body: fd });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        throw new Error(userMessage(r, body));
       }
       setPhase("done");
       setTimeout(onClose, 1200);

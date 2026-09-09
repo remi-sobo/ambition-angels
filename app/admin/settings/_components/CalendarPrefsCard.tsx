@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { formatMinute } from "@/lib/agenda/week-grid";
 
 /**
@@ -38,7 +39,7 @@ export default function CalendarPrefsCard({ initial }: { initial: Prefs }) {
       });
       if (!r.ok) {
         const body = (await r.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        throw new Error(userMessage(r, body));
       }
       startTransition(() => router.refresh());
     } catch (e) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { userMessage } from "@/lib/admin/errors";
 import Link from "next/link";
 import type { BankFormat, ImportPreview } from "@/lib/finance/types";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -60,7 +61,7 @@ export default function UploadClient() {
     const r = await fetch("/api/admin/finance/import", { method: "POST", body: fd });
     const json = await r.json().catch(() => ({}));
     if (!r.ok) {
-      setError(json.error ?? `Upload failed (${r.status})`);
+      setError(userMessage(r, json));
       if (Array.isArray(json.sample)) setErrorSample(json.sample);
       if (typeof json.hint === "string") setErrorHint(json.hint);
     } else {
@@ -82,7 +83,7 @@ export default function UploadClient() {
     const r = await fetch("/api/admin/finance/import", { method: "POST", body: fd });
     const json = await r.json().catch(() => ({}));
     if (!r.ok) {
-      setError(json.error ?? `Commit failed (${r.status})`);
+      setError(userMessage(r, json));
     } else {
       setResult(json as CommitResult);
       setPreview(null);

@@ -6,6 +6,7 @@
 // refusal, verbatim.
 
 import { useState } from "react";
+import { userMessage } from "@/lib/admin/errors";
 import { useRouter } from "next/navigation";
 
 export type DailyCandidate = { soc_code: string; title: string; job_zone: number };
@@ -41,7 +42,7 @@ export function DailyControls({
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setNotices((p) => ({ ...p, [day]: j.error ?? `That didn't work (HTTP ${res.status}).` }));
+        setNotices((p) => ({ ...p, [day]: userMessage(res, j) }));
       }
       router.refresh();
     } catch {

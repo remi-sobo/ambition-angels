@@ -6,6 +6,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 
 export default function EmailActions({
   interactionId,
@@ -15,6 +16,7 @@ export default function EmailActions({
   isPrivate: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState(false);
 
@@ -29,7 +31,7 @@ export default function EmailActions({
         if (!r.ok) throw new Error("Failed");
         start(() => router.refresh());
       })
-      .catch(() => alert("Could not update — try again."))
+      .catch(() => toast.error("Could not update. Try again."))
       .finally(() => setBusy(false));
   };
 

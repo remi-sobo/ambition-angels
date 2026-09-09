@@ -5,6 +5,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -20,6 +23,7 @@ type Step = { subject: string; body: string; delay_days: number };
 
 export function NewJourneyForm() {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -43,13 +47,16 @@ export function NewJourneyForm() {
         body: JSON.stringify({ name, trigger, steps }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
-      if (j.warning) alert(j.warning);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
+      if (j.warning) toast.info(j.warning);
       router.refresh();
       setOpen(false);
       setName(""); setTrigger("first_gift"); setSteps([{ subject: "", body: "", delay_days: 0 }]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create journey");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -113,6 +120,7 @@ export function NewJourneyForm() {
 
 export function JourneyActions({ id, status }: { id: string; status: string }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const act = async (fn: () => Promise<Response>) => {
     setBusy(true);
@@ -129,7 +137,15 @@ export function JourneyActions({ id, status }: { id: string; status: string }) {
       </button>
       <button
         disabled={busy}
-        onClick={() => { if (confirm("Delete this journey? Enrollments are removed.")) void act(() => fetch(`/api/admin/journeys/${id}`, { method: "DELETE" })); }}
+        onClick={async () => {
+          const ok = await confirm({
+            title: "Delete this journey?",
+            body: "Enrollments are removed.",
+            confirmLabel: "Delete",
+            destructive: true,
+          });
+          if (ok) void act(() => fetch(`/api/admin/journeys/${id}`, { method: "DELETE" }));
+        }}
         className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
       >
         Delete

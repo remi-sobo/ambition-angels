@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // Manually add a prospect to the bench. The simplest intake — someone you know
@@ -51,7 +52,7 @@ export default function AddProspectModal({ onClose }: { onClose: () => void }) {
       });
       if (!r.ok) {
         const b = await r.json().catch(() => ({}));
-        throw new Error(b?.error ?? `HTTP ${r.status}`);
+        throw new Error(userMessage(r, b));
       }
       router.refresh();
       onClose();

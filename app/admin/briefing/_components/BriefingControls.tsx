@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 
 export function GenerateButton() {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
 
   const generate = async () => {
     setBusy(true);
     try {
       const res = await fetch("/api/admin/briefing", { method: "POST" });
-      if (!res.ok) alert("Briefing generation failed — check ANTHROPIC_API_KEY.");
+      if (!res.ok) toast.error("Briefing generation failed. Check ANTHROPIC_API_KEY.");
       router.refresh();
     } finally {
       setBusy(false);

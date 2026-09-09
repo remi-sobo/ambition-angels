@@ -228,11 +228,15 @@ export default function DataTable<Row>({
     URL.revokeObjectURL(url);
   };
 
+  // null = the save-view name input is closed (the native prompt is banned; this
+  // inline input in the Views dropdown is its replacement).
+  const [savingViewName, setSavingViewName] = useState<string | null>(null);
   const saveView = () => {
-    const name = window.prompt("Save this view as…")?.trim();
+    const name = savingViewName?.trim();
     if (!name) return;
     const view: SavedView = { name, search, sort, hidden: Array.from(hidden), pageSize };
     persistViews([...views.filter((v) => v.name !== name), view]);
+    setSavingViewName(null);
     setViewsOpen(false);
   };
   const applyView = (v: SavedView) => {
@@ -298,9 +302,25 @@ export default function DataTable<Row>({
             </button>
             {viewsOpen && (
               <div className="absolute right-0 z-20 mt-1 w-60 bg-tile border-[1.5px] border-outline rounded-card shadow-lg p-2">
-                <button onClick={saveView} className="w-full text-left px-2 py-1.5 text-sm font-semibold text-orange hover:bg-[#EFE6D4] rounded">
-                  + Save current view
-                </button>
+                {savingViewName === null ? (
+                  <button onClick={() => setSavingViewName("")} className="w-full text-left px-2 py-1.5 text-sm font-semibold text-orange hover:bg-[#EFE6D4] rounded">
+                    + Save current view
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1 px-1 py-1">
+                    <input
+                      autoFocus
+                      value={savingViewName}
+                      onChange={(e) => setSavingViewName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") saveView(); if (e.key === "Escape") setSavingViewName(null); }}
+                      placeholder="Save this view as…"
+                      className="flex-1 min-w-0 bg-cream border-[1.5px] border-outline rounded px-2 py-1 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+                    />
+                    <button onClick={saveView} disabled={!savingViewName.trim()} className="text-xs font-semibold text-orange hover:text-orange-dark px-1 disabled:opacity-50">
+                      Save
+                    </button>
+                  </div>
+                )}
                 {views.length === 0 ? (
                   <p className="px-2 py-1.5 text-xs text-ink-3">No saved views yet.</p>
                 ) : (

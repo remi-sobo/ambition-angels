@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import type { StaffRow } from "../../_lib/read";
 
 /**
@@ -20,6 +22,7 @@ export default function StaffEditForm({
   managerOptions: { id: string; full_name: string }[];
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({
@@ -43,7 +46,7 @@ export default function StaffEditForm({
       if (res.ok) {
         setOpen(false);
         router.refresh();
-      } else alert(((await res.json().catch(() => null)) as { error?: string })?.error ?? "Failed.");
+      } else toast.error(userMessage(res, (await res.json().catch(() => null)) as { error?: string } | null));
     } finally {
       setBusy(false);
     }

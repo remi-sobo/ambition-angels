@@ -8,7 +8,9 @@
 // cannot be batched, and never will be.
 
 import { useMemo, useState } from "react";
+import { userMessage } from "@/lib/admin/errors";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 
 export type OccupationView = {
   soc_code: string;
@@ -84,7 +86,7 @@ function useApi() {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setNotice(j.error ?? `That didn't work (HTTP ${res.status}). Try again.`);
+        setNotice(userMessage(res, j));
       }
       router.refresh();
       return res.ok;
@@ -132,6 +134,7 @@ function Notice({ text }: { text: string | null }) {
 // ── Review panel ──────────────────────────────────────────────────────────
 
 function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
+  const confirm = useConfirm();
   const { busy, notice, call } = useApi();
   const [edits, setEdits] = useState<Record<string, string>>({});
   const isDraft = card.status === "draft";
@@ -233,10 +236,14 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
               {busy === "generate" ? GENERATING_LABEL : card.day_vignette ? "Regenerate" : "Generate draft"}
             </button>
             <button
-              onClick={() =>
-                confirm(`Remove ${occ.title} from the queue?`) &&
-                call("delete", "/api/admin/careers/review", "POST", { soc_code: card.soc_code, action: "delete" })
-              }
+              onClick={async () => {
+                const ok = await confirm({
+                  title: `Remove ${occ.title} from the queue?`,
+                  confirmLabel: "Remove",
+                  destructive: true,
+                });
+                if (ok) void call("delete", "/api/admin/careers/review", "POST", { soc_code: card.soc_code, action: "delete" });
+              }}
               disabled={busy !== null}
               className="text-[12px] text-ink-2 px-2 py-1.5 hover:text-ink-1"
             >

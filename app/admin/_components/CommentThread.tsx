@@ -7,6 +7,8 @@
 // Phase 5; v1 is plain text.
 
 import { useCallback, useEffect, useState } from "react";
+import { useToast } from "./feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import { MentionTextarea, type Mentionable } from "./MentionTextarea";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -65,6 +67,7 @@ export function CommentThread({
   entityId: string;
   entityLabel: string;
 }) {
+  const toast = useToast();
   const [comments, setComments] = useState<Comment[]>([]);
   const [me, setMe] = useState<string | null>(null);
   const [members, setMembers] = useState<Mentionable[]>([]);
@@ -114,7 +117,7 @@ export function CommentThread({
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(j.error ?? `HTTP ${res.status}`); return; }
+      if (!res.ok) { toast.error(userMessage(res, j)); return; }
       await load();
       return true;
     } finally {

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { userMessage } from "@/lib/admin/errors";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import type { CalendarConnectionStatus } from "@/lib/google/connection";
 
 const inputCls =
@@ -30,7 +32,7 @@ export function DisplayNameForm({ initialName }: { initialName: string }) {
         body: JSON.stringify({ displayName: trimmed }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { setError(j.error ?? `HTTP ${res.status}`); return; }
+      if (!res.ok) { setError(userMessage(res, j)); return; }
       setDone(true);
       // Refresh server components so the greeting picks up the new name.
       router.refresh();
@@ -103,7 +105,7 @@ function CalendarPicker({ onDone }: { onDone: (connected: boolean) => void }) {
         const j = await res.json().catch(() => ({}));
         if (cancelled) return;
         if (!res.ok) {
-          setError(j.error ?? `HTTP ${res.status}`);
+          setError(userMessage(res, j));
           return;
         }
         const cals = (j.calendars ?? []) as CalendarChoice[];
@@ -140,7 +142,7 @@ function CalendarPicker({ onDone }: { onDone: (connected: boolean) => void }) {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(j.error ?? `HTTP ${res.status}`);
+        setError(userMessage(res, j));
         return;
       }
       // Pull the new calendars into the cache right away (best-effort).
@@ -264,7 +266,7 @@ export function ConnectCalendarControls({
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(j.error ?? `HTTP ${res.status}`);
+        setError(userMessage(res, j));
         return;
       }
       setMsg("Calendar refreshed.");
@@ -364,7 +366,7 @@ export function ChangePasswordForm() {
       const res = await fetch("/api/admin/account/password/reset-link", { method: "POST" });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        setResetError(j.error ?? `HTTP ${res.status}`);
+        setResetError(userMessage(res, j));
         return;
       }
       setResetSent(true);
@@ -412,7 +414,7 @@ export function ChangePasswordForm() {
         body: JSON.stringify({ currentPassword: current, newPassword: next }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { setError(j.error ?? `HTTP ${res.status}`); return; }
+      if (!res.ok) { setError(userMessage(res, j)); return; }
       setDone(true);
       setCurrent(""); setNext(""); setConfirm("");
     } finally {
@@ -486,9 +488,16 @@ export function ChangePasswordForm() {
 
 export function SignOutAllButton() {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const run = async () => {
-    if (!confirm("Sign out of every device, including this one?")) return;
+    const ok = await confirm({
+      title: "Sign out of every device?",
+      body: "Every session ends, including this one.",
+      confirmLabel: "Sign out everywhere",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await fetch("/api/admin/account/signout-all", { method: "POST" });

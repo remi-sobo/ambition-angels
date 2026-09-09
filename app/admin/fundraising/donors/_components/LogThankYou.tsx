@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { ACK_CHANNELS, CHANNEL_LABEL, type AckChannel } from "@/lib/fundraising/ack-channels";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -42,7 +43,7 @@ export default function LogThankYou({
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) throw new Error(userMessage(res, j));
       setOpen(false);
       setNote("");
       router.refresh();

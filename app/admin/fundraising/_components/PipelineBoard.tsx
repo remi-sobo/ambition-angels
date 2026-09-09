@@ -17,6 +17,9 @@ import {
 } from "@/lib/fundraising/stages";
 import { isLostStage, isWonStage } from "@/lib/fundraising/stage-sets";
 import OpportunityEditModal from "./OpportunityEditModal";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -26,6 +29,7 @@ const fmtMoney = (n: number) =>
 
 export function NewOpportunityForm() {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -54,14 +58,17 @@ export function NewOpportunityForm() {
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
-      if (j.warning) alert(j.warning);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
+      if (j.warning) toast.info(j.warning);
       setName(""); setAsk(""); setProbability(""); setCapacity("");
       setNextStep(""); setNextStepDue("");
       setOpen(false);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create opportunity");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -191,6 +198,8 @@ export function OpportunityCard({
   stages: PipelineStage[];
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
 
@@ -212,7 +221,7 @@ export function OpportunityCard({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
       }
       router.refresh();
     } finally {
@@ -294,8 +303,13 @@ export function OpportunityCard({
         </button>
         {stageType !== "lost" && stageType !== "won" && lostKey && (
           <button
-            onClick={() => {
-              if (confirm("Mark this ask as lost?")) void patch({ stage: lostKey });
+            onClick={async () => {
+              const ok = await confirm({
+                title: "Mark this ask as lost?",
+                body: "You can reopen it from the Lost column later.",
+                confirmLabel: "Mark lost",
+              });
+              if (ok) void patch({ stage: lostKey });
             }}
             disabled={busy}
             className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"

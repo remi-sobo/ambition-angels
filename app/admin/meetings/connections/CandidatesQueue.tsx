@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 
 export type Candidate = {
   id: string;
@@ -44,7 +45,7 @@ export default function CandidatesQueue({
         body: JSON.stringify({ action }),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d?.error ?? `HTTP ${r.status}`);
+      if (!r.ok) throw new Error(userMessage(r, d));
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't update candidate");

@@ -1,11 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useState, useTransition } from "react";
 
 /** Pull past external calendar events into matched meeting records. Idempotent. */
 export default function SyncMeetingsButton() {
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
 
@@ -17,7 +19,7 @@ export default function SyncMeetingsButton() {
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Meetings sync failed:", e);
-      alert("Couldn't sync meetings. Try again.");
+      toast.error("Couldn't sync meetings. Try again.");
     } finally {
       setBusy(false);
     }

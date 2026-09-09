@@ -6,6 +6,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 import { JOURNEY_STAGES, STAGE_ORDER, STAGE_LABELS, STAGE_DESCRIPTIONS } from "../_lib/stages";
 import CustomFields, { type CustomValues } from "./CustomFields";
 import type { CustomFieldDef } from "@/lib/admin/customFields";
@@ -64,6 +67,8 @@ export function StudentRow({
   volunteerTerm?: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
 
@@ -77,7 +82,7 @@ export function StudentRow({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
       }
       router.refresh();
     } finally {
@@ -86,7 +91,13 @@ export function StudentRow({
   };
 
   const remove = async () => {
-    if (!confirm(`Delete ${fullName(student)}?`)) return;
+    const ok = await confirm({
+      title: `Delete ${fullName(student)}?`,
+      body: "The record is removed from the roster.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await fetch(`/api/admin/students/${student.id}`, { method: "DELETE" });
@@ -299,6 +310,7 @@ export function NewStudentForm({
   volunteerTerm?: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const journeyStages = stages.filter((s) => !s.terminal);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -325,7 +337,7 @@ export function NewStudentForm({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
         return;
       }
       setFirstName(""); setLastName(""); setCustom({});

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { useState, useTransition } from "react";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -25,7 +26,7 @@ export default function GrantSeedTasks({ grantId }: { grantId: string }) {
       });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        throw new Error(userMessage(r, body));
       }
       startTransition(() => router.refresh());
     } catch (e) {

@@ -1,6 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { useState, useTransition } from "react";
 import TaskEditModal from "@/app/admin/_components/TaskEditModal";
 import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
@@ -41,6 +44,8 @@ export default function ProjectTaskList({
   initialTasks: OpsTask[];
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const { isLeaving, complete } = useTaskComplete();
   const [, startTransition] = useTransition();
   const [tasks, setTasks] = useState(initialTasks);
@@ -94,7 +99,7 @@ export default function ProjectTaskList({
       });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        throw new Error(userMessage(r, body));
       }
       setNewTitle("");
       setNewDue("");
@@ -129,7 +134,7 @@ export default function ProjectTaskList({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Reorder failed:", e);
-      alert("Couldn't save new order. Reloading.");
+      toast.error("Couldn't save the new order. Reloading.");
       router.refresh();
     } finally {
       setBusy(false);
@@ -178,7 +183,7 @@ export default function ProjectTaskList({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Task patch failed:", e);
-      alert("Couldn't save change.");
+      toast.error("Couldn't save the change.");
     } finally {
       setBusy(false);
     }
@@ -192,7 +197,12 @@ export default function ProjectTaskList({
   };
 
   async function deleteTask(id: string, title: string) {
-    if (!confirm(`Delete task "${title}"?`)) return;
+    const ok = await confirm({
+      title: `Delete task "${title}"?`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const r = await fetch(`/api/admin/ops/tasks/${id}`, { method: "DELETE" });
@@ -200,7 +210,7 @@ export default function ProjectTaskList({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Task delete failed:", e);
-      alert("Couldn't delete task.");
+      toast.error("Couldn't delete the task.");
     } finally {
       setBusy(false);
     }

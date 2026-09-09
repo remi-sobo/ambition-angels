@@ -12,6 +12,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { kpiProvenance } from "@/lib/admin/plan/provenance";
 
 export type ScorecardKpi = {
@@ -112,7 +113,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
         setError(
           res.status === 403
             ? "Your account can't edit measures — ask an admin for the manage permission."
-            : `Could not save (${(await res.json().catch(() => ({} as { error?: string }))).error ?? `HTTP ${res.status}`}).`
+            : userMessage(res, await res.json().catch(() => null))
         );
         return false;
       }

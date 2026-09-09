@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import type { AdminUser } from "@/lib/admin/auth";
 import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
 import TaskRow, { PriorityFlag } from "./TaskRow";
@@ -46,6 +48,7 @@ export default function TaskListView({
   currentUser: AdminUser | null;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const { isLeaving, complete } = useTaskComplete();
   const [, startTransition] = useTransition();
 
@@ -142,7 +145,7 @@ export default function TaskListView({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Reorder failed:", e);
-      alert("Couldn't save new order. Reloading.");
+      toast.error("Couldn't save the new order. Reloading.");
       router.refresh();
     } finally {
       setBusy(false);
@@ -187,7 +190,7 @@ export default function TaskListView({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Task complete failed:", e);
-      alert("Couldn't save change.");
+      toast.error("Couldn't save the change.");
     } finally {
       setBusy(false);
     }
@@ -221,7 +224,7 @@ export default function TaskListView({
       });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        throw new Error(userMessage(r, body));
       }
       setNewTitle("");
       startTransition(() => router.refresh());

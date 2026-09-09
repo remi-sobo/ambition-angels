@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -45,7 +46,7 @@ export function NewDonorForm() {
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) throw new Error(userMessage(res, j));
       router.push(`/admin/fundraising/donors/${j.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create donor");
@@ -166,7 +167,7 @@ export function EditDonorButton({ donor }: { donor: EditDonorValues }) {
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) throw new Error(userMessage(res, j));
       setOpen(false);
       router.refresh();
     } catch (err) {
@@ -250,7 +251,7 @@ export function LogInteractionForm({ constituentId }: { constituentId: string })
         body: JSON.stringify({ constituent_id: constituentId, kind, occurred_at: when || undefined, notes: notes || undefined }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) throw new Error(userMessage(res, j));
       setNotes("");
       setOpen(false);
       router.refresh();

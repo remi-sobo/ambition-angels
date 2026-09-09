@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useState, useTransition } from "react";
 
 /**
@@ -11,6 +12,7 @@ import { useState, useTransition } from "react";
  */
 export default function FollowUpQuickActions({ recordId }: { recordId: string }) {
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
 
@@ -26,7 +28,7 @@ export default function FollowUpQuickActions({ recordId }: { recordId: string })
       startTransition(() => router.refresh());
     } catch (e) {
       console.error(e);
-      alert("Couldn't update. Try again.");
+      toast.error("Couldn't update. Try again.");
     } finally {
       setBusy(false);
     }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import type { ChatMessage, MessageReaction, ThreadReadMember, ThreadSummary } from "@/lib/messaging/threads";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
 import Button from "../../_components/Button";
@@ -90,6 +91,7 @@ export default function MessagesView({
   initialReadState: ThreadReadMember[];
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [threads, setThreads] = useState<ThreadSummary[]>(initialThreads);
   const [messages, setMessages] = useState<LocalMessage[]>(initialMessages);
   const [readState, setReadState] = useState<ThreadReadMember[]>(initialReadState);
@@ -394,7 +396,12 @@ export default function MessagesView({
   }
   async function del(id: string) {
     if (!activeThreadId) return;
-    if (!window.confirm("Delete this message?")) return;
+    const ok = await confirm({
+      title: "Delete this message?",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setMessages((prev) =>
       prev.map((m) => (m.id === id ? { ...m, body: "", deletedAt: new Date().toISOString(), reactions: [] } : m))
     );

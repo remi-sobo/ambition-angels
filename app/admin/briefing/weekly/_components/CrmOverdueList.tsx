@@ -8,6 +8,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import type { CrmOverdueTask } from "@/lib/admin/crmOverdue";
 
 type AssigneeFilter = string; // "all" | "unassigned" | an assignee handle
@@ -97,6 +99,7 @@ function Group({ title, rows }: { title: string; rows: CrmOverdueTask[] }) {
 
 function Row({ t }: { t: CrmOverdueTask }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
 
   const patch = async (body: Record<string, unknown>) => {
@@ -109,7 +112,7 @@ function Row({ t }: { t: CrmOverdueTask }) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
       }
       router.refresh();
     } finally {

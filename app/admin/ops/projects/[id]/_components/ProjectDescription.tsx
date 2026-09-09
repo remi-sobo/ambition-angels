@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { Fragment, useState, useTransition, type ReactNode } from "react";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -157,7 +158,7 @@ export default function ProjectDescription({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description: draft || null }),
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) throw new Error(userMessage(r));
       setEditing(false);
       startTransition(() => router.refresh());
     } catch (e) {

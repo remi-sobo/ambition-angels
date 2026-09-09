@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import {
   SCHEDULING_LABEL,
   SCHEDULING_TASK_CATEGORY,
@@ -160,7 +161,7 @@ export default function NewConnectionForm() {
         }),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d?.error ?? `HTTP ${r.status}`);
+      if (!r.ok) throw new Error(userMessage(r, d));
       reset();
       setOpen(false);
       router.refresh();

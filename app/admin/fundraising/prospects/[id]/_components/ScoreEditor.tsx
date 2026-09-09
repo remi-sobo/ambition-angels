@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { useMemo, useState } from "react";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -152,7 +153,7 @@ export default function ScoreEditor({
       );
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${res.status}`);
+        throw new Error(userMessage(res, body));
       }
       const data = (await res.json()) as { score: ProspectScore };
       setLastSaved(data.score);

@@ -5,6 +5,9 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { TYPE } from "@/lib/admin/typeScale";
 
 type Candidate = { id: string; name: string; kind: string; city: string | null; status: string };
@@ -15,6 +18,8 @@ export function MergeControl({ keepId, keepName, candidates }: {
   candidates: Candidate[];
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState("");
@@ -30,7 +35,13 @@ export function MergeControl({ keepId, keepName, candidates }: {
 
   const doMerge = async () => {
     if (!picked) return;
-    if (!confirm(`Merge "${picked.name}" into "${keepName}"? Its contacts and activity move here, and "${picked.name}" is deleted. This can't be undone.`)) return;
+    const ok = await confirm({
+      title: `Merge "${picked.name}" into "${keepName}"?`,
+      body: `Its contacts and activity move here, and "${picked.name}" is deleted. This can't be undone.`,
+      confirmLabel: "Merge",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const res = await fetch("/api/admin/partners/merge", {
@@ -39,7 +50,7 @@ export function MergeControl({ keepId, keepName, candidates }: {
         body: JSON.stringify({ keep_id: keepId, merge_id: picked.id }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(j.error ?? `HTTP ${res.status}`); return; }
+      if (!res.ok) { toast.error(userMessage(res, j)); return; }
       setOpen(false); setPicked(null); setQ("");
       router.refresh();
     } finally {

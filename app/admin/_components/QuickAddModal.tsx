@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { useEffect, useState } from "react";
 import type { AdminUser } from "@/lib/admin/auth";
 import {
@@ -114,7 +115,7 @@ export default function QuickAddModal({
       });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        throw new Error(userMessage(r, body));
       }
       setSuccess(true);
       router.refresh();

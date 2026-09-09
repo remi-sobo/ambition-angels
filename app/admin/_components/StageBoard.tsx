@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "./feedback/ToastProvider";
 import { TYPE } from "@/lib/admin/typeScale";
 
 /**
@@ -74,6 +75,7 @@ export default function StageBoard<T>({
   emptyHint?: ReactNode;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
 
   // Optimistic overrides: itemId -> column key. Cleared whenever fresh server
@@ -184,7 +186,7 @@ export default function StageBoard<T>({
         delete next[id];
         return next;
       });
-      alert("Couldn't move that card. Try again.");
+      toast.error("Couldn't move that card. Try again.");
     }
   }
 

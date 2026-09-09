@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 // Closes out a monthly OGSM review: capture notes + the next review date, log
 // the session, and return to the plan. The KPI/status edits happen live in the
@@ -17,6 +19,7 @@ function defaultNextReview(): string {
 
 export default function ReviewComplete() {
   const router = useRouter();
+  const toast = useToast();
   const [notes, setNotes] = useState("");
   const [nextReview, setNextReview] = useState(defaultNextReview());
   const [busy, setBusy] = useState(false);
@@ -32,7 +35,7 @@ export default function ReviewComplete() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
         return;
       }
       router.push("/admin/strategic-plan");

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import { AUTO_METRIC_CATALOG } from "@/lib/admin/plan/metricCatalog";
 import { STARTER_OBJECTIVES } from "@/lib/admin/plan/template";
 
@@ -14,7 +16,7 @@ export type WizInitiative = { id: string; goal_id: string };
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
-async function api(url: string, body: unknown): Promise<boolean> {
+async function apiRequest(url: string, body: unknown, onError: (message: string) => void): Promise<boolean> {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -22,10 +24,17 @@ async function api(url: string, body: unknown): Promise<boolean> {
   });
   if (!res.ok) {
     const j = await res.json().catch(() => ({}));
-    alert(j.error ?? `HTTP ${res.status}`);
+    onError(userMessage(res, j));
     return false;
   }
   return true;
+}
+
+// Bind the helper to the component's toast (`const api = useApi();`) so call
+// sites stay unchanged while failures speak through the Q2 layer.
+function useApi() {
+  const toast = useToast();
+  return useCallback((url: string, body: unknown) => apiRequest(url, body, toast.error), [toast]);
 }
 
 function StepCard({
@@ -96,6 +105,7 @@ function QuickAdd({ placeholder, onAdd }: { placeholder: string; onAdd: (title: 
 
 // The measure picker — wire to live data (auto) in one click, or a manual measure.
 function AddMeasure({ goalId, onDone }: { goalId: string; onDone: () => void }) {
+  const api = useApi();
   const [manual, setManual] = useState(false);
   const [title, setTitle] = useState("");
   const [unit, setUnit] = useState("");
@@ -162,6 +172,7 @@ export type WizFoundation = { mission: string; vision: string; values: string; b
 // Inline foundation editor (spec #6 F1): a brand-new org must not be sent away
 // at step 1 — mission/vision/values save right here via the existing PUT route.
 function FoundationForm({ initial, onSaved }: { initial: WizFoundation; onSaved: () => void }) {
+  const toast = useToast();
   const [mission, setMission] = useState(initial.mission);
   const [vision, setVision] = useState(initial.vision);
   const [values, setValues] = useState(initial.values);
@@ -183,7 +194,7 @@ function FoundationForm({ initial, onSaved }: { initial: WizFoundation; onSaved:
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
         return;
       }
       onSaved();
@@ -228,6 +239,7 @@ function FoundationForm({ initial, onSaved }: { initial: WizFoundation; onSaved:
 // Fuller objective authoring (spec #6 F2): title + optional 3-year statement,
 // available whether the org has zero objectives or is adding its fifth.
 function AddObjective({ onDone, autoOpen = false }: { onDone: () => void; autoOpen?: boolean }) {
+  const api = useApi();
   const [open, setOpen] = useState(autoOpen);
   const [title, setTitle] = useState("");
   const [statement, setStatement] = useState("");
@@ -281,6 +293,7 @@ function AddObjective({ onDone, autoOpen = false }: { onDone: () => void; autoOp
 // Starter-shape loader (spec #6 F3): four tenant-neutral pillars with
 // bracketed statement prompts, created through the same objectives route.
 function LoadTemplateButton({ onDone }: { onDone: () => void }) {
+  const api = useApi();
   const [busy, setBusy] = useState(false);
   const load = async () => {
     setBusy(true);
@@ -324,6 +337,7 @@ export default function SetupWizard({
   initiatives: WizInitiative[];
   nextReviewAt: string | null;
 }) {
+  const api = useApi();
   const router = useRouter();
   const refresh = () => router.refresh();
   const [reviewDate, setReviewDate] = useState("");

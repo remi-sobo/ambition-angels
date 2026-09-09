@@ -98,16 +98,16 @@ Each stage is one PR. Remi merges every PR and starts every stage.
 
 **The wide row wraps.** Seven tabs is the widest yet; the B3 no-wrap pins (flex-nowrap, scroll, shrink-0) must hold at AA's count — the existing structural test covers it, the printout proves it.
 
-## Open decisions (recommendations inline — nothing starts until Remi rules)
+## Open decisions — all four resolved (Remi, 2026-09-09, as recommended)
 
-1. **Where volunteers land.** The Stage 0 map says Programs → People (volunteer view); the data says volunteers are `constituents` (`is_volunteer`), and Donors & Funders is the one-list with the views machinery. **Recommendation: re-target to Donors & Funders** — `"volunteers"` becomes a built-in view (R11 machinery, no schema change, terminology preserved); the map row's as-built note records the re-aim. People stays a `students` surface.
+1. **Where volunteers land — RESOLVED: Donors & Funders.** `"volunteers"` becomes a built-in view (R11 machinery, no schema change, terminology preserved); the map row re-targets with an as-built note. People stays a `students` surface.
 
-2. **The Attendance offline queue.** Stage 5 designs offline capture for spotty school Wi-Fi. **Recommendation: defer** — the screen ships online-first (the scenarios/size-column precedent); the queue becomes its own stage when field use demands it.
+2. **The Attendance offline queue — RESOLVED: deferred.** The screen ships online-first; the queue becomes its own stage when field use demands it.
 
-3. **Overview's funnel.** Signed-up → started → mid-track → finished is platform-app data that only exists as manual `metric_snapshots`. **Recommendation: ship Overview without it** — next sessions + needs-attention from bound data; the funnel arrives with Impact's provenance work, not before.
+3. **Overview's funnel — RESOLVED: shipped without it.** Next sessions + needs-attention from bound data; the funnel arrives with Impact's provenance work.
 
-4. **Demo Day and YGB camp.** R8/R9: pinned Group views on Cohorts, mechanism undesigned, revisit October with real data. **Recommendation: honor the rulings** — both stay at-cutover with live screens; this spec neither designs the pinned-view mechanism nor moves the routes.
+4. **Demo Day and YGB camp — RESOLVED: rulings honored.** Both stay at-cutover with live screens; the pinned-view mechanism waits for October's real data.
 
 ---
 
-*Drafted 2026-09-09, pending Remi's approval. P1 begins only on his kickoff.*
+*Spec approved 2026-09-09. P1 kicked off the same day.*

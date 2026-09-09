@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   BUILT_IN_VIEWS,
+  RESEARCH_VIEWS,
   definitionToParams,
   fiscalYearStart,
   isLapsed,
@@ -115,9 +116,15 @@ describe("saved-view definitions (R11): validate on the way in, degrade never cr
     expect(toDefinition({ q: "a,b(c)" }).q).toBe("a b c");
   });
 
-  test("the built-in view strip is exactly the five the spec names", () => {
+  test("the built-in view strip is the spec's five plus Promoted (F4, R1)", () => {
     expect(BUILT_IN_VIEWS.map((v) => v.value)).toEqual([
-      "all", "donors", "prospects", "recurring", "lapsed",
+      "all", "donors", "prospects", "promoted", "recurring", "lapsed",
     ]);
+  });
+
+  test("the research views (R1) are exactly the bench and its promotions — gated together", () => {
+    expect(Array.from(RESEARCH_VIEWS).sort()).toEqual(["promoted", "prospects"]);
+    // A promoted-view definition round-trips like any other.
+    expect(toDefinition({ view: "promoted" })).toEqual({ view: "promoted" });
   });
 });

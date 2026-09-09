@@ -76,14 +76,14 @@ Each stage is one PR. Remi merges every PR and starts every stage.
 
 **The contract quietly deleted instead of discharged.** The stored-shapes test must flip to assert the translation, not vanish — the map owes those URLs an answer forever, and the test is the record.
 
-## Open decisions (recommendations inline — nothing starts until Remi rules)
+## Open decisions — all three resolved (Remi, 2026-09-09, as recommended)
 
-1. **The Messages seat's shape.** Pure B2 host vs any restructure (folding the feed and chat into one screen, restyling the chrome). **Recommendation: pure host** — the chat is a working, distinctly-styled surface; the model already gives it its own tab; a unification is a product redesign no cutover should smuggle.
+1. **The Messages seat's shape — RESOLVED: pure host.** The chat keeps its distinct surface; unification is a product redesign for another day.
 
-2. **The Reed approvals slice.** The recon binds `reed_drafts` approvals to Inbox; today `/admin/reed` owns them and its own at-cutover row says it "becomes the contextual panel." **Recommendation: defer to the panel work** — one owner at a time; when the panel spec runs, it decides what surfaces in Inbox.
+2. **The Reed approvals slice — RESOLVED: deferred to the panel work.** `/admin/reed` keeps ownership; the panel spec decides what surfaces in Inbox.
 
-3. **The comments seat.** R11 signed `entity_comments` dormant with a reserved seat alongside Messages. **Recommendation: stays reserved and empty** (the journeys shape) — the tables are untouched, the seat is on the record, and nothing ships until comments become real work.
+3. **The comments seat — RESOLVED: stays reserved and empty.** The journeys shape; nothing ships until comments become real work.
 
 ---
 
-*Drafted 2026-09-09, pending Remi's approval. X1 begins only on his kickoff.*
+*Spec approved 2026-09-09. X1 kicked off the same day.*

@@ -81,6 +81,21 @@ Every number renders through `<Metric>` or a canonical loader — Contract 2 app
 
 **F6 — cutover.** Steps 1–5 above plus verification: four-org resolved-nav printout, live crawl of all eight 308s with query survival, both stored-shape notifications resolving to a real 360. Commit: `spec-fr: cutover`.
 
+> **As built (F6, 2026-09-09 — pending Remi's acceptance).** All five steps
+> landed. Three rows were NARROWED from the Stage 0 prefix shape so no child
+> could 308 into a 404: `plan` and `acknowledgments` went **exact**
+> (`plan/[id]` and `acknowledgments/{letters,templates}` keep their live
+> screens until Campaigns absorbs the plan detail and Settings seats the
+> templates), and `prospects` split into **exact + uuid-child** (`import`
+> and `by-hubspot/*` stay live — the R1 drawer links them). `asks` stayed a
+> true prefix with its `[id]` child seated at
+> `/admin/fundraising/pipeline/[id]` (the extracted AskDetail).
+> `pledges → Finance → Forecast` remains at-cutover for Finance's spec, as
+> scoped. Verified by live crawl (eleven move shapes 308 to their exact
+> seats with query strings surviving; every fixed point and narrowed child
+> returns only the pre-existing auth 307) and the four-org printout
+> (Fundraising → Today's Moves, five tabs, identical everywhere).
+
 Each stage is one PR. Remi merges every PR and starts every stage.
 
 ## Definition of done

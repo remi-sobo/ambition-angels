@@ -52,11 +52,9 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
   });
 
   test("merge seats resolve to their FIRST live V1 source in map order", () => {
-    // /admin/today graduated at H3: it is an ACTIVE target now, so it seats
-    // itself (asserted with the active hosts below).
+    // /admin/today graduated at H3, donors-funders and pipeline at F6: they
+    // are ACTIVE targets now and seat themselves (asserted below).
     expect(liveSeatFor("/admin/work/plan-close")).toBe("/admin/ops/monday");
-    expect(liveSeatFor("/admin/fundraising/donors-funders")).toBe("/admin/fundraising/donors");
-    expect(liveSeatFor("/admin/fundraising/pipeline")).toBe("/admin/fundraising/asks");
     expect(liveSeatFor("/admin/inbox/messages")).toBe("/admin/messages");
   });
 
@@ -75,6 +73,8 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
       "/admin/inbox",
       "/admin/today",               // ACTIVE target since H3
       "/admin/organization-health", // V2-only screen: its own path IS the seat (H3)
+      "/admin/fundraising/donors-funders", // ACTIVE target since F6
+      "/admin/fundraising/pipeline",       // ACTIVE target since F6
     ]) {
       expect(liveSeatFor(path), path).toBe(path);
     }
@@ -172,8 +172,18 @@ describe("activeShellKey: sidebar highlight + tab-slot routing", () => {
 });
 
 describe("B3 shell invariants", () => {
-  test("Home is the one cut-over destination — its tab slot renders the V2 single row", () => {
-    expect(Array.from(V2_CUTOVER_DESTINATIONS)).toEqual(["home"]);
+  test("Home and Fundraising are the cut-over destinations — their tab slots render the V2 single row", () => {
+    expect(Array.from(V2_CUTOVER_DESTINATIONS)).toEqual(["home", "fundraising"]);
+  });
+
+  test("Fundraising lands on Today's Moves with the five-tab V2 row for every org (F6)", () => {
+    for (const features of [AA, YGB, NINE_KEY]) {
+      const fr = resolveShellNav(features).destinations.find((d) => d.key === "fundraising")!;
+      expect(fr.href).toBe("/admin/fundraising/today");
+      expect(fr.tabs.map((t) => t.key)).toEqual([
+        "today", "donors-funders", "pipeline", "grants", "campaigns",
+      ]);
+    }
   });
 
   test("DoD 7 structurally: the V2 tab row cannot wrap at any tenant's tab count", () => {

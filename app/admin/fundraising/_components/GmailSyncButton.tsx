@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 
 type Status = "running" | "completed" | "failed" | "partial";
 type Job = {
@@ -58,7 +59,7 @@ export default function GmailSyncButton() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ jobId: job.id }),
         });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (!r.ok) throw new Error(userMessage(r));
         const next = (await r.json()) as Job;
         setJob(next);
         if (next.status !== "running") router.refresh();
@@ -82,7 +83,7 @@ export default function GmailSyncButton() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode }),
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) throw new Error(userMessage(r));
       setJob(await r.json());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Sync failed");

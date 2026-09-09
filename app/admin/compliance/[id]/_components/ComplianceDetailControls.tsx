@@ -472,7 +472,7 @@ export function FilingsPanel({ itemId, filings }: { itemId: string; filings: Com
     setBusy(false);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setError((j.error as string) ?? `HTTP ${res.status}`);
+      setError(userMessage(res, j));
       return;
     }
     setFiledDate(""); setConfirmation(""); setFee(""); setNotes("");

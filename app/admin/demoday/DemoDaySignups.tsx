@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -70,7 +71,7 @@ export default function DemoDaySignups() {
 
   useEffect(() => {
     fetch("/api/admin/demoday/signups")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(userMessage(r)))))
       .then((j: { signups: Signup[]; tableMissing?: boolean }) => {
         if (j.tableMissing) setTableMissing(true);
         setSignups(j.signups ?? []);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
   CATEGORIES,
@@ -188,7 +189,7 @@ function NewProjectModal({
       });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        throw new Error(userMessage(r, body));
       }
       const data = (await r.json()) as { project: { id: string } };
       onClose();

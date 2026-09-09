@@ -264,7 +264,7 @@ export function NewMemberForm() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
+        throw new Error(userMessage(res, j));
       }
       setName(""); setEmail(""); setTermEnd("");
       setOpen(false);

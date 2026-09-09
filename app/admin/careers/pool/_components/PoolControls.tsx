@@ -8,6 +8,7 @@
 // mitigation for "the pool is boring and the game is unfair".
 
 import { useMemo, useState } from "react";
+import { userMessage } from "@/lib/admin/errors";
 import { useRouter } from "next/navigation";
 import { draftRevealLine, eligibilityIssues, REVEAL_LINE_MAX } from "@/lib/games/pool";
 
@@ -54,7 +55,7 @@ function useApi() {
         body: JSON.stringify(body),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) setNotice(j.error ?? `That didn't work (HTTP ${res.status}). Try again.`);
+      if (!res.ok) setNotice(userMessage(res, j));
       router.refresh();
       return res.ok;
     } catch {

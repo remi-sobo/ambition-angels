@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -100,7 +101,7 @@ export default function AnalyticsView() {
     setLoading(true);
     fetch("/api/admin/analytics")
       .then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw new Error(userMessage(res));
         return (await res.json()) as AnalyticsResponse;
       })
       .then((d) => {

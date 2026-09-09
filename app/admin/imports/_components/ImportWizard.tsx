@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 
 type FieldOption = { key: string; label: string; required?: boolean };
 type Fields = { spine: FieldOption[]; custom: FieldOption[] };
@@ -42,7 +43,7 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
 
   const fail = async (res: Response) => {
     const j = await res.json().catch(() => ({}));
-    setError(j.error ?? `HTTP ${res.status}`);
+    setError(userMessage(res, j));
   };
 
   const upload = async (file: File) => {

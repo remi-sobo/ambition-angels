@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import DocumentEditModal, { type EditableDoc } from "./DocumentEditModal";
 
 // Per-row actions for the documents hub. Edit covers the metadata (title,
@@ -16,6 +17,7 @@ export default function DocumentActions({
   status: string;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
 
@@ -31,7 +33,13 @@ export default function DocumentActions({
   };
 
   const remove = async () => {
-    if (!window.confirm("Delete this document everywhere? The file and all its record links are removed.")) return;
+    const ok = await confirm({
+      title: "Delete this document everywhere?",
+      body: "The file and all its record links are removed.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     await fetch(`/api/admin/documents/${doc.id}`, { method: "DELETE" });
     setBusy(false);

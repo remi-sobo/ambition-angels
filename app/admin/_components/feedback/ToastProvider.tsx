@@ -2,11 +2,11 @@
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 
-// Quality Floor Q2 — the toast layer that replaces alert() (the audit's F2:
-// 141 native dialogs, 90+ of them showing raw HTTP codes). Non-blocking,
+// Quality Floor Q2 — the toast layer that replaced the native alert dialog
+// (the audit's F2: 141 of them, 90+ showing raw HTTP codes). Non-blocking,
 // house-styled, announced to screen readers; errors persist longer than
-// successes; everything is dismissible. Q3 migrates the call sites; nothing
-// else in the app is allowed to call alert() once it lands.
+// successes; everything is dismissible. Q3 migrated every call site; lint
+// bans the native dialogs in app/admin.
 
 type ToastKind = "success" | "error" | "info";
 type Toast = { id: number; kind: ToastKind; message: string };

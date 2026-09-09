@@ -145,7 +145,7 @@ async function apiRequest(
 
 // Components bind the module helper to their toast: `const api = useApi();`
 // keeps every call site unchanged while failure copy flows through the Q2
-// layer instead of alert().
+// layer instead of a native browser dialog.
 function useApi() {
   const toast = useToast();
   return useCallback(

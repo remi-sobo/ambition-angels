@@ -19,7 +19,7 @@ import {
  * change (or on blur for the title). Created date is shown read-only.
  *
  * Delete button at the bottom keeps its interruption through the house
- * confirm dialog (Quality Floor Q3 replaced the v1 window.confirm()).
+ * confirm dialog (Quality Floor Q3 replaced the v1 native dialog).
  */
 export type InitiativeOption = { id: string; label: string };
 

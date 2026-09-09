@@ -3,12 +3,12 @@
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 import { TYPE } from "@/lib/admin/typeScale";
 
-// Quality Floor Q2 — the dialog that replaces confirm() (the audit's F2: 54
-// native dialogs gating actions, permanent ones included). The interruption
-// is KEPT — that's the audit's own "what I would not change" — but the
-// moment gets what it deserves: the consequence stated in the body and the
-// confirming VERB on the button, never "OK". Promise-based so Q3's
-// migration is mechanical: `if (!confirm(...))` becomes
+// Quality Floor Q2 — the dialog that replaced the native browser confirm
+// (the audit's F2: 54 of them gating actions, permanent ones included). The
+// interruption is KEPT — that's the audit's own "what I would not change" —
+// but the moment gets what it deserves: the consequence stated in the body
+// and the confirming VERB on the button, never "OK". Promise-based, so Q3's
+// migration was mechanical: a blocking if-not gate became
 // `if (!(await confirm({ ... })))`.
 
 export type ConfirmOptions = {

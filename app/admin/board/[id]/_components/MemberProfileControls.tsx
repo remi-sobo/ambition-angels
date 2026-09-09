@@ -8,6 +8,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
 
 export type ChecklistItem = { id: string; text: string; done: boolean };
@@ -55,7 +57,7 @@ async function patchMember(id: string, fields: Record<string, unknown>): Promise
   });
   if (!res.ok) {
     const j = await res.json().catch(() => ({}));
-    return (j.error as string) ?? `HTTP ${res.status}`;
+    return userMessage(res, j);
   }
   return null;
 }
@@ -200,6 +202,7 @@ export function EditMemberProfile({ member }: { member: BoardMemberFull }) {
 
 export function MemberQuickActions({ member, coiYear }: { member: BoardMemberFull; coiYear: number }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [coiDate, setCoiDate] = useState("");
   const coiCurrent = !!member.coi_signed_at && member.coi_signed_at >= `${coiYear}-01-01`;
@@ -208,7 +211,7 @@ export function MemberQuickActions({ member, coiYear }: { member: BoardMemberFul
     setBusy(true);
     const err = await patchMember(member.id, fields);
     setBusy(false);
-    if (err) alert(err);
+    if (err) toast.error(err);
     router.refresh();
   };
 
@@ -257,6 +260,7 @@ export function MemberQuickActions({ member, coiYear }: { member: BoardMemberFul
 // consecutive edits must build on the latest array, not a stale server prop.
 export function OnboardingChecklist({ member }: { member: BoardMemberFull }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [items, setItems] = useState<ChecklistItem[]>(member.checklist ?? []);
   const [newText, setNewText] = useState("");
@@ -266,7 +270,7 @@ export function OnboardingChecklist({ member }: { member: BoardMemberFull }) {
     setBusy(true);
     const err = await patchMember(member.id, { checklist: next });
     setBusy(false);
-    if (err) alert(err);
+    if (err) toast.error(err);
     router.refresh();
   };
 

@@ -8,6 +8,9 @@ import { useState } from "react";
 import Link from "next/link";
 import SectionHeading from "../../_components/SectionHeading";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 export type BoardMember = {
   id: string;
@@ -55,6 +58,8 @@ export function MemberRow({
   coiYear: number;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [termEnd, setTermEnd] = useState(member.term_end ?? "");
@@ -70,7 +75,7 @@ export function MemberRow({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
       }
       router.refresh();
     } finally {
@@ -79,7 +84,12 @@ export function MemberRow({
   };
 
   const remove = async () => {
-    if (!confirm(`Remove ${member.name} from the board roster?`)) return;
+    const ok = await confirm({
+      title: `Remove ${member.name} from the board roster?`,
+      confirmLabel: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await fetch(`/api/admin/board/members/${member.id}`, { method: "DELETE" });
@@ -254,7 +264,7 @@ export function NewMemberForm() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
+        throw new Error(userMessage(res, j));
       }
       setName(""); setEmail(""); setTermEnd("");
       setOpen(false);
@@ -322,10 +332,13 @@ export function NewMemberForm() {
 
 export function NewMeetingForm() {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
+  // null = the date input is closed (the native prompt is banned; this inline input
+  // is its replacement).
+  const [date, setDate] = useState<string | null>(null);
 
   const create = async () => {
-    const date = prompt("Meeting date (YYYY-MM-DD):", new Date().toISOString().slice(0, 10));
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
     setBusy(true);
     try {
@@ -334,15 +347,37 @@ export function NewMeetingForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ meeting_date: date }),
       });
-      if (!res.ok) alert("Could not create meeting");
+      if (!res.ok) toast.error(userMessage(res, await res.json().catch(() => null)));
+      else setDate(null);
       router.refresh();
     } finally {
       setBusy(false);
     }
   };
 
+  if (date !== null) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <input
+          autoFocus
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") void create(); if (e.key === "Escape") setDate(null); }}
+          className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 text-xs focus:outline-none focus:border-orange/40"
+        />
+        <button onClick={() => void create()} disabled={busy || !date} className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full disabled:opacity-50">
+          Create
+        </button>
+        <button onClick={() => setDate(null)} disabled={busy} className="text-[11px] text-ink-3 hover:text-ink-1">
+          Cancel
+        </button>
+      </span>
+    );
+  }
+
   return (
-    <button onClick={() => void create()} disabled={busy}
+    <button onClick={() => setDate(new Date().toISOString().slice(0, 10))} disabled={busy}
       className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
       + New meeting
     </button>
@@ -357,6 +392,8 @@ export function MeetingCard({
   members: BoardMember[];
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
   const [minutes, setMinutes] = useState(meeting.minutes ?? "");
@@ -379,7 +416,7 @@ export function MeetingCard({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
       }
       router.refresh();
     } finally {
@@ -522,9 +559,13 @@ export function MeetingCard({
                     Save draft
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm("Approve minutes? They become permanent and can no longer be edited."))
-                        void patch({ approve: true });
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Approve minutes?",
+                        body: "They become permanent and can no longer be edited.",
+                        confirmLabel: "Approve & freeze",
+                      });
+                      if (ok) void patch({ approve: true });
                     }}
                     disabled={busy}
                     className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full"

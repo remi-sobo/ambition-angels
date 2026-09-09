@@ -7,6 +7,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 import { useAssignees, withSelected } from "../../_lib/useAssignees";
 import { normalizeAssignee, handleLabel } from "@/lib/admin/assignees";
 
@@ -56,6 +59,8 @@ export const RECUR_OPTIONS: Array<[string, string]> = [
 
 export function ComplianceRow({ item }: { item: ComplianceItem }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [notesDraft, setNotesDraft] = useState(item.notes ?? "");
@@ -109,7 +114,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
+        throw new Error(userMessage(res, j));
       }
       setEditing(false);
       router.refresh();
@@ -130,7 +135,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
       }
       router.refresh();
     } finally {
@@ -161,7 +166,12 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
   const checkedCount = checklist.filter((c) => c.done).length;
 
   const remove = async () => {
-    if (!confirm(`Delete “${item.title}”?`)) return;
+    const ok = await confirm({
+      title: `Delete “${item.title}”?`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await fetch(`/api/admin/compliance/${item.id}`, { method: "DELETE" });
@@ -463,7 +473,7 @@ export function NewComplianceForm() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
+        throw new Error(userMessage(res, j));
       }
       setTitle(""); setDueDate(""); setJurisdiction(""); setAssignee("");
       setOpen(false);

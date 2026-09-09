@@ -14,6 +14,8 @@ import { money } from "../../../finance/_components/charts";
 import { FLAG_LABELS, FLAG_HELP, type RetentionFlag } from "@/lib/fundraising/retention";
 import { BAND_LABEL, type EngagementBand } from "@/lib/fundraising/engagement";
 import { LIFECYCLE_LABELS, LIFECYCLE_HELP, type LifecycleStage } from "@/lib/fundraising/lifecycle";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 
 export type DonorRow = {
   id: string;
@@ -82,6 +84,8 @@ export default function DonorsTable({
   showLifetime?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [taskTargets, setTaskTargets] = useState<TaskTarget[] | null>(null);
   const defaultTaskTitle = (targets: TaskTarget[]) =>
     targets.length === 1
@@ -253,19 +257,24 @@ export default function DonorsTable({
       run: (selected) => {
         const emails = selected.map((r) => r.email).filter((e): e is string => !!e);
         if (emails.length === 0) {
-          alert("None of the selected donors have an email on file.");
+          toast.info("None of the selected donors have an email on file.");
           return;
         }
         void navigator.clipboard
           .writeText(emails.join(", "))
-          .then(() => alert(`Copied ${emails.length} email${emails.length === 1 ? "" : "s"} to the clipboard.`))
-          .catch(() => alert("Could not access the clipboard."));
+          .then(() => toast.success(`Copied ${emails.length} email${emails.length === 1 ? "" : "s"} to the clipboard.`))
+          .catch(() => toast.error("Could not access the clipboard."));
       },
     },
     {
       label: "Archive",
-      run: (selected) => {
-        if (!confirm(`Archive ${selected.length} donor(s)? They'll be hidden from lists but keep all history.`)) return;
+      run: async (selected) => {
+        const ok = await confirm({
+          title: `Archive ${selected.length} donor${selected.length === 1 ? "" : "s"}?`,
+          body: "They'll be hidden from lists but keep all history.",
+          confirmLabel: "Archive",
+        });
+        if (!ok) return;
         void bulkConstituents(selected.map((r) => r.id), "archive").then(() => router.refresh());
       },
     },
@@ -277,21 +286,22 @@ export default function DonorsTable({
     },
     {
       label: "Delete (no gifts)",
-      run: (selected) => {
+      run: async (selected) => {
         const deletable = selected.filter((r) => r.count === 0);
         const blocked = selected.length - deletable.length;
         if (deletable.length === 0) {
-          alert("None of the selected donors can be deleted — they all have gifts. Archive them instead.");
+          toast.info("None of the selected donors can be deleted because they all have gifts. Archive them instead.");
           return;
         }
-        if (
-          !confirm(
-            `Permanently delete ${deletable.length} donor(s) with no gifts?` +
-              (blocked > 0 ? ` ${blocked} with giving history will be skipped.` : "") +
-              " This cannot be undone."
-          )
-        )
-          return;
+        const ok = await confirm({
+          title: `Permanently delete ${deletable.length} donor${deletable.length === 1 ? "" : "s"} with no gifts?`,
+          body:
+            (blocked > 0 ? `${blocked} with giving history will be skipped. ` : "") +
+            "This cannot be undone.",
+          confirmLabel: "Delete",
+          destructive: true,
+        });
+        if (!ok) return;
         void bulkConstituents(deletable.map((r) => r.id), "delete").then(() => router.refresh());
       },
     },

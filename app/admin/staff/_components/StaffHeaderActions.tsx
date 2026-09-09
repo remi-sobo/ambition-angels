@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 /**
  * Staff page header actions: a Reviews link, and (for admins) an inline rename so
@@ -17,6 +19,7 @@ export default function StaffHeaderActions({
   currentLabel: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(currentLabel);
   const [busy, setBusy] = useState(false);
@@ -32,7 +35,7 @@ export default function StaffHeaderActions({
       if (res.ok) {
         setEditing(false);
         router.refresh();
-      } else alert(((await res.json().catch(() => null)) as { error?: string })?.error ?? "Failed.");
+      } else toast.error(userMessage(res, (await res.json().catch(() => null)) as { error?: string } | null));
     } finally {
       setBusy(false);
     }

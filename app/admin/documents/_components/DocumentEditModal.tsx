@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
 import { DOC_TYPES, DOC_TYPE_LABEL, docTypeExpires, minExpirationISO } from "@/lib/documents/config";
 
@@ -73,7 +74,7 @@ export default function DocumentEditModal({ doc, onClose }: { doc: EditableDoc; 
       });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        throw new Error(body?.error ?? `HTTP ${r.status}`);
+        throw new Error(userMessage(r, body));
       }
       router.refresh();
       onClose();

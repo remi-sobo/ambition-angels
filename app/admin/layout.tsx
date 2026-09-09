@@ -109,8 +109,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <AdminUserProvider value={{ user, isOwner: ctx?.role === "owner" }}>
       <AdminBadgesProvider orgId={orgId} enabled={authed}>
       {/* Quality Floor Q2: the feedback layer every client component reaches
-          — toasts replace alert(), the confirm dialog replaces confirm()
-          (call sites migrate at Q3). */}
+          — toasts and the house confirm dialog replaced the native browser
+          dialogs (every call site migrated at Q3; lint bans them). */}
       <ToastProvider>
       <ConfirmProvider>
       <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">

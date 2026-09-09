@@ -7,6 +7,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TYPE } from "@/lib/admin/typeScale";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 const BADGES = [
   ["", "No badge"],
@@ -25,6 +27,7 @@ const input =
 
 export default function NewAngleForm() {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({ name: "", status_badge: "", hook: "", funds: "", want: "", ask: "", approach: "" });
@@ -34,7 +37,7 @@ export default function NewAngleForm() {
 
   const submit = async () => {
     if (!f.name.trim()) {
-      alert("Name is required.");
+      toast.error("Name is required.");
       return;
     }
     setBusy(true);
@@ -46,15 +49,18 @@ export default function NewAngleForm() {
       });
       const d = await r.json().catch(() => ({}));
       if (r.status === 409) {
-        alert("An angle with that name already exists.");
+        toast.error("An angle with that name already exists.");
         return;
       }
-      if (!r.ok) throw new Error(d?.error ?? "Failed");
+      if (!r.ok) {
+        toast.error(userMessage(r, d));
+        return;
+      }
       setF({ name: "", status_badge: "", hook: "", funds: "", want: "", ask: "", approach: "" });
       setOpen(false);
       router.refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Could not create angle.");
+    } catch {
+      toast.error(networkMessage());
     } finally {
       setBusy(false);
     }

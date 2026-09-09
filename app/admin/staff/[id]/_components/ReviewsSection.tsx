@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import SectionHeading from "../../../_components/SectionHeading";
 import EmptyState from "../../../_components/EmptyState";
 import { StatusChip } from "../../../_components/StatusChip";
@@ -28,6 +30,7 @@ function CycleBlock({
   data: SubjectReviewCycle;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [summary, setSummary] = useState(data.summary ?? "");
   const [notes, setNotes] = useState(data.managerNotes ?? "");
   const [busy, setBusy] = useState(false);
@@ -41,7 +44,7 @@ function CycleBlock({
         body: JSON.stringify({ summary, notes, share }),
       });
       if (res.ok) router.refresh();
-      else alert(((await res.json().catch(() => null)) as { error?: string })?.error ?? "Failed.");
+      else toast.error(userMessage(res, (await res.json().catch(() => null)) as { error?: string } | null));
     } finally {
       setBusy(false);
     }

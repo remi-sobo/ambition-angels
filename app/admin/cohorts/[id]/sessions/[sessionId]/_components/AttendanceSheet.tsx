@@ -7,6 +7,8 @@
 // take attendance one-handed at the door.
 
 import { useState } from "react";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 export type RosterEntry = {
   studentId: string;
@@ -47,6 +49,7 @@ export default function AttendanceSheet({
   sessionId: string;
   roster: RosterEntry[];
 }) {
+  const toast = useToast();
   const [roster, setRoster] = useState(initialRoster);
   const [busyAll, setBusyAll] = useState(false);
 
@@ -62,8 +65,12 @@ export default function AttendanceSheet({
     }).catch(() => null);
     if (!res?.ok) {
       setStatus(studentId, prev);
-      const j = await res?.json().catch(() => ({}));
-      alert(j?.error ?? "Save failed — check your connection.");
+      if (res) {
+        const j = await res.json().catch(() => ({}));
+        toast.error(userMessage(res, j));
+      } else {
+        toast.error(networkMessage());
+      }
     }
   };
 
@@ -84,7 +91,7 @@ export default function AttendanceSheet({
     }).catch(() => null);
     if (!res?.ok) {
       setRoster(prev);
-      alert("Save failed — check your connection.");
+      toast.error(res ? userMessage(res, await res.json().catch(() => null)) : networkMessage());
     }
     setBusyAll(false);
   };

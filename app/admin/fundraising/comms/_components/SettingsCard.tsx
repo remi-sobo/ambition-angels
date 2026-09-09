@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 
 export type CommsSettings = {
   from_name: string;
@@ -48,7 +49,7 @@ export function SettingsCard({ settings }: { settings: CommsSettings | null }) {
         body: JSON.stringify({ ...form, reply_to: form.reply_to || null, footer_text: form.footer_text || null }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) throw new Error(userMessage(res, j));
       setEditing(false);
       router.refresh();
     } catch (err) {

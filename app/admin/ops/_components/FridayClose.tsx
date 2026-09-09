@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { TYPE } from "@/lib/admin/typeScale";
 
 /**
@@ -26,6 +27,7 @@ export default function FridayClose({
   initialChecklist: Record<string, boolean>;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(committedAt);
@@ -50,7 +52,7 @@ export default function FridayClose({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Close failed:", e);
-      alert("Couldn't close the week. Try again.");
+      toast.error("Couldn't close the week. Try again.");
     } finally {
       setBusy(false);
     }

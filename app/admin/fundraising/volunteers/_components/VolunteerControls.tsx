@@ -6,12 +6,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40";
 
 export function NewVolunteerForm({ term = "volunteer" }: { term?: string }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [firstName, setFirstName] = useState("");
@@ -36,7 +40,7 @@ export function NewVolunteerForm({ term = "volunteer" }: { term?: string }) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
         return;
       }
       setFirstName(""); setLastName(""); setEmail(""); setPhone("");
@@ -95,10 +99,16 @@ export function NewVolunteerForm({ term = "volunteer" }: { term?: string }) {
 
 export function UnflagButton({ id, name, term = "volunteer" }: { id: string; name: string; term?: string }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
 
   const unflag = async () => {
-    if (!confirm(`Remove ${name} from the ${term.toLowerCase()} list? The record stays in fundraising.`)) return;
+    const ok = await confirm({
+      title: `Remove ${name} from the ${term.toLowerCase()} list?`,
+      body: "The record stays in fundraising.",
+      confirmLabel: "Remove",
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await fetch(`/api/admin/constituents/${id}`, {

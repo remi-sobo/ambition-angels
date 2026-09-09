@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 import {
   ACK_CHANNELS,
   ACK_SUBJECT_TYPES,
@@ -40,6 +42,7 @@ const EMPTY: Form = {
 
 export default function TemplateManager({ initial }: { initial: AckTemplate[] }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [editing, setEditing] = useState<string | "new" | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
   const [busy, setBusy] = useState(false);
@@ -81,29 +84,38 @@ export default function TemplateManager({ initial }: { initial: AckTemplate[] })
         body: JSON.stringify(form),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
       setEditing(null);
       router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
   };
 
   const del = async (id: string) => {
-    if (!confirm("Delete this template?")) return;
+    const ok = await confirm({
+      title: "Delete this template?",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     setError("");
     try {
       const res = await fetch(`/api/admin/fundraising/ack-templates/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
+        setError(userMessage(res, j));
+        return;
       }
       router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Delete failed");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }

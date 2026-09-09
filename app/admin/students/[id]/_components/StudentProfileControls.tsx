@@ -8,6 +8,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import CustomFields, { type CustomValues } from "../../_components/CustomFields";
 import type { CustomFieldDef } from "@/lib/admin/customFields";
 import type { Student, StageOption, LeaderOption } from "../../_components/StudentControls";
@@ -23,20 +25,21 @@ async function patchStudent(id: string, fields: Record<string, unknown>): Promis
   });
   if (!res.ok) {
     const j = await res.json().catch(() => ({}));
-    return (j.error as string) ?? `HTTP ${res.status}`;
+    return userMessage(res, j);
   }
   return null;
 }
 
 export function StageControls({ student, stages }: { student: Student; stages: StageOption[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
 
   const patch = async (fields: Record<string, unknown>) => {
     setBusy(true);
     const err = await patchStudent(student.id, fields);
     setBusy(false);
-    if (err) alert(err);
+    if (err) toast.error(err);
     router.refresh();
   };
 

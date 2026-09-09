@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { ReedMark } from "../../../_components/reed/ReedPanel";
 import { ANGLE_BADGES, ANGLE_TONES } from "@/lib/admin/strategy/angle-fields";
 import { TYPE } from "@/lib/admin/typeScale";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 // Reed-led wizard for a new framing angle. Step 1: describe the angle in a
 // sentence. Step 2: Reed drafts the full angle (hook → ask) and you edit every
@@ -46,6 +48,7 @@ const asStr = (v: unknown) => (typeof v === "string" ? v : "");
 
 export default function ReedAngleWizard() {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [stage, setStage] = useState<"brief" | "review">("brief");
   const [brief, setBrief] = useState("");
@@ -58,7 +61,7 @@ export default function ReedAngleWizard() {
   const reset = () => { setStage("brief"); setBrief(""); setDraft(EMPTY); setOpen(false); };
 
   const generate = async () => {
-    if (!brief.trim()) { alert("Describe the angle first."); return; }
+    if (!brief.trim()) { toast.error("Describe the angle first."); return; }
     setBusy(true);
     try {
       const r = await fetch("/api/admin/strategy/angles/draft", {
@@ -66,7 +69,7 @@ export default function ReedAngleWizard() {
         body: JSON.stringify({ brief: brief.trim() }),
       });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok) { alert(j.error ?? `HTTP ${r.status}`); return; }
+      if (!r.ok) { toast.error(userMessage(r, j)); return; }
       const a = (j.angle ?? {}) as Record<string, unknown>;
       setDraft({
         name: asStr(a.name), nav_title: asStr(a.nav_title), status_badge: asStr(a.status_badge),
@@ -79,7 +82,7 @@ export default function ReedAngleWizard() {
   };
 
   const create = async () => {
-    if (!draft.name.trim()) { alert("The angle needs a name."); return; }
+    if (!draft.name.trim()) { toast.error("The angle needs a name."); return; }
     setBusy(true);
     try {
       const r = await fetch("/api/admin/strategy/angles", {
@@ -87,8 +90,8 @@ export default function ReedAngleWizard() {
         body: JSON.stringify(draft),
       });
       const j = await r.json().catch(() => ({}));
-      if (r.status === 409) { alert("An angle with that name already exists."); return; }
-      if (!r.ok) { alert(j.error ?? `HTTP ${r.status}`); return; }
+      if (r.status === 409) { toast.error("An angle with that name already exists."); return; }
+      if (!r.ok) { toast.error(userMessage(r, j)); return; }
       reset();
       router.refresh();
     } finally { setBusy(false); }

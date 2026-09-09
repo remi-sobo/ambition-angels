@@ -6,6 +6,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 type Option = { id: string; name: string };
 
@@ -34,12 +37,15 @@ export function NewCampaignForm({ segments }: { segments: Option[] }) {
         body: JSON.stringify({ name, subject, body, segment_id: segmentId || undefined }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
       setName(""); setSubject(""); setBody(""); setSegmentId("");
       setOpen(false);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create campaign");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -90,10 +96,15 @@ export function NewCampaignForm({ segments }: { segments: Option[] }) {
 
 export function CampaignActions({ id, status, hasSegment }: { id: string; status: string; hasSegment: boolean }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
+  // null = the test-email input is closed (the native prompt is banned; this inline
+  // input is its replacement).
+  const [testEmail, setTestEmail] = useState<string | null>(null);
 
   const test = async () => {
-    const email = prompt("Send a test copy to which email?")?.trim();
+    const email = testEmail?.trim();
     if (!email) return;
     setBusy(true);
     try {
@@ -101,24 +112,40 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }),
       });
       const j = await res.json().catch(() => ({}));
-      alert(res.ok ? `Test sent to ${email}.` : (j.error ?? "Test failed"));
+      if (res.ok) {
+        toast.success(`Test sent to ${email}.`);
+        setTestEmail(null);
+      } else {
+        toast.error(userMessage(res, j));
+      }
     } finally { setBusy(false); }
   };
 
   const send = async () => {
-    if (!confirm("Send this campaign to everyone in the segment? This emails real donors and can't be undone.")) return;
+    const ok = await confirm({
+      title: "Send this campaign to everyone in the segment?",
+      body: "This emails real donors and can't be undone.",
+      confirmLabel: "Send to segment",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/admin/comms/${id}/send`, { method: "POST" });
       const j = await res.json().catch(() => ({}));
-      if (res.ok) alert(`Sent to ${j.sent} of ${j.recipients} recipients${j.failed ? ` (${j.failed} failed)` : ""}.`);
-      else alert(j.error ?? "Send failed");
+      if (res.ok) toast.success(`Sent to ${j.sent} of ${j.recipients} recipients${j.failed ? ` (${j.failed} failed)` : ""}.`);
+      else toast.error(userMessage(res, j));
       router.refresh();
     } finally { setBusy(false); }
   };
 
   const del = async () => {
-    if (!confirm("Delete this campaign?")) return;
+    const ok = await confirm({
+      title: "Delete this campaign?",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await fetch(`/api/admin/comms/${id}`, { method: "DELETE" });
@@ -126,9 +153,27 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
     } finally { setBusy(false); }
   };
 
+  if (testEmail !== null) {
+    return (
+      <span className="flex items-center gap-2">
+        <input
+          autoFocus
+          type="email"
+          value={testEmail}
+          onChange={(e) => setTestEmail(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") void test(); if (e.key === "Escape") setTestEmail(null); }}
+          placeholder="Test copy to which email?"
+          className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 text-[11px] w-48 placeholder-ink-3 focus:outline-none focus:border-orange/40"
+        />
+        <button disabled={busy || !testEmail.trim()} onClick={test} className="text-[11px] font-semibold text-orange hover:text-orange-dark transition-colors disabled:opacity-50">Send test</button>
+        <button disabled={busy} onClick={() => setTestEmail(null)} className="text-[11px] font-semibold text-ink-3 hover:text-ink-1 transition-colors disabled:opacity-50">Cancel</button>
+      </span>
+    );
+  }
+
   return (
     <span className="flex items-center gap-3">
-      <button disabled={busy} onClick={test} className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 transition-colors disabled:opacity-50">Test</button>
+      <button disabled={busy} onClick={() => setTestEmail("")} className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 transition-colors disabled:opacity-50">Test</button>
       {status === "draft" && (
         <button
           disabled={busy || !hasSegment}

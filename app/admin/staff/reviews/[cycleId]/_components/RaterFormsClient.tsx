@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import { StatusChip } from "../../../../_components/StatusChip";
 import type { RaterForm, ReviewCompetency } from "../../../_lib/reviews";
 
@@ -17,6 +19,7 @@ const REL_LABEL: Record<string, string> = {
 
 function FormCard({ form, competencies }: { form: RaterForm; competencies: ReviewCompetency[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [ratings, setRatings] = useState<Record<string, number>>(form.ratings ?? {});
   const [strengths, setStrengths] = useState(form.strengths ?? "");
   const [growth, setGrowth] = useState(form.growth ?? "");
@@ -33,7 +36,7 @@ function FormCard({ form, competencies }: { form: RaterForm; competencies: Revie
         body: JSON.stringify({ ratings, strengths, growth, comments, submit }),
       });
       if (res.ok) router.refresh();
-      else alert(((await res.json().catch(() => null)) as { error?: string })?.error ?? "Failed.");
+      else toast.error(userMessage(res, (await res.json().catch(() => null)) as { error?: string } | null));
     } finally {
       setBusy(false);
     }

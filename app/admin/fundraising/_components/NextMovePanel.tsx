@@ -8,6 +8,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage } from "@/lib/admin/errors";
 import type { NextMoveRecord } from "@/lib/agents/next-move/types";
 import { useAdminUser } from "@/app/admin/_components/AdminUserContext";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -34,6 +36,7 @@ export default function NextMovePanel({
   email: string | null;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const me = useAdminUser();
   const [suggestion, setSuggestion] = useState<NextMoveRecord | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -76,7 +79,7 @@ export default function NextMovePanel({
         setError(
           r.status === 503
             ? "AI isn't configured (ANTHROPIC_API_KEY)."
-            : j.error ?? `HTTP ${r.status}`
+            : userMessage(r, j)
         );
         return;
       }
@@ -121,7 +124,7 @@ export default function NextMovePanel({
       setTaskDone(true);
       router.refresh();
     } catch {
-      alert("Could not create the task — try again.");
+      toast.error("Could not create the task. Try again.");
     } finally {
       setTaskBusy(false);
     }

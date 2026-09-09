@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import TaskRow from "@/app/admin/ops/_components/TaskRow";
 import {
   taskStatusBadgeClass,
@@ -33,6 +34,7 @@ export default function ConnectionsBacklog({
   connections: OpsTask[];
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
 
   // Server is the source of truth; resync whenever a refresh hands us a new
@@ -79,7 +81,7 @@ export default function ConnectionsBacklog({
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Connection reorder failed:", e);
-      alert("Couldn't save new order. Reloading.");
+      toast.error("Couldn't save the new order. Reloading.");
       router.refresh();
     } finally {
       setBusy(false);

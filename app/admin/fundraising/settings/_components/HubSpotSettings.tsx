@@ -7,6 +7,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TYPE } from "@/lib/admin/typeScale";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 type Flags = { sync_out: boolean; sync_in: boolean; sync_gifts_as_deals: boolean };
 
@@ -22,6 +25,8 @@ export default function HubSpotSettings({
   flags: Flags;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
 
   const call = async (body: Record<string, unknown>) => {
@@ -34,7 +39,7 @@ export default function HubSpotSettings({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
         return;
       }
       router.refresh();
@@ -97,7 +102,15 @@ export default function HubSpotSettings({
         {connected ? (
           <button
             disabled={busy}
-            onClick={() => { if (confirm("Disconnect HubSpot? Sync stops immediately.")) void call({ action: "disconnect" }); }}
+            onClick={async () => {
+              const ok = await confirm({
+                title: "Disconnect HubSpot?",
+                body: "Sync stops immediately.",
+                confirmLabel: "Disconnect",
+                destructive: true,
+              });
+              if (ok) void call({ action: "disconnect" });
+            }}
             className="text-xs font-semibold text-ink-2 hover:text-expense border-[1.5px] border-outline bg-tile px-4 py-2 rounded-full transition-colors disabled:opacity-50"
           >
             Disconnect

@@ -9,6 +9,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import Link from "next/link";
 
 const inputCls =
@@ -142,7 +143,7 @@ export function HouseholdControls({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
+        throw new Error(userMessage(res, j));
       }
       router.refresh();
     } catch (err) {
@@ -166,7 +167,7 @@ export function HouseholdControls({
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) throw new Error(userMessage(res, j));
       setName("");
       setSalutation("");
       setStaged([]);
@@ -189,7 +190,7 @@ export function HouseholdControls({
         body: JSON.stringify(payload),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) throw new Error(userMessage(res, j));
       setEditing(false);
       router.refresh();
     } catch (err) {

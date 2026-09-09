@@ -7,6 +7,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
 import {
   KIND_LABELS,
@@ -38,13 +41,14 @@ async function patchItem(id: string, fields: Record<string, unknown>): Promise<s
   });
   if (!res.ok) {
     const j = await res.json().catch(() => ({}));
-    return (j.error as string) ?? `HTTP ${res.status}`;
+    return userMessage(res, j);
   }
   return null;
 }
 
 export function ItemStatusActions({ item }: { item: ComplianceItem }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const openItem = item.status === "upcoming" || item.status === "in_progress";
 
@@ -52,7 +56,7 @@ export function ItemStatusActions({ item }: { item: ComplianceItem }) {
     setBusy(true);
     const err = await patchItem(item.id, fields);
     setBusy(false);
-    if (err) alert(err);
+    if (err) toast.error(err);
     router.refresh();
   };
 
@@ -196,6 +200,7 @@ export function EditItemDetails({ item }: { item: ComplianceItem }) {
 // Notes + checklist, same optimistic pattern as the list row's details panel.
 export function NotesAndChecklist({ item }: { item: ComplianceItem }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [notesDraft, setNotesDraft] = useState(item.notes ?? "");
   const [checklist, setChecklist] = useState<ChecklistItem[]>(item.checklist ?? []);
@@ -205,7 +210,7 @@ export function NotesAndChecklist({ item }: { item: ComplianceItem }) {
     setBusy(true);
     const err = await patchItem(item.id, fields);
     setBusy(false);
-    if (err) alert(err);
+    if (err) toast.error(err);
     router.refresh();
   };
 
@@ -320,6 +325,8 @@ const fmtDate = (s: string) =>
 
 function FilingRow({ itemId, filing }: { itemId: string; filing: ComplianceFiling }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [filedDate, setFiledDate] = useState(filing.filed_date);
@@ -343,7 +350,7 @@ function FilingRow({ itemId, filing }: { itemId: string; filing: ComplianceFilin
     setBusy(false);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      alert(j.error ?? `HTTP ${res.status}`);
+      toast.error(userMessage(res, j));
       return;
     }
     setEditing(false);
@@ -351,7 +358,12 @@ function FilingRow({ itemId, filing }: { itemId: string; filing: ComplianceFilin
   };
 
   const remove = async () => {
-    if (!confirm(`Delete the ${fmtDate(filing.filed_date)} filing record?`)) return;
+    const ok = await confirm({
+      title: `Delete the ${fmtDate(filing.filed_date)} filing record?`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     await fetch(`/api/admin/compliance/${itemId}/filings/${filing.id}`, { method: "DELETE" });
     setBusy(false);
@@ -460,7 +472,7 @@ export function FilingsPanel({ itemId, filings }: { itemId: string; filings: Com
     setBusy(false);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setError((j.error as string) ?? `HTTP ${res.status}`);
+      setError(userMessage(res, j));
       return;
     }
     setFiledDate(""); setConfirmation(""); setFee(""); setNotes("");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { userMessage } from "@/lib/admin/errors";
 import { useEffect, useState, useTransition } from "react";
 import type { BriefContent } from "@/lib/agents/funder-research/types";
 import Snapshot from "./BriefSections/Snapshot";
@@ -149,7 +150,7 @@ export default function BriefPanel({
       if (!r.ok) {
         setRunning(false);
         const message =
-          typeof body?.error === "string" ? body.error : `HTTP ${r.status}`;
+          userMessage(r, body);
         const kind: ErrorBanner["kind"] =
           r.status === 429
             ? "rate_limit"

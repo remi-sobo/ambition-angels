@@ -8,6 +8,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 import {
   GRANT_CONTACT_ROLES,
   GRANT_CONTACT_ROLE_LABELS,
@@ -182,6 +184,7 @@ function PersonPicker({
 
 export function GrantContactRow({ contact: c }: { contact: GrantContact }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
@@ -206,18 +209,27 @@ export function GrantContactRow({ contact: c }: { contact: GrantContact }) {
         body: JSON.stringify(payload),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
       setEditing(false);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
   };
 
   const remove = async () => {
-    if (!confirm(`Remove ${name} from this grant? (The contact record is kept.)`)) return;
+    const ok = await confirm({
+      title: `Remove ${name} from this grant?`,
+      body: "The contact record is kept.",
+      confirmLabel: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await fetch(`/api/admin/grants/contacts/${c.id}`, { method: "DELETE" });
@@ -343,13 +355,16 @@ export function AddGrantContactForm({ grantId }: { grantId: string }) {
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
       setPerson({ constituentId: null, name: "" });
       setEmail("");
       setCustom("");
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add contact");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }

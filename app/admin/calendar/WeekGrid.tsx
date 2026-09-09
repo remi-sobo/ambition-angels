@@ -272,7 +272,7 @@ export default function WeekGrid({
         refresh();
       }
     },
-    [refresh, toast]
+    [refresh]
   );
 
   const apiToggleTask = useCallback(
@@ -291,7 +291,7 @@ export default function WeekGrid({
         setStatusOverride((prev) => ({ ...prev, [taskId]: done ? "todo" : "done" }));
       }
     },
-    [refresh, toast]
+    [refresh]
   );
 
   const apiAddTask = useCallback(
@@ -327,7 +327,7 @@ export default function WeekGrid({
         refresh();
       }
     },
-    [refresh, toast]
+    [refresh]
   );
 
   // ── Pointer machinery (own week only) ────────────────────────────────────

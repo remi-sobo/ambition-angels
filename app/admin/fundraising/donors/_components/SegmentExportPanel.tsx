@@ -29,7 +29,7 @@ export default function SegmentExportPanel() {
   const toast = useToast();
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
-  // null = the segment-name input is closed (prompt() is banned; this inline
+  // null = the segment-name input is closed (the native prompt is banned; this inline
   // input is its replacement).
   const [segName, setSegName] = useState<string | null>(null);
   const [segments, setSegments] = useState<Segment[]>([]);

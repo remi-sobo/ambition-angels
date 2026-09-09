@@ -334,7 +334,7 @@ export function NewMeetingForm() {
   const router = useRouter();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  // null = the date input is closed (prompt() is banned; this inline input
+  // null = the date input is closed (the native prompt is banned; this inline input
   // is its replacement).
   const [date, setDate] = useState<string | null>(null);
 

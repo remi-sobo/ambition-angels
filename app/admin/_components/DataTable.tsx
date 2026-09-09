@@ -228,7 +228,7 @@ export default function DataTable<Row>({
     URL.revokeObjectURL(url);
   };
 
-  // null = the save-view name input is closed (prompt() is banned; this
+  // null = the save-view name input is closed (the native prompt is banned; this
   // inline input in the Views dropdown is its replacement).
   const [savingViewName, setSavingViewName] = useState<string | null>(null);
   const saveView = () => {

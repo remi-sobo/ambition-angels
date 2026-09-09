@@ -3,13 +3,17 @@ import { plainDate } from "@/lib/board/format";
 import { C, F, card, eyebrow } from "./tokens";
 
 /**
- * What directors chose to send the Chair (board.write only).
+ * What directors chose to send you.
  *
  * These are NOT their private notes. member_notes has no read path for anyone
  * but its author, here or in the database. Every row below was copied here by
  * the director named on it, by pressing send. If this panel is empty, nobody
  * sent anything — it does not mean nobody wrote anything, and there is
  * deliberately no way to find out from this screen.
+ *
+ * Rendered for the designated recipient only, which is one named person and
+ * not "the board admins": holding board.write does not grant this, and the
+ * send panel names the recipient to the director before she sends.
  */
 export default function SharedNotesInbox({
   notes,
@@ -20,7 +24,7 @@ export default function SharedNotesInbox({
 }) {
   return (
     <section className="board-noprint" style={{ ...card, padding: 28 }}>
-      <div style={eyebrow}>Board admin</div>
+      <div style={eyebrow}>Sent to you</div>
       <h3 style={{ margin: "10px 0 0", fontFamily: F.heading, fontSize: 20, fontWeight: 600, color: C.ink }}>
         Notes directors sent you
       </h3>

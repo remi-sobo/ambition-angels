@@ -118,14 +118,39 @@ describe("sharing a note does not weaken member_notes", () => {
     expect(sql).not.toMatch(/for\s+all/);
   });
 
-  test("the admin read path is on shared_notes and nothing else", () => {
+  test("board.write does not grant a read path to sent notes", () => {
     const sql = readFileSync(join(ROOT, "supabase/migrations/create_shared_notes.sql"), "utf8");
-    // Every board.write mention in this migration must be about shared_notes.
-    for (const line of sql.split("\n")) {
-      if (line.includes("board.write") && !line.trim().startsWith("--")) {
-        expect(sql.slice(0, sql.indexOf(line))).toContain("on public.shared_notes");
-      }
-    }
+    // The recipient is one named person, set as data on a board_members row.
+    // board.write is Remi AND Shannon, so using it here would hand a note the
+    // director addressed to one person to two.
+    const from = sql.indexOf('create policy "author or recipient reads note"');
+    expect(from).toBeGreaterThan(-1);
+    const policy = sql.slice(from, sql.indexOf(";", from));
+    // The read policy names the recipient helper and nothing about roles.
+    expect(policy).toContain("private.is_shared_notes_recipient(org_id)");
+    expect(policy).not.toContain("has_permission");
+    expect(policy).not.toContain("board.write");
+    // And the helper is driven by a flag on the roster row.
+    const helper = sql.slice(
+      sql.indexOf("create or replace function private.is_shared_notes_recipient"),
+    );
+    expect(helper.slice(0, helper.indexOf("$$;"))).toContain("b.receives_shared_notes");
+  });
+
+  test("the inbox renders for the recipient, not for board admins", () => {
+    const page = code(readFileSync(join(ROOT, "app/board/meetings/[id]/page.tsx"), "utf8"));
+    expect(page).toContain("ctx.isNotesRecipient && (");
+    // The read itself is gated the same way, so an admin never even asks.
+    expect(page).toContain("ctx.isNotesRecipient ? await getSharedNotes");
+    expect(page).not.toContain("ctx.isAdmin ? await getSharedNotes");
+  });
+
+  test("the recipient flag is read from the roster, never assumed", () => {
+    const auth = code(readFileSync(join(ROOT, "lib/board/auth.ts"), "utf8"));
+    expect(auth).toContain("receives_shared_notes");
+    // isNotesRecipient must come from the member row, not from the permission.
+    expect(auth).toContain("isNotesRecipient: !!member?.receives_shared_notes");
+    expect(auth).not.toContain("isNotesRecipient: !!perm");
   });
 });
 

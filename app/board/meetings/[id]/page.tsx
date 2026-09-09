@@ -73,9 +73,9 @@ export default async function MeetingPage({ params }: { params: { id: string } }
       ])
     : [noNotes, [] as Awaited<ReturnType<typeof getMyQuestions>>, noNotes];
 
-  // RLS returns rows here only to a caller holding board.write, so this is
-  // empty for a director even though the call is unconditional.
-  const sharedToChair = ctx.isAdmin ? await getSharedNotes(meeting.id) : [];
+  // RLS returns another director's sent note only to the designated
+  // recipient, so this is empty for everyone else — board admins included.
+  const sharedToMe = ctx.isNotesRecipient ? await getSharedNotes(meeting.id) : [];
 
   // Continuity comes from the meeting immediately before this one.
   const prior = allMeetings.find((m) => m.meeting_date < meeting.meeting_date) ?? null;
@@ -258,7 +258,7 @@ export default async function MeetingPage({ params }: { params: { id: string } }
             {ctx.memberId && !ctx.isStaff && (
               <ShareNotes
                 meetingId={meeting.id}
-                recipient="Remi and Shannon"
+                recipient="Remi"
                 notes={agenda
                   .filter((a) => (notes[a.id] ?? "").trim())
                   .map((a) => ({
@@ -276,9 +276,9 @@ export default async function MeetingPage({ params }: { params: { id: string } }
 
             {/* Filing materials lives here because /admin/documents cannot
                 attach a document to a meeting — see the route's comment. */}
-            {ctx.isAdmin && (
+            {ctx.isNotesRecipient && (
               <SharedNotesInbox
-                notes={sharedToChair}
+                notes={sharedToMe}
                 titleOf={(id) => agenda.find((a) => a.id === id)?.title ?? "The meeting"}
               />
             )}

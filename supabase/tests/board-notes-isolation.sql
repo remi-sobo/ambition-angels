@@ -21,8 +21,11 @@ declare
   u_admin   uuid := '00000000-0000-0000-0000-0000000000a1';
   u_lara    uuid := '00000000-0000-0000-0000-0000000000a2';
   u_todd    uuid := '00000000-0000-0000-0000-0000000000a3';
+  u_second  uuid := '00000000-0000-0000-0000-0000000000a4';
   m_lara    uuid;
   m_todd    uuid;
+  m_admin   uuid;
+  m_second  uuid;
   mtg       uuid;
   item      uuid;
 begin
@@ -32,13 +35,18 @@ begin
   insert into auth.users (id, email) values
     (u_admin, 'notes-admin@example.org'),
     (u_lara,  'notes-lara@example.org'),
-    (u_todd,  'notes-todd@example.org')
+    (u_todd,  'notes-todd@example.org'),
+    (u_second,'notes-second-admin@example.org')
   on conflict (id) do nothing;
 
   insert into memberships (user_id, org_id, role) values
     (u_admin, aa, 'admin'),
     (u_lara,  aa, 'board_viewer'),
-    (u_todd,  aa, 'board_viewer')
+    (u_todd,  aa, 'board_viewer'),
+    -- A SECOND holder of board.write, standing in for Shannon. She may run
+    -- the meeting and file materials; she may not read a note a director
+    -- addressed to somebody else.
+    (u_second, aa, 'admin')
   on conflict do nothing;
 
   insert into board_members (org_id, name, email, status)
@@ -56,6 +64,20 @@ begin
   if m_todd is null then
     select id into m_todd from board_members where org_id = aa and email = 'notes-todd@example.org';
   end if;
+
+  -- The designated recipient: holds board.write AND carries the flag.
+  insert into board_members (org_id, name, email, status, receives_shared_notes)
+  values (aa, 'Notes Remi', 'notes-admin@example.org', 'active', true)
+  on conflict (org_id, lower(email)) where email is not null
+    do update set status = 'active', receives_shared_notes = true
+  returning id into m_admin;
+
+  -- Board admin, but NOT the recipient. This row is the whole point.
+  insert into board_members (org_id, name, email, status, receives_shared_notes)
+  values (aa, 'Notes Second Admin', 'notes-second-admin@example.org', 'active', false)
+  on conflict (org_id, lower(email)) where email is not null
+    do update set status = 'active', receives_shared_notes = false
+  returning id into m_second;
 
   insert into board_meetings (org_id, meeting_date, title, fiscal_label)
   values (aa, '2099-01-01', 'Notes isolation fixture', 'TEST')
@@ -177,18 +199,34 @@ begin
   end if;
 end $$;
 
--- ── As board_admin: the copy YES, the private note still NO ───────────────
+-- ── As the OTHER board admin: board.write is not enough ───────────────────
+-- She holds board.write, so she can run the meeting and file materials. The
+-- note was addressed to one person and she is not that person.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a4';
+do $$
+begin
+  if (select count(*) from shared_notes) <> 0 then
+    raise exception 'FAIL: board.write alone can read a note sent to someone else (got % rows)',
+      (select count(*) from shared_notes);
+  end if;
+  if (select count(*) from member_notes) <> 0 then
+    raise exception 'FAIL: a second board_admin can read member_notes (got % rows)',
+      (select count(*) from member_notes);
+  end if;
+end $$;
+
+-- ── As the designated recipient: the copy YES, the private note still NO ──
 set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';
 do $$
 begin
   if (select count(*) from shared_notes) <> 1 then
-    raise exception 'FAIL: board_admin cannot read a note sent to it (got %)',
+    raise exception 'FAIL: the recipient cannot read a note sent to him (got %)',
       (select count(*) from shared_notes);
   end if;
 
   -- The whole point. Sharing one note must not have opened member_notes.
   if (select count(*) from member_notes) <> 0 then
-    raise exception 'FAIL: board_admin gained a read path to member_notes (got % rows)',
+    raise exception 'FAIL: the recipient gained a read path to member_notes (got % rows)',
       (select count(*) from member_notes);
   end if;
 end $$;

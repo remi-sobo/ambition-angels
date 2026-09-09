@@ -8,6 +8,8 @@ import RestrictedToggle from "./_components/RestrictedToggle";
 import ExcludeFromRunwayToggle from "./_components/ExcludeFromRunwayToggle";
 import AiCategorize from "./_components/AiCategorize";
 import PageHeader from "../../_components/PageHeader";
+import ReconcileSection from "../reconcile/ReconcileSection";
+import CloseSection from "../close/CloseSection";
 
 type SearchParams = {
   q?: string;
@@ -276,6 +278,13 @@ export default async function TransactionsPage({
           </div>
         </nav>
       )}
+
+      {/* Spec Finance N1 — the one bookkeeping surface: ledger above, the
+          reconcile inbox and the Contract-7-gated Friday close below. Same
+          components the V1 /reconcile and /close routes render standalone
+          until their N4 308s land here. */}
+      <ReconcileSection embedded />
+      <CloseSection embedded />
     </div>
   );
 }

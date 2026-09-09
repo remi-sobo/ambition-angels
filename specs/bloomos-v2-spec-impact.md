@@ -92,14 +92,14 @@ Each stage is one PR. Remi merges every PR and starts every stage.
 
 **Two report screens drift apart.** Same gate, same waiver semantics, same audit shape — only artifact type, title, and metric defaults differ. Shared code is the enforcement, not a style guide.
 
-## Open decisions (recommendations inline — nothing starts until Remi rules)
+## Open decisions — all three resolved (Remi, 2026-09-09, as recommended)
 
-1. **What counts as an outcome.** The catalog has no `is_outcome` flag, and adding one is a migration this spec doesn't need. `metric_definitions.department` exists, and the outcome story (teens served, completion, day-30, second track) is the **`program`** department's. **Recommendation: Outcomes = the catalog's `program`-department slice** — no schema change, new outcome metrics join by setting their department, and a curated-list drift problem never exists.
+1. **What counts as an outcome — RESOLVED: the `program`-department slice.** No schema change; new outcome metrics join by setting their department.
 
-2. **How Reports reuses Finance's builder.** A copy would drift; importing `lib/finance/*` from Impact is a smell. **Recommendation: generalize** — `renderReportHtml` + line types move to `lib/reports/renderHtml.ts`, finance re-exports (the `rhythmMode` precedent), fin output pinned byte-identical, and the Impact route mirrors the fin route's exact gate-before-write shape with its own artifact type.
+2. **How Reports reuses Finance's builder — RESOLVED: generalize.** `renderReportHtml` + line types move to `lib/reports/renderHtml.ts`, finance re-exports, fin output pinned byte-identical; the Impact route mirrors the fin route's gate-before-write shape with its own artifact type.
 
-3. **The scorecard's landing.** Its at-cutover row targets Impact → KPIs ("merged"), but the catalog hub doesn't carry the owner cards' editing. **Recommendation: absorb at I3** — `ScorecardSection` extraction under the catalog hub, editing intact, row activates at I4. (The alternative — parking it settings-style — hides a working surface, the exact mistake decision 3 of Programs reversed for connections.)
+3. **The scorecard's landing — RESOLVED: absorbed onto KPIs at I3.** `ScorecardSection` extraction under the catalog hub, editing intact, row activates at I4.
 
 ---
 
-*Drafted 2026-09-09, pending Remi's approval. I1 begins only on his kickoff.*
+*Spec approved 2026-09-09. I1 kicked off the same day.*

@@ -15,6 +15,7 @@ const SOURCES = new Set([
   "ops_task", "grant_requirement", "compliance_item", "acknowledgment",
   "reconciliation_item", "document_renewal", "metric_stale",
   "application_pending", "session_unrecorded",
+  "fr_next_step", // the F5 arm (Spec Fundraising decision 2)
 ]);
 const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);

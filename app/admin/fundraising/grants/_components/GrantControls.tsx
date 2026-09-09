@@ -9,6 +9,9 @@ import { useRouter } from "next/navigation";
 import { STAGES, STAGE_LABELS } from "../_lib/stages";
 import FunderPicker, { type FunderChoice } from "../../_components/FunderPicker";
 import { TYPE } from "@/lib/admin/typeScale";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 // Turn a FunderPicker choice into the grant API's funder fields. A picked
 // funder sends funder_id; a typed name sends funder_name (find-or-created).
@@ -38,6 +41,7 @@ const fmtReqDate = (iso: string) =>
 
 export function NewGrantForm() {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -68,13 +72,16 @@ export function NewGrantForm() {
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
-      if (j.warning) alert(j.warning);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
+      if (j.warning) toast.info(j.warning);
       setName(""); setFunder({ funderId: null, funderName: "" }); setAmount(""); setDeadline(""); setPeriodEnd("");
       setOpen(false);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create grant");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -218,11 +225,14 @@ export function EditableGrantDetails({ grant }: { grant: GrantDetails }) {
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
       setEditing(false);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save grant");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -427,6 +437,7 @@ type Requirement = {
 // can be corrected in place instead of deleted and recreated.
 export function RequirementRow({ requirement: r, today }: { requirement: Requirement; today: string }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
@@ -466,12 +477,13 @@ export function RequirementRow({ requirement: r, today }: { requirement: Require
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
+        setError(userMessage(res, j));
+        return;
       }
       setEditing(false);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -548,8 +560,13 @@ export function RequirementRow({ requirement: r, today }: { requirement: Require
         )}
         <button
           disabled={busy}
-          onClick={() => {
-            if (!confirm("Delete this deadline?")) return;
+          onClick={async () => {
+            const ok = await confirm({
+              title: "Delete this deadline?",
+              confirmLabel: "Delete",
+              destructive: true,
+            });
+            if (!ok) return;
             void act(() => fetch(`/api/admin/grants/requirements/${r.id}`, { method: "DELETE" }));
           }}
           className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
@@ -581,12 +598,13 @@ export function AddRequirementForm({ grantId }: { grantId: string }) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
+        setError(userMessage(res, j));
+        return;
       }
       setDue(""); setLabel("");
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add deadline");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }

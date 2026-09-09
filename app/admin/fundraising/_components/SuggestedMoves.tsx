@@ -11,6 +11,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 import { money } from "../../finance/_components/charts";
 import type { NbaCardRecommendation, NbaStats } from "@/lib/agents/next-best-action/types";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -36,6 +38,7 @@ const toCards = (recs: NbaCardRecommendation[]): CardState[] =>
 
 export default function SuggestedMoves() {
   const router = useRouter();
+  const toast = useToast();
   const [cards, setCards] = useState<CardState[] | null>(null);
   const [stats, setStats] = useState<NbaStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -62,12 +65,15 @@ export default function SuggestedMoves() {
         setError("AI suggestions aren't configured (ANTHROPIC_API_KEY).");
         return;
       }
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) {
+        setError(userMessage(r));
+        return;
+      }
       const data = (await r.json()) as { recommendations: NbaCardRecommendation[]; stats: NbaStats };
       setCards(toCards(data.recommendations));
       setStats(data.stats);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not generate suggestions.");
+    } catch {
+      setError(networkMessage());
     } finally {
       setLoading(false);
     }
@@ -93,14 +99,14 @@ export default function SuggestedMoves() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ next_step: c.action, next_step_due: c.due }),
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) throw new Error("apply failed");
       if (c.rec.id) await decide(c.rec.id, "applied");
       patch(i, { applied: true, busy: false });
       setStats((s) => (s ? { ...s, applied: s.applied + 1 } : s));
       router.refresh();
     } catch {
       patch(i, { busy: false });
-      alert("Could not apply — try again.");
+      toast.error("Could not apply the suggestion. Try again.");
     }
   };
 

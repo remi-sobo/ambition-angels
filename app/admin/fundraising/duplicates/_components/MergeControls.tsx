@@ -5,11 +5,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 export type DupMember = { id: string; name: string; email: string; gifts: number; total: string };
 
 export default function MergeControls({ members }: { members: DupMember[] }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [primary, setPrimary] = useState(members[0]?.id ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -18,7 +21,13 @@ export default function MergeControls({ members }: { members: DupMember[] }) {
     const others = members.filter((m) => m.id !== primary);
     if (others.length === 0) return;
     const keep = members.find((m) => m.id === primary);
-    if (!confirm(`Merge ${others.length} record${others.length === 1 ? "" : "s"} into "${keep?.name}"? This reassigns all their gifts/history and deletes the duplicates. Can't be undone.`)) return;
+    const ok = await confirm({
+      title: `Merge ${others.length} record${others.length === 1 ? "" : "s"} into "${keep?.name}"?`,
+      body: "This reassigns all their gifts and history and deletes the duplicates. Can't be undone.",
+      confirmLabel: "Merge",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     setError("");
     try {
@@ -30,12 +39,14 @@ export default function MergeControls({ members }: { members: DupMember[] }) {
         });
         if (!res.ok) {
           const j = await res.json().catch(() => ({}));
-          throw new Error(j.error ?? `HTTP ${res.status}`);
+          setError(userMessage(res, j));
+          setBusy(false);
+          return;
         }
       }
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Merge failed");
+    } catch {
+      setError(networkMessage());
       setBusy(false);
     }
   };

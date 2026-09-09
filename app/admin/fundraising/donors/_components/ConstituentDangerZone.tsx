@@ -7,6 +7,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 export default function ConstituentDangerZone({
   id,
@@ -20,6 +23,8 @@ export default function ConstituentDangerZone({
   hasGifts: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState<null | "archive" | "delete">(null);
 
   const toggleArchive = async () => {
@@ -30,28 +35,40 @@ export default function ConstituentDangerZone({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ archived: !archived }),
       });
-      if (!r.ok) throw new Error();
+      if (!r.ok) {
+        toast.error(userMessage(r, await r.json().catch(() => null)));
+        return;
+      }
       router.refresh();
     } catch {
-      alert("Could not update — try again.");
+      toast.error(networkMessage());
     } finally {
       setBusy(null);
     }
   };
 
   const remove = async () => {
-    if (!confirm(`Delete ${name}? This permanently removes the record and their non-gift history. This cannot be undone.`)) return;
+    const ok = await confirm({
+      title: `Delete ${name}?`,
+      body: "This permanently removes the record and their non-gift history. This cannot be undone.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy("delete");
     try {
       const r = await fetch(`/api/admin/constituents/${id}`, { method: "DELETE" });
       if (r.status === 409) {
-        alert("This donor has financial history. Archive or merge them instead of deleting.");
+        toast.error("This donor has financial history. Archive or merge them instead of deleting.");
         return;
       }
-      if (!r.ok) throw new Error();
+      if (!r.ok) {
+        toast.error(userMessage(r, await r.json().catch(() => null)));
+        return;
+      }
       router.push("/admin/fundraising/donors");
     } catch {
-      alert("Could not delete — try again.");
+      toast.error(networkMessage());
     } finally {
       setBusy(null);
     }

@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ANGLE_BADGES, ANGLE_TONES } from "@/lib/admin/strategy/angle-fields";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage } from "@/lib/admin/errors";
 
 // One strategy/framing angle, fully editable in place. Every element commits to
 // PATCH /api/admin/strategy/angles/[id] on blur/change; the public Strategy Room
@@ -39,7 +42,12 @@ const BADGE_LABEL: Record<string, string> = {
 const inputCls =
   "w-full text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50";
 
-async function patchAngle(id: string, fields: Record<string, unknown>): Promise<boolean> {
+// Module-level helper, so failure copy comes from the caller's toast.
+async function patchAngle(
+  id: string,
+  fields: Record<string, unknown>,
+  onError: (message: string) => void,
+): Promise<boolean> {
   const r = await fetch(`/api/admin/strategy/angles/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -47,7 +55,7 @@ async function patchAngle(id: string, fields: Record<string, unknown>): Promise<
   });
   if (!r.ok) {
     const j = await r.json().catch(() => ({}));
-    alert(j.error ?? `HTTP ${r.status}`);
+    onError(userMessage(r, j));
     return false;
   }
   return true;
@@ -66,6 +74,7 @@ function EditField({
   placeholder?: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? "");
   const [busy, setBusy] = useState(false);
@@ -76,7 +85,7 @@ function EditField({
     const next = draft.trim() === "" ? null : draft.trim();
     if (next === (value ?? null)) { setDraft(value ?? ""); return; }
     setBusy(true);
-    try { if (await patchAngle(angleId, { [field]: next })) router.refresh(); else setDraft(value ?? ""); }
+    try { if (await patchAngle(angleId, { [field]: next }, toast.error)) router.refresh(); else setDraft(value ?? ""); }
     finally { setBusy(false); }
   };
   const cancel = () => { setDraft(value ?? ""); setEditing(false); };
@@ -112,19 +121,27 @@ function EditField({
 
 export default function AngleEditorCard({ angle, funderCount }: { angle: AdminAngle; funderCount: number }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
 
   const patch = async (fields: Record<string, unknown>) => {
     setBusy(true);
-    try { if (await patchAngle(angle.id, fields)) router.refresh(); }
+    try { if (await patchAngle(angle.id, fields, toast.error)) router.refresh(); }
     finally { setBusy(false); }
   };
   const remove = async () => {
-    if (!confirm(`Delete the “${angle.name}” angle? This removes it from the Strategy Room.`)) return;
+    const ok = await confirm({
+      title: `Delete the “${angle.name}” angle?`,
+      body: "This removes it from the Strategy Room.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const r = await fetch(`/api/admin/strategy/angles/${angle.id}`, { method: "DELETE" });
-      if (!r.ok) { const j = await r.json().catch(() => ({})); alert(j.error ?? `HTTP ${r.status}`); }
+      if (!r.ok) { const j = await r.json().catch(() => ({})); toast.error(userMessage(r, j)); }
       else router.refresh();
     } finally { setBusy(false); }
   };

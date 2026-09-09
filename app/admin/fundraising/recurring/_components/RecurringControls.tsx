@@ -5,6 +5,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -19,6 +22,7 @@ const FREQS = [
 
 export function NewRecurringForm() {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -37,13 +41,16 @@ export function NewRecurringForm() {
         body: JSON.stringify({ constituent_name: donor, amount: amount ? Number(amount) : undefined, frequency }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
-      if (j.warning) alert(j.warning);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
+      if (j.warning) toast.info(j.warning);
       setDonor(""); setAmount("");
       setOpen(false);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create plan");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -90,6 +97,7 @@ export function NewRecurringForm() {
 
 export function RecurringActions({ id, status }: { id: string; status: string }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const patch = async (payload: Record<string, unknown>) => {
     setBusy(true);
@@ -119,7 +127,15 @@ export function RecurringActions({ id, status }: { id: string; status: string })
       {status !== "cancelled" && (
         <button
           disabled={busy}
-          onClick={() => { if (confirm("Cancel this recurring plan?")) void patch({ status: "cancelled" }); }}
+          onClick={async () => {
+            const ok = await confirm({
+              title: "Cancel this recurring plan?",
+              body: "Expected recurring revenue stops counting it.",
+              confirmLabel: "Cancel plan",
+              destructive: true,
+            });
+            if (ok) void patch({ status: "cancelled" });
+          }}
           className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
         >
           Cancel

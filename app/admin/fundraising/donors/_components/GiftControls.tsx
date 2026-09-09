@@ -6,6 +6,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 type Option = { id: string; name: string };
 
@@ -75,12 +78,15 @@ export function GiftEntryForm({
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
       reset();
       setOpen(false);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to record gift");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -176,18 +182,26 @@ export function GiftEntryForm({
 
 export function GiftRowActions({ id }: { id: string }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   return (
     <button
       disabled={busy}
       onClick={async () => {
-        if (!confirm("Delete this gift? This removes it from all totals.")) return;
+        const ok = await confirm({
+          title: "Delete this gift?",
+          body: "This removes it from all totals.",
+          confirmLabel: "Delete",
+          destructive: true,
+        });
+        if (!ok) return;
         setBusy(true);
         try {
           const res = await fetch(`/api/admin/gifts/${id}`, { method: "DELETE" });
           if (!res.ok) {
             const j = await res.json().catch(() => ({}));
-            alert(j.error ?? `Delete failed (HTTP ${res.status})`);
+            toast.error(userMessage(res, j));
             return;
           }
           router.refresh();

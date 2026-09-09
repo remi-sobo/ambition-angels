@@ -6,6 +6,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 const inputCls =
   "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -37,13 +39,14 @@ export function NewCampaignForm() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
+        setError(userMessage(res, j));
+        return;
       }
       setName(""); setGoal(""); setStartsOn(""); setEndsOn("");
       setOpen(false);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create campaign");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -102,6 +105,7 @@ export function NewCampaignForm() {
 
 export function NewAppealForm({ campaignId }: { campaignId: string }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [name, setName] = useState("");
@@ -117,7 +121,7 @@ export function NewAppealForm({ campaignId }: { campaignId: string }) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error ?? `HTTP ${res.status}`);
+        toast.error(userMessage(res, j));
       }
       setName("");
       setOpen(false);
@@ -159,6 +163,7 @@ export function BulkAttributeForm({
   unattributed: number;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [campaignId, setCampaignId] = useState(campaigns[0]?.id ?? "");
   const [from, setFrom] = useState("2000-01-01");
@@ -174,8 +179,8 @@ export function BulkAttributeForm({
         body: JSON.stringify({ campaign_id: campaignId, from, to }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) alert(j.error ?? `HTTP ${res.status}`);
-      else alert(`Attributed ${j.count} gift${j.count === 1 ? "" : "s"}.`);
+      if (!res.ok) toast.error(userMessage(res, j));
+      else toast.success(`Attributed ${j.count} gift${j.count === 1 ? "" : "s"}.`);
       router.refresh();
     } finally {
       setBusy(false);

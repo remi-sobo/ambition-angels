@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { userMessage, networkMessage } from "@/lib/admin/errors";
 import type { PipelineOption, StageType } from "@/lib/fundraising/stages";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -45,6 +47,7 @@ export default function StagesEditor({
   usage: Record<string, number>;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [pipeline, setPipeline] = useState(
     pipelines.find((p) => p.isDefault)?.key ?? pipelines[0]?.key ?? "default"
   );
@@ -66,11 +69,12 @@ export default function StagesEditor({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${res.status}`);
+        setError(userMessage(res, j));
+        return;
       }
       router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
+    } catch {
+      setError(networkMessage());
     } finally {
       setBusy(false);
     }
@@ -132,9 +136,13 @@ export default function StagesEditor({
                 onMoveUp={() => move(i, -1)}
                 onMoveDown={() => move(i, 1)}
                 onPatch={(fields) => void patch(s.id, fields)}
-                onDelete={() => {
-                  if (confirm(`Delete the "${s.label}" stage?`))
-                    void call(`/api/admin/pipeline-stages/${s.id}`, "DELETE");
+                onDelete={async () => {
+                  const ok = await confirm({
+                    title: `Delete the "${s.label}" stage?`,
+                    confirmLabel: "Delete",
+                    destructive: true,
+                  });
+                  if (ok) void call(`/api/admin/pipeline-stages/${s.id}`, "DELETE");
                 }}
               />
             ))}

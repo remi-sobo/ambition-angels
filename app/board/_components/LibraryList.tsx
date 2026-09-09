@@ -17,6 +17,11 @@ export type LibraryDoc = {
    *  policies were adopted 31 August 2023 and uploaded in 2026, and a library
    *  that prints the upload date states the wrong one. */
   issued_at?: string | null;
+  /** The Secretary's own wording for what happened and what is next. Filed,
+   *  prepared, e-filed and a policy period are four different acts, and one
+   *  derived "Filed <date>" line would flatten them into a fifth thing that
+   *  is true of none of them. When this is set it is printed verbatim. */
+  notes?: string | null;
   /** Filed against a board meeting, so it is meeting material rather than a
    *  corporate record. Set by the library page from document_links. */
   forMeeting?: boolean;
@@ -214,10 +219,15 @@ function Group({ name, note, rows }: { name: string; note?: string; rows: Librar
               <span style={{ display: "block", fontSize: 17, fontWeight: 500, lineHeight: 1.4 }}>
                 {d.title || d.filename}
               </span>
-              <span style={{ display: "block", fontSize: 15, color: C.muted, marginTop: 3 }}>
+              <span style={{ display: "block", fontSize: 15, lineHeight: 1.5, color: C.muted, marginTop: 3 }}>
                 {[
                   d.mime?.includes("pdf") ? "PDF" : null,
-                  d.issued_at ? `Adopted ${plainDate(d.issued_at)}` : `Filed ${plainDate(d.created_at)}`,
+                  // The Secretary's wording wins when she has given it.
+                  d.notes?.trim()
+                    ? d.notes.trim()
+                    : d.issued_at
+                      ? `Adopted ${plainDate(d.issued_at)}`
+                      : `Filed ${plainDate(d.created_at)}`,
                 ]
                   .filter(Boolean)
                   .join(" · ")}

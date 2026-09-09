@@ -143,6 +143,29 @@ export async function getDonorsFunders(
     }
   }
 
+  // Volunteers (Spec Programs P3, decision 1: their V2 home is a view of the
+  // one list). Same id-set mechanism as Promoted — v_fr_rollups doesn't carry
+  // is_volunteer, and this spec ships no migrations — so the flag is read
+  // from constituents and the rollup query filters by id. An empty set
+  // short-circuits to an empty page rather than an unfiltered list.
+  let volunteerIds: string[] | null = null;
+  if (view === "volunteers") {
+    const { data: volRows } = await supabase
+      .from("constituents")
+      .select("id")
+      .eq("org_id", ctx.orgId)
+      .eq("is_volunteer", true)
+      .limit(1000);
+    volunteerIds = ((volRows ?? []) as { id: string }[]).map((r) => r.id);
+    if (volunteerIds.length === 0) {
+      const savedViewsRes = await savedViewsQ;
+      return {
+        view, rows: [], prospects: [], total: 0, page, pageSize: PAGE_SIZE,
+        savedViews: (savedViewsRes.data ?? []) as SavedView[], error: null,
+      };
+    }
+  }
+
   let q = supabase
     .from("v_fr_rollups")
     .select(
@@ -152,6 +175,7 @@ export async function getDonorsFunders(
     .eq("org_id", ctx.orgId)
     .is("archived_at", null); // archived hidden everywhere (matchesView)
   if (promotedIds) q = q.in("id", promotedIds);
+  if (volunteerIds) q = q.in("id", volunteerIds);
   // These filters must stay equivalent to matchesView() in
   // lib/fundraising/views.ts — the tested contract for the view semantics.
   if (view === "donors") q = q.gt("gift_count", 0);

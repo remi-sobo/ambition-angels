@@ -11,7 +11,14 @@
  * anyone else (DoD 2: one person, one row).
  */
 
-export type BuiltInView = "all" | "donors" | "prospects" | "promoted" | "recurring" | "lapsed";
+export type BuiltInView =
+  | "all"
+  | "donors"
+  | "prospects"
+  | "promoted"
+  | "recurring"
+  | "lapsed"
+  | "volunteers";
 
 export const BUILT_IN_VIEWS: readonly { value: BuiltInView; label: string }[] = [
   { value: "all", label: "All" },
@@ -20,6 +27,12 @@ export const BUILT_IN_VIEWS: readonly { value: BuiltInView; label: string }[] = 
   { value: "promoted", label: "Promoted" },
   { value: "recurring", label: "Recurring" },
   { value: "lapsed", label: "Lapsed" },
+  // Spec Programs P3 (decision 1, resolved): volunteers are constituents
+  // wearing a different hat (is_volunteer), so their V2 home is a view of
+  // the one list — not a second list on Programs → People. The page
+  // relabels this pill per org_terminology (YL EPA reads "Leaders"), the
+  // same lookup the V1 /admin/fundraising/volunteers page used.
+  { value: "volunteers", label: "Volunteers" },
 ];
 
 /** Views that exist only under ai.prospect_research (R1): the un-promoted
@@ -53,13 +66,16 @@ export type RollupRow = {
  * The view semantics, as one testable predicate. The page pushes the same
  * conditions into the database query (PostgREST filters) — this function is
  * the documented contract those filters must match, exercised on fixtures.
- * Prospects is not here on purpose (it reads a different table), and
- * Promoted is not either (it filters by the promoted-prospect id set, which
- * lives in fr_prospects, not on the rollup row).
+ * Prospects is not here on purpose (it reads a different table), Promoted
+ * is not either (it filters by the promoted-prospect id set, which lives in
+ * fr_prospects, not on the rollup row), and neither is Volunteers (P3: the
+ * same id-set mechanism over constituents.is_volunteer — v_fr_rollups does
+ * not carry the flag, and adding it would be a migration this spec
+ * deliberately doesn't ship).
  */
 export function matchesView(
   row: RollupRow,
-  view: Exclude<BuiltInView, "prospects" | "promoted">,
+  view: Exclude<BuiltInView, "prospects" | "promoted" | "volunteers">,
   todayISO: string,
 ): boolean {
   if (row.archived_at !== null) return false; // archived hidden everywhere

@@ -61,6 +61,18 @@ Rows activating: `/admin/strategic-plan/objective` → `/admin/organization/stra
 
 **O2 — cutover.** Both rows activate in map + config, `"organization"` joins the set, verification: four-org printout (AA/YGB four tabs landing Strategy; 9-key two tabs landing Board), live crawl (both 308s with query survival; setup/narrative/people/staff-reviews live and un-redirected). Commit: `spec-org: cutover`.
 
+> **As built (O2, 2026-09-09 — pending Remi's acceptance).** Both rows
+> graduated with O1's re-targets; the objective base joined the disk test's
+> no-base-page set (only `[id]` is real, same as V1 — the
+> meetings/upcoming precedent). Verified by live crawl (both moves 308 to
+> the O1 seats, `?tab=goals` surviving the objective hop; setup, narrative,
+> people, and staff/reviews answer only the pre-existing auth 307) and the
+> four-org printout (AA/YGB: Strategy · Team · Board · Compliance landing
+> Strategy; the 9-key orgs: Board · Compliance landing Board). With
+> `"organization"` in the cutover set, ALL SEVEN destinations render the V2
+> tab row — Inbox and the `NAV_SECTIONS` deletion are what remain of the
+> whole V2 map.
+
 Each stage is one PR. Remi merges every PR and starts every stage.
 
 ## Definition of done

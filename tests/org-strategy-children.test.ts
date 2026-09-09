@@ -29,17 +29,16 @@ describe("O1 structural pins", () => {
     expect(nav).toMatch(/pathname === BASE \|\| pathname === V2_BASE/);
   });
 
-  test("the rows re-targeted to their real seats, still at-cutover — nothing moves until O2", () => {
+  test("the rows carry the O1 re-targets and are ACTIVE since O2", () => {
     const objective = V2_ROUTE_MAP.find(
       (r) => r.v1 === "/admin/strategic-plan/objective" && r.kind === "prefix",
     )!;
     expect(objective.v2).toBe("/admin/organization/strategy/objective");
-    expect(objective.activation).toBe("at-cutover");
+    expect(objective.activation).toBe("now");
     const review = V2_ROUTE_MAP.find((r) => r.v1 === "/admin/strategic-plan/review")!;
     expect(review.v2).toBe("/admin/organization/strategy/review");
-    expect(review.activation).toBe("at-cutover");
-    // Pre-O2: the V1 routes stay put.
-    expect(v2Href("/admin/strategic-plan/review")).toBe("/admin/strategic-plan/review");
-    expect(v2Href("/admin/strategic-plan/objective/abc")).toBe("/admin/strategic-plan/objective/abc");
+    expect(review.activation).toBe("now");
+    expect(v2Href("/admin/strategic-plan/review")).toBe("/admin/organization/strategy/review");
+    expect(v2Href("/admin/strategic-plan/objective/abc")).toBe("/admin/organization/strategy/objective/abc");
   });
 });

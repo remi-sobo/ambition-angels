@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { MeetingDoc, Resolution, FollowUp } from "@/lib/board/data";
 import { fileSize, shortDate, followUpLabel, tallyLabel, firstSentence } from "@/lib/board/format";
+import MaterialActions from "./MaterialActions";
 import { C, F, card, eyebrow } from "./tokens";
 
 /** Running header for the printed minute book. Screen-hidden, print-fixed. */
@@ -29,7 +30,15 @@ export function PrintFooter() {
  * AgendaList) — one undifferentiated board packet PDF is how boards stop
  * reading. This list exists alongside it, not instead of it.
  */
-export function MaterialsList({ docs }: { docs: MeetingDoc[] }) {
+export function MaterialsList({
+  docs,
+  meetingId,
+  canManage = false,
+}: {
+  docs: MeetingDoc[];
+  meetingId: string;
+  canManage?: boolean;
+}) {
   return (
     <section style={{ ...card }}>
       <div style={{ padding: "28px 28px 16px" }}>
@@ -42,32 +51,65 @@ export function MaterialsList({ docs }: { docs: MeetingDoc[] }) {
             : `${docs.length} document${docs.length === 1 ? "" : "s"} for this meeting.`}
         </div>
       </div>
-      {docs.map((d) => (
-        <a
-          key={d.id}
-          className="board-row"
-          href={`/api/board/documents/${d.id}`}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-            padding: "16px 28px",
-            borderTop: `1px solid ${C.rule}`,
-            textDecoration: "none",
-            color: C.ink,
-          }}
-        >
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: "block", fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}>{d.title}</span>
-            <span style={{ display: "block", fontSize: 15, color: C.muted }}>
-              {[d.mime?.includes("pdf") ? "PDF" : d.doc_type, fileSize(d.size_bytes)].filter(Boolean).join(" · ")}
-            </span>
-          </span>
-          <span className="board-open" style={{ flex: "none", fontSize: 15, fontWeight: 500, borderBottom: `1px solid ${C.ruleStrong}` }}>
-            Open
-          </span>
-        </a>
-      ))}
+      {docs.map((d) => {
+        const meta = [d.mime?.includes("pdf") ? "PDF" : d.doc_type, fileSize(d.size_bytes)]
+          .filter(Boolean)
+          .join(" · ");
+
+        // A director sees the whole row as one link. An admin gets the same
+        // row with controls beside it, so the row cannot be a link any more:
+        // a button inside an anchor is invalid and swallows the click.
+        if (!canManage) {
+          return (
+            <a
+              key={d.id}
+              className="board-row"
+              href={`/api/board/documents/${d.id}`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 16,
+                padding: "16px 28px",
+                borderTop: `1px solid ${C.rule}`,
+                textDecoration: "none",
+                color: C.ink,
+              }}
+            >
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}>{d.title}</span>
+                <span style={{ display: "block", fontSize: 15, color: C.muted }}>{meta}</span>
+              </span>
+              <span className="board-open" style={{ flex: "none", fontSize: 15, fontWeight: 500, borderBottom: `1px solid ${C.ruleStrong}` }}>
+                Open
+              </span>
+            </a>
+          );
+        }
+
+        return (
+          <div
+            key={d.id}
+            style={{ padding: "16px 28px", borderTop: `1px solid ${C.rule}`, color: C.ink }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}>{d.title}</span>
+                <span style={{ display: "block", fontSize: 15, color: C.muted }}>{meta}</span>
+              </span>
+              <a
+                className="board-open"
+                href={`/api/board/documents/${d.id}`}
+                style={{ flex: "none", fontSize: 15, fontWeight: 500, color: C.ink, textDecoration: "none", borderBottom: `1px solid ${C.ruleStrong}` }}
+              >
+                Open
+              </a>
+            </div>
+            <div className="board-noprint" style={{ marginTop: 8 }}>
+              <MaterialActions meetingId={meetingId} documentId={d.id} title={d.title ?? "this document"} />
+            </div>
+          </div>
+        );
+      })}
     </section>
   );
 }

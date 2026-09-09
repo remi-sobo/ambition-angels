@@ -154,6 +154,43 @@ describe("sharing a note does not weaken member_notes", () => {
   });
 });
 
+describe("taking a document off a meeting", () => {
+  const src = code(
+    readFileSync(join(ROOT, "app/api/board/meetings/[id]/materials/[documentId]/route.ts"), "utf8"),
+  );
+
+  test("only a board admin may remove materials", () => {
+    expect(src).toContain("ctx?.isAdmin");
+    expect(src).toContain("403");
+  });
+
+  test("unlink is the default and delete must be asked for", () => {
+    // Getting the mode backwards would destroy a file on a misfiled upload.
+    expect(src).toContain('=== "delete" ? "delete" : "unlink"');
+  });
+
+  test("the link removal is scoped to this meeting and this org", () => {
+    expect(src).toContain('.eq("entity_type", "board_meeting")');
+    expect(src).toContain('.eq("entity_id", params.id)');
+    expect(src).toContain('.eq("org_id", ctx.orgId)');
+  });
+
+  test("rows go through the session client so RLS applies", () => {
+    // The admin client appears once and only for storage, which has no RLS.
+    const adminUses = src.split("getSupabaseAdmin()").length - 1;
+    expect(adminUses).toBe(1);
+    expect(src).toContain("getSupabaseAdmin().storage");
+    expect(src).not.toMatch(/getSupabaseAdmin\(\)\s*\.from\(/);
+  });
+
+  test("a delete that half-fails says the document is in the library", () => {
+    // The unlink lands first, so a failed delete leaves the document filed
+    // in the library rather than lost. Saying "nothing happened" would send
+    // the Secretary looking for it on the meeting.
+    expect(src).toContain("It is in the library.");
+  });
+});
+
 describe("sign-in does not reveal the roster", () => {
   const src = code(readFileSync(join(ROOT, "app/api/board/signin/route.ts"), "utf8"));
 

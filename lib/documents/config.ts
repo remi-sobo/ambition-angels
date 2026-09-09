@@ -30,6 +30,11 @@ export const DOC_TYPES = [
   "mou",
   "board_packet",
   "minutes",
+  // The founding corporate documents — bylaws, articles of incorporation,
+  // the IRS determination letter. Distinct from "policy": a policy is adopted
+  // by the board and can be replaced at a meeting; these constitute the
+  // corporation. The Corporate Secretary keeps them as separate shelves.
+  "corporate",
   "policy",
   "report",
   "grant_narrative",
@@ -60,6 +65,7 @@ export const DOC_TYPE_LABEL: Record<string, string> = {
   mou: "MOU",
   board_packet: "Board packet",
   minutes: "Minutes",
+  corporate: "Corporate document",
   policy: "Policy",
   report: "Report",
   grant_narrative: "Grant narrative",

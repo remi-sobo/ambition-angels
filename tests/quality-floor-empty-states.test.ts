@@ -62,9 +62,7 @@ describe("Q5: adoption on the first-run screens and V2 converge targets", () => 
     // be empty keeps its match-message (never a lecture about a first run).
     expect(src("admin", "ops", "projects", "page.tsx")).toMatch(/orgProjectCount/);
     expect(src("admin", "documents", "page.tsx")).toMatch(/orgDocCount/);
-    expect(src("admin", "finance", "transactions", "page.tsx")).toMatch(
-      /total === 0 \? \(/,
-    );
+    expect(src("admin", "finance", "transactions", "page.tsx")).toMatch(/orgTxnCount/);
   });
 });
 

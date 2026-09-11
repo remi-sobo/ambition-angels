@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../../_components/EmptyState";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
@@ -121,10 +122,13 @@ export default async function AskLog({ embedded = false }: { embedded?: boolean 
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {asks.length === 0 ? (
-            <p className={`p-6 ${TYPE.bodyMuted}`}>
-              No asks logged yet. Log every solicitation — a grant proposal, a major-gift ask, a
-              sponsorship request — and attach the PDF you sent.
-            </p>
+            <div className="p-4">
+              <EmptyState
+                label="asks"
+                title="No asks logged yet"
+                hint="Log every solicitation with “+ Log an ask” above — a grant proposal, a major-gift ask, a sponsorship request — and attach the PDF you sent."
+              />
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

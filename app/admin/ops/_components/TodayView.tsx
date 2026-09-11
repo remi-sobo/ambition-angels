@@ -1,4 +1,5 @@
 import TaskRow from "./TaskRow";
+import EmptyState from "../../_components/EmptyState";
 import type { OpsTask } from "../_types/ops";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -30,13 +31,19 @@ export default function TodayView({
       </header>
 
       {isEmpty ? (
-        <p className="text-sm text-ink-2">
-          Nothing for today yet. Use the{" "}
-          <span className="inline-block px-1.5 py-0.5 rounded bg-orange/10 text-orange border border-orange/30 font-bold">
-            +
-          </span>{" "}
-          button to add something.
-        </p>
+        <EmptyState
+          label="tasks"
+          title="Nothing for today yet"
+          hint={
+            <>
+              Use the{" "}
+              <span className="inline-block px-1.5 py-0.5 rounded bg-orange/10 text-orange border border-orange/30 font-bold">
+                +
+              </span>{" "}
+              button to add something, or pull a task in from its row menu.
+            </>
+          }
+        />
       ) : (
         <div className="space-y-5">
           {dueToday.length > 0 && (

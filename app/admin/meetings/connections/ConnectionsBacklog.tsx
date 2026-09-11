@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import EmptyState from "../../_components/EmptyState";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import TaskRow from "@/app/admin/ops/_components/TaskRow";
@@ -110,13 +111,11 @@ export default function ConnectionsBacklog({
 
   if (topLevel.length === 0) {
     return (
-      <div className="rounded-lg border-[1.5px] border-outline bg-tile p-8 text-center">
-        <p className="text-sm text-ink-2">No connections in the backlog yet.</p>
-        <p className="mt-1 text-xs text-ink-3">
-          Intros teammates send with you on the thread show up as candidates to
-          add, or create one manually with “+ New connection.”
-        </p>
-      </div>
+      <EmptyState
+        label="connections"
+        title="No connections in the backlog yet"
+        hint="Intros teammates send with you on the thread show up as candidates to add, or create one manually with “+ New connection.”"
+      />
     );
   }
 

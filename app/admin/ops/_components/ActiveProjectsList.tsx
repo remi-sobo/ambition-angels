@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../../_components/EmptyState";
 import {
   categoryBadgeClass,
   categoryLabel,
@@ -30,9 +31,15 @@ export default function ActiveProjectsList({
       </header>
 
       {projects.length === 0 ? (
-        <p className="text-sm text-ink-2">
-          No active projects yet. Create one from the projects page.
-        </p>
+        <EmptyState
+          label="active projects"
+          hint="Projects group tasks with a goal and an owner."
+          action={
+            <Link href="/admin/ops/projects" className="text-xs font-semibold text-orange hover:text-orange-dark">
+              Create the first project
+            </Link>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {projects.map((p) => {

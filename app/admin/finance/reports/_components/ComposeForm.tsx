@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import EmptyState from "@/app/admin/_components/EmptyState";
 import { useRouter } from "next/navigation";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -65,7 +66,16 @@ export default function ComposeForm({
           className="w-full text-sm bg-surface border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange"
         />
         {metrics.length === 0 ? (
-          <p className={TYPE.bodyMuted}>No metrics in the catalog yet.</p>
+          <EmptyState
+            label="metrics"
+            title="No metrics in the catalog yet"
+            hint="Reports pick their numbers from the Metric Catalog. Define the first metric and it appears here."
+            action={
+              <a href="/admin/impact/kpis" className="text-xs font-semibold text-orange hover:text-orange-dark">
+                Open the Metric Catalog →
+              </a>
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {metrics.map((m) => {

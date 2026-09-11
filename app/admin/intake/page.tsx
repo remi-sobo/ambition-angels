@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../_components/EmptyState";
 import SectionHeading from "../_components/SectionHeading";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
@@ -213,10 +214,20 @@ export default async function IntakePage() {
         )}
 
         {apps.length === 0 && (
-          <p className="text-sm text-ink-2">
-            No applications yet. Flag a cohort as &ldquo;Accepting applications&rdquo; on its page,
-            then share <span className="text-ink-1">ambitionangels.org/apply</span>.
-          </p>
+          <EmptyState
+            label="applications"
+            hint={
+              <>
+                Flag a cohort as &ldquo;Accepting applications&rdquo; on its page, then share{" "}
+                <span className="text-ink-1">ambitionangels.org/apply</span>.
+              </>
+            }
+            action={
+              <Link href="/admin/cohorts" className="text-xs font-semibold text-orange hover:text-orange-dark">
+                Open cohorts →
+              </Link>
+            }
+          />
         )}
       </div>
     </div>

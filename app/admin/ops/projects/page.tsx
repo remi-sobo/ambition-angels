@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../../_components/EmptyState";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { resolveUserHandle } from "@/lib/admin/ops/identity";
 import ProjectListControls from "../_components/ProjectListControls";
@@ -100,7 +101,13 @@ export default async function ProjectsListPage({
     .order(sort, { ascending: dir === "asc", nullsFirst: false })
     .range(offset, offset + PAGE_SIZE - 1);
 
-  const { data: rows, error, count } = await baseQuery;
+  const [{ data: rows, error, count }, { count: orgProjectCount }] = await Promise.all([
+    baseQuery,
+    // Any project at all — the first-run signal for Q5's EmptyState (the
+    // default view filters to Active, which reads as zero on day one).
+    supabase.from("ops_projects").select("*", { count: "exact", head: true }).eq("org_id", orgId),
+  ]);
+  const total = orgProjectCount ?? 0;
   if (error) {
     console.error("[/admin/ops/projects] query failed:", {
       code: error.code,
@@ -183,10 +190,22 @@ export default async function ProjectsListPage({
       />
 
       {projects.length === 0 ? (
-        <div className="rounded-card border-[1.5px] border-outline bg-surface p-8 text-center text-sm text-ink-2">
-          No projects match your filters. Try clearing them, or use{" "}
-          <span className="text-orange">+ New project</span> above.
-        </div>
+        total === 0 ? (
+          <EmptyState
+            label="projects"
+            hint="A project groups tasks with a goal and an owner — grant deliverables, program launches, board prep."
+            action={
+              <span className="text-xs font-semibold text-ink-2">
+                Use <span className="text-orange">+ New project</span> above to create the first one.
+              </span>
+            }
+          />
+        ) : (
+          <div className="rounded-card border-[1.5px] border-outline bg-surface p-8 text-center text-sm text-ink-2">
+            No projects match your filters. Try clearing them, or use{" "}
+            <span className="text-orange">+ New project</span> above.
+          </div>
+        )
       ) : (
         <div className="rounded-card border-[1.5px] border-outline bg-surface overflow-hidden">
           <div className="overflow-x-auto">

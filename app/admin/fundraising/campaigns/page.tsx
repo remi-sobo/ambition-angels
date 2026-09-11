@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import EmptyState from "../../_components/EmptyState";
 import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
@@ -143,10 +144,10 @@ export default async function CampaignsPage() {
           );
         })}
         {campaigns.length === 0 && (
-          <p className="text-sm text-ink-2">
-            No campaigns yet — create the first one (e.g. “FY26 Annual Fund”) and attribute your
-            gift history to it.
-          </p>
+          <EmptyState
+            label="campaigns"
+            hint="Create the first one (e.g. “FY26 Annual Fund”) with the button above, then attribute your gift history to it so every gift carries a campaign."
+          />
         )}
       </div>
     </div>

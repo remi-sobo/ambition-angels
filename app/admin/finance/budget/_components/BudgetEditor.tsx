@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import EmptyState from "../../../_components/EmptyState";
 import type { FinCategory } from "@/lib/finance/types";
 
 export type BudgetRow = {
@@ -135,6 +136,16 @@ export default function BudgetEditor({ year, categories, initialBudget }: Props)
             </tr>
           </thead>
           <tbody>
+            {groups.every((g) => g.items.length === 0) && (
+              <tr>
+                <td colSpan={5} className="p-4">
+                  <EmptyState
+                    label="budget lines"
+                    hint="The budget mirrors your category list — import the workbook with the button above, or add categories under Finance settings and the lines appear here."
+                  />
+                </td>
+              </tr>
+            )}
             {groups.map((g) => {
               const t = totalFor(g.items);
               return (

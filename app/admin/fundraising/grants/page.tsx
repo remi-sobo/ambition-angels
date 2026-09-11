@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../../_components/EmptyState";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
@@ -160,10 +161,12 @@ export default async function GrantsPage() {
               <h2 className={TYPE.cardTitle}>Upcoming Deadlines</h2>
             </div>
             {requirements.length === 0 ? (
-              <p className={`p-6 ${TYPE.bodyMuted}`}>
-                No open deadlines. Every grant&apos;s LOIs, applications, and reports belong here —
-                add them from the grant&apos;s page.
-              </p>
+              <div className="p-4">
+                <EmptyState
+                  label="open deadlines"
+                  hint="Every grant's LOIs, applications, and reports belong here — add them from the grant's page."
+                />
+              </div>
             ) : (
               <ul className="divide-y divide-hairline">
                 {requirements.map((r) => {

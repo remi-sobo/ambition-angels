@@ -108,7 +108,7 @@ export default async function SettingsPage({
           </dl>
         </Card>
 
-        <Card title="Your name" description="How BloomOS addresses you — shown in the greeting and on agenda owner chips.">
+        <Card title="Your name" description="How BloomOS addresses you. Shown in the greeting and on agenda owner chips.">
           <DisplayNameForm initialName={displayName} />
         </Card>
 
@@ -146,7 +146,7 @@ export default async function SettingsPage({
 
         <Card
           title="Google Calendar"
-          description="Connect your calendar so BloomOS can show your day. Read-only — BloomOS never changes your events."
+          description="Connect your calendar so BloomOS can show your day. Read-only. BloomOS never changes your events."
         >
           {calendarStatus ? (
             <ConnectCalendarControls
@@ -176,7 +176,7 @@ export default async function SettingsPage({
 
         <Card
           title="Data sources"
-          description="Where your data comes from — file imports and connected systems."
+          description="Where your data comes from. File imports and connected systems."
         >
           <div className="space-y-5">
             {canImport && (
@@ -185,7 +185,7 @@ export default async function SettingsPage({
                   <div className="min-w-0">
                     <h3 className="text-sm font-semibold text-ink-1">File imports</h3>
                     <p className="text-xs text-ink-2 mt-0.5">
-                      Bring data in from your current CRM or spreadsheet — any system that exports CSV works.
+                      Bring data in from your current CRM or spreadsheet. Any system that exports CSV works.
                     </p>
                   </div>
                   <Link
@@ -223,7 +223,7 @@ export default async function SettingsPage({
               <div className={canImport ? "pt-5 border-t border-outline" : undefined}>
                 <h3 className="text-sm font-semibold text-ink-1">Using a CRM?</h3>
                 <p className="text-xs text-ink-2 mt-0.5">
-                  Live CRM sync isn&apos;t available yet — CSV import covers everything today.{" "}
+                  Live CRM sync isn&apos;t available yet. CSV import covers everything today.{" "}
                   <a
                     href="mailto:remi@ambitionangels.org?subject=Our%20CRM"
                     className="text-orange font-semibold hover:underline"

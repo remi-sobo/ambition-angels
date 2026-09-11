@@ -124,7 +124,7 @@ export async function autoPlotFinalReport(
     grant_id: grantId,
     kind: "final_report",
     due_date: periodEnd,
-    notes: "Auto-plotted at award — adjust to the funder's actual reporting deadline.",
+    notes: "Auto-plotted at award. Adjust to the funder's actual reporting deadline.",
   });
   if (error) {
     console.error("[grants] final-report auto-plot failed:", error.message);

@@ -12,7 +12,7 @@ import { TYPE } from "@/lib/admin/typeScale";
  */
 
 const CHECKLIST_ITEMS: { key: string; label: string }[] = [
-  { key: "tasks_truthed", label: "Tasks truthed — done, rolled, or dropped" },
+  { key: "tasks_truthed", label: "Tasks truthed: done, rolled, or dropped" },
   { key: "follow_ups_cleared", label: "Meeting follow-ups cleared" },
   { key: "note_written", label: "Note to next week written" },
 ];

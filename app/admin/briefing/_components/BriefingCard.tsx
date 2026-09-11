@@ -91,7 +91,7 @@ export default function BriefingCard({ item }: { item: BriefingItem }) {
           <p className="text-sm text-ink-2 mt-0.5">{item.detail}</p>
           {item.staleFlag && (
             <p className="text-[11px] text-status-watch-text mt-1.5">
-              ⚠ Computed off {item.dataAgeDays ?? "?"}-day-old data — re-sync to confirm.
+              ⚠ Computed off {item.dataAgeDays ?? "?"}-day-old data. Re-sync to confirm.
             </p>
           )}
         </div>

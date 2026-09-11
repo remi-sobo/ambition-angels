@@ -340,7 +340,7 @@ export default async function CloseSection() {
       {/* Still open — roll forward */}
       <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
         <h2 className={`${TYPE.sectionHeader} mb-4`}>
-          Still open — truth it <span className="text-ink-3">({stillPinned.length})</span>
+          Still open: truth it <span className="text-ink-3">({stillPinned.length})</span>
         </h2>
         {stillPinned.length === 0 ? (
           <p className="text-sm text-revenue">Everything pinned for this week is done. Solid week.</p>
@@ -362,7 +362,7 @@ export default async function CloseSection() {
       {slippedRows.length > 0 && (
         <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
           <h2 className={`${TYPE.sectionHeader} mb-1`}>Slipped categories</h2>
-          <p className="text-xs text-ink-2 mb-4">Visibility only — patterns in what got pushed.</p>
+          <p className="text-xs text-ink-2 mb-4">Visibility only. Patterns in what got pushed.</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {slippedRows.map(([cat, count]) => (
               <div

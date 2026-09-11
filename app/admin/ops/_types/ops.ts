@@ -193,7 +193,7 @@ export function taskHasAssignee(
 }
 
 export const ASSIGNEE_REQUIRED_MESSAGE =
-  "Every task needs an owner — assign a team member, or set the category to the owning team (e.g. Fundraising, Finance).";
+  "Every task needs an owner. Assign a team member, or set the category to the owning team (e.g. Fundraising, Finance).";
 
 // ── Style helpers ──────────────────────────────────────────────────────────
 // Centralized so all components render consistent colors.

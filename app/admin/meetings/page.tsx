@@ -199,7 +199,7 @@ export default async function MeetingsPage() {
             </svg>
           </span>
           <p className="text-[14px] text-ink-1 font-medium">
-            All caught up — every recent meeting has a follow-up or doesn&apos;t need one.
+            All caught up: every recent meeting has a follow-up or doesn&apos;t need one.
           </p>
         </section>
       ) : null}

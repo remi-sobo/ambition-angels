@@ -93,8 +93,8 @@ function staleItem(dataAge: DataAge, now: number): BriefingItem | null {
     severity: "critical",
     title: "The data is stale",
     detail: dataAge.lastFullSyncAt
-      ? `Last full HubSpot sync was ${dataAge.ageLabel} ago — the numbers below may be out of date. Re-sync before deciding.`
-      : "The spine has never fully synced — numbers below may be incomplete.",
+      ? `Last full HubSpot sync was ${dataAge.ageLabel} ago. The numbers below may be out of date. Re-sync before deciding.`
+      : "The spine has never fully synced. Numbers below may be incomplete.",
     metric: dataAge.lastFullSyncAt ? `${dataAge.ageDays}d old` : "never synced",
     weight: 10_000, // always the top critical
     decisions: ["open", "dismiss"],

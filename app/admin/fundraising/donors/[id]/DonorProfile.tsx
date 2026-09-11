@@ -582,7 +582,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
           </div>
           {enrollments.length === 0 ? (
             <p className={`px-5 py-5 ${TYPE.bodyMuted}`}>
-              Not enrolled in any journey. Journeys are triggered, multi-step email sequences —
+              Not enrolled in any journey. Journeys are triggered, multi-step email sequences. 
               build them in{" "}
               <Link
                 href="/admin/fundraising/journeys"
@@ -611,7 +611,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                       Step {upcoming} of {totalSteps || "?"}
                     </span>
                     {journeyPaused ? (
-                      <span className="text-xs text-ink-3 whitespace-nowrap">sends held — journey paused</span>
+                      <span className="text-xs text-ink-3 whitespace-nowrap">sends held. Journey paused</span>
                     ) : (
                       e.next_run_at && (
                         <span className="text-xs text-ink-2 whitespace-nowrap">next send {fmtWhen(e.next_run_at)}</span>

@@ -53,7 +53,7 @@ export default async function StrategyHealthWidget({ className }: { className?: 
     <Widget title="Strategy" href="/admin/strategic-plan" hrefLabel="Plan" className={className}>
       {!hasPlan ? (
         <Empty>
-          No strategy yet — <Link href="/admin/strategic-plan" className="text-orange hover:underline">load the OGSM</Link> to see objective health here.
+          No strategy yet: <Link href="/admin/strategic-plan" className="text-orange hover:underline">load the OGSM</Link> to see objective health here.
         </Empty>
       ) : (
         <>

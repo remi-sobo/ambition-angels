@@ -173,7 +173,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
             </div>
             {requirements.length === 0 ? (
               <p className={`px-5 py-6 ${TYPE.bodyMuted}`}>
-                No deadlines yet — add the application, reports, and anything else the funder
+                No deadlines yet. Add the application, reports, and anything else the funder
                 expects. Awarded grants auto-plot a final report at the period end.
               </p>
             ) : (
@@ -194,7 +194,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
           </div>
           {contacts.length === 0 ? (
             <p className={`px-5 py-6 ${TYPE.bodyMuted}`}>
-              No contacts yet — attach the intro source, program officer, and whoever handles
+              No contacts yet. Attach the intro source, program officer, and whoever handles
               finance/reporting at the funder. The first contact becomes primary.
             </p>
           ) : (
@@ -221,7 +221,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
           {asks.length === 0 ? (
             <p className={`px-5 py-6 ${TYPE.bodyMuted}`}>
               No asks logged for this grant yet. Log the proposal or LOI you submitted and attach the
-              PDF — it lands in the Ask Log too.
+              PDF: it lands in the Ask Log too.
             </p>
           ) : (
             <ul className="divide-y divide-hairline">
@@ -276,7 +276,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
             <div className="lg:col-span-7 space-y-4">
               <p className="text-[11px] text-ink-3">
                 Tasks added here are filed to this grant&apos;s workspace project and show up in
-                your normal task views (My Week, Tasks, Ops) — assignee, due date, and priority set
+                your normal task views (My Week, Tasks, Ops). Assignee, due date, and priority set
                 here carry through.
               </p>
               {tasks.length === 0 && <GrantSeedTasks grantId={g.id} />}
@@ -294,7 +294,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
         ) : (
           <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 text-sm text-ink-2">
             This grant&apos;s workspace project couldn&apos;t be loaded. Reload the
-            page to retry — it will be created automatically.
+            page to retry: it will be created automatically.
           </section>
         )}
       </div>

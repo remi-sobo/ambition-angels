@@ -27,19 +27,19 @@ export type ParticipantStage = {
 /** Starter template + fallback. Mirrors the AA participant_stages seed. */
 export const DEFAULT_STAGES: ParticipantStage[] = [
   { stage_key: "discover", label: "New", sort_order: 1, engaged: false, terminal: false,
-    description: "Just joined — getting oriented, not yet actively engaged." },
+    description: "Just joined: getting oriented, not yet actively engaged." },
   { stage_key: "learn", label: "Exploring", sort_order: 2, engaged: true, terminal: false,
     description: "Exploring careers and building future-orientation through the app and sessions." },
   { stage_key: "practice", label: "Practicing", sort_order: 3, engaged: true, terminal: false,
-    description: "Hands-on — practicing and applying real skills and tasks." },
+    description: "Hands-on: practicing and applying real skills and tasks." },
   { stage_key: "connect", label: "Connecting", sort_order: 4, engaged: true, terminal: false,
     description: "Being matched with and meeting a trusted adult or mentor." },
   { stage_key: "launch", label: "Launched", sort_order: 5, engaged: true, terminal: false,
-    description: "Reached a real opportunity — an internship, program, or placement." },
+    description: "Reached a real opportunity: an internship, program, or placement." },
   { stage_key: "alumni", label: "Alumni", sort_order: 6, engaged: false, terminal: true,
     description: "Completed the journey; part of the alumni community." },
   { stage_key: "withdrawn", label: "Inactive", sort_order: 7, engaged: false, terminal: true,
-    description: "No longer participating — paused, left, or unreachable." },
+    description: "No longer participating: paused, left, or unreachable." },
 ];
 
 /** The org's stage vocabulary, session-scoped (program.read RLS). */

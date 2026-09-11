@@ -509,7 +509,7 @@ export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) 
         <label className="block text-xs text-ink-2">Behaviors (comma-separated)
           <input className={`${inputCls} w-full mt-1`} value={behaviors} onChange={(e) => setBehaviors(e.target.value)} />
         </label>
-        <label className="block text-xs text-ink-2">Proof points — one per line, <span className="text-ink-3">value | label</span> (shown in the funder Narrative)
+        <label className="block text-xs text-ink-2">Proof points: one per line, <span className="text-ink-3">value | label</span> (shown in the funder Narrative)
           <textarea className={`${inputCls} w-full mt-1 font-mono text-[12px]`} rows={4} placeholder={"3,500+ | teens reached\n87% | Title I schools"} value={proof} onChange={(e) => setProof(e.target.value)} />
         </label>
         <div className="flex gap-2">
@@ -530,7 +530,7 @@ export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) 
         <button onClick={() => setEditing(true)} className="text-[11px] text-ink-2 hover:text-orange">Edit</button>
       </div>
       {empty ? (
-        <p className="text-sm text-ink-2">Mission, vision, values, and behaviors — the culture home. Add them, or load the starter strategy above.</p>
+        <p className="text-sm text-ink-2">Mission, vision, values, and behaviors. The culture home. Add them, or load the starter strategy above.</p>
       ) : (
         <div className="space-y-3 text-sm">
           {foundation!.mission && (
@@ -1568,7 +1568,7 @@ function NewKpiForm({ goalId }: { goalId: string }) {
             {(metrics ?? []).map((m) => (
               <option key={m.key} value={m.key} disabled={m.bound}>
                 {m.label}
-                {m.value != null ? ` — ${fmtVal(m.value, m.unit)}` : ""}
+                {m.value != null ? `: ${fmtVal(m.value, m.unit)}` : ""}
                 {m.bound ? " · in use" : ""}
               </option>
             ))}

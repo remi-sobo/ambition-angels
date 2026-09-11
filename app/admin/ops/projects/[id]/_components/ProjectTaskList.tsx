@@ -80,7 +80,7 @@ export default function ProjectTaskList({
     const category = isTaskCategory(projectCategory) ? projectCategory : "other";
     setError(null);
     if (!taskHasAssignee(newAssignee, category)) {
-      setError("Every task needs an owner — pick a team member to assign this to.");
+      setError("Every task needs an owner. Pick a team member to assign this to.");
       return;
     }
     setAdding(true);

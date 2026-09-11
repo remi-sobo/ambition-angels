@@ -163,7 +163,7 @@ export default function QbBudgetImportPage() {
               Drop a CSV exported from QuickBooks Budget Overview (or any CSV
               with an Account column and a Total column). We match account names
               to your categories, show what we&apos;ll write, and let you fix any
-              unmatched rows before commit. Only <span className="text-ink-1">base_amount</span> changes —
+              unmatched rows before commit. Only <span className="text-ink-1">base_amount</span> changes. 
               contingency tiers stay where they were.
             </span>
           }
@@ -245,7 +245,7 @@ export default function QbBudgetImportPage() {
               </thead>
               <tbody>
                 {preview.matched.length === 0 ? (
-                  <tr><td colSpan={5} className="px-3 py-6 text-center text-ink-2">No automatic matches yet — map them below.</td></tr>
+                  <tr><td colSpan={5} className="px-3 py-6 text-center text-ink-2">No automatic matches yet. Map them below.</td></tr>
                 ) : (
                   preview.matched.map((m) => {
                     const delta = m.amount - m.current_base;
@@ -279,7 +279,7 @@ export default function QbBudgetImportPage() {
                 </div>
                 <p className="text-[11px] text-ink-2 mt-1">
                   We couldn&apos;t auto-match these QB accounts. Pick a category
-                  for each — or leave as &ldquo;skip&rdquo; to leave that QB line out of
+                  for each, or leave as &ldquo;skip&rdquo; to leave that QB line out of
                   the import.
                 </p>
               </header>
@@ -304,7 +304,7 @@ export default function QbBudgetImportPage() {
                           }
                           className="bg-ink border-[1.5px] border-outline rounded px-2 py-1 text-xs text-ink-1 max-w-xs"
                         >
-                          <option value="">— skip this row —</option>
+                          <option value="">(skip this row)</option>
                           {/* Suggested first */}
                           {u.suggestions.length > 0 && (
                             <optgroup label="Suggested">

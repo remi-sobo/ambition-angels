@@ -47,7 +47,7 @@ function FlagChip({ flag }: { flag: MetricFlag }) {
     return (
       <span
         className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-heading font-semibold uppercase tracking-wide text-red-700"
-        title="Computed definition with no registered resolver — this value can never refresh (register one in METRIC_RESOLVERS or set the definition to manual)."
+        title="Computed definition with no registered resolver. This value can never refresh (register one in METRIC_RESOLVERS or set the definition to manual)."
       >
         no resolver
       </span>

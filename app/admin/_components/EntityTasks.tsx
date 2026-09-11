@@ -67,7 +67,7 @@ export function EntityTasks({
     // Category comes from the entity context (a real department today), so
     // this only fires if a call site ever passes a non-department category.
     if (!taskHasAssignee(assignee, defaultCategory)) {
-      setAssigneeError("Every task needs an owner — pick a team member to assign this to.");
+      setAssigneeError("Every task needs an owner. Pick a team member to assign this to.");
       return;
     }
     setAssigneeError(null);

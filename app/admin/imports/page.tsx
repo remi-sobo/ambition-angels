@@ -67,7 +67,7 @@ export default async function ImportsPage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[860px]">
       <PageHeader
         title="Import"
-        subtitle={`Bring existing ${terms.students.toLowerCase()} or donors in from a CSV — map columns to your fields, preview, then commit`}
+        subtitle={`Bring existing ${terms.students.toLowerCase()} or donors in from a CSV. Map columns to your fields, preview, then commit`}
       />
 
       <ImportWizard resumeId={resumable?.id ?? null} />

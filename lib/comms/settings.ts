@@ -31,13 +31,13 @@ export async function loadOrgCommsSettings(
 /** Human-readable reason sending must be refused, or null when sendable. */
 export function sendBlocker(settings: OrgCommsSettings | null): string | null {
   if (!settings) {
-    return "Comms settings are missing for this org — configure the sending identity on the Comms page first.";
+    return "Comms settings are missing for this org. Configure the sending identity on the Comms page first.";
   }
   if (!settings.from_email.trim()) {
-    return "No from address configured — set one in Comms settings before sending.";
+    return "No from address configured. Set one in Comms settings before sending.";
   }
   if (!settings.mailing_address.trim()) {
-    return "No physical mailing address configured — CAN-SPAM requires one in every email. Set it in Comms settings.";
+    return "No physical mailing address configured. CAN-SPAM requires one in every email. Set it in Comms settings.";
   }
   return null;
 }

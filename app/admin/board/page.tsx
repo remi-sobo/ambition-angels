@@ -162,7 +162,7 @@ export default async function BoardPage() {
       {meetings.length > 0 && (
         <section className="mt-8">
           <SectionHeading className="mb-2">
-            {`Documents — ${meetings[0].title || "latest meeting"} (${meetings[0].meeting_date})`}
+            {`Documents: ${meetings[0].title || "latest meeting"} (${meetings[0].meeting_date})`}
           </SectionHeading>
           <EntityDocuments
             entityType="board_meeting"

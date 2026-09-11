@@ -54,7 +54,7 @@ export default function ExportControls({
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) {
-        setErr(j.error ?? "Waiver refused — reports.approve required.");
+        setErr(j.error ?? "Waiver refused. Reports.approve required.");
         return;
       }
       router.refresh();
@@ -104,7 +104,7 @@ export default function ExportControls({
       {gate.blocked && (
         <div className="rounded-xl border border-[#D9BE86] bg-[#F4E8D0] px-4 py-3 space-y-2">
           <p className="text-xs text-[#A56A1B] font-semibold">
-            Export blocked — {gate.blockers.length} unresolved figure
+            Export blocked: {gate.blockers.length} unresolved figure
             {gate.blockers.length === 1 ? "" : "s"}. The draft renders anyway; only the exit is
             gated.
           </p>
@@ -132,7 +132,7 @@ export default function ExportControls({
       )}
       {gate.waived.length > 0 && (
         <p className="text-[11px] text-ink-3">
-          Shipping with waivers: {gate.waived.map((w) => w.metricKey).join(", ")} — printed into
+          Shipping with waivers: {gate.waived.map((w) => w.metricKey).join(", ")}. Printed into
           the exported file.
         </p>
       )}

@@ -124,13 +124,13 @@ export default function ReedAngleWizard() {
         {stage === "brief" ? (
           <>
             <p className="text-xs text-ink-2 leading-relaxed">
-              Describe the angle in a sentence or two — the audience, the thesis, the kind of funder. Reed drafts
+              Describe the angle in a sentence or two. The audience, the thesis, the kind of funder. Reed drafts
               the full card (hook, frame, who funds it, what they want, the ask) and you edit every element before
               it&apos;s created. Nothing is saved until you click Create.
             </p>
             <textarea
               autoFocus rows={4} className={input}
-              placeholder="e.g. An angle for place-based collaboratives in Atlanta — saturate one metro, prove outcomes, sell a city not a line item."
+              placeholder="e.g. An angle for place-based collaboratives in Atlanta. Saturate one metro, prove outcomes, sell a city not a line item."
               value={brief} onChange={(e) => setBrief(e.target.value)}
             />
             <div className="flex items-center justify-end gap-2">

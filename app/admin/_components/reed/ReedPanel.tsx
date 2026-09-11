@@ -112,7 +112,7 @@ export default function ReedPanel({
         setMessages((m) => [...m, { role: "assistant", text: data.text ?? "(no answer)" }]);
       }
     } catch {
-      setNotice("Network error — try again.");
+      setNotice("Network error. Try again.");
     } finally {
       setBusy(false);
     }
@@ -158,7 +158,7 @@ export default function ReedPanel({
           {empty ? (
             <>
               <p className="text-sm text-cream/70 leading-relaxed">
-                Reed reasons across your BloomOS data — fundraising, finance, program, ops. Ask a
+                Reed reasons across your BloomOS data: fundraising, finance, program, ops. Ask a
                 question, or jump to one of his pre-aimed jobs:
               </p>
               <div className="mt-4 flex flex-col gap-2">
@@ -238,7 +238,7 @@ export default function ReedPanel({
               ↑
             </button>
           </div>
-          <p className="mt-2 text-center text-[11px] text-cream/50">Reed explains, recommends, and drafts for your review — he never sends or changes anything.</p>
+          <p className="mt-2 text-center text-[11px] text-cream/50">Reed explains, recommends, and drafts for your review. He never sends or changes anything.</p>
         </form>
       </aside>
     </div>

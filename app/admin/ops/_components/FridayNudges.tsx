@@ -21,7 +21,7 @@ export default async function FridayNudges({ orgId }: { orgId: string | null }) 
     <section className="rounded-card border-[1.5px] border-outline bg-surface p-6 space-y-4">
       <div>
         <h2 className={TYPE.sectionHeader}>Touches &amp; numbers</h2>
-        <p className="text-sm text-ink-2 mt-1">A quick look before you close — act where it matters.</p>
+        <p className="text-sm text-ink-2 mt-1">A quick look before you close. Act where it matters.</p>
       </div>
 
       {/* Fundraising follow-through */}
@@ -34,13 +34,13 @@ export default async function FridayNudges({ orgId }: { orgId: string | null }) 
           >
             <span className="truncate">
               <span className="font-medium">{touch.name}</span>
-              <span className="text-ink-2"> — {touch.action}</span>
+              <span className="text-ink-2">, {touch.action}</span>
             </span>
             <span className="ml-auto shrink-0 text-[11px] font-mono text-expense">{touch.weight}</span>
             <span className="shrink-0 text-orange opacity-0 group-hover:opacity-100">→</span>
           </Link>
         ) : (
-          <p className="text-sm text-revenue">Follow-through is clear — no overdue moves.</p>
+          <p className="text-sm text-revenue">Follow-through is clear. No overdue moves.</p>
         )}
         {overdueCount > 0 && (
           <Link

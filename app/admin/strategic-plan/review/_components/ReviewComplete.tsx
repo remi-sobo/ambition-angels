@@ -52,12 +52,12 @@ export default function ReviewComplete() {
     >
       <h2 className="font-heading font-semibold text-ink-1">Close out the review</h2>
       <label className="block text-xs text-ink-2">
-        Notes — decisions, blockers, what changed
+        Notes: decisions, blockers, what changed
         <textarea
           className={`${inputCls} w-full mt-1`}
           rows={4}
           value={notes}
-          placeholder="e.g. Fundraising on pace; recruitment behind — shifting Q3 focus to the partner playbook…"
+          placeholder="e.g. Fundraising on pace; recruitment behind. Shifting Q3 focus to the partner playbook…"
           onChange={(e) => setNotes(e.target.value)}
         />
       </label>

@@ -59,7 +59,7 @@ export default function ResetPasswordPage() {
     try {
       const { error: updErr } = await getSupabaseBrowser().auth.updateUser({ password: next });
       if (updErr) {
-        setError(updErr.message || "Couldn't set the password — request a fresh link and try again.");
+        setError(updErr.message || "Couldn't set the password. Request a fresh link and try again.");
         return;
       }
       setDone(true);

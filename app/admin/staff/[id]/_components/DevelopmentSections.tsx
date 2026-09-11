@@ -365,7 +365,7 @@ function KpisSection({
       {kpis.length === 0 ? (
         <EmptyState
           label="KPIs"
-          hint="Recurring personal metrics with targets — auto ones read straight from the BloomOS spine."
+          hint="Recurring personal metrics with targets. Auto ones read straight from the BloomOS spine."
         />
       ) : (
         <ul className="flex flex-col gap-2">

@@ -25,7 +25,7 @@ export default async function MyQueueWidget({
   return (
     <Widget title={title} href={href} hrefLabel={`All tasks (${total})`} className={className}>
       {tasks.length === 0 ? (
-        <Empty>Nothing assigned and open — clear plate.</Empty>
+        <Empty>Nothing assigned and open. Clear plate.</Empty>
       ) : (
         <ul className="space-y-2.5">
           {tasks.slice(0, 8).map((t) => {

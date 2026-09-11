@@ -167,7 +167,7 @@ export default async function AttendancePage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px] space-y-8">
       <PageHeader
         title="Attendance"
-        subtitle={`Every ${terms.cohort.toLowerCase()}'s ${sessionsWord} on one surface — open a ${terms.session.toLowerCase()} to take roll on its check-in sheet.`}
+        subtitle={`Every ${terms.cohort.toLowerCase()}'s ${sessionsWord} on one surface. Open a ${terms.session.toLowerCase()} to take roll on its check-in sheet.`}
       />
       <Section
         label="Today"
@@ -178,7 +178,7 @@ export default async function AttendancePage() {
         label="Upcoming"
         rows={upcoming}
         empty="Nothing scheduled ahead"
-        emptyHint={`${terms.sessions} are planned on each ${terms.cohort.toLowerCase()}'s page — schedule the next one and it shows here.`}
+        emptyHint={`${terms.sessions} are planned on each ${terms.cohort.toLowerCase()}'s page. Schedule the next one and it shows here.`}
         emptyAction={
           <Link href="/admin/programs/cohorts" className="text-xs font-semibold text-orange hover:text-orange-dark">
             Open {terms.cohorts} →

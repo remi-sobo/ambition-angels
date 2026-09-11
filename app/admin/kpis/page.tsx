@@ -43,7 +43,7 @@ function FreshnessBadge({ m }: { m: CatalogMetric }) {
   return (
     <span
       className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-revenue-bg text-revenue whitespace-nowrap"
-      title={`${m.cadence} cadence — due after ${staleAfter(m.cadence)} days`}
+      title={`${m.cadence} cadence. Due after ${staleAfter(m.cadence)} days`}
     >
       {age === 0 ? "Today" : `${age}d ago`}
     </span>
@@ -87,7 +87,7 @@ export default async function KpisPage({
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1200px]">
       <PageHeader
         title="Metric Catalog"
-        subtitle="Every number the org runs on — one definition, one source, one owner, freshness enforced"
+        subtitle="Every number the org runs on: one definition, one source, one owner, freshness enforced"
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
@@ -122,7 +122,7 @@ export default async function KpisPage({
       <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
         {rows.length === 0 ? (
           view === "stale" ? (
-            <p className="p-5 text-sm text-ink-2">Nothing is stale — every metric is inside its cadence.</p>
+            <p className="p-5 text-sm text-ink-2">Nothing is stale. Every metric is inside its cadence.</p>
           ) : (
             <div className="p-4">
               <EmptyState

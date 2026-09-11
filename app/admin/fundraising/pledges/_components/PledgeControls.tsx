@@ -215,7 +215,7 @@ export function ConvertOpportunityForm({ opportunities }: { opportunities: WonOp
           <option value="" className="bg-tile shadow-tile">Pick a won ask…</option>
           {opportunities.map((o) => (
             <option key={o.id} value={o.id} className="bg-tile shadow-tile">
-              {o.label} — ${o.askAmount.toLocaleString()}
+              {o.label} · ${o.askAmount.toLocaleString()}
             </option>
           ))}
         </select>

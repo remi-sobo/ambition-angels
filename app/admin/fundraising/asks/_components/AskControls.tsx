@@ -451,7 +451,7 @@ export function AskDocuments({ askId, documents }: { askId: string; documents: A
     <div>
       {documents.length === 0 ? (
         <p className={`px-5 py-6 ${TYPE.bodyMuted}`}>
-          No documents yet. Upload the proposal PDF, cover letter, or budget — the paper trail for
+          No documents yet. Upload the proposal PDF, cover letter, or budget. The paper trail for
           this ask lives here.
         </p>
       ) : (

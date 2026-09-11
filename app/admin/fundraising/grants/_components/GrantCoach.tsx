@@ -138,7 +138,7 @@ export default function GrantCoach({
         ...prev,
       ]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "The coach run failed — try again.");
+      setError(e instanceof Error ? e.message : "The coach run failed. Try again.");
     } finally {
       setRunningId(null);
     }
@@ -172,7 +172,7 @@ export default function GrantCoach({
       if (!r.ok) throw new Error(userMessage(r, body));
       setDefendHistory([...history, { role: "assistant", content: body.text ?? "" }]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "The reviewer stalled — try again.");
+      setError(e instanceof Error ? e.message : "The reviewer stalled. Try again.");
     } finally {
       setDefendBusy(false);
     }
@@ -188,7 +188,7 @@ export default function GrantCoach({
       <div className="px-5 py-4 border-b border-outline">
         <h2 className={TYPE.cardTitle}>Reed&apos;s Proposal Review</h2>
         <p className="text-xs text-ink-2 mt-0.5">
-          Reed reads your draft the way the actual audience will — naming the gaps and the
+          Reed reads your draft the way the actual audience will. Naming the gaps and the
           evidence to close them; he won&apos;t write the proposal for you.
         </p>
       </div>
@@ -211,7 +211,7 @@ export default function GrantCoach({
             ))}
           </select>
           <p className={`${TYPE.metadata} mt-1`}>
-            Defaulted from the funder&apos;s record — change it if that&apos;s not who&apos;s
+            Defaulted from the funder&apos;s record. Change it if that&apos;s not who&apos;s
             reading.
           </p>
         </div>
@@ -252,7 +252,7 @@ export default function GrantCoach({
               className="w-full bg-ink/40 border border-outline rounded-card p-3 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60 resize-y"
             />
             <p className={`${TYPE.metadata} mt-1`}>
-              Don&apos;t paste sensitive donor data, client identities, or unreleased financials —
+              Don&apos;t paste sensitive donor data, client identities, or unreleased financials. 
               anonymize first.
             </p>
           </div>
@@ -269,7 +269,7 @@ export default function GrantCoach({
               onChange={(e) => setFunderMaterials(e.target.value)}
               maxLength={40_000}
               rows={5}
-              placeholder="Paste the RFP, application questions, or their “What We Fund” page — the coach then rates against their criteria and checks eligibility…"
+              placeholder="Paste the RFP, application questions, or their “What We Fund” page. The coach then rates against their criteria and checks eligibility…"
               className="w-full bg-ink/40 border border-outline rounded-card p-3 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60 resize-y"
             />
           </div>
@@ -328,7 +328,7 @@ export default function GrantCoach({
         {defendOpen && (
           <div className="border-[1.5px] border-orange/40 rounded-card p-4 bg-ink/40 space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <p className={TYPE.cardLabel}>{defend.label} — live interrogation</p>
+              <p className={TYPE.cardLabel}>{defend.label}: live interrogation</p>
               <button
                 onClick={() => {
                   setDefendOpen(false);

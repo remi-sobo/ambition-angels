@@ -51,7 +51,7 @@ export default async function StrategySetupPage() {
         title="Plan setup"
         subtitle={
           <>
-            Close the gaps that make a plan measurable — add measures, wire them to live data, set a review
+            Close the gaps that make a plan measurable. Add measures, wire them to live data, set a review
             cadence · jump to the <Link href="/admin/strategic-plan" className="text-orange hover:underline">full plan</Link> anytime
           </>
         }

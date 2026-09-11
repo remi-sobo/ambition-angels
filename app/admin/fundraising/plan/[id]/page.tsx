@@ -193,7 +193,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
           <h2 className={TYPE.cardTitle}>The arithmetic underneath</h2>
           <p className="text-[11px] text-ink-3">
             Gift size × how many, checked against real asks. Identified counts open linked asks at each
-            level; committed counts won ones. The generated table is a proposal — edit it.
+            level; committed counts won ones. The generated table is a proposal. Edit it.
           </p>
         </div>
         {matched.length > 0 && (
@@ -246,7 +246,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
           <p className="text-[11px] text-ink-3">The asks, grants, and campaigns whose money this strategy counts.</p>
         </div>
         {linkedOpps.length + linkedGrants.length + linkedCampaigns.length === 0 ? (
-          <p className="px-5 py-4 text-ink-3 text-sm">Nothing linked yet — add from the lists below.</p>
+          <p className="px-5 py-4 text-ink-3 text-sm">Nothing linked yet. Add from the lists below.</p>
         ) : (
           <ul className="divide-y divide-hairline">
             {linkedOpps.map((o) => (

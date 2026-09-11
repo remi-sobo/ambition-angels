@@ -54,7 +54,7 @@ export function NewGrantForm() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!funder.funderId && !funder.funderName.trim()) {
-      setError("Every grant needs a funder — search for one or type a new name.");
+      setError("Every grant needs a funder. Search for one or type a new name.");
       return;
     }
     setBusy(true);

@@ -78,7 +78,7 @@ export default async function CloseSection({ embedded = false }: { embedded?: bo
           <h2 className={TYPE.cardTitle}>Friday close</h2>
           <p className="text-[11px] text-ink-3 max-w-2xl">
             Work top to bottom, then stamp the close. The stamp blocks while reconcile
-            proposals are pending above — a reports.approve holder can waive, on the record.
+            proposals are pending above. A reports.approve holder can waive, on the record.
           </p>
         </div>
         {wizard}

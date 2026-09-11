@@ -109,7 +109,7 @@ export default function TaskEditModal({
       router.refresh();
       setPromptMsg(successMsg);
     } catch {
-      setPromptMsg("Couldn't apply — try again.");
+      setPromptMsg("Couldn't apply. Try again.");
     } finally {
       setPromptBusy(false);
     }
@@ -144,7 +144,7 @@ export default function TaskEditModal({
       router.refresh();
       onClose();
     } catch {
-      setPromptMsg("Couldn't drop — try again.");
+      setPromptMsg("Couldn't drop. Try again.");
       setPromptBusy(false);
     }
   }
@@ -169,9 +169,9 @@ export default function TaskEditModal({
       router.refresh();
       setSubtaskTitle("");
       setDecomposing(false);
-      setPromptMsg("Subtask added — break the rest down the same way.");
+      setPromptMsg("Subtask added. Break the rest down the same way.");
     } catch {
-      setPromptMsg("Couldn't add subtask — try again.");
+      setPromptMsg("Couldn't add subtask. Try again.");
     } finally {
       setPromptBusy(false);
     }
@@ -188,7 +188,7 @@ export default function TaskEditModal({
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      setError("Couldn't copy — select the description text and copy manually.");
+      setError("Couldn't copy. Select the description text and copy manually.");
     }
   }
 
@@ -335,7 +335,7 @@ export default function TaskEditModal({
                   <span className="font-semibold uppercase tracking-wider text-status-watch-text">
                     Stuck
                   </span>
-                  <span className="text-ink-2"> — {stuckReason}. Pick one:</span>
+                  <span className="text-ink-2">, {stuckReason}. Pick one:</span>
                 </div>
                 <button
                   type="button"

@@ -45,7 +45,7 @@ function freshness(reconciledAt: string | null): { label: string; stale: boolean
   if (!reconciledAt) return { label: "no cash anchor set", stale: true };
   const days = Math.floor((Date.now() - new Date(reconciledAt).getTime()) / 86400000);
   if (days <= 4) return { label: `anchor ${days === 0 ? "updated today" : `${days}d old`}`, stale: false };
-  return { label: `stale — anchor from ${reconciledAt.slice(0, 10)}`, stale: true };
+  return { label: `stale: anchor from ${reconciledAt.slice(0, 10)}`, stale: true };
 }
 
 function Tile({ title, children }: { title: string; children: React.ReactNode }) {

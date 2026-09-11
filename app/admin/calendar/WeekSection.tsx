@@ -61,7 +61,7 @@ export default async function WeekSection({
           <h2 className={TYPE.cardTitle}>
             {view.owner.relation === "self"
               ? `Week of ${weekLabel}`
-              : `${view.owner.name}'s week of ${weekLabel} — read-only`}
+              : `${view.owner.name}'s week of ${weekLabel} (read-only)`}
           </h2>
           <p className="text-[11px] text-ink-3">
             Meetings as fixed rock, work blocks in the gaps, open time visible.
@@ -78,8 +78,8 @@ export default async function WeekSection({
         title="Calendar"
         subtitle={
           view.owner.relation === "self"
-            ? `Week of ${weekLabel} — meetings, work blocks, and open time`
-            : `${view.owner.name}'s week of ${weekLabel} — read-only`
+            ? `Week of ${weekLabel}: meetings, work blocks, and open time`
+            : `${view.owner.name}'s week of ${weekLabel} (read-only)`
         }
       />
       <WeekGrid view={view} />

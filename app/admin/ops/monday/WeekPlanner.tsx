@@ -313,7 +313,7 @@ export default function WeekPlanner({
                   <div
                     key={i}
                     className="flex items-center gap-2 text-[11px] text-revenue/90 pl-1"
-                    title="Open time in working hours — fill it with a task's “+ time”"
+                    title="Open time in working hours. Fill it with a task's “+ time”"
                   >
                     <span className="font-mono text-revenue/70 w-16 shrink-0">
                       {fmtMinuteLabel(ob.startMinute)}
@@ -522,7 +522,7 @@ function ScheduleCell({
       <span className="shrink-0 inline-flex items-center gap-1">
         <span
           className={`text-[10px] font-mono whitespace-nowrap ${conflict ? "text-expense" : "text-orange"}`}
-          title={conflict ? "Overlaps a meeting — move the block" : "On your calendar"}
+          title={conflict ? "Overlaps a meeting. Move the block" : "On your calendar"}
         >
           {conflict && "⚠ "}
           {fmtBlockTime(block)}

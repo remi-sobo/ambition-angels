@@ -206,13 +206,13 @@ function FoundationForm({ initial, onSaved }: { initial: WizFoundation; onSaved:
   return (
     <div className="space-y-2">
       <label className="block text-[11px] text-ink-2">
-        Mission — why you exist, one sentence
+        Mission: why you exist, one sentence
         <textarea className={`${inputCls} block w-full mt-1 !text-xs`} rows={2} value={mission}
           placeholder="e.g. To empower young people with the skills and support to thrive."
           onChange={(e) => setMission(e.target.value)} />
       </label>
       <label className="block text-[11px] text-ink-2">
-        Vision — the world if you succeed
+        Vision: the world if you succeed
         <textarea className={`${inputCls} block w-full mt-1 !text-xs`} rows={2} value={vision}
           onChange={(e) => setVision(e.target.value)} />
       </label>
@@ -269,12 +269,12 @@ function AddObjective({ onDone, autoOpen = false }: { onDone: () => void; autoOp
     <div className={`space-y-2 ${busy ? "opacity-60" : ""}`}>
       <input
         className={`${inputCls} w-full !py-1.5 !text-xs`}
-        placeholder="Objective — a standing pillar (e.g. Execute an effective fundraising strategy)"
+        placeholder="Objective: a standing pillar (e.g. Execute an effective fundraising strategy)"
         value={title} autoFocus onChange={(e) => setTitle(e.target.value)}
       />
       <textarea
         className={`${inputCls} w-full !text-xs`} rows={2}
-        placeholder="3-year statement (optional) — what does success look like for this pillar?"
+        placeholder="3-year statement (optional). What does success look like for this pillar?"
         value={statement} onChange={(e) => setStatement(e.target.value)}
       />
       <div className="flex gap-2">
@@ -362,7 +362,7 @@ export default function SetupWizard({
     if (!reviewDate) return;
     setReviewBusy(true);
     try {
-      if (await api("/api/admin/plan/reviews", { notes: "Plan setup — first review scheduled.", next_review_at: reviewDate })) refresh();
+      if (await api("/api/admin/plan/reviews", { notes: "Plan setup. First review scheduled.", next_review_at: reviewDate })) refresh();
     } finally {
       setReviewBusy(false);
     }
@@ -382,14 +382,14 @@ export default function SetupWizard({
       )}
 
       <StepCard n={1} title="Foundation" done={foundationSet}
-        hint={foundationSet ? "Mission, vision, values, and behaviors are set." : "Add your mission, vision, values, and behaviors — the culture home."}>
+        hint={foundationSet ? "Mission, vision, values, and behaviors are set." : "Add your mission, vision, values, and behaviors. The culture home."}>
         {!foundationSet && <FoundationForm initial={foundation} onSaved={refresh} />}
       </StepCard>
 
       <StepCard n={2} title="Objectives have goals" done={objectives.length > 0 && objectivesNoGoals.length === 0}
         hint={
           objectives.length === 0
-            ? "No objectives yet — add the standing departments you run against (you author these; the wizard never invents strategy)."
+            ? "No objectives yet. Add the standing departments you run against (you author these; the wizard never invents strategy)."
             : objectivesNoGoals.length === 0
             ? "Every objective has at least one goal."
             : `${objectivesNoGoals.length} objective${objectivesNoGoals.length === 1 ? "" : "s"} need a goal.`

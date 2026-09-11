@@ -86,10 +86,10 @@ describe("Today integration (rank + honest fallback)", () => {
 
   test("the fallback line is honest and type-specific — never a bare checkbox", () => {
     expect(whyFallback(row({}), "2026-09-08")).toBe(
-      "A move you set on an open ask — was due 2026-09-01.",
+      "A move you set on an open ask, was due 2026-09-01.",
     );
     expect(whyFallback(row({ due_date: "2026-09-08" }), "2026-09-08")).toBe(
-      "A move you set on an open ask — due today.",
+      "A move you set on an open ask, due today.",
     );
   });
 });

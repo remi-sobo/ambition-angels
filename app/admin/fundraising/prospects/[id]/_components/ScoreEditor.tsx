@@ -222,7 +222,7 @@ export default function ScoreEditor({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
-          placeholder="Why this score — context, sources, what you'd do next."
+          placeholder="Why this score: context, sources, what you'd do next."
           className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
         />
       </div>

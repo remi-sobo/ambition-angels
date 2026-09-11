@@ -159,7 +159,7 @@ export default function StagesEditor({
       <p className="text-[12px] text-ink-3 leading-relaxed max-w-[640px]">
         Type drives the forecast: <strong>Open</strong> counts toward weighted pipeline,{" "}
         <strong>Won</strong> is committed, Lost and On hold count toward neither. The HubSpot stage
-        id links a stage to its HubSpot counterpart for two-way sync — leave it blank for
+        id links a stage to its HubSpot counterpart for two-way sync. Leave it blank for
         Bloom-only stages. Stages holding asks can&apos;t be deactivated or deleted; move the cards
         first.
       </p>

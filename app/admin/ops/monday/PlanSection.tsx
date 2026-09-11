@@ -309,14 +309,14 @@ export default async function PlanSection() {
       </h2>
       {slippedRaw.length === 0 ? (
         <p className="text-sm text-ink-2 mt-2 italic">
-          The deck&apos;s clear — nothing carried over from an earlier week.
+          The deck&apos;s clear. Nothing carried over from an earlier week.
         </p>
       ) : (
         <>
           <p className="text-sm text-ink-1 mb-4">
             <span className="font-semibold text-ink-1">{slippedRaw.length}</span>{" "}
             {slippedRaw.length === 1 ? "item" : "items"} planned for an earlier
-            week aren&apos;t done. Empty the deck before adding — plan it in,
+            week aren&apos;t done. Empty the deck before adding. Plan it in,
             finish it, push it, or drop it.
           </p>
           <div className="space-y-1.5">

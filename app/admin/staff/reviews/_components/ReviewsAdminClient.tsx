@@ -193,13 +193,13 @@ export default function ReviewsAdminClient({
                 <div className="mt-3 rounded-md border border-status-watch/40 bg-status-watch-bg px-3 py-2 text-xs text-ink-1">
                   <p className="font-semibold">Small-team anonymity warning</p>
                   <p className="text-ink-2 mt-0.5">
-                    These subjects have a single upward or peer rater — anonymity can’t be real, so their raw upward/peer
+                    These subjects have a single upward or peer rater. Anonymity can’t be real, so their raw upward/peer
                     feedback stays confidential (subject sees the summary only):
                   </p>
                   <ul className="mt-1 list-disc list-inside">
                     {warnings[c.id].map((s) => (
                       <li key={s.subjectId}>
-                        {s.name} — {s.upward} upward, {s.peers} peer
+                        {s.name} · {s.upward} upward, {s.peers} peer
                       </li>
                     ))}
                   </ul>

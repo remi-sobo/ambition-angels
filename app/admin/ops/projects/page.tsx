@@ -193,7 +193,7 @@ export default async function ProjectsListPage({
         total === 0 ? (
           <EmptyState
             label="projects"
-            hint="A project groups tasks with a goal and an owner — grant deliverables, program launches, board prep."
+            hint="A project groups tasks with a goal and an owner. Grant deliverables, program launches, board prep."
             action={
               <span className="text-xs font-semibold text-ink-2">
                 Use <span className="text-orange">+ New project</span> above to create the first one.

@@ -164,7 +164,7 @@ describe("setPrimaryGrantContact", () => {
       { data: null, error: { code: "23505", message: "unique" } },
     ]);
     const res = await setPrimaryGrantContact(sb, GRANT, CONTACT);
-    expect("error" in res && res.error).toContain("try again");
+    expect("error" in res && res.error).toContain("Try again");
   });
 });
 

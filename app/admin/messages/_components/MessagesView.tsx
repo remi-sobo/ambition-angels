@@ -429,7 +429,7 @@ export default function MessagesView({
             <div className="min-w-0">
               <h1 className={`${TYPE.sectionTitle} leading-tight`}>Messages</h1>
               <p className="text-[11px] text-ink-3 truncate">
-                Chat with your team — alerts &amp; mentions live in Inbox
+                Chat with your team. Alerts &amp; mentions live in Inbox
               </p>
             </div>
             <Button size="sm" onClick={() => setNewOpen(true)}>

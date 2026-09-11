@@ -164,7 +164,7 @@ export default async function GrantsPage() {
               <div className="p-4">
                 <EmptyState
                   label="open deadlines"
-                  hint="Every grant's LOIs, applications, and reports belong here — add them from the grant's page."
+                  hint="Every grant's LOIs, applications, and reports belong here. Add them from the grant's page."
                 />
               </div>
             ) : (

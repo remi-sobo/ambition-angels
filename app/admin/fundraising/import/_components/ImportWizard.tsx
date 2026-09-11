@@ -98,7 +98,7 @@ export default function ImportWizard() {
 
   const ingest = (text: string) => {
     const p = parseCsv(text);
-    if (p.headers.length === 0 || p.rows.length === 0) { setError("No rows found — check the file has a header row and data."); return; }
+    if (p.headers.length === 0 || p.rows.length === 0) { setError("No rows found. Check the file has a header row and data."); return; }
     setError("");
     setParsed(p);
     setMap(autoMap(p.headers));
@@ -172,7 +172,7 @@ export default function ImportWizard() {
       setError(
         (err instanceof Error ? err.message : "Import failed") +
           (totals.batches.length > 0
-            ? ` (${totals.batches.length} batch(es) already landed — re-run the same file to continue; nothing will double)`
+            ? ` (${totals.batches.length} batch(es) already landed. Re-run the same file to continue; nothing will double)`
             : "")
       );
     } finally {
@@ -196,7 +196,7 @@ export default function ImportWizard() {
         {result.reconciliation.years.length > 0 && (
           <div>
             <h3 className="text-xs font-heading font-bold text-ink-1 mb-2">
-              Reconciliation by year — check these against the source system&apos;s totals
+              Reconciliation by year. Check these against the source system&apos;s totals
             </h3>
             <table className="text-xs">
               <thead>
@@ -292,7 +292,7 @@ export default function ImportWizard() {
                 onChange={(e) => setMap((m) => { const n = { ...m }; if (e.target.value === "") delete n[f.key]; else n[f.key] = Number(e.target.value); return n; })}
                 className={inputCls}
               >
-                <option value="" className="bg-tile shadow-tile">— ignore —</option>
+                <option value="" className="bg-tile shadow-tile">(ignore)</option>
                 {parsed.headers.map((h, i) => (<option key={i} value={i} className="bg-tile shadow-tile">{h || `Column ${i + 1}`}</option>))}
               </select>
             </label>

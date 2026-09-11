@@ -68,7 +68,7 @@ export function NewCampaignForm({ segments }: { segments: Option[] }) {
         <label className={labelCls}>
           Segment
           <select value={segmentId} onChange={(e) => setSegmentId(e.target.value)} className={inputCls + " w-52"}>
-            <option value="" className="bg-tile shadow-tile">— pick to enable send —</option>
+            <option value="" className="bg-tile shadow-tile">(pick to enable send)</option>
             {segments.map((s) => (<option key={s.id} value={s.id} className="bg-tile shadow-tile">{s.name}</option>))}
           </select>
         </label>
@@ -78,7 +78,7 @@ export function NewCampaignForm({ segments }: { segments: Option[] }) {
         <input required value={subject} onChange={(e) => setSubject(e.target.value)} className={inputCls + " w-full"} />
       </label>
       <label className={labelCls + " block"}>
-        Body — plain text, blank line = new paragraph, {"{{first_name}}"} personalizes
+        Body: plain text, blank line = new paragraph, {"{{first_name}}"} personalizes
         <textarea required value={body} onChange={(e) => setBody(e.target.value)} rows={8} className={inputCls + " w-full resize-y font-body"} placeholder={"Hi {{first_name}},\n\nThank you for believing in our teens…"} />
       </label>
       <div className="flex items-center gap-2">

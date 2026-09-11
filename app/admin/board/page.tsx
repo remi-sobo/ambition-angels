@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import EmptyState from "../_components/EmptyState";
 import { getOrgContext } from "@/lib/admin/auth";
 import SectionHeading from "../_components/SectionHeading";
 import PageHeader from "../_components/PageHeader";
@@ -126,10 +127,10 @@ export default async function BoardPage() {
             />
           ))}
           {members.length === 0 && (
-            <p className="text-sm text-ink-2">
-              No board members yet — add your directors with their terms and emails (an email that
-              matches a donor record links giving status automatically).
-            </p>
+            <EmptyState
+              label="board members"
+              hint="Add your directors with their terms and emails using the button above (an email that matches a donor record links giving status automatically)."
+            />
           )}
         </div>
       </section>
@@ -146,10 +147,10 @@ export default async function BoardPage() {
             <MeetingCard key={mt.id} meeting={mt} members={active} />
           ))}
           {meetings.length === 0 && (
-            <p className="text-sm text-ink-2">
-              No meetings yet — create one to build the agenda, take attendance with a quorum
-              check, and keep minutes that freeze on approval.
-            </p>
+            <EmptyState
+              label="meetings"
+              hint="Create one with the button above to build the agenda, take attendance with a quorum check, and keep minutes that freeze on approval."
+            />
           )}
         </div>
       </section>

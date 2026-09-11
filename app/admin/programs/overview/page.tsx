@@ -6,6 +6,7 @@ import { todayInTZ } from "@/lib/admin/ops/week";
 import { pct } from "@/app/admin/cohorts/_lib/rollups";
 import { cf, fullName, type Student } from "@/app/admin/students/_lib/studentFields";
 import PageHeader from "@/app/admin/_components/PageHeader";
+import EmptyState from "@/app/admin/_components/EmptyState";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // Spec Programs P2 — Overview, the destination's landing. Until P2 this host
@@ -163,9 +164,16 @@ export default async function ProgramsOverviewPage() {
           </Link>
         </div>
         {nextSessions.length === 0 ? (
-          <p className="text-sm text-ink-3 italic px-1">
-            Nothing scheduled — plan {terms.sessions.toLowerCase()} from the {terms.cohort.toLowerCase()} pages.
-          </p>
+          <EmptyState
+            label={terms.sessions.toLowerCase()}
+            title="Nothing scheduled"
+            hint={`${terms.sessions} are planned on each ${terms.cohort.toLowerCase()}'s page — schedule one and the near-term calendar fills in.`}
+            action={
+              <Link href="/admin/programs/cohorts" className="text-xs font-semibold text-orange hover:text-orange-dark">
+                Open {terms.cohorts} →
+              </Link>
+            }
+          />
         ) : (
           <div className="space-y-1.5">
             {nextSessions.map((s) => (

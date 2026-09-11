@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../_components/EmptyState";
 import PageHeader from "../_components/PageHeader";
 import Metric from "../_components/Metric";
 import NeedsYou from "./_components/NeedsYou";
@@ -121,7 +122,15 @@ export default async function TodayPage() {
 
           <Tile title="Mission health">
             {missionKeys.length === 0 ? (
-              <p className="text-[12px] text-ink-2">No program metrics defined yet.</p>
+              <EmptyState
+                label="program metrics"
+                hint="Mission health reads the Metric Catalog. Define a program metric and it shows here."
+                action={
+                  <Link href="/admin/impact/kpis" className="text-xs font-semibold text-orange hover:text-orange-dark">
+                    Open the Metric Catalog →
+                  </Link>
+                }
+              />
             ) : (
               <ul className="space-y-2">
                 {missionKeys.map((key) => (

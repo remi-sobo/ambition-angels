@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import EmptyState from "../../_components/EmptyState";
 import { useRouter } from "next/navigation";
 import { userMessage } from "@/lib/admin/errors";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
@@ -251,7 +252,10 @@ export default function TaskListView({
   return (
     <div className="space-y-6">
       {groups.length === 0 ? (
-        <p className="text-sm text-ink-2 italic">No tasks yet. Add one below.</p>
+        <EmptyState
+          label="tasks"
+          hint="Type a title in the add row below. Every task lands in Today or This Week from its row menu."
+        />
       ) : (
         groups.map((g) => (
           <div key={g.key}>

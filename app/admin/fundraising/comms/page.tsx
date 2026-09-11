@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import EmptyState from "../../_components/EmptyState";
 import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
@@ -96,9 +97,12 @@ export default async function CommsPage() {
 
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
           {campaigns.length === 0 ? (
-            <p className={`p-8 ${TYPE.bodyMuted}`}>
-              No campaigns yet. Create one, attach a saved segment, send a test to yourself, then send.
-            </p>
+            <div className="p-4">
+              <EmptyState
+                label="campaigns"
+                hint="Create one with the button above, attach a saved segment, send a test to yourself, then send."
+              />
+            </div>
           ) : (
             <ul className="divide-y divide-hairline">
               {campaigns.map((c) => (

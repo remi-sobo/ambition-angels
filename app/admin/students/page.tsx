@@ -1,4 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import Link from "next/link";
+import EmptyState from "../_components/EmptyState";
 import SectionHeading from "../_components/SectionHeading";
 import StageStrip from "../_components/StageStrip";
 import StatCard from "../_components/StatCard";
@@ -150,10 +152,15 @@ export default async function StudentsPage() {
           );
         })}
         {students.length === 0 && (
-          <p className="text-sm text-ink-2">
-            No {terms.students.toLowerCase()} yet — add one above, or bring them in
-            through Imports.
-          </p>
+          <EmptyState
+            label={terms.students.toLowerCase()}
+            hint={`Add your first ${terms.student.toLowerCase()} with the button above, or bring a whole roster in at once.`}
+            action={
+              <Link href="/admin/imports" className="text-xs font-semibold text-orange hover:text-orange-dark">
+                Import a roster (CSV) →
+              </Link>
+            }
+          />
         )}
       </div>
     </div>

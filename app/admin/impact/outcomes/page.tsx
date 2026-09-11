@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "@/app/admin/_components/EmptyState";
 import { getMetricCatalog, staleAfter, type CatalogMetric } from "@/lib/admin/metrics/catalog";
 import Metric from "@/app/admin/_components/Metric";
 import PageHeader from "@/app/admin/_components/PageHeader";
@@ -46,16 +47,21 @@ export default async function OutcomesPage() {
       />
 
       {outcomes.length === 0 ? (
-        <section className="rounded-card-lg border border-dashed border-outline bg-surface px-6 py-10 text-center">
-          <p className="text-sm text-ink-2">
-            No outcome metrics yet. A metric joins this screen by carrying the{" "}
-            <span className="font-mono text-[12px]">program</span> department in the{" "}
-            <Link href="/admin/impact/kpis" className="text-orange hover:text-orange-dark font-medium">
-              Metric Catalog
+        <EmptyState
+          label="outcome metrics"
+          hint={
+            <>
+              A metric joins this screen by carrying the{" "}
+              <span className="font-mono text-[12px]">program</span> department in the Metric
+              Catalog.
+            </>
+          }
+          action={
+            <Link href="/admin/impact/kpis" className="text-xs font-semibold text-orange hover:text-orange-dark">
+              Open the Metric Catalog →
             </Link>
-            .
-          </p>
-        </section>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {outcomes.map((m) => (

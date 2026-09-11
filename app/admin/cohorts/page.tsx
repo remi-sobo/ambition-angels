@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../_components/EmptyState";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import StatCard from "../_components/StatCard";
 import SectionSummary from "../_components/SectionSummary";
@@ -176,10 +177,12 @@ export default async function CohortsPage() {
           );
         })}
         {cohorts.length === 0 && (
-          <p className="text-sm text-ink-2 col-span-full">
-            No {terms.cohorts.toLowerCase()} yet — create one above, or run the
-            create_cohorts_attendance migration to fold in YGB Creators Camp.
-          </p>
+          <div className="col-span-full">
+            <EmptyState
+              label={terms.cohorts.toLowerCase()}
+              hint={`A ${terms.cohort.toLowerCase()} is a ${terms.program.toLowerCase()} × term group with its own sessions, roster, and attendance. Create the first one with the button above.`}
+            />
+          </div>
         )}
       </div>
     </div>

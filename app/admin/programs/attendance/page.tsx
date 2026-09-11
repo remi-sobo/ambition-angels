@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState from "../../_components/EmptyState";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getProgramTerms } from "@/lib/admin/terminology";
@@ -134,11 +135,15 @@ export default async function AttendancePage() {
     label,
     rows,
     empty,
+    emptyHint,
+    emptyAction,
     showRate,
   }: {
     label: string;
     rows: SessionRow[];
     empty: string;
+    emptyHint?: string;
+    emptyAction?: React.ReactNode;
     showRate?: boolean;
   }) => (
     <section>
@@ -146,7 +151,7 @@ export default async function AttendancePage() {
         {label} <span className="text-ink-3 font-normal">({rows.length})</span>
       </h2>
       {rows.length === 0 ? (
-        <p className="text-sm text-ink-3 italic px-1">{empty}</p>
+        <EmptyState label={sessionsWord} title={empty} hint={emptyHint} action={emptyAction} />
       ) : (
         <div className="space-y-1.5">
           {rows.map((s) => (
@@ -167,17 +172,23 @@ export default async function AttendancePage() {
       <Section
         label="Today"
         rows={today}
-        empty={`No ${sessionsWord} scheduled today.`}
+        empty={`No ${sessionsWord} scheduled today`}
       />
       <Section
         label="Upcoming"
         rows={upcoming}
-        empty={`Nothing scheduled ahead — plan ${sessionsWord} from the ${terms.cohort.toLowerCase()} pages.`}
+        empty="Nothing scheduled ahead"
+        emptyHint={`${terms.sessions} are planned on each ${terms.cohort.toLowerCase()}'s page — schedule the next one and it shows here.`}
+        emptyAction={
+          <Link href="/admin/programs/cohorts" className="text-xs font-semibold text-orange hover:text-orange-dark">
+            Open {terms.cohorts} →
+          </Link>
+        }
       />
       <Section
         label="Recent"
         rows={recent}
-        empty={`No past ${sessionsWord} yet.`}
+        empty={`No past ${sessionsWord} yet`}
         showRate
       />
     </div>

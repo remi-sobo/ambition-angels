@@ -221,7 +221,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
               Report an issue
             </h2>
             <p className="text-xs text-ink-2 mt-0.5">
-              Tell me what&apos;s going on — I&apos;ll ask a couple of quick questions to get the details.
+              Tell me what&apos;s going on. I&apos;ll ask a couple of quick questions to get the details.
             </p>
           </div>
 
@@ -252,7 +252,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
           {/* ── Done. ── */}
           {phase === "done" && (
             <p className="text-revenue text-sm py-4 text-center">
-              {isOwner ? "Filed as a BloomOS Upgrade — thank you." : "Sent to your team — thank you."}
+              {isOwner ? "Filed as a BloomOS Upgrade. Thank you." : "Sent to your team. Thank you."}
             </p>
           )}
 

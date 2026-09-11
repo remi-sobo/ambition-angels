@@ -516,7 +516,7 @@ export const getFires = cache(async (): Promise<FireItem[]> => {
       id: "fire:runway",
       severity: "critical",
       title: "Runway under 2 months",
-      detail: `${fin.runwayMonths.toFixed(1)} months left at the current burn — raise or cut now.`,
+      detail: `${fin.runwayMonths.toFixed(1)} months left at the current burn. Raise or cut now.`,
       href: "/admin/finance",
     });
   }

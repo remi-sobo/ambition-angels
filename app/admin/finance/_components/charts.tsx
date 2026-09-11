@@ -256,7 +256,7 @@ export function CashFlowChart({
   const innerW = width - pad.left - pad.right;
   const innerH = height - pad.top - pad.bottom;
   const n = data.length;
-  if (n === 0) return <div className="text-sm text-gray-mid">No data yet — upload a CSV to populate.</div>;
+  if (n === 0) return <div className="text-sm text-gray-mid">No data yet. Upload a CSV to populate.</div>;
 
   const maxRev = Math.max(0, ...data.map((d) => d.revenue));
   const maxExp = Math.max(0, ...data.map((d) => d.expense));

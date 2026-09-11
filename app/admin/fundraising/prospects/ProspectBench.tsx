@@ -196,7 +196,7 @@ export default async function ProspectBench({
 
       {benchErr && (
         <div className="mb-4 bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
-          The bench failed to load — reload to retry.
+          The bench failed to load. Reload to retry.
         </div>
       )}
 

@@ -105,7 +105,7 @@ export default function TransactionFilters({ categories }: Props) {
             className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
           >
             <option value="">All</option>
-            <option value="uncategorized">— Uncategorized —</option>
+            <option value="uncategorized">(Uncategorized)</option>
             {groups.map((g) => (
               <optgroup key={g.name} label={g.name}>
                 {g.items.map((c) => (

@@ -54,7 +54,7 @@ export function EnrollInJourney({
   if (disabledReason) {
     return (
       <span className="text-[11px] text-ink-3" title={disabledReason}>
-        Can&apos;t enroll — {disabledReason}
+        Can&apos;t enroll: {disabledReason}
       </span>
     );
   }

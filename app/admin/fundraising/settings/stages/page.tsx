@@ -46,7 +46,7 @@ export default async function PipelineStagesSettingsPage() {
       <div className="max-w-[900px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <PageHeader
           title="Pipeline stages"
-          subtitle="Columns, forecast buckets, and HubSpot stage mapping — per pipeline"
+          subtitle="Columns, forecast buckets, and HubSpot stage mapping. Per pipeline"
           actions={
             <Link
               href="/admin/fundraising"
@@ -58,7 +58,7 @@ export default async function PipelineStagesSettingsPage() {
         />
         {!config.fromConfig ? (
           <p className="text-sm text-ink-2">
-            Stage configuration hasn&apos;t been migrated yet — the board is running on the built-in
+            Stage configuration hasn&apos;t been migrated yet. The board is running on the built-in
             legacy funnel. Apply the pipeline config migrations first.
           </p>
         ) : (

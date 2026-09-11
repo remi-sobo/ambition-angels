@@ -88,13 +88,13 @@ export default async function StrategyReviewPage() {
 
       {objectives.length === 0 && orphanGoals.length === 0 ? (
         <p className="text-sm text-ink-2">
-          No strategy to review yet — <Link href="/admin/strategic-plan" className="text-orange hover:underline">load the starter strategy</Link> first.
+          No strategy to review yet: <Link href="/admin/strategic-plan" className="text-orange hover:underline">load the starter strategy</Link> first.
         </p>
       ) : (
         <div className="space-y-5">
           <p className="text-sm text-ink-2">
-            Step 1 — hit <strong>↻ Refresh metrics</strong> to pull the latest auto numbers. Step 2 — walk each
-            objective below, update the manual measures and statuses. Step 3 — log the review at the bottom.
+            Step 1: hit <strong>↻ Refresh metrics</strong> to pull the latest auto numbers. Step 2: walk each
+            objective below, update the manual measures and statuses. Step 3: log the review at the bottom.
           </p>
 
           {objectives.map((o) => (

@@ -70,7 +70,7 @@ export default function UnassignedMetrics({
         <h2 className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Unassigned vital signs</h2>
         <span className="text-[11px] text-ink-3">{metrics.length} not attached to a goal</span>
       </div>
-      <p className="text-[11px] text-ink-3 mb-3">Live metrics with no home yet — attach each to the goal it proves.</p>
+      <p className="text-[11px] text-ink-3 mb-3">Live metrics with no home yet. Attach each to the goal it proves.</p>
 
       <ul className="divide-y divide-hairline">
         {metrics.map((m) => (

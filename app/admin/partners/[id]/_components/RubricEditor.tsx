@@ -81,7 +81,7 @@ export function RubricEditor({ partnerId, initial }: {
             ))}
           </div>
         ) : (
-          <p className="text-[11px] text-ink-3">Not yet scored — rate geography, volume, readiness, funding & fit.</p>
+          <p className="text-[11px] text-ink-3">Not yet scored. Rate geography, volume, readiness, funding & fit.</p>
         )
       ) : (
         <div className="space-y-2">

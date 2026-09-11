@@ -126,7 +126,7 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
         });
       }}
     >
-      <option value="">— don&apos;t import —</option>
+      <option value="">(don&apos;t import)</option>
       <optgroup label={entity === "constituent" ? "Contact fields" : "Participant fields"}>
         {fields.spine.map((f) => (
           <option key={f.key} value={f.key}>{f.label}{f.required ? " *" : ""}</option>

@@ -128,7 +128,7 @@ export default async function Donor360Extras({
             <p className={`p-6 ${TYPE.bodyMuted}`}>No grants from this funder.</p>
           ) : owed.length === 0 ? (
             <p className={`p-6 ${TYPE.bodyMuted}`}>
-              Nothing owed — every requirement on this funder&apos;s grants is submitted or waived.
+              Nothing owed: every requirement on this funder&apos;s grants is submitted or waived.
             </p>
           ) : (
             <ul className="divide-y divide-hairline">

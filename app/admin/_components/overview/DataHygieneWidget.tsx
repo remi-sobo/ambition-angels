@@ -19,7 +19,7 @@ export default async function DataHygieneWidget({ className }: { className?: str
     <Widget title="Data hygiene" className={className}>
       {h.staleHubspot && (
         <div className="mb-4 px-3 py-2 rounded-card bg-expense-bg border border-expense/30">
-          <p className="text-xs font-semibold text-expense">HubSpot data is stale — re-sync before the numbers are trusted.</p>
+          <p className="text-xs font-semibold text-expense">HubSpot data is stale. Re-sync before the numbers are trusted.</p>
           <Link href="/admin/fundraising" className="text-[11px] font-semibold text-expense underline">
             Run a sync →
           </Link>

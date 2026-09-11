@@ -68,7 +68,7 @@ export default async function ModelSection({ embedded = false }: { embedded?: bo
         <div>
           <h2 className={TYPE.cardTitle}>Model</h2>
           <p className="text-[11px] text-ink-3 max-w-2xl">
-            The four numbers from the founder model sheet — refreshes hourly.
+            The four numbers from the founder model sheet. Refreshes hourly.
           </p>
         </div>
       ) : (
@@ -78,7 +78,7 @@ export default async function ModelSection({ embedded = false }: { embedded?: bo
           subtitle={
             <span className="block max-w-2xl">
               The four numbers that decide whether we keep going. Pulled directly
-              from the source-of-truth Google Sheet — refreshes hourly.
+              from the source-of-truth Google Sheet. Refreshes hourly.
             </span>
           }
         />
@@ -179,8 +179,8 @@ function NotConfigured({ missing }: { missing: string[] }) {
       <p className="text-xs text-ink-2 leading-relaxed">
         Env vars belong in Vercel (Production + Preview + Development).
         The Apps Script Web App source lives at{" "}
-        <code className="text-ink-1">scripts/finance-model-webhook.gs</code>{" "}
-        — paste it into the sheet&apos;s Extensions → Apps Script editor.
+        <code className="text-ink-1">scripts/finance-model-webhook.gs</code>. Paste it into the
+        sheet&apos;s Extensions → Apps Script editor.
       </p>
     </div>
   );

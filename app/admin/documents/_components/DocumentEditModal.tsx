@@ -152,7 +152,7 @@ export default function DocumentEditModal({ doc, onClose }: { doc: EditableDoc; 
 
           <label className="inline-flex items-center gap-2 text-xs text-ink-2">
             <input type="checkbox" checked={restricted} onChange={(e) => setRestricted(e.target.checked)} />
-            Restricted — hide from the board and other limited-access roles
+            Restricted: hide from the board and other limited-access roles
           </label>
 
           <label className={labelCls}>

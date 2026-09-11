@@ -21,9 +21,9 @@ export const TRUST_LABELS: Record<TrustLevel, string> = {
 };
 
 export const TRUST_HINTS: Record<TrustLevel, string> = {
-  verified: "Recorded money — gifts on the spine.",
-  stated: "A recorded commitment — a won ask, an awarded grant, or a pledge schedule. Not yet (all) received.",
-  estimated: "Open pipeline — asks that may not land.",
+  verified: "Recorded money: gifts on the spine.",
+  stated: "A recorded commitment: a won ask, an awarded grant, or a pledge schedule. Not yet (all) received.",
+  estimated: "Open pipeline: asks that may not land.",
   placeholder: "A target with nothing recorded underneath it yet.",
 };
 

@@ -92,7 +92,7 @@ export default async function ConnectionsSection({ embedded = false }: { embedde
             </span>
           </h2>
           <p className="text-[11px] text-ink-3 max-w-2xl">
-            People you owe a meeting — from email intros or added by hand — tracked until each
+            People you owe a meeting. From email intros or added by hand, tracked until each
             one is booked.
           </p>
         </div>
@@ -107,7 +107,7 @@ export default async function ConnectionsSection({ embedded = false }: { embedde
     <div className="max-w-5xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       <PageHeader
         title="Connections"
-        subtitle="People you owe a meeting — from email intros or added by hand — tracked until each one is booked."
+        subtitle="People you owe a meeting. From email intros or added by hand, tracked until each one is booked."
       />
       <CandidatesQueue candidates={candidates} />
       <NewConnectionForm />

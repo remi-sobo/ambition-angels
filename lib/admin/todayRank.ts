@@ -80,19 +80,19 @@ export function whyFallback(row: ObligationRow, today: string): string {
     : "no due date";
   switch (row.type) {
     case "ops_task":
-      return `Task${row.state === "blocked" ? " (blocked)" : ""} — ${due}. No reason recorded yet.`;
+      return `Task${row.state === "blocked" ? " (blocked)" : ""} · ${due}. No reason recorded yet.`;
     case "grant_requirement":
-      return `Grant requirement — ${due}.`;
+      return `Grant requirement: ${due}.`;
     case "compliance_item":
-      return `Compliance filing — ${due}.`;
+      return `Compliance filing: ${due}.`;
     case "acknowledgment":
       return `A gift is waiting on its thank-you (${due}).`;
     case "fr_next_step":
-      return `A move you set on an open ask — ${due}.`;
+      return `A move you set on an open ask, ${due}.`;
     case "reconciliation_item":
       return "A reconciliation proposal is waiting for review.";
     case "document_renewal":
-      return `A document needs renewal — ${due}.`;
+      return `A document needs renewal, ${due}.`;
     case "metric_stale":
       return "This metric is past its update cadence.";
     case "application_pending":
@@ -100,6 +100,6 @@ export function whyFallback(row: ObligationRow, today: string): string {
     case "session_unrecorded":
       return "A session happened; attendance was never recorded.";
     default:
-      return `Filed under ${row.module} — ${due}.`;
+      return `Filed under ${row.module} · ${due}.`;
   }
 }

@@ -204,7 +204,7 @@ export default async function CohortPage({ params }: { params: { id: string } })
           ))}
           {memberViews.length === 0 && (
             <p className="text-sm text-ink-2">
-              No {terms.students.toLowerCase()} enrolled yet — pick one from the roster above.
+              No {terms.students.toLowerCase()} enrolled yet. Pick one from the roster above.
             </p>
           )}
         </div>

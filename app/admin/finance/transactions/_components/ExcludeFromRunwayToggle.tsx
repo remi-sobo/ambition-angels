@@ -47,7 +47,7 @@ export default function ExcludeFromRunwayToggle({ transactionId, initial }: Prop
       } ${busy ? "opacity-50" : ""}`}
       title={
         value
-          ? "Excluded from runway/burn — still counts in YTD and the cash-flow chart"
+          ? "Excluded from runway/burn. Still counts in YTD and the cash-flow chart"
           : "Counted in runway/burn"
       }
     >

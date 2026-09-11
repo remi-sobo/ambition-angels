@@ -71,7 +71,7 @@ export default async function ReconcileSection({ embedded = false }: { embedded?
         subtitle={
           <span className="block max-w-2xl">
             Cowork sweeps the week&apos;s HubSpot deals and email commitments and proposes ledger
-            entries here. Accept what&apos;s real and the numbers update everywhere — nothing touches
+            entries here. Accept what&apos;s real and the numbers update everywhere. Nothing touches
             the books until you say so. Work this to zero on Friday and Monday starts clean.
           </span>
         }

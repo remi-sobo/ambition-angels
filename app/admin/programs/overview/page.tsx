@@ -136,7 +136,7 @@ export default async function ProgramsOverviewPage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px] space-y-8">
       <PageHeader
         title="Overview"
-        subtitle={`${terms.programs}, ${terms.students.toLowerCase()}, outcomes — the near-term schedule and what needs a human.`}
+        subtitle={`${terms.programs}, ${terms.students.toLowerCase()}, outcomes. The near-term schedule and what needs a human.`}
       />
 
       {/* ── Headline band ─────────────────────────────────────────────── */}
@@ -167,7 +167,7 @@ export default async function ProgramsOverviewPage() {
           <EmptyState
             label={terms.sessions.toLowerCase()}
             title="Nothing scheduled"
-            hint={`${terms.sessions} are planned on each ${terms.cohort.toLowerCase()}'s page — schedule one and the near-term calendar fills in.`}
+            hint={`${terms.sessions} are planned on each ${terms.cohort.toLowerCase()}'s page. Schedule one and the near-term calendar fills in.`}
             action={
               <Link href="/admin/programs/cohorts" className="text-xs font-semibold text-orange hover:text-orange-dark">
                 Open {terms.cohorts} →
@@ -202,7 +202,7 @@ export default async function ProgramsOverviewPage() {
         </h2>
         {attentionCount === 0 ? (
           <p className="text-sm text-ink-3 italic px-1">
-            Nothing flagged — attendance steady, rosters reachable, intake clear.
+            Nothing flagged: attendance steady, rosters reachable, intake clear.
           </p>
         ) : (
           <div className="space-y-1.5">

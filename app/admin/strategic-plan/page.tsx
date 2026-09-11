@@ -355,7 +355,7 @@ export default async function StrategicPlanPage({
                   each block is and who it's for. */}
               <PlanSection
                 title="How the plan is doing"
-                description="The whole organization at a glance — every objective, its health, and what needs attention first. Rolls up automatically from the measures underneath."
+                description="The whole organization at a glance. Every objective, its health, and what needs attention first. Rolls up automatically from the measures underneath."
                 links={[{ href: "/admin/strategic-plan/scorecard", label: "KPI Scorecard" }]}
               >
                 <p className="text-xs text-ink-3 mb-4 tabular-nums">
@@ -367,7 +367,7 @@ export default async function StrategicPlanPage({
 
               <PlanSection
                 title="For funders"
-                description="The outward-facing view — a readiness check before you present, and the narrative you share with donors and grantmakers."
+                description="The outward-facing view. A readiness check before you present, and the narrative you share with donors and grantmakers."
                 links={[{ href: "/admin/strategic-plan/narrative", label: "Narrative" }]}
               >
                 {readiness && <ReadinessPanel data={readiness} />}
@@ -375,7 +375,7 @@ export default async function StrategicPlanPage({
 
               <PlanSection
                 title="Plan upkeep"
-                description="Housekeeping for whoever maintains the plan — attach loose metrics, run the monthly review, and keep owners and the foundation current."
+                description="Housekeeping for whoever maintains the plan. Attach loose metrics, run the monthly review, and keep owners and the foundation current."
                 links={[
                   { href: "/admin/strategic-plan/review", label: "Monthly review" },
                   { href: "/admin/strategic-plan/people", label: "People" },

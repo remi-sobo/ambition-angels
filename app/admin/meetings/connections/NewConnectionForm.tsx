@@ -265,7 +265,7 @@ export default function NewConnectionForm() {
           <input
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
-            placeholder={`Purpose — e.g. Intro call with ${chosen.name}`}
+            placeholder={`Purpose: e.g. Intro call with ${chosen.name}`}
             className={inputCls}
             autoFocus
           />

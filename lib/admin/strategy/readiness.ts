@@ -69,7 +69,7 @@ export async function getReadiness(orgId: string): Promise<Readiness> {
     severity: "blocker",
     ok: money.floor != null,
     label: "Committed floor is set",
-    detail: money.floor != null ? `Floor ${usd(money.floor)}.` : "No committed-floor target — set dollars_raised_fy26.",
+    detail: money.floor != null ? `Floor ${usd(money.floor)}.` : "No committed-floor target. Set dollars_raised_fy26.",
     fixHref: PLAN_HREF,
   });
 
@@ -85,7 +85,7 @@ export async function getReadiness(orgId: string): Promise<Readiness> {
       money.sources.length === 0
         ? "No floor-by-source breakdown yet."
         : money.floor != null && Math.abs(sourceSum - money.floor) > 1
-          ? `Sources total ${usd(sourceSum)} but the floor is ${usd(money.floor)} — off by ${usd(Math.abs(sourceSum - (money.floor ?? 0)))}.`
+          ? `Sources total ${usd(sourceSum)} but the floor is ${usd(money.floor)}. Off by ${usd(Math.abs(sourceSum - (money.floor ?? 0)))}.`
           : `${money.sources.length} channels summing to ${usd(sourceSum)}.`,
     fixHref: PLAN_HREF,
   });
@@ -112,7 +112,7 @@ export async function getReadiness(orgId: string): Promise<Readiness> {
     detail:
       doorsWithProspects > 0
         ? `${doorsWithProspects} of ${how.angles.length} doors have at least one mapped funder.`
-        : "No door has a mapped prospect — the pipeline can't be traced to the plan.",
+        : "No door has a mapped prospect. The pipeline can't be traced to the plan.",
     fixHref: FUND_HREF,
   });
 
@@ -142,7 +142,7 @@ export async function getReadiness(orgId: string): Promise<Readiness> {
       label: `Runway at/above the ${money.runwayTargetMonths}-month target`,
       detail: healthy
         ? `${money.runwayMonths.toFixed(1)} months on hand.`
-        : `${money.runwayMonths.toFixed(1)} months — a ${usd(money.runwayBridge)} bridge is shown to restore the cushion.`,
+        : `${money.runwayMonths.toFixed(1)} months. A ${usd(money.runwayBridge)} bridge is shown to restore the cushion.`,
       fixHref: PLAN_HREF,
     });
   }
@@ -171,7 +171,7 @@ export async function getReadiness(orgId: string): Promise<Readiness> {
         ? "No measures yet."
         : noBaseline.length === 0
           ? `All ${kpis.length} measures show where they started.`
-          : `${noBaseline.length} of ${kpis.length} measures have no baseline — they read as a bare number against the goal.`,
+          : `${noBaseline.length} of ${kpis.length} measures have no baseline. They read as a bare number against the goal.`,
     fixHref: PLAN_HREF,
   });
 

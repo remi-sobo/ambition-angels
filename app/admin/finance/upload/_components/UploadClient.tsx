@@ -99,7 +99,7 @@ export default function UploadClient() {
         <h2 className={`${TYPE.cardTitle} mb-1`}>Bank transactions (CSV)</h2>
         <p className="text-xs text-ink-2 mb-4 max-w-2xl">
           Pick a CSV exported from your bank and click <span className="text-ink-1">Upload</span>. We parse it, dedupe
-          against existing transactions, and show a preview — nothing is written until you click{" "}
+          against existing transactions, and show a preview. Nothing is written until you click{" "}
           <span className="text-ink-1">Commit</span>. Generic mode works for any CSV with date / description / amount
           columns.
         </p>
@@ -194,7 +194,7 @@ export default function UploadClient() {
         <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-6">
           {preview.file_already_imported && (
             <div className="mb-4 rounded-card border border-[#D9BE86] bg-[#F4E8D0] p-3 text-xs text-amber-100">
-              This file&apos;s hash matches a prior import. Committing will be refused — re-upload only after rotating the
+              This file&apos;s hash matches a prior import. Committing will be refused. Re-upload only after rotating the
               file or trimming its date range.
             </div>
           )}

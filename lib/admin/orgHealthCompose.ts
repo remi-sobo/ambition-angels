@@ -26,12 +26,12 @@ export function composeMoney(input: {
   anchorDate: string | null;
 }): HealthVerdict {
   const staleNote = input.anchorStale
-    ? ` Cash anchor ${input.anchorDate ? `from ${input.anchorDate}` : "never set"} — treat as stale.`
+    ? ` Cash anchor ${input.anchorDate ? `from ${input.anchorDate}` : "never set"}. Treat as stale.`
     : "";
   if (input.runwayMonths == null) {
     return {
       status: "neutral",
-      cause: `Runway can't be computed — no burn or no cash anchor.${staleNote}`,
+      cause: `Runway can't be computed. No burn or no cash anchor.${staleNote}`,
     };
   }
   const base = `Runway ${mo(input.runwayMonths)}: ${usd(input.cashOnHand)} on hand at ${usd(input.burn3mo)}/mo burn.${staleNote}`;
@@ -51,7 +51,7 @@ export function composeFundraising(input: {
     return { status: "neutral", cause: "No fundraising goal set for this fiscal year." };
   }
   const pct = Math.round((input.forecast / input.goal) * 100);
-  const cause = `Forecast ${usd(input.forecast)} against a ${usd(input.goal)} goal (${pct}%) — ${usd(input.raised)} raised, ${usd(Math.max(0, input.gap))} to find.`;
+  const cause = `Forecast ${usd(input.forecast)} against a ${usd(input.goal)} goal (${pct}%). ${usd(input.raised)} raised, ${usd(Math.max(0, input.gap))} to find.`;
   if (pct >= 90) return { status: "healthy", cause };
   if (pct >= 70) return { status: "due", cause };
   if (pct >= 50) return { status: "watch", cause };

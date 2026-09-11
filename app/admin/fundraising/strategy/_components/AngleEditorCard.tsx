@@ -179,10 +179,10 @@ export default function AngleEditorCard({ angle, funderCount }: { angle: AdminAn
         </div>
       </div>
 
-      <EditField label="Hook — the line you say out loud" field="hook" value={angle.hook} angleId={angle.id} placeholder="Add a hook" />
-      <EditField label="Nav title — short label for the jump nav" field="nav_title" value={angle.nav_title} angleId={angle.id} placeholder="Defaults to the name" />
-      <EditField label="Frame — the case, in our voice" field="frame" value={angle.frame} angleId={angle.id} multiline placeholder="Add the framing paragraph" />
-      <EditField label="Lead — a single quotable line" field="lead" value={angle.lead} angleId={angle.id} placeholder="Add a lead line" />
+      <EditField label="Hook: the line you say out loud" field="hook" value={angle.hook} angleId={angle.id} placeholder="Add a hook" />
+      <EditField label="Nav title: short label for the jump nav" field="nav_title" value={angle.nav_title} angleId={angle.id} placeholder="Defaults to the name" />
+      <EditField label="Frame: the case, in our voice" field="frame" value={angle.frame} angleId={angle.id} multiline placeholder="Add the framing paragraph" />
+      <EditField label="Lead: a single quotable line" field="lead" value={angle.lead} angleId={angle.id} placeholder="Add a lead line" />
 
       <div className="grid sm:grid-cols-2 gap-4 border-t border-outline pt-4">
         <EditField label={angle.funds_label || "Who funds this"} field="funds" value={angle.funds} angleId={angle.id} multiline placeholder="Named funders / buyers" />
@@ -201,7 +201,7 @@ export default function AngleEditorCard({ angle, funderCount }: { angle: AdminAn
           <EditField label="Flag (optional caution)" field="flag" value={angle.flag} angleId={angle.id} placeholder="e.g. a number to pressure-test" />
         </div>
         <div className="mt-3">
-          <EditField label="Approach (internal note — not shown in the Strategy Room)" field="approach" value={angle.approach ?? null} angleId={angle.id} multiline placeholder="Cold vs warm reachability note" />
+          <EditField label="Approach (internal note, not shown in the Strategy Room)" field="approach" value={angle.approach ?? null} angleId={angle.id} multiline placeholder="Cold vs warm reachability note" />
         </div>
       </div>
 

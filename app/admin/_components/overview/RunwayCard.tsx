@@ -31,7 +31,7 @@ export default async function RunwayCard() {
   const t = TONE[tone];
   const spark = d.monthBuckets.filter((b) => b.revenue > 0 || b.expense > 0).map((b) => b.ending);
   const label =
-    tone === "critical" ? "Critical — raise or cut now" : tone === "amber" ? "Tightening — watch closely" : "Healthy";
+    tone === "critical" ? "Critical: raise or cut now" : tone === "amber" ? "Tightening: watch closely" : "Healthy";
   const burnLabel = inputs.baselineSource === "config" ? "burn baseline (set)" : "trailing 3-month burn";
 
   return (

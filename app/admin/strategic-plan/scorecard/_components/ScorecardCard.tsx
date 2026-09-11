@@ -112,7 +112,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
       if (!res.ok) {
         setError(
           res.status === 403
-            ? "Your account can't edit measures — ask an admin for the manage permission."
+            ? "Your account can't edit measures. Ask an admin for the manage permission."
             : userMessage(res, await res.json().catch(() => null))
         );
         return false;
@@ -120,7 +120,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
       router.refresh();
       return true;
     } catch {
-      setError("Could not save — check your connection and try again.");
+      setError("Could not save. Check your connection and try again.");
       return false;
     } finally {
       setBusy(false);

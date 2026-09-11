@@ -64,7 +64,7 @@ export async function resolveConstituent(
   if (matches && matches.length > 1) {
     return {
       constituentId: matches[0].id,
-      warning: `Multiple constituents match "${name}" — linked the first; verify on the donor page.`,
+      warning: `Multiple constituents match "${name}". Linked the first; verify on the donor page.`,
     };
   }
 
@@ -79,6 +79,6 @@ export async function resolveConstituent(
   }
   return {
     constituentId: created.id,
-    warning: `Created a new constituent for "${name}" — add contact details on the donor page.`,
+    warning: `Created a new constituent for "${name}". Add contact details on the donor page.`,
   };
 }

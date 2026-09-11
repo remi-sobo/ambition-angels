@@ -77,7 +77,7 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
               Thank someone <span className="text-ink-3 font-normal">· {pending.length}</span>
             </h2>
             <p className="text-[11px] text-ink-3">
-              Gifts awaiting an acknowledgment — the receipt language is generated, never edited.
+              Gifts awaiting an acknowledgment. The receipt language is generated, never edited.
             </p>
           </div>
           <div className="ml-auto flex items-center gap-4">

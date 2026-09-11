@@ -55,7 +55,7 @@ export default async function WeeklyBriefingPage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[800px]">
       <PageHeader
         title="Weekly Briefing"
-        subtitle="Narrated from live data — every number is computed, never invented"
+        subtitle="Narrated from live data. Every number is computed, never invented"
         actions={<GenerateButton />}
       />
 
@@ -74,7 +74,7 @@ export default async function WeeklyBriefingPage() {
 
       {!b ? (
         <p className="text-sm text-ink-2">
-          No briefing yet — generate the first one, or wait for Monday&apos;s edition.
+          No briefing yet. Generate the first one, or wait for Monday&apos;s edition.
         </p>
       ) : (
         <article className="space-y-6">

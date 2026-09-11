@@ -207,7 +207,7 @@ export async function setPrimaryGrantContact(
     .select("id");
   if (error) {
     if (error.code === "23505") {
-      return { error: "Another contact was just made primary — try again." };
+      return { error: "Another contact was just made primary. Try again." };
     }
     return { error: error.message };
   }

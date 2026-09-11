@@ -103,7 +103,7 @@ export default async function BoardReport() {
   const runwayTxt = snap.runway.cash.months === null ? "no burn signal yet" : `${snap.runway.cash.months.toFixed(1)} months of cash runway at ${money(snap.runway.inputs.baseline)}/mo`;
   const goalTxt = cfg.goal > 0 ? `raised ${money(raisedHard)} of the ${money(cfg.goal)} goal (${goalPct}%)` : `raised ${money(raisedHard)}`;
   const netTxt = `net ${snap.netYTD >= 0 ? "surplus" : "deficit"} of ${money(Math.abs(snap.netYTD))} YTD`;
-  const headline = `${money(snap.cashOnHand)} cash on hand — ${runwayTxt}. ${goalTxt[0].toUpperCase()}${goalTxt.slice(1)}; ${netTxt}.`;
+  const headline = `${money(snap.cashOnHand)} cash on hand. ${runwayTxt}. ${goalTxt[0].toUpperCase()}${goalTxt.slice(1)}; ${netTxt}.`;
 
   const asOf = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const reconciledTxt = cfg.reconciledAt

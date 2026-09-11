@@ -156,7 +156,7 @@ function MeetingCard({ meeting }: { meeting: RecapMeeting }) {
         disabled={busyKey !== null}
         className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-tile text-ink-1 border-[1.5px] border-outline hover:bg-[#EFE6D4] disabled:opacity-50 transition-colors"
       >
-        {busyKey === "recap" ? "Saving…" : "Mark recapped — nothing else"}
+        {busyKey === "recap" ? "Saving…" : "Mark recapped, nothing else"}
       </button>
     </div>
   );

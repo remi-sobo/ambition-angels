@@ -143,7 +143,7 @@ export default function AiCategorize({ uncategorizedCount }: { uncategorizedCoun
               )}
 
               {busy !== "suggesting" && !done && rows.length === 0 && !error && (
-                <p className="text-sm text-ink-2 py-8 text-center">Nothing to categorize — every transaction has a category.</p>
+                <p className="text-sm text-ink-2 py-8 text-center">Nothing to categorize. Every transaction has a category.</p>
               )}
 
               {rows.length > 0 && (
@@ -206,7 +206,7 @@ export default function AiCategorize({ uncategorizedCount }: { uncategorizedCoun
                     <button onClick={() => setOpen(false)} disabled={busy !== "idle"} className={`px-4 py-2 rounded-lg text-ink-2 hover:${TYPE.body}`}>
                       Cancel
                     </button>
-                    <span className="text-[11px] text-ink-3 ml-auto">Review before applying — AI can be wrong.</span>
+                    <span className="text-[11px] text-ink-3 ml-auto">Review before applying. AI can be wrong.</span>
                   </div>
                 </>
               )}

@@ -82,19 +82,19 @@ export default function HubSpotSettings({
       <div className="px-5 py-4 space-y-3">
         {!tokenPresent && (
           <div className="text-[11px] text-[#A56A1B] bg-[#F4E8D0] rounded-lg px-3 py-2">
-            <code>HUBSPOT_ACCESS_TOKEN</code> isn&apos;t set — outbound sync can&apos;t reach HubSpot until it is.
+            <code>HUBSPOT_ACCESS_TOKEN</code> isn&apos;t set. Outbound sync can&apos;t reach HubSpot until it is.
           </div>
         )}
         {!secretPresent && (
           <div className="text-[11px] text-[#A56A1B] bg-[#F4E8D0] rounded-lg px-3 py-2">
-            <code>HUBSPOT_CLIENT_SECRET</code> isn&apos;t set — inbound webhooks will be rejected until it is.
+            <code>HUBSPOT_CLIENT_SECRET</code> isn&apos;t set. Inbound webhooks will be rejected until it is.
           </div>
         )}
 
         <div className="divide-y divide-hairline">
           <Toggle flag="sync_out" label="Outbound sync" help="Push BloomOS donors, interactions, and opportunities to HubSpot as you edit them." warn={!tokenPresent ? "Needs HUBSPOT_ACCESS_TOKEN to take effect." : undefined} />
           <Toggle flag="sync_in" label="Inbound webhooks" help="Apply HubSpot contact/company changes back to the linked constituents." warn={!secretPresent ? "Needs HUBSPOT_CLIENT_SECRET to take effect." : undefined} />
-          <Toggle flag="sync_gifts_as_deals" label="Gifts → Deals" help="Also mirror each recorded gift to HubSpot as a closed-won deal (off by default — opinionated)." />
+          <Toggle flag="sync_gifts_as_deals" label="Gifts → Deals" help="Also mirror each recorded gift to HubSpot as a closed-won deal (off by default, opinionated)." />
         </div>
       </div>
 

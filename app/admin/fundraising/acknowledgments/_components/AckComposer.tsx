@@ -214,8 +214,8 @@ export default function AckComposer({
         rows={isEmail || isLetter ? 5 : 3}
         placeholder={
           isEmail || isLetter
-            ? "The personal note — write it yourself or draft with AI, then edit freely. Review before sending."
-            : `What you said when you ${CHANNEL_LABEL[channel].toLowerCase()}ed (optional — a short script or note for the record).`
+            ? "The personal note: write it yourself or draft with AI, then edit freely. Review before sending."
+            : `What you said when you ${CHANNEL_LABEL[channel].toLowerCase()}ed (optional, a short script or note for the record).`
         }
         className={`w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40`}
       />
@@ -223,7 +223,7 @@ export default function AckComposer({
       {showCompliance && (
         <div className="text-[11px] text-ink-2 leading-relaxed bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 whitespace-pre-wrap">
           <span className="text-ink-3 font-semibold uppercase tracking-wider text-[10px] block mb-1">
-            Appended automatically (IRS receipt language — not editable)
+            Appended automatically (IRS receipt language, not editable)
           </span>
           {complianceBlock}
         </div>

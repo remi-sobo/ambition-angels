@@ -36,7 +36,7 @@ export default function WhyTheyMatter({
     }).catch(() => null);
     setBusy(false);
     if (!res?.ok) {
-      setError("Save failed — try again.");
+      setError("Save failed. Try again.");
       return;
     }
     setEditing(false);
@@ -65,7 +65,7 @@ export default function WhyTheyMatter({
             onChange={(e) => setText(e.target.value)}
             rows={4}
             maxLength={2000}
-            placeholder={`In a sentence or three: why ${name} matters to this mission — the relationship, not the math.`}
+            placeholder={`In a sentence or three: why ${name} matters to this mission. The relationship, not the math.`}
             className="w-full text-sm bg-tile border-[1.5px] border-outline rounded-xl px-3 py-2 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange leading-relaxed"
           />
           <div className="flex items-center gap-3">
@@ -97,7 +97,7 @@ export default function WhyTheyMatter({
         <p className="text-sm text-ink-1 leading-relaxed whitespace-pre-wrap">{initial}</p>
       ) : (
         <p className="text-sm text-ink-3 leading-relaxed">
-          Nothing written yet. This is the narrative a number can&apos;t carry — why this
+          Nothing written yet. This is the narrative a number can&apos;t carry. Why this
           relationship matters, in a human&apos;s words.
         </p>
       )}

@@ -110,7 +110,7 @@ export default async function ImpactReportsPage({
             <h2 className={TYPE.cardTitle}>The numbers</h2>
           </div>
           {keys.length === 0 ? (
-            <p className={`p-6 ${TYPE.bodyMuted}`}>No metrics selected — go back and pick some.</p>
+            <p className={`p-6 ${TYPE.bodyMuted}`}>No metrics selected. Go back and pick some.</p>
           ) : (
             <ul className="divide-y divide-hairline">
               {keys.map((key) => (
@@ -130,7 +130,7 @@ export default async function ImpactReportsPage({
             <p className="p-5 text-sm text-ink-1 leading-relaxed whitespace-pre-wrap">{narrative}</p>
           ) : (
             <p className={`p-6 ${TYPE.bodyMuted}`}>
-              No approved narrative. Reed can draft one (kind &ldquo;report narrative&rdquo;) —
+              No approved narrative. Reed can draft one (kind &ldquo;report narrative&rdquo;). 
               it renders here only after a human approves it, and never sends itself.
             </p>
           )}

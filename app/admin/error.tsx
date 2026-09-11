@@ -38,7 +38,7 @@ export default function AdminError({
       <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-8">
         <h1 className={TYPE.pageTitle}>Something broke on this page</h1>
         <p className="mt-2 text-sm text-ink-2 leading-relaxed">
-          The rest of BloomOS is fine — this screen hit an error while loading. Retrying
+          The rest of BloomOS is fine. This screen hit an error while loading. Retrying
           usually clears it; if it keeps happening, the error is already in the logs
           {error.digest ? (
             <>

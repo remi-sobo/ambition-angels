@@ -19,16 +19,16 @@ export const STARTER_OBJECTIVES: StarterObjective[] = [
   {
     title: "Fund the mission sustainably",
     statement:
-      "[What does full-budget coverage look like — which revenue mix, what floor must be raised, what does a healthy runway mean for you?]",
+      "[What does full-budget coverage look like: which revenue mix, what floor must be raised, what does a healthy runway mean for you?]",
   },
   {
     title: "Grow reach and partnerships",
     statement:
-      "[Who else delivers your mission with you — schools, partners, volunteers — and what does that network look like at scale?]",
+      "[Who else delivers your mission with you (schools, partners, volunteers), and what does that network look like at scale?]",
   },
   {
     title: "Build a durable organization",
     statement:
-      "[Board, team, systems, compliance — what has to be true so the organization runs well and isn't dependent on any one person?]",
+      "[Board, team, systems, compliance. What has to be true so the organization runs well and isn't dependent on any one person?]",
   },
 ];

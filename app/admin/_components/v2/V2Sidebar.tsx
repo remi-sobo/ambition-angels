@@ -101,7 +101,7 @@ export default function V2Sidebar({
       <div className="px-5 py-5 border-b border-white/10">
         <Link
           href="/admin"
-          aria-label="BloomOS — go to Home"
+          aria-label="BloomOS: go to Home"
           className="flex items-center gap-2.5 group rounded-lg -m-1 p-1 hover:bg-white/[0.05] transition-colors"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}

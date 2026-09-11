@@ -43,7 +43,7 @@ export default async function CareersPage() {
       </div>
 
       <p className="text-[12px] text-ink-2 mb-6">
-        Which occupations the teen games may use is a separate decision — the{" "}
+        Which occupations the teen games may use is a separate decision. The{" "}
         <Link href="/admin/careers/pool" className="underline underline-offset-2">
           Play Pool
         </Link>
@@ -63,8 +63,7 @@ export default async function CareersPage() {
               Run the import once from a machine with network access:{" "}
               <code className="text-[12px] bg-tile px-1.5 py-0.5 rounded">
                 npx tsx scripts/import-onet.ts --onet-dir &lt;o*net text db&gt; --oews-csv &lt;national OEWS csv&gt;
-              </code>{" "}
-              — see the header of that script for where the files come from.
+              </code>. See the header of that script for where the files come from.
             </>
           }
         />

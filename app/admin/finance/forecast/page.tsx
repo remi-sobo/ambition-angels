@@ -55,7 +55,7 @@ export default async function FinanceForecastPage({
         <PageHeader
           eyebrow="Scenario planning"
           title="Forecast"
-          subtitle="Project cash forward and stack what-ifs — a hire, a grant landing, a slip — to see when you run out under each scenario."
+          subtitle="Project cash forward and stack what-ifs (a hire, a grant landing, a slip) to see when you run out under each scenario."
         />
         <ModelSection embedded />
         <ForecastBoard cashOnHand={snap.cashOnHand} monthlyBurn={snap.burn3mo} seeds={seeds} />

@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/api", "/auth"],
+      disallow: ["/admin", "/api", "/auth", "/demo"],
     },
     sitemap: "https://www.ambitionangels.org/sitemap.xml",
   };

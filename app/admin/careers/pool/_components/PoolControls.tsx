@@ -59,7 +59,7 @@ function useApi() {
       router.refresh();
       return res.ok;
     } catch {
-      setNotice("Network hiccup — give it a few seconds, then refresh.");
+      setNotice("Network hiccup. Give it a few seconds, then refresh.");
       router.refresh();
       return false;
     } finally {
@@ -100,7 +100,7 @@ function RowEditor({ occ, row }: { occ: PoolOccupation; row: PoolRow | undefined
 
       {issues.length > 0 ? (
         <div className="bg-orange-light rounded-lg px-3 py-2 text-[12px] text-orange-dark">
-          Blocked by the rules: {issues.join(", ")}. Fix the import, or leave it out — the pool is
+          Blocked by the rules: {issues.join(", ")}. Fix the import, or leave it out. The pool is
           allowed to be smaller than the catalog.
         </div>
       ) : (
@@ -147,7 +147,7 @@ function RowEditor({ occ, row }: { occ: PoolOccupation; row: PoolRow | undefined
                   ? revealDirty
                     ? "Re-approve with this line"
                     : "Re-approve"
-                  : "Approve — in the pool"}
+                  : "Approve into the pool"}
             </button>
             {eligible && (
               <>

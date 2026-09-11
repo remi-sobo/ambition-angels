@@ -50,7 +50,7 @@ export default async function QueueDrilldownPage({
     <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8">
       <PageHeader
         title="Action queue"
-        subtitle={`${due.length} open action item${due.length === 1 ? "" : "s"} due in the next ${days} days (by ${fmtDate(endDate)}) — the count behind the Overview's ${days}d outlook.`}
+        subtitle={`${due.length} open action item${due.length === 1 ? "" : "s"} due in the next ${days} days (by ${fmtDate(endDate)}). The count behind the Overview's ${days}d outlook.`}
         actions={
           <Link href="/admin" className="text-xs font-semibold text-orange hover:text-orange-dark">
             ← Back to Overview
@@ -81,7 +81,7 @@ export default async function QueueDrilldownPage({
       <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
         {due.length === 0 ? (
           <p className="text-sm text-ink-2">
-            Nothing is due in the next {days} days — the window is clear.
+            Nothing is due in the next {days} days. The window is clear.
           </p>
         ) : (
           <NeedsYouQueueClient items={due} me={me} meId={meId} />

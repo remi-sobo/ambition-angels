@@ -76,7 +76,7 @@ export default async function DailyPage() {
           sub="consecutive days covered from today"
           muted={runwayDays(rows, today) === 0}
         />
-        <StatCard label="Weekly rule" value="3 of 7" sub="job zone ≤ 3 — enforced on save" muted />
+        <StatCard label="Weekly rule" value="3 of 7" sub="job zone ≤ 3. Enforced on save" muted />
       </div>
 
       <p className="text-[12px] text-ink-2 mb-6">

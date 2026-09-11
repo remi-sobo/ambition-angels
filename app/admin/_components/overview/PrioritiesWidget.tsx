@@ -15,8 +15,8 @@ export default async function PrioritiesWidget({ className }: { className?: stri
       {rows.length === 0 ? (
         <Empty>
           {openTaskCount > 0
-            ? `${openTaskCount} open task${openTaskCount === 1 ? "" : "s"}, none with a due date — set dates under Operations → Tasks to surface them here.`
-            : "Nothing due — add tasks under Operations → Tasks."}
+            ? `${openTaskCount} open task${openTaskCount === 1 ? "" : "s"}, none with a due date. Set dates under Operations → Tasks to surface them here.`
+            : "Nothing due. Add tasks under Operations → Tasks."}
         </Empty>
       ) : (
         <ul className="space-y-2.5">

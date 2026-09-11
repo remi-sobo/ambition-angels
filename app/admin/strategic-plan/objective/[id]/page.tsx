@@ -152,7 +152,7 @@ export default async function ObjectiveDetailPage({ params }: { params: { id: st
       <h2 className={`${TYPE.sectionTitle} mt-8 mb-3`}>Tasks</h2>
       {initsWithWork.length === 0 ? (
         <p className="text-sm text-ink-2">
-          No tasks yet — attach a project to an initiative on the{" "}
+          No tasks yet. Attach a project to an initiative on the{" "}
           <Link href="/admin/ops/projects" className="text-orange hover:underline">projects</Link> page, and its tasks will roll up here.
         </p>
       ) : (

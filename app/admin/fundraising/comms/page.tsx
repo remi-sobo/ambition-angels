@@ -91,7 +91,7 @@ export default async function CommsPage() {
 
         {segments.length === 0 && (
           <div className="bg-[#F4E8D0] text-[#A56A1B] rounded-xl px-5 py-3 text-sm">
-            No saved segments yet — build one on the Donors page (Segments &amp; export) to target a campaign.
+            No saved segments yet. Build one on the Donors page (Segments &amp; export) to target a campaign.
           </div>
         )}
 

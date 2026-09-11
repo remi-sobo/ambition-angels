@@ -273,7 +273,7 @@ function InlineEdit({
           {volunteerTerm}
           <select className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={leaderId}
             onChange={(e) => setLeaderId(e.target.value)}>
-            <option value="">— none —</option>
+            <option value="">(none)</option>
             {leaders.map((l) => (
               <option key={l.id} value={l.id}>{l.name}</option>
             ))}
@@ -390,7 +390,7 @@ export function NewStudentForm({
           {volunteerTerm}
           <select className={`${inputCls} w-full mt-1`} value={leaderId}
             onChange={(e) => setLeaderId(e.target.value)}>
-            <option value="">— none —</option>
+            <option value="">(none)</option>
             {leaders.map((l) => (
               <option key={l.id} value={l.id}>{l.name}</option>
             ))}

@@ -158,7 +158,7 @@ export default async function TodaysMovesPage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
       <PageHeader
         title="Today's Moves"
-        subtitle="Who needs you today — across asks, acknowledgments, and recent gifts"
+        subtitle="Who needs you today. Across asks, acknowledgments, and recent gifts"
         actions={
           <div className="flex items-center gap-3">
             <GmailSyncButton />
@@ -193,7 +193,7 @@ export default async function TodaysMovesPage() {
         />
         <OppQueue
           title="Overdue next steps"
-          hint="Open asks whose next step is past due — do these first."
+          hint="Open asks whose next step is past due. Do these first."
           rows={overdue}
           accent="text-expense"
           detail={(o) => (
@@ -218,7 +218,7 @@ export default async function TodaysMovesPage() {
         />
         <OppQueue
           title="Asks with no owner"
-          hint="Open asks nobody has claimed — assign an owner."
+          hint="Open asks nobody has claimed. Assign an owner."
           rows={unowned}
           accent="text-ink-2"
           detail={(o) => (
@@ -235,7 +235,7 @@ export default async function TodaysMovesPage() {
         <AckQueue embedded />
         <GiftQueue
           title="Recently engaged"
-          hint="New gifts in the last 14 days — worth a personal touch."
+          hint="New gifts in the last 14 days. Worth a personal touch."
           rows={recent}
           accent="text-revenue"
         />
@@ -274,7 +274,7 @@ function QueueShell({
           </Link>
         )}
       </div>
-      {count === 0 ? <p className="px-5 py-4 text-ink-3 text-sm">Nothing here — nice.</p> : children}
+      {count === 0 ? <p className="px-5 py-4 text-ink-3 text-sm">Nothing here. Nice.</p> : children}
     </section>
   );
 }

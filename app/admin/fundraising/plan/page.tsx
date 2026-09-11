@@ -148,7 +148,7 @@ export default async function FundraisingPlanPage({
       <PageHeader
         title="Fundraising Plan"
         eyebrow={`Plan year ${year}`}
-        subtitle="Where the money will come from — every figure rolls up live from the spine, never typed in."
+        subtitle="Where the money will come from. Every figure rolls up live from the spine, never typed in."
         actions={
           <div className="flex items-center gap-2">
             {[year - 1, currentYear, currentYear + 1]
@@ -191,7 +191,7 @@ export default async function FundraisingPlanPage({
         <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6 mb-8">
           <h2 className={TYPE.cardTitle}>No plan for {year} yet</h2>
           <p className="text-sm text-ink-2 mt-1 max-w-[60ch]">
-            Add the year&apos;s strategies — major gifts, monthly partners, an event, grants — each with
+            Add the year&apos;s strategies (major gifts, monthly partners, an event, grants), each with
             its own goal. Committed and gap figures compute from the asks, grants, and campaigns you
             link to each strategy, so the plan and the records can never disagree.
           </p>
@@ -233,7 +233,7 @@ export default async function FundraisingPlanPage({
                     </div>
                   ) : (
                     <p className="mt-3 text-xs text-ink-3">
-                      Nothing committed yet — the bar appears with the first won ask, awarded grant, or
+                      Nothing committed yet: the bar appears with the first won ask, awarded grant, or
                       campaign gift linked here.
                     </p>
                   )}
@@ -289,7 +289,7 @@ export default async function FundraisingPlanPage({
                       <td className="px-5 py-2.5">
                         Not in the plan
                         <span className="block text-[11px] text-ink-3">
-                          Won and open value no strategy claims — open a strategy to link it.
+                          Won and open value no strategy claims. Open a strategy to link it.
                         </span>
                       </td>
                       <td className="px-3 py-2.5 text-right">—</td>

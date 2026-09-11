@@ -182,7 +182,7 @@ export function EditMemberProfile({ member }: { member: BoardMemberFull }) {
       <label className="col-span-2 text-xs text-ink-2">
         Notes
         <textarea className={`${inputCls} w-full mt-1 leading-relaxed`} rows={3} value={notes}
-          placeholder="Internal notes — interests, intros, context"
+          placeholder="Internal notes: interests, intros, context"
           onChange={(e) => setNotes(e.target.value)} />
       </label>
       <div className="col-span-2 flex gap-2 items-center">

@@ -48,7 +48,7 @@ export function financeSource(input: FinanceInput, ctx: SourceCtx): BriefingItem
         source: "finance",
         severity: "critical",
         title: "Runway is critically short",
-        detail: `${runwayMonths.toFixed(1)} months of runway at the current burn — below the ${FINANCE.runwayCriticalMonths}-month floor.`,
+        detail: `${runwayMonths.toFixed(1)} months of runway at the current burn. Below the ${FINANCE.runwayCriticalMonths}-month floor.`,
         metric: `${runwayMonths.toFixed(1)} mo`,
         weight: 1_000 - runwayMonths, // shorter runway sorts first
         decisions: ["open", "snooze", "dismiss"],
@@ -61,7 +61,7 @@ export function financeSource(input: FinanceInput, ctx: SourceCtx): BriefingItem
         source: "finance",
         severity: "watch",
         title: "Runway is getting short",
-        detail: `${runwayMonths.toFixed(1)} months of runway — under the ${FINANCE.runwayWatchMonths}-month comfort line.`,
+        detail: `${runwayMonths.toFixed(1)} months of runway. Under the ${FINANCE.runwayWatchMonths}-month comfort line.`,
         metric: `${runwayMonths.toFixed(1)} mo`,
         weight: 500 - runwayMonths,
         decisions: ["open", "snooze", "dismiss"],
@@ -77,7 +77,7 @@ export function financeSource(input: FinanceInput, ctx: SourceCtx): BriefingItem
       source: "finance",
       severity: "watch",
       title: "Cash on hand is below the floor",
-      detail: `${usd(cashOnHand)} in the bank — under the ${usd(FINANCE.cashFloorUsd)} floor.`,
+      detail: `${usd(cashOnHand)} in the bank. Under the ${usd(FINANCE.cashFloorUsd)} floor.`,
       metric: usd(cashOnHand),
       weight: FINANCE.cashFloorUsd - cashOnHand,
       decisions: ["open", "snooze", "dismiss"],
@@ -204,7 +204,7 @@ export function majorGiftsSource(input: MajorGiftsInput, ctx: SourceCtx): Briefi
       source: "major_gifts",
       severity,
       title: `${overdue.length} ask${overdue.length === 1 ? "" : "s"} with an overdue next step`,
-      detail: `${usd(atStake)} in asks have a next step past due — oldest: “${overdue[0].name}”.`,
+      detail: `${usd(atStake)} in asks have a next step past due. Oldest: “${overdue[0].name}”.`,
       metric: usd(atStake),
       weight: atStake,
       decisions: ["open", "snooze", "dismiss"],
@@ -249,7 +249,7 @@ export function donorsSource(input: DonorsInput, ctx: SourceCtx): BriefingItem[]
   const severity = irs.length > 0 ? "critical" : "watch";
   const detail =
     irs.length > 0
-      ? `${pastWindow.length} unacknowledged past ${DONORS.ackWindowDays} days — ${irs.length} are ≥ ${usd(DONORS.irsThresholdUsd)} and need a written receipt (IRS Pub 1771).`
+      ? `${pastWindow.length} unacknowledged past ${DONORS.ackWindowDays} days. ${irs.length} are ≥ ${usd(DONORS.irsThresholdUsd)} and need a written receipt (IRS Pub 1771).`
       : `${pastWindow.length} gifts have waited more than ${DONORS.ackWindowDays} days for a thank-you.`;
 
   return [
@@ -361,7 +361,7 @@ export function followupsSource(input: FollowupsInput, ctx: SourceCtx): Briefing
       source: "followups",
       severity: "critical",
       title: `${overdue.length} email follow-up${overdue.length === 1 ? "" : "s"} past the ${FOLLOWUPS.slaHours}h reply window`,
-      detail: `Oldest: “${oldest.title.replace(/^Follow up:\s*/i, "")}” — ${hoursLate}h over.`,
+      detail: `Oldest: “${oldest.title.replace(/^Follow up:\s*/i, "")}”. ${hoursLate}h over.`,
       metric: `${overdue.length} late`,
       weight: 1_000 + overdue.length,
       decisions: ["open", "snooze", "dismiss"],

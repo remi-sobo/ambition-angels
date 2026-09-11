@@ -30,7 +30,7 @@ export default async function FinancialHealthWidget({ className }: { className?:
           <CashFlowChart data={d.monthBuckets} width={760} height={200} />
         </div>
       ) : (
-        <Empty>No transactions recorded for FY {d.cfg.year} yet — import them under Finance.</Empty>
+        <Empty>No transactions recorded for FY {d.cfg.year} yet. Import them under Finance.</Empty>
       )}
     </Widget>
   );

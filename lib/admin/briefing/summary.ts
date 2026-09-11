@@ -19,9 +19,9 @@ const SECTION_SOURCES: Record<SectionKey, BriefingSource[]> = {
 
 // What "all clear" reads as, per section — the positive state the spec asks for.
 const CLEAR: Record<SectionKey, string> = {
-  major_gifts: "Pipeline's clean — no asks need a move today.",
+  major_gifts: "Pipeline's clean. No asks need a move today.",
   compliance: "Nothing due or overdue in the compliance calendar.",
-  students: "Students are progressing — no engagement gaps flagged.",
+  students: "Students are progressing. No engagement gaps flagged.",
   cohorts: "Sessions are logged and attendance is current.",
 };
 
@@ -57,7 +57,7 @@ export async function getSectionSummary(section: SectionKey): Promise<SectionSum
     const { getProgramTerms } = await import("@/lib/admin/terminology");
     const terms = await getProgramTerms();
     return summarize(section, briefing.items, {
-      students: `${terms.students} are progressing — no engagement gaps flagged.`,
+      students: `${terms.students} are progressing. No engagement gaps flagged.`,
       cohorts: `${terms.sessions} are logged and attendance is current.`,
     });
   } catch {

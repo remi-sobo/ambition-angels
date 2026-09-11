@@ -114,7 +114,7 @@ function CalendarPicker({ onDone }: { onDone: (connected: boolean) => void }) {
         // Pre-select the account's own calendar plus anything already connected.
         setSelected(new Set(cals.filter((c) => c.primary || c.alreadyConnected).map((c) => c.id)));
       } catch {
-        if (!cancelled) setError("Couldn't load this account's calendars — try again.");
+        if (!cancelled) setError("Couldn't load this account's calendars. Try again.");
       } finally {
         if (!cancelled) setBusy(null);
       }
@@ -153,7 +153,7 @@ function CalendarPicker({ onDone }: { onDone: (connected: boolean) => void }) {
       }).catch(() => {});
       onDone(true);
     } catch {
-      setError("Something went wrong — try again.");
+      setError("Something went wrong. Try again.");
     } finally {
       setBusy(null);
     }
@@ -235,10 +235,10 @@ export function ConnectCalendarControls({
   const [picking, setPicking] = useState(oauthResult === "pick");
   const [busy, setBusy] = useState<null | "sync">(null);
   const [error, setError] = useState<string | null>(
-    oauthResult === "error" ? (oauthReason || "The Google connection failed — try again.") : null
+    oauthResult === "error" ? (oauthReason || "The Google connection failed. Try again.") : null
   );
   const [msg, setMsg] = useState<string | null>(
-    oauthResult === "cancelled" ? "Connection cancelled — no account was connected." : null
+    oauthResult === "cancelled" ? "Connection cancelled. No account was connected." : null
   );
 
   const startConnect = () => {
@@ -272,7 +272,7 @@ export function ConnectCalendarControls({
       setMsg("Calendar refreshed.");
       router.refresh();
     } catch {
-      setError("Something went wrong — try again.");
+      setError("Something went wrong. Try again.");
     } finally {
       setBusy(null);
     }
@@ -371,7 +371,7 @@ export function ChangePasswordForm() {
       }
       setResetSent(true);
     } catch {
-      setResetError("Couldn't send the reset link — try again.");
+      setResetError("Couldn't send the reset link. Try again.");
     } finally {
       setResetBusy(false);
     }
@@ -381,7 +381,7 @@ export function ChangePasswordForm() {
     <div className="mt-4 pt-4 border-t border-hairline">
       {resetSent ? (
         <p className="text-xs text-revenue">
-          Reset link sent — check your email, then follow the link to set a new password (no current
+          Reset link sent. Check your email, then follow the link to set a new password (no current
           password needed).
         </p>
       ) : (

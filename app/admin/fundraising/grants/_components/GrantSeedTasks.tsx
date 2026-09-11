@@ -40,7 +40,7 @@ export default function GrantSeedTasks({ grantId }: { grantId: string }) {
       <div className="min-w-0 flex-1">
         <h3 className={TYPE.cardTitle}>Start the workspace</h3>
         <p className="text-xs text-ink-2 mt-0.5">
-          Seed the grant lifecycle — LOI, budget, narrative, review, submit, report —
+          Seed the grant lifecycle (LOI, budget, narrative, review, submit, report)
           as tasks you can work and reorder.
         </p>
       </div>

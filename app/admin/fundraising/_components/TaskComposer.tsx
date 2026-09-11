@@ -66,7 +66,7 @@ export default function TaskComposer({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            title: single ? title.trim() : `${title.trim()} — ${t.name}`,
+            title: single ? title.trim() : `${title.trim()} · ${t.name}`,
             category: "fundraising",
             priority,
             due_date: due || null,
@@ -85,7 +85,7 @@ export default function TaskComposer({
     setSaving(false);
     if (failed.length > 0) {
       setError(
-        `Created ${created} of ${targets.length} — failed for ${failed.slice(0, 3).join(", ")}` +
+        `Created ${created} of ${targets.length}. Failed for ${failed.slice(0, 3).join(", ")}` +
           (failed.length > 3 ? ` and ${failed.length - 3} more` : "") +
           ". Try again for the rest."
       );
@@ -116,7 +116,7 @@ export default function TaskComposer({
             <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} className={fieldCls} />
             {!single && (
               <p className="mt-1 text-[11px] text-ink-3">
-                One task per person, name appended: &ldquo;{title.trim() || "…"} — {targets[0].name}&rdquo;, …
+                One task per person, name appended: &ldquo;{title.trim() || "…"} · {targets[0].name}&rdquo;, …
               </p>
             )}
           </label>

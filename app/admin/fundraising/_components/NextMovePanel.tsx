@@ -178,7 +178,7 @@ export default function NextMovePanel({
 
       {!error && loaded && !suggestion && !generating && (
         <p className="px-5 py-4 text-ink-3 text-sm">
-          Ask Reed for the single best next move with {entityLabel} — and the email to send, drafted
+          Ask Reed for the single best next move with {entityLabel}, and the email to send, drafted
           from the real history. Costs a few cents per run.
         </p>
       )}

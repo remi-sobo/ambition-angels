@@ -24,7 +24,7 @@ const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 /** invalid_client explanation, shared by the preflight and the callback catch so
  *  a mismatched client id/secret always reads the same way. */
 export const INVALID_CLIENT_REASON =
-  "Google rejected the server's OAuth credentials (invalid_client) — GOOGLE_CLIENT_SECRET doesn't match GOOGLE_CLIENT_ID. Fix the pair in Vercel and redeploy.";
+  "Google rejected the server's OAuth credentials (invalid_client). GOOGLE_CLIENT_SECRET doesn't match GOOGLE_CLIENT_ID. Fix the pair in Vercel and redeploy.";
 
 /** Env credentials, trimmed — a trailing newline pasted into Vercel is a common
  *  cause of invalid_client, so never trust the raw value. */

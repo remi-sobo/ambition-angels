@@ -110,7 +110,7 @@ export function StrategyForm({
       />
       <textarea
         className={`${inputCls} sm:col-span-2`}
-        placeholder="Notes — the playbook, preconditions, risks"
+        placeholder="Notes: the playbook, preconditions, risks"
         rows={2}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}

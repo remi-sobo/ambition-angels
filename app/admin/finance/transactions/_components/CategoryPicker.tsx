@@ -64,7 +64,7 @@ export default function CategoryPicker({
             : "border-outline"
         }`}
       >
-        <option value="">— Uncategorized —</option>
+        <option value="">(Uncategorized)</option>
         {groups.map((g) => (
           <optgroup key={g.name} label={g.name}>
             {g.items.map((c) => (

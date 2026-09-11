@@ -137,7 +137,7 @@ export default async function DonorsPage({
         <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_fundraising_core.sql</code> via Actions → Apply DB
-          migration, then reload — existing Stripe donations backfill automatically.
+          migration, then reload: existing Stripe donations backfill automatically.
         </div>
       </div>
     );
@@ -451,7 +451,7 @@ export default async function DonorsPage({
 
         {constituentFetchFailed && (
           <div className="bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
-            Some donor records failed to load — the table below may be missing donors that the
+            Some donor records failed to load. The table below may be missing donors that the
             totals include. Reload to retry.
           </div>
         )}
@@ -481,7 +481,7 @@ export default async function DonorsPage({
           </div>
           {flagsByDonor.size === 0 ? (
             <p className={`px-5 py-5 ${TYPE.bodyMuted}`}>
-              No retention flags — every donor is on their usual rhythm.
+              No retention flags: every donor is on their usual rhythm.
             </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-outline">
@@ -534,7 +534,7 @@ export default async function DonorsPage({
             <span className="text-sm text-ink-1">
               Showing <span className="font-bold">{donors.length}</span>{" "}
               <span className="font-bold uppercase">{FLAG_LABELS[retentionSegment]}</span>{" "}
-              donor{donors.length === 1 ? "" : "s"} — {FLAG_HELP[retentionSegment].toLowerCase()}.
+              donor{donors.length === 1 ? "" : "s"} · {FLAG_HELP[retentionSegment].toLowerCase()}.
               Totals below are lifetime giving. Open a profile, or select rows to create follow-up
               tasks in bulk.
             </span>
@@ -578,7 +578,7 @@ export default async function DonorsPage({
                 </>
               ) : null}
               Donor records live in BloomOS and are fed by Stripe donations, CSV imports, and the
-              HubSpot sync — contacts, companies and closed-won deals project in twice a day, or on
+              HubSpot sync: contacts, companies and closed-won deals project in twice a day, or on
               demand from{" "}
               <Link href="/admin/fundraising/settings" className="text-orange hover:text-orange-mid">
                 Settings → Sync now

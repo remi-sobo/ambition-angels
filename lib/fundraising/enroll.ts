@@ -18,9 +18,9 @@ export type EnrollRefusal = "do_not_contact" | "no_email" | "no_steps" | "alread
 
 export const REFUSAL_MESSAGE: Record<EnrollRefusal, string> = {
   do_not_contact: "This donor is marked do-not-contact, so they can't be enrolled in a journey.",
-  no_email: "This donor has no email on file — journeys send email, so enrollment is refused.",
-  no_steps: "This journey has no steps yet — add at least one step before enrolling anyone.",
-  already_active: "Already enrolled — this donor has an active enrollment in this journey.",
+  no_email: "This donor has no email on file. Journeys send email, so enrollment is refused.",
+  no_steps: "This journey has no steps yet. Add at least one step before enrolling anyone.",
+  already_active: "Already enrolled. This donor has an active enrollment in this journey.",
 };
 
 /** The exact row the cron's tryEnroll writes; keep the two in lockstep. */

@@ -29,7 +29,7 @@ export class HubSpotError extends Error {
 // the job's error list and, from there, in the Settings UI, so it needs to
 // tell a human what to actually do rather than just "HubSpot 403".
 function describeStatus(status: number): string {
-  if (status === 401) return "HubSpot 401 (access token invalid or expired — reconnect the integration)";
+  if (status === 401) return "HubSpot 401 (access token invalid or expired, reconnect the integration)";
   if (status === 403) return "HubSpot 403 (the access token is missing a required scope for this object)";
   if (status === 429) return "HubSpot 429 (rate limited)";
   if (status >= 500) return `HubSpot ${status} (HubSpot server error)`;

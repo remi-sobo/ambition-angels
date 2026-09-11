@@ -39,7 +39,7 @@ export default function SavedViews({
     }).catch(() => null);
     setBusy(false);
     if (!res?.ok) {
-      setError("Save failed — try again.");
+      setError("Save failed. Try again.");
       return;
     }
     setSaving(false);

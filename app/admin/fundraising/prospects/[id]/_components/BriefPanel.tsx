@@ -68,7 +68,7 @@ type ErrorBanner = {
 function RunningNote({ label }: { label?: string }) {
   return (
     <p className="text-xs text-ink-1 italic">
-      Researching{label ? ` ${label}` : ""}… you can leave this page — we&apos;ll
+      Researching{label ? ` ${label}` : ""}… You can leave this page. We&apos;ll
       notify you (and email you) the moment it&apos;s done.
     </p>
   );

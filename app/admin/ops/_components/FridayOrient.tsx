@@ -23,7 +23,7 @@ export default async function FridayOrient() {
           <p className="text-sm text-ink-2">
             {status.tone === "calm"
               ? "Clean close. Truth what's left, then put the week down."
-              : "Some of this is still open. Truth each task — done, roll it deliberately, or drop it — and clear the follow-ups before the weekend."}
+              : "Some of this is still open. Truth each task (done, roll it deliberately, or drop it), and clear the follow-ups before the weekend."}
           </p>
         </>
       ) : (

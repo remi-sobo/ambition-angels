@@ -43,7 +43,7 @@ export default async function ImportFromHubspotPage() {
       />
       <p className="mb-4 text-sm text-ink-2 max-w-2xl">
         Pick HubSpot contacts to add to the bench. Tip: filter by lifecycle stage and
-        skip <span className="font-medium">customer</span> (existing donors) — the bench is for
+        skip <span className="font-medium">customer</span> (existing donors). The bench is for
         prospects you haven&apos;t closed yet. Added contacts land active and can be rated,
         researched, and put on angles like any other prospect.
       </p>

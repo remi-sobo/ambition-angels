@@ -42,7 +42,7 @@ export default async function OrganizationHealthPage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[820px]">
       <PageHeader
         title="Organization Health"
-        subtitle="Each row says how it is — and why. Same input, same sentence."
+        subtitle="Each row says how it is, and why. Same input, same sentence."
       />
 
       {rows.length === 0 ? (

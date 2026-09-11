@@ -120,7 +120,7 @@ export default function MovementPlan({ plan }: { plan: PlanMovement }) {
       )}
 
       {empty ? (
-        <p className="text-sm text-ink-2">No plan to narrate yet — build the OGSM in the Strategic Plan first.</p>
+        <p className="text-sm text-ink-2">No plan to narrate yet. Build the OGSM in the Strategic Plan first.</p>
       ) : (
         plan.objectives.map((o, i) => <ObjectiveBlock key={o.id} objective={o} index={i} />)
       )}

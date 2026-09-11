@@ -126,7 +126,7 @@ export default async function AskLog({ embedded = false }: { embedded?: boolean 
               <EmptyState
                 label="asks"
                 title="No asks logged yet"
-                hint="Log every solicitation with “+ Log an ask” above — a grant proposal, a major-gift ask, a sponsorship request — and attach the PDF you sent."
+                hint="Log every solicitation with “+ Log an ask” above (a grant proposal, a major-gift ask, a sponsorship request), and attach the PDF you sent."
               />
             </div>
           ) : (

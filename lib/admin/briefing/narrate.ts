@@ -203,7 +203,7 @@ function renderFactsForModel(fs: FactSheet): string {
       `ITEMS NEEDING A DECISION TODAY (${fs.total} total — ${fs.counts.critical} critical, ${fs.counts.watch} watch, ${fs.counts.due_soon} due soon). Top items, most important first:`
     );
     fs.topItems.forEach((it, i) => {
-      lines.push(`${i + 1}. [${it.severity}] ${it.title} — ${it.detail}${it.metric ? ` (${it.metric})` : ""}`);
+      lines.push(`${i + 1}. [${it.severity}] ${it.title} · ${it.detail}${it.metric ? ` (${it.metric})` : ""}`);
     });
   }
   lines.push("");
@@ -228,7 +228,7 @@ function fallbackNarrative(briefing: Briefing, pulse: Pulse, now: number): Narra
       pulse.runwayMonths != null
         ? `Nothing needs a decision today. Runway sits at ${pulse.runwayMonths.toFixed(1)} months with ${usd(pulse.cashOnHand)} on hand, and ${usd(pulse.openPipelineUsd)} is in the open pipeline.`
         : `Nothing needs a decision today. ${usd(pulse.cashOnHand)} is on hand and ${usd(pulse.openPipelineUsd)} is in the open pipeline.`;
-    focus = "No actions queued — use the open time to get ahead on outreach.";
+    focus = "No actions queued. Use the open time to get ahead on outreach.";
   } else {
     const counts = { critical: 0, watch: 0, due_soon: 0 };
     for (const it of briefing.items) counts[it.severity]++;
@@ -241,7 +241,7 @@ function fallbackNarrative(briefing: Briefing, pulse: Pulse, now: number): Narra
       counts.critical > 0
         ? `${counts.critical} thing${counts.critical === 1 ? "" : "s"} need${counts.critical === 1 ? "s" : ""} you now`
         : `${briefing.items.length} item${briefing.items.length === 1 ? "" : "s"} for your morning`;
-    narrative = `${parts.join(", ")}. Top of the list: ${top[0].title} — ${top[0].detail}`;
+    narrative = `${parts.join(", ")}. Top of the list: ${top[0].title} · ${top[0].detail}`;
     focus = top[0].title;
   }
 

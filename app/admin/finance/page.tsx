@@ -325,9 +325,9 @@ export default async function FinanceDashboardPage() {
           info={
             <InfoTip heading="Raised YTD">
               Money actually <b>received</b> this fiscal year: gifts that have landed
-              (the <code>gifts</code> ledger — HubSpot <b>Closed Won</b> deals and
+              (the <code>gifts</code> ledger. HubSpot <b>Closed Won</b> deals and
               manual gifts). Committed or pledged deals that haven&apos;t been received
-              are <b>not</b> counted here — they appear as <b>Secured</b> in the pledge
+              are <b>not</b> counted here. They appear as <b>Secured</b> in the pledge
               pipeline below. Projected pipeline is not included either.
             </InfoTip>
           }
@@ -405,7 +405,7 @@ export default async function FinanceDashboardPage() {
           tone={netYTD >= 0 ? "good" : "warn"}
           info={
             <InfoTip heading="Net YTD">
-              <b>Revenue − expense</b> for the fiscal year so far — every inflow minus
+              <b>Revenue − expense</b> for the fiscal year so far. Every inflow minus
               every outflow in <code>fin_transactions</code>. Positive means more came in
               than went out. This is cash flow, not the same as fundraising
               &ldquo;Raised&rdquo; (which counts committed money not yet in the bank).
@@ -452,13 +452,13 @@ export default async function FinanceDashboardPage() {
             <InfoTip heading="Functional split">
               This fiscal year&apos;s <b>expenses</b> grouped by each category&apos;s{" "}
               <b>functional class</b> — <b>program</b>, <b>admin</b>, or{" "}
-              <b>fundraising</b> — the same split a Form 990 reports. Expenses whose
+              <b>fundraising</b>: the same split a Form 990 reports. Expenses whose
               category has no class (or no category) fall under <b>Uncategorized</b>.
             </InfoTip>
           </SectionHeading>
           <p className="text-xs text-ink-2 mb-5">
             How {money(expenseYTD)} of expense breaks down across program,
-            admin, and fundraising — the same split a Form 990 reports.
+            admin, and fundraising: the same split a Form 990 reports.
           </p>
           {functionalSegs.length > 0 ? (
             <Donut
@@ -501,7 +501,7 @@ export default async function FinanceDashboardPage() {
               (by their source type) with <b>positive bank transactions</b>, each
               routed to a source by its revenue category (foundation, individual,
               corporate, government, accelerator, earned, other). Projected pipeline is
-              not included — only money actually received.
+              not included: only money actually received.
             </InfoTip>
           </SectionHeading>
           <p className="text-xs text-ink-2 mb-5">
@@ -595,7 +595,7 @@ export default async function FinanceDashboardPage() {
               value={money(receivedTotal)}
               info={
                 <InfoTip heading="Received">
-                  Real money that has landed this fiscal year — the sum of{" "}
+                  Real money that has landed this fiscal year. The sum of{" "}
                   <b>gifts</b> dated within the year (the <code>gifts</code> ledger).
                   This is the hard floor of goal progress.
                 </InfoTip>
@@ -608,7 +608,7 @@ export default async function FinanceDashboardPage() {
               info={
                 <InfoTip heading="Secured">
                   Committed money not yet received: the <b>committed</b> rows of the
-                  revenue schedule at full value — scheduled pledge installments,
+                  revenue schedule at full value. Scheduled pledge installments,
                   awarded grants, and committed AIG/Pledged deals. Restricted money is
                   included here (it still counts toward the goal).
                 </InfoTip>
@@ -644,7 +644,7 @@ export default async function FinanceDashboardPage() {
             <SectionHeading>
               Recent donations
               <InfoTip heading="Recent donations">
-                The last five <b>gifts</b> that landed, newest first — from the{" "}
+                The last five <b>gifts</b> that landed, newest first. From the{" "}
                 <code>gifts</code> ledger, the same source as Received / Raised YTD.
                 Shows who gave, unlike Recent transactions (bank-level, no donor).
               </InfoTip>
@@ -774,7 +774,7 @@ function Hero({
       {href && (
         <Link
           href={href}
-          aria-label={`${label} — ${hrefLabel ?? "view list"}`}
+          aria-label={`${label} · ${hrefLabel ?? "view list"}`}
           className="absolute inset-0 z-10"
         />
       )}

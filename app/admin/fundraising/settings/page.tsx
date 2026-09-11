@@ -71,7 +71,7 @@ export default async function FundraisingSettingsPage() {
               <Link href="/admin/fundraising/import" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
                 Import donors &amp; gifts from CSV →
               </Link>
-              <p className="text-[11px] text-ink-3 mt-1">Map columns, preview, and commit — dedupes by email against existing constituents.</p>
+              <p className="text-[11px] text-ink-3 mt-1">Map columns, preview, and commit. Dedupes by email against existing constituents.</p>
             </div>
             <div>
               <Link href="/admin/fundraising/duplicates" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">

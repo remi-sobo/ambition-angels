@@ -19,7 +19,7 @@ export default async function MovesOnlyYouWidget({
   return (
     <Widget title={title} href="/admin/fundraising/today" hrefLabel="Today's Moves" className={className}>
       {moves.length === 0 ? (
-        <Empty>No high-stakes asks need you right now — every owned or $10k+ ask has a current next step.</Empty>
+        <Empty>No high-stakes asks need you right now. Every owned or $10k+ ask has a current next step.</Empty>
       ) : (
         <ul className="divide-y divide-hairline -my-1">
           {shown.map((m) => (

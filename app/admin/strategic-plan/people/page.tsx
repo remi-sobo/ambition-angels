@@ -76,7 +76,7 @@ export default async function StrategyPeoplePage() {
         title="People"
         subtitle={
           <>
-            Each person&apos;s slice of the plan — their objectives, measures, and next moves · back to the{" "}
+            Each person&apos;s slice of the plan. Their objectives, measures, and next moves · back to the{" "}
             <Link href="/admin/strategic-plan" className="text-orange hover:underline">full plan</Link>
           </>
         }
@@ -148,7 +148,7 @@ export default async function StrategyPeoplePage() {
 
           {unowned > 0 && (
             <p className="text-xs text-ink-3">
-              {unowned} plan item{unowned === 1 ? "" : "s"} have no owner — assign owners on the plan so nothing is unaccounted for.
+              {unowned} plan item{unowned === 1 ? "" : "s"} have no owner. Assign owners on the plan so nothing is unaccounted for.
             </p>
           )}
         </div>

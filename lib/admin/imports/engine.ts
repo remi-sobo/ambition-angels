@@ -114,7 +114,7 @@ export function validateMapping(
   }
   for (const key of Array.from(customKeys)) {
     if (spineKeys.has(key)) {
-      return { ok: false, error: `Custom field key "${key}" shadows a built-in field — rename the custom field` };
+      return { ok: false, error: `Custom field key "${key}" shadows a built-in field. Rename the custom field` };
     }
   }
   if (seen.size === 0) return { ok: false, error: "Map at least one column" };

@@ -115,7 +115,7 @@ export default function ReconcileCard({
       {open && (
         <div className="mt-5 pt-5 border-t border-hairline space-y-4">
           <p className="text-xs text-ink-2 max-w-2xl">
-            Enter the actual balance from your bank. We&apos;ll anchor cash to it and date it — cash on hand becomes this
+            Enter the actual balance from your bank. We&apos;ll anchor cash to it and date it. Cash on hand becomes this
             number plus any transactions you upload dated after it. Do this whenever you want the number to match the
             bank exactly (e.g. after each weekly upload).
           </p>
@@ -145,7 +145,7 @@ export default function ReconcileCard({
           {drift !== null && Math.abs(drift) >= 0.5 && (
             <p className="text-xs">
               <span className={Math.abs(drift) > 0 ? "text-[#A56A1B]" : "text-revenue"}>
-                The app currently computes {fmtMoney(computedCash)} — that&apos;s{" "}
+                The app currently computes {fmtMoney(computedCash)}. That&apos;s{" "}
                 {fmtMoney(Math.abs(drift))} {drift > 0 ? "less than" : "more than"} your number.
               </span>{" "}
               <span className="text-ink-2">
@@ -155,7 +155,7 @@ export default function ReconcileCard({
             </p>
           )}
           {drift !== null && Math.abs(drift) < 0.5 && (
-            <p className="text-xs text-revenue">Matches the app&apos;s computed cash — you&apos;re reconciled. ✓</p>
+            <p className="text-xs text-revenue">Matches the app&apos;s computed cash. You&apos;re reconciled. ✓</p>
           )}
 
           {err && <p className="text-xs text-expense">{err}</p>}

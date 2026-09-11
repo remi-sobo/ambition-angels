@@ -43,7 +43,7 @@ export default async function OutcomesPage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px] space-y-6">
       <PageHeader
         title="Outcomes"
-        subtitle="What the program changed, with each number's origin on its sleeve — where it came from, when it was captured, and whether it can be stood behind."
+        subtitle="What the program changed, with each number's origin on its sleeve. Where it came from, when it was captured, and whether it can be stood behind."
       />
 
       {outcomes.length === 0 ? (
@@ -102,8 +102,8 @@ export default async function OutcomesPage() {
           KPIs
         </Link>
         , which owns the catalog&apos;s update flow. A metric flagged{" "}
-        <span className="font-semibold">blocks export</span> still renders here — drafting is
-        never blocked — but no report ships it without a waiver (Contract 7).
+        <span className="font-semibold">blocks export</span> still renders here. Drafting is
+        never blocked, but no report ships it without a waiver (Contract 7).
       </p>
     </div>
   );

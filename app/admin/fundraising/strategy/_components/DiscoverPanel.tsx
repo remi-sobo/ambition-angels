@@ -74,7 +74,7 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
           name: c.name,
           type: c.type,
           org_name: c.org ?? undefined,
-          strategy_note: `${angleName} — ${c.fit_rationale}`,
+          strategy_note: `${angleName} · ${c.fit_rationale}`,
           source: "research",
           angle_id: angleId,
         }),
@@ -129,7 +129,7 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
 
       {error && <p className="px-5 py-4 text-sm text-expense">{error}</p>}
       {warning && <p className="px-5 pt-3 text-[11px] text-status-watch-text">{warning}</p>}
-      {loading && <p className="px-5 py-4 text-ink-3 text-sm">Researching the web for fits — this can take ~30–60s.</p>}
+      {loading && <p className="px-5 py-4 text-ink-3 text-sm">Researching the web for fits. This can take ~30–60s.</p>}
 
       {candidates && candidates.length === 0 && !loading && (
         <p className="px-5 py-4 text-ink-3 text-sm">No high-confidence net-new prospects surfaced. Try a different type or refine the angle.</p>

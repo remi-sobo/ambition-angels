@@ -56,7 +56,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           subtitle={
             <>
               Alerts, mentions, and updates for you from across BloomOS. New team
-              messages ping here too — open one to reply in{" "}
+              messages ping here too. Open one to reply in{" "}
               <Link href="/admin/messages" className="text-orange hover:underline">
                 Messages
               </Link>

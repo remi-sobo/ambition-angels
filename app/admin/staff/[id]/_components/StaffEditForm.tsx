@@ -82,7 +82,7 @@ export default function StaffEditForm({
         </select>
       </div>
       <select className={FIELD} value={f.reports_to} onChange={(e) => setF({ ...f, reports_to: e.target.value })}>
-        <option value="">— No manager (top of chart) —</option>
+        <option value="">No manager (top of chart)</option>
         {managerOptions
           .filter((o) => o.id !== member.id)
           .map((o) => (

@@ -124,7 +124,7 @@ export default function UploadDocumentButton() {
       <textarea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
-        placeholder="Notes (optional) — provider, policy number, context…"
+        placeholder="Notes (optional): provider, policy number, context…"
         rows={2}
         maxLength={4000}
         className={`${inputCls} w-full resize-y`}

@@ -100,7 +100,7 @@ export default function RunwayTiers({
             </InfoTip>
           </div>
           <p className="mt-1 text-xs text-ink-2 max-w-xl">
-            How long the money lasts, three ways — cash today, plus what&apos;s owed and pledged. Months
+            How long the money lasts, three ways. Cash today, plus what&apos;s owed and pledged. Months
             beyond the current month, at{" "}
             <span className="text-ink-1 font-medium">{money(baseline)}/mo</span>{" "}
             {baselineSource === "config" ? "burn baseline" : "trailing 3-month burn"}.
@@ -153,20 +153,19 @@ export default function RunwayTiers({
 
       <div className="mt-4 pt-4 border-t border-hairline space-y-1.5 text-[11px] text-ink-2">
         <p>
-          <span className="text-[#A56A1B]">Projected ignores timing within the window</span> — a pledge
+          <span className="text-[#A56A1B]">Projected ignores timing within the window</span>. A pledge
           late in the horizon can paper over a gap earlier in it. Read it with the cash-flow chart below,
           not on its own.
         </p>
         {undated > 0 && (
           <p>
-            <span className="text-[#A56A1B]">{undated} pledge{undated === 1 ? "" : "s"} missing a date</span>{" "}
-            — not counted in any tier. Add expected dates on{" "}
+            <span className="text-[#A56A1B]">{undated} pledge{undated === 1 ? "" : "s"} missing a date</span>, not counted in any tier. Add expected dates on{" "}
             <a href="/admin/finance/revenue" className="underline hover:text-ink-1">Revenue</a> to include them.
           </p>
         )}
         {restrictedInflows > 0 && (
           <p>
-            <span className="text-ink-1 font-medium">{money(restrictedInflows)} restricted</span> — excluded
+            <span className="text-ink-1 font-medium">{money(restrictedInflows)} restricted</span>. Excluded
             from every tier above. Restricted money can&apos;t cover general operating, so runway never
             counts it.
           </p>

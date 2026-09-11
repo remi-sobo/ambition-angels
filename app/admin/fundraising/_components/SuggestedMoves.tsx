@@ -152,7 +152,7 @@ export default function SuggestedMoves() {
       {error && <p className="px-5 py-4 text-sm text-expense">{error}</p>}
 
       {!error && cards && cards.length === 0 && (
-        <p className="px-5 py-4 text-ink-3 text-sm">No moves needed right now — your pipeline is current.</p>
+        <p className="px-5 py-4 text-ink-3 text-sm">No moves needed right now. Your pipeline is current.</p>
       )}
 
       {!error && !cards && !loading && (

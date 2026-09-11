@@ -17,7 +17,7 @@ export default async function FinanceUploadPage() {
       <PageHeader
         eyebrow="Import hub"
         title="Upload"
-        subtitle="Bring everything in here — bank transactions, budget, and pledges — then set your current balance so cash matches the bank."
+        subtitle="Bring everything in here (bank transactions, budget, and pledges), then set your current balance so cash matches the bank."
       />
 
       {/* Set current balance / reconcile */}

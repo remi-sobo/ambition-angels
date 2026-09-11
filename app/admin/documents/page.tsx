@@ -150,7 +150,7 @@ export default async function DocumentsHubPage({
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1200px]">
       <PageHeader
         title="Documents"
-        subtitle="Every file in the org — attached to the records it belongs to"
+        subtitle="Every file in the org. Attached to the records it belongs to"
         actions={<UploadDocumentButton />}
       />
 
@@ -213,12 +213,12 @@ export default async function DocumentsHubPage({
       <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden mb-8">
         {docs.length === 0 ? (
           view === "expiring" ? (
-            <p className="p-5 text-sm text-ink-2">Nothing expires in the window — all current.</p>
+            <p className="p-5 text-sm text-ink-2">Nothing expires in the window. All current.</p>
           ) : totalDocs === 0 ? (
             <div className="p-4">
               <EmptyState
                 label="documents"
-                hint="Award letters, MOUs, board packets, policies — every file attached to the record it belongs to. Upload the first one with the button above."
+                hint="Award letters, MOUs, board packets, policies. Every file attached to the record it belongs to. Upload the first one with the button above."
               />
             </div>
           ) : (
@@ -307,7 +307,7 @@ export default async function DocumentsHubPage({
           <div className="px-5 py-4 border-b border-outline">
             <h2 className={TYPE.cardTitle}>Ask files (fundraising)</h2>
             <p className="text-xs text-ink-2 mt-0.5">
-              Managed on their asks — shown here so the org&apos;s files read as one list. Consolidation into the hub is
+              Managed on their asks. Shown here so the org&apos;s files read as one list. Consolidation into the hub is
               a tracked follow-on.
             </p>
           </div>

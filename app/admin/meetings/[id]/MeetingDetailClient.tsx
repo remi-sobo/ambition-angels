@@ -151,7 +151,7 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
               disabled={busy}
               className="text-[12px] font-medium px-3 py-1.5 rounded-full border border-outline text-ink-2 hover:text-ink-1 hover:bg-tile disabled:opacity-40 transition-colors"
             >
-              Never needs follow-up — dismiss all future occurrences
+              Never needs follow-up. Dismiss all future occurrences
             </button>
             <span className="text-[11px] text-ink-3">
               This is a recurring event. Excluding it also hides it from Upcoming.
@@ -195,7 +195,7 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
         {matched.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-ink-2 italic">
-              No matched donor or partner — this meeting is in the unmatched tray.
+              No matched donor or partner. This meeting is in the unmatched tray.
             </p>
             <ConnectEntity meetingId={record.id} />
           </div>

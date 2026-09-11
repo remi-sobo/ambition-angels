@@ -102,7 +102,7 @@ export async function gatherBriefingData(supabase: SupabaseClient, orgId: string
 
   const deadlines = [
     ...((grantDueRes.data ?? []) as unknown as Req[]).map((r) => ({
-      what: `${grantName(r.grant)} — ${r.label ?? r.kind.replace(/_/g, " ")}`,
+      what: `${grantName(r.grant)} · ${r.label ?? r.kind.replace(/_/g, " ")}`,
       due: r.due_date,
     })),
     ...((compDueRes.data ?? []) as Array<{ title: string; due_date: string }>).map((c) => ({

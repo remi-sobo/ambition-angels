@@ -101,7 +101,7 @@ export default async function StrategyPage() {
       <RoomMetaEditor meta={meta} />
 
       <p className="text-xs text-ink-3 mb-4 max-w-2xl">
-        Click any element to edit it — changes save on blur and show in the Strategy Room on its next load.
+        Click any element to edit it. Changes save on blur and show in the Strategy Room on its next load.
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

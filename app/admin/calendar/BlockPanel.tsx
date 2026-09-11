@@ -318,7 +318,7 @@ export default function BlockPanel({
                         {t.homeDay && (
                           <span
                             className="shrink-0 text-[10px] font-semibold text-status-watch-text"
-                            title="Already on another block — tapping moves it here"
+                            title="Already on another block. Tapping moves it here"
                           >
                             {t.homeBlockId === block.id ? "" : `On ${homeLabel(t.homeDay)} →`}
                           </span>

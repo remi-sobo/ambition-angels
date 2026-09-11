@@ -198,7 +198,7 @@ export default function RevenueManager({
         <span className="min-w-0 truncate text-ink-1" title={r.label}>
           {r.label}
           {r.needs_schedule && (
-            <span className="ml-2 text-[10px] text-[#A56A1B]" title="Awarded but not tranched — counted as a lump at the period start">
+            <span className="ml-2 text-[10px] text-[#A56A1B]" title="Awarded but not tranched. Counted as a lump at the period start">
               needs schedule
             </span>
           )}
@@ -266,7 +266,7 @@ export default function RevenueManager({
           )}
         </div>
         <p className="text-xs text-ink-2 mb-4">
-          Dated money still to come — committed at full value, pipeline weighted by probability.
+          Dated money still to come. Committed at full value, pipeline weighted by probability.
           Grants, pledges and pipeline flow in automatically; rows tagged <b>Manual</b> are one-offs
           you added here. Received money is below.
         </p>
@@ -329,13 +329,13 @@ export default function RevenueManager({
           <>
             {committedRows.length > 0 && (
               <>
-                <GroupHeader label="Committed" sub="grants, pledges & signed commitments — full value" total={money(committedTotal)} />
+                <GroupHeader label="Committed" sub="grants, pledges & signed commitments. Full value" total={money(committedTotal)} />
                 <ul className="divide-y divide-hairline">{committedRows.map(scheduleRow)}</ul>
               </>
             )}
             {projectedRows.length > 0 && (
               <>
-                <GroupHeader label="Projected pipeline" sub="open asks, weighted by probability — not committed yet" total={money(projectedTotal)} muted />
+                <GroupHeader label="Projected pipeline" sub="open asks, weighted by probability, not committed yet" total={money(projectedTotal)} muted />
                 <ul className="divide-y divide-hairline">{projectedRows.map(scheduleRow)}</ul>
               </>
             )}
@@ -350,7 +350,7 @@ export default function RevenueManager({
           <span className="text-xs font-mono text-revenue [font-variant-numeric:tabular-nums]">{money(totalReceived)}</span>
         </div>
         <p className="text-xs text-ink-2 mb-4">
-          Money that has landed in {year} — gifts from the ledger (the canonical record of
+          Money that has landed in {year}. Gifts from the ledger (the canonical record of
           received money; HubSpot closed-won and manual gifts both land here).
         </p>
         {receivedGifts.length === 0 ? (

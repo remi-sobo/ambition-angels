@@ -115,8 +115,8 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
     ranked.length === 0
       ? "Nothing needs you right now."
       : `${ranked.length} thing${ranked.length === 1 ? "" : "s"} need${ranked.length === 1 ? "s" : ""} you` +
-        (overdue ? ` — ${overdue} overdue` : "") +
-        (dueToday ? `${overdue ? "," : " —"} ${dueToday} due today` : "") +
+        (overdue ? `: ${overdue} overdue` : "") +
+        (dueToday ? `${overdue ? "," : ":"} ${dueToday} due today` : "") +
         ".";
 
   return {

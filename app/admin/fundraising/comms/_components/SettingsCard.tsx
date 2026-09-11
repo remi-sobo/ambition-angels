@@ -73,7 +73,7 @@ export function SettingsCard({ settings }: { settings: CommsSettings | null }) {
       {incomplete && !editing && (
         <div className="bg-[#F4E8D0] text-[#A56A1B] rounded-xl px-4 py-2.5 text-sm">
           Sending is disabled until a from address and mailing address are configured
-          {settings ? "" : " (settings row missing — apply comms_v2_phase1_tables.sql)"}.
+          {settings ? "" : " (not set up for this org yet)"}.
         </div>
       )}
 

@@ -7,11 +7,58 @@ already exists (`specs/bloomos-reed-strategy.md` and its predecessors): the boun
 loop, entitlement gate, per-org cost cap, global spend backstop, `ai_calls` ledger, and the
 propose-never-write draft flow.
 
-Status: draft, recon-grounded. Unlike specs #1–#3, the Phase 0 research for this spec was done
-while writing it (2026-07-11, against the live repo and database at `main` = `2810b70`); file
-citations below are real, not assumed. A residual Phase 0 confirm step remains for the three
-items marked ⚠, and stops for review before any build. Migrations, where any exist, are
-applied by Remi through the Supabase dashboard, never auto-applied.
+Status: **BUILT and CLOSED** (see "As built" below). Shipped 2026-07-10 in PR #319 as four
+commits, one per phase. Phase 2 was later un-shipped by a product decision and is ruled closed
+rather than restored — the spec is complete either way.
+
+The original draft header, kept for the record: recon-grounded; unlike specs #1–#3, the Phase 0
+research was done while writing it (2026-07-11, against the live repo and database at
+`main` = `2810b70`), so file citations are real, not assumed. A residual Phase 0 confirm step
+remained for the three items marked ⚠, stopping for review before any build. Migrations, where
+any exist, are applied by Remi through the Supabase dashboard, never auto-applied.
+
+---
+
+## As built (recorded 2026-09-11)
+
+Everything here is live on `main` unless marked otherwise.
+
+| Phase | Shipped as | State |
+| --- | --- | --- |
+| **0** — residual confirm | folded into #319 | done |
+| **1** — spine read tools | `reed: spine read tools` | **live** — `get_needs_you_queue`, `get_status_and_outlook`, `audit_metric_catalog`, catalog-first `explain_metric` in `lib/agents/reed/tools.ts`; overlays in `lib/agents/reed/metricGlossary.ts` |
+| **2** — Explain entry points | `reed: explain entry points` | **removed** — see the ruling below |
+| **3** — document reading | `reed: document reading` | **live** — `list_documents`, `read_document`, untrusted envelope, 8 MB PDF / 300 KB text gates |
+| **4** — extraction proposals | `reed: document extraction proposals` | **live** — `propose_document_extraction`, accept-route appliers, `reed_suggestions.payload` applied in production |
+
+Tests: `tests/reed-spine-tools.test.ts`, `tests/reed-documents.test.ts`,
+`tests/reed-extraction.test.ts` — 38 tests including the DoD prompt-injection regression
+net (a forged `</untrusted_document>` tag cannot break the envelope).
+
+Open decisions A–E all landed as recommended. Decision C's migration
+(`supabase/migrations/reed_suggestions_payload.sql`) is committed **and applied** — it appears
+in neither side of the migration-ledger guard's baseline, so the guard's green run on every PR
+is positive evidence production has the column.
+
+### Ruling: Phase 2 is closed, not pending (Remi, 2026-09-11)
+
+Phase 2 shipped two "Explain" affordances on `StatusLineCard` and `OutlookPanel`, plus the
+shared `ExplainWithReed` button. Ten days later, PR #394 ("Open Command Center directly on the
+cockpit/ops views") removed the pre-cockpit Overview stack — the status-line banner, the
+outlook chips, the merged needs-you section — and deleted all three components with it. The
+`getStatusLine()` / `getOutlook()` loaders were deliberately kept, explicitly "for Reed and the
+ops rhythm".
+
+So the affordance did not rot; **its host surfaces were removed on purpose, and nothing in the
+product renders the spine status line or the outlook today** (Reed's tools are their only
+readers). Restoring the buttons would mean restoring the cards, which would reverse a later
+product decision.
+
+Ruled: **#394 stands, and Phase 2 stays deleted.** Reed's capability is untouched — he answers
+"why is the status amber" from the Phase 1 tools whenever asked in the panel; only the
+one-click shortcut is gone. If a V2 surface ever gives the status line a home again, an Explain
+button there is new work under a new spec, not this one resuming. Decision E's "two entry
+points and stop" is hereby "zero, because the two are gone".
 
 ---
 
@@ -196,6 +243,8 @@ Key decisions in the sketch:
   finance overlay keys exist in the catalog seed. App PR. Commit: `reed: spine read tools`.
 - **Phase 2** — Entry points: "Explain" affordances on StatusLineCard and the Outlook opening
   the Reed panel pre-filled. App PR, UI only. Commit: `reed: explain entry points`.
+  (Shipped, then removed with its host cards by PR #394. Closed, not pending — see the ruling
+  above.)
 - **Phase 3** — Document reading: `list_documents` + `read_document` with the untrusted-content
   envelope and size guards. App PR. Commit: `reed: document reading`.
 - **Phase 4** — Extraction proposals: `propose_document_extraction`, the accept-route appliers

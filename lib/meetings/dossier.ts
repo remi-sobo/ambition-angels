@@ -218,7 +218,7 @@ export async function loadPartnerDossier(
       name: str("name") ?? "Partner",
       kind: str("kind"),
       status: str("status"),
-      champion: [str("champion_name"), str("champion_role")].filter(Boolean).join(" — ") || null,
+      champion: [str("champion_name"), str("champion_role")].filter(Boolean).join(" · ") || null,
       champion_email: str("champion_email"),
       program_type: str("program_type"),
       teen_count: str("teen_count"),

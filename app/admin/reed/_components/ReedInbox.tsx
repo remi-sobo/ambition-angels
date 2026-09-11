@@ -70,7 +70,7 @@ export default function ReedInbox({
         <div>
           <h1 className={`${TYPE.pageTitle} !text-cream`}>Reed</h1>
           <p className="text-sm text-ink-3 mt-1">
-            Review what Reed drafted and proposed. Approving a draft moves it to your ready-to-send queue — you
+            Review what Reed drafted and proposed. Approving a draft moves it to your ready-to-send queue. You
             send or use it from there. Reed never sends or executes anything itself.
           </p>
         </div>
@@ -102,7 +102,7 @@ export default function ReedInbox({
       {approved.length > 0 && (
         <section className="mb-8">
           <SectionHeading className="!text-orange mb-3">
-            Approved — ready to send / use
+            Approved: ready to send / use
           </SectionHeading>
           <div className="flex flex-col gap-3">
             {approved.map((d) => (

@@ -221,7 +221,7 @@ export default function DemoDayTracker() {
         <div>
           <h1 className={TYPE.pageTitle}>Demo Day</h1>
           <p className="mt-2 text-zinc-400">
-            Fast Forward demo-day contacts — note, star, and track the people to
+            Fast Forward demo-day contacts. Note, star, and track the people to
             look out for.
           </p>
         </div>
@@ -239,7 +239,7 @@ export default function DemoDayTracker() {
         <div className="mt-4 rounded-lg border border-orange/40 bg-orange/10 px-4 py-3 text-sm text-orange">
           The notes table isn’t set up yet. Apply{" "}
           <code className="font-mono">supabase/migrations/create_demoday_notes.sql</code>{" "}
-          to start saving — you can browse and filter now, but saves won’t persist.
+          to start saving: you can browse and filter now, but saves won’t persist.
         </div>
       )}
 
@@ -491,7 +491,7 @@ function AttendeeCard({
           >
             {saveState === "saving" && "Saving…"}
             {saveState === "saved" && "Saved ✓"}
-            {saveState === "error" && "Save failed — retry"}
+            {saveState === "error" && "Save failed. Retry"}
           </span>
         </div>
       </div>

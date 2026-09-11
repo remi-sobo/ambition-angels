@@ -223,7 +223,7 @@ export default async function StudentProfilePage({ params }: { params: { id: str
             </div>
             {enrollments.length === 0 ? (
               <p className={`p-6 ${TYPE.bodyMuted}`}>
-                Not enrolled in any {terms.programs.toLowerCase()} yet — enroll from a cohort page.
+                Not enrolled in any {terms.programs.toLowerCase()} yet. Enroll from a cohort page.
               </p>
             ) : (
               <ul className="divide-y divide-hairline">

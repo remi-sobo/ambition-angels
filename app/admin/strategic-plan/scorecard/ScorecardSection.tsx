@@ -163,7 +163,7 @@ export default async function ScorecardSection({ embedded = false }: { embedded?
           <div className="ml-auto"><RefreshMetricsButton /></div>
         </div>
         <p className="text-[11px] text-ink-3 mb-4 max-w-2xl">
-          Every measure, by who owns it — update manual values, status, owner, and notes right
+          Every measure, by who owns it. Update manual values, status, owner, and notes right
           here. Structural editing (add/delete measures, targets) stays on the{" "}
           <Link href="/admin/strategic-plan" className="text-orange hover:underline">plan</Link>.
         </p>
@@ -178,7 +178,7 @@ export default async function ScorecardSection({ embedded = false }: { embedded?
         title="KPI Scorecard"
         subtitle={
           <>
-            Every measure, by who owns it — progress, pacing, and where each number comes from. Update
+            Every measure, by who owns it. Progress, pacing, and where each number comes from. Update
             manual values, status, owner, and notes right here; changes flow to the{" "}
             <Link href="/admin/strategic-plan/narrative" className="text-orange hover:underline">narrative</Link>{" "}
             · back to the{" "}

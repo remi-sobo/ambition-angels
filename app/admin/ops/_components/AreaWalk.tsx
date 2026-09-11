@@ -134,7 +134,7 @@ export default async function AreaWalk({
               ) : (
                 area.projects.length > 0 && (
                   <p className="text-[11px] text-ink-3 italic pl-1">
-                    No loose tasks — all this area&apos;s work hangs off its projects.
+                    No loose tasks. All this area&apos;s work hangs off its projects.
                   </p>
                 )
               )}

@@ -91,7 +91,7 @@ export default async function StrategyNarrativePage({
           <span className="font-semibold text-ink-1">
             {readiness.blockerCount} funder-readiness blocker{readiness.blockerCount === 1 ? "" : "s"} open.
           </span>{" "}
-          <span className="text-ink-2">Clear these before presenting —</span>{" "}
+          <span className="text-ink-2">Clear these before presenting:</span>{" "}
           <Link href="/admin/strategic-plan" className="font-semibold text-orange hover:underline">
             see the checklist
           </Link>

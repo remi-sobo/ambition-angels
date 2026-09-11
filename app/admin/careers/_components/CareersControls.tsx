@@ -91,7 +91,7 @@ function useApi() {
       router.refresh();
       return res.ok;
     } catch {
-      setNotice("Network hiccup — the request may still be finishing. Give it a few seconds, then refresh.");
+      setNotice("Network hiccup: the request may still be finishing. Give it a few seconds, then refresh.");
       router.refresh();
       return false;
     } finally {
@@ -224,7 +224,7 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
               title={dirty ? "Save your edits first" : "You read it. It ships."}
               className="text-[12px] font-semibold bg-revenue text-white px-4 py-1.5 rounded-full disabled:opacity-50"
             >
-              {busy === "approve" ? "Approving…" : "Approve — I read this"}
+              {busy === "approve" ? "Approving…" : "Approve: I read this"}
             </button>
             <button
               onClick={() =>
@@ -337,13 +337,13 @@ export function CareersControls({
       if (!ok) {
         setBatchProgress(null);
         setNotice(
-          `Stopped at ${list[i].title} — ${list.length - i - 1} still queued. Fix or retry, then run it again; finished drafts are saved.`
+          `Stopped at ${list[i].title}. ${list.length - i - 1} still queued. Fix or retry, then run it again; finished drafts are saved.`
         );
         return;
       }
     }
     setBatchProgress(null);
-    setNotice(`Done — ${list.length} drafts written. Read each one, then approve.`);
+    setNotice(`Done: ${list.length} drafts written. Read each one, then approve.`);
   };
 
   const results = useMemo(() => {
@@ -408,7 +408,7 @@ export function CareersControls({
     <div className="space-y-8">
       <section>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2 mb-2">
-          Catalog coverage — a kid strongest in each trait needs {COVERAGE_TARGET}+ approved cards
+          Catalog coverage: a kid strongest in each trait needs {COVERAGE_TARGET}+ approved cards
         </p>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {coverage.map(({ letter, approved: a, accessible, pipeline: p }) => (
@@ -459,7 +459,7 @@ export function CareersControls({
                 disabled={anythingBusy}
                 className="text-[12px] font-semibold bg-ink-1 text-surface px-4 py-1.5 rounded-full disabled:opacity-50"
               >
-                Generate all queued ({queued.length}) — about {Math.ceil(queued.length * 0.6)} min
+                Generate all queued ({queued.length}). About {Math.ceil(queued.length * 0.6)} min
               </button>
             )}
           </div>
@@ -474,7 +474,7 @@ export function CareersControls({
       {approved.length > 0 && (
         <section>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2 mb-2">
-            Approved — live in the catalog ({approved.length})
+            Approved: live in the catalog ({approved.length})
           </p>
           <div className="space-y-2">
             {approved.map((x) => (
@@ -486,7 +486,7 @@ export function CareersControls({
 
       <section>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2 mb-2">
-          Imported occupations — pick the next card
+          Imported occupations: pick the next card
         </p>
         <div className="flex flex-wrap gap-2 mb-3">
           <input

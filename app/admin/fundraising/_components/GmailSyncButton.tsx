@@ -97,7 +97,7 @@ export default function GmailSyncButton() {
   const label = running
     ? `Syncing… ${job?.counts?.logged ?? 0} logged`
     : failed
-    ? "Email sync failed — retry"
+    ? "Email sync failed. Retry"
     : job?.finished_at
     ? `Email synced ${fmtAgo(job.finished_at)}`
     : "Sync email";

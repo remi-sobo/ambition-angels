@@ -226,7 +226,7 @@ export default function TasksSurface({
 
       {scope === "archived" ? (
         archivedTasks.length === 0 ? (
-          <p className="text-sm text-ink-2 italic">No archived tasks yet — use a task&apos;s ⋯ menu → Archive to file it here.</p>
+          <p className="text-sm text-ink-2 italic">No archived tasks yet. Use a task&apos;s ⋯ menu → Archive to file it here.</p>
         ) : (
           <div className="space-y-1.5">
             {archivedTasks.map((t) => (

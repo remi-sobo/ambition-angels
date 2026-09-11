@@ -73,7 +73,7 @@ export default async function CompliancePage() {
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
       <PageHeader
         title="Compliance"
-        subtitle="Filings, renewals, and policy deadlines — none of them live in someone's head"
+        subtitle="Filings, renewals, and policy deadlines. None of them live in someone's head"
         actions={<NewComplianceForm />}
       />
 

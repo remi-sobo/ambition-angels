@@ -49,7 +49,7 @@ export function userMessage(
   const s = res.status;
   if (s === 401) return "Your session has expired. Sign in again and retry.";
   if (s === 403) return "You don't have permission for that. An owner can grant it in Settings.";
-  if (s === 404) return "That record wasn't found. It may have been removed — refresh and try again.";
+  if (s === 404) return "That record wasn't found. It may have been removed. Refresh and try again.";
   if (s === 409) return "That couldn't be completed because something it depends on changed. Refresh to see the current state.";
   if (s === 422 || s === 400) return "Something in the form isn't valid. Check the fields and try again.";
   if (s === 429) return "Too many requests at once. Wait a moment and try again.";
@@ -59,5 +59,5 @@ export function userMessage(
 
 /** For thrown fetches (network down, CORS, aborted) — no response at all. */
 export function networkMessage(): string {
-  return "Couldn't reach BloomOS. Check your connection and try again — nothing was saved.";
+  return "Couldn't reach BloomOS. Check your connection and try again. Nothing was saved.";
 }

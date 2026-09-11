@@ -135,7 +135,7 @@ export default function LogAckButton() {
           </button>
         </div>
         <p className="text-[11px] text-ink-2 leading-relaxed">
-          For a thank-you with no gift behind it — a proactive note, a grant acknowledgment, a
+          For a thank-you with no gift behind it. A proactive note, a grant acknowledgment, a
           volunteer or board thank-you. Gift receipts stay in the queue above. No tax-deductible
           language is ever attached here.
         </p>

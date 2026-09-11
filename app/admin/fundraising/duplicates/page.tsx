@@ -88,7 +88,7 @@ export default async function DuplicatesPage() {
   return (
     <div className="min-h-screen bg-ink">
       <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-        <PageHeader title="Duplicates" subtitle="Constituents sharing an email — review and merge" />
+        <PageHeader title="Duplicates" subtitle="Constituents sharing an email. Review and merge" />
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard label="Duplicate groups" value={groups.length} sub={groups.length > 0 ? "review below" : "none found"} muted={groups.length === 0} />

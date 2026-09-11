@@ -26,8 +26,8 @@ export default function MovementHow({ how }: { how: HowMovement }) {
         title="How We Raise It"
         lead={
           <>
-            Eight doors into the same plan — each a frame a funder already cares about, with{" "}
-            <strong>{totalFunders}</strong> funders mapped against them — converted through one live
+            Eight doors into the same plan, each a frame a funder already cares about, with{" "}
+            <strong>{totalFunders}</strong> funders mapped against them. Converted through one live
             pipeline.
           </>
         }
@@ -79,7 +79,7 @@ export default function MovementHow({ how }: { how: HowMovement }) {
           </div>
           <div className="mt-3 text-[12px] text-ink-3">
             Counts and ask totals are live from the pipeline. <strong className="text-ink-2">Steward</strong> is
-            the book of already-secured, active relationships up for renewal — shown for context, and deliberately
+            the book of already-secured, active relationships up for renewal. Shown for context, and deliberately
             excluded from the weighted ask in Movement 2 so a renewal dollar is never double-counted against a
             new-money ask.
           </div>

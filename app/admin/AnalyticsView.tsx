@@ -460,7 +460,7 @@ export default function AnalyticsView() {
       </div>
 
       {/* Key Events */}
-      <Section title="Key Events" subtitle="Click & interaction events — what people are actually doing">
+      <Section title="Key Events" subtitle="Click & interaction events. What people are actually doing">
         {/* Mobile cards */}
         <div className="md:hidden divide-y divide-hairline">
           {loading ? (

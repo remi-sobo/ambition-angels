@@ -237,7 +237,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
             onChange={(e) => setNewCategory(e.target.value)}
             className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
           >
-            <option value="">— Set category to —</option>
+            <option value="">Set category to…</option>
             {renderCategoryOptions()}
           </select>
           <button
@@ -316,7 +316,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
             {sorted.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-3 py-10 text-center text-ink-2">
-                  No rules yet. Add one above — for example,{" "}
+                  No rules yet. Add one above. For example,{" "}
                   <code className="text-ink-1">contains GUSTO → Salaries &amp; wages</code>.
                 </td>
               </tr>

@@ -133,8 +133,8 @@ export default async function MyWeekHubPage() {
 
       <p className="text-xs text-ink-3">
         {planActive
-          ? "It's early in the week — Plan is lit. Close stays open whenever you need it."
-          : "It's the back half of the week — Close is lit. Plan stays open whenever you need it."}
+          ? "It's early in the week. Plan is lit. Close stays open whenever you need it."
+          : "It's the back half of the week. Close is lit. Plan stays open whenever you need it."}
       </p>
     </div>
   );

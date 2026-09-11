@@ -138,7 +138,7 @@ function AddFunder({ angleId }: { angleId: string }) {
           value={q}
           onChange={(e) => search(e.target.value)}
           disabled={busy}
-          placeholder="Add a funder — search by name or organization…"
+          placeholder="Add a funder: search by name or organization…"
           className="w-full text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50 disabled:opacity-60"
         />
         {(results.length > 0 || q.trim().length >= 2) && (
@@ -174,7 +174,7 @@ function AddFunder({ angleId }: { angleId: string }) {
         )}
       </div>
       <p className="text-[11px] text-ink-3 mt-1.5">
-        Pick an existing constituent when you can — it avoids duplicates.
+        Pick an existing constituent when you can. It avoids duplicates.
       </p>
     </div>
   );
@@ -357,7 +357,7 @@ function FunderCard({ funder }: { funder: FunderRow }) {
               </Link>
             ) : (
               <span className="text-ink-3" title="The research agent needs a HubSpot mirror row">
-                Not in HubSpot — research unavailable
+                Not in HubSpot: research unavailable
               </span>
             ))}
           {funder.opportunityId ? (
@@ -385,7 +385,7 @@ function FunderCard({ funder }: { funder: FunderRow }) {
           if ((funder.fitNotes ?? "") !== notes) void patch({ fit_notes: notes });
         }}
         rows={2}
-        placeholder="Triage notes — reachable? warm intro? does the ask fit?"
+        placeholder="Triage notes: reachable? warm intro? does the ask fit?"
         className="w-full text-xs bg-cream border-[1.5px] border-outline rounded-lg px-2.5 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50 resize-y"
       />
     </div>

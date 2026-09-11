@@ -91,11 +91,11 @@ export default function NewAngleForm() {
             <option key={v} value={v}>{label}</option>
           ))}
         </select>
-        <input className={input} placeholder="Hook — the north-star one-liner" value={f.hook} onChange={set("hook")} />
+        <input className={input} placeholder="Hook: the north-star one-liner" value={f.hook} onChange={set("hook")} />
         <textarea className={input} rows={2} placeholder="Who funds this" value={f.funds} onChange={set("funds")} />
         <textarea className={input} rows={2} placeholder="What they want" value={f.want} onChange={set("want")} />
         <input className={input} placeholder="Ask range / model" value={f.ask} onChange={set("ask")} />
-        <textarea className={input} rows={2} placeholder="Approach — cold vs warm note (optional)" value={f.approach} onChange={set("approach")} />
+        <textarea className={input} rows={2} placeholder="Approach: cold vs warm note (optional)" value={f.approach} onChange={set("approach")} />
         <div className="flex items-center justify-end gap-2 pt-1">
           <button type="button" onClick={() => setOpen(false)} disabled={busy} className="text-xs font-semibold text-ink-2 hover:text-ink-1 px-3 py-2 rounded-full disabled:opacity-60">
             Cancel

@@ -99,7 +99,7 @@ export default function CloseWizard(props: {
         status={<Chip tone={sync.tone}>HubSpot synced {sync.label}</Chip>}
       >
         <p className="text-xs text-ink-2 mb-3">
-          Refresh HubSpot, then fix any stale dates or amounts. Adopt a deal to edit it — pledges
+          Refresh HubSpot, then fix any stale dates or amounts. Adopt a deal to edit it. Pledges
           count at full value and feed the due/projected tiers; restricted and undated ones don&apos;t.
         </p>
         <Link
@@ -262,7 +262,7 @@ function BalanceForm({
       </div>
       {drift !== null && Math.abs(drift) >= 0.5 && (
         <p className="text-xs text-[#A56A1B] mt-2">
-          {money(Math.abs(drift))} {drift > 0 ? "more than" : "less than"} the computed figure — likely
+          {money(Math.abs(drift))} {drift > 0 ? "more than" : "less than"} the computed figure. Likely
           unimported transactions. Setting the balance fixes the displayed cash regardless.
         </p>
       )}
@@ -383,7 +383,7 @@ function StampButton({ lastClosedAt, onStamped }: { lastClosedAt: string | null;
       const j = await r.json().catch(() => ({}));
       if (!r.ok) {
         // RLS denial = the caller lacks reports.approve (owner + admin only).
-        setErr(j.error ?? "Waiver refused — reports.approve required.");
+        setErr(j.error ?? "Waiver refused. Reports.approve required.");
         return;
       }
       setBusy(false);

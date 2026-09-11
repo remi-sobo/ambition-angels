@@ -198,8 +198,8 @@ export default async function DonorsFundersPage({
           per constituent, with lifetime giving from gifts, last touch from logged
           interactions, and the next move from the nearest open ask. Prospects without a
           constituent record appear only in the Prospects view; once promoted they join
-          the list as one row. Lapsed is computed — gave in a prior year, nothing this
-          year — never a stored flag.
+          the list as one row. Lapsed is computed: gave in a prior year, nothing this
+          year, never a stored flag.
         </p>
       </div>
     </div>

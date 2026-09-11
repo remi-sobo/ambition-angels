@@ -74,7 +74,7 @@ export function EntityHistory({ events }: { events: HistoryEvent[] }) {
               </span>
               <div className="min-w-0 flex-1">
                 <span className="text-ink-1 font-medium">{actionLabel(e.action)}</span>
-                {e.actorName && <span className="text-xs text-ink-3"> — {e.actorName}</span>}
+                {e.actorName && <span className="text-xs text-ink-3">, {e.actorName}</span>}
                 {changeSummary(e.after) && (
                   <p className="text-xs text-ink-2 mt-0.5 break-words">{changeSummary(e.after)}</p>
                 )}

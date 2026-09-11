@@ -179,7 +179,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
                 <AddContactForm partnerId={p.id} />
               </div>
               {contacts.length === 0 ? (
-                <p className="text-sm text-ink-2">No contacts yet — add the people you work with at this org.</p>
+                <p className="text-sm text-ink-2">No contacts yet. Add the people you work with at this org.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {contacts.map((c) => <ContactCard key={c.id} contact={c} />)}

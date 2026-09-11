@@ -134,7 +134,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
           <StatCard
             label="Active partners"
             value={kpis.active}
-            sub={activeOnly ? "filtering — click to clear" : `${kpis.live} live in pipeline`}
+            sub={activeOnly ? "filtering, click to clear" : `${kpis.live} live in pipeline`}
           />
         </button>
         <StatCard label="Emerging" value={kpis.emerging} sub="in outreach / piloting" muted={kpis.emerging === 0} />
@@ -243,7 +243,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
           onClick={() => setTab("prospects")}
           className="block w-full text-left text-xs text-ink-2 bg-tile border-[1.5px] border-outline rounded-lg px-4 py-2 hover:border-orange/40 hover:text-ink-1 transition-colors"
         >
-          {tabCounts.prospects} prospect{tabCounts.prospects === 1 ? "" : "s"} {tabCounts.prospects === 1 ? "isn't" : "aren't"} shown on this tab —{" "}
+          {tabCounts.prospects} prospect{tabCounts.prospects === 1 ? "" : "s"} {tabCounts.prospects === 1 ? "isn't" : "aren't"} shown on this tab, {" "}
           <span className="font-semibold text-orange">view Prospects →</span>
         </button>
       )}

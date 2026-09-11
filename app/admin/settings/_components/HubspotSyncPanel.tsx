@@ -155,12 +155,12 @@ export default function HubspotSyncPanel() {
                 {dataAge.lastFullSyncAt
                   ? `Last full sync ${fmtDate(dataAge.lastFullSyncAt)}`
                   : lastRunReason
-                    ? `Last attempt didn't finish — ${lastRunReason}`
+                    ? `Last attempt didn't finish. ${lastRunReason}`
                     : "Run a sync to populate the spine"}
               </div>
               {dataAge.lastFullSyncAt && dataAge.lastRunStatus === "partial" && lastRunReason && (
                 <div className="text-xs text-status-watch-text mt-0.5 pl-3.5">
-                  Since then, the last attempt stopped early — {lastRunReason}
+                  Since then, the last attempt stopped early: {lastRunReason}
                 </div>
               )}
             </>
@@ -194,7 +194,7 @@ export default function HubspotSyncPanel() {
 
       {running && (
         <p className="text-[11px] text-ink-3">
-          Safe to navigate away — the sync keeps running and picks up right where it left off.
+          Safe to navigate away. The sync keeps running and picks up right where it left off.
         </p>
       )}
 
@@ -227,7 +227,7 @@ export default function HubspotSyncPanel() {
 
       {partial && job && otherErrors.length > 0 && (
         <details className="text-xs text-ink-2">
-          <summary className="cursor-pointer text-status-watch-text">Last run was partial — {otherErrors.length} step(s) failed</summary>
+          <summary className="cursor-pointer text-status-watch-text">Last run was partial: {otherErrors.length} step(s) failed</summary>
           <ul className="mt-1.5 space-y-1 pl-4 list-disc text-ink-3">
             {otherErrors.map((e, i) => (
               <li key={i}>

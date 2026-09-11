@@ -26,17 +26,17 @@ export const metadata: Metadata = {
     absolute: "BloomOS",
     template: "%s · BloomOS",
   },
-  description: "BloomOS — the operating system for your nonprofit.",
+  description: "BloomOS: the operating system for your nonprofit.",
   // Override the root layout's AA-branded social metadata for the same reason.
   openGraph: {
     title: "BloomOS",
     siteName: "BloomOS",
-    description: "BloomOS — the operating system for your nonprofit.",
+    description: "BloomOS: the operating system for your nonprofit.",
     images: [],
   },
   twitter: {
     title: "BloomOS",
-    description: "BloomOS — the operating system for your nonprofit.",
+    description: "BloomOS: the operating system for your nonprofit.",
     images: [],
   },
   manifest: "/admin/manifest.webmanifest",

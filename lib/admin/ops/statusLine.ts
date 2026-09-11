@@ -81,7 +81,7 @@ export function buildMondayStatus(role: Role, c: MondayCounts): WeekStatus {
   if (c.open === 0 && c.carriedOver === 0 && c.meetings === 0) {
     return {
       lead: "a clear deck",
-      sentence: "This week: a clear deck — nothing planned or booked yet.",
+      sentence: "This week: a clear deck. Nothing planned or booked yet.",
       segments: [{ key: "empty", text: "a clear deck", flare: false }],
       tone: "calm",
     };

@@ -60,7 +60,7 @@ export default function CandidatesQueue({
         <h2 className="text-sm font-semibold text-ink-1">Candidates from email</h2>
         <span className="text-[11px] text-ink-3">{candidates.length}</span>
         <span className="ml-auto text-[11px] text-ink-3">
-          Intros with you on them — add the real ones, dismiss the rest.
+          Intros with you on them. Add the real ones, dismiss the rest.
         </span>
       </header>
       <ul className="divide-y divide-hairline">

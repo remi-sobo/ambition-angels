@@ -82,7 +82,7 @@ export default function ConfigEditor({ initial }: Props) {
     <div className="space-y-6">
       <Section
         title="Fiscal year"
-        hint="The fiscal year determines which budget rows are 'current'. Most US nonprofits use calendar year — fiscal year starts January."
+        hint="The fiscal year determines which budget rows are 'current'. Most US nonprofits use calendar year. Fiscal year starts January."
       >
         <Field label="Current fiscal year">
           <input
@@ -156,7 +156,7 @@ export default function ConfigEditor({ initial }: Props) {
 
       <Section
         title="Runway model"
-        hint="Drives the forward runway. The burn baseline is the monthly spend the runway divides by — set it to a number you can defend, a touch above your actual average for cushion. Leave it blank to fall back to the trailing 3-month average. The horizon is how many months ahead the projected runway counts pledges that haven't landed yet."
+        hint="Drives the forward runway. The burn baseline is the monthly spend the runway divides by. Set it to a number you can defend, a touch above your actual average for cushion. Leave it blank to fall back to the trailing 3-month average. The horizon is how many months ahead the projected runway counts pledges that haven't landed yet."
       >
         <Field label="Monthly burn baseline ($)">
           <input

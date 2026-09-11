@@ -168,7 +168,7 @@ export default function ForecastBoard({
         {levers.length === 0 ? (
           <EmptyState
             label="what-ifs"
-            hint="Stack a hire, a grant landing, or a slip with the buttons above — until then this is the baseline burn-down."
+            hint="Stack a hire, a grant landing, or a slip with the buttons above. Until then this is the baseline burn-down."
           />
         ) : (
           <ul className="space-y-2">

@@ -120,7 +120,7 @@ export default function EntityProfile({
                   <span className="text-ink-1">
                     <span className="text-ink-3">{item.kind}</span>
                     {item.text && item.text.toLowerCase() !== item.kind.toLowerCase() && (
-                      <span className="text-ink-2"> — {item.text}</span>
+                      <span className="text-ink-2">, {item.text}</span>
                     )}
                   </span>
                 </li>

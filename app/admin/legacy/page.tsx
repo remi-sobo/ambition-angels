@@ -458,7 +458,7 @@ export default function AdminPage() {
           <div className={`${TYPE.bodyMuted} mb-8`}>The operating system for nonprofits</div>
           {magicSent ? (
             <div className={`${TYPE.body} leading-relaxed`}>
-              Check your email — we sent a one-time sign-in link to{" "}
+              Check your email: we sent a one-time sign-in link to{" "}
               <span className="text-ink-1 font-semibold">{email}</span>.
             </div>
           ) : (

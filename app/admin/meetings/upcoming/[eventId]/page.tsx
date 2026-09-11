@@ -88,7 +88,7 @@ function ConstituentCard({ d, first, prior }: { d: ConstituentDossier; first: bo
       {lastInt && (
         <p className="mt-1.5 text-[13px] text-ink-2">
           <span className="text-ink-3">Last touch:</span> {lastInt.kind} · {fmtDay(lastInt.occurred_at)}
-          {lastInt.subject && !lastInt.is_private && <> — {lastInt.subject}</>}
+          {lastInt.subject && !lastInt.is_private && <>, {lastInt.subject}</>}
         </p>
       )}
     </div>
@@ -115,7 +115,7 @@ function PartnerCard({ d, first, prior }: { d: PartnerDossier; first: boolean; p
       {lastInt && (
         <p className="mt-1.5 text-[13px] text-ink-2">
           <span className="text-ink-3">Last touch:</span> {lastInt.kind} · {fmtDay(lastInt.occurred_at)}
-          {lastInt.preview && <> — {lastInt.preview.slice(0, 100)}</>}
+          {lastInt.preview && <>, {lastInt.preview.slice(0, 100)}</>}
         </p>
       )}
     </div>
@@ -156,7 +156,7 @@ export default async function UpcomingMeetingDetailPage({ params }: { params: { 
         <SectionTitle count={brief.entities.length || undefined}>Who it&apos;s with</SectionTitle>
         {brief.entities.length === 0 ? (
           <p className="text-sm text-ink-2 italic">
-            No attendee matched a donor or partner — this meeting is unmatched. Reed can still prep from the title and attendees.
+            No attendee matched a donor or partner. This meeting is unmatched. Reed can still prep from the title and attendees.
           </p>
         ) : (
           <div className="space-y-3">
@@ -187,7 +187,7 @@ export default async function UpcomingMeetingDetailPage({ params }: { params: { 
         ) : (
           <p className="text-sm text-ink-2 italic">
             No agenda yet. Hit{" "}
-            <span className="font-medium text-ink-1">Prep with Reed</span> — he&apos;ll research who you&apos;re meeting,
+            <span className="font-medium text-ink-1">Prep with Reed</span>. He&apos;ll research who you&apos;re meeting,
             review your history, and draft a tailored agenda for {brief.entities.some((e) => e.is_first_meeting) ? "this first meeting" : "the next touchpoint"}.
           </p>
         )}

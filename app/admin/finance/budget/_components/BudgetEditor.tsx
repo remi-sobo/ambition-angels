@@ -141,7 +141,7 @@ export default function BudgetEditor({ year, categories, initialBudget }: Props)
                 <td colSpan={5} className="p-4">
                   <EmptyState
                     label="budget lines"
-                    hint="The budget mirrors your category list — import the workbook with the button above, or add categories under Finance settings and the lines appear here."
+                    hint="The budget mirrors your category list. Import the workbook with the button above, or add categories under Finance settings and the lines appear here."
                   />
                 </td>
               </tr>

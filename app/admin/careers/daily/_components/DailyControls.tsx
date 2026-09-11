@@ -46,7 +46,7 @@ export function DailyControls({
       }
       router.refresh();
     } catch {
-      setNotices((p) => ({ ...p, [day]: "Network hiccup — try again." }));
+      setNotices((p) => ({ ...p, [day]: "Network hiccup. Try again." }));
     } finally {
       setBusy(null);
     }
@@ -78,7 +78,7 @@ export function DailyControls({
                 onChange={(e) => save(day, e.target.value || null)}
                 className="flex-1 min-w-56 border border-outline rounded-lg px-2.5 py-1.5 text-[13px] bg-surface"
               >
-                <option value="">— nothing scheduled —</option>
+                <option value="">(nothing scheduled)</option>
                 {candidates.map((c) => (
                   <option key={c.soc_code} value={c.soc_code}>
                     {c.title} · JZ {c.job_zone}

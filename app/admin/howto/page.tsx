@@ -21,12 +21,12 @@ const SECTIONS: Section[] = [
   {
     id: "command-center",
     label: "Command Center",
-    blurb: "Where you start the day — what needs a decision, right now.",
+    blurb: "Where you start the day. What needs a decision, right now.",
     items: [
       {
         name: "Overview",
         href: "/admin",
-        what: "The home dashboard. A live snapshot of the whole org — money, pipeline, tasks, and what's slipping — with quick links into everything else.",
+        what: "The home dashboard. A live snapshot of the whole org (money, pipeline, tasks, and what's slipping), with quick links into everything else.",
         does: [
           "See cash, fundraising, and open work at a glance",
           "Jump straight to whatever needs attention",
@@ -35,10 +35,10 @@ const SECTIONS: Section[] = [
       {
         name: "Strategy",
         href: "/admin/strategic-plan",
-        what: "The strategic plan — your OGSM objectives and goals, and the measures (KPIs) that track progress against them.",
+        what: "The strategic plan. Your OGSM objectives and goals, and the measures (KPIs) that track progress against them.",
         does: [
           "Reference objectives and goals; their health rolls up from the underlying measures",
-          "Track KPIs against targets — Monday snapshots build ~4-week trend lines",
+          "Track KPIs against targets. Monday snapshots build ~4-week trend lines",
           "Reed can review the plan's coherence and propose edits (draft-then-approve)",
           "Off-track objectives and the monthly-review nudge surface on the Executive Briefing",
         ],
@@ -46,7 +46,7 @@ const SECTIONS: Section[] = [
       {
         name: "Executive Briefing",
         href: "/admin/briefing",
-        what: "“Needs you today.” A ranked, capped decision feed computed from real records — no AI cost, nothing invented. Every card is a real thing to act on.",
+        what: "“Needs you today.” A ranked, capped decision feed computed from real records. No AI cost, nothing invented. Every card is a real thing to act on.",
         does: [
           "Read the day's priorities, highest-impact first",
           "Open the Weekly Briefing for the Monday edition",
@@ -63,11 +63,11 @@ const SECTIONS: Section[] = [
       {
         name: "Students",
         href: "/admin/students",
-        what: "One roster across every program — each student's journey from discover to launch. Intake rides along as a tab (the pipeline into the roster).",
+        what: "One roster across every program, each student's journey from discover to launch. Intake rides along as a tab (the pipeline into the roster).",
         does: [
           "Track each student's stage and program history",
           "Search and filter the full roster",
-          "Intake tab: applications from the public form — review, screen → waitlist → offer, and promote accepted students onto the roster",
+          "Intake tab: applications from the public form. Review, screen → waitlist → offer, and promote accepted students onto the roster",
         ],
       },
       {
@@ -85,7 +85,7 @@ const SECTIONS: Section[] = [
       {
         name: "YGB Camp",
         href: "/admin/ygb",
-        what: "Young, Gifted & Black camp — registrations and logistics.",
+        what: "Young, Gifted & Black camp. Registrations and logistics.",
         does: ["Manage camp signups and details"],
       },
       {
@@ -97,7 +97,7 @@ const SECTIONS: Section[] = [
           "Per-org profile: a full contacts directory, an activity timeline of logged touches, and MOU / data-agreement tracking",
           "Score each org on a 7-factor fit rubric; the list sorts highest-fit first",
           "One-tap stage advancement, “Move to…”, and merge duplicate orgs",
-          "Add tasks right on a profile — they flow into Ops and show a tasks-due chip on the list",
+          "Add tasks right on a profile. They flow into Ops and show a tasks-due chip on the list",
         ],
       },
       { name: "Ambition App", soon: true, what: "The student-facing app surface. Coming soon." },
@@ -113,10 +113,10 @@ const SECTIONS: Section[] = [
       {
         name: "Today's Moves",
         href: "/admin/fundraising/today",
-        what: "Your operator queue — who needs you today across open asks, unthanked gifts, and recent giving.",
+        what: "Your operator queue. Who needs you today across open asks, unthanked gifts, and recent giving.",
         does: [
           "Work a single prioritized list each day",
-          "“Suggest next moves” — an AI agent ranks open asks and proposes one concrete action each, grounded only in real giving facts (draft-then-approve; nothing auto-applies)",
+          "“Suggest next moves”: an AI agent ranks open asks and proposes one concrete action each, grounded only in real giving facts (draft-then-approve; nothing auto-applies)",
           "“Sync email” pulls Gmail threads into each donor's timeline",
         ],
       },
@@ -141,14 +141,14 @@ const SECTIONS: Section[] = [
           "See the AI next-best-action suggestions in context",
           "Prospects tab: HubSpot-mirrored prospect research with AI research briefs (snapshot, how-we-fit, meeting playbook, mutual connections); score and disqualify without touching the mirror",
           "Ask Log tab: the record of every ask and its outcome",
-          "Strategy tab: funding angles — the strategic framing for how you approach funders",
+          "Strategy tab: funding angles. The strategic framing for how you approach funders",
         ],
       },
       {
         name: "Grants",
         href: "/admin/fundraising/grants",
         what: "The grant pipeline plus every requirement and deadline.",
-        does: ["Track grants through their lifecycle", "Never miss a report or renewal — requirements feed the weekly digest"],
+        does: ["Track grants through their lifecycle", "Never miss a report or renewal. Requirements feed the weekly digest"],
       },
       {
         name: "Campaigns",
@@ -167,10 +167,10 @@ const SECTIONS: Section[] = [
       {
         name: "Finance",
         href: "/admin/finance",
-        what: "One sidebar item; the whole finance product lives on its own tab bar — Dashboard, Friday close, Reconcile, Forecast, Report, Model, Upload, Transactions, Budget, Pledges, Rules, Config.",
+        what: "One sidebar item; the whole finance product lives on its own tab bar. Dashboard, Friday close, Reconcile, Forecast, Report, Model, Upload, Transactions, Budget, Pledges, Rules, Config.",
         does: [
-          "Dashboard: live cash, burn, fundraising, and budget — watch runway and cash on hand at a glance",
-          "Transactions: the ledger — import, categorize, and rule-tag expenses; set rules so categorization sticks",
+          "Dashboard: live cash, burn, fundraising, and budget. Watch runway and cash on hand at a glance",
+          "Transactions: the ledger. Import, categorize, and rule-tag expenses; set rules so categorization sticks",
           "Budget: planned vs. actual by category",
           "Pledges: revenue by source and time",
         ],
@@ -203,9 +203,9 @@ const SECTIONS: Section[] = [
         href: "/admin/ops/my-week",
         what: "The whole task system behind one sidebar item, with tabs: My Week (your personal home, including the Monday Plan and Friday Review wizards), Tasks (the org-wide hub), and Projects.",
         does: [
-          "My Week: plan the week day by day against your real calendar — place tasks onto days, reorder, push to next week, or drop one into an open time block to put it on Google Calendar",
+          "My Week: plan the week day by day against your real calendar. Place tasks onto days, reorder, push to next week, or drop one into an open time block to put it on Google Calendar",
           "Monday Plan walks the week with your agenda alongside each day; Friday Review walks what was planned vs. what shipped, and rolls the rest forward",
-          "Tasks: every task as a list or board — group by priority, status, department, or project; quick-add, subtasks, labels, pins; a “Linked” filter narrows to CRM work",
+          "Tasks: every task as a list or board. Group by priority, status, department, or project; quick-add, subtasks, labels, pins; a “Linked” filter narrows to CRM work",
           "Each task can carry a chip linking back to the partner or donor it's about",
           "Projects: longer-running initiatives, each with its own task list and activity log",
         ],
@@ -213,10 +213,10 @@ const SECTIONS: Section[] = [
       {
         name: "Meetings",
         href: "/admin/meetings",
-        what: "Everything meetings in one place: your real meetings (synced from calendar and matched to the donor or partner each one concerns), the connection backlog, and your public booking page's setup — as tabs.",
+        what: "Everything meetings in one place: your real meetings (synced from calendar and matched to the donor or partner each one concerns), the connection backlog, and your public booking page's setup. As tabs.",
         does: [
           "Overview: past and upcoming meetings, each matched to a donor/partner; the meeting lands on their timeline. Meetings booked through your public page show badged in Upcoming, with cancel right on the row",
-          "Paste a transcript and Reed drafts a summary plus one to three suggested follow-ups — accept one and it becomes a real task linked to the donor",
+          "Paste a transcript and Reed drafts a summary plus one to three suggested follow-ups. Accept one and it becomes a real task linked to the donor",
           "A deterministic “N meetings with no follow-up” coverage line keeps anything from slipping; clear it by adding a follow-up or marking it not needed",
           "Connections: intro candidates from email plus your scheduling backlog, tracked until each meeting is booked",
           "Booking page: the bookable meeting types, availability, and blackouts behind the public Calendly-style scheduler, plus booking history",
@@ -240,7 +240,7 @@ const SECTIONS: Section[] = [
       {
         name: "Compliance",
         href: "/admin/compliance",
-        what: "Filings, renewals, and policy deadlines — so none of them live in someone's head.",
+        what: "Filings, renewals, and policy deadlines, so none of them live in someone's head.",
         does: ["Track every filing and renewal with its due date", "Upcoming items feed the weekly digest"],
       },
     ],
@@ -261,12 +261,12 @@ const GLOBALS: { title: string; body: string }[] = [
     body: "Each operator signs in from the login panel. The left sidebar shows one row per product; bigger products fan out through a tab bar at the top of their pages. Items marked “Soon” on this page are planned but not built yet.",
   },
   {
-    title: "Your rail — the daily cockpit",
-    body: "The right rail rides along on every page. It shows today's agenda with day-by-day arrows (and rolls forward to your next meeting when today is done), what Needs you — overdue, due today, and your next donor touch — a “This week” load ribbon, and a Capture box for instant tasks, with “Ask Reed” for anything bigger.",
+    title: "Your rail: the daily cockpit",
+    body: "The right rail rides along on every page. It shows today's agenda with day-by-day arrows (and rolls forward to your next meeting when today is done), what Needs you (overdue, due today, and your next donor touch) a “This week” load ribbon, and a Capture box for instant tasks, with “Ask Reed” for anything bigger.",
   },
   {
     title: "The data spine & HubSpot sync",
-    body: "Fundraising views read a synced mirror of HubSpot (the “spine”). Use “Sync HubSpot” in the sidebar to pull the latest — it advances in chunks. The colored dot below it shows data freshness: green (fresh), amber (watch), red (stale), so you always know how current the numbers are.",
+    body: "Fundraising views read a synced mirror of HubSpot (the “spine”). Use “Sync HubSpot” in the sidebar to pull the latest. It advances in chunks. The colored dot below it shows data freshness: green (fresh), amber (watch), red (stale), so you always know how current the numbers are.",
   },
   {
     title: "Email logging",
@@ -274,19 +274,19 @@ const GLOBALS: { title: string; body: string }[] = [
   },
   {
     title: "Your calendar, two ways",
-    body: "BloomOS mirrors your Google Calendar so your agenda is always current. Schedule a task into a time block and it writes a tagged event back to Google; move or delete that event in Google and it flows back — the task follows the new time, or unschedules itself, but never disappears.",
+    body: "BloomOS mirrors your Google Calendar so your agenda is always current. Schedule a task into a time block and it writes a tagged event back to Google; move or delete that event in Google and it flows back. The task follows the new time, or unschedules itself, but never disappears.",
   },
   {
     title: "Tasks connect everything",
-    body: "Add a task on a partner or donor profile and it becomes a real Ops task — visible in Ops, Today, and This Week, with a chip linking back to the record. Overdue ones surface on the list views and in the weekly digest.",
+    body: "Add a task on a partner or donor profile and it becomes a real Ops task. Visible in Ops, Today, and This Week, with a chip linking back to the record. Overdue ones surface on the list views and in the weekly digest.",
   },
   {
     title: "The weekly digest",
     body: "Every Monday morning BloomOS emails each operator a personalized digest: last week's giving, what's due, and your own overdue CRM tasks (plus anything unassigned). The same overdue list is on the Weekly Briefing page, where you can reschedule or complete items inline.",
   },
   {
-    title: "Meet Reed — AI, used carefully",
-    body: "Reed is the BloomOS AI. Where it helps — drafting meeting follow-ups, ranking fundraising next-moves, writing prospect briefs and the weekly narrative, reviewing the strategic plan — it's grounded strictly in your real data, drafts for your approval, and never auto-applies. Deterministic logic runs first; Reed only proposes on top. (Reed is our product AI, not a third-party meeting notetaker.)",
+    title: "Meet Reed: AI, used carefully",
+    body: "Reed is the BloomOS AI. Where it helps (drafting meeting follow-ups, ranking fundraising next-moves, writing prospect briefs and the weekly narrative, reviewing the strategic plan), it's grounded strictly in your real data, drafts for your approval, and never auto-applies. Deterministic logic runs first; Reed only proposes on top. (Reed is our product AI, not a third-party meeting notetaker.)",
   },
   {
     title: "Audit trail",
@@ -294,7 +294,7 @@ const GLOBALS: { title: string; body: string }[] = [
   },
   {
     title: "Install as an app",
-    body: "BloomOS is an installable PWA — add it to your home screen or dock for a full-screen, app-like experience.",
+    body: "BloomOS is an installable PWA. Add it to your home screen or dock for a full-screen, app-like experience.",
   },
 ];
 
@@ -324,9 +324,9 @@ export default function HowToPage() {
 
       {/* Start here / global concepts */}
       <section id="start-here" className="scroll-mt-20 mb-10">
-        <SectionHeading className="mb-1">Start here — the basics</SectionHeading>
+        <SectionHeading className="mb-1">Start here: the basics</SectionHeading>
         <p className="text-sm text-ink-2 mb-4 max-w-[70ch]">
-          BloomOS is one operating system for the whole organization — fundraising, program, finance,
+          BloomOS is one operating system for the whole organization. Fundraising, program, finance,
           operations, and governance in a single place. A few ideas run through all of it:
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -387,7 +387,7 @@ export default function HowToPage() {
       </div>
 
       <p className="text-xs text-ink-3 mt-12 border-t border-outline pt-5">
-        BloomOS™ · the operating system for your nonprofit. This guide mirrors the sidebar — if a
+        BloomOS™ · the operating system for your nonprofit. This guide mirrors the sidebar. If a
         module is here, it&apos;s in the menu on the left.
       </p>
     </div>

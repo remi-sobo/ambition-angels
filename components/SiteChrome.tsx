@@ -37,6 +37,9 @@ export default function SiteChrome({
       // visually, and because /board is private and never advertises the site.
       pathname?.startsWith("/board") ||
       teensGameScreen ||
+      // The My Ambition partner demo: a password door, then the demo in a
+      // full-viewport iframe. Neither wants a fixed marketing nav over it.
+      pathname?.startsWith("/demo") ||
       pathname?.startsWith("/ygb") ||
       pathname?.startsWith("/shannon") ||
       pathname?.startsWith("/strategy") ||

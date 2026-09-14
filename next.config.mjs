@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    // The My Ambition partner demo (demo-assets/ambition-demo.html) lives
+    // outside public/ on purpose — public/ is served with no auth — and is
+    // read from disk by the gated /demo/app route handler. Files outside the
+    // normal build graph are not in the serverless bundle unless traced
+    // here; without this line the route 500s in production and works on
+    // localhost. Verify after the first deploy.
+    outputFileTracingIncludes: { "/demo/app": ["./demo-assets/**"] },
+  },
   async redirects() {
     // Cutover (migration runbook step 14): the admin now lives at
     // app.bloomos.org. Old links, bookmarks, and installed PWAs on the AA

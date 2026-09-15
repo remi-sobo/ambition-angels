@@ -50,7 +50,7 @@ export default function PartnersBoard({ partners }: { partners: Partner[] }) {
       footer={
         lapsed.length > 0 ? (
           <>
-            <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-2">
+            <div className="text-xs font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-2">
               Lapsed
             </div>
             <div className="flex flex-wrap gap-2">
@@ -59,7 +59,7 @@ export default function PartnersBoard({ partners }: { partners: Partner[] }) {
                   key={p.id}
                   href={`/admin/partners/${p.id}`}
                   draggable={false}
-                  className="text-xs text-ink-3 hover:text-ink-1 bg-tile border-[1.5px] border-outline rounded-full px-2.5 py-1 transition-colors"
+                  className="text-xs text-ink-3 hover:text-ink-1 bg-tile border-hairline rounded-full px-2.5 py-1 transition-colors"
                 >
                   {p.name}
                 </Link>
@@ -96,34 +96,34 @@ function PartnerCardBody({ partner: p }: { partner: Partner }) {
     (!p.last_touch_at ||
       p.last_touch_at < new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10));
   return (
-    <div className="bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline rounded-lg px-2.5 py-2 transition-colors">
+    <div className="bg-tile hover:bg-tile border-hairline rounded-control px-2.5 py-2 transition-colors">
       <div className="flex items-center gap-1.5">
         <span className="text-xs font-medium text-ink-1 truncate flex-1 min-w-0">{p.name}</span>
         {p.priority_score != null && (
           <span
             title="Fit score"
-            className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${SCORE_BAND_STYLE[scoreBand(p.priority_score)]}`}
+            className={`text-xs font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${SCORE_BAND_STYLE[scoreBand(p.priority_score)]}`}
           >
             {p.priority_score}
           </span>
         )}
       </div>
       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-        <span className="text-[10px] text-ink-2 uppercase tracking-wider">
+        <span className="text-xs text-ink-2 uppercase tracking-wider">
           {KIND_LABELS[p.kind] ?? p.kind}
         </span>
-        {geo && <span className="text-[10px] text-ink-3 truncate">{geo}</span>}
+        {geo && <span className="text-xs text-ink-3 truncate">{geo}</span>}
       </div>
       {p.primary_contact && (
-        <div className="text-[10px] text-ink-3 mt-1 truncate">{p.primary_contact}</div>
+        <div className="text-xs text-ink-3 mt-1 truncate">{p.primary_contact}</div>
       )}
       <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-        <span className={`text-[10px] [font-variant-numeric:tabular-nums] ${stale ? "text-[#A56A1B]" : "text-ink-3"}`}>
+        <span className={`text-xs [font-variant-numeric:tabular-nums] ${stale ? "text-status-watch-text" : "text-ink-3"}`}>
           {relTouch(p.last_touch_at)}
         </span>
         {typeof p.open_tasks === "number" && p.open_tasks > 0 && (
           <span
-            className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+            className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
               p.overdue_tasks ? "bg-expense-bg text-expense" : "bg-orange/15 text-orange"
             }`}
           >
@@ -133,7 +133,7 @@ function PartnerCardBody({ partner: p }: { partner: Partner }) {
         )}
         {p.mou_status === "signed" && (
           <span
-            className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+            className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
               mouExpired ? "bg-expense-bg text-expense" : "bg-revenue-bg text-revenue"
             }`}
           >

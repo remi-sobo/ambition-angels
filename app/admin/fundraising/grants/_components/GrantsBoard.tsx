@@ -58,10 +58,10 @@ export default function GrantsBoard({
       }
       emptyHint="—"
       renderCard={(g) => (
-        <div className="bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline rounded-lg px-2.5 py-2 transition-colors">
+        <div className="bg-tile hover:bg-tile border-hairline rounded-control px-2.5 py-2 transition-colors">
           <div className="text-xs font-medium text-ink-1 truncate">{g.name}</div>
-          <div className="text-[11px] text-ink-2 truncate">{g.funderName ?? "—"}</div>
-          <div className="text-[11px] text-orange font-semibold [font-variant-numeric:tabular-nums]">
+          <div className="text-xs text-ink-2 truncate">{g.funderName ?? "—"}</div>
+          <div className="text-xs text-orange font-semibold [font-variant-numeric:tabular-nums]">
             {grantValue(g) > 0 ? money(grantValue(g)) : ""}
           </div>
         </div>
@@ -69,7 +69,7 @@ export default function GrantsBoard({
       footer={
         closed.length > 0 ? (
           <>
-            <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-2">
+            <div className="text-xs font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-2">
               Declined / Closed
             </div>
             <div className="flex flex-wrap gap-2">
@@ -77,7 +77,7 @@ export default function GrantsBoard({
                 <Link
                   key={g.id}
                   href={`/admin/fundraising/grants/${g.id}`}
-                  className="text-xs text-ink-3 hover:text-ink-1 bg-tile border-[1.5px] border-outline rounded-full px-2.5 py-1 transition-colors"
+                  className="text-xs text-ink-3 hover:text-ink-1 bg-tile border-hairline rounded-full px-2.5 py-1 transition-colors"
                 >
                   {g.name} · {STAGE_LABELS[g.stage]}
                 </Link>

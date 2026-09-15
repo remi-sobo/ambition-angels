@@ -120,11 +120,11 @@ function Chip({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2 rounded-full border border-white/10 bg-navy px-4 py-2.5 text-[13px] font-heading font-semibold text-cream shadow-xl transition-colors hover:bg-[#1a2c5e] active:scale-[0.98]"
+      className="flex items-center gap-2 rounded-full border border-white/10 bg-navy px-4 py-2.5 text-sm font-heading font-semibold text-cream shadow-xl transition-colors hover:bg-navy-light active:scale-[0.98]"
     >
       <span className="flex h-5 w-5 items-center justify-center">{children}</span>
       {label}
-      {kbd && <kbd className="ml-1 text-[10px] font-medium border border-white/10 rounded px-1.5 py-0.5 text-cream/60">{kbd}</kbd>}
+      {kbd && <kbd className="ml-1 text-xs font-medium border border-white/10 rounded px-1.5 py-0.5 text-cream/60">{kbd}</kbd>}
     </button>
   );
 }

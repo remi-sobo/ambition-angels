@@ -56,7 +56,7 @@ export default async function VolunteersPage() {
         {volunteers.map((v) => (
           <article
             key={v.id}
-            className="bg-surface shadow-panel border-[1.5px] border-outline rounded-card px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-1"
+            className="bg-surface border-hairline rounded-panel px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-1"
           >
             <Link
               href={`/admin/fundraising/donors/${v.id}`}

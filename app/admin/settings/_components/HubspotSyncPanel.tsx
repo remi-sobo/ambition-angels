@@ -178,14 +178,14 @@ export default function HubspotSyncPanel() {
         <button
           onClick={startSync}
           disabled={running}
-          className="shrink-0 text-sm font-semibold text-white bg-orange hover:bg-orange-dark disabled:opacity-50 disabled:cursor-default px-4 py-2 rounded-lg transition-colors"
+          className="shrink-0 text-sm font-semibold text-white bg-orange hover:bg-orange-dark disabled:opacity-50 disabled:cursor-default px-4 py-2 rounded-control transition-colors"
         >
           {running ? "Syncing…" : "Sync now"}
         </button>
       </div>
 
       {(running || finished) && (
-        <div className="text-[11px] text-ink-3 [font-variant-numeric:tabular-nums]">
+        <div className="text-xs text-ink-3 [font-variant-numeric:tabular-nums]">
           {STEP_LABELS.map(
             ({ key, label }) => `${counts[key]}${totals ? ` of ${totals[key]}` : ""} ${label}`
           ).join(" · ")}
@@ -193,7 +193,7 @@ export default function HubspotSyncPanel() {
       )}
 
       {running && (
-        <p className="text-[11px] text-ink-3">
+        <p className="text-xs text-ink-3">
           Safe to navigate away. The sync keeps running and picks up right where it left off.
         </p>
       )}
@@ -204,7 +204,7 @@ export default function HubspotSyncPanel() {
           human granting the scope to the HubSpot private app, so don't bury
           the instructions inside the collapsed details below. */}
       {finished && scopeErrors.length > 0 && (
-        <div className="rounded-lg bg-status-watch-bg border border-status-watch/40 px-3 py-2.5 space-y-1.5">
+        <div className="rounded-control bg-status-watch-bg border border-status-watch/40 px-3 py-2.5 space-y-1.5">
           <div className="text-xs font-semibold text-status-watch-text">
             HubSpot needs additional permissions
           </div>

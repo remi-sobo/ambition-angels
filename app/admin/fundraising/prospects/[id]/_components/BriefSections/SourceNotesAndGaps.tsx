@@ -14,7 +14,7 @@ export default function SourceNotesAndGaps({
   return (
     <details
       {...(defaultOpen ? { open: true } : {})}
-      className="rounded-card border-[1.5px] border-outline bg-surface p-6 group"
+      className="rounded-panel border-hairline bg-surface p-6 group"
     >
       <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1">
         Source notes &amp; gaps
@@ -23,7 +23,7 @@ export default function SourceNotesAndGaps({
       <div className="mt-4 space-y-5">
         {data.sources.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+            <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               Sources
             </div>
             <ul className="space-y-1 text-xs text-ink-2">
@@ -49,13 +49,13 @@ export default function SourceNotesAndGaps({
 
         {data.gaps.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-[#A56A1B]/80 mb-2">
+            <div className="text-xs uppercase tracking-wider text-status-watch-text/80 mb-2">
               Gaps
             </div>
             <ul className="space-y-1.5 text-xs text-ink-1">
               {data.gaps.map((g, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="text-[#A56A1B]/60 shrink-0">·</span>
+                  <span className="text-status-watch-text/60 shrink-0">·</span>
                   <span>{g}</span>
                 </li>
               ))}

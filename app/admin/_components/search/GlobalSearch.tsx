@@ -298,7 +298,7 @@ export default function GlobalSearch() {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl rounded-card border-[1.5px] border-outline bg-ink shadow-2xl overflow-hidden flex flex-col max-h-[70vh]"
+        className="w-full max-w-xl rounded-panel border-hairline bg-ink shadow-2xl overflow-hidden flex flex-col max-h-[70vh]"
         role="dialog"
         aria-modal="true"
         aria-label="Search BloomOS"
@@ -309,11 +309,11 @@ export default function GlobalSearch() {
             <EntityProfile data={profile} onBack={closeProfile} onOpen={navigate} />
           ) : (
             <div className="flex-1 flex flex-col">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-outline">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-hairline">
                 <button
                   onClick={closeProfile}
                   aria-label="Back to search"
-                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-ink-3 hover:text-ink-1 hover:bg-tile transition-colors"
+                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-control text-ink-3 hover:text-ink-1 hover:bg-tile transition-colors"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden>
                     <path d="M15 18l-6-6 6-6" />
@@ -326,7 +326,7 @@ export default function GlobalSearch() {
         ) : (
           <>
         {/* Search field */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-outline">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-hairline">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -354,7 +354,7 @@ export default function GlobalSearch() {
             autoComplete="off"
             spellCheck={false}
           />
-          <kbd className="shrink-0 text-[10px] font-medium text-ink-2 border border-outline rounded px-1.5 py-0.5">
+          <kbd className="shrink-0 text-xs font-medium text-ink-2 border border-hairline rounded px-1.5 py-0.5">
             esc
           </kbd>
         </div>
@@ -365,7 +365,7 @@ export default function GlobalSearch() {
             <p className="px-4 py-6 text-sm text-ink-2 text-center">
               Type a name, organization, deal, task, or page to jump to it.
               <br />
-              <span className="text-ink-3 text-[12px]">
+              <span className="text-ink-3 text-xs">
                 Tip: prefix with <code>people:</code>, <code>deal:</code>, or <code>task:</code> to filter.
               </span>
             </p>
@@ -381,7 +381,7 @@ export default function GlobalSearch() {
 
           {groups.map((g) => (
             <div key={g.group} className="mb-1.5 last:mb-0">
-              <div className="px-4 pt-2 pb-1 text-[10px] font-heading font-semibold uppercase tracking-[0.14em] text-ink-3">
+              <div className="px-4 pt-2 pb-1 text-xs font-heading font-semibold uppercase tracking-[0.14em] text-ink-3">
                 {GROUP_LABEL[g.group]}
               </div>
               {g.items.map((hit) => {
@@ -402,7 +402,7 @@ export default function GlobalSearch() {
                   >
                     <span
                       className={[
-                        "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center",
+                        "shrink-0 w-7 h-7 rounded-control flex items-center justify-center",
                         active ? "bg-orange/20 text-orange-mid" : "bg-tile text-ink-3",
                       ].join(" ")}
                       aria-hidden
@@ -410,13 +410,13 @@ export default function GlobalSearch() {
                       <KindIcon kind={hit.kind} />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[13px] text-ink-1 truncate">{hit.title}</span>
+                      <span className="block text-sm text-ink-1 truncate">{hit.title}</span>
                       {hit.subtitle && (
-                        <span className="block text-[11px] text-ink-2 truncate">{hit.subtitle}</span>
+                        <span className="block text-xs text-ink-2 truncate">{hit.subtitle}</span>
                       )}
                     </span>
                     {hit.badge && (
-                      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-ink-3 border border-outline rounded-full px-1.5 py-px">
+                      <span className="shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3 border border-hairline rounded-full px-1.5 py-px">
                         {hit.badge}
                       </span>
                     )}
@@ -442,7 +442,7 @@ export default function GlobalSearch() {
         </div>
 
         {/* Footer hints (context-aware: people/orgs open the profile) */}
-        <div className="flex items-center gap-4 px-4 py-2 border-t border-outline text-[10px] text-ink-2">
+        <div className="flex items-center gap-4 px-4 py-2 border-t border-hairline text-xs text-ink-2">
           <Hint k="↑↓" label="navigate" />
           {activeHit?.kind === "constituent" ? (
             <>
@@ -464,7 +464,7 @@ export default function GlobalSearch() {
               "ml-auto flex items-center gap-1.5 rounded-full px-2 py-0.5 border transition-colors",
               includeNotes
                 ? "border-orange/40 text-orange bg-orange-light"
-                : "border-outline text-ink-2 hover:text-ink-1",
+                : "border-hairline text-ink-2 hover:text-ink-1",
             ].join(" ")}
           >
             <span
@@ -484,7 +484,7 @@ export default function GlobalSearch() {
 function Hint({ k, label }: { k: string; label: string }) {
   return (
     <span className="flex items-center gap-1.5">
-      <kbd className="text-[10px] border border-outline rounded px-1 py-px text-ink-3">{k}</kbd>
+      <kbd className="text-xs border border-hairline rounded px-1 py-px text-ink-3">{k}</kbd>
       {label}
     </span>
   );

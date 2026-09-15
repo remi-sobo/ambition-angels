@@ -136,7 +136,7 @@ export default function LoginScreen({
         alt=""
         width={36}
         height={36}
-        className="rounded-xl shrink-0"
+        className="rounded-panel shrink-0"
       />
       <span className="font-display font-black text-3xl tracking-tight normal-case leading-none">
         Bloom<span className="text-[#A8B58C]">OS</span>
@@ -197,7 +197,7 @@ export default function LoginScreen({
                 type="button"
                 onClick={handleSignOut}
                 disabled={loggingIn}
-                className="mt-6 w-full bg-surface hover:bg-tile border-[1.5px] border-outline text-ink-1 font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
+                className="mt-6 w-full bg-surface hover:bg-tile border-hairline text-ink-1 font-semibold py-3 rounded-panel transition-colors disabled:opacity-60"
               >
                 Sign out
               </button>
@@ -232,7 +232,7 @@ export default function LoginScreen({
                 type="button"
                 onClick={handleGoogle}
                 disabled={loggingIn}
-                className="w-full flex items-center justify-center gap-2.5 bg-surface hover:bg-tile border-[1.5px] border-outline text-ink-1 font-semibold text-sm py-3 rounded-xl transition-colors disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-2.5 bg-surface hover:bg-tile border-hairline text-ink-1 font-semibold text-sm py-3 rounded-panel transition-colors disabled:opacity-60"
               >
                 <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
                   <path
@@ -268,7 +268,7 @@ export default function LoginScreen({
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
                   autoComplete="email"
-                  className={`bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/50`}
+                  className={`bg-tile border-hairline rounded-panel px-4 py-3 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/50`}
                   autoFocus
                 />
                 <div className="relative">
@@ -278,7 +278,7 @@ export default function LoginScreen({
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
                     autoComplete="current-password"
-                    className={`w-full bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 pr-12 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/50`}
+                    className={`w-full bg-tile border-hairline rounded-panel px-4 py-3 pr-12 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/50`}
                   />
                   <button
                     type="button"
@@ -307,7 +307,7 @@ export default function LoginScreen({
                 <button
                   type="submit"
                   disabled={loggingIn}
-                  className="bg-orange hover:bg-orange-dark text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
+                  className="bg-orange hover:bg-orange-dark text-white font-semibold py-3 rounded-panel transition-colors disabled:opacity-60"
                 >
                   {loggingIn ? "Signing in…" : "Sign in"}
                 </button>

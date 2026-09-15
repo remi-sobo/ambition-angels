@@ -78,14 +78,14 @@ export default async function ImportsPage() {
           <div className="space-y-2">
             {runs.map((r) => (
               <div key={r.id}
-                className="bg-surface border-[1.5px] border-outline rounded-xl px-3 py-2 flex flex-wrap items-center gap-2 text-[12px]">
+                className="bg-surface border-hairline rounded-panel px-3 py-2 flex flex-wrap items-center gap-2 text-xs">
                 <span className="text-ink-1 font-semibold">
                   {r.source === "hubspot" ? "HubSpot sync" : r.filename ?? "Untitled file"}
                 </span>
-                <span className="text-[10px] text-ink-3 uppercase tracking-wider">
+                <span className="text-xs text-ink-3 uppercase tracking-wider">
                   {r.source === "hubspot" ? "Connector" : r.entity_type === "constituent" ? "Donors" : "Participants"}
                 </span>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${STATUS_CHIP[r.status] ?? "bg-tile text-ink-2"}`}>
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${STATUS_CHIP[r.status] ?? "bg-tile text-ink-2"}`}>
                   {r.status === "committing" && r.source === "hubspot" ? "syncing" : r.status}
                 </span>
                 <span className="text-ink-2 tabular-nums ml-auto">{countsLine(r)}</span>

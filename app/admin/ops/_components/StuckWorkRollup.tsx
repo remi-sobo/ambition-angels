@@ -61,12 +61,12 @@ export default function StuckWorkRollup({
   }
 
   return (
-    <section className="rounded-card border-[1.5px] border-status-watch/30 bg-surface p-6">
+    <section className="rounded-panel border-status-watch/30 bg-surface p-6">
       <header className="flex items-baseline justify-between mb-4">
         <h2 className="text-xs uppercase tracking-wider text-status-watch-text">
           Stuck Work
         </h2>
-        <span className="text-[10px] uppercase tracking-wider text-ink-2">
+        <span className="text-xs uppercase tracking-wider text-ink-2">
           {tasks.length} stuck
         </span>
       </header>
@@ -97,14 +97,14 @@ export default function StuckWorkRollup({
             <div key={key}>
               <div className="flex items-baseline gap-2 mb-2">
                 <h3 className="text-sm font-semibold text-ink-1">{label}</h3>
-                <span className="text-[10px] uppercase tracking-wider text-ink-3">
+                <span className="text-xs uppercase tracking-wider text-ink-3">
                   {forAssignee.length} stuck
                 </span>
               </div>
               <div className="space-y-4 pl-1">
                 {TASK_CATEGORIES.filter((c) => byCategory.has(c)).map((cat) => (
                   <div key={cat}>
-                    <h4 className="text-[10px] uppercase tracking-wider text-ink-3 mb-1.5">
+                    <h4 className="text-xs uppercase tracking-wider text-ink-3 mb-1.5">
                       {categoryLabel(cat)}
                     </h4>
                     <div className="space-y-1.5">
@@ -160,7 +160,7 @@ function ProjectContextLine({
   if (!context) {
     return (
       <p
-        className="pl-11 pt-1 text-[11px] italic text-ink-3"
+        className="pl-11 pt-1 text-xs italic text-ink-3"
         title="Click the task title to open it and attach a project"
       >
         No linked project
@@ -175,9 +175,9 @@ function ProjectContextLine({
     fields.push({ label: "Partnership", value: context.partnerships.join(", ") });
 
   return (
-    <div className="pl-11 pt-1 flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-[11px]">
+    <div className="pl-11 pt-1 flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-xs">
       <span className="inline-flex items-baseline gap-1.5 min-w-0">
-        <span className="uppercase tracking-wider text-[10px] text-ink-3">
+        <span className="uppercase tracking-wider text-xs text-ink-3">
           Project
         </span>
         <Link
@@ -190,7 +190,7 @@ function ProjectContextLine({
       </span>
       {fields.map((f) => (
         <span key={f.label} className="inline-flex items-baseline gap-1.5 min-w-0">
-          <span className="uppercase tracking-wider text-[10px] text-ink-3">
+          <span className="uppercase tracking-wider text-xs text-ink-3">
             {f.label}
           </span>
           <span className="text-ink-2 truncate max-w-[280px]">{f.value}</span>

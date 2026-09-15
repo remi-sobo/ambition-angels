@@ -123,7 +123,7 @@ export default async function IntakePage() {
   const closedApps = apps.filter((a) => CLOSED.includes(a.status));
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Intake"
         subtitle="Applications from the public form · screen → waitlist → offer → roster"
@@ -131,7 +131,7 @@ export default async function IntakePage() {
           <a
             href="/apply"
             target="_blank"
-            className="text-xs font-semibold text-ink-2 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"
+            className="text-xs font-semibold text-ink-2 bg-tile hover:bg-tile px-4 py-2 rounded-full transition-colors"
           >
             View public form ↗
           </a>
@@ -150,13 +150,13 @@ export default async function IntakePage() {
           {seatStrips.map((c) => (
             <div
               key={c.id}
-              className="bg-surface shadow-panel border-[1.5px] border-outline rounded-xl px-3 py-2.5 flex flex-wrap items-center gap-2 text-[12px] text-ink-2"
+              className="bg-surface border-hairline rounded-panel px-3 py-2.5 flex flex-wrap items-center gap-2 text-xs text-ink-2"
             >
               <Link href={`/admin/cohorts/${c.id}`} className="font-semibold text-ink-1 hover:text-orange">
                 {c.name}
               </Link>
               {c.accepting_applications && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-revenue-bg text-revenue uppercase tracking-wider">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-revenue-bg text-revenue uppercase tracking-wider">
                   Accepting
                 </span>
               )}

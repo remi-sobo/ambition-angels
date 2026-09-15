@@ -56,7 +56,7 @@ export default async function MyWeekPage({
       />
 
       {/* ── WeekStatus + the one ritual door ───────────────────────────── */}
-      <section className="mt-6 rounded-card border-[1.5px] border-outline bg-surface p-6">
+      <section className="mt-6 rounded-panel border-hairline bg-surface p-6">
         {status ? (
           <WeekStatusLine status={status} />
         ) : (
@@ -64,7 +64,7 @@ export default async function MyWeekPage({
         )}
         <Link
           href="/admin/work/plan-close"
-          className="mt-4 group flex items-center justify-between gap-4 rounded-card border-[1.5px] border-orange/40 bg-orange-light px-5 py-4 transition-colors hover:bg-[#FFE4D6]"
+          className="mt-4 group flex items-center justify-between gap-4 rounded-panel border-orange/40 bg-orange-light px-5 py-4 transition-colors hover:bg-orange-light"
         >
           <span className="flex items-baseline gap-3 flex-wrap">
             <span className={`${TYPE.sectionHeader} !text-orange-dark`}>
@@ -73,7 +73,7 @@ export default async function MyWeekPage({
             <span className="font-display font-black uppercase tracking-tight text-2xl leading-none text-orange-dark">
               {planLit ? "Plan" : "Close"}
             </span>
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-orange-dark border border-orange/40 rounded-full px-1.5 py-px">
+            <span className="text-xs uppercase tracking-wider font-semibold text-orange-dark border border-orange/40 rounded-full px-1.5 py-px">
               Now
             </span>
           </span>

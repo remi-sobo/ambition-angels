@@ -27,10 +27,10 @@ export default function ThisWeekView({
   const days = Array.from(byDay.keys()).sort();
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <header className="flex items-baseline justify-between mb-4">
         <h2 className={TYPE.sectionHeader}>This Week</h2>
-        <span className="text-[10px] uppercase tracking-wider text-ink-2">
+        <span className="text-xs uppercase tracking-wider text-ink-2">
           {tasks.length} pinned
         </span>
       </header>
@@ -50,7 +50,7 @@ export default function ThisWeekView({
         <div className="space-y-5">
           {anytime.length > 0 && (
             <div>
-              <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+              <h3 className="text-xs uppercase tracking-wider text-ink-3 mb-2">
                 Anytime this week
               </h3>
               <div className="space-y-1.5">
@@ -73,7 +73,7 @@ export default function ThisWeekView({
             });
             return (
               <div key={day}>
-                <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+                <h3 className="text-xs uppercase tracking-wider text-ink-3 mb-2">
                   {label}
                 </h3>
                 <div className="space-y-1.5">

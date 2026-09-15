@@ -12,7 +12,7 @@ export default async function ImpactKpisPage() {
   return (
     <>
       <KpisPage />
-      <div className="px-4 lg:px-8 pb-6 lg:pb-8 max-w-[1100px]">
+      <div className="px-4 lg:px-8 pb-6 lg:pb-8 max-w-workspace">
         <ScorecardSection embedded />
       </div>
     </>

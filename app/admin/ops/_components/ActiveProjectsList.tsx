@@ -17,7 +17,7 @@ export default function ActiveProjectsList({
   openTaskCounts: Map<string, number>;
 }) {
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <header className="flex items-baseline justify-between mb-4">
         <h2 className={TYPE.sectionHeader}>
           Active Projects
@@ -48,23 +48,23 @@ export default function ActiveProjectsList({
               <Link
                 key={p.id}
                 href={`/admin/ops/projects/${p.id}`}
-                className="block rounded-lg border-[1.5px] border-outline bg-surface shadow-panel hover:bg-[#EFE6D4] transition-colors p-4 group"
+                className="block rounded-control border-hairline bg-surface hover:bg-tile transition-colors p-4 group"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <h3 className="text-sm font-medium text-ink-1 group-hover:text-orange transition-colors truncate">
                     {p.title}
                   </h3>
                   <span
-                    className={`shrink-0 inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(p.category)}`}
+                    className={`shrink-0 inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${categoryBadgeClass(p.category)}`}
                   >
                     {categoryLabel(p.category)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-ink-2">
+                <div className="flex items-center justify-between text-xs text-ink-2">
                   <div className="flex items-center gap-3">
                     {p.assigned_to && (
                       <span className="inline-flex items-center gap-1">
-                        <span className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[10px] font-bold uppercase">
+                        <span className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-xs font-bold uppercase">
                           {p.assigned_to.charAt(0)}
                         </span>
                         <span>{p.assigned_to}</span>

@@ -208,7 +208,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:px-4">
       <div
-        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-card border-[1.5px] border-outline bg-ink shadow-2xl max-h-[92vh] overflow-y-auto"
+        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-panel border-hairline bg-ink shadow-2xl max-h-[92vh] overflow-y-auto"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="sm:hidden flex justify-center pt-2.5 pb-1" aria-hidden>
@@ -228,17 +228,17 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
           {/* Type selector — hidden once the interview is underway. */}
           {phase === "describe" && (
             <div>
-              <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1.5">Type</div>
+              <div className="text-xs uppercase tracking-wider text-ink-2 mb-1.5">Type</div>
               <div className="grid grid-cols-3 gap-2">
                 {TYPES.map((t) => (
                   <button
                     key={t.value}
                     type="button"
                     onClick={() => chooseType(t.value)}
-                    className={`flex items-center justify-center gap-1.5 py-2 rounded-lg border-[1.5px] text-sm font-medium transition-colors ${
+                    className={`flex items-center justify-center gap-1.5 py-2 rounded-control text-sm font-medium transition-colors ${
                       type === t.value
                         ? "border-orange bg-orange/15 text-ink-1"
-                        : "border-outline bg-tile text-ink-2 hover:text-ink-1"
+                        : "border-hairline bg-tile text-ink-2 hover:text-ink-1"
                     }`}
                   >
                     <span aria-hidden>{t.emoji}</span>
@@ -266,7 +266,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                     type="button"
                     onClick={() => fileReport({ debugPrompt: prompt, title: promptTitle })}
                     disabled={saving}
-                    className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
+                    className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-control transition-colors"
                   >
                     {saving ? "Sending…" : "Try again"}
                   </button>
@@ -281,7 +281,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
           {phase === "describe" && (
             <form onSubmit={start} className="space-y-4">
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">
+                <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">
                   What&apos;s going on?
                 </div>
                 <div className="relative">
@@ -291,7 +291,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
                     placeholder="Describe what you saw, what you expected, or what you'd like…"
-                    className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 pr-12 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 text-base sm:text-sm resize-y"
+                    className="w-full bg-tile border-hairline rounded-control px-3 py-2.5 pr-12 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 text-base sm:text-sm resize-y"
                   />
                   <MicButton onAppend={(t) => setDescription((d) => joinSpeech(d, t))} />
                 </div>
@@ -313,7 +313,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                 <button
                   type="submit"
                   disabled={busy}
-                  className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
+                  className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-control transition-colors"
                 >
                   {thinking ? "Thinking…" : "Continue"}
                 </button>
@@ -342,7 +342,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                     }}
                     rows={2}
                     placeholder="Answer here, or tap the mic to talk…"
-                    className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 pr-12 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 text-base sm:text-sm resize-y"
+                    className="w-full bg-tile border-hairline rounded-control px-3 py-2.5 pr-12 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 text-base sm:text-sm resize-y"
                   />
                   <MicButton onAppend={(t) => setAnswer((d) => joinSpeech(d, t))} />
                 </div>
@@ -361,7 +361,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                   <button
                     type="submit"
                     disabled={busy || !answer.trim()}
-                    className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
+                    className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-control transition-colors"
                   >
                     {thinking ? "Thinking…" : "Send"}
                   </button>
@@ -373,8 +373,8 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
           {/* ── Owner-only: the synthesized prompt. ── */}
           {phase === "ready" && isOwner && (
             <div className="space-y-4">
-              <div className="text-[10px] uppercase tracking-wider text-ink-2">Your Claude Code prompt</div>
-              <pre className="whitespace-pre-wrap bg-tile border-[1.5px] border-outline rounded-lg p-3 text-xs text-ink-1 max-h-[44vh] overflow-y-auto font-mono leading-relaxed">
+              <div className="text-xs uppercase tracking-wider text-ink-2">Your Claude Code prompt</div>
+              <pre className="whitespace-pre-wrap bg-tile border-hairline rounded-control p-3 text-xs text-ink-1 max-h-[44vh] overflow-y-auto font-mono leading-relaxed">
                 {prompt}
               </pre>
 
@@ -384,7 +384,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                 <button
                   type="button"
                   onClick={copyPrompt}
-                  className="w-full bg-orange hover:bg-orange-dark text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
+                  className="w-full bg-orange hover:bg-orange-dark text-white text-sm font-semibold px-5 py-2.5 rounded-control transition-colors"
                 >
                   {copied ? "Copied ✓" : "Copy prompt"}
                 </button>
@@ -393,7 +393,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
                     type="button"
                     onClick={() => fileReport({ debugPrompt: prompt, title: promptTitle })}
                     disabled={saving}
-                    className={`flex-1 border-[1.5px] border-outline bg-tile hover:text-ink-1 ${TYPE.bodyMuted} font-semibold px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50`}
+                    className={`flex-1 border-hairline bg-tile hover:text-ink-1 ${TYPE.bodyMuted} font-semibold px-4 py-2.5 rounded-control transition-colors disabled:opacity-50`}
                   >
                     {saving ? "Saving…" : "Save as task"}
                   </button>
@@ -437,10 +437,10 @@ function ChatBubble({ role, text, muted }: { role: Turn["role"]; text: string; m
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
+        className={`max-w-[85%] rounded-panel px-3.5 py-2 text-sm leading-relaxed ${
           isUser
             ? "bg-orange/15 border border-orange/30 text-ink-1 rounded-br-sm"
-            : `bg-tile border border-outline rounded-bl-sm ${muted ? "text-ink-3" : "text-ink-1"}`
+            : `bg-tile border border-hairline rounded-bl-sm ${muted ? "text-ink-3" : "text-ink-1"}`
         }`}
       >
         {text}
@@ -460,7 +460,7 @@ function PhotoPicker({
 }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">Photo (optional)</div>
+      <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Photo (optional)</div>
       <input
         ref={fileRef}
         type="file"
@@ -471,7 +471,7 @@ function PhotoPicker({
       {previewUrl ? (
         <div className="relative">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={previewUrl} alt="Selected" className="w-full max-h-56 object-cover rounded-lg border-[1.5px] border-outline" />
+          <img src={previewUrl} alt="Selected" className="w-full max-h-56 object-cover rounded-control border-hairline" />
           <button
             type="button"
             onClick={() => onPick(null)}
@@ -484,7 +484,7 @@ function PhotoPicker({
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg border-[1.5px] border-dashed border-outline bg-tile text-ink-2 hover:${TYPE.body} font-medium transition-colors`}
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-control border-dashed border-hairline bg-tile text-ink-2 hover:${TYPE.body} font-medium transition-colors`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden>
             <rect x="3" y="6" width="18" height="14" rx="2" />
@@ -515,7 +515,7 @@ function MicButton({ onAppend }: { onAppend: (text: string) => void }) {
       className={`absolute bottom-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
         listening
           ? "bg-orange text-white animate-pulse"
-          : "bg-tile border border-outline text-ink-2 hover:text-ink-1"
+          : "bg-tile border border-hairline text-ink-2 hover:text-ink-1"
       }`}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Big_Shoulders_Display, Poppins, DM_Sans, Space_Grotesk } from "next/font/google";
+import { Big_Shoulders_Display, Poppins, DM_Sans, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
@@ -27,13 +27,15 @@ const dmSans = DM_Sans({
   display: "swap",
 });
 
-// BloomOS (admin) display/heading face. Scoped to `.admin-shell` in
-// globals.css so the public Ambition Angels site keeps Big Shoulders /
-// Poppins. Chosen to echo the geometric grotesque of the BloomOS wordmark.
-const spaceGrotesk = Space_Grotesk({
+// BloomOS (admin) interface face — Visual System V3 §2. ONE face for the whole
+// product UI: headings, body, navigation, buttons, labels. Scoped to
+// `.admin-shell` in globals.css so the public Ambition Angels site keeps Big
+// Shoulders / Poppins / DM Sans untouched. The BloomOS wordmark stays an image
+// asset and is deliberately NOT matched to this face.
+const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-grotesk",
+  variable: "--font-instrument",
   display: "swap",
 });
 
@@ -85,7 +87,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${bigShoulders.variable} ${poppins.variable} ${dmSans.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" className={`${bigShoulders.variable} ${poppins.variable} ${dmSans.variable} ${instrumentSans.variable}`}>
       <body className="antialiased">
         <DonateModalProvider>
           {/* Org JSON-LD rides SiteChrome so standalone tenant surfaces

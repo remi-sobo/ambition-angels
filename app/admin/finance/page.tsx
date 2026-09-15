@@ -24,6 +24,8 @@ import ReconcileCard from "./_components/ReconcileCard";
 import RunwayTiers from "./_components/RunwayTiers";
 import InfoTip from "./_components/InfoTip";
 import { constituentName } from "@/lib/fundraising/display";
+import { CHART, CHART_SERIES } from "@/lib/admin/chartTokens";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Read live every request: the service-role client's reads go through the
 // global fetch Next caches by default, so without this a freshly-saved config
@@ -139,10 +141,10 @@ export default async function FinanceDashboardPage() {
     else functionalTotals.uncategorized += -t.amount;
   }
   const functionalSegs: DonutSeg[] = [
-    { label: "Program", value: functionalTotals.program, color: "#C0703C" },
-    { label: "Admin", value: functionalTotals.admin, color: "#2A201A" },
-    { label: "Fundraising", value: functionalTotals.fundraising, color: "#2D7857" },
-    { label: "Uncategorized", value: functionalTotals.uncategorized, color: "#B5762A" },
+    { label: "Program", value: functionalTotals.program, color: CHART.accent },
+    { label: "Admin", value: functionalTotals.admin, color: CHART.ink },
+    { label: "Fundraising", value: functionalTotals.fundraising, color: CHART.revenue },
+    { label: "Uncategorized", value: functionalTotals.uncategorized, color: CHART.warning },
   ].filter((s) => s.value > 0.0001);
 
   // ── Revenue source mix (from pledges + actual revenue txns) ────────────
@@ -182,19 +184,19 @@ export default async function FinanceDashboardPage() {
     sourceTotals.set(src, (sourceTotals.get(src) ?? 0) + t.amount);
   }
   const SOURCE_COLOR: Record<string, string> = {
-    foundation: "#2D7857",
-    individual: "#C0703C",
-    corporate: "#B5762A",
-    government: "#2A201A",
-    accelerator: "#a78bfa",
+    foundation: CHART.revenue,
+    individual: CHART.accent,
+    corporate: CHART.warning,
+    government: CHART.ink,
+    accelerator: CHART_SERIES[6],
     earned: "#60a5fa",
-    other: "#9A8B7C",
+    other: CHART.inkFaint,
   };
   const sourceSegs: DonutSeg[] = Array.from(sourceTotals.entries())
     .map(([k, v]) => ({
       label: k.charAt(0).toUpperCase() + k.slice(1),
       value: v,
-      color: SOURCE_COLOR[k] ?? "#9A8B7C",
+      color: SOURCE_COLOR[k] ?? CHART.inkFaint,
     }))
     .sort((a, b) => b.value - a.value);
 
@@ -289,7 +291,7 @@ export default async function FinanceDashboardPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       {/* Header — SubNav now lives in app/admin/finance/layout.tsx so it
           persists across every finance page. */}
       <PageHeader
@@ -340,8 +342,8 @@ export default async function FinanceDashboardPage() {
           <CircleGauge
             pct={receivedPct}
             value={`${Math.round(receivedPct * 100)}%`}
-            label="goal"
-            color="#2D7857"
+            label="Goal"
+            color={CHART.revenue}
           />
         </Hero>
         <Hero
@@ -367,8 +369,8 @@ export default async function FinanceDashboardPage() {
           <CircleGauge
             pct={budgetPct}
             value={`${Math.round(budgetPct * 100)}%`}
-            label="budget"
-            color={budgetPct > 1 ? "#B0462E" : budgetPct > 0.8 ? "#B5762A" : "#C0703C"}
+            label="Budget"
+            color={budgetPct > 1 ? CHART.expense : budgetPct > 0.8 ? CHART.warning : CHART.accent}
           />
         </Hero>
       </section>
@@ -433,7 +435,7 @@ export default async function FinanceDashboardPage() {
       </section>
 
       {/* Cash flow chart */}
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
+      <section className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
         <SectionHeading className="mb-1">
           Cash flow · 12 months
         </SectionHeading>
@@ -446,7 +448,7 @@ export default async function FinanceDashboardPage() {
 
       {/* Splits */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
+        <div className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
           <SectionHeading className="mb-1">
             Functional split
             <InfoTip heading="Functional split">
@@ -493,7 +495,7 @@ export default async function FinanceDashboardPage() {
           )}
         </div>
 
-        <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
+        <div className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
           <SectionHeading className="mb-1">
             Revenue by source
             <InfoTip heading="Revenue by source">
@@ -520,7 +522,7 @@ export default async function FinanceDashboardPage() {
       </section>
 
       {/* Budget vs actual */}
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
+      <section className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
         <div className="flex items-baseline justify-between flex-wrap gap-2 mb-4">
           <SectionHeading>
             Budget vs actual
@@ -549,7 +551,7 @@ export default async function FinanceDashboardPage() {
               return (
                 <li key={r.group} className="text-xs">
                   <div className="flex items-baseline justify-between mb-1">
-                    <span className="uppercase tracking-wider text-ink-1 font-medium">
+                    <span className="font-medium text-ink-1">
                       {r.group}
                     </span>
                     <span className="font-mono text-ink-1">
@@ -559,7 +561,7 @@ export default async function FinanceDashboardPage() {
                           intent === "over"
                             ? "text-expense"
                             : intent === "warn"
-                            ? "text-[#A56A1B]"
+                            ? "text-status-watch-text"
                             : "text-revenue"
                         }`}
                       >
@@ -577,7 +579,7 @@ export default async function FinanceDashboardPage() {
 
       {/* Bottom strip: pledge pipeline + recent donations, then recent transactions */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
+        <div className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
           <div className="flex items-baseline justify-between mb-4">
             <SectionHeading>
               Pledge pipeline
@@ -627,7 +629,7 @@ export default async function FinanceDashboardPage() {
               }
             />
           </div>
-          <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-2">
+          <div className={`${TYPE.cardLabel} mb-2`}>
             Toward {money(cfg.goal)} goal
           </div>
           <ProgressBar pct={goalPct} intent={goalPct >= 1 ? "ok" : "warn"} height={10} />
@@ -639,7 +641,7 @@ export default async function FinanceDashboardPage() {
           )}
         </div>
 
-        <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
+        <div className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
           <div className="flex items-baseline justify-between mb-4">
             <SectionHeading>
               Recent donations
@@ -681,7 +683,7 @@ export default async function FinanceDashboardPage() {
           )}
         </div>
 
-        <div className="lg:col-span-2 rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
+        <div className="lg:col-span-2 rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
           <div className="flex items-baseline justify-between mb-4">
             <SectionHeading>
               Recent transactions
@@ -708,7 +710,7 @@ export default async function FinanceDashboardPage() {
                     <span className="text-ink-1 truncate" title={t.description}>
                       {t.description}
                       {c && (
-                        <span className="text-ink-2 text-[10px] ml-2">
+                        <span className="text-ink-2 text-xs ml-2">
                           {c.display_name}
                         </span>
                       )}
@@ -763,9 +765,9 @@ function Hero({
     accent === "orange" ? "text-orange" : "text-ink-1";
   return (
     <div
-      className={`group relative rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 overflow-hidden ${
+      className={`group relative rounded-panel-lg border-hairline bg-surface p-5 overflow-hidden ${
         href
-          ? "transition-colors hover:border-ink-2 hover:bg-[#EFE6D4] focus-within:ring-2 focus-within:ring-orange/40"
+          ? "transition-colors hover:border-ink-2 hover:bg-tile focus-within:ring-2 focus-within:ring-orange/40"
           : ""
       }`}
     >
@@ -780,7 +782,7 @@ function Hero({
       )}
       <div className={`flex items-start justify-between gap-3 ${href ? "pointer-events-none" : ""}`}>
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-widest text-ink-2">
+          <div className={TYPE.cardLabel}>
             {label}
             {info && <span className="pointer-events-auto relative z-20">{info}</span>}
           </div>
@@ -797,7 +799,7 @@ function Hero({
             </div>
           )}
           {href && (
-            <div className="mt-2 text-[11px] font-medium text-ink-3 group-hover:text-orange transition-colors">
+            <div className="mt-2 text-xs font-medium text-ink-3 group-hover:text-orange transition-colors">
               {hrefLabel ?? "View list"} →
             </div>
           )}
@@ -806,7 +808,7 @@ function Hero({
       </div>
       {sparkline && sparkline.length > 1 && (
         <div className="mt-3 -mb-1">
-          <Sparkline values={sparkline} width={220} height={36} color="#C0703C" />
+          <Sparkline values={sparkline} width={220} height={36} color={CHART.accent} />
         </div>
       )}
     </div>
@@ -830,15 +832,15 @@ function Mini({
 }) {
   const valueClass =
     tone === "warn"
-      ? "text-[#A56A1B]"
+      ? "text-status-watch-text"
       : tone === "good"
       ? "text-revenue"
       : "text-ink-1";
   const inner = (
-    <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-3 hover:bg-[#EFE6D4] transition-colors">
-      <div className="text-[10px] uppercase tracking-widest text-ink-2 mb-1">{label}{info}</div>
+    <div className="rounded-panel border-hairline bg-surface p-3 hover:bg-tile transition-colors">
+      <div className={`${TYPE.cardLabel} mb-1`}>{label}{info}</div>
       <div className={`text-lg font-medium ${valueClass}`}>{value}</div>
-      {sub && <div className="mt-0.5 text-[10px] text-ink-2">{sub}</div>}
+      {sub && <div className="mt-0.5 text-xs text-ink-2">{sub}</div>}
     </div>
   );
   if (href) return <Link href={href}>{inner}</Link>;
@@ -847,7 +849,7 @@ function Mini({
 
 function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-sm text-ink-2 py-8 text-center border border-dashed border-outline rounded-card">
+    <div className="text-sm text-ink-2 py-8 text-center border border-dashed border-hairline rounded-panel">
       {children}
     </div>
   );
@@ -868,7 +870,7 @@ function Cell({
 }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}{info}</div>
+      <div className={`${TYPE.cardLabel} mb-1`}>{label}{info}</div>
       <div
         className={`text-lg font-medium font-mono ${
           accent ? "text-orange" : subtle ? "text-ink-2" : "text-ink-1"

@@ -308,14 +308,14 @@ export default function HowToPage() {
 
       {/* Table of contents */}
       <nav className="flex flex-wrap gap-2 mb-8">
-        <a href="#start-here" className="text-xs font-semibold text-ink-2 hover:text-orange bg-tile border-[1.5px] border-outline rounded-full px-3 py-1.5 transition-colors">
+        <a href="#start-here" className="text-xs font-semibold text-ink-2 hover:text-orange bg-tile border-hairline rounded-full px-3 py-1.5 transition-colors">
           Start here
         </a>
         {ORDERED_SECTIONS.map((s) => (
           <a
             key={s.id}
             href={`#${s.id}`}
-            className="text-xs font-semibold text-ink-2 hover:text-orange bg-tile border-[1.5px] border-outline rounded-full px-3 py-1.5 transition-colors"
+            className="text-xs font-semibold text-ink-2 hover:text-orange bg-tile border-hairline rounded-full px-3 py-1.5 transition-colors"
           >
             {s.label}
           </a>
@@ -331,9 +331,9 @@ export default function HowToPage() {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {GLOBALS.map((g) => (
-            <div key={g.title} className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-4">
+            <div key={g.title} className="bg-tile border-hairline rounded-panel-lg p-4">
               <h3 className={`${TYPE.cardTitle} mb-1`}>{g.title}</h3>
-              <p className="text-[13px] text-ink-2 leading-relaxed">{g.body}</p>
+              <p className="text-sm text-ink-2 leading-relaxed">{g.body}</p>
             </div>
           ))}
         </div>
@@ -349,14 +349,14 @@ export default function HowToPage() {
               {section.items.map((item) => (
                 <article
                   key={item.name}
-                  className={`bg-tile shadow-tile border-[1.5px] rounded-card-lg p-5 ${
-                    item.soon ? "border-outline opacity-75" : "border-outline"
+                  className={`bg-tile rounded-panel-lg p-5 ${
+                    item.soon ? "border-hairline opacity-75" : "border-hairline"
                   }`}
                 >
                   <div className="flex items-center gap-2 flex-wrap mb-1.5">
                     <h3 className="font-heading font-bold text-ink-1 text-base">{item.name}</h3>
                     {item.soon ? (
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3 border border-outline rounded-full px-2 py-0.5">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-ink-3 border border-hairline rounded-full px-2 py-0.5">
                         Soon
                       </span>
                     ) : item.href ? (
@@ -372,7 +372,7 @@ export default function HowToPage() {
                   {item.does && item.does.length > 0 && (
                     <ul className="mt-3 space-y-1.5">
                       {item.does.map((d, i) => (
-                        <li key={i} className="flex gap-2.5 text-[13px] text-ink-1">
+                        <li key={i} className="flex gap-2.5 text-sm text-ink-1">
                           <span className="text-orange mt-1.5 w-1 h-1 rounded-full bg-orange shrink-0" aria-hidden />
                           <span className="leading-relaxed">{d}</span>
                         </li>
@@ -386,7 +386,7 @@ export default function HowToPage() {
         ))}
       </div>
 
-      <p className="text-xs text-ink-3 mt-12 border-t border-outline pt-5">
+      <p className="text-xs text-ink-3 mt-12 border-t border-hairline pt-5">
         BloomOS™ · the operating system for your nonprofit. This guide mirrors the sidebar. If a
         module is here, it&apos;s in the menu on the left.
       </p>

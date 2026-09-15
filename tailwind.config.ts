@@ -5,6 +5,13 @@ const config: Config = {
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    // lib/ holds class strings too — above all the canonical type scale in
+    // lib/admin/typeScale.ts. Without this glob every scale value that
+    // appears ONLY there (text-[28px], text-[15px], text-[17px], the
+    // tracking steps) is never generated, and the role silently falls back
+    // to inherited 16px. The page title shipped at 16px instead of 28px
+    // until this line existed.
+    "./lib/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -22,67 +29,70 @@ const config: Config = {
         },
         ink: {
           DEFAULT: "rgb(var(--c-ink) / <alpha-value>)",
-          // Text-on-cream ramp for the BloomOS admin (cream workspace).
-          // Plain hexes — admin-only, never consumed by the public site.
-          // Every step clears WCAG AA (4.5:1) as small text on app/surface/
-          // tile — the contrast gate in tests/design-tokens.test.ts enforces
-          // it, so a value here can't quietly slide below the floor again.
-          1: "#2A201A", // primary ink (13.88 on app)
-          2: "#6B5C4E", // secondary (5.61 on app)
-          3: "#796A5C", // tertiary / uppercase labels — the LIGHTEST value ≥4.5 on app (4.55; Quality Floor Q4, was #9A8B7C at 2.88)
+          // Text-on-cream ramp for the BloomOS product (V3 §3). Plain hexes —
+          // admin-only, never consumed by the public site. Every step clears
+          // WCAG AA (4.5:1) as small text on app/surface/tile; the contrast
+          // gate in tests/design-tokens.test.ts enforces it, so a value here
+          // can't quietly slide below the floor again.
+          1: "#29241F", // --text-primary   (14.00 on app)
+          2: "#746C63", // --text-secondary (4.70 on app)
+          3: "#756C5B", // --text-tertiary  (4.72 on app; V3 §13-tuned from #948A7E)
         },
         // Raised-surface dark for cards on ink backgrounds (public site).
         "ink-soft": "#1A1A1A",
-        // ── BloomOS admin cream-workspace surfaces / data (admin-only) ──────
-        // Cream-tuned, fixed values. Only referenced inside app/admin/*, so
-        // they never bleed into the public Ambition Angels brand.
-        app: "#F5EFE2", // cream workspace background
-        surface: "#FFFDF8", // card / panel surface
-        tile: "#FBF6EC", // recessed tile (stat cards, inputs)
-        hairline: "#E7DCC9", // internal dividers, chart axes, progress tracks
-        outline: "#C7B18C", // stronger card outline
+        // ── BloomOS V3 surfaces / borders (admin-only) ─────────────────────
+        app: "#F7F4EE", // --bg-app       workspace background
+        surface: "#FFFDF9", // --bg-surface   card / panel surface
+        tile: "#FBF8F2", // --bg-tile      recessed tile (inputs, stat wells)
+        hairline: "#E3D9CB", // --border-subtle internal dividers, chart axes
+        outline: "#CDBEAA", // --border-strong selected / editable / attention
+        // ── The one tenant-ownable accent (V3 §10) ─────────────────────────
+        // `accent` is the VIVID terracotta and is fill-only: indicators,
+        // underlines, dots, chart marks. Small text and white-on-fill use
+        // `accent-ink` (= Tailwind `orange`), which clears AA both ways.
+        accent: {
+          DEFAULT: "rgb(var(--c-accent) / <alpha-value>)",
+          ink: "rgb(var(--c-orange) / <alpha-value>)",
+          hover: "rgb(var(--c-orange-dark) / <alpha-value>)",
+          soft: "rgb(var(--c-orange-light) / <alpha-value>)",
+        },
         revenue: {
-          // Lightest green ≥4.5 as small text on app/surface/tile AND on its
-          // own pale bg (the success-toast pair; Q4, was #2F7D5B at 4.36/app).
-          DEFAULT: "#2D7857", // revenue green (4.66 on app, 4.50 on revenue-bg)
-          bg: "#E2EFE5", // pale revenue background
+          DEFAULT: "#32745B", // --success (5.05 on app, 5.55 under white)
+          bg: "#E2EFE8", // --success-soft
         },
         expense: {
-          // Same rule for the red (the error-toast pair sat at 4.31 on
-          // expense-bg; Q4, was #B5482F).
-          DEFAULT: "#B0462E", // expense / overdue red (4.87 on app, 4.50 on expense-bg)
-          bg: "#F6E3DC", // pale expense background
+          DEFAULT: "#AE4339", // --danger-text (5.22 on app)
+          bg: "#F5E2E0", // --danger-soft
         },
-        // ── BloomOS five-value status scale (spec Phase 0, AA-verified) ─────
-        // One meaning per color, shared by chips (Phase 3) and the briefing
-        // engine (Phase 4). `*` is the saturated hue (fills/dots/borders);
-        // `*-text` meets WCAG AA as small text on cream; `*-bg` is the pale
-        // chip tint (ink-1 label reads AAA on every tint). Nothing outside
-        // this scale gets a status color — otherwise it is `neutral`.
+        // ── BloomOS five-value status scale (V3 §3, AA-verified) ───────────
+        // One meaning per color, shared by badges and the briefing engine.
+        // `*` is the saturated hue (fills/dots/borders); `*-text` clears WCAG
+        // AA as small text on cream AND on its own pale tint; `*-bg` is the
+        // chip tint. Nothing outside this scale gets a status color.
         status: {
-          critical: "#B0462E", // = expense (4.87 AA on app — safe as text too)
-          "critical-text": "#9E3A24", // 5.94 on app, 5.49 on critical-bg
-          "critical-bg": "#F6E3DC",
-          watch: "#B5762A", // fill/border/dot only (3.28 on app)
-          "watch-text": "#8A5A12", // 5.16 on app, 4.87 on watch-bg
-          "watch-bg": "#F4E8D0",
-          due: "#C0703C", // clay — fill/border/dot only (3.26 on app)
-          "due-text": "#96582F", // Q4: due finally gets its text step (4.91 on app, 4.51 on due-bg)
-          "due-bg": "#F6E3D2",
-          healthy: "#2D7857", // = revenue (4.66 AA on app)
-          "healthy-text": "#2D7857", // Q4: the calendar already used this class; now it exists
-          "healthy-bg": "#E2EFE5",
-          neutral: "#6B5C4E", // = ink-2
-          "neutral-bg": "#FBF6EC", // = tile
+          critical: "#C24B40", // --danger      fill (4.80 under white)
+          "critical-text": "#AE4339", // 5.22 on app, 4.60 on critical-bg
+          "critical-bg": "#F5E2E0",
+          watch: "#A96820", // --warning     fill (4.48 under white)
+          "watch-text": "#965C1C", // 4.98 on app, 4.58 on watch-bg
+          "watch-bg": "#F5EAD6",
+          due: "#C96B38", // --accent      fill
+          "due-text": "#9D532C", // 5.16 on app, 4.62 on due-bg
+          "due-bg": "#F5E5DB",
+          healthy: "#32745B", // --success
+          "healthy-text": "#32745B", // 5.05 on app, 4.69 on healthy-bg
+          "healthy-bg": "#E2EFE8",
+          neutral: "#746C63", // = ink-2
+          "neutral-bg": "#FBF8F2", // = tile
         },
         // Deliberate dark "attention" surface. Reserved for the briefing
-        // engine's critical state (Phase 4) — light text on it reads AAA.
-        // Distinct from the espresso sidebar chrome (`navy`).
+        // engine's critical state. Distinct from the sidebar chrome (`navy`).
         attention: {
-          DEFAULT: "#23160D",
-          fg: "#F5EFE2",
+          DEFAULT: "#241C15",
+          fg: "#F3EDE4",
         },
-        // BloomOS product chrome (docs/bloomos/06-design-system.md §2).
+        // Espresso navigation chrome (V3 §7). `navy` is the historical token
+        // name; the value is --bg-sidebar.
         navy: {
           DEFAULT: "rgb(var(--c-navy) / <alpha-value>)",
           light: "rgb(var(--c-navy-light) / <alpha-value>)",
@@ -101,15 +111,32 @@ const config: Config = {
       maxWidth: {
         site: "1200px",
         prose: "680px",
+        // BloomOS V3 §8 — the product workspace. Was a 1100px column that left
+        // a wide dead gutter on desktop; `workspace` is the default page
+        // width, `reading` keeps long-form/one-column screens legible.
+        workspace: "1280px",
+        reading: "900px",
       },
       borderRadius: {
+        // Public Ambition Angels site — deliberately unchanged.
         card: "1.25rem",
         "card-lg": "1.75rem",
+        // ── BloomOS V3 §4 shape language (admin-only) ────────────────────
+        // Three steps, one meaning each. Nothing in the product invents a
+        // fourth, and `rounded-full` is reserved for badges/dots/avatars.
+        control: "9px", // buttons, inputs, selects, small controls
+        panel: "14px", // cards, list containers
+        "panel-lg": "16px", // large feature panels
+        modal: "18px", // modals, sheets
       },
       boxShadow: {
-        // BloomOS admin cream-workspace elevation (admin-only).
-        panel: "0 1px 3px rgba(60,40,20,.06)",
-        tile: "0 1px 2px rgba(60,40,20,.05)",
+        // BloomOS V3 §12 — "BloomOS should not be a shadow-heavy product."
+        // Cards read through surface contrast + a hairline border, so the two
+        // historical card-elevation tokens resolve to nothing. Real elevation
+        // (modals, dropdowns, floating menus) uses the `.elevate-menu` /
+        // `.elevate-modal` utilities in globals.css instead.
+        panel: "none",
+        tile: "none",
       },
     },
   },

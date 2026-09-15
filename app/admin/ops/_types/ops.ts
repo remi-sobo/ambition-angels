@@ -201,7 +201,7 @@ export const ASSIGNEE_REQUIRED_MESSAGE =
 // Categories are taxonomy, not status — under the five-value scale they render
 // neutral (saturated color is reserved for the five status values). The
 // category hue survives only as a dot via <CategoryTag> (lib/admin/status.ts).
-const NEUTRAL_BADGE = "bg-status-neutral-bg text-ink-2 border-outline";
+const NEUTRAL_BADGE = "bg-status-neutral-bg text-ink-2 border-hairline";
 
 // Category is intentionally ignored now that all categories render neutral;
 // the signature is kept so existing call sites need no change.
@@ -237,8 +237,8 @@ export function priorityRank(p: TaskPriority | string): number {
 // Statuses map onto the five-value scale: blocked→critical, done→healthy,
 // todo/in_progress carry no severity → neutral. (Token chips, ink-1 label.)
 const TASK_STATUS_BADGE_STYLES: Record<TaskStatus, string> = {
-  todo: "bg-status-neutral-bg text-ink-2 border-outline",
-  in_progress: "bg-status-neutral-bg text-ink-1 border-outline",
+  todo: "bg-status-neutral-bg text-ink-2 border-hairline",
+  in_progress: "bg-status-neutral-bg text-ink-1 border-hairline",
   done: "bg-status-healthy-bg text-ink-1 border-status-healthy/30",
   blocked: "bg-status-critical-bg text-ink-1 border-status-critical/30",
 };
@@ -252,7 +252,7 @@ const PROJECT_STATUS_BADGE_STYLES: Record<ProjectStatus, string> = {
   active: "bg-status-due-bg text-ink-1 border-status-due/30",
   paused: "bg-status-watch-bg text-ink-1 border-status-watch/30",
   done: "bg-status-healthy-bg text-ink-1 border-status-healthy/30",
-  archived: "bg-status-neutral-bg text-ink-2 border-outline",
+  archived: "bg-status-neutral-bg text-ink-2 border-hairline",
 };
 
 export function projectStatusBadgeClass(s: ProjectStatus | string): string {

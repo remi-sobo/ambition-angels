@@ -40,7 +40,7 @@ export default function FollowUpQuickActions({ recordId }: { recordId: string })
         onClick={() => set("none_needed")}
         disabled={busy}
         title="No follow-up needed"
-        className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-outline text-ink-2 hover:text-ink-1 hover:bg-tile disabled:opacity-40 transition-colors"
+        className="text-xs font-medium px-2.5 py-1 rounded-full border border-hairline text-ink-2 hover:text-ink-1 hover:bg-tile disabled:opacity-40 transition-colors"
       >
         No follow-up
       </button>

@@ -97,13 +97,13 @@ export type PlanObjectiveTask = {
 export type TeamMember = { id: string; full_name: string };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 // Health scale (objective / goal / KPI).
 const HEALTH_STYLES: Record<string, string> = {
   not_started: "bg-tile text-ink-2",
   on_track: "bg-revenue-bg text-revenue",
-  at_risk: "bg-[#F4E8D0] text-[#A56A1B]",
+  at_risk: "bg-status-watch-bg text-status-watch-text",
   behind: "bg-expense-bg text-expense",
   done: "bg-tile text-ink-2",
 };
@@ -272,7 +272,7 @@ function ConfirmDialog({
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-sm bg-surface border-[1.5px] border-outline rounded-card shadow-panel p-5"
+        className="w-full max-w-sm bg-surface border-hairline rounded-panel p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className={`font-heading font-semibold ${TYPE.body}`}>Delete permanently?</h3>
@@ -344,7 +344,7 @@ function AssigneeSelect({
       onChange={(e) => onChange(e.target.value || null)}
       aria-label={ariaLabel}
       title="Assign to a team member"
-      className="text-[10px] font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer bg-tile text-ink-2 max-w-[140px]"
+      className="text-xs font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer bg-tile text-ink-2 max-w-[140px]"
     >
       <option value="">Unassigned</option>
       {legacy.map((n) => (
@@ -377,7 +377,7 @@ export function RefreshMetricsButton() {
           setBusy(false);
         }
       }}
-      className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors disabled:opacity-50"
+      className="text-xs font-semibold text-ink-1 bg-tile hover:bg-tile px-4 py-2 rounded-full transition-colors disabled:opacity-50"
     >
       {busy ? "Refreshing…" : "↻ Refresh metrics"}
     </button>
@@ -424,7 +424,7 @@ function StatusOverride({
   return (
     <span className={`flex items-center gap-1 ${busy ? "opacity-60" : ""}`}>
       <span
-        className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${HEALTH_STYLES[effective] ?? "bg-tile text-ink-2"}`}
+        className={`text-xs font-semibold rounded-full px-2 py-0.5 ${HEALTH_STYLES[effective] ?? "bg-tile text-ink-2"}`}
         title={override ? `Manual override${reason ? `: ${reason}` : ""}` : "Computed from measures"}
       >
         {HEALTH_LABELS[effective] ?? effective}
@@ -433,14 +433,14 @@ function StatusOverride({
         value={override ?? ""}
         onChange={(e) => set(e.target.value)}
         title="Override the computed status"
-        className="text-[10px] font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer bg-tile text-ink-2"
+        className="text-xs font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer bg-tile text-ink-2"
       >
         <option value="">Auto</option>
         {Object.entries(HEALTH_LABELS).map(([k, v]) => (
           <option key={k} value={k} className="bg-surface text-ink-1">{v}</option>
         ))}
       </select>
-      {override && <span className="text-[10px] uppercase tracking-wide text-status-watch-text" title={reason ?? ""}>override</span>}
+      {override && <span className="text-xs text-status-watch-text" title={reason ?? ""}>override</span>}
       {pendingVal !== null && (
         <span className="flex items-center gap-1">
           <input
@@ -449,10 +449,10 @@ function StatusOverride({
             onChange={(e) => setReasonDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") saveOverride(); if (e.key === "Escape") setPendingVal(null); }}
             placeholder="Why override the computed status?"
-            className="text-[11px] bg-cream border-[1.5px] border-outline rounded px-1.5 py-0.5 w-48 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+            className="text-xs bg-cream border-hairline rounded px-1.5 py-0.5 w-48 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
           />
-          <button type="button" onClick={saveOverride} className="text-[10px] font-semibold text-orange hover:text-orange-dark">Save</button>
-          <button type="button" onClick={() => setPendingVal(null)} className="text-[10px] text-ink-3 hover:text-ink-1">Cancel</button>
+          <button type="button" onClick={saveOverride} className="text-xs font-semibold text-orange hover:text-orange-dark">Save</button>
+          <button type="button" onClick={() => setPendingVal(null)} className="text-xs text-ink-3 hover:text-ink-1">Cancel</button>
         </span>
       )}
     </span>
@@ -496,7 +496,7 @@ export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) 
 
   if (editing) {
     return (
-      <form onSubmit={save} className={`bg-surface border-[1.5px] border-outline rounded-card p-5 mb-6 space-y-3 ${busy ? "opacity-60" : ""}`}>
+      <form onSubmit={save} className={`bg-surface border-hairline rounded-panel p-5 mb-6 space-y-3 ${busy ? "opacity-60" : ""}`}>
         <label className="block text-xs text-ink-2">Mission
           <textarea className={`${inputCls} w-full mt-1`} rows={2} value={mission} onChange={(e) => setMission(e.target.value)} />
         </label>
@@ -510,7 +510,7 @@ export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) 
           <input className={`${inputCls} w-full mt-1`} value={behaviors} onChange={(e) => setBehaviors(e.target.value)} />
         </label>
         <label className="block text-xs text-ink-2">Proof points: one per line, <span className="text-ink-3">value | label</span> (shown in the funder Narrative)
-          <textarea className={`${inputCls} w-full mt-1 font-mono text-[12px]`} rows={4} placeholder={"3,500+ | teens reached\n87% | Title I schools"} value={proof} onChange={(e) => setProof(e.target.value)} />
+          <textarea className={`${inputCls} w-full mt-1 font-mono text-xs`} rows={4} placeholder={"3,500+ | teens reached\n87% | Title I schools"} value={proof} onChange={(e) => setProof(e.target.value)} />
         </label>
         <div className="flex gap-2">
           <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full disabled:opacity-50">
@@ -524,45 +524,45 @@ export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) 
 
   const empty = !foundation || (!foundation.mission && !foundation.vision && foundation.values.length === 0);
   return (
-    <section className="bg-surface border-[1.5px] border-outline rounded-card p-5 mb-6">
+    <section className="bg-surface border-hairline rounded-panel p-5 mb-6">
       <div className="flex items-center gap-2 mb-3">
         <h2 className="font-heading font-semibold text-ink-1 flex-1">Foundation</h2>
-        <button onClick={() => setEditing(true)} className="text-[11px] text-ink-2 hover:text-orange">Edit</button>
+        <button onClick={() => setEditing(true)} className="text-xs text-ink-2 hover:text-orange">Edit</button>
       </div>
       {empty ? (
         <p className="text-sm text-ink-2">Mission, vision, values, and behaviors. The culture home. Add them, or load the starter strategy above.</p>
       ) : (
         <div className="space-y-3 text-sm">
           {foundation!.mission && (
-            <div><span className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Mission</span><p className="text-ink-1 mt-0.5">{foundation!.mission}</p></div>
+            <div><span className="text-xs uppercase tracking-wider text-ink-3 font-semibold">Mission</span><p className="text-ink-1 mt-0.5">{foundation!.mission}</p></div>
           )}
           {foundation!.vision && (
-            <div><span className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Vision</span><p className="text-ink-1 mt-0.5">{foundation!.vision}</p></div>
+            <div><span className="text-xs uppercase tracking-wider text-ink-3 font-semibold">Vision</span><p className="text-ink-1 mt-0.5">{foundation!.vision}</p></div>
           )}
           <div className="flex flex-wrap gap-4">
             {foundation!.values.length > 0 && (
               <div className="flex-1 min-w-[200px]">
-                <span className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Values</span>
+                <span className="text-xs uppercase tracking-wider text-ink-3 font-semibold">Values</span>
                 <div className="flex flex-wrap gap-1.5 mt-1">
-                  {foundation!.values.map((v) => <span key={v} className="text-[11px] bg-tile text-ink-1 rounded-full px-2 py-0.5">{v}</span>)}
+                  {foundation!.values.map((v) => <span key={v} className="text-xs bg-tile text-ink-1 rounded-full px-2 py-0.5">{v}</span>)}
                 </div>
               </div>
             )}
             {foundation!.behaviors.length > 0 && (
               <div className="flex-1 min-w-[200px]">
-                <span className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Behaviors</span>
+                <span className="text-xs uppercase tracking-wider text-ink-3 font-semibold">Behaviors</span>
                 <div className="flex flex-wrap gap-1.5 mt-1">
-                  {foundation!.behaviors.map((v) => <span key={v} className="text-[11px] bg-tile text-ink-1 rounded-full px-2 py-0.5">{v}</span>)}
+                  {foundation!.behaviors.map((v) => <span key={v} className="text-xs bg-tile text-ink-1 rounded-full px-2 py-0.5">{v}</span>)}
                 </div>
               </div>
             )}
           </div>
           {(foundation!.proof_points ?? []).length > 0 && (
             <div>
-              <span className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Proof points <span className="normal-case text-ink-3 font-normal">· shown in the funder Narrative</span></span>
+              <span className="text-xs uppercase tracking-wider text-ink-3 font-semibold">Proof points <span className="normal-case text-ink-3 font-normal">· shown in the funder Narrative</span></span>
               <div className="flex flex-wrap gap-1.5 mt-1">
                 {foundation!.proof_points!.map((p) => (
-                  <span key={`${p.value}-${p.label}`} className="text-[11px] bg-tile text-ink-1 rounded-full px-2 py-0.5">
+                  <span key={`${p.value}-${p.label}`} className="text-xs bg-tile text-ink-1 rounded-full px-2 py-0.5">
                     <strong>{p.value}</strong> {p.label}
                   </span>
                 ))}
@@ -609,7 +609,7 @@ export function NewObjectiveForm() {
     );
   }
   return (
-    <form onSubmit={submit} className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 flex flex-wrap items-end gap-3">
+    <form onSubmit={submit} className="w-full bg-surface border-hairline rounded-panel p-4 flex flex-wrap items-end gap-3">
       <label className="flex-1 min-w-[240px] text-xs text-ink-2">Objective
         <input className={`${inputCls} w-full mt-1`} value={title} required autoFocus placeholder="Execute an effective and efficient fundraising strategy" onChange={(e) => setTitle(e.target.value)} />
       </label>
@@ -676,7 +676,7 @@ export function ObjectiveCard({
   return (
     <section
       id={`objective-${objective.id}`}
-      className={`scroll-mt-24 border-[1.5px] border-outline rounded-card-lg p-5 bg-tile/40 ${busy ? "opacity-60" : ""}`}
+      className={`scroll-mt-24 border-hairline rounded-panel-lg p-5 bg-tile/40 ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <EditableText
@@ -706,7 +706,7 @@ export function ObjectiveCard({
             onSave={(v) => patch({ owner: v })}
             placeholder="+ owner"
             ariaLabel="Objective owner"
-            className="text-[11px] text-ink-2"
+            className="text-xs text-ink-2"
           />
         )}
         <button
@@ -716,7 +716,7 @@ export function ObjectiveCard({
               remove
             )
           }
-          className="text-[11px] text-ink-2 hover:text-expense px-1"
+          className="text-xs text-ink-2 hover:text-expense px-1"
         >
           Delete
         </button>
@@ -735,7 +735,7 @@ export function ObjectiveCard({
       </p>
 
       {(tasks || notes) && (
-        <div className="mt-4 bg-surface border-[1.5px] border-outline rounded-card p-4 grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-4">
+        <div className="mt-4 bg-surface border-hairline rounded-panel p-4 grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-4">
           {tasks && <ObjectiveTasks objectiveId={objective.id} tasks={tasks} team={team ?? []} />}
           {notes && <ObjectiveNotes objectiveId={objective.id} notes={notes} />}
         </div>
@@ -810,7 +810,7 @@ function ObjectiveTasks({
 
   return (
     <div className={busy ? "opacity-60" : ""}>
-      <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-1.5">Tasks</div>
+      <div className="text-xs uppercase tracking-wider text-ink-3 font-semibold mb-1.5">Tasks</div>
       {tasks.length > 0 ? (
         <ul className="space-y-1.5">
           {tasks.map((t) => {
@@ -820,8 +820,8 @@ function ObjectiveTasks({
                 <button
                   onClick={() => void patchTask(t, { status: done ? "todo" : "done" })}
                   disabled={busy}
-                  className={`w-4 h-4 rounded-full border flex items-center justify-center text-[10px] shrink-0 ${
-                    done ? "bg-orange border-orange text-white" : "border-outline text-transparent hover:border-orange/60"
+                  className={`w-4 h-4 rounded-full border flex items-center justify-center text-xs shrink-0 ${
+                    done ? "bg-orange border-orange text-white" : "border-hairline text-transparent hover:border-orange/60"
                   }`}
                   aria-label={done ? "Mark not done" : "Mark done"}
                 >✓</button>
@@ -842,7 +842,7 @@ function ObjectiveTasks({
                   value={t.due_date ?? ""}
                   onChange={(e) => void patchTask(t, { due_date: e.target.value || null })}
                   aria-label="Task due date"
-                  className="bg-transparent text-[11px] text-ink-2 cursor-pointer focus:outline-none shrink-0"
+                  className="bg-transparent text-xs text-ink-2 cursor-pointer focus:outline-none shrink-0"
                 />
                 <button
                   onClick={() => removeTask(t)}
@@ -865,7 +865,7 @@ function ObjectiveTasks({
           onChange={(e) => setNewTitle(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void add(); } }}
         />
-        <button onClick={() => void add()} disabled={busy} className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 rounded-lg">Add</button>
+        <button onClick={() => void add()} disabled={busy} className="text-xs bg-tile hover:bg-tile text-ink-2 px-3 rounded-control">Add</button>
       </div>
       {confirmEl}
     </div>
@@ -921,7 +921,7 @@ function ObjectiveNotes({ objectiveId, notes }: { objectiveId: string; notes: Pl
 
   return (
     <div className={busy ? "opacity-60" : ""}>
-      <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-1.5">Notes</div>
+      <div className="text-xs uppercase tracking-wider text-ink-3 font-semibold mb-1.5">Notes</div>
       {notes.length > 0 ? (
         <ul className="space-y-2">
           {notes.map((n) => (
@@ -942,7 +942,7 @@ function ObjectiveNotes({ objectiveId, notes }: { objectiveId: string; notes: Pl
                   aria-label="Delete note"
                 >×</button>
               </div>
-              <div className="text-[10px] text-ink-3 mt-0.5">
+              <div className="text-xs text-ink-3 mt-0.5">
                 {n.author ? `${n.author} · ` : ""}{fmtNoteDate(n.created_at)}
               </div>
             </li>
@@ -959,7 +959,7 @@ function ObjectiveNotes({ objectiveId, notes }: { objectiveId: string; notes: Pl
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
         />
-        <button onClick={() => void add()} disabled={busy} className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 py-1.5 rounded-lg">Add</button>
+        <button onClick={() => void add()} disabled={busy} className="text-xs bg-tile hover:bg-tile text-ink-2 px-3 py-1.5 rounded-control">Add</button>
       </div>
       {confirmEl}
     </div>
@@ -997,14 +997,14 @@ export function NewGoalForm({ objectiveId, compact }: { objectiveId?: string; co
     return (
       <button onClick={() => setOpen(true)}
         className={compact
-          ? "text-[11px] text-ink-2 hover:text-orange"
+          ? "text-xs text-ink-2 hover:text-orange"
           : "text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors"}>
         + {compact ? "Add goal" : "New goal"}
       </button>
     );
   }
   return (
-    <form onSubmit={submit} className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 flex flex-wrap items-end gap-3">
+    <form onSubmit={submit} className="w-full bg-surface border-hairline rounded-panel p-4 flex flex-wrap items-end gap-3">
       <label className="flex-1 min-w-[240px] text-xs text-ink-2">Goal
         <input className={`${inputCls} w-full mt-1`} value={title} required autoFocus placeholder="Raise $400k+ from foundations and grants" onChange={(e) => setTitle(e.target.value)} />
       </label>
@@ -1095,7 +1095,7 @@ export function GoalCard({
     });
 
   return (
-    <section className={`bg-surface border-[1.5px] border-outline rounded-card p-5 ${busy ? "opacity-60" : ""}`}>
+    <section className={`bg-surface border-hairline rounded-panel p-5 ${busy ? "opacity-60" : ""}`}>
       <div className="flex flex-wrap items-center gap-2">
         <EditableText
           value={goal.title}
@@ -1117,7 +1117,7 @@ export function GoalCard({
             onChange={(e) => void patchGoal({ objective_id: e.target.value || null })}
             aria-label="Move goal to objective"
             title="Move to another objective"
-            className="text-[10px] font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer bg-tile text-ink-2 max-w-[140px]"
+            className="text-xs font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer bg-tile text-ink-2 max-w-[140px]"
           >
             <option value="">No objective</option>
             {objectiveOptions.map((o) => (
@@ -1130,19 +1130,19 @@ export function GoalCard({
           onSave={(v) => patchGoal({ owner: v })}
           placeholder="+ owner"
           ariaLabel="Goal owner"
-          className="text-[11px] text-ink-2"
+          className="text-xs text-ink-2"
         />
-        <span className="text-[11px] text-ink-2 tabular-nums flex items-center gap-1">
+        <span className="text-xs text-ink-2 tabular-nums flex items-center gap-1">
           <span className="text-ink-3">by</span>
           <input
             type="date"
             value={goal.target_date ?? ""}
             onChange={(e) => void patchGoal({ target_date: e.target.value || null })}
             aria-label="Goal target date"
-            className="bg-transparent text-[11px] text-ink-2 cursor-pointer focus:outline-none"
+            className="bg-transparent text-xs text-ink-2 cursor-pointer focus:outline-none"
           />
         </span>
-        <button onClick={() => void removeGoal()} className="text-[11px] text-ink-2 hover:text-expense px-1">Delete</button>
+        <button onClick={() => void removeGoal()} className="text-xs text-ink-2 hover:text-expense px-1">Delete</button>
       </div>
       <div className="text-xs text-ink-2 mt-1">
         <EditableText
@@ -1169,7 +1169,7 @@ export function GoalCard({
           <div className="flex-1 h-2 rounded-full bg-tile overflow-hidden">
             <div className="h-full bg-orange transition-all" style={{ width: `${pct}%` }} />
           </div>
-          <span className="text-[11px] text-ink-2 tabular-nums">{done}/{initiatives.length}</span>
+          <span className="text-xs text-ink-2 tabular-nums">{done}/{initiatives.length}</span>
         </div>
       )}
       <ul className="mt-3 space-y-1.5">
@@ -1183,8 +1183,8 @@ export function GoalCard({
                 <button
                   onClick={() => toggleInitiative(i)}
                   disabled={busy || leaving}
-                  className={`w-4 h-4 rounded-full border flex items-center justify-center text-[10px] shrink-0 ${
-                    leaving ? "bg-orange border-orange text-white" : "border-outline text-transparent hover:border-orange/60"
+                  className={`w-4 h-4 rounded-full border flex items-center justify-center text-xs shrink-0 ${
+                    leaving ? "bg-orange border-orange text-white" : "border-hairline text-transparent hover:border-orange/60"
                   }`}
                   aria-label="Mark done"
                 >✓</button>
@@ -1199,7 +1199,7 @@ export function GoalCard({
                   onSave={(v) => patchInit(i, { owner: v })}
                   placeholder="+ owner"
                   ariaLabel="Initiative owner"
-                  className="text-[10px] text-ink-2 shrink-0"
+                  className="text-xs text-ink-2 shrink-0"
                 />
                 <button
                   onClick={() => void removeInit(i)}
@@ -1213,7 +1213,7 @@ export function GoalCard({
                   <div className="flex-1 max-w-[160px] h-1.5 rounded-full bg-tile overflow-hidden">
                     <div className="h-full bg-orange/70 transition-all" style={{ width: `${pctTasks ?? 0}%` }} />
                   </div>
-                  <span className="text-[10px] text-ink-2 tabular-nums">
+                  <span className="text-xs text-ink-2 tabular-nums">
                     {r.projects} project{r.projects === 1 ? "" : "s"}
                     {r.tasksTotal > 0 ? ` · ${r.tasksDone}/${r.tasksTotal} tasks` : " · no tasks yet"}
                   </span>
@@ -1228,7 +1228,7 @@ export function GoalCard({
         <div className="mt-2">
           <button
             onClick={() => setShowDoneInits((v) => !v)}
-            className="text-[11px] font-semibold text-ink-3 hover:text-ink-1"
+            className="text-xs font-semibold text-ink-3 hover:text-ink-1"
           >
             {showDoneInits ? "Hide" : "Show"} {doneInits.length} done
           </button>
@@ -1239,11 +1239,11 @@ export function GoalCard({
                   <button
                     onClick={() => toggleInitiative(i)}
                     disabled={busy}
-                    className="w-4 h-4 rounded-full border border-orange bg-orange text-white flex items-center justify-center text-[10px]"
+                    className="w-4 h-4 rounded-full border border-orange bg-orange text-white flex items-center justify-center text-xs"
                     aria-label="Mark not done"
                   >✓</button>
                   <span className="text-ink-2 line-through">{i.title}</span>
-                  {i.owner && <span className="text-[10px] text-ink-2">· {i.owner}</span>}
+                  {i.owner && <span className="text-xs text-ink-2">· {i.owner}</span>}
                 </li>
               ))}
             </ul>
@@ -1258,7 +1258,7 @@ export function GoalCard({
           onChange={(e) => setNewInit(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void addInitiative(); } }}
         />
-        <button onClick={() => void addInitiative()} disabled={busy} className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 rounded-lg">Add</button>
+        <button onClick={() => void addInitiative()} disabled={busy} className="text-xs bg-tile hover:bg-tile text-ink-2 px-3 rounded-control">Add</button>
       </div>
       {confirmEl}
     </section>
@@ -1321,7 +1321,7 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
   const fresh = measureFreshness(kpi.last_updated_at, kpi.cadence);
 
   return (
-    <div className={`bg-tile/60 rounded-lg ${busy ? "opacity-60" : ""}`}>
+    <div className={`bg-tile/60 rounded-control ${busy ? "opacity-60" : ""}`}>
     <div className="flex items-center gap-2 text-xs px-3 py-1.5">
       <EditableText
         value={kpi.title}
@@ -1330,15 +1330,15 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
         className="text-ink-1 flex-1 min-w-0 truncate"
       />
       <span
-        className={`hidden sm:inline text-[10px] tabular-nums ${fresh.stale ? "text-status-watch-text font-semibold" : "text-ink-3"}`}
+        className={`hidden sm:inline text-xs tabular-nums ${fresh.stale ? "text-status-watch-text font-semibold" : "text-ink-3"}`}
         title={kpi.source === "auto" ? "Refreshed from the spine" : "Last manual update"}
       >
         {fresh.text}
       </span>
       {kpi.source === "auto" ? (
-        <span className="text-[10px] uppercase tracking-wide text-revenue bg-revenue-bg rounded px-1 py-0.5" title={kpi.metric_key ?? "auto"}>auto</span>
+        <span className="text-xs text-revenue bg-revenue-bg rounded px-1 py-0.5" title={kpi.metric_key ?? "auto"}>auto</span>
       ) : (
-        <span className="text-[10px] uppercase tracking-wide text-ink-3 bg-tile rounded px-1 py-0.5">manual</span>
+        <span className="text-xs text-ink-3 bg-tile rounded px-1 py-0.5">manual</span>
       )}
       {editing ? (
         <span className="flex items-center gap-1">
@@ -1409,7 +1409,7 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
       <select
         value={kpi.status}
         onChange={(e) => void patch({ status: e.target.value })}
-        className={`text-[10px] font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer ${HEALTH_STYLES[kpi.status] ?? "bg-tile text-ink-2"}`}
+        className={`text-xs font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer ${HEALTH_STYLES[kpi.status] ?? "bg-tile text-ink-2"}`}
       >
         {Object.entries(HEALTH_LABELS).map(([k, v]) => (
           <option key={k} value={k} className="bg-surface text-ink-1">{v}</option>
@@ -1426,7 +1426,7 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
     </div>
     {confirmEl}
     {showDetails && (
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 pb-2 pt-1.5 text-[11px] text-ink-3 border-t border-hairline">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 pb-2 pt-1.5 text-xs text-ink-3 border-t border-hairline">
         <span className="flex items-center gap-1">Unit
           <EditableText
             value={kpi.unit}
@@ -1535,11 +1535,11 @@ function NewKpiForm({ goalId }: { goalId: string }) {
   };
 
   if (!open) {
-    return <button onClick={() => setOpen(true)} className="text-[11px] text-ink-2 hover:text-orange mt-2">+ Add measure</button>;
+    return <button onClick={() => setOpen(true)} className="text-xs text-ink-2 hover:text-orange mt-2">+ Add measure</button>;
   }
   return (
-    <form onSubmit={submit} className="mt-2 bg-tile/40 rounded-lg p-2 space-y-2">
-      <div className="inline-flex p-0.5 bg-tile border border-outline rounded-full text-[10px] font-semibold">
+    <form onSubmit={submit} className="mt-2 bg-tile/40 rounded-control p-2 space-y-2">
+      <div className="inline-flex p-0.5 bg-tile border border-hairline rounded-full text-xs font-semibold">
         {(["manual", "auto"] as const).map((m) => (
           <button
             key={m}
@@ -1574,8 +1574,8 @@ function NewKpiForm({ goalId }: { goalId: string }) {
             ))}
           </select>
           <input className={`${inputCls} w-24 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
-          <button type="submit" disabled={busy || !chosen} className="text-[11px] bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-lg disabled:opacity-50">Add</button>
-          <button type="button" onClick={reset} className="text-[11px] text-ink-2 px-1">Cancel</button>
+          <button type="submit" disabled={busy || !chosen} className="text-xs bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-control disabled:opacity-50">Add</button>
+          <button type="button" onClick={reset} className="text-xs text-ink-2 px-1">Cancel</button>
         </div>
       ) : (
         <div className="flex flex-wrap items-end gap-2">
@@ -1583,8 +1583,8 @@ function NewKpiForm({ goalId }: { goalId: string }) {
           <input className={`${inputCls} w-16 !py-1 !text-xs`} placeholder="unit" value={unit} onChange={(e) => setUnit(e.target.value)} />
           <input className={`${inputCls} w-20 !py-1 !text-xs`} placeholder="start" value={baseline} onChange={(e) => setBaseline(e.target.value)} />
           <input className={`${inputCls} w-20 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
-          <button type="submit" disabled={busy} className="text-[11px] bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-lg disabled:opacity-50">Add</button>
-          <button type="button" onClick={reset} className="text-[11px] text-ink-2 px-1">Cancel</button>
+          <button type="submit" disabled={busy} className="text-xs bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-control disabled:opacity-50">Add</button>
+          <button type="button" onClick={reset} className="text-xs text-ink-2 px-1">Cancel</button>
         </div>
       )}
     </form>

@@ -203,13 +203,13 @@ export default function RulesEditor({ initialRules, categories }: Props) {
   return (
     <div className="space-y-6">
       {/* Create form */}
-      <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
-        <h2 className="text-sm uppercase tracking-wider text-ink-2 mb-3">
+      <div className="rounded-panel-lg border-hairline bg-surface p-5">
+        <h2 className={`${TYPE.sectionHeader} mb-3`}>
           Add rule
         </h2>
         <div className="grid sm:grid-cols-[1fr_auto_1fr_auto] gap-3 items-end">
           <div>
-            <label className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">
+            <label className={`block ${TYPE.fieldLabel} mb-1`}>
               When description …
             </label>
             <input
@@ -218,13 +218,13 @@ export default function RulesEditor({ initialRules, categories }: Props) {
               placeholder={
                 newType === "regex" ? "/regex/" : newType === "starts_with" ? "WF DIRECT PAY" : "GUSTO"
               }
-              className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+              className="w-full bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
             />
           </div>
           <select
             value={newType}
             onChange={(e) => setNewType(e.target.value as Rule["pattern_type"])}
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
           >
             {PATTERN_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -235,7 +235,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
           <select
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
           >
             <option value="">Set category to…</option>
             {renderCategoryOptions()}
@@ -244,7 +244,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
             type="button"
             disabled={busy || !newPattern.trim() || !newCategory}
             onClick={createRule}
-            className="px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Add
           </button>
@@ -253,7 +253,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
       </div>
 
       {/* Seed + Apply CTAs */}
-      <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-4 space-y-3">
+      <div className="rounded-panel border-hairline bg-surface p-4 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="text-sm text-ink-1 font-medium">
@@ -269,7 +269,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
             type="button"
             disabled={busy}
             onClick={seedDefaults}
-            className="px-3 py-1.5 rounded-lg bg-orange/20 hover:bg-orange/30 border border-orange/40 text-orange text-sm font-medium disabled:opacity-40"
+            className="px-3 py-1.5 rounded-control bg-orange/20 hover:bg-orange/30 border border-orange/40 text-orange text-sm font-medium disabled:opacity-40"
           >
             {busy ? "Working…" : "Seed defaults"}
           </button>
@@ -286,22 +286,22 @@ export default function RulesEditor({ initialRules, categories }: Props) {
             type="button"
             disabled={busy}
             onClick={applyAll}
-            className={`px-3 py-1.5 rounded-lg border-[1.5px] border-outline bg-tile hover:bg-[#EFE6D4] ${TYPE.body} disabled:opacity-40`}
+            className={`px-3 py-1.5 rounded-control border-hairline bg-tile hover:bg-tile ${TYPE.body} disabled:opacity-40`}
           >
             {busy ? "Working…" : "Apply to uncategorized"}
           </button>
         </div>
       </div>
       {applyResult && (
-        <div className="rounded-card border border-revenue/30 bg-revenue-bg p-3 text-sm text-revenue">
+        <div className="rounded-panel border border-revenue/30 bg-revenue-bg p-3 text-sm text-revenue">
           {applyResult}
         </div>
       )}
 
       {/* Rule list */}
-      <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel overflow-hidden">
+      <div className="rounded-panel-lg border-hairline bg-surface overflow-hidden">
         <table className="w-full text-xs">
-          <thead className="bg-surface shadow-panel text-ink-2 uppercase tracking-wider">
+          <thead className={`bg-surface ${TYPE.tableHeader}`}>
             <tr>
               <th className="text-left px-3 py-2.5 w-8"></th>
               <th className="text-left px-3 py-2.5">Pattern</th>
@@ -334,14 +334,14 @@ export default function RulesEditor({ initialRules, categories }: Props) {
                       placeholder={
                         draft.pattern_type === "regex" ? "/regex/" : draft.pattern_type === "starts_with" ? "WF DIRECT PAY" : "GUSTO"
                       }
-                      className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1 text-xs text-ink-1 font-mono"
+                      className="w-full bg-ink border-hairline rounded px-2 py-1 text-xs text-ink-1 font-mono"
                     />
                   </td>
                   <td className="px-3 py-2">
                     <select
                       value={draft.pattern_type}
                       onChange={(e) => setDraft((d) => ({ ...d, pattern_type: e.target.value as Rule["pattern_type"] }))}
-                      className="w-full bg-ink border-[1.5px] border-outline rounded px-1 py-1 text-xs text-ink-1"
+                      className="w-full bg-ink border-hairline rounded px-1 py-1 text-xs text-ink-1"
                     >
                       {PATTERN_TYPES.map((t) => (
                         <option key={t} value={t}>
@@ -354,7 +354,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
                     <select
                       value={draft.category_id}
                       onChange={(e) => setDraft((d) => ({ ...d, category_id: e.target.value }))}
-                      className="w-full bg-ink border-[1.5px] border-outline rounded px-1 py-1 text-xs text-ink-1"
+                      className="w-full bg-ink border-hairline rounded px-1 py-1 text-xs text-ink-1"
                     >
                       {renderCategoryOptions()}
                     </select>
@@ -369,7 +369,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
                         const n = parseInt(e.target.value, 10);
                         setDraft((d) => ({ ...d, priority: Number.isNaN(n) ? 0 : n }));
                       }}
-                      className="w-16 bg-ink border-[1.5px] border-outline rounded px-1 py-1 text-xs text-ink-1 text-right font-mono"
+                      className="w-16 bg-ink border-hairline rounded px-1 py-1 text-xs text-ink-1 text-right font-mono"
                     />
                   </td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
@@ -399,7 +399,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
                   <td className="px-3 py-2 text-ink-2">{r.pattern_type.replace("_", " ")}</td>
                   <td className="px-3 py-2 text-ink-1">
                     {catById.get(r.category_id)?.display_name ?? r.category_id}
-                    <span className="text-[10px] text-ink-2 ml-1.5">
+                    <span className="text-xs text-ink-2 ml-1.5">
                       {catById.get(r.category_id)?.group_name}
                     </span>
                   </td>

@@ -215,21 +215,21 @@ export default function WeekPlanner({
   const dayOptions = days.map((d) => ({ iso: d.iso, label: d.label }));
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <h2 className={`${TYPE.sectionHeader} mb-4`}>
         This Week, by day
       </h2>
 
       {unscheduled.length > 0 && (
-        <div className="mb-6 rounded-lg border border-dashed border-outline bg-tile/40 p-4">
-          <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+        <div className="mb-6 rounded-control border border-dashed border-hairline bg-tile/40 p-4">
+          <h3 className="text-xs uppercase tracking-wider text-ink-3 mb-2">
             Not yet on a day ({unscheduled.length})
           </h3>
           <div className="space-y-1.5">
             {unscheduled.map((t) => (
               <div
                 key={t.id}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg border border-outline bg-surface shadow-panel"
+                className="flex items-center gap-3 px-3 py-2 rounded-control border border-hairline bg-surface"
               >
                 <DoneButton
                   task={t}
@@ -254,14 +254,14 @@ export default function WeekPlanner({
         {days.map((day) => (
           <div
             key={day.iso}
-            className={`rounded-lg border p-4 ${
+            className={`rounded-control border p-4 ${
               day.isToday
                 ? "border-orange/40 bg-orange-light/40"
-                : "border-outline bg-surface"
+                : "border-hairline bg-surface"
             }`}
           >
             <h3
-              className={`text-[11px] uppercase tracking-wider mb-2 ${
+              className={`text-xs uppercase tracking-wider mb-2 ${
                 day.isToday ? "text-orange font-semibold" : "text-ink-3"
               }`}
             >
@@ -277,7 +277,7 @@ export default function WeekPlanner({
                   return (
                     <div
                       key={ev.id}
-                      className="flex items-center gap-2 text-[11px] text-ink-2 pl-1"
+                      className="flex items-center gap-2 text-xs text-ink-2 pl-1"
                       title={ev.location ?? undefined}
                     >
                       <span className="font-mono text-ink-3 w-16 shrink-0">{eventTime(ev)}</span>
@@ -289,14 +289,14 @@ export default function WeekPlanner({
                       />
                       <span className="truncate min-w-0">{ev.title}</span>
                       {ev.isExternal && hasPrep && (
-                        <span className="ml-auto shrink-0 text-[10px] text-revenue">prep ✓</span>
+                        <span className="ml-auto shrink-0 text-xs text-revenue">prep ✓</span>
                       )}
                       {ev.isExternal && !hasPrep && future && (
                         <button
                           onClick={() => createPrep(ev.id, ev.title, day.iso)}
                           disabled={prepBusy === ev.id}
                           title="Add a prep task before this meeting"
-                          className="ml-auto shrink-0 text-[10px] text-ink-3 hover:text-orange border border-outline rounded px-1 py-0.5 disabled:opacity-40"
+                          className="ml-auto shrink-0 text-xs text-ink-3 hover:text-orange border border-hairline rounded px-1 py-0.5 disabled:opacity-40"
                         >
                           {prepBusy === ev.id ? "…" : "+ prep"}
                         </button>
@@ -312,7 +312,7 @@ export default function WeekPlanner({
                 {day.openBlocks.map((ob, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-2 text-[11px] text-revenue/90 pl-1"
+                    className="flex items-center gap-2 text-xs text-revenue/90 pl-1"
                     title="Open time in working hours. Fill it with a task's “+ time”"
                   >
                     <span className="font-mono text-revenue/70 w-16 shrink-0">
@@ -332,7 +332,7 @@ export default function WeekPlanner({
                 {day.tasks.map((t, i) => (
                   <div
                     key={t.id}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-outline bg-surface shadow-panel"
+                    className="flex items-center gap-2 px-3 py-2 rounded-control border border-hairline bg-surface"
                   >
                     <div className="flex flex-col -my-1">
                       <ReorderArrow
@@ -375,7 +375,7 @@ export default function WeekPlanner({
                       disabled={busyId === t.id}
                       aria-label="Remove from day"
                       title="Back to unscheduled"
-                      className="shrink-0 w-6 h-6 rounded text-ink-3 hover:text-ink-1 hover:bg-[#EFE6D4] disabled:opacity-40"
+                      className="shrink-0 w-6 h-6 rounded text-ink-3 hover:text-ink-1 hover:bg-tile disabled:opacity-40"
                     >
                       ×
                     </button>
@@ -408,7 +408,7 @@ function DoneButton({
       className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
         isDone
           ? "bg-revenue-bg border-revenue/30 text-revenue"
-          : "border-outline hover:border-orange/60"
+          : "border-hairline hover:border-orange/60"
       }`}
     >
       {isDone && (
@@ -431,17 +431,17 @@ function TaskMeta({
     <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
       <span className="text-sm text-ink-1 truncate min-w-[100px]">{task.title}</span>
       <span
-        className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(task.category)}`}
+        className={`inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${categoryBadgeClass(task.category)}`}
       >
         {categoryLabel(task.category)}
       </span>
       {task.project_id && projectName && (
-        <span className="text-[11px] text-orange/80 truncate max-w-[140px]">
+        <span className="text-xs text-orange/80 truncate max-w-[140px]">
           #{projectName}
         </span>
       )}
       {task.due_date && (
-        <span className="text-[11px] text-ink-2 font-mono">
+        <span className="text-xs text-ink-2 font-mono">
           {formatDueLabel(task.due_date)}
         </span>
       )}
@@ -469,7 +469,7 @@ function DayPicker({
       onChange={(e) => {
         if (e.target.value) onPick(e.target.value);
       }}
-      className="shrink-0 text-[11px] rounded border border-outline bg-tile text-ink-1 px-1.5 py-1 disabled:opacity-40 max-w-[120px]"
+      className="shrink-0 text-xs rounded border border-hairline bg-tile text-ink-1 px-1.5 py-1 disabled:opacity-40 max-w-[120px]"
       aria-label="Move to day"
     >
       {placeholder && value === null && (
@@ -521,7 +521,7 @@ function ScheduleCell({
     return (
       <span className="shrink-0 inline-flex items-center gap-1">
         <span
-          className={`text-[10px] font-mono whitespace-nowrap ${conflict ? "text-expense" : "text-orange"}`}
+          className={`text-xs font-mono whitespace-nowrap ${conflict ? "text-expense" : "text-orange"}`}
           title={conflict ? "Overlaps a meeting. Move the block" : "On your calendar"}
         >
           {conflict && "⚠ "}
@@ -532,7 +532,7 @@ function ScheduleCell({
           disabled={busy}
           aria-label="Remove from calendar"
           title="Remove from calendar"
-          className="w-5 h-5 rounded text-ink-3 hover:text-expense hover:bg-[#EFE6D4] disabled:opacity-40 text-xs"
+          className="w-5 h-5 rounded text-ink-3 hover:text-expense hover:bg-tile disabled:opacity-40 text-xs"
         >
           ⊘
         </button>
@@ -545,7 +545,7 @@ function ScheduleCell({
       <button
         onClick={onOpen}
         disabled={busy}
-        className="shrink-0 text-[11px] text-ink-2 hover:text-orange border border-outline rounded px-1.5 py-0.5 hover:bg-[#EFE6D4] disabled:opacity-40"
+        className="shrink-0 text-xs text-ink-2 hover:text-orange border border-hairline rounded px-1.5 py-0.5 hover:bg-tile disabled:opacity-40"
         title="Schedule a time block"
       >
         + time
@@ -559,13 +559,13 @@ function ScheduleCell({
         type="time"
         value={time}
         onChange={(e) => setTime(e.target.value)}
-        className="text-[11px] rounded border border-outline bg-tile text-ink-1 px-1 py-0.5"
+        className="text-xs rounded border border-hairline bg-tile text-ink-1 px-1 py-0.5"
         aria-label="Start time"
       />
       <select
         value={dur}
         onChange={(e) => setDur(Number(e.target.value))}
-        className="text-[11px] rounded border border-outline bg-tile text-ink-1 px-1 py-0.5"
+        className="text-xs rounded border border-hairline bg-tile text-ink-1 px-1 py-0.5"
         aria-label="Duration"
       >
         <option value={30}>30m</option>
@@ -578,7 +578,7 @@ function ScheduleCell({
           if (Number.isFinite(h) && Number.isFinite(m)) onSchedule(h * 60 + m, dur);
         }}
         disabled={busy}
-        className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-orange/15 text-orange border border-orange/30 hover:bg-orange/25 disabled:opacity-40"
+        className="text-xs font-medium px-1.5 py-0.5 rounded bg-orange/15 text-orange border border-orange/30 hover:bg-orange/25 disabled:opacity-40"
       >
         Add
       </button>
@@ -586,7 +586,7 @@ function ScheduleCell({
         onClick={onClose}
         disabled={busy}
         aria-label="Cancel"
-        className="w-5 h-5 rounded text-ink-3 hover:text-ink-1 hover:bg-[#EFE6D4] disabled:opacity-40"
+        className="w-5 h-5 rounded text-ink-3 hover:text-ink-1 hover:bg-tile disabled:opacity-40"
       >
         ×
       </button>

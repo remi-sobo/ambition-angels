@@ -118,7 +118,7 @@ function Chip({ children, tone = "neutral" }: { children: React.ReactNode; tone?
     warn: "bg-orange-light text-orange-dark",
   };
   return (
-    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${tones[tone]}`}>
+    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${tones[tone]}`}>
       {children}
     </span>
   );
@@ -127,7 +127,7 @@ function Chip({ children, tone = "neutral" }: { children: React.ReactNode; tone?
 function Notice({ text }: { text: string | null }) {
   if (!text) return null;
   return (
-    <p className="text-[12px] text-orange-dark bg-orange-light rounded-lg px-3 py-2 mt-2">{text}</p>
+    <p className="text-xs text-orange-dark bg-orange-light rounded-control px-3 py-2 mt-2">{text}</p>
   );
 }
 
@@ -153,11 +153,11 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
   const gate = card.last_gate_result;
 
   return (
-    <div className="mt-3 border-t border-outline pt-3 space-y-3 text-[13px]">
+    <div className="mt-3 border-t border-hairline pt-3 space-y-3 text-sm">
       {gate && !gate.passed && (
-        <div className="bg-orange-light rounded-lg px-3 py-2">
-          <p className="font-semibold text-orange-dark text-[12px] mb-1">Machine gates failing:</p>
-          <ul className="text-orange-dark text-[12px] list-disc pl-4">
+        <div className="bg-orange-light rounded-control px-3 py-2">
+          <p className="font-semibold text-orange-dark text-xs mb-1">Machine gates failing:</p>
+          <ul className="text-orange-dark text-xs list-disc pl-4">
             {gate.failures.map((f, i) => (
               <li key={i}>{f.detail}</li>
             ))}
@@ -166,12 +166,12 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
       )}
 
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2 mb-1">
+        <p className="text-xs font-semibold uppercase tracking-wider text-ink-2 mb-1">
           The Day {card.reading_grade != null && <span className="normal-case">· reading grade {card.reading_grade}</span>}
         </p>
         {isDraft ? (
           <textarea
-            className="w-full border border-outline rounded-lg px-3 py-2 text-[13px] min-h-32 bg-surface"
+            className="w-full border border-hairline rounded-control px-3 py-2 text-sm min-h-32 bg-surface"
             value={value("day_vignette")}
             onChange={(e) => setEdits((p) => ({ ...p, day_vignette: e.target.value }))}
           />
@@ -185,12 +185,12 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
           const rendered = key === "clue_6" || key === "clue_7";
           return (
             <div key={key}>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-2">
                 {i + 1}. {CLUE_LABELS[i]}
               </p>
               {isDraft && !rendered ? (
                 <textarea
-                  className="w-full border border-outline rounded-lg px-3 py-1.5 text-[13px] min-h-10 bg-surface"
+                  className="w-full border border-hairline rounded-control px-3 py-1.5 text-sm min-h-10 bg-surface"
                   value={value(key)}
                   onChange={(e) => setEdits((p) => ({ ...p, [key]: e.target.value }))}
                 />
@@ -209,7 +209,7 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
           <button
             onClick={save}
             disabled={busy !== null}
-            className="text-[12px] font-semibold bg-ink-1 text-surface px-4 py-1.5 rounded-full disabled:opacity-50"
+            className="text-xs font-semibold bg-ink-1 text-surface px-4 py-1.5 rounded-full disabled:opacity-50"
           >
             {busy === "save" ? "Saving…" : "Save edits"}
           </button>
@@ -222,7 +222,7 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
               }
               disabled={busy !== null || dirty}
               title={dirty ? "Save your edits first" : "You read it. It ships."}
-              className="text-[12px] font-semibold bg-revenue text-white px-4 py-1.5 rounded-full disabled:opacity-50"
+              className="text-xs font-semibold bg-revenue text-white px-4 py-1.5 rounded-full disabled:opacity-50"
             >
               {busy === "approve" ? "Approving…" : "Approve: I read this"}
             </button>
@@ -231,7 +231,7 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
                 call("generate", "/api/admin/careers/generate", "POST", { soc_code: card.soc_code })
               }
               disabled={busy !== null}
-              className="text-[12px] font-semibold bg-tile text-ink-1 px-4 py-1.5 rounded-full disabled:opacity-50"
+              className="text-xs font-semibold bg-tile text-ink-1 px-4 py-1.5 rounded-full disabled:opacity-50"
             >
               {busy === "generate" ? GENERATING_LABEL : card.day_vignette ? "Regenerate" : "Generate draft"}
             </button>
@@ -245,7 +245,7 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
                 if (ok) void call("delete", "/api/admin/careers/review", "POST", { soc_code: card.soc_code, action: "delete" });
               }}
               disabled={busy !== null}
-              className="text-[12px] text-ink-2 px-2 py-1.5 hover:text-ink-1"
+              className="text-xs text-ink-2 px-2 py-1.5 hover:text-ink-1"
             >
               Remove
             </button>
@@ -253,7 +253,7 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
         )}
         {card.status === "approved" && (
           <>
-            <span className="text-[12px] text-ink-2">
+            <span className="text-xs text-ink-2">
               Approved by {card.reviewed_by}
               {card.reviewed_at ? ` · ${new Date(card.reviewed_at).toLocaleDateString()}` : ""}
             </span>
@@ -262,7 +262,7 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
                 call("unapprove", "/api/admin/careers/review", "POST", { soc_code: card.soc_code, action: "unapprove" })
               }
               disabled={busy !== null}
-              className="text-[12px] font-semibold bg-tile text-ink-1 px-4 py-1.5 rounded-full disabled:opacity-50"
+              className="text-xs font-semibold bg-tile text-ink-1 px-4 py-1.5 rounded-full disabled:opacity-50"
             >
               Unapprove to edit
             </button>
@@ -271,7 +271,7 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
                 call("retire", "/api/admin/careers/review", "POST", { soc_code: card.soc_code, action: "retire" })
               }
               disabled={busy !== null}
-              className="text-[12px] text-ink-2 px-2 py-1.5 hover:text-ink-1"
+              className="text-xs text-ink-2 px-2 py-1.5 hover:text-ink-1"
             >
               Retire
             </button>
@@ -283,7 +283,7 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
               call("unapprove", "/api/admin/careers/review", "POST", { soc_code: card.soc_code, action: "unapprove" })
             }
             disabled={busy !== null}
-            className="text-[12px] font-semibold bg-tile text-ink-1 px-4 py-1.5 rounded-full disabled:opacity-50"
+            className="text-xs font-semibold bg-tile text-ink-1 px-4 py-1.5 rounded-full disabled:opacity-50"
           >
             Back to draft
           </button>
@@ -356,11 +356,11 @@ export function CareersControls({
   }, [occupations, cardBySoc, search, zone]);
 
   const CatalogRow = ({ card, occ }: { card: CardView; occ: OccupationView }) => (
-    <div className="bg-surface shadow-panel border-[1.5px] border-outline rounded-xl px-4 py-3">
+    <div className="bg-surface border-hairline rounded-panel px-4 py-3">
       <button className="w-full text-left" onClick={() => setOpen(open === card.soc_code ? null : card.soc_code)}>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-ink-1 text-[13px]">{occ.title}</span>
-          <span className="text-[11px] text-ink-2 tabular-nums">{card.soc_code}</span>
+          <span className="font-semibold text-ink-1 text-sm">{occ.title}</span>
+          <span className="text-xs text-ink-2 tabular-nums">{card.soc_code}</span>
           {card.field && <Chip>{card.field}</Chip>}
           <Chip>JZ {occ.job_zone}</Chip>
           {card.status === "draft" && !card.day_vignette && <Chip tone="warn">queued</Chip>}
@@ -371,7 +371,7 @@ export function CareersControls({
           )}
           {card.status === "approved" && <Chip tone="good">approved</Chip>}
           {card.status === "retired" && <Chip>retired</Chip>}
-          <span className="ml-auto text-[12px] text-ink-2 tabular-nums">{fmtPay(occ.pay_median)}</span>
+          <span className="ml-auto text-xs text-ink-2 tabular-nums">{fmtPay(occ.pay_median)}</span>
         </div>
       </button>
       {card.status === "draft" && !card.day_vignette && open !== card.soc_code && (
@@ -379,7 +379,7 @@ export function CareersControls({
           <button
             onClick={() => generateOne(card.soc_code)}
             disabled={anythingBusy}
-            className="text-[12px] font-semibold bg-ink-1 text-surface px-4 py-1.5 rounded-full disabled:opacity-50"
+            className="text-xs font-semibold bg-ink-1 text-surface px-4 py-1.5 rounded-full disabled:opacity-50"
           >
             {busy === `gen-${card.soc_code}` ? GENERATING_LABEL : "Generate draft"}
           </button>
@@ -407,27 +407,27 @@ export function CareersControls({
   return (
     <div className="space-y-8">
       <section>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2 mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-ink-2 mb-2">
           Catalog coverage: a kid strongest in each trait needs {COVERAGE_TARGET}+ approved cards
         </p>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {coverage.map(({ letter, approved: a, accessible, pipeline: p }) => (
             <div
               key={letter}
-              className={`rounded-xl border-[1.5px] px-3 py-2 ${
+              className={`rounded-panel px-3 py-2 ${
                 a >= COVERAGE_TARGET && accessible >= 3
-                  ? "border-outline bg-surface"
+                  ? "border-hairline bg-surface"
                   : "border-orange/60 bg-orange-light"
               }`}
             >
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-2">
                 {LETTER_LABELS[letter]} ({letter})
               </p>
               <p className="text-[15px] font-bold text-ink-1 tabular-nums">
                 {a}
-                <span className="text-[11px] font-semibold text-ink-2"> / {COVERAGE_TARGET}</span>
+                <span className="text-xs font-semibold text-ink-2"> / {COVERAGE_TARGET}</span>
               </p>
-              <p className="text-[10px] text-ink-2 tabular-nums">
+              <p className="text-xs text-ink-2 tabular-nums">
                 {accessible}/3 no-degree{p > 0 ? ` · +${p} queued` : ""}
               </p>
             </div>
@@ -436,10 +436,10 @@ export function CareersControls({
       </section>
 
       {(notice || batchProgress) && (
-        <div className="bg-surface shadow-panel border-[1.5px] border-outline rounded-xl px-4 py-3">
+        <div className="bg-surface border-hairline rounded-panel px-4 py-3">
           {batchProgress && (
-            <p className="text-[13px] font-semibold text-ink-1">
-              <span className="inline-block w-3.5 h-3.5 border-2 border-outline border-t-ink-1 rounded-full animate-spin align-[-2px] mr-2" />
+            <p className="text-sm font-semibold text-ink-1">
+              <span className="inline-block w-3.5 h-3.5 border-2 border-hairline border-t-ink-1 rounded-full animate-spin align-[-2px] mr-2" />
               {batchProgress}
             </p>
           )}
@@ -450,14 +450,14 @@ export function CareersControls({
       {drafts.length > 0 && (
         <section>
           <div className="flex flex-wrap items-center gap-3 mb-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink-2">
               In the pipeline ({drafts.length})
             </p>
             {queued.length > 1 && (
               <button
                 onClick={generateAllQueued}
                 disabled={anythingBusy}
-                className="text-[12px] font-semibold bg-ink-1 text-surface px-4 py-1.5 rounded-full disabled:opacity-50"
+                className="text-xs font-semibold bg-ink-1 text-surface px-4 py-1.5 rounded-full disabled:opacity-50"
               >
                 Generate all queued ({queued.length}). About {Math.ceil(queued.length * 0.6)} min
               </button>
@@ -473,7 +473,7 @@ export function CareersControls({
 
       {approved.length > 0 && (
         <section>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2 mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-2 mb-2">
             Approved: live in the catalog ({approved.length})
           </p>
           <div className="space-y-2">
@@ -485,7 +485,7 @@ export function CareersControls({
       )}
 
       <section>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2 mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-ink-2 mb-2">
           Imported occupations: pick the next card
         </p>
         <div className="flex flex-wrap gap-2 mb-3">
@@ -494,13 +494,13 @@ export function CareersControls({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search title or SOC code…"
-            className="border border-outline rounded-full px-4 py-1.5 text-[13px] bg-surface w-64"
+            className="border border-hairline rounded-full px-4 py-1.5 text-sm bg-surface w-64"
           />
           {[null, 1, 2, 3, 4, 5].map((z) => (
             <button
               key={z ?? "all"}
               onClick={() => setZone(z)}
-              className={`text-[12px] font-semibold px-3 py-1.5 rounded-full ${
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
                 zone === z ? "bg-ink-1 text-surface" : "bg-tile text-ink-2"
               }`}
             >
@@ -512,30 +512,30 @@ export function CareersControls({
           {results.map((o) => (
             <div
               key={o.soc_code}
-              className="bg-surface border-[1.5px] border-outline rounded-xl px-4 py-2 flex flex-wrap items-center gap-2"
+              className="bg-surface border-hairline rounded-panel px-4 py-2 flex flex-wrap items-center gap-2"
             >
-              <span className="font-semibold text-ink-1 text-[13px]">{o.title}</span>
-              <span className="text-[11px] text-ink-2 tabular-nums">{o.soc_code}</span>
+              <span className="font-semibold text-ink-1 text-sm">{o.title}</span>
+              <span className="text-xs text-ink-2 tabular-nums">{o.soc_code}</span>
               <Chip>JZ {o.job_zone}</Chip>
               <Chip>{dominantLetters(o.riasec)}</Chip>
-              <span className="text-[12px] text-ink-2 tabular-nums">{fmtPay(o.pay_median)}</span>
+              <span className="text-xs text-ink-2 tabular-nums">{fmtPay(o.pay_median)}</span>
               <span className="ml-auto" />
               <button
                 onClick={() => call(`q-${o.soc_code}`, "/api/admin/careers/queue", "POST", { soc_code: o.soc_code })}
                 disabled={anythingBusy}
-                className="text-[12px] font-semibold bg-tile text-ink-1 px-4 py-1.5 rounded-full hover:bg-[#EFE6D4] disabled:opacity-50"
+                className="text-xs font-semibold bg-tile text-ink-1 px-4 py-1.5 rounded-full hover:bg-tile disabled:opacity-50"
               >
                 {busy === `q-${o.soc_code}` ? "Adding…" : "Add to queue"}
               </button>
             </div>
           ))}
-          {results.length === 0 && <p className="text-[13px] text-ink-2">No matches.</p>}
+          {results.length === 0 && <p className="text-sm text-ink-2">No matches.</p>}
         </div>
       </section>
 
       {retired.length > 0 && (
         <section>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2 mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-2 mb-2">
             Retired ({retired.length})
           </p>
           <div className="space-y-2">

@@ -27,7 +27,7 @@ function ageDays(capturedOn: string): number {
 function FreshnessBadge({ m }: { m: CatalogMetric }) {
   if (!m.latest) {
     return (
-      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense whitespace-nowrap">
+      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense whitespace-nowrap">
         Never updated
       </span>
     );
@@ -35,14 +35,14 @@ function FreshnessBadge({ m }: { m: CatalogMetric }) {
   const age = ageDays(m.latest.captured_on);
   if (m.stale) {
     return (
-      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense whitespace-nowrap">
+      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense whitespace-nowrap">
         Stale · {age}d
       </span>
     );
   }
   return (
     <span
-      className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-revenue-bg text-revenue whitespace-nowrap"
+      className="text-xs font-semibold px-2 py-0.5 rounded-full bg-revenue-bg text-revenue whitespace-nowrap"
       title={`${m.cadence} cadence. Due after ${staleAfter(m.cadence)} days`}
     >
       {age === 0 ? "Today" : `${age}d ago`}
@@ -84,7 +84,7 @@ export default async function KpisPage({
   );
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1200px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Metric Catalog"
         subtitle="Every number the org runs on: one definition, one source, one owner, freshness enforced"
@@ -119,7 +119,7 @@ export default async function KpisPage({
         />
       </div>
 
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
         {rows.length === 0 ? (
           view === "stale" ? (
             <p className="p-5 text-sm text-ink-2">Nothing is stale. Every metric is inside its cadence.</p>
@@ -145,11 +145,11 @@ export default async function KpisPage({
                     <span className="text-sm font-medium text-ink-1 truncate" title={m.description ?? undefined}>
                       {m.name}
                     </span>
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-3 whitespace-nowrap">
+                    <span className="text-xs font-semibold text-ink-3 whitespace-nowrap">
                       {m.department ?? "—"} · {m.source_kind === "computed" ? "auto" : "manual"}
                     </span>
                   </div>
-                  <div className="text-[11px] text-ink-3">
+                  <div className="text-xs text-ink-3">
                     {m.owner_id ? (names[m.owner_id] ?? "—") : "No owner"} · {m.cadence}
                   </div>
                 </div>
@@ -157,7 +157,7 @@ export default async function KpisPage({
                 <span className="text-sm font-semibold text-ink-1 tabular-nums whitespace-nowrap w-24 text-right">
                   {m.latest ? fmtValue(m.unit, m.latest.value) : "—"}
                 </span>
-                <span className="text-[12px] tabular-nums whitespace-nowrap w-24 text-right hidden md:inline">
+                <span className="text-xs tabular-nums whitespace-nowrap w-24 text-right hidden md:inline">
                   <TargetCell m={m} />
                 </span>
                 <FreshnessBadge m={m} />
@@ -165,7 +165,7 @@ export default async function KpisPage({
                   <MetricUpdateForm metricId={m.id} />
                 ) : (
                   <span
-                    className="text-[11px] text-ink-3 whitespace-nowrap w-[4.5rem] text-right"
+                    className="text-xs text-ink-3 whitespace-nowrap w-[4.5rem] text-right"
                     title="Captured by the daily cron"
                   >
                     auto

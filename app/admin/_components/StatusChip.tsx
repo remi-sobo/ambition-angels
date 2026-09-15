@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { STATUS_CHIP, categoryDot, scoreToStatus, type Status } from "@/lib/admin/status";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * The one pill primitive for the BloomOS admin (spec Phase 3). Every status
@@ -11,8 +12,11 @@ import { STATUS_CHIP, categoryDot, scoreToStatus, type Status } from "@/lib/admi
  * - <ScoreBadge score={82} />                                       (tiered)
  */
 
-const BASE =
-  "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold text-ink-1 align-middle";
+// Visual System V3 §4: the 999px radius survives here because a status IS one
+// of the sanctioned pills. The label moved to the §2 badge role (12px/600 —
+// the old 11px sat under the readable floor) and now takes each status's
+// AA-verified `text` step instead of a flat ink-1.
+const BASE = `inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 align-middle ${TYPE.badge}`;
 
 export function StatusChip({
   status,
@@ -27,7 +31,7 @@ export function StatusChip({
 }) {
   const s = STATUS_CHIP[status];
   return (
-    <span className={`${BASE} ${s.bg} ${className}`}>
+    <span className={`${BASE} ${s.bg} ${s.text} ${className}`}>
       {dot && <span aria-hidden className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.dot}`} />}
       <span className="truncate">{children}</span>
     </span>
@@ -48,7 +52,7 @@ export function CategoryTag({
   className?: string;
 }) {
   return (
-    <span className={`${BASE} bg-status-neutral-bg ${className}`}>
+    <span className={`${BASE} bg-status-neutral-bg text-ink-2 ${className}`}>
       <span
         aria-hidden
         className="w-1.5 h-1.5 rounded-full shrink-0"

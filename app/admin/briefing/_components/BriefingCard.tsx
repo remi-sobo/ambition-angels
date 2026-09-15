@@ -56,7 +56,7 @@ export default function BriefingCard({ item }: { item: BriefingItem }) {
 
   if (resolved) {
     return (
-      <div className="flex items-center justify-between gap-3 rounded-card border-[1.5px] border-outline bg-tile px-4 py-3 text-sm text-ink-2">
+      <div className="flex items-center justify-between gap-3 rounded-panel border-hairline bg-tile px-4 py-3 text-sm text-ink-2">
         <span>
           {RESOLVED_LABEL[resolved] ?? "Done"} · <span className="text-ink-1 font-medium">{item.title}</span>
         </span>
@@ -74,7 +74,7 @@ export default function BriefingCard({ item }: { item: BriefingItem }) {
   const actionable = item.decisions.filter((d) => d !== "open");
 
   return (
-    <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-4 sm:p-5">
+    <div className="rounded-panel border-hairline bg-surface p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
@@ -82,7 +82,7 @@ export default function BriefingCard({ item }: { item: BriefingItem }) {
               {SEVERITY_LABEL[item.severity]}
             </StatusChip>
             {item.metric && (
-              <span className="text-[11px] font-mono tabular-nums text-ink-2">{item.metric}</span>
+              <span className="text-xs font-mono tabular-nums text-ink-2">{item.metric}</span>
             )}
           </div>
           <h3 className="font-heading font-semibold text-[15px] text-ink-1 leading-snug">
@@ -90,7 +90,7 @@ export default function BriefingCard({ item }: { item: BriefingItem }) {
           </h3>
           <p className="text-sm text-ink-2 mt-0.5">{item.detail}</p>
           {item.staleFlag && (
-            <p className="text-[11px] text-status-watch-text mt-1.5">
+            <p className="text-xs text-status-watch-text mt-1.5">
               ⚠ Computed off {item.dataAgeDays ?? "?"}-day-old data. Re-sync to confirm.
             </p>
           )}
@@ -111,7 +111,7 @@ export default function BriefingCard({ item }: { item: BriefingItem }) {
             key={d}
             onClick={() => decide(d)}
             disabled={busy}
-            className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+            className="text-xs font-semibold text-ink-1 bg-tile hover:bg-tile border-hairline px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
           >
             {DECISION_LABEL[d] ?? d}
           </button>

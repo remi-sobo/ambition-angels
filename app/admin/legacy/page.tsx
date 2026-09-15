@@ -229,7 +229,7 @@ const PAGE_SIZE = 25;
 // ── Skeleton ───────────────────────────────────────────────────────────────
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-tile rounded-lg ${className}`} />;
+  return <div className={`animate-pulse bg-tile rounded-control ${className}`} />;
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────
@@ -453,7 +453,7 @@ export default function AdminPage() {
           backgroundSize: "22px 22px",
         }}
       >
-        <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-10 w-full max-w-sm shadow-2xl">
+        <div className="bg-tile border-hairline rounded-panel-lg p-10 w-full max-w-sm shadow-2xl">
           <div className="font-display font-black text-3xl text-ink-1 mb-1 tracking-tight uppercase">BloomOS</div>
           <div className={`${TYPE.bodyMuted} mb-8`}>The operating system for nonprofits</div>
           {magicSent ? (
@@ -469,7 +469,7 @@ export default function AdminPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email"
                 autoComplete="email"
-                className={`bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/50`}
+                className={`bg-tile border-hairline rounded-panel px-4 py-3 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/50`}
                 autoFocus
               />
               <input
@@ -478,13 +478,13 @@ export default function AdminPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
                 autoComplete="current-password"
-                className={`bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/50`}
+                className={`bg-tile border-hairline rounded-panel px-4 py-3 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/50`}
               />
               {loginError && <p className="text-expense text-xs">{loginError}</p>}
               <button
                 type="submit"
                 disabled={loggingIn}
-                className="bg-orange hover:bg-orange-dark text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
+                className="bg-orange hover:bg-orange-dark text-white font-semibold py-3 rounded-panel transition-colors disabled:opacity-60"
               >
                 {loggingIn ? "Signing in…" : "Sign In"}
               </button>
@@ -514,7 +514,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-ink">
 
       {/* ── HEADER ── */}
-      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3 sticky admin-sticky-top z-30 flex-wrap">
+      <div className="bg-tile border-b border-hairline px-4 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3 sticky admin-sticky-top z-30 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
           <span className={`${TYPE.cardTitle} sm:text-base`}>Admin Dashboard</span>
           {lastUpdated && (
@@ -537,7 +537,7 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => exportSubmissionsCSV(filtered)}
-            className="text-xs font-semibold text-ink-2 bg-tile border-[1.5px] border-outline px-3 sm:px-4 py-2 rounded-full hover:bg-[#EFE6D4] transition-colors"
+            className="text-xs font-semibold text-ink-2 bg-tile border-hairline px-3 sm:px-4 py-2 rounded-full hover:bg-tile transition-colors"
           >
             <span className="sm:hidden">CSV</span>
             <span className="hidden sm:inline">Export CSV</span>
@@ -554,13 +554,13 @@ export default function AdminPage() {
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-8">
 
         {error && (
-          <div className="bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
+          <div className="bg-expense-bg border border-expense/30 rounded-panel px-5 py-3 text-expense text-sm">
             {error}
           </div>
         )}
 
         {/* ── MAIN VIEW TABS ── */}
-        <div className="flex gap-1 border-b border-outline">
+        <div className="flex gap-1 border-b border-hairline">
           {([
             { id: "overview", label: "Overview" },
             { id: "analytics", label: "Analytics" },
@@ -588,7 +588,7 @@ export default function AdminPage() {
           <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Career Quiz</p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+            <div className="bg-tile border-hairline rounded-panel-lg p-6">
               {loading || !stats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -600,7 +600,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+            <div className="bg-tile border-hairline rounded-panel-lg p-6">
               {loading || !stats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -612,7 +612,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+            <div className="bg-tile border-hairline rounded-panel-lg p-6">
               {loading || !stats ? (
                 <><Skeleton className="h-10 w-28 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -626,7 +626,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+            <div className="bg-tile border-hairline rounded-panel-lg p-6">
               {loading || !stats ? (
                 <><Skeleton className="h-7 w-full mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -644,7 +644,7 @@ export default function AdminPage() {
           <p className="text-xs font-bold text-ink-3 uppercase tracking-widest mb-3">Donations</p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+            <div className="bg-tile border-hairline rounded-panel-lg p-6">
               {loading || !donationStats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -658,7 +658,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+            <div className="bg-tile border-hairline rounded-panel-lg p-6">
               {loading || !donationStats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -672,7 +672,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+            <div className="bg-tile border-hairline rounded-panel-lg p-6">
               {loading || !donationStats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -686,7 +686,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+            <div className="bg-tile border-hairline rounded-panel-lg p-6">
               {loading || !donationStats ? (
                 <><Skeleton className="h-10 w-20 mb-2" /><Skeleton className="h-3 w-32" /></>
               ) : (
@@ -702,14 +702,14 @@ export default function AdminPage() {
         </div>
 
         {/* ── ROW 2: SUBMISSIONS TABLE ── */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-6 py-5 border-b border-outline flex flex-col sm:flex-row sm:items-center gap-4">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-6 py-5 border-b border-hairline flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
               <h2 className={TYPE.sectionTitle}>Career Quiz Submissions</h2>
               <p className="text-ink-2 text-xs mt-0.5">{filtered.length} result{filtered.length !== 1 ? "s" : ""} · {totalPages} page{totalPages !== 1 ? "s" : ""}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex rounded-lg overflow-hidden border-[1.5px] border-outline">
+              <div className="flex rounded-control overflow-hidden border-hairline">
                 {(["week", "month", "all"] as const).map((f) => (
                   <button
                     key={f}
@@ -725,7 +725,7 @@ export default function AdminPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search name, email, location…"
-                className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-xs placeholder-ink-3 focus:outline-none focus:border-orange/40 w-52"
+                className="bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-xs placeholder-ink-3 focus:outline-none focus:border-orange/40 w-52"
               />
             </div>
           </div>
@@ -752,7 +752,7 @@ export default function AdminPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={`font-semibold ${TYPE.body} truncate`}>{s.teen_name || "Anonymous"}</span>
                           {s.audience && (
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>{s.audience}</span>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>{s.audience}</span>
                           )}
                         </div>
                         <div className="text-xs text-ink-2 mt-0.5">
@@ -768,13 +768,13 @@ export default function AdminPage() {
                     {s.career_matches && s.career_matches.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {s.career_matches.slice(0, 3).map((c, i) => (
-                          <span key={i} className="text-[11px] bg-tile border-[1.5px] border-outline text-ink-2 px-2 py-0.5 rounded-full">{c.title}</span>
+                          <span key={i} className="text-xs bg-tile border-hairline text-ink-2 px-2 py-0.5 rounded-full">{c.title}</span>
                         ))}
                       </div>
                     )}
                     {open && (
-                      <div className="mt-4 pt-4 border-t border-outline space-y-3">
-                        <div className="text-[10px] font-bold text-orange uppercase tracking-widest">Quiz Answers</div>
+                      <div className="mt-4 pt-4 border-t border-hairline space-y-3">
+                        <div className="text-xs font-bold text-orange uppercase tracking-widest">Quiz Answers</div>
                         <div className="space-y-1.5 text-xs">
                           {[
                             ["Email", s.email],
@@ -795,15 +795,15 @@ export default function AdminPage() {
                         </div>
                         {s.career_matches && s.career_matches.length > 0 && (
                           <>
-                            <div className="text-[10px] font-bold text-orange uppercase tracking-widest pt-2">All Matches</div>
+                            <div className="text-xs font-bold text-orange uppercase tracking-widest pt-2">All Matches</div>
                             <div className="space-y-1.5">
                               {s.career_matches.map((c, i) => (
-                                <div key={i} className="bg-tile rounded-lg px-2.5 py-1.5">
+                                <div key={i} className="bg-tile rounded-control px-2.5 py-1.5">
                                   <div className="flex items-center justify-between gap-2">
                                     <span className="text-xs font-semibold text-ink-1 truncate">{i + 1}. {c.title}</span>
-                                    <span className="text-[11px] text-orange font-semibold whitespace-nowrap flex-shrink-0">{c.salary}</span>
+                                    <span className="text-xs text-orange font-semibold whitespace-nowrap flex-shrink-0">{c.salary}</span>
                                   </div>
-                                  {c.why && <div className="text-[11px] text-ink-2 mt-0.5 italic">{c.why}</div>}
+                                  {c.why && <div className="text-xs text-ink-2 mt-0.5 italic">{c.why}</div>}
                                 </div>
                               ))}
                             </div>
@@ -820,7 +820,7 @@ export default function AdminPage() {
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm min-w-[900px]">
               <thead>
-                <tr className="border-b border-outline">
+                <tr className="border-b border-hairline">
                   {["Date", "Name", "Email", "Audience", "Age", "Location", "Top 3 Careers", "💰 Score"].map((h) => (
                     <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
                   ))}
@@ -845,7 +845,7 @@ export default function AdminPage() {
                       <tr
                         key={s.id}
                         onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                        className={`border-b border-hairline cursor-pointer transition-colors ${expandedId === s.id ? "bg-orange/10" : "hover:bg-[#EFE6D4]"}`}
+                        className={`border-b border-hairline cursor-pointer transition-colors ${expandedId === s.id ? "bg-orange/10" : "hover:bg-tile"}`}
                       >
                         <td className="px-5 py-4 text-ink-2 whitespace-nowrap text-xs">{fmtDate(s.created_at)}</td>
                         <td className="px-5 py-4 font-medium text-ink-1 whitespace-nowrap">{s.teen_name || <span className="text-ink-3">—</span>}</td>
@@ -860,7 +860,7 @@ export default function AdminPage() {
                         <td className="px-5 py-4">
                           <div className="flex flex-wrap gap-1">
                             {s.career_matches?.slice(0, 3).map((c, i) => (
-                              <span key={i} className="text-xs bg-tile border-[1.5px] border-outline text-ink-2 px-2 py-0.5 rounded-full whitespace-nowrap">{c.title}</span>
+                              <span key={i} className="text-xs bg-tile border-hairline text-ink-2 px-2 py-0.5 rounded-full whitespace-nowrap">{c.title}</span>
                             )) ?? <span className="text-ink-3">—</span>}
                           </div>
                         </td>
@@ -898,7 +898,7 @@ export default function AdminPage() {
                                   ) : null)}
                                 </div>
                                 {s.email && (
-                                  <div className="mt-4 pt-4 border-t border-outline">
+                                  <div className="mt-4 pt-4 border-t border-hairline">
                                     <div className="text-xs font-bold text-orange uppercase tracking-widest mb-1">Email Sent To</div>
                                     <div className="text-ink-2 text-xs">{s.email}</div>
                                   </div>
@@ -908,7 +908,7 @@ export default function AdminPage() {
                                 <div className="text-xs font-bold text-orange uppercase tracking-widest mb-3">All Career Matches</div>
                                 <div className="space-y-2">
                                   {s.career_matches?.map((c, i) => (
-                                    <div key={i} className="bg-tile rounded-lg px-3 py-2">
+                                    <div key={i} className="bg-tile rounded-control px-3 py-2">
                                       <div className="flex items-start justify-between gap-2">
                                         <div>
                                           <span className="text-xs font-bold text-ink-3 mr-2">{i + 1}.</span>
@@ -933,18 +933,18 @@ export default function AdminPage() {
           </div>
 
           {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-outline flex items-center justify-between">
+            <div className="px-6 py-4 border-t border-hairline flex items-center justify-between">
               <span className="text-xs text-ink-2">Page {page} of {totalPages} · {filtered.length} rows</span>
               <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="text-xs font-semibold text-ink-2 bg-tile border-[1.5px] border-outline px-3 py-1.5 rounded-lg hover:bg-[#EFE6D4] disabled:opacity-30 transition-colors">← Prev</button>
-                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="text-xs font-semibold text-ink-2 bg-tile border-[1.5px] border-outline px-3 py-1.5 rounded-lg hover:bg-[#EFE6D4] disabled:opacity-30 transition-colors">Next →</button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="text-xs font-semibold text-ink-2 bg-tile border-hairline px-3 py-1.5 rounded-control hover:bg-tile disabled:opacity-30 transition-colors">← Prev</button>
+                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="text-xs font-semibold text-ink-2 bg-tile border-hairline px-3 py-1.5 rounded-control hover:bg-tile disabled:opacity-30 transition-colors">Next →</button>
               </div>
             </div>
           )}
         </section>
 
         {/* ── ROW 3: CAREER ANALYTICS ── */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+        <section className="bg-tile border-hairline rounded-panel-lg p-6">
           <h2 className={`${TYPE.sectionTitle} mb-6`}>Career Match Breakdown</h2>
           {loading || !stats ? (
             <div className="space-y-3">
@@ -975,7 +975,7 @@ export default function AdminPage() {
             </div>
           )}
           {stats && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-6 border-t border-outline">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-6 border-t border-hairline">
               {[
                 { label: "Avg money vs meaning", value: `${stats.avgMoneyVsMeaning}/10` },
                 { label: "Most common age", value: stats.mostCommonAge },
@@ -992,15 +992,15 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 4: DONATIONS FULL SECTION ── */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
           {/* Header + tab bar */}
-          <div className="px-6 py-5 border-b border-outline flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="px-6 py-5 border-b border-hairline flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
               <h2 className={TYPE.sectionTitle}>Donations</h2>
               <p className="text-ink-2 text-xs mt-0.5">Powered by Stripe</p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex rounded-lg overflow-hidden border-[1.5px] border-outline">
+              <div className="flex rounded-control overflow-hidden border-hairline">
                 {(["feed", "table", "profiles"] as const).map((t) => (
                   <button
                     key={t}
@@ -1014,7 +1014,7 @@ export default function AdminPage() {
               {activeTab === "table" && (
                 <button
                   onClick={() => exportDonationsCSV(filteredDonations)}
-                  className="text-xs font-semibold text-ink-2 bg-tile border-[1.5px] border-outline px-3 py-1.5 rounded-lg hover:bg-[#EFE6D4] transition-colors"
+                  className="text-xs font-semibold text-ink-2 bg-tile border-hairline px-3 py-1.5 rounded-control hover:bg-tile transition-colors"
                 >
                   Export CSV
                 </button>
@@ -1034,7 +1034,7 @@ export default function AdminPage() {
               ) : (
                 <div className="space-y-1">
                   {donationStats.donations.slice(0, 20).map((d) => (
-                    <div key={d.id} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-[#EFE6D4] transition-colors">
+                    <div key={d.id} className="flex items-center gap-4 px-4 py-3 rounded-panel hover:bg-tile transition-colors">
                       <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
                         <span className="text-orange font-bold text-xs">{donorInitial(d)}</span>
                       </div>
@@ -1064,13 +1064,13 @@ export default function AdminPage() {
           {/* ── ALL DONATIONS TABLE ── */}
           {activeTab === "table" && (
             <>
-              <div className="px-6 pt-4 pb-3 border-b border-outline flex items-center gap-3">
+              <div className="px-6 pt-4 pb-3 border-b border-hairline flex items-center gap-3">
                 <input
                   type="text"
                   value={donationSearch}
                   onChange={(e) => setDonationSearch(e.target.value)}
                   placeholder="Search name or email…"
-                  className="bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-xs placeholder-ink-3 focus:outline-none focus:border-orange/40 w-56"
+                  className="bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-xs placeholder-ink-3 focus:outline-none focus:border-orange/40 w-56"
                 />
                 <span className="text-xs text-ink-2">{filteredDonations.length} donation{filteredDonations.length !== 1 ? "s" : ""}</span>
               </div>
@@ -1092,17 +1092,17 @@ export default function AdminPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={`font-medium ${TYPE.body} truncate`}>{donorDisplayName(d)}</span>
                           {d.recurring && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
+                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
                           )}
                         </div>
-                        <div className="text-[11px] text-ink-2">
+                        <div className="text-xs text-ink-2">
                           {fmtDate(d.created_at)}{d.email ? ` · ${d.email}` : ""}
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <div className={`font-bold ${TYPE.body}`}>{fmtMoney(d.amount)}</div>
                         {d.status && d.status !== "succeeded" && (
-                          <div className="text-[10px] text-expense capitalize">{d.status}</div>
+                          <div className="text-xs text-expense capitalize">{d.status}</div>
                         )}
                       </div>
                     </div>
@@ -1113,7 +1113,7 @@ export default function AdminPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-outline">
+                    <tr className="border-b border-hairline">
                       {["Date", "Donor", "Email", "Amount", "Type", "Status"].map((h) => (
                         <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
                       ))}
@@ -1132,7 +1132,7 @@ export default function AdminPage() {
                       <tr><td colSpan={6} className="text-center py-16 text-ink-2">No donations found.</td></tr>
                     ) : (
                       paginatedDonations.map((d) => (
-                        <tr key={d.id} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                        <tr key={d.id} className="border-b border-hairline hover:bg-tile transition-colors">
                           <td className="px-5 py-4 text-ink-2 text-xs whitespace-nowrap">{fmtDate(d.created_at)}</td>
                           <td className="px-5 py-4 font-medium text-ink-1">{donorDisplayName(d)}</td>
                           <td className="px-5 py-4 text-ink-2 text-xs">{d.email || "—"}</td>
@@ -1159,11 +1159,11 @@ export default function AdminPage() {
                 </table>
               </div>
               {donationTotalPages > 1 && (
-                <div className="px-6 py-4 border-t border-outline flex items-center justify-between">
+                <div className="px-6 py-4 border-t border-hairline flex items-center justify-between">
                   <span className="text-xs text-ink-2">Page {donationPage} of {donationTotalPages}</span>
                   <div className="flex gap-2">
-                    <button onClick={() => setDonationPage((p) => Math.max(1, p - 1))} disabled={donationPage === 1} className="text-xs font-semibold text-ink-2 bg-tile border-[1.5px] border-outline px-3 py-1.5 rounded-lg hover:bg-[#EFE6D4] disabled:opacity-30 transition-colors">← Prev</button>
-                    <button onClick={() => setDonationPage((p) => Math.min(donationTotalPages, p + 1))} disabled={donationPage === donationTotalPages} className="text-xs font-semibold text-ink-2 bg-tile border-[1.5px] border-outline px-3 py-1.5 rounded-lg hover:bg-[#EFE6D4] disabled:opacity-30 transition-colors">Next →</button>
+                    <button onClick={() => setDonationPage((p) => Math.max(1, p - 1))} disabled={donationPage === 1} className="text-xs font-semibold text-ink-2 bg-tile border-hairline px-3 py-1.5 rounded-control hover:bg-tile disabled:opacity-30 transition-colors">← Prev</button>
+                    <button onClick={() => setDonationPage((p) => Math.min(donationTotalPages, p + 1))} disabled={donationPage === donationTotalPages} className="text-xs font-semibold text-ink-2 bg-tile border-hairline px-3 py-1.5 rounded-control hover:bg-tile disabled:opacity-30 transition-colors">Next →</button>
                   </div>
                 </div>
               )}
@@ -1195,10 +1195,10 @@ export default function AdminPage() {
                             {[p.firstName, p.lastName].filter(Boolean).join(" ") || "Anonymous"}
                           </span>
                           {p.recurring && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
+                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
                           )}
                         </div>
-                        <div className="text-[11px] text-ink-2">
+                        <div className="text-xs text-ink-2">
                           {p.donationCount} gift{p.donationCount !== 1 ? "s" : ""} · last {fmtDate(p.lastDonation)}
                         </div>
                       </div>
@@ -1210,7 +1210,7 @@ export default function AdminPage() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm min-w-[750px]">
                     <thead>
-                      <tr className="border-b border-outline">
+                      <tr className="border-b border-hairline">
                         {["Donor", "Email", "Total Given", "Donations", "First Gift", "Last Gift", "Type"].map((h) => (
                           <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">{h}</th>
                         ))}
@@ -1218,7 +1218,7 @@ export default function AdminPage() {
                     </thead>
                     <tbody>
                       {donationStats.donorProfiles.map((p, i) => (
-                        <tr key={p.email + i} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                        <tr key={p.email + i} className="border-b border-hairline hover:bg-tile transition-colors">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
@@ -1253,7 +1253,7 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 5: RECENT ACTIVITY FEED ── */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+        <section className="bg-tile border-hairline rounded-panel-lg p-6">
           <h2 className={`${TYPE.sectionTitle} mb-6`}>Recent Quiz Activity</h2>
           {loading ? (
             <div className="space-y-4">
@@ -1272,7 +1272,7 @@ export default function AdminPage() {
           ) : (
             <div className="space-y-1">
               {recentTen.map((s) => (
-                <div key={s.id} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-[#EFE6D4] transition-colors">
+                <div key={s.id} className="flex items-center gap-4 px-4 py-3 rounded-panel hover:bg-tile transition-colors">
                   <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
                     <span className="text-orange font-bold text-xs">{s.teen_name ? s.teen_name[0].toUpperCase() : "?"}</span>
                   </div>
@@ -1305,8 +1305,8 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 5: PARTNER WAITLIST ── */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-6 py-5 border-b border-outline flex flex-col sm:flex-row sm:items-center gap-4">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-6 py-5 border-b border-hairline flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
               <h2 className={TYPE.sectionTitle}>Partner Waitlist</h2>
               <p className="text-ink-2 text-xs mt-0.5">
@@ -1334,7 +1334,7 @@ export default function AdminPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {partnerData.roleBreakdown.map(({ role, count }) => (
-                      <div key={role} className="bg-tile border-[1.5px] border-outline rounded-full px-4 py-1.5 flex items-center gap-2">
+                      <div key={role} className="bg-tile border-hairline rounded-full px-4 py-1.5 flex items-center gap-2">
                         <span className={`${TYPE.body} font-semibold`}>{count}</span>
                         <span className="text-ink-2 text-xs">{role}</span>
                       </div>
@@ -1348,10 +1348,10 @@ export default function AdminPage() {
                     <div key={s.id} className="px-6 py-3">
                       <div className="flex items-center justify-between gap-3">
                         <span className={`font-medium ${TYPE.body} truncate`}>{s.first_name} {s.last_name}</span>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange flex-shrink-0">{s.role}</span>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange flex-shrink-0">{s.role}</span>
                       </div>
-                      <div className="text-[11px] text-ink-2 mt-0.5 truncate">{s.email}</div>
-                      <div className="text-[11px] text-ink-3 mt-0.5">
+                      <div className="text-xs text-ink-2 mt-0.5 truncate">{s.email}</div>
+                      <div className="text-xs text-ink-3 mt-0.5">
                         {fmtDate(s.created_at)}{s.teen_count ? ` · ${s.teen_count} teens` : ""}
                       </div>
                     </div>
@@ -1362,7 +1362,7 @@ export default function AdminPage() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm min-w-[700px]">
                     <thead>
-                      <tr className="border-b border-outline">
+                      <tr className="border-b border-hairline">
                         {["Name", "Email", "Role", "Teen Count", "Date"].map((h) => (
                           <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
                             {h}
@@ -1372,7 +1372,7 @@ export default function AdminPage() {
                     </thead>
                     <tbody>
                       {partnerData.signups.map((s) => (
-                        <tr key={s.id} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                        <tr key={s.id} className="border-b border-hairline hover:bg-tile transition-colors">
                           <td className="px-4 py-3 font-medium text-ink-1 whitespace-nowrap">
                             {s.first_name} {s.last_name}
                           </td>
@@ -1395,8 +1395,8 @@ export default function AdminPage() {
         </section>
 
         {/* ── ROW 6: PROGRAM PARTNERS ── */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-6 py-5 border-b border-outline flex flex-col sm:flex-row sm:items-center gap-4">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-6 py-5 border-b border-hairline flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
               <h2 className={TYPE.sectionTitle}>Program Partners</h2>
               <p className="text-ink-2 text-xs mt-0.5">
@@ -1424,7 +1424,7 @@ export default function AdminPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {programData.typeBreakdown.map(({ type, count }) => (
-                      <div key={type} className="bg-tile border-[1.5px] border-outline rounded-full px-4 py-1.5 flex items-center gap-2">
+                      <div key={type} className="bg-tile border-hairline rounded-full px-4 py-1.5 flex items-center gap-2">
                         <span className={`${TYPE.body} font-semibold`}>{count}</span>
                         <span className="text-ink-2 text-xs">{type}</span>
                       </div>
@@ -1438,12 +1438,12 @@ export default function AdminPage() {
                     <div key={s.id} className="px-6 py-3">
                       <div className="flex items-center justify-between gap-3">
                         <span className={`font-medium ${TYPE.body} truncate`}>{s.org_name}</span>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange flex-shrink-0">{s.program_type}</span>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange flex-shrink-0">{s.program_type}</span>
                       </div>
-                      <div className="text-[11px] text-ink-2 mt-0.5 truncate">
+                      <div className="text-xs text-ink-2 mt-0.5 truncate">
                         {s.first_name} {s.last_name} · {s.email}
                       </div>
-                      <div className="text-[11px] text-ink-3 mt-0.5">
+                      <div className="text-xs text-ink-3 mt-0.5">
                         {fmtDate(s.created_at)}{s.teen_count ? ` · ${s.teen_count} teens` : ""}
                       </div>
                     </div>
@@ -1454,7 +1454,7 @@ export default function AdminPage() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm min-w-[800px]">
                     <thead>
-                      <tr className="border-b border-outline">
+                      <tr className="border-b border-hairline">
                         {["Org Name", "Contact", "Email", "Program Type", "Teen Count", "Date"].map((h) => (
                           <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
                             {h}
@@ -1464,7 +1464,7 @@ export default function AdminPage() {
                     </thead>
                     <tbody>
                       {programData.signups.map((s) => (
-                        <tr key={s.id} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                        <tr key={s.id} className="border-b border-hairline hover:bg-tile transition-colors">
                           <td className="px-4 py-3 font-medium text-ink-1 whitespace-nowrap">{s.org_name}</td>
                           <td className={`px-4 py-3 ${TYPE.bodyMuted} whitespace-nowrap`}>
                             {s.first_name} {s.last_name}

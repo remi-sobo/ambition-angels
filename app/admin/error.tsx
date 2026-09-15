@@ -35,7 +35,7 @@ export default function AdminError({
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-2xl">
-      <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-8">
+      <div className="rounded-panel-lg border-hairline bg-surface p-8">
         <h1 className={TYPE.pageTitle}>Something broke on this page</h1>
         <p className="mt-2 text-sm text-ink-2 leading-relaxed">
           The rest of BloomOS is fine. This screen hit an error while loading. Retrying
@@ -43,7 +43,7 @@ export default function AdminError({
           {error.digest ? (
             <>
               {" "}
-              (reference <span className="font-mono text-[12px]">{error.digest}</span>)
+              (reference <span className="font-mono text-xs">{error.digest}</span>)
             </>
           ) : null}
           .
@@ -58,7 +58,7 @@ export default function AdminError({
           </button>
           <Link
             href="/admin/today"
-            className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+            className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
           >
             Back to Today
           </Link>

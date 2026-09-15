@@ -63,7 +63,7 @@ export default async function WeekSection({
               ? `Week of ${weekLabel}`
               : `${view.owner.name}'s week of ${weekLabel} (read-only)`}
           </h2>
-          <p className="text-[11px] text-ink-3">
+          <p className="text-xs text-ink-3">
             Meetings as fixed rock, work blocks in the gaps, open time visible.
           </p>
         </div>

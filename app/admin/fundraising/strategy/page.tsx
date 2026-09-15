@@ -19,7 +19,7 @@ export default async function StrategyPage() {
   const ctx = await getOrgContext();
   if (!ctx) {
     return (
-      <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+      <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
         <PageHeader title="Strategy" subtitle="Sign in to view funding angles." />
       </div>
     );
@@ -35,9 +35,9 @@ export default async function StrategyPage() {
 
   if (error) {
     return (
-      <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+      <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
         <PageHeader title="Strategy" subtitle="Funding angles" />
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The <code className="text-orange">strategy_angles</code> table isn&apos;t ready yet. Apply{" "}
           <code className="text-orange">create_strategy_angles.sql</code> and{" "}
           <code className="text-orange">extend_strategy_angles_framing.sql</code> via the Supabase SQL
@@ -81,7 +81,7 @@ export default async function StrategyPage() {
   };
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Strategy"
         subtitle={

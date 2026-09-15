@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { DOC_TYPES, DOC_TYPE_LABEL, docTypeExpires, minExpirationISO } from "@/lib/documents/config";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 // Hub upload: same POST as the record-page attach control, minus the
 // auto-link context. Links can be added afterwards from any record page.
@@ -74,7 +74,7 @@ export default function UploadDocumentButton() {
   return (
     <form
       onSubmit={upload}
-      className="flex flex-wrap items-center gap-2 bg-surface border-[1.5px] border-outline rounded-card p-3"
+      className="flex flex-wrap items-center gap-2 bg-surface border-hairline rounded-panel p-3"
     >
       <input ref={fileRef} type="file" required className={inputCls} aria-label="File to upload" />
       <input
@@ -140,7 +140,7 @@ export default function UploadDocumentButton() {
       <button
         type="button"
         onClick={() => setOpen(false)}
-        className="text-sm font-semibold px-3 py-2 rounded-full border border-outline text-ink-2 hover:text-ink-1 transition-colors"
+        className="text-sm font-semibold px-3 py-2 rounded-full border border-hairline text-ink-2 hover:text-ink-1 transition-colors"
       >
         Cancel
       </button>

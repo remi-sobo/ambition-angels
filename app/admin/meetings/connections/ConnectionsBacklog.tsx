@@ -126,14 +126,14 @@ export default function ConnectionsBacklog({
           <header className="flex items-center gap-2 mb-2">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-2">
               <span
-                className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${taskStatusBadgeClass(
+                className={`inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${taskStatusBadgeClass(
                   g.key
                 )}`}
               >
                 {statusLabel(g.key)}
               </span>
             </h3>
-            <span className="text-[11px] text-ink-3">{g.items.length}</span>
+            <span className="text-xs text-ink-3">{g.items.length}</span>
           </header>
           <div className="space-y-1.5">
             {g.items.map((t) => {
@@ -153,7 +153,7 @@ export default function ConnectionsBacklog({
                     setDragId(null);
                     setHoverId(null);
                   }}
-                  className={`flex items-center gap-1 rounded-lg ${
+                  className={`flex items-center gap-1 rounded-control ${
                     isDragOver ? "ring-2 ring-orange/40" : ""
                   }`}
                 >

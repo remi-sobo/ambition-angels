@@ -134,7 +134,7 @@ export default async function DonorsPage({
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className={`${TYPE.pageTitle} mb-4`}>Donors</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_fundraising_core.sql</code> via Actions → Apply DB
           migration, then reload: existing Stripe donations backfill automatically.
@@ -388,10 +388,10 @@ export default async function DonorsPage({
   });
 
   const FLAG_STYLES: Record<RetentionFlag, string> = {
-    lybunt: "bg-[#F4E8D0] text-[#A56A1B]",
+    lybunt: "bg-status-watch-bg text-status-watch-text",
     sybunt: "bg-tile text-ink-2",
     cadence_lapsed: "bg-expense-bg text-expense",
-    second_gift_watch: "bg-blue-500/15 text-blue-400",
+    second_gift_watch: "bg-tile text-ink-2",
   };
   // Tile membership comes from the all-time flag map, NOT the year-filtered
   // list — under "This year" a LYBUNT donor has no period gifts, and the old
@@ -417,19 +417,19 @@ export default async function DonorsPage({
           }
           actions={
             <div className="flex items-center gap-3">
-              <Link href="/admin/imports" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors">Import CSV</Link>
-              <Link href="/admin/fundraising/comms" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors">Comms</Link>
-              <Link href="/admin/fundraising/journeys" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors">Journeys</Link>
-              <Link href="/admin/fundraising/recurring" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors">Recurring</Link>
-              <Link href="/admin/fundraising/pledges" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors">Pledges</Link>
-              <Link href="/admin/fundraising/reports" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors">Reports</Link>
-              <Link href="/admin/fundraising/settings" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors">Settings</Link>
+              <Link href="/admin/imports" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Import CSV</Link>
+              <Link href="/admin/fundraising/comms" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Comms</Link>
+              <Link href="/admin/fundraising/journeys" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Journeys</Link>
+              <Link href="/admin/fundraising/recurring" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Recurring</Link>
+              <Link href="/admin/fundraising/pledges" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Pledges</Link>
+              <Link href="/admin/fundraising/reports" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Reports</Link>
+              <Link href="/admin/fundraising/settings" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Settings</Link>
               <Link
                 href="/admin/fundraising/acknowledgments"
                 className={`text-xs font-semibold px-4 py-2 rounded-full transition-colors ${
                   (pendingAcksRes.count ?? 0) > 0
                     ? "text-orange bg-orange/10 border border-orange/30 hover:bg-orange/20"
-                    : "text-ink-2 hover:text-ink-1 border-[1.5px] border-outline bg-tile"
+                    : "text-ink-2 hover:text-ink-1 border-hairline bg-tile"
                 }`}
               >
                 Acknowledgments{(pendingAcksRes.count ?? 0) > 0 ? ` (${pendingAcksRes.count})` : ""}
@@ -450,7 +450,7 @@ export default async function DonorsPage({
         </div>
 
         {constituentFetchFailed && (
-          <div className="bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
+          <div className="bg-expense-bg border border-expense/30 rounded-panel px-5 py-3 text-expense text-sm">
             Some donor records failed to load. The table below may be missing donors that the
             totals include. Reload to retry.
           </div>
@@ -463,13 +463,13 @@ export default async function DonorsPage({
         </div>
 
         {/* ── Retention intelligence (always year-over-year) ── */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
             <h2 className={TYPE.cardTitle}>Retention Intelligence</h2>
             <div className="text-xs text-ink-2">
               {retention.rate !== null ? (
                 <>
-                  <span className={`font-bold ${retention.rate >= 0.43 ? "text-revenue" : "text-[#A56A1B]"}`}>
+                  <span className={`font-bold ${retention.rate >= 0.43 ? "text-revenue" : "text-status-watch-text"}`}>
                     {Math.round(retention.rate * 100)}%
                   </span>{" "}
                   of last year&apos;s {retention.lastYearDonors} donors retained so far this year · sector benchmark ≈ 43%
@@ -495,28 +495,28 @@ export default async function DonorsPage({
                       title={active ? "Clear this filter" : `Show all ${members.length} in the table below`}
                       className="group flex items-center gap-2 mb-2"
                     >
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${FLAG_STYLES[flag]} ${active ? "ring-1 ring-orange" : ""}`}>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${FLAG_STYLES[flag]} ${active ? "ring-1 ring-orange" : ""}`}>
                         {FLAG_LABELS[flag]}
                       </span>
                       <span className="text-xs text-ink-2 [font-variant-numeric:tabular-nums]">{members.length}</span>
-                      <span className="ml-auto text-[11px] font-semibold text-orange opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      <span className="ml-auto text-xs font-semibold text-orange opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                         {active ? "Clear ✕" : "View all →"}
                       </span>
                     </Link>
-                    <p className="text-[11px] text-ink-3 mb-2 leading-snug">{FLAG_HELP[flag]}</p>
+                    <p className="text-xs text-ink-3 mb-2 leading-snug">{FLAG_HELP[flag]}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {members.slice(0, 6).map(({ c, r }) => (
                         <Link
                           key={c.id}
                           href={`/admin/fundraising/donors/${c.id}`}
                           title={`${money(r.total)} lifetime · last gift ${r.last}`}
-                          className="text-[11px] text-ink-2 hover:text-orange bg-tile border-[1.5px] border-outline rounded-full px-2 py-0.5 transition-colors truncate max-w-[150px]"
+                          className="text-xs text-ink-2 hover:text-orange bg-tile border-hairline rounded-full px-2 py-0.5 transition-colors truncate max-w-[150px]"
                         >
                           {constituentName(c)}
                         </Link>
                       ))}
                       {members.length > 6 && (
-                        <Link href={segmentHref(flag)} className="text-[11px] text-ink-3 hover:text-orange px-1 py-0.5">
+                        <Link href={segmentHref(flag)} className="text-xs text-ink-3 hover:text-orange px-1 py-0.5">
                           +{members.length - 6} more →
                         </Link>
                       )}
@@ -530,7 +530,7 @@ export default async function DonorsPage({
 
         {/* ── Active retention filter banner ── */}
         {retentionSegment && (
-          <div className="bg-orange/10 border border-orange/30 rounded-xl px-5 py-3 flex items-center gap-3 flex-wrap">
+          <div className="bg-orange/10 border border-orange/30 rounded-panel px-5 py-3 flex items-center gap-3 flex-wrap">
             <span className="text-sm text-ink-1">
               Showing <span className="font-bold">{donors.length}</span>{" "}
               <span className="font-bold uppercase">{FLAG_LABELS[retentionSegment]}</span>{" "}
@@ -548,7 +548,7 @@ export default async function DonorsPage({
         )}
 
         {donors.length === 0 ? (
-          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+          <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
             <p className={`p-8 ${TYPE.bodyMuted}`}>
               No donors match this filter{year === "all" ? "" : ` for ${yearLabel}`}. Try a different
               year or segment.

@@ -88,7 +88,7 @@ export function MentionTextarea({
         className={className}
       />
       {open && matches.length > 0 && (
-        <ul className="absolute z-20 left-2 top-full mt-1 min-w-[12rem] bg-surface border-[1.5px] border-outline rounded-lg shadow-lg overflow-hidden">
+        <ul className="absolute z-20 left-2 top-full mt-1 min-w-[12rem] bg-surface border-hairline rounded-control shadow-lg overflow-hidden">
           {matches.map((m, i) => (
             <li key={m.userId}>
               <button
@@ -100,7 +100,7 @@ export function MentionTextarea({
                   i === hi ? "bg-orange-light text-orange-dark" : "text-ink-1 hover:bg-tile"
                 }`}
               >
-                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-light text-orange-dark text-[10px] font-bold">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-light text-orange-dark text-xs font-bold">
                   {m.displayName[0]?.toUpperCase()}
                 </span>
                 {m.displayName}

@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   activeShellKey,
   type ShellDestination,
   type ShellNav,
 } from "@/lib/admin/v2shellNav";
+import Tabs from "../ui/Tabs";
 
 /**
  * Spec B, stage B3 — the shell's tab slot: the V2 single tab row — one row,
@@ -24,30 +24,20 @@ import {
 
 export function V2TabRow({ dest, pathname }: { dest: ShellDestination; pathname: string }) {
   const path = pathname.split("?")[0];
+  // Visual System V3 §5 — the tab row stops being a strip of capsules. Every
+  // tab was a bordered, tinted, rounded-full chip, which made the second
+  // navigation level compete with the first. Now: text, generous spacing,
+  // weight + a terracotta underline for the active tab, one hairline rule
+  // under the row. Nothing else.
   return (
-    <div className="sticky admin-sticky-top z-30 bg-ink/95 backdrop-blur-sm border-b border-hairline">
-      <nav
-        aria-label={`${dest.label} tabs`}
-        className="max-w-7xl px-4 lg:px-8 py-3 flex flex-nowrap items-center gap-1.5 text-xs overflow-x-auto"
-      >
-        {dest.tabs.map((t) => {
-          const isActive = path === t.href || path.startsWith(t.href + "/");
-          return (
-            <Link
-              key={t.key}
-              href={t.href}
-              aria-current={isActive ? "page" : undefined}
-              className={`shrink-0 px-3 py-1.5 rounded-full border transition-colors ${
-                isActive
-                  ? "border-orange/60 bg-orange/15 text-orange"
-                  : "border-outline text-ink-2 hover:text-ink-1 hover:bg-[#EFE6D4]"
-              }`}
-            >
-              {t.label}
-            </Link>
-          );
-        })}
-      </nav>
+    <div className="sticky admin-sticky-top z-30 bg-app/95 backdrop-blur-sm">
+      <div className="max-w-workspace px-4 lg:px-8">
+        <Tabs
+          label={`${dest.label} tabs`}
+          items={dest.tabs.map((t) => ({ key: t.key, label: t.label, href: t.href }))}
+          isActive={(t) => path === t.href || path.startsWith(t.href + "/")}
+        />
+      </div>
     </div>
   );
 }

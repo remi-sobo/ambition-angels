@@ -1,4 +1,5 @@
 import type { Booking, MeetingType } from "@/lib/database.types";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type BookingWithType = Booking & { meeting_type: MeetingType | null };
 
@@ -16,7 +17,7 @@ export default function BookingHistory({
   return (
     <section>
       <details className="group">
-        <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-[12px] text-ink-3 hover:text-ink-1 transition-colors">
+        <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-xs text-ink-3 hover:text-ink-1 transition-colors">
           <svg viewBox="0 0 16 16" className="w-3 h-3 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M6 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -26,10 +27,10 @@ export default function BookingHistory({
           {rows.length === 0 ? (
             <p className="text-ink-3 text-sm">No past or cancelled bookings yet.</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border-[1.5px] border-outline bg-surface">
+            <div className="overflow-x-auto rounded-control border-hairline bg-surface">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-widest text-ink-3 border-b border-outline">
+                  <tr className={`text-left ${TYPE.tableHeader} border-b border-hairline`}>
                     <th className="px-4 py-3 font-medium">When (PT)</th>
                     <th className="px-4 py-3 font-medium">Type</th>
                     <th className="px-4 py-3 font-medium">Attendee</th>
@@ -69,7 +70,7 @@ function StatusPill({ status }: { status: Booking["status"] }) {
     confirmed: "bg-revenue-bg text-revenue border-revenue/30",
     cancelled: "bg-expense-bg text-expense border-expense/30",
     no_show: "bg-status-watch-bg text-status-watch-text border-status-watch/40",
-    completed: "bg-tile text-ink-2 border-outline",
+    completed: "bg-tile text-ink-2 border-hairline",
   };
   return (
     <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${styles[status]}`}>

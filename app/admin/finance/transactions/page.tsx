@@ -11,6 +11,7 @@ import AiCategorize from "./_components/AiCategorize";
 import PageHeader from "../../_components/PageHeader";
 import ReconcileSection from "../reconcile/ReconcileSection";
 import CloseSection from "../close/CloseSection";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type SearchParams = {
   q?: string;
@@ -73,7 +74,7 @@ export default async function TransactionsPage({
   const ctx = await getOrgContext();
   if (!ctx) {
     return (
-      <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8">
+      <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
         <PageHeader title="Transactions" subtitle="Sign in to view transactions." />
       </div>
     );
@@ -144,7 +145,7 @@ export default async function TransactionsPage({
     .is("category_id", null);
 
   return (
-    <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8">
+    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
       <header>
         <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
           <Link href="/admin/finance" className="hover:text-ink-1">
@@ -158,7 +159,7 @@ export default async function TransactionsPage({
               {uncategorizedCount && uncategorizedCount > 0 ? (
                 <Link
                   href="/admin/finance/transactions?category=uncategorized"
-                  className="rounded-full border border-[#D9BE86] bg-[#F4E8D0] text-amber-200 px-3 py-1 hover:bg-[#F4E8D0]"
+                  className="rounded-full border border-status-watch/40 bg-status-watch-bg text-status-watch-text px-3 py-1 hover:bg-status-watch-bg"
                 >
                   {uncategorizedCount} uncategorized →
                 </Link>
@@ -177,10 +178,10 @@ export default async function TransactionsPage({
 
       <TransactionFilters categories={categories} />
 
-      <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel overflow-hidden">
+      <div className="rounded-panel-lg border-hairline bg-surface overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead className="bg-surface shadow-panel text-ink-2 uppercase tracking-wider">
+            <thead className={`bg-surface ${TYPE.tableHeader}`}>
               <tr>
                 <th className="text-left px-3 py-2.5 w-[6.5rem]">Date</th>
                 <th className="text-left px-3 py-2.5">Description</th>
@@ -212,7 +213,7 @@ export default async function TransactionsPage({
               {rows.map((r) => {
                 const cat = r.category_id ? catById.get(r.category_id) : null;
                 return (
-                  <tr key={r.id} className="border-t border-hairline hover:bg-[#EFE6D4]">
+                  <tr key={r.id} className="border-t border-hairline hover:bg-tile">
                     <td className="px-3 py-2 font-mono text-ink-1 align-top">
                       {r.txn_date}
                     </td>
@@ -221,7 +222,7 @@ export default async function TransactionsPage({
                         {r.description}
                       </div>
                       {r.source_file && (
-                        <div className="text-[10px] text-ink-2 mt-0.5 truncate">
+                        <div className="text-xs text-ink-2 mt-0.5 truncate">
                           {r.source_file}
                         </div>
                       )}
@@ -240,7 +241,7 @@ export default async function TransactionsPage({
                         categories={categories}
                       />
                       {cat?.functional_class && (
-                        <div className="text-[10px] text-ink-2 mt-1 uppercase tracking-wider">
+                        <div className={`${TYPE.cardLabel} mt-1`}>
                           {cat.functional_class}
                         </div>
                       )}
@@ -259,7 +260,7 @@ export default async function TransactionsPage({
                         )}
                       </div>
                       {r.restricted && r.restricted_to && (
-                        <div className="text-[10px] text-orange/80 mt-1">
+                        <div className="text-xs text-orange/80 mt-1">
                           → {r.restricted_to}
                         </div>
                       )}
@@ -322,7 +323,7 @@ function PageLink({
 }) {
   if (disabled) {
     return (
-      <span className="px-3 py-1.5 rounded-lg border border-hairline text-ink-2/40 cursor-default">
+      <span className="px-3 py-1.5 rounded-control border border-hairline text-ink-2/40 cursor-default">
         {label}
       </span>
     );
@@ -336,7 +337,7 @@ function PageLink({
   return (
     <Link
       href={s ? `/admin/finance/transactions?${s}` : "/admin/finance/transactions"}
-      className="px-3 py-1.5 rounded-lg border-[1.5px] border-outline text-ink-1 hover:text-ink-1 hover:bg-[#EFE6D4]"
+      className="px-3 py-1.5 rounded-control border-hairline text-ink-1 hover:text-ink-1 hover:bg-tile"
     >
       {label}
     </Link>

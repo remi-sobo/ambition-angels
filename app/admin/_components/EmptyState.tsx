@@ -32,9 +32,9 @@ export default function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center text-center rounded-card border border-dashed border-outline bg-tile/40 px-6 py-8 gap-1.5">
+    <div className="flex flex-col items-center justify-center text-center rounded-panel border border-dashed border-hairline bg-tile px-6 py-8 gap-2">
       <p className="text-sm font-semibold text-ink-1">{title ?? `No ${label.toLowerCase()} yet`}</p>
-      {hint ? <p className="text-xs text-ink-2 max-w-sm">{hint}</p> : null}
+      {hint ? <p className="text-sm text-ink-2 max-w-sm leading-relaxed">{hint}</p> : null}
       {action ? <div className="mt-2">{action}</div> : null}
     </div>
   );

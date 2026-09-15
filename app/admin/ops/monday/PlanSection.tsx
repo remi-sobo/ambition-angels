@@ -303,7 +303,7 @@ export default async function PlanSection() {
 
   // ── Step content (rendered on the server, handed to the wizard shell) ───────
   const carryover = (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <h2 className={`${TYPE.sectionHeader} mb-1`}>
         Clear the carryover
       </h2>
@@ -330,20 +330,20 @@ export default async function PlanSection() {
                     projectName={t.project_id ? projectNames.get(t.project_id) : null}
                     actions={carryoverActions}
                   />
-                  <div className="text-[10px] pl-3 flex items-center gap-2">
+                  <div className="text-xs pl-3 flex items-center gap-2">
                     {rolls > 0 && (
                       <span
                         className={
                           rolls >= 3
                             ? "text-expense font-semibold"
-                            : "text-[#A56A1B]/80 font-medium"
+                            : "text-status-watch-text/80 font-medium"
                         }
                         title="Times pushed to a later week"
                       >
                         rolled {rolls}×
                       </span>
                     )}
-                    <span className="text-[#A56A1B]/70">
+                    <span className="text-status-watch-text/70">
                       {overdue} day{overdue === 1 ? "" : "s"} since last touched
                     </span>
                   </div>
@@ -361,7 +361,7 @@ export default async function PlanSection() {
       <div className="flex items-center justify-end">
         <Link
           href="/admin/calendar"
-          className="text-[12px] font-semibold text-orange hover:text-orange-dark"
+          className="text-xs font-semibold text-orange hover:text-orange-dark"
         >
           Open the week grid →
         </Link>

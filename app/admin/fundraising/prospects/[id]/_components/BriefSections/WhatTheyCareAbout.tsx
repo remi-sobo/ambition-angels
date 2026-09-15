@@ -10,7 +10,7 @@ export default function WhatTheyCareAbout({
   return (
     <details
       {...(defaultOpen ? { open: true } : {})}
-      className="rounded-card border-[1.5px] border-outline bg-surface p-6 group"
+      className="rounded-panel border-hairline bg-surface p-6 group"
     >
       <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1">
         What they care about
@@ -19,7 +19,7 @@ export default function WhatTheyCareAbout({
       <div className="mt-4 space-y-5">
         {data.mission_statement && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-1">
+            <div className="text-xs uppercase tracking-wider text-ink-3 mb-1">
               Mission
             </div>
             <blockquote className="italic text-ink-1 border-l-2 border-orange/40 pl-3 text-sm">
@@ -30,7 +30,7 @@ export default function WhatTheyCareAbout({
 
         {data.funding_priorities.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+            <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               Funding priorities
             </div>
             <ul className="space-y-1.5 text-sm text-ink-1">
@@ -46,13 +46,13 @@ export default function WhatTheyCareAbout({
 
         {data.recent_grants.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+            <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               Recent grants
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-[10px] uppercase tracking-wider text-ink-2 border-b border-outline">
+                  <tr className="text-xs uppercase tracking-wider text-ink-2 border-b border-hairline">
                     <th className="text-left font-medium pb-2 pr-4">Recipient</th>
                     <th className="text-right font-medium pb-2 pr-4">Amount</th>
                     <th className="text-left font-medium pb-2 pr-4">Purpose</th>
@@ -82,7 +82,7 @@ export default function WhatTheyCareAbout({
 
         {data.public_statements && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-1">
+            <div className="text-xs uppercase tracking-wider text-ink-3 mb-1">
               Recent public statements
             </div>
             <p className="text-sm text-ink-1 leading-relaxed">
@@ -92,8 +92,8 @@ export default function WhatTheyCareAbout({
         )}
 
         {data.what_they_dont_fund && (
-          <div className="rounded-lg border-l-4 border-orange bg-orange/[0.07] p-4">
-            <div className="text-[10px] uppercase tracking-wider text-orange/90 mb-1 font-bold">
+          <div className="rounded-control border-l-4 border-orange bg-orange/[0.07] p-4">
+            <div className="text-xs uppercase tracking-wider text-orange/90 mb-1 font-bold">
               What they don&apos;t fund
             </div>
             <p className="text-sm text-ink-1 leading-relaxed">

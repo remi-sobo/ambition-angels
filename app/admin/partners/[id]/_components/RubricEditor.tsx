@@ -56,12 +56,12 @@ export function RubricEditor({ partnerId, initial }: {
   return (
     <div>
       <div className="flex items-center justify-between gap-2 mb-2">
-        <h3 className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Fit score</h3>
+        <h3 className="text-xs uppercase tracking-wider text-ink-3 font-semibold">Fit score</h3>
         <div className="flex items-center gap-2">
-          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${SCORE_BAND_STYLE[band]}`}>
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${SCORE_BAND_STYLE[band]}`}>
             {score == null ? "Not scored" : `${score}/100`}
           </span>
-          <button onClick={() => setOpen((v) => !v)} className="text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors">
+          <button onClick={() => setOpen((v) => !v)} className="text-xs font-semibold text-ink-2 hover:text-orange transition-colors">
             {open ? "Close" : initial ? "Edit" : "Score"}
           </button>
         </div>
@@ -71,7 +71,7 @@ export function RubricEditor({ partnerId, initial }: {
         initial ? (
           <div className="space-y-1">
             {RUBRIC_FACTORS.filter((f) => typeof factors[f.key] === "number").map((f) => (
-              <div key={f.key} className="flex items-center gap-2 text-[11px]">
+              <div key={f.key} className="flex items-center gap-2 text-xs">
                 <span className="text-ink-2 w-32 flex-shrink-0">{f.label}</span>
                 <div className="flex-1 h-1.5 bg-tile rounded-full overflow-hidden">
                   <div className="h-full bg-orange/70" style={{ width: `${((factors[f.key] ?? 0) / RUBRIC_MAX) * 100}%` }} />
@@ -81,22 +81,22 @@ export function RubricEditor({ partnerId, initial }: {
             ))}
           </div>
         ) : (
-          <p className="text-[11px] text-ink-3">Not yet scored. Rate geography, volume, readiness, funding & fit.</p>
+          <p className="text-xs text-ink-3">Not yet scored. Rate geography, volume, readiness, funding & fit.</p>
         )
       ) : (
         <div className="space-y-2">
           {RUBRIC_FACTORS.map((f) => (
             <div key={f.key} className="flex items-center gap-2">
-              <span className="text-[11px] text-ink-2 w-32 flex-shrink-0" title={f.help}>{f.label}</span>
+              <span className="text-xs text-ink-2 w-32 flex-shrink-0" title={f.help}>{f.label}</span>
               <div className="flex items-center gap-1">
                 {Array.from({ length: RUBRIC_MAX + 1 }, (_, n) => (
                   <button
                     key={n}
                     onClick={() => set(f.key, n)}
-                    className={`w-6 h-6 rounded-md text-[11px] font-semibold transition-colors ${
+                    className={`w-6 h-6 rounded-control text-xs font-semibold transition-colors ${
                       factors[f.key] === n
                         ? "bg-orange text-white"
-                        : "bg-tile text-ink-3 hover:text-ink-1 border border-outline"
+                        : "bg-tile text-ink-3 hover:text-ink-1 border border-hairline"
                     }`}
                   >
                     {n}
@@ -109,8 +109,8 @@ export function RubricEditor({ partnerId, initial }: {
             <button onClick={save} disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-1.5 rounded-full disabled:opacity-50">
               {busy ? "Saving…" : "Save score"}
             </button>
-            <button onClick={() => { setFactors({}); }} className="text-[11px] text-ink-3 hover:text-expense px-2">Clear</button>
-            <span className={`ml-auto text-[11px] font-semibold px-2 py-0.5 rounded-full ${SCORE_BAND_STYLE[band]}`}>
+            <button onClick={() => { setFactors({}); }} className="text-xs text-ink-3 hover:text-expense px-2">Clear</button>
+            <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${SCORE_BAND_STYLE[band]}`}>
               {score == null ? "—" : `${score}/100`}
             </span>
           </div>

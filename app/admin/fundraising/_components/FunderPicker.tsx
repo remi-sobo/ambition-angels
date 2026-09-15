@@ -16,7 +16,7 @@ export type FunderChoice = { funderId: string | null; funderName: string };
 type Result = { id: string; type: string; name: string };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export default function FunderPicker({
   value,
@@ -101,12 +101,12 @@ export default function FunderPicker({
         className={inputCls + " w-full"}
       />
       {value.funderId && (
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-revenue bg-revenue-bg border border-revenue/30 px-1.5 py-0.5 rounded-full">
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-revenue bg-revenue-bg border border-revenue/30 px-1.5 py-0.5 rounded-full">
           linked
         </span>
       )}
       {open && (typed.length >= 2) && (
-        <div className="absolute z-20 mt-1 w-full bg-tile border-[1.5px] border-outline rounded-lg shadow-tile max-h-64 overflow-auto">
+        <div className="absolute z-20 mt-1 w-full bg-tile border-hairline rounded-control max-h-64 overflow-auto">
           {loading && results.length === 0 && (
             <div className="px-3 py-2 text-xs text-ink-3">Searching…</div>
           )}
@@ -118,7 +118,7 @@ export default function FunderPicker({
               className="w-full text-left px-3 py-2 hover:bg-orange/10 flex items-center justify-between gap-2"
             >
               <span className="text-sm text-ink-1 truncate">{r.name}</span>
-              <span className="text-[10px] uppercase tracking-wider text-ink-3 flex-shrink-0">
+              <span className="text-xs uppercase tracking-wider text-ink-3 flex-shrink-0">
                 {r.type === "organization" ? "Org" : "Person"}
               </span>
             </button>
@@ -130,7 +130,7 @@ export default function FunderPicker({
                 onChange({ funderId: null, funderName: typed });
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-2 border-t border-outline hover:bg-orange/10 text-xs text-orange font-semibold"
+              className="w-full text-left px-3 py-2 border-t border-hairline hover:bg-orange/10 text-xs text-orange font-semibold"
             >
               + Create new funder “{typed}”
             </button>

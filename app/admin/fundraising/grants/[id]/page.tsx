@@ -57,7 +57,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className={`${TYPE.pageTitle} mb-4`}>Grants</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The grants tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_grants.sql</code> via Actions → Apply DB migration,
           then reload.
@@ -130,7 +130,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+      <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <PageHeader
           eyebrow={
             <Link href="/admin/fundraising/grants" className="hover:text-ink-1 transition-colors">
@@ -140,7 +140,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
           title={
             <span className="flex items-center gap-3 flex-wrap">
               <span className="truncate">{g.name}</span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
                 {STAGE_LABELS[g.stage] ?? g.stage}
               </span>
             </span>
@@ -148,7 +148,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
           actions={<StageSelect grantId={g.id} stage={g.stage} periodEnd={g.period_end ?? null} />}
         />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <section className="lg:col-span-5 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5">
+          <section className="lg:col-span-5 bg-tile border-hairline rounded-panel-lg p-5">
             <EditableGrantDetails
               grant={{
                 id: g.id,
@@ -167,8 +167,8 @@ export default async function GrantDetailPage({ params }: { params: { id: string
             />
           </section>
 
-          <section className="lg:col-span-7 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-outline">
+          <section className="lg:col-span-7 bg-tile border-hairline rounded-panel-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-hairline">
               <h2 className={TYPE.cardTitle}>Requirements Calendar</h2>
             </div>
             {requirements.length === 0 ? (
@@ -188,8 +188,8 @@ export default async function GrantDetailPage({ params }: { params: { id: string
         </div>
 
         {/* ── Contacts: the people on this pursuit (funder org stays above) ── */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>Contacts</h2>
           </div>
           {contacts.length === 0 ? (
@@ -208,8 +208,8 @@ export default async function GrantDetailPage({ params }: { params: { id: string
         </section>
 
         {/* ── Asks: the solicitations behind this grant + their PDFs ── */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
             <h2 className={TYPE.cardTitle}>Asks</h2>
             {g.funder?.id && (
               <NewAskForm
@@ -235,7 +235,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
                         <span className="text-sm text-ink-1 font-medium truncate group-hover:text-orange transition-colors block">
                           {a.title || ASK_FORM_LABELS[a.form] || a.form}
                         </span>
-                        <span className="text-[11px] text-ink-2">
+                        <span className="text-xs text-ink-2">
                           {ASK_FORM_LABELS[a.form] ?? a.form}
                           {a.ask_date ? ` · ${new Date(a.ask_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
                           {docCount > 0 ? ` · ${docCount} doc${docCount === 1 ? "" : "s"}` : ""}
@@ -274,7 +274,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
         {project ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div className="lg:col-span-7 space-y-4">
-              <p className="text-[11px] text-ink-3">
+              <p className="text-xs text-ink-3">
                 Tasks added here are filed to this grant&apos;s workspace project and show up in
                 your normal task views (My Week, Tasks, Ops). Assignee, due date, and priority set
                 here carry through.
@@ -292,7 +292,7 @@ export default async function GrantDetailPage({ params }: { params: { id: string
             </div>
           </div>
         ) : (
-          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 text-sm text-ink-2">
+          <section className="bg-tile border-hairline rounded-panel-lg p-5 text-sm text-ink-2">
             This grant&apos;s workspace project couldn&apos;t be loaded. Reload the
             page to retry: it will be created automatically.
           </section>

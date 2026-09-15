@@ -55,7 +55,7 @@ export default async function CompliancePage() {
     rows.length === 0 ? null : (
       <section>
         <h2
-          className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${
+          className={`text-xs font-semibold uppercase tracking-wider mb-2 ${
             tone === "red" ? "text-expense" : "text-ink-2"
           }`}
         >

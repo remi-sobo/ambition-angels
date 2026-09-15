@@ -145,7 +145,7 @@ export default function ForecastBoard({
       </section>
 
       {/* Chart */}
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
+      <section className="rounded-panel-lg border-hairline bg-surface p-5">
         <h2 className={`${TYPE.cardTitle} mb-1`}>Projected cash · 24 months</h2>
         <p className="text-xs text-ink-2 mb-4">
           Solid = your scenario. Faint = baseline (burn only, no income). Where a line crosses zero is when you run out.
@@ -154,13 +154,13 @@ export default function ForecastBoard({
       </section>
 
       {/* Levers */}
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
+      <section className="rounded-panel-lg border-hairline bg-surface p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h2 className={TYPE.cardTitle}>What-ifs</h2>
-          <div className="flex items-center gap-2 text-[11px]">
-            <button onClick={() => add("expense", "monthly")} className="rounded-full bg-tile border-[1.5px] border-outline px-2.5 py-1 hover:bg-[#EFE6D4] text-ink-1">+ Hire / recurring cost</button>
-            <button onClick={() => add("income", "one_time")} className="rounded-full bg-tile border-[1.5px] border-outline px-2.5 py-1 hover:bg-[#EFE6D4] text-ink-1">+ Expected gift</button>
-            <button onClick={() => add("income", "monthly")} className="rounded-full bg-tile border-[1.5px] border-outline px-2.5 py-1 hover:bg-[#EFE6D4] text-ink-1">+ Recurring income</button>
+          <div className="flex items-center gap-2 text-xs">
+            <button onClick={() => add("expense", "monthly")} className="rounded-full bg-tile border-hairline px-2.5 py-1 hover:bg-tile text-ink-1">+ Hire / recurring cost</button>
+            <button onClick={() => add("income", "one_time")} className="rounded-full bg-tile border-hairline px-2.5 py-1 hover:bg-tile text-ink-1">+ Expected gift</button>
+            <button onClick={() => add("income", "monthly")} className="rounded-full bg-tile border-hairline px-2.5 py-1 hover:bg-tile text-ink-1">+ Recurring income</button>
             <button onClick={reset} className="text-ink-2 hover:text-ink-1 px-1">Reset</button>
           </div>
         </div>
@@ -173,17 +173,17 @@ export default function ForecastBoard({
         ) : (
           <ul className="space-y-2">
             {levers.map((l) => (
-              <li key={l.id} className="flex items-center gap-2 flex-wrap text-xs bg-tile/40 rounded-card border border-outline px-3 py-2">
+              <li key={l.id} className="flex items-center gap-2 flex-wrap text-xs bg-tile/40 rounded-panel border border-hairline px-3 py-2">
                 <input type="checkbox" checked={l.enabled} onChange={(e) => update(l.id, { enabled: e.target.checked })} className="accent-orange" />
                 <input
                   value={l.label}
                   onChange={(e) => update(l.id, { label: e.target.value })}
-                  className="bg-ink border border-outline rounded px-2 py-1 text-ink-1 w-44 min-w-0 flex-1"
+                  className="bg-ink border border-hairline rounded px-2 py-1 text-ink-1 w-44 min-w-0 flex-1"
                 />
                 <select
                   value={l.kind}
                   onChange={(e) => update(l.id, { kind: e.target.value as Lever["kind"] })}
-                  className="bg-ink border border-outline rounded px-1.5 py-1 text-ink-1"
+                  className="bg-ink border border-hairline rounded px-1.5 py-1 text-ink-1"
                 >
                   <option value="income">income</option>
                   <option value="expense">expense</option>
@@ -193,12 +193,12 @@ export default function ForecastBoard({
                   value={String(l.amount)}
                   onChange={(e) => update(l.id, { amount: Math.max(0, Number(e.target.value.replace(/[^0-9.]/g, "")) || 0) })}
                   inputMode="decimal"
-                  className="bg-ink border border-outline rounded px-2 py-1 text-ink-1 w-24 [font-variant-numeric:tabular-nums]"
+                  className="bg-ink border border-hairline rounded px-2 py-1 text-ink-1 w-24 [font-variant-numeric:tabular-nums]"
                 />
                 <select
                   value={l.mode}
                   onChange={(e) => update(l.id, { mode: e.target.value as Lever["mode"] })}
-                  className="bg-ink border border-outline rounded px-1.5 py-1 text-ink-1"
+                  className="bg-ink border border-hairline rounded px-1.5 py-1 text-ink-1"
                 >
                   <option value="one_time">one-time</option>
                   <option value="monthly">/mo</option>
@@ -207,7 +207,7 @@ export default function ForecastBoard({
                 <select
                   value={l.startMonth}
                   onChange={(e) => update(l.id, { startMonth: Number(e.target.value) })}
-                  className="bg-ink border border-outline rounded px-1.5 py-1 text-ink-1"
+                  className="bg-ink border border-hairline rounded px-1.5 py-1 text-ink-1"
                 >
                   {Array.from({ length: HORIZON }, (_, i) => (
                     <option key={i} value={i}>
@@ -221,7 +221,7 @@ export default function ForecastBoard({
                     <select
                       value={l.endMonth ?? -1}
                       onChange={(e) => update(l.id, { endMonth: Number(e.target.value) < 0 ? null : Number(e.target.value) })}
-                      className="bg-ink border border-outline rounded px-1.5 py-1 text-ink-1"
+                      className="bg-ink border border-hairline rounded px-1.5 py-1 text-ink-1"
                     >
                       <option value={-1}>end</option>
                       {Array.from({ length: HORIZON }, (_, i) => (
@@ -239,7 +239,7 @@ export default function ForecastBoard({
             ))}
           </ul>
         )}
-        <p className="text-[11px] text-ink-3 mt-3">
+        <p className="text-xs text-ink-3 mt-3">
           Seeded from your secured + projected pledges (projected ones weighted by probability). Edits are saved on this device; “Reset” reloads from your pledges.
         </p>
       </section>
@@ -249,8 +249,8 @@ export default function ForecastBoard({
 
 function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "expense" }) {
   return (
-    <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
-      <div className="text-[10px] uppercase tracking-widest text-ink-2">{label}</div>
+    <div className="rounded-panel-lg border-hairline bg-surface p-5">
+      <div className={TYPE.cardLabel}>{label}</div>
       <div className={`mt-1 font-display font-black text-3xl leading-none ${tone === "expense" ? "text-expense" : "text-ink-1"}`}>{value}</div>
       {sub && <div className="mt-2 text-xs text-ink-2">{sub}</div>}
     </div>
@@ -259,8 +259,8 @@ function Stat({ label, value, sub, tone }: { label: string; value: string; sub?:
 
 function RunwayStat({ baseLabel, scenLabel, better, worse }: { baseLabel: string; scenLabel: string; better: boolean; worse: boolean }) {
   return (
-    <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
-      <div className="text-[10px] uppercase tracking-widest text-ink-2">Runway (scenario)</div>
+    <div className="rounded-panel-lg border-hairline bg-surface p-5">
+      <div className={TYPE.cardLabel}>Runway (scenario)</div>
       <div className={`mt-1 font-display font-black text-2xl leading-none ${better ? "text-revenue" : worse ? "text-expense" : "text-ink-1"}`}>{scenLabel}</div>
       <div className="mt-2 text-xs text-ink-2">baseline: {baseLabel}</div>
     </div>

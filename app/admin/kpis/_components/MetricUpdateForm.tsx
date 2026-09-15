@@ -42,7 +42,7 @@ export default function MetricUpdateForm({ metricId }: { metricId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs font-semibold px-2.5 py-1 rounded-full border border-outline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors whitespace-nowrap"
+        className="text-xs font-semibold px-2.5 py-1 rounded-full border border-hairline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors whitespace-nowrap"
       >
         Update
       </button>
@@ -59,14 +59,14 @@ export default function MetricUpdateForm({ metricId }: { metricId: string }) {
         placeholder="Value"
         required
         autoFocus
-        className="w-24 bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-sm text-ink-1 focus:outline-none focus:border-orange/40"
+        className="w-24 bg-tile border-hairline rounded-control px-2 py-1 text-sm text-ink-1 focus:outline-none focus:border-orange/40"
       />
       <input
         type="text"
         value={note}
         onChange={(e) => setNote(e.target.value)}
         placeholder="Note (optional)"
-        className="w-32 bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/40"
+        className="w-32 bg-tile border-hairline rounded-control px-2 py-1 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/40"
       />
       <button
         type="submit"
@@ -82,7 +82,7 @@ export default function MetricUpdateForm({ metricId }: { metricId: string }) {
       >
         ✕
       </button>
-      {error && <span className="text-[11px] font-semibold text-expense">{error}</span>}
+      {error && <span className="text-xs font-semibold text-expense">{error}</span>}
     </form>
   );
 }

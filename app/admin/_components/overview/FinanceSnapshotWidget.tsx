@@ -31,7 +31,7 @@ export default async function FinanceSnapshotWidget({
         </span>
         <span className="text-sm text-ink-1 font-medium">months of cash runway</span>
       </div>
-      <p className="text-[11px] text-ink-3 mt-1">
+      <p className="text-xs text-ink-3 mt-1">
         beyond now · with pledges due {fmtMo(due.months)} · projected {fmtMo(projected.months)}
       </p>
 
@@ -42,7 +42,7 @@ export default async function FinanceSnapshotWidget({
           { label: "Net YTD", value: money(net), cls: net >= 0 ? "text-revenue" : "text-expense" },
         ].map((c) => (
           <div key={c.label}>
-            <dt className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-1">{c.label}</dt>
+            <dt className="text-xs uppercase tracking-wider text-ink-3 font-semibold mb-1">{c.label}</dt>
             <dd className={`font-heading font-semibold text-base [font-variant-numeric:tabular-nums] ${c.cls}`}>{c.value}</dd>
           </div>
         ))}

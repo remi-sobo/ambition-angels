@@ -77,7 +77,7 @@ function BarSlot({
       }`}
     >
       {children}
-      <span className="text-[10px] font-heading font-semibold leading-none">{label}</span>
+      <span className="text-xs font-heading font-semibold leading-none">{label}</span>
     </span>
   );
 }
@@ -167,7 +167,7 @@ export default function V2MobileBar({
               <Svg className="w-[22px] h-[22px]">{MORE_ICON}</Svg>
               {unread + msgUnread > 0 && (
                 <span
-                  className="absolute -top-1 -right-1.5 min-w-[15px] h-[15px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-[10px] font-bold leading-none ring-2 ring-navy"
+                  className="absolute -top-1 -right-1.5 min-w-[15px] h-[15px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-xs font-bold leading-none ring-2 ring-navy"
                   aria-label={`${unread + msgUnread} unread`}
                 >
                   {unread + msgUnread > 9 ? "9+" : unread + msgUnread}
@@ -193,14 +193,14 @@ export default function V2MobileBar({
                   key={d.key}
                   href={d.href}
                   onClick={() => setSheet(null)}
-                  className={`flex min-h-[52px] items-center gap-3 rounded-card px-3 py-2 transition-colors active:scale-[0.99] ${
+                  className={`flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 transition-colors active:scale-[0.99] ${
                     activeKey === d.key ? "bg-white/[0.09] text-orange-mid" : "hover:bg-white/[0.06]"
                   }`}
                 >
                   <Icon name={d.icon} className="w-5 h-5 shrink-0 opacity-80" />
-                  <span className="font-heading font-semibold text-[13px]">{d.label}</span>
+                  <span className="font-heading font-semibold text-sm">{d.label}</span>
                   {d.key === "inbox" && unread + msgUnread > 0 && (
-                    <span className="ml-auto min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-[10px] font-bold leading-none">
+                    <span className="ml-auto min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-xs font-bold leading-none">
                       {unread + msgUnread > 9 ? "9+" : unread + msgUnread}
                     </span>
                   )}
@@ -212,7 +212,7 @@ export default function V2MobileBar({
               <Link
                 href="/admin/settings"
                 onClick={() => setSheet(null)}
-                className="flex min-h-[52px] items-center gap-3 rounded-card px-3 py-2 transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
+                className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
               >
                 <Svg className="w-5 h-5 shrink-0 opacity-80">
                   <>
@@ -220,7 +220,7 @@ export default function V2MobileBar({
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
                   </>
                 </Svg>
-                <span className="font-heading font-semibold text-[13px]">Settings</span>
+                <span className="font-heading font-semibold text-sm">Settings</span>
               </Link>
               {/* Report an issue lives in the More sheet too (DoD 5: the
                   trigger works from Quick Add AND mobile More). */}
@@ -230,10 +230,10 @@ export default function V2MobileBar({
                   setSheet(null);
                   setModal("report");
                 }}
-                className="flex min-h-[52px] items-center gap-3 rounded-card px-3 py-2 text-left transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
+                className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 text-left transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
               >
                 <span className="w-5 shrink-0 text-center" aria-hidden>🐞</span>
-                <span className="font-heading font-semibold text-[13px]">Report an issue</span>
+                <span className="font-heading font-semibold text-sm">Report an issue</span>
               </button>
               {reedEnabled && (
                 <button
@@ -242,10 +242,10 @@ export default function V2MobileBar({
                     setSheet(null);
                     openReed({ surface: "v2-mobile-more" });
                   }}
-                  className="flex min-h-[52px] items-center gap-3 rounded-card px-3 py-2 text-left transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
+                  className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 text-left transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
                 >
                   <ReedMark className="w-5 h-5 shrink-0 text-orange-mid" />
-                  <span className="font-heading font-semibold text-[13px]">Reed</span>
+                  <span className="font-heading font-semibold text-sm">Reed</span>
                 </button>
               )}
             </div>
@@ -350,14 +350,14 @@ function ActionRow({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full min-h-[52px] items-center gap-3 rounded-card px-3 py-3 text-left transition-colors active:scale-[0.99] ${
+      className={`flex w-full min-h-[52px] items-center gap-3 rounded-panel px-3 py-3 text-left transition-colors active:scale-[0.99] ${
         accent ? "bg-white/[0.07] hover:bg-white/10" : "hover:bg-white/[0.06]"
       }`}
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10">{icon}</span>
       <span className="min-w-0 leading-tight">
         <span className="block font-heading font-semibold text-cream">{title}</span>
-        <span className="block text-[12px] text-cream/55">{blurb}</span>
+        <span className="block text-xs text-cream/55">{blurb}</span>
       </span>
     </button>
   );

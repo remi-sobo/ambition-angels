@@ -220,9 +220,9 @@ export default function StageBoard<T>({
   };
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
       {title != null && (
-        <div className="px-5 py-4 border-b border-outline">
+        <div className="px-5 py-4 border-b border-hairline">
           <h2 className={TYPE.cardTitle}>{title}</h2>
         </div>
       )}
@@ -235,21 +235,21 @@ export default function StageBoard<T>({
               <div
                 key={col.key}
                 data-stage-col={col.key}
-                className={`flex-1 rounded-lg p-1.5 -m-px transition-colors ${
+                className={`flex-1 rounded-control p-1.5 -m-px transition-colors ${
                   isOver ? "bg-orange/5 ring-1 ring-orange/40" : ""
                 }`}
                 style={{ minWidth: minColWidth }}
               >
-                <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-0.5 px-0.5">
+                <div className="text-xs font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-0.5 px-0.5">
                   {col.label}
                 </div>
-                <div className="text-[11px] text-ink-2 mb-2 px-0.5 [font-variant-numeric:tabular-nums]">
+                <div className="text-xs text-ink-2 mb-2 px-0.5 [font-variant-numeric:tabular-nums]">
                   {columnSummary ? columnSummary(colItems) : colItems.length}
                 </div>
                 <div className="space-y-2">
                   {colItems.length === 0 ? (
                     emptyHint != null ? (
-                      <div className="text-[11px] text-ink-3 px-0.5">{emptyHint}</div>
+                      <div className="text-xs text-ink-3 px-0.5">{emptyHint}</div>
                     ) : null
                   ) : maxVisible != null && colItems.length > maxVisible ? (
                     <>
@@ -273,7 +273,7 @@ export default function StageBoard<T>({
         </div>
       </div>
       {footer != null && (
-        <div className="px-4 py-3 border-t border-outline">{footer}</div>
+        <div className="px-4 py-3 border-t border-hairline">{footer}</div>
       )}
     </section>
   );

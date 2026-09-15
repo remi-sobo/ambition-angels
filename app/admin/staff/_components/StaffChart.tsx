@@ -24,7 +24,7 @@ const EMPLOYMENT_BADGE: Record<string, { label: string; cls: string }> = {
 function Badge({ type }: { type: string }) {
   const b = EMPLOYMENT_BADGE[type];
   if (!b) return null;
-  return <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${b.cls}`}>{b.label}</span>;
+  return <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${b.cls}`}>{b.label}</span>;
 }
 
 function PersonCard({
@@ -49,10 +49,10 @@ function PersonCard({
       onDragOver={draggable ? (e) => { e.preventDefault(); setOver(true); } : undefined}
       onDragLeave={draggable ? () => setOver(false) : undefined}
       onDrop={draggable ? (e) => { e.preventDefault(); setOver(false); onDrop?.(node.id); } : undefined}
-      className={`group inline-flex items-center gap-3 rounded-card border-[1.5px] px-3 py-2 shadow-tile transition-colors ${
+      className={`group inline-flex items-center gap-3 rounded-panel px-3 py-2 transition-colors ${
         over && dragging && dragging !== node.id
           ? "border-orange bg-orange-light"
-          : "border-outline bg-tile hover:border-orange/50"
+          : "border-hairline bg-tile hover:border-orange/50"
       } ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
     >
       <Avatar name={node.full_name} id={node.user_id} size={36} />
@@ -62,7 +62,7 @@ function PersonCard({
           <Badge type={node.employment_type} />
         </span>
         {node.title ? <span className="block text-xs text-ink-2 truncate">{node.title}</span> : null}
-        {node.department ? <span className="block text-[11px] text-ink-3 truncate">{node.department}</span> : null}
+        {node.department ? <span className="block text-xs text-ink-3 truncate">{node.department}</span> : null}
       </span>
     </Link>
   );
@@ -80,7 +80,7 @@ function TreeNode(props: {
     <li>
       <PersonCard node={node} {...rest} />
       {node.reports.length > 0 && (
-        <ul className="mt-3 ml-5 pl-5 border-l border-outline flex flex-col gap-3">
+        <ul className="mt-3 ml-5 pl-5 border-l border-hairline flex flex-col gap-3">
           {node.reports.map((c) => (
             <TreeNode key={c.id} node={c} {...rest} />
           ))}
@@ -187,7 +187,7 @@ export default function StaffChart({
         <select
           value={dept}
           onChange={(e) => setDept(e.target.value)}
-          className="rounded-md border border-outline bg-surface px-2 py-1 text-sm text-ink-1"
+          className="rounded-control border border-hairline bg-surface px-2 py-1 text-sm text-ink-1"
         >
           <option value="">All departments</option>
           {departments.map((d) => (
@@ -197,7 +197,7 @@ export default function StaffChart({
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          className="rounded-md border border-outline bg-surface px-2 py-1 text-sm text-ink-1"
+          className="rounded-control border border-hairline bg-surface px-2 py-1 text-sm text-ink-1"
         >
           <option value="">All types</option>
           <option value="staff">Staff</option>
@@ -210,8 +210,8 @@ export default function StaffChart({
             type="button"
             onClick={() => setArrange((v) => !v)}
             disabled={busy}
-            className={`ml-auto rounded-md px-3 py-1 text-sm font-semibold ${
-              arrange ? "bg-orange text-white" : "border border-outline text-ink-1 hover:border-orange/50"
+            className={`ml-auto rounded-control px-3 py-1 text-sm font-semibold ${
+              arrange ? "bg-orange text-white" : "border border-hairline text-ink-1 hover:border-orange/50"
             }`}
           >
             {arrange ? "Done arranging" : "Arrange"}
@@ -247,7 +247,7 @@ export default function StaffChart({
           </ul>
           {orphans.length > 0 && (
             <div>
-              <p className="text-[11px] uppercase tracking-[0.08em] text-ink-3 mb-2">Not on the chart</p>
+              <p className="text-xs uppercase tracking-[0.08em] text-ink-3 mb-2">Not on the chart</p>
               <ul className="flex flex-col gap-3">
                 {orphans.map((n) => (
                   <TreeNode key={n.id} node={n} {...dragProps} />
@@ -261,19 +261,19 @@ export default function StaffChart({
       {/* Pending-invite ghost nodes */}
       {pendingInvites.length > 0 && (
         <div>
-          <p className="text-[11px] uppercase tracking-[0.08em] text-ink-3 mb-2">Pending invites</p>
+          <p className="text-xs uppercase tracking-[0.08em] text-ink-3 mb-2">Pending invites</p>
           <ul className="flex flex-wrap gap-3">
             {pendingInvites.map((inv) => (
               <li
                 key={inv.id}
-                className="inline-flex items-center gap-3 rounded-card border border-dashed border-outline bg-tile/40 px-3 py-2"
+                className="inline-flex items-center gap-3 rounded-panel border border-dashed border-hairline bg-tile/40 px-3 py-2"
               >
                 <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-light text-ink-3 text-xs font-bold">
                   ?
                 </span>
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-ink-2 truncate">{inv.email}</span>
-                  <span className="block text-[11px] text-ink-3">Invited · {inv.role}</span>
+                  <span className="block text-xs text-ink-3">Invited · {inv.role}</span>
                 </span>
               </li>
             ))}

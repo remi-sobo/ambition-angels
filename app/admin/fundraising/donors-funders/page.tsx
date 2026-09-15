@@ -96,7 +96,7 @@ export default async function DonorsFundersPage({
                   ...(view !== "all" ? { view } : {}),
                   drawer: "research",
                 }).toString()}`}
-                className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+                className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
               >
                 Prospect research →
               </Link>
@@ -131,7 +131,7 @@ export default async function DonorsFundersPage({
               name="q"
               defaultValue={def.q ?? ""}
               placeholder="Search names…"
-              className="text-xs bg-tile border-[1.5px] border-outline rounded-full px-3 py-1.5 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange w-48"
+              className="text-xs bg-tile border-hairline rounded-full px-3 py-1.5 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange w-48"
             />
           </form>
         </div>
@@ -139,7 +139,7 @@ export default async function DonorsFundersPage({
         <SavedViews savedViews={data.savedViews} current={def} />
 
         {data.error && (
-          <div className="bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
+          <div className="bg-expense-bg border border-expense/30 rounded-panel px-5 py-3 text-expense text-sm">
             The list failed to load ({data.error}). Reload to retry.
           </div>
         )}
@@ -209,16 +209,16 @@ export default async function DonorsFundersPage({
 function ConstituentsTable({ rows, today }: { rows: DfRow[]; today: string }) {
   if (rows.length === 0) {
     return (
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
         <p className={`p-8 ${TYPE.bodyMuted}`}>No constituents match this view.</p>
       </section>
     );
   }
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-x-auto">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-[11px] uppercase tracking-wider text-ink-3 border-b border-outline">
+          <tr className="text-left text-xs uppercase tracking-wider text-ink-3 border-b border-hairline">
             <th className="px-4 py-3 font-semibold">Name</th>
             <th className="px-4 py-3 font-semibold text-right">Lifetime</th>
             <th className="px-4 py-3 font-semibold text-right">Gifts</th>
@@ -242,22 +242,22 @@ function ConstituentsTable({ rows, today }: { rows: DfRow[]; today: string }) {
                   </Link>
                   <span className="ml-2 inline-flex flex-wrap gap-1 align-middle">
                     {r.type === "organization" && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-tile border border-outline text-ink-3 uppercase tracking-wider">
+                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-tile border border-hairline text-ink-3 uppercase tracking-wider">
                         Org
                       </span>
                     )}
                     {r.recurring_active && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-revenue-bg text-revenue uppercase tracking-wider">
+                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-revenue-bg text-revenue uppercase tracking-wider">
                         Recurring
                       </span>
                     )}
                     {lapsed && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#F4E8D0] text-[#A56A1B] uppercase tracking-wider">
+                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-status-watch-bg text-status-watch-text uppercase tracking-wider">
                         Lapsed
                       </span>
                     )}
                     {r.do_not_contact && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-expense-bg text-expense uppercase tracking-wider">
+                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-expense-bg text-expense uppercase tracking-wider">
                         DNC
                       </span>
                     )}
@@ -281,7 +281,7 @@ function ConstituentsTable({ rows, today }: { rows: DfRow[]; today: string }) {
                       <span className="truncate block">{r.next_step}</span>
                       {r.next_step_due && (
                         <span
-                          className={`text-[11px] ${overdue ? "text-expense font-semibold" : "text-ink-3"} [font-variant-numeric:tabular-nums]`}
+                          className={`text-xs ${overdue ? "text-expense font-semibold" : "text-ink-3"} [font-variant-numeric:tabular-nums]`}
                         >
                           {overdue ? "overdue · " : "due "}
                           {fmtDate(r.next_step_due)}
@@ -304,7 +304,7 @@ function ConstituentsTable({ rows, today }: { rows: DfRow[]; today: string }) {
 function ProspectsTable({ prospects }: { prospects: ProspectRow[] }) {
   if (prospects.length === 0) {
     return (
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
         <p className={`p-8 ${TYPE.bodyMuted}`}>
           No active prospects. Promoted prospects live in the main list; disqualified
           ones are archived with their reason.
@@ -313,10 +313,10 @@ function ProspectsTable({ prospects }: { prospects: ProspectRow[] }) {
     );
   }
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-x-auto">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-[11px] uppercase tracking-wider text-ink-3 border-b border-outline">
+          <tr className="text-left text-xs uppercase tracking-wider text-ink-3 border-b border-hairline">
             <th className="px-4 py-3 font-semibold">Prospect</th>
             <th className="px-4 py-3 font-semibold">Type</th>
             <th className="px-4 py-3 font-semibold">Email</th>

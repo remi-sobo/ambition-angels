@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState, useEffect } from "react";
 import type { FinCategory } from "@/lib/finance/types";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type Props = {
   categories: FinCategory[];
@@ -81,10 +82,10 @@ export default function TransactionFilters({ categories }: Props) {
   }
 
   return (
-    <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-4 mb-4">
+    <div className="rounded-panel border-hairline bg-surface p-4 mb-4">
       <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="lg:col-span-2">
-          <label className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">
+          <label className={`block ${TYPE.fieldLabel} mb-1`}>
             Search
           </label>
           <input
@@ -92,17 +93,17 @@ export default function TransactionFilters({ categories }: Props) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="description"
-            className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+            className="w-full bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
           />
         </div>
         <div>
-          <label className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">
+          <label className={`block ${TYPE.fieldLabel} mb-1`}>
             Category
           </label>
           <select
             value={category}
             onChange={(e) => apply({ category: e.target.value })}
-            className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+            className="w-full bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
           >
             <option value="">All</option>
             <option value="uncategorized">(Uncategorized)</option>
@@ -118,25 +119,25 @@ export default function TransactionFilters({ categories }: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">
+          <label className={`block ${TYPE.fieldLabel} mb-1`}>
             From
           </label>
           <input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+            className="w-full bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
           />
         </div>
         <div>
-          <label className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">
+          <label className={`block ${TYPE.fieldLabel} mb-1`}>
             To
           </label>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+            className="w-full bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
           />
         </div>
       </div>
@@ -154,7 +155,7 @@ export default function TransactionFilters({ categories }: Props) {
             className={`text-xs px-2.5 py-1 rounded-full border ${
               status === s.value
                 ? "border-orange/60 bg-orange/15 text-orange"
-                : "border-outline text-ink-2 hover:text-ink-1"
+                : "border-hairline text-ink-2 hover:text-ink-1"
             }`}
           >
             {s.label}

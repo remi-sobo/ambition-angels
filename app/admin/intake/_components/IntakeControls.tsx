@@ -73,9 +73,9 @@ function ActionButton({
       ? "bg-orange/15 text-orange hover:bg-orange/25 font-semibold"
       : tone === "danger"
       ? "text-ink-2 hover:text-expense"
-      : "bg-tile hover:bg-[#EFE6D4] text-ink-2";
+      : "bg-tile hover:bg-tile text-ink-2";
   return (
-    <button onClick={onClick} disabled={disabled} className={`px-2 py-1 rounded-md text-[11px] ${cls}`}>
+    <button onClick={onClick} disabled={disabled} className={`px-2 py-1 rounded-control text-xs ${cls}`}>
       {label}
     </button>
   );
@@ -97,32 +97,32 @@ const confirm = useConfirm();
 
   return (
     <article
-      className={`bg-surface border-[1.5px] border-outline rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
+      className={`bg-surface border-hairline rounded-panel p-3 text-sm ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-semibold text-ink-1">{app.name}</span>
-        {app.grade && <span className="text-[11px] text-ink-2">Grade {app.grade}</span>}
-        {app.school && <span className="text-[11px] text-ink-2">· {app.school}</span>}
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
+        {app.grade && <span className="text-xs text-ink-2">Grade {app.grade}</span>}
+        {app.school && <span className="text-xs text-ink-2">· {app.school}</span>}
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
           {app.cohortName}
         </span>
         {app.priority === 1 && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
             High priority
           </span>
         )}
         {app.waitlistPosition !== null && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
             #{app.waitlistPosition} on waitlist
           </span>
         )}
-        <span className="ml-auto text-[11px] tabular-nums text-ink-2">
+        <span className="ml-auto text-xs tabular-nums text-ink-2">
           applied {app.created_at.slice(0, 10)}
         </span>
       </div>
 
       {(app.guardian_name || app.guardian_email) && (
-        <p className="text-[12px] text-ink-2 mt-1">
+        <p className="text-xs text-ink-2 mt-1">
           {app.guardian_name ? `Guardian: ${app.guardian_name}` : "Contact:"}
           {app.guardian_email && (
             <a href={`mailto:${app.guardian_email}`} className="text-orange/80 hover:text-orange ml-1.5">
@@ -136,14 +136,14 @@ const confirm = useConfirm();
       {app.motivation && (
         <p
           onClick={() => setExpanded((v) => !v)}
-          className={`text-[12px] text-ink-2 mt-1.5 cursor-pointer ${expanded ? "" : "line-clamp-2"}`}
+          className={`text-xs text-ink-2 mt-1.5 cursor-pointer ${expanded ? "" : "line-clamp-2"}`}
           title={expanded ? "Collapse" : "Expand"}
         >
           &ldquo;{app.motivation}&rdquo;
         </p>
       )}
       {app.referral && (
-        <p className="text-[11px] text-ink-2 mt-1">Heard via: {app.referral}</p>
+        <p className="text-xs text-ink-2 mt-1">Heard via: {app.referral}</p>
       )}
 
       <div className="flex flex-wrap items-center gap-1 mt-2">
@@ -153,7 +153,7 @@ const confirm = useConfirm();
               value={app.cohort_id ?? ""}
               disabled={busy}
               onChange={(e) => patch({ cohort_id: e.target.value || null })}
-              className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1 text-ink-1 cursor-pointer max-w-[200px]"
+              className="text-xs bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 cursor-pointer max-w-[200px]"
             >
               <option value="" className="bg-surface">No cohort</option>
               {cohorts.map((c) => (
@@ -164,7 +164,7 @@ const confirm = useConfirm();
               value={app.priority}
               disabled={busy}
               onChange={(e) => patch({ priority: Number(e.target.value) })}
-              className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1 text-ink-1 cursor-pointer"
+              className="text-xs bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 cursor-pointer"
             >
               {[1, 2, 3].map((p) => (
                 <option key={p} value={p} className="bg-surface">{PRIORITY_LABELS[p]}</option>
@@ -208,7 +208,7 @@ const confirm = useConfirm();
             onClick={() => void patch({ status: "new" })} />
         )}
         {app.status === "accepted" && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-revenue-bg text-revenue uppercase tracking-wider">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-revenue-bg text-revenue uppercase tracking-wider">
             On the roster
           </span>
         )}
@@ -240,7 +240,7 @@ export function OfferNextButton({ applicationId, name }: { applicationId: string
         void call(`/api/admin/applications/${applicationId}`, "PATCH", { status: "offered" })
       }
       disabled={busy}
-      className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-orange/15 text-orange hover:bg-orange/25 disabled:opacity-50"
+      className="px-2.5 py-1 rounded-full text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25 disabled:opacity-50"
     >
       Offer next: {name}
     </button>

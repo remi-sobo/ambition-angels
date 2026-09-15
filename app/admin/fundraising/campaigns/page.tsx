@@ -73,7 +73,7 @@ export default async function CampaignsPage() {
   const unattributed = unattributedRes.count ?? 0;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Campaigns"
         subtitle="Campaign → appeal attribution · every gift should carry a campaign"
@@ -106,7 +106,7 @@ export default async function CampaignsPage() {
           const pct = c.goal && c.goal > 0 ? Math.min(100, (agg.total / Number(c.goal)) * 100) : null;
           const campaignAppeals = appeals.filter((a) => a.campaign_id === c.id);
           return (
-            <section key={c.id} className="bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-5">
+            <section key={c.id} className="bg-surface border-hairline rounded-panel p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="font-heading font-semibold text-ink-1">{c.name}</h2>
                 <span className="text-sm text-ink-1 tabular-nums">
@@ -116,7 +116,7 @@ export default async function CampaignsPage() {
                 </span>
               </div>
               {(c.starts_on || c.ends_on) && (
-                <p className="text-[11px] text-ink-2 mt-0.5">
+                <p className="text-xs text-ink-2 mt-0.5">
                   {c.starts_on ?? "…"} → {c.ends_on ?? "…"}
                 </p>
               )}
@@ -131,7 +131,7 @@ export default async function CampaignsPage() {
                   return (
                     <span
                       key={a.id}
-                      className="text-[11px] bg-tile border-[1.5px] border-outline rounded-full px-3 py-1 text-ink-2"
+                      className="text-xs bg-tile border-hairline rounded-full px-3 py-1 text-ink-2"
                       title={a.source_code ? `Source code ${a.source_code}` : undefined}
                     >
                       {a.name} · {money(aa.total)}

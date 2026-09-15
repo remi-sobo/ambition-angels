@@ -155,7 +155,7 @@ export default async function TodaysMovesPage() {
   const recentValue = recent.reduce((s, g) => s + Number(g.amount), 0);
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Today's Moves"
         subtitle="Who needs you today. Across asks, acknowledgments, and recent gifts"
@@ -164,7 +164,7 @@ export default async function TodaysMovesPage() {
             <GmailSyncButton />
             <Link
               href="/admin/fundraising"
-              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
             >
               Pipeline →
             </Link>
@@ -260,16 +260,16 @@ function QueueShell({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-5 py-3 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-3 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className={TYPE.cardTitle}>
             {title} <span className="text-ink-3 font-normal">· {count}</span>
           </h2>
-          <p className="text-[11px] text-ink-3">{hint}</p>
+          <p className="text-xs text-ink-3">{hint}</p>
         </div>
         {href && (
-          <Link href={href} className="text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors whitespace-nowrap">
+          <Link href={href} className="text-xs font-semibold text-ink-2 hover:text-orange transition-colors whitespace-nowrap">
             {hrefLabel ?? "Open →"}
           </Link>
         )}
@@ -292,7 +292,7 @@ function MomentQueue({ title, hint, rows }: { title: string; hint: string; rows:
       <ul className="divide-y divide-hairline">
         {shown.map((m, i) => (
           <li key={`${m.kind}-${i}`} className="px-5 py-2.5 flex items-center gap-3 text-sm">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3 w-12 flex-shrink-0">
+            <span className="text-xs font-semibold uppercase tracking-wider text-ink-3 w-12 flex-shrink-0">
               {MOMENT_KIND_LABELS[m.kind]}
             </span>
             <Link href={m.href} className="font-medium text-ink-1 hover:text-orange transition-colors truncate max-w-[220px]">
@@ -309,7 +309,7 @@ function MomentQueue({ title, hint, rows }: { title: string; hint: string; rows:
         ))}
       </ul>
       {rows.length > shown.length && (
-        <p className="px-5 py-2 text-[11px] text-ink-3">+{rows.length - shown.length} more</p>
+        <p className="px-5 py-2 text-xs text-ink-3">+{rows.length - shown.length} more</p>
       )}
     </QueueShell>
   );
@@ -343,7 +343,7 @@ function OppQueue({
         ))}
       </ul>
       {rows.length > shown.length && (
-        <p className="px-5 py-2 text-[11px] text-ink-3">+{rows.length - shown.length} more</p>
+        <p className="px-5 py-2 text-xs text-ink-3">+{rows.length - shown.length} more</p>
       )}
     </QueueShell>
   );
@@ -383,7 +383,7 @@ function GiftQueue({
         ))}
       </ul>
       {rows.length > shown.length && (
-        <p className="px-5 py-2 text-[11px] text-ink-3">+{rows.length - shown.length} more</p>
+        <p className="px-5 py-2 text-xs text-ink-3">+{rows.length - shown.length} more</p>
       )}
     </QueueShell>
   );

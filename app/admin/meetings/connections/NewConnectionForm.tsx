@@ -23,7 +23,7 @@ type SearchResult = {
 type Chosen = { id: string; name: string };
 
 const inputCls =
-  "w-full text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 disabled:opacity-60";
+  "w-full text-sm bg-cream border-hairline rounded-control px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 disabled:opacity-60";
 
 /**
  * "+ New connection" — for asks that didn't come over email. Pick the person
@@ -185,7 +185,7 @@ export default function NewConnectionForm() {
   }
 
   return (
-    <div className="rounded-lg border-[1.5px] border-outline bg-tile p-4 space-y-3">
+    <div className="rounded-control border-hairline bg-tile p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-ink-1">New connection</h3>
         <button
@@ -203,14 +203,14 @@ export default function NewConnectionForm() {
       {/* Step 1 — person */}
       {chosen ? (
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 text-sm text-ink-1 bg-cream border border-outline rounded-full px-3 py-1">
+          <span className="inline-flex items-center gap-1 text-sm text-ink-1 bg-cream border border-hairline rounded-full px-3 py-1">
             <span className="text-ink-3">♥</span>
             {chosen.name}
           </span>
           <button
             type="button"
             onClick={() => setChosen(null)}
-            className="text-[11px] text-ink-2 hover:text-orange"
+            className="text-xs text-ink-2 hover:text-orange"
           >
             Change
           </button>
@@ -226,18 +226,18 @@ export default function NewConnectionForm() {
             autoFocus
           />
           {(results.length > 0 || q.trim().length >= 2) && (
-            <div className="absolute z-20 left-0 right-0 mt-1 bg-tile border-[1.5px] border-outline rounded-lg shadow-lg overflow-hidden">
+            <div className="absolute z-20 left-0 right-0 mt-1 bg-tile border-hairline rounded-control shadow-lg overflow-hidden">
               {results.map((res) => (
                 <button
                   key={res.kind === "prospect" ? `p-${res.hubspotId}` : `c-${res.id}`}
                   type="button"
                   onClick={() => pick(res)}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-[#EFE6D4] flex items-center justify-between gap-2"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-tile flex items-center justify-between gap-2"
                 >
                   <span className="text-ink-1 font-medium truncate">
                     {res.name}
                     {res.kind === "prospect" && (
-                      <span className="ml-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">
+                      <span className="ml-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
                         prospect · add
                       </span>
                     )}
@@ -250,7 +250,7 @@ export default function NewConnectionForm() {
               <button
                 type="button"
                 onClick={addNew}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-[#EFE6D4] text-orange font-semibold border-t border-outline"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-tile text-orange font-semibold border-t border-hairline"
               >
                 + Add “{q.trim()}” as a new person
               </button>
@@ -270,7 +270,7 @@ export default function NewConnectionForm() {
             autoFocus
           />
           <div className="flex items-end gap-3">
-            <label className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1">
+            <label className="text-xs uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1">
               Due (optional)
               <input
                 type="date"

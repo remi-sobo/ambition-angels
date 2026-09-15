@@ -9,8 +9,8 @@ import { StatusChip } from "../../../_components/StatusChip";
 import EmptyState from "../../../_components/EmptyState";
 import type { ReviewCycle } from "../../_lib/reviews";
 
-const CARD = "rounded-card border-[1.5px] border-outline bg-tile shadow-tile";
-const FIELD = "rounded-md border border-outline bg-surface px-2 py-1 text-sm text-ink-1 placeholder:text-ink-3";
+const CARD = "rounded-panel border-hairline bg-tile";
+const FIELD = "rounded-control border border-hairline bg-surface px-2 py-1 text-sm text-ink-1 placeholder:text-ink-3";
 
 const MODE_LABEL: Record<string, string> = {
   transparent: "Transparent",
@@ -127,7 +127,7 @@ export default function ReviewsAdminClient({
               type="button"
               disabled={busy || !form.name.trim()}
               onClick={create}
-              className="rounded-md bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50"
+              className="rounded-control bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50"
             >
               Create
             </button>
@@ -190,7 +190,7 @@ export default function ReviewsAdminClient({
               </div>
 
               {warnings[c.id]?.length > 0 && (
-                <div className="mt-3 rounded-md border border-status-watch/40 bg-status-watch-bg px-3 py-2 text-xs text-ink-1">
+                <div className="mt-3 rounded-control border border-status-watch/40 bg-status-watch-bg px-3 py-2 text-xs text-ink-1">
                   <p className="font-semibold">Small-team anonymity warning</p>
                   <p className="text-ink-2 mt-0.5">
                     These subjects have a single upward or peer rater. Anonymity can’t be real, so their raw upward/peer

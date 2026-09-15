@@ -76,7 +76,7 @@ export default function FollowUps({ followups }: { followups: FollowupLite[] }) 
         <h2 className={TYPE.cardTitle}>
           Email follow-ups <span className="text-ink-3 font-normal">· {visible.length}</span>
         </h2>
-        <span className="text-[11px] text-ink-3">reply within {SLA_HOURS}h</span>
+        <span className="text-xs text-ink-3">reply within {SLA_HOURS}h</span>
       </div>
 
       <div className="space-y-2">
@@ -87,12 +87,12 @@ export default function FollowUps({ followups }: { followups: FollowupLite[] }) 
           return (
             <div
               key={f.id}
-              className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel px-4 py-3"
+              className="rounded-panel border-hairline bg-surface px-4 py-3"
             >
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border tabular-nums ${s.tone}`}>
+                    <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border tabular-nums ${s.tone}`}>
                       {s.label}
                     </span>
                   </div>
@@ -115,7 +115,7 @@ export default function FollowUps({ followups }: { followups: FollowupLite[] }) 
                 )}
                 <button
                   onClick={() => markDone(f.id)}
-                  className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-3 py-1.5 rounded-full transition-colors"
+                  className="text-xs font-semibold text-ink-1 bg-tile hover:bg-tile border-hairline px-3 py-1.5 rounded-full transition-colors"
                 >
                   Done
                 </button>

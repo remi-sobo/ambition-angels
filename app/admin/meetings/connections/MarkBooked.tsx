@@ -77,13 +77,13 @@ export default function MarkBooked({ taskId }: { taskId: string }) {
         type="button"
         onClick={() => (open ? setOpen(false) : openPicker())}
         disabled={busy}
-        className="text-[11px] font-semibold text-revenue hover:text-revenue/80 px-2 py-1 rounded-full border border-revenue/30 bg-revenue-bg disabled:opacity-50 transition-colors"
+        className="text-xs font-semibold text-revenue hover:text-revenue/80 px-2 py-1 rounded-full border border-revenue/30 bg-revenue-bg disabled:opacity-50 transition-colors"
       >
         {busy ? "…" : "Mark booked"}
       </button>
       {open && (
         <div
-          className="absolute right-0 top-8 z-30 w-72 rounded-lg border-[1.5px] border-outline bg-tile shadow-xl py-1 text-xs"
+          className="absolute right-0 top-8 z-30 w-72 rounded-control border-hairline bg-tile shadow-xl py-1 text-xs"
           onMouseLeave={() => !busy && setOpen(false)}
         >
           {loading ? (
@@ -91,7 +91,7 @@ export default function MarkBooked({ taskId }: { taskId: string }) {
           ) : (
             <>
               {bookings.length > 0 && (
-                <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-ink-3">
+                <div className="px-3 py-1 text-xs uppercase tracking-wider text-ink-3">
                   Link a /meet booking
                 </div>
               )}
@@ -101,18 +101,18 @@ export default function MarkBooked({ taskId }: { taskId: string }) {
                   type="button"
                   onClick={() => book(b.id)}
                   disabled={busy}
-                  className="block w-full text-left px-3 py-1.5 hover:bg-[#EFE6D4] text-ink-1"
+                  className="block w-full text-left px-3 py-1.5 hover:bg-tile text-ink-1"
                 >
                   <span className="font-medium">{b.typeName}</span> · {fmt(b.startTime)}
                   <span className="block text-ink-3">{b.attendeeName}</span>
                 </button>
               ))}
-              {bookings.length > 0 && <div className="border-t border-outline my-1" />}
+              {bookings.length > 0 && <div className="border-t border-hairline my-1" />}
               <button
                 type="button"
                 onClick={() => book(null)}
                 disabled={busy}
-                className="block w-full text-left px-3 py-1.5 hover:bg-[#EFE6D4] text-ink-2"
+                className="block w-full text-left px-3 py-1.5 hover:bg-tile text-ink-2"
               >
                 Just mark booked (no /meet link)
               </button>

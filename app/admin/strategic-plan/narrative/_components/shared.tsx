@@ -97,7 +97,7 @@ export function StatBig({
   accent?: boolean;
 }) {
   return (
-    <div className={`rounded-card-lg border p-5 ${accent ? "border-orange/30 bg-orange-light" : "border-hairline bg-surface"}`}>
+    <div className={`rounded-panel-lg border p-5 ${accent ? "border-orange/30 bg-orange-light" : "border-hairline bg-surface"}`}>
       <div className={`${TYPE.cardLabel} mb-1.5`}>
         {label}
       </div>
@@ -105,7 +105,7 @@ export function StatBig({
       {(sub || status) && (
         <div className="mt-2 flex items-center gap-2 flex-wrap">
           {status && <StatusChip status={status}>{STATUS_LABEL[status]}</StatusChip>}
-          {sub && <span className="text-[12px] text-ink-2">{sub}</span>}
+          {sub && <span className="text-xs text-ink-2">{sub}</span>}
         </div>
       )}
     </div>
@@ -116,7 +116,7 @@ export function StatBig({
 export function MovementHeader({ n, title, lead }: { n: number; title: string; lead?: ReactNode }) {
   return (
     <header className="mb-8">
-      <div className="text-[10px] uppercase tracking-[0.25em] text-orange/80 mb-2">
+      <div className="text-xs uppercase tracking-[0.25em] text-orange/80 mb-2">
         Strategy Narrative · Movement {n} of 3
       </div>
       <h1 className="font-display text-5xl sm:text-6xl text-ink-1 leading-[0.95] mb-4">{title}</h1>

@@ -59,7 +59,7 @@ function fmtDate(iso: string | null): string {
 function MetaItem({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-ink-2">{label}</div>
+      <div className="text-xs uppercase tracking-wider text-ink-2">{label}</div>
       <div className="mt-0.5 text-sm text-ink-1">{children}</div>
     </div>
   );
@@ -165,14 +165,14 @@ export default async function ProspectProfile({ id, v2 = false }: { id: string; 
         {v2 ? "← Donors & Funders · Prospects" : "← Back to Prospects"}
       </Link>
 
-      <header className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+      <header className="rounded-panel border-hairline bg-surface p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h1 className={TYPE.pageTitle}>
               {prospect.name}
             </h1>
-            <div className="mt-1.5 flex items-center gap-2 text-[11px] text-ink-2">
-              <span className="uppercase tracking-wide border border-outline rounded px-1.5 py-0.5">{TYPE_LABEL[prospect.type] ?? prospect.type}</span>
+            <div className="mt-1.5 flex items-center gap-2 text-xs text-ink-2">
+              <span className=" border border-hairline rounded px-1.5 py-0.5">{TYPE_LABEL[prospect.type] ?? prospect.type}</span>
               <span>· {SOURCE_LABEL[prospect.source] ?? prospect.source}</span>
               {prospect.status !== "active" && <span className="text-orange">· {prospect.status}</span>}
             </div>
@@ -182,7 +182,7 @@ export default async function ProspectProfile({ id, v2 = false }: { id: string; 
               href={hubspotUrl}
               target="_blank"
               rel="noreferrer"
-              className="shrink-0 text-xs font-semibold text-orange hover:text-orange-dark bg-orange/10 hover:bg-orange/15 border border-orange/30 px-3 py-2 rounded-lg whitespace-nowrap"
+              className="shrink-0 text-xs font-semibold text-orange hover:text-orange-dark bg-orange/10 hover:bg-orange/15 border border-orange/30 px-3 py-2 rounded-control whitespace-nowrap"
             >
               View in HubSpot ↗
             </a>
@@ -201,7 +201,7 @@ export default async function ProspectProfile({ id, v2 = false }: { id: string; 
 
         {prospect.strategy_note && (
           <div className="mt-4 border-t border-hairline pt-3">
-            <div className="text-[10px] uppercase tracking-wider text-ink-2">Why / angle</div>
+            <div className="text-xs uppercase tracking-wider text-ink-2">Why / angle</div>
             <p className="mt-0.5 text-sm text-ink-1">{prospect.strategy_note}</p>
           </div>
         )}
@@ -245,11 +245,11 @@ export default async function ProspectProfile({ id, v2 = false }: { id: string; 
           <DealsTable deals={deals} />
           <EngagementTimeline engagements={engagements} />
           {contact && (
-            <details className="rounded-card border-[1.5px] border-outline bg-surface p-6 group">
+            <details className="rounded-panel border-hairline bg-surface p-6 group">
               <summary className="cursor-pointer text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1 select-none">
                 Raw HubSpot data
               </summary>
-              <pre className="mt-4 text-[11px] text-ink-2 font-mono leading-relaxed bg-surface border border-hairline rounded-lg p-4 overflow-x-auto">
+              <pre className="mt-4 text-xs text-ink-2 font-mono leading-relaxed bg-surface border border-hairline rounded-control p-4 overflow-x-auto">
                 {JSON.stringify(contact.raw_json, null, 2)}
               </pre>
             </details>

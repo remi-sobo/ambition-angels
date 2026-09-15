@@ -52,13 +52,13 @@ export default async function ResearchDrawer({
     <>
       {/* Scrim — a link, so closing is a navigation like opening. */}
       <Link href={closeHref} aria-label="Close research drawer" className="fixed inset-0 z-40 bg-black/50" />
-      <aside className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-ink border-l-[1.5px] border-outline overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 z-10 bg-tile border-b border-outline px-5 py-3 flex items-center gap-3">
+      <aside className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-ink border-l-[1.5px] border-hairline overflow-y-auto shadow-2xl">
+        <div className="sticky top-0 z-10 bg-tile border-b border-hairline px-5 py-3 flex items-center gap-3">
           <span className={TYPE.cardTitle}>Prospect Research</span>
-          <span className="text-[10px] uppercase tracking-wider text-ink-3">ai.prospect_research</span>
+          <span className="text-xs uppercase tracking-wider text-ink-3">ai.prospect_research</span>
           <Link
             href={closeHref}
-            className="ml-auto text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-3 py-1.5 rounded-full transition-colors"
+            className="ml-auto text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-3 py-1.5 rounded-full transition-colors"
           >
             Close ✕
           </Link>
@@ -79,10 +79,10 @@ export default async function ResearchDrawer({
                   <Link
                     key={a.id}
                     href={`/admin/fundraising/strategy/${a.key}`}
-                    className="inline-flex items-center gap-2 bg-tile border-[1.5px] border-outline rounded-full px-3 py-1.5 text-xs font-semibold text-ink-2 hover:text-orange transition-colors"
+                    className="inline-flex items-center gap-2 bg-tile border-hairline rounded-full px-3 py-1.5 text-xs font-semibold text-ink-2 hover:text-orange transition-colors"
                   >
                     {a.name}
-                    <span className="text-[10px] text-ink-3 [font-variant-numeric:tabular-nums]">
+                    <span className="text-xs text-ink-3 [font-variant-numeric:tabular-nums]">
                       {counts.get(a.id) ?? 0}
                     </span>
                   </Link>

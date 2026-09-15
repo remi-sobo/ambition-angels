@@ -64,11 +64,11 @@ export default function SavedViews({
         return (
           <span
             key={sv.id}
-            className="group inline-flex items-center gap-1 bg-tile border-[1.5px] border-outline rounded-full pl-3 pr-1.5 py-1"
+            className="group inline-flex items-center gap-1 bg-tile border-hairline rounded-full pl-3 pr-1.5 py-1"
           >
             <a
               href={`/admin/fundraising/donors-funders${params ? `?${params}` : ""}`}
-              className="text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors"
+              className="text-xs font-semibold text-ink-2 hover:text-orange transition-colors"
             >
               {sv.name}
             </a>
@@ -76,7 +76,7 @@ export default function SavedViews({
               type="button"
               onClick={() => remove(sv.id)}
               title={`Delete saved view "${sv.name}"`}
-              className="text-[11px] text-ink-3 hover:text-expense px-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="text-xs text-ink-3 hover:text-expense px-1 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               ✕
             </button>
@@ -95,7 +95,7 @@ export default function SavedViews({
             }}
             placeholder="Name this view"
             maxLength={120}
-            className="text-xs bg-tile border-[1.5px] border-outline rounded-full px-3 py-1 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange w-44"
+            className="text-xs bg-tile border-hairline rounded-full px-3 py-1 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange w-44"
           />
           <button
             type="button"
@@ -123,12 +123,12 @@ export default function SavedViews({
               ? "Save the current filters as a named view"
               : "Set a filter to save a view"
           }
-          className="text-[11px] font-semibold text-ink-2 hover:text-orange border-[1.5px] border-dashed border-outline rounded-full px-3 py-1 transition-colors disabled:opacity-40"
+          className="text-xs font-semibold text-ink-2 hover:text-orange border-dashed border-hairline rounded-full px-3 py-1 transition-colors disabled:opacity-40"
         >
           + Save view
         </button>
       )}
-      {error && <span className="text-[11px] text-expense">{error}</span>}
+      {error && <span className="text-xs text-expense">{error}</span>}
     </div>
   );
 }

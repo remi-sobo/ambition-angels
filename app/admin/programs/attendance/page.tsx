@@ -101,19 +101,19 @@ export default async function AttendancePage() {
     return (
       <Link
         href={`/admin/programs/cohorts/${s.cohort_id}/sessions/${s.id}`}
-        className="group flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel transition-colors hover:bg-[#EFE6D4]"
+        className="group flex items-center gap-3 px-4 py-2.5 rounded-panel border border-hairline bg-surface transition-colors hover:bg-tile"
       >
-        <span className="text-[12px] text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-24 shrink-0">
+        <span className="text-xs text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-24 shrink-0">
           {fmtDate(s.session_date)}
         </span>
         <span className="flex-1 min-w-0 truncate">
           <span className="text-[14px] text-ink-1 group-hover:text-orange transition-colors">
             {cohortName.get(s.cohort_id)}
           </span>
-          {s.title && <span className="text-[13px] text-ink-2"> · {s.title}</span>}
+          {s.title && <span className="text-sm text-ink-2"> · {s.title}</span>}
         </span>
         {s.status === "held" || taken > 0 ? (
-          <span className="shrink-0 text-[12px] text-ink-2">
+          <span className="shrink-0 text-xs text-ink-2">
             {showRate && rate !== null ? (
               <>
                 <span className="font-semibold text-ink-1">{pct(rate)}</span> · {taken}/{expected || "?"} marked
@@ -123,7 +123,7 @@ export default async function AttendancePage() {
             )}
           </span>
         ) : (
-          <span className="shrink-0 text-[12px] text-ink-3">
+          <span className="shrink-0 text-xs text-ink-3">
             {expected} expected · not taken
           </span>
         )}
@@ -164,7 +164,7 @@ export default async function AttendancePage() {
 
   const sessionsWord = terms.sessions.toLowerCase();
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px] space-y-8">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace space-y-8">
       <PageHeader
         title="Attendance"
         subtitle={`Every ${terms.cohort.toLowerCase()}'s ${sessionsWord} on one surface. Open a ${terms.session.toLowerCase()} to take roll on its check-in sheet.`}

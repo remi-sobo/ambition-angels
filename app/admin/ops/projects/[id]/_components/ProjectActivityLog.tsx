@@ -88,7 +88,7 @@ export default function ProjectActivityLog({
 
   if (events.length === 0) {
     return (
-      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+      <section className="rounded-panel border-hairline bg-surface p-6">
         <h2 className={`${TYPE.sectionHeader} mb-3`}>
           Activity
         </h2>
@@ -108,14 +108,14 @@ export default function ProjectActivityLog({
   const days = Array.from(groups.keys()).sort((a, b) => (a < b ? 1 : -1));
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <h2 className={`${TYPE.sectionHeader} mb-4`}>
         Activity
       </h2>
       <div className="space-y-5">
         {days.map((day) => (
           <div key={day}>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+            <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               {fmtDayLabel(day)}
             </div>
             <ol className="space-y-1.5">
@@ -124,7 +124,7 @@ export default function ProjectActivityLog({
                   key={`${day}-${i}`}
                   className="flex items-baseline gap-3 text-sm"
                 >
-                  <span className="shrink-0 text-[11px] text-ink-3 font-mono w-14">
+                  <span className="shrink-0 text-xs text-ink-3 font-mono w-14">
                     {fmtTime(e.ts)}
                   </span>
                   <span className="text-ink-1">{e.message}</span>

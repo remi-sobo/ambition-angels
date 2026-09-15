@@ -314,7 +314,7 @@ export default function AnalyticsView() {
             className={`text-xs font-semibold px-4 py-2 rounded-full border transition-colors ${
               period === p.id
                 ? "bg-orange text-white border-orange"
-                : "text-ink-2 border-outline hover:border-orange/40 hover:text-ink-1"
+                : "text-ink-2 border-hairline hover:border-orange/40 hover:text-ink-1"
             }`}
           >
             {p.label}
@@ -323,7 +323,7 @@ export default function AnalyticsView() {
       </div>
 
       {error && (
-        <div className="bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
+        <div className="bg-expense-bg border border-expense/30 rounded-panel px-5 py-3 text-expense text-sm">
           {error}
         </div>
       )}
@@ -386,9 +386,9 @@ export default function AnalyticsView() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
-              <tr className="border-b border-outline">
+              <tr className="border-b border-hairline">
                 {["Page", "Views", "Avg Time on Page", "% of Total"].map((h) => (
-                  <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                  <th key={h} className={`text-left ${TYPE.tableHeader} px-4 py-3 whitespace-nowrap`}>
                     {h}
                   </th>
                 ))}
@@ -401,7 +401,7 @@ export default function AnalyticsView() {
                 <tr><td colSpan={4} className={`px-4 py-6 ${TYPE.bodyMuted}`}>No page views in this period yet.</td></tr>
               ) : (
                 topPages.map((p) => (
-                  <tr key={p.page} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                  <tr key={p.page} className="border-b border-hairline hover:bg-tile transition-colors">
                     <td className="px-4 py-3 text-ink-1 font-mono text-xs whitespace-nowrap">{p.page}</td>
                     <td className="px-4 py-3 text-ink-1">{p.views.toLocaleString()}</td>
                     <td className="px-4 py-3 text-ink-2 text-xs">{fmtSeconds(p.avgTime)}</td>
@@ -473,7 +473,7 @@ export default function AnalyticsView() {
                 <span className="text-ink-1 font-mono text-xs break-all flex-1 min-w-0">{e.event_name}</span>
                 <div className="text-right flex-shrink-0">
                   <div className="text-ink-1 font-semibold text-sm">{e.count.toLocaleString()}</div>
-                  <div className="text-ink-2 text-[11px]">{e.allTime.toLocaleString()} all-time</div>
+                  <div className="text-ink-2 text-xs">{e.allTime.toLocaleString()} all-time</div>
                 </div>
               </div>
             ))
@@ -483,9 +483,9 @@ export default function AnalyticsView() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm min-w-[520px]">
             <thead>
-              <tr className="border-b border-outline">
+              <tr className="border-b border-hairline">
                 {["Event Name", "Count (period)", "Count all time"].map((h) => (
-                  <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                  <th key={h} className={`text-left ${TYPE.tableHeader} px-4 py-3 whitespace-nowrap`}>
                     {h}
                   </th>
                 ))}
@@ -498,7 +498,7 @@ export default function AnalyticsView() {
                 <tr><td colSpan={3} className={`px-4 py-6 ${TYPE.bodyMuted}`}>No events in this period yet.</td></tr>
               ) : (
                 eventCounts.map((e) => (
-                  <tr key={e.event_name} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                  <tr key={e.event_name} className="border-b border-hairline hover:bg-tile transition-colors">
                     <td className="px-4 py-3 text-ink-1 font-mono text-xs whitespace-nowrap">{e.event_name}</td>
                     <td className="px-4 py-3 text-ink-1 font-semibold">{e.count.toLocaleString()}</td>
                     <td className="px-4 py-3 text-ink-2">{e.allTime.toLocaleString()}</td>
@@ -544,9 +544,9 @@ export default function AnalyticsView() {
               <div key={String(v.id)} className="px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-ink-1 font-mono text-xs break-all flex-1 min-w-0">{v.page ?? "—"}</span>
-                  <span className="text-[11px] text-ink-3 whitespace-nowrap flex-shrink-0">{timeAgo(v.created_at)}</span>
+                  <span className="text-xs text-ink-3 whitespace-nowrap flex-shrink-0">{timeAgo(v.created_at)}</span>
                 </div>
-                <div className="text-[11px] text-ink-2 mt-1 flex flex-wrap gap-x-2">
+                <div className="text-xs text-ink-2 mt-1 flex flex-wrap gap-x-2">
                   <span>{v.device ?? "—"}</span>
                   <span>·</span>
                   <span>{refSource(v.referrer)}</span>
@@ -565,9 +565,9 @@ export default function AnalyticsView() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm min-w-[800px]">
             <thead>
-              <tr className="border-b border-outline">
+              <tr className="border-b border-hairline">
                 {["Page", "Device", "Source", "Time on Page", "When"].map((h) => (
-                  <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                  <th key={h} className={`text-left ${TYPE.tableHeader} px-4 py-3 whitespace-nowrap`}>
                     {h}
                   </th>
                 ))}
@@ -580,7 +580,7 @@ export default function AnalyticsView() {
                 <tr><td colSpan={5} className={`px-4 py-6 ${TYPE.bodyMuted}`}>No page views yet.</td></tr>
               ) : (
                 recentActivity.map((v) => (
-                  <tr key={String(v.id)} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                  <tr key={String(v.id)} className="border-b border-hairline hover:bg-tile transition-colors">
                     <td className="px-4 py-3 text-ink-1 font-mono text-xs whitespace-nowrap">{v.page ?? "—"}</td>
                     <td className="px-4 py-3 text-ink-2 text-xs">{v.device ?? "—"}</td>
                     <td className="px-4 py-3 text-ink-2 text-xs">{refSource(v.referrer)}</td>
@@ -604,7 +604,7 @@ export default function AnalyticsView() {
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6">
+    <div className="bg-tile border-hairline rounded-panel-lg p-6">
       <div className="font-display font-black text-3xl lg:text-4xl text-orange tracking-tight leading-none mb-2 truncate">
         {value}
       </div>
@@ -624,8 +624,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-6 py-5 border-b border-outline">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-6 py-5 border-b border-hairline">
         <h2 className={TYPE.sectionTitle}>{title}</h2>
         {subtitle && <p className="text-ink-2 text-xs mt-0.5">{subtitle}</p>}
       </div>

@@ -40,7 +40,7 @@ export default function EmailActions({
       type="button"
       onClick={toggle}
       disabled={busy || pending}
-      className="text-[10px] font-semibold text-ink-3 hover:text-ink-1 transition-colors disabled:opacity-50"
+      className="text-xs font-semibold text-ink-3 hover:text-ink-1 transition-colors disabled:opacity-50"
     >
       {busy || pending ? "…" : isPrivate ? "Unhide" : "Hide"}
     </button>

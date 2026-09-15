@@ -60,7 +60,7 @@ export function MergeControl({ keepId, keepName, candidates }: {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="text-[11px] font-semibold text-ink-3 hover:text-orange transition-colors">
+      <button onClick={() => setOpen(true)} className="text-xs font-semibold text-ink-3 hover:text-orange transition-colors">
         Merge duplicate
       </button>
     );
@@ -72,11 +72,11 @@ export function MergeControl({ keepId, keepName, candidates }: {
         value={picked ? picked.name : q}
         onChange={(e) => { setPicked(null); setQ(e.target.value); }}
         placeholder="Search the org to merge in…"
-        className={`bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 w-full`}
+        className={`bg-tile border-hairline rounded-control px-3 py-2 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 w-full`}
         autoFocus
       />
       {!picked && matches.length > 0 && (
-        <ul className="border border-outline rounded-lg overflow-hidden divide-y divide-hairline">
+        <ul className="border border-hairline rounded-control overflow-hidden divide-y divide-hairline">
           {matches.map((c) => (
             <li key={c.id}>
               <button
@@ -84,7 +84,7 @@ export function MergeControl({ keepId, keepName, candidates }: {
                 className="w-full text-left px-3 py-2 text-sm text-ink-1 hover:bg-tile transition-colors flex items-center gap-2"
               >
                 <span className="font-medium">{c.name}</span>
-                <span className="text-[11px] text-ink-3">{[c.city, c.status].filter(Boolean).join(" · ")}</span>
+                <span className="text-xs text-ink-3">{[c.city, c.status].filter(Boolean).join(" · ")}</span>
               </button>
             </li>
           ))}

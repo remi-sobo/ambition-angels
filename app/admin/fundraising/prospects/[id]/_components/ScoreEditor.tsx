@@ -168,13 +168,13 @@ export default function ScoreEditor({
   }
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <div className="flex items-baseline justify-between gap-4 mb-4 flex-wrap">
         <h2 className={TYPE.sectionHeader}>
           Prospect Score
         </h2>
         {lastSaved && lastSaved.scored_at && (
-          <div className="text-[11px] text-ink-2">
+          <div className="text-xs text-ink-2">
             Last scored by{" "}
             <span className="text-ink-1">{cap(lastSaved.scored_by)}</span> ·{" "}
             <span className="text-ink-1">{fmtAbsolute(lastSaved.scored_at)}</span>
@@ -192,7 +192,7 @@ export default function ScoreEditor({
                 <div className="text-sm text-ink-1 font-medium leading-tight">
                   {d.label}
                 </div>
-                <div className="text-[11px] text-ink-2 leading-tight mt-0.5">
+                <div className="text-xs text-ink-2 leading-tight mt-0.5">
                   {d.helper}
                 </div>
               </div>
@@ -203,8 +203,8 @@ export default function ScoreEditor({
                 value={v}
                 onChange={(e) => setField(d.key, e.target.value)}
                 placeholder="—"
-                className={`w-16 text-center font-mono bg-tile border rounded-lg px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50 ${
-                  err ? "border-expense/30" : "border-outline"
+                className={`w-16 text-center font-mono bg-tile border rounded-control px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50 ${
+                  err ? "border-expense/30" : "border-hairline"
                 }`}
                 aria-invalid={err ? true : undefined}
                 aria-label={`${d.label} score, 0 to 10`}
@@ -215,7 +215,7 @@ export default function ScoreEditor({
       </div>
 
       <div className="mt-4">
-        <label className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">
+        <label className="block text-xs uppercase tracking-wider text-ink-2 mb-1">
           Notes
         </label>
         <textarea
@@ -223,7 +223,7 @@ export default function ScoreEditor({
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
           placeholder="Why this score: context, sources, what you'd do next."
-          className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+          className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
         />
       </div>
 
@@ -243,7 +243,7 @@ export default function ScoreEditor({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors"
+            className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-control transition-colors"
           >
             {saving ? "Saving…" : "Save score"}
           </button>

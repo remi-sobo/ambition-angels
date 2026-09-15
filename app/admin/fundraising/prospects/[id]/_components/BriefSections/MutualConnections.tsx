@@ -11,7 +11,7 @@ export default function MutualConnections({
   return (
     <details
       {...(defaultOpen ? { open: true } : {})}
-      className="rounded-card border-[1.5px] border-outline bg-surface p-6 group"
+      className="rounded-panel border-hairline bg-surface p-6 group"
     >
       <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1">
         Mutual connections{" "}
@@ -28,17 +28,17 @@ export default function MutualConnections({
             {data.map((c, i) => (
               <li
                 key={i}
-                className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-3"
+                className="rounded-control border-hairline bg-surface p-3"
               >
                 <div className={`font-medium ${TYPE.body}`}>{c.name}</div>
                 <div className="text-xs text-ink-2 mt-1">
                   {c.how_connected}
                 </div>
-                <div className="text-[11px] text-ink-2 mt-1">
+                <div className="text-xs text-ink-2 mt-1">
                   Source: {c.source}
                 </div>
                 {c.recent_touch_if_any && (
-                  <div className="text-[11px] text-orange/80 mt-1">
+                  <div className="text-xs text-orange/80 mt-1">
                     Recent touch: {c.recent_touch_if_any}
                   </div>
                 )}

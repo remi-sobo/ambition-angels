@@ -28,7 +28,7 @@ export type EditorStage = {
 };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const TYPE_LABEL: Record<StageType, string> = {
   open: "Open",
@@ -96,7 +96,7 @@ export default function StagesEditor({
 
   return (
     <div className="space-y-4">
-      <div className="inline-flex items-center gap-1 bg-tile border-[1.5px] border-outline rounded-full p-1">
+      <div className="inline-flex items-center gap-1 bg-tile border-hairline rounded-full p-1">
         {pipelines.map((p) => (
           <button
             key={p.key}
@@ -112,10 +112,10 @@ export default function StagesEditor({
 
       {error && <p className="text-expense text-sm">{error}</p>}
 
-      <div className="bg-surface shadow-panel border-[1.5px] border-outline rounded-card overflow-hidden">
+      <div className="bg-surface border-hairline rounded-panel overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className={`text-left border-b border-outline ${TYPE.cardLabel}`}>
+            <tr className={`text-left border-b border-hairline ${TYPE.cardLabel}`}>
               <th className="px-3 py-2 w-8"></th>
               <th className="px-2 py-2">Label</th>
               <th className="px-2 py-2">Type</th>
@@ -156,7 +156,7 @@ export default function StagesEditor({
         busy={busy}
       />
 
-      <p className="text-[12px] text-ink-3 leading-relaxed max-w-[640px]">
+      <p className="text-xs text-ink-3 leading-relaxed max-w-[640px]">
         Type drives the forecast: <strong>Open</strong> counts toward weighted pipeline,{" "}
         <strong>Won</strong> is committed, Lost and On hold count toward neither. The HubSpot stage
         id links a stage to its HubSpot counterpart for two-way sync. Leave it blank for
@@ -193,13 +193,13 @@ function StageRow({
   const inUse = count > 0;
 
   return (
-    <tr className={`border-b border-outline last:border-b-0 ${stage.isActive ? "" : "opacity-50"}`}>
+    <tr className={`border-b border-hairline last:border-b-0 ${stage.isActive ? "" : "opacity-50"}`}>
       <td className="px-3 py-1.5">
         <div className="flex flex-col">
           <button
             onClick={onMoveUp}
             disabled={first}
-            className="text-ink-3 hover:text-ink-1 disabled:opacity-30 text-[10px] leading-tight"
+            className="text-ink-3 hover:text-ink-1 disabled:opacity-30 text-xs leading-tight"
             aria-label={`Move ${stage.label} up`}
           >
             ▲
@@ -207,7 +207,7 @@ function StageRow({
           <button
             onClick={onMoveDown}
             disabled={last}
-            className="text-ink-3 hover:text-ink-1 disabled:opacity-30 text-[10px] leading-tight"
+            className="text-ink-3 hover:text-ink-1 disabled:opacity-30 text-xs leading-tight"
             aria-label={`Move ${stage.label} down`}
           >
             ▼
@@ -223,7 +223,7 @@ function StageRow({
             if (label.trim() && label.trim() !== stage.label) onPatch({ label: label.trim() });
           }}
         />
-        <span className="block text-[10px] text-ink-3 font-mono mt-0.5">{stage.key}</span>
+        <span className="block text-xs text-ink-3 font-mono mt-0.5">{stage.key}</span>
       </td>
       <td className="px-2 py-1.5">
         <select
@@ -277,7 +277,7 @@ function StageRow({
                 ? "Hide this column"
                 : "Show this column"
             }
-            className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 disabled:opacity-40"
+            className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2 disabled:opacity-40"
           >
             {stage.isActive ? "Deactivate" : "Activate"}
           </button>
@@ -285,7 +285,7 @@ function StageRow({
             onClick={onDelete}
             disabled={inUse}
             title={inUse ? `Move the ${count} ask${count === 1 ? "" : "s"} in this stage first` : "Delete stage"}
-            className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense disabled:opacity-40"
+            className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense disabled:opacity-40"
           >
             Delete
           </button>
@@ -323,7 +323,7 @@ function AddStageForm({
         setProb("");
         setStageType("open");
       }}
-      className="flex flex-wrap items-end gap-3 bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4"
+      className="flex flex-wrap items-end gap-3 bg-surface border-hairline rounded-panel p-4"
     >
       <label className="text-xs text-ink-2">
         New stage

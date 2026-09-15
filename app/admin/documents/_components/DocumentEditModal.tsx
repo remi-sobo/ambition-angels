@@ -85,7 +85,7 @@ export default function DocumentEditModal({ doc, onClose }: { doc: EditableDoc; 
   }
 
   const inputCls =
-    "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 w-full";
+    "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 w-full";
   const labelCls = "text-xs text-ink-2 block";
 
   return (
@@ -95,7 +95,7 @@ export default function DocumentEditModal({ doc, onClose }: { doc: EditableDoc; 
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-card border-[1.5px] border-outline bg-surface shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg rounded-panel border-hairline bg-surface shadow-2xl max-h-[90vh] overflow-y-auto"
       >
         <form onSubmit={submit} className="p-6 space-y-4">
           <div className="min-w-0">

@@ -33,7 +33,7 @@ const usd = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider text-ink-3">{label}</div>
+      <div className="text-xs uppercase tracking-wider text-ink-3">{label}</div>
       <div className="text-[15px] text-ink-1 font-semibold truncate [font-variant-numeric:tabular-nums]">{value}</div>
     </div>
   );
@@ -41,11 +41,11 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function FirstMeetingBadge({ first, prior }: { first: boolean; prior: number }) {
   return first ? (
-    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold bg-orange-light text-orange-dark border border-orange/30">
+    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs uppercase tracking-wider font-semibold bg-orange-light text-orange-dark border border-orange/30">
       First meeting
     </span>
   ) : (
-    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold bg-status-neutral-bg text-ink-2 border border-outline">
+    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs uppercase tracking-wider font-semibold bg-status-neutral-bg text-ink-2 border border-hairline">
       {prior} prior {prior === 1 ? "touch" : "touches"}
     </span>
   );
@@ -54,7 +54,7 @@ function FirstMeetingBadge({ first, prior }: { first: boolean; prior: number }) 
 function ConstituentCard({ d, first, prior }: { d: ConstituentDossier; first: boolean; prior: number }) {
   const lastInt = d.recent_interactions[0];
   return (
-    <div className="rounded-card border border-outline bg-tile/40 p-4">
+    <div className="rounded-panel border border-hairline bg-tile/40 p-4">
       <div className="flex items-start justify-between gap-3">
         <Link href={`/admin/fundraising/donors/${d.id}`} className="text-[15px] font-medium text-ink-1 hover:text-orange transition-colors">
           {d.profile.name}
@@ -70,15 +70,15 @@ function ConstituentCard({ d, first, prior }: { d: ConstituentDossier; first: bo
       {(d.profile.tags.length > 0 || d.profile.do_not_contact) && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {d.profile.do_not_contact && (
-            <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-status-watch-bg text-ink-1 border border-status-watch/40">Do not contact</span>
+            <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-status-watch-bg text-ink-1 border border-status-watch/40">Do not contact</span>
           )}
           {d.profile.tags.map((t) => (
-            <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-surface border border-hairline text-ink-2">{t}</span>
+            <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-surface border border-hairline text-ink-2">{t}</span>
           ))}
         </div>
       )}
       {d.open_opportunities.length > 0 && (
-        <p className="mt-3 text-[13px] text-ink-2">
+        <p className="mt-3 text-sm text-ink-2">
           <span className="text-ink-3">Open ask:</span>{" "}
           {d.open_opportunities[0].name ?? "Opportunity"}
           {d.open_opportunities[0].ask_amount != null && <> · {usd(d.open_opportunities[0].ask_amount)}</>}
@@ -86,7 +86,7 @@ function ConstituentCard({ d, first, prior }: { d: ConstituentDossier; first: bo
         </p>
       )}
       {lastInt && (
-        <p className="mt-1.5 text-[13px] text-ink-2">
+        <p className="mt-1.5 text-sm text-ink-2">
           <span className="text-ink-3">Last touch:</span> {lastInt.kind} · {fmtDay(lastInt.occurred_at)}
           {lastInt.subject && !lastInt.is_private && <>, {lastInt.subject}</>}
         </p>
@@ -98,7 +98,7 @@ function ConstituentCard({ d, first, prior }: { d: ConstituentDossier; first: bo
 function PartnerCard({ d, first, prior }: { d: PartnerDossier; first: boolean; prior: number }) {
   const lastInt = d.recent_interactions[0];
   return (
-    <div className="rounded-card border border-outline bg-tile/40 p-4">
+    <div className="rounded-panel border border-hairline bg-tile/40 p-4">
       <div className="flex items-start justify-between gap-3">
         <Link href={`/admin/partners/${d.id}`} className="text-[15px] font-medium text-ink-1 hover:text-orange transition-colors">
           {d.profile.name}
@@ -111,9 +111,9 @@ function PartnerCard({ d, first, prior }: { d: PartnerDossier; first: boolean; p
         <Stat label="Teens" value={d.profile.teen_count ?? "—"} />
         <Stat label="Last touch" value={fmtDay(d.profile.last_touch_at)} />
       </div>
-      {d.profile.champion && <p className="mt-3 text-[13px] text-ink-2"><span className="text-ink-3">Champion:</span> {d.profile.champion}</p>}
+      {d.profile.champion && <p className="mt-3 text-sm text-ink-2"><span className="text-ink-3">Champion:</span> {d.profile.champion}</p>}
       {lastInt && (
-        <p className="mt-1.5 text-[13px] text-ink-2">
+        <p className="mt-1.5 text-sm text-ink-2">
           <span className="text-ink-3">Last touch:</span> {lastInt.kind} · {fmtDay(lastInt.occurred_at)}
           {lastInt.preview && <>, {lastInt.preview.slice(0, 100)}</>}
         </p>
@@ -152,7 +152,7 @@ export default async function UpcomingMeetingDetailPage({ params }: { params: { 
       </header>
 
       {/* Who it's with — dossiers inline. */}
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface p-6">
+      <section className="rounded-panel-lg border-hairline bg-surface p-6">
         <SectionTitle count={brief.entities.length || undefined}>Who it&apos;s with</SectionTitle>
         {brief.entities.length === 0 ? (
           <p className="text-sm text-ink-2 italic">
@@ -166,9 +166,9 @@ export default async function UpcomingMeetingDetailPage({ params }: { params: { 
               if (cd) return <ConstituentCard key={`c:${e.id}`} d={cd} first={e.is_first_meeting} prior={e.prior_touchpoints} />;
               if (pd) return <PartnerCard key={`p:${e.id}`} d={pd} first={e.is_first_meeting} prior={e.prior_touchpoints} />;
               return (
-                <div key={`x:${e.id}`} className="rounded-card border border-outline bg-tile/40 p-4 flex items-center justify-between gap-3">
+                <div key={`x:${e.id}`} className="rounded-panel border border-hairline bg-tile/40 p-4 flex items-center justify-between gap-3">
                   <span className="text-[15px] text-ink-1">{e.name}</span>
-                  <span className="text-[11px] text-ink-3 italic">No read access to this {e.type === "partner" ? "partner" : "donor"}&apos;s record</span>
+                  <span className="text-xs text-ink-3 italic">No read access to this {e.type === "partner" ? "partner" : "donor"}&apos;s record</span>
                 </div>
               );
             })}
@@ -177,10 +177,10 @@ export default async function UpcomingMeetingDetailPage({ params }: { params: { 
       </section>
 
       {/* Reed's agenda — auto-persisted from the meeting-prep thread. */}
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface p-6">
+      <section className="rounded-panel-lg border-hairline bg-surface p-6">
         <div className="flex items-center justify-between gap-3 mb-3">
           <SectionTitle>Reed&apos;s agenda</SectionTitle>
-          {agenda && <span className="text-[11px] text-ink-3">Generated {fmtRelDay(agenda.generatedAt)}</span>}
+          {agenda && <span className="text-xs text-ink-3">Generated {fmtRelDay(agenda.generatedAt)}</span>}
         </div>
         {agenda ? (
           <p className="text-sm text-ink-1 leading-relaxed whitespace-pre-wrap">{agenda.agenda}</p>

@@ -40,7 +40,7 @@ export default async function OutcomesPage() {
     .sort((a, b) => provenanceOrder(a) - provenanceOrder(b) || a.name.localeCompare(b.name));
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px] space-y-6">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace space-y-6">
       <PageHeader
         title="Outcomes"
         subtitle="What the program changed, with each number's origin on its sleeve. Where it came from, when it was captured, and whether it can be stood behind."
@@ -52,7 +52,7 @@ export default async function OutcomesPage() {
           hint={
             <>
               A metric joins this screen by carrying the{" "}
-              <span className="font-mono text-[12px]">program</span> department in the Metric
+              <span className="font-mono text-xs">program</span> department in the Metric
               Catalog.
             </>
           }
@@ -67,15 +67,15 @@ export default async function OutcomesPage() {
           {outcomes.map((m) => (
             <section
               key={m.metric_key}
-              className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel px-5 py-4"
+              className="rounded-panel border-hairline bg-surface px-5 py-4"
             >
               {/* The number itself — only ever through the primitive. */}
               <Metric metricKey={m.metric_key} showName />
               {m.description && (
-                <p className="mt-1 text-[12px] text-ink-2 max-w-2xl">{m.description}</p>
+                <p className="mt-1 text-xs text-ink-2 max-w-2xl">{m.description}</p>
               )}
               {/* Provenance line: the point of the screen. */}
-              <p className="mt-2 text-[11px] text-ink-3">
+              <p className="mt-2 text-xs text-ink-3">
                 {m.source_kind === "manual" ? "Entered by hand" : "Computed"}
                 {" · "}
                 {m.latest
@@ -96,7 +96,7 @@ export default async function OutcomesPage() {
         </div>
       )}
 
-      <p className="text-[11px] text-ink-3 max-w-2xl">
+      <p className="text-xs text-ink-3 max-w-2xl">
         Values update on{" "}
         <Link href="/admin/impact/kpis" className="text-orange hover:text-orange-dark font-medium">
           KPIs

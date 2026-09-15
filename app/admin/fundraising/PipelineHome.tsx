@@ -212,13 +212,13 @@ export default async function PipelineHome({
           <div className="flex items-center gap-3">
             <Link
               href="/admin/fundraising/settings/stages"
-              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
             >
               Edit stages
             </Link>
             <Link
               href="/admin/fundraising/prospects"
-              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
             >
               Prospect research →
             </Link>

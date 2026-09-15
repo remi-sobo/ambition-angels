@@ -73,7 +73,7 @@ export default async function AskLog({ embedded = false }: { embedded?: boolean 
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className={`${TYPE.pageTitle} mb-4`}>Ask Log</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The ask log tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_asks_log.sql</code> via Actions → Apply DB migration,
           then reload.
@@ -120,7 +120,7 @@ export default async function AskLog({ embedded = false }: { embedded?: boolean 
 
         <NewAskForm />
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
           {asks.length === 0 ? (
             <div className="p-4">
               <EmptyState
@@ -133,7 +133,7 @@ export default async function AskLog({ embedded = false }: { embedded?: boolean 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-[11px] uppercase tracking-wider text-ink-3 border-b border-outline">
+                  <tr className="text-xs uppercase tracking-wider text-ink-3 border-b border-hairline">
                     <th className="text-left font-semibold px-5 py-3">Funder</th>
                     <th className="text-left font-semibold px-3 py-3">Ask</th>
                     <th className="text-left font-semibold px-3 py-3">Form</th>

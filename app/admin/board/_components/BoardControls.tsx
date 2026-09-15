@@ -38,7 +38,7 @@ export type BoardMeeting = {
 };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const ROLE_LABELS: Record<string, string> = {
   chair: "Chair",
@@ -109,7 +109,7 @@ export function MemberRow({
 
   return (
     <article
-      className={`bg-surface border-[1.5px] border-outline rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
+      className={`bg-surface border-hairline rounded-panel p-3 text-sm ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <Link
@@ -118,18 +118,18 @@ export function MemberRow({
         >
           {member.name}
         </Link>
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
           {ROLE_LABELS[member.officer_role] ?? member.officer_role}
         </span>
         {member.status !== "active" && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-tile text-ink-2">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-tile text-ink-2">
             {member.status}
           </span>
         )}
         {member.term_end && (
           <span
-            className={`text-[11px] tabular-nums ${
-              termPast ? "text-expense font-semibold" : termSoon ? "text-[#A56A1B]" : "text-ink-2"
+            className={`text-xs tabular-nums ${
+              termPast ? "text-expense font-semibold" : termSoon ? "text-status-watch-text" : "text-ink-2"
             }`}
             title={`Term ${member.term_number}`}
           >
@@ -137,7 +137,7 @@ export function MemberRow({
             {termPast ? " · expired" : termSoon ? " · soon" : ""}
           </span>
         )}
-        <span className="ml-auto flex items-center gap-2 text-[11px]">
+        <span className="ml-auto flex items-center gap-2 text-xs">
           <span
             className={coiCurrent ? "text-revenue" : "text-expense"}
             title={member.coi_signed_at ? `COI signed ${member.coi_signed_at}` : "No COI on file"}
@@ -163,14 +163,14 @@ export function MemberRow({
           <button
             onClick={() => patch({ coi_signed_at: true })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] font-semibold bg-orange/15 text-orange hover:bg-orange/25"
+            className="px-2 py-1 rounded-control text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25"
           >
             Record COI ({coiYear})
           </button>
         )}
         <button
           onClick={() => setEditing((v) => !v)}
-          className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
+          className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
         >
           Edit
         </button>
@@ -178,7 +178,7 @@ export function MemberRow({
           <button
             onClick={() => patch({ status: "past" })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
+            className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-ink-1"
           >
             Mark past
           </button>
@@ -186,7 +186,7 @@ export function MemberRow({
           <button
             onClick={() => patch({ status: "active" })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
+            className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-ink-1"
           >
             Reactivate
           </button>
@@ -194,14 +194,14 @@ export function MemberRow({
         <button
           onClick={() => void remove()}
           disabled={busy}
-          className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
+          className="ml-auto px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense"
         >
           Remove
         </button>
       </div>
       {editing && (
-        <div className="mt-3 pt-3 border-t border-outline flex flex-wrap items-end gap-3">
-          <label className="text-[10px] text-ink-2">
+        <div className="mt-3 pt-3 border-t border-hairline flex flex-wrap items-end gap-3">
+          <label className="text-xs text-ink-2">
             Officer role
             <select
               className={`${inputCls} block mt-0.5 !py-1 !text-xs`}
@@ -213,7 +213,7 @@ export function MemberRow({
               ))}
             </select>
           </label>
-          <label className="text-[10px] text-ink-2">
+          <label className="text-xs text-ink-2">
             Term ends
             <input
               className={`${inputCls} block mt-0.5 !py-1 !text-xs`}
@@ -227,7 +227,7 @@ export function MemberRow({
               void patch({ officer_role: role, term_end: termEnd || null });
               setEditing(false);
             }}
-            className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full"
+            className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full"
           >
             Save
           </button>
@@ -290,7 +290,7 @@ export function NewMemberForm() {
   return (
     <form
       onSubmit={submit}
-      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
+      className="w-full bg-surface border-hairline rounded-panel p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
     >
       <label className="text-xs text-ink-2">
         Name
@@ -364,12 +364,12 @@ export function NewMeetingForm() {
           value={date}
           onChange={(e) => setDate(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") void create(); if (e.key === "Escape") setDate(null); }}
-          className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 text-xs focus:outline-none focus:border-orange/40"
+          className="bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-xs focus:outline-none focus:border-orange/40"
         />
-        <button onClick={() => void create()} disabled={busy || !date} className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full disabled:opacity-50">
+        <button onClick={() => void create()} disabled={busy || !date} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full disabled:opacity-50">
           Create
         </button>
-        <button onClick={() => setDate(null)} disabled={busy} className="text-[11px] text-ink-3 hover:text-ink-1">
+        <button onClick={() => setDate(null)} disabled={busy} className="text-xs text-ink-3 hover:text-ink-1">
           Cancel
         </button>
       </span>
@@ -445,19 +445,19 @@ export function MeetingCard({
   };
 
   return (
-    <article className={`bg-surface border-[1.5px] border-outline rounded-xl p-4 text-sm ${busy ? "opacity-60" : ""}`}>
+    <article className={`bg-surface border-hairline rounded-panel p-4 text-sm ${busy ? "opacity-60" : ""}`}>
       <button className="w-full flex flex-wrap items-center gap-2 text-left" onClick={() => setOpen((v) => !v)}>
         <span className="font-semibold text-ink-1">{meeting.title}</span>
-        <span className="text-[12px] text-ink-2 tabular-nums">{meeting.meeting_date}</span>
+        <span className="text-xs text-ink-2 tabular-nums">{meeting.meeting_date}</span>
         <span
-          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-            approved ? "bg-revenue-bg text-revenue" : "bg-[#F4E8D0] text-[#A56A1B]"
+          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+            approved ? "bg-revenue-bg text-revenue" : "bg-status-watch-bg text-status-watch-text"
           }`}
         >
           {approved ? "Minutes approved" : "Draft"}
         </span>
         {meeting.attendance.length > 0 && (
-          <span className={`text-[11px] ${quorum ? "text-revenue" : "text-expense"}`}>
+          <span className={`text-xs ${quorum ? "text-revenue" : "text-expense"}`}>
             {presentCount}/{members.length} present · quorum {quorum ? "met" : "NOT met"}
           </span>
         )}
@@ -472,17 +472,17 @@ export function MeetingCard({
             </SectionHeading>
             <ol className="space-y-1">
               {meeting.agenda.map((a, i) => (
-                <li key={i} className="text-[13px] text-ink-1">
+                <li key={i} className="text-sm text-ink-1">
                   {i + 1}. {a.title}
                   {a.kind === "consent" && (
-                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-tile text-ink-2">
+                    <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-tile text-ink-2">
                       consent block
                     </span>
                   )}
                 </li>
               ))}
               {meeting.agenda.length === 0 && (
-                <li className="text-[12px] text-ink-2">No items yet.</li>
+                <li className="text-xs text-ink-2">No items yet.</li>
               )}
             </ol>
             {!approved && (
@@ -497,12 +497,12 @@ export function MeetingCard({
                   }}
                 />
                 <button onClick={() => addAgendaItem("normal")}
-                  className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 rounded-lg">
+                  className="text-xs bg-tile hover:bg-tile text-ink-2 px-3 rounded-control">
                   Add
                 </button>
                 <button onClick={() => addAgendaItem("consent")}
                   title="Routine approvals bundled into one motion"
-                  className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 rounded-lg">
+                  className="text-xs bg-tile hover:bg-tile text-ink-2 px-3 rounded-control">
                   Add to consent
                 </button>
               </div>
@@ -521,10 +521,10 @@ export function MeetingCard({
                     key={m.id}
                     disabled={approved || busy}
                     onClick={() => toggleAttendance(m.id)}
-                    className={`text-[11px] px-3 py-1 rounded-full border transition-colors ${
+                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                       present
                         ? "bg-revenue-bg text-revenue border-revenue/30"
-                        : "bg-tile text-ink-2 border-outline hover:text-ink-1"
+                        : "bg-tile text-ink-2 border-hairline hover:text-ink-1"
                     }`}
                   >
                     {m.name.split(" ")[0]} {present ? "✓" : ""}
@@ -539,13 +539,13 @@ export function MeetingCard({
               Minutes
             </SectionHeading>
             {approved ? (
-              <p className="text-[13px] text-ink-1 whitespace-pre-wrap border-[1.5px] border-outline rounded-lg p-3 bg-surface shadow-panel">
+              <p className="text-sm text-ink-1 whitespace-pre-wrap border-hairline rounded-control p-3 bg-surface">
                 {meeting.minutes ?? "—"}
               </p>
             ) : (
               <>
                 <textarea
-                  className={`${inputCls} w-full min-h-[120px] text-[13px]`}
+                  className={`${inputCls} w-full min-h-[120px] text-sm`}
                   placeholder={"Attendance & quorum noted above.\nMotions: text, mover, seconder, vote tally (for/against/abstain).\nDecisions and follow-ups with owners."}
                   value={minutes}
                   onChange={(e) => setMinutes(e.target.value)}
@@ -554,7 +554,7 @@ export function MeetingCard({
                   <button
                     onClick={() => void patch({ minutes })}
                     disabled={busy}
-                    className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 py-1.5 rounded-lg"
+                    className="text-xs bg-tile hover:bg-tile text-ink-2 px-3 py-1.5 rounded-control"
                   >
                     Save draft
                   </button>
@@ -568,7 +568,7 @@ export function MeetingCard({
                       if (ok) void patch({ approve: true });
                     }}
                     disabled={busy}
-                    className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full"
+                    className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full"
                   >
                     Approve & freeze
                   </button>

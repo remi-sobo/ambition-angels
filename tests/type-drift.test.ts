@@ -36,7 +36,6 @@ const DISPLAY_BLACK_ALLOWLIST: { file: string; reason: string }[] = [
   { file: "app/admin/programs/overview/page.tsx", reason: "display metrics (headline band numerals, Spec Programs P2)" },
   { file: "app/admin/ops/friday/CloseSection.tsx", reason: "display metric (close count — the page body extracted at Spec Work W1, entry moved with it)" },
   { file: "app/admin/_components/LoginScreen.tsx", reason: "D5 exemption: marketing-style dark surface" },
-  { file: "app/admin/_components/v2/V2Sidebar.tsx", reason: "brand marks (BloomOS wordmark + mobile bar title, same voice as the V1 sidebar it replaces)" },
   { file: "app/admin/AnalyticsView.tsx", reason: "display metrics (orange stat numerals)" },
   { file: "app/admin/finance/model/ModelSection.tsx", reason: "display metric (model numerals — the page body extracted at Spec Finance N2, entry moved with it)" },
   { file: "app/admin/finance/_components/ReconcileCard.tsx", reason: "display metric (computed cash)" },
@@ -91,15 +90,28 @@ const FINGERPRINTS: { pattern: string; role: string; allow: { file: string; reas
     ],
   },
   {
+    // Visual System V3 §2 — "Reduce excessive letter spacing." The 0.25em
+    // eyebrow retired product-wide: PageHeader and FeatureGate both moved to
+    // 0.04em. Only the D5-exempt presentation deck still speaks that voice.
     pattern: "tracking-[0.25em]",
-    role: "the PageHeader eyebrow slot",
+    role: "the retired wide-tracked eyebrow",
     allow: [
-      { file: "app/admin/_components/PageHeader.tsx", reason: "the primitive that defines the eyebrow treatment" },
-      { file: "app/admin/_components/FeatureGate.tsx", reason: "standalone module-gate panel eyebrow (no PageHeader on this surface)" },
       { file: "app/admin/strategic-plan/narrative/_components/shared.tsx", reason: "D5 exemption: presentation deck eyebrow" },
     ],
   },
   { pattern: "text-[28px]", role: "TYPE.cardMetric", allow: [] },
+  {
+    // Visual System V3 §2 — "Reduce excessive letter spacing." `tracking-widest`
+    // is 0.1em, the widest step Tailwind ships, and it had become the default
+    // for column headers and micro-labels across the product. Both roles now
+    // live in the scale (TYPE.tableHeader at a quiet 0.06em, TYPE.cardLabel in
+    // sentence case), so the only place it survives is the retired dashboard.
+    pattern: "tracking-widest",
+    role: "TYPE.tableHeader / TYPE.cardLabel",
+    allow: [
+      { file: "app/admin/legacy/page.tsx", reason: "legacy dashboard, unrouted — retired surface, not restyled" },
+    ],
+  },
 ];
 
 function tsxFiles(dir: string): string[] {

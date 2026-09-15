@@ -13,15 +13,15 @@ import { TYPE } from "@/lib/admin/typeScale";
 function Row({ c }: { c: ReadinessCheck }) {
   return (
     <li className="flex items-start gap-2 py-1.5 border-b border-hairline last:border-0">
-      <span className={`mt-0.5 text-[12px] ${c.ok ? "text-revenue" : c.severity === "blocker" ? "text-expense" : "text-status-watch-text"}`}>
+      <span className={`mt-0.5 text-xs ${c.ok ? "text-revenue" : c.severity === "blocker" ? "text-expense" : "text-status-watch-text"}`}>
         {c.ok ? "✓" : c.severity === "blocker" ? "●" : "○"}
       </span>
       <span className="flex-1 min-w-0">
-        <span className="text-[13px] text-ink-1">{c.label}</span>
-        <span className="block text-[11px] text-ink-3 leading-snug">{c.detail}</span>
+        <span className="text-sm text-ink-1">{c.label}</span>
+        <span className="block text-xs text-ink-3 leading-snug">{c.detail}</span>
       </span>
       {!c.ok && c.fixHref && (
-        <Link href={c.fixHref} className="shrink-0 text-[11px] font-semibold text-orange hover:underline">Fix →</Link>
+        <Link href={c.fixHref} className="shrink-0 text-xs font-semibold text-orange hover:underline">Fix →</Link>
       )}
     </li>
   );
@@ -33,7 +33,7 @@ export default function ReadinessPanel({ data }: { data: Readiness }) {
   const openAdvisories = data.advisories.filter((a) => !a.ok).length;
 
   return (
-    <section className={`mb-8 rounded-card border-[1.5px] p-5 ${clean ? "border-revenue/30 bg-revenue-bg" : "border-expense/30 bg-expense-bg"}`}>
+    <section className={`mb-8 rounded-panel p-5 ${clean ? "border-revenue/30 bg-revenue-bg" : "border-expense/30 bg-expense-bg"}`}>
       <div className="flex items-center gap-3 flex-wrap">
         <div>
           <div className={TYPE.cardLabel}>Funder readiness</div>
@@ -43,7 +43,7 @@ export default function ReadinessPanel({ data }: { data: Readiness }) {
           </div>
         </div>
         <span className="ml-auto text-sm tabular-nums text-ink-2">{data.score.passed}/{data.score.total} checks</span>
-        <button onClick={() => setOpen((v) => !v)} className="text-[11px] font-semibold text-ink-2 hover:text-orange">
+        <button onClick={() => setOpen((v) => !v)} className="text-xs font-semibold text-ink-2 hover:text-orange">
           {open ? "Hide" : "Show"} checklist
         </button>
       </div>

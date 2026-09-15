@@ -22,9 +22,9 @@ const manifest = {
   scope: "/admin",
   display: "standalone",
   orientation: "any",
-  background_color: "#17140F",
+  background_color: "#1C1814",
   // Matches the warm espresso BloomOS chrome (mobile top bar / sidebar).
-  theme_color: "#262019",
+  theme_color: "#1C1814",
   categories: ["productivity", "business"],
   icons: [
     {

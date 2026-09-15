@@ -37,14 +37,14 @@ export default function OrgSwitcher({
 
   return (
     <label className="block">
-      <span className="block px-1 mb-1 text-[10px] uppercase tracking-[0.08em] text-[#8d7c63]">
+      <span className="block px-1 mb-1 text-xs text-[color:var(--sidebar-muted)]">
         Organization
       </span>
       <select
         value={activeOrgId}
         onChange={(e) => switchTo(e.target.value)}
         disabled={busy}
-        className="w-full bg-white/[0.06] border border-white/[0.10] rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-cream cursor-pointer disabled:opacity-50"
+        className="w-full bg-white/[0.06] border border-white/[0.10] rounded-control px-2.5 py-1.5 text-xs font-medium text-cream cursor-pointer disabled:opacity-50"
       >
         {orgs.map((o) => (
           <option key={o.orgId} value={o.orgId} className="bg-navy text-cream">

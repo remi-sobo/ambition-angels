@@ -144,7 +144,7 @@ export default async function FundraisingPlanPage({
   const months = groupByMonth(moments);
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Fundraising Plan"
         eyebrow={`Plan year ${year}`}
@@ -158,10 +158,10 @@ export default async function FundraisingPlanPage({
                 <Link
                   key={y}
                   href={`/admin/fundraising/plan?year=${y}`}
-                  className={`text-xs font-semibold px-3 py-1.5 rounded-full border-[1.5px] transition-colors ${
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
                     y === year
                       ? "bg-orange text-white border-orange"
-                      : "text-ink-2 border-outline hover:text-ink-1"
+                      : "text-ink-2 border-hairline hover:text-ink-1"
                   }`}
                 >
                   {y}
@@ -188,7 +188,7 @@ export default async function FundraisingPlanPage({
       </div>
 
       {strategies.length === 0 ? (
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6 mb-8">
+        <section className="bg-tile border-hairline rounded-panel-lg p-6 mb-8">
           <h2 className={TYPE.cardTitle}>No plan for {year} yet</h2>
           <p className="text-sm text-ink-2 mt-1 max-w-[60ch]">
             Add the year&apos;s strategies (major gifts, monthly partners, an event, grants), each with
@@ -207,11 +207,11 @@ export default async function FundraisingPlanPage({
                 <Link
                   key={s.id}
                   href={`/admin/fundraising/plan/${s.id}`}
-                  className="block bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 hover:border-orange/40 transition-colors"
+                  className="block bg-tile border-hairline rounded-panel-lg p-5 hover:border-orange/40 transition-colors"
                 >
                   <div className="flex items-baseline justify-between gap-3">
                     <h2 className={TYPE.cardTitle}>{s.name}</h2>
-                    <span className="text-[11px] text-ink-3 whitespace-nowrap">{s.owner ?? "No owner"}</span>
+                    <span className="text-xs text-ink-3 whitespace-nowrap">{s.owner ?? "No owner"}</span>
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
                     <div>
@@ -248,10 +248,10 @@ export default async function FundraisingPlanPage({
             })}
           </div>
 
-          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden mb-8">
-            <div className="px-5 py-3 border-b border-outline">
+          <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden mb-8">
+            <div className="px-5 py-3 border-b border-hairline">
               <h2 className={TYPE.cardTitle}>Where the money will come from</h2>
-              <p className="text-[11px] text-ink-3">
+              <p className="text-xs text-ink-3">
                 Committed = won asks <TrustBadge level="stated" /> + awarded grants <TrustBadge level="stated" /> + campaign gifts{" "}
                 <TrustBadge level="verified" />. Open pipeline is <TrustBadge level="estimated" />.
               </p>
@@ -259,7 +259,7 @@ export default async function FundraisingPlanPage({
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[560px]">
                 <thead>
-                  <tr className="text-left text-[11px] uppercase tracking-wider text-ink-3">
+                  <tr className="text-left text-xs uppercase tracking-wider text-ink-3">
                     <th className="px-5 py-2 font-semibold">Strategy</th>
                     <th className="px-3 py-2 font-semibold text-right">Goal</th>
                     <th className="px-3 py-2 font-semibold text-right">Committed</th>
@@ -288,7 +288,7 @@ export default async function FundraisingPlanPage({
                     <tr className="text-ink-2">
                       <td className="px-5 py-2.5">
                         Not in the plan
-                        <span className="block text-[11px] text-ink-3">
+                        <span className="block text-xs text-ink-3">
                           Won and open value no strategy claims. Open a strategy to link it.
                         </span>
                       </td>
@@ -314,12 +314,12 @@ export default async function FundraisingPlanPage({
         </>
       )}
 
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-        <div className="px-5 py-3 border-b border-outline">
+      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+        <div className="px-5 py-3 border-b border-hairline">
           <h2 className={TYPE.cardTitle}>
             When the asks have to happen <span className="text-ink-3 font-normal">· next 90 days</span>
           </h2>
-          <p className="text-[11px] text-ink-3">
+          <p className="text-xs text-ink-3">
             Expected closes, grant deadlines, and pledge installments in one calendar. The asks have to
             land before the money is needed, not in the same month.
           </p>
@@ -333,7 +333,7 @@ export default async function FundraisingPlanPage({
           <div className="divide-y divide-hairline">
             {months.map((m) => (
               <div key={m.month}>
-                <div className="px-5 pt-3 pb-1 text-[11px] uppercase tracking-wider font-semibold text-ink-3">
+                <div className="px-5 pt-3 pb-1 text-xs uppercase tracking-wider font-semibold text-ink-3">
                   {fmtMonth(m.month)}
                 </div>
                 <ul>
@@ -342,7 +342,7 @@ export default async function FundraisingPlanPage({
                       <span className="text-xs text-ink-3 w-12 flex-shrink-0 [font-variant-numeric:tabular-nums]">
                         {fmtDay(item.date)}
                       </span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3 w-12 flex-shrink-0">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-ink-3 w-12 flex-shrink-0">
                         {MOMENT_KIND_LABELS[item.kind]}
                       </span>
                       <Link href={item.href} className="font-medium text-ink-1 hover:text-orange transition-colors truncate">

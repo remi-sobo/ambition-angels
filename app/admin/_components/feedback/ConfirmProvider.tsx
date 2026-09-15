@@ -65,7 +65,7 @@ export default function ConfirmProvider({ children }: { children: ReactNode }) {
         >
           {/* Scrim: clicking away is a cancel, same as Escape. */}
           <div className="absolute inset-0 bg-ink/50" onClick={() => settle(false)} />
-          <div className="relative w-full max-w-md rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-6">
+          <div className="relative w-full max-w-md rounded-panel-lg border-hairline bg-surface p-6">
             <h2 className={TYPE.cardTitle}>{pending.title}</h2>
             {pending.body && (
               <p className="mt-2 text-sm text-ink-2 leading-relaxed">{pending.body}</p>
@@ -75,7 +75,7 @@ export default function ConfirmProvider({ children }: { children: ReactNode }) {
                 type="button"
                 autoFocus
                 onClick={() => settle(false)}
-                className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+                className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
               >
                 Cancel
               </button>

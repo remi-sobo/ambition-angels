@@ -58,8 +58,8 @@ export default function Presenter({
   if (gated) {
     return (
       <div className="fixed inset-0 z-[100] bg-app overflow-y-auto flex items-center justify-center p-6">
-        <div className="max-w-[640px] w-full rounded-card-lg border-[1.5px] border-expense/30 bg-surface p-8">
-          <div className="text-[11px] uppercase tracking-[0.16em] font-semibold text-expense mb-2">Not funder-ready</div>
+        <div className="max-w-[640px] w-full rounded-panel-lg border-expense/30 bg-surface p-8">
+          <div className="text-xs uppercase tracking-[0.16em] font-semibold text-expense mb-2">Not funder-ready</div>
           <h1 className="font-display text-3xl text-ink-1 leading-tight mb-3">
             {blockers.length} blocker{blockers.length === 1 ? "" : "s"} before this is safe to present
           </h1>
@@ -113,7 +113,7 @@ export default function Presenter({
               />
             ))}
           </div>
-          <span className="text-[12px] uppercase tracking-[0.14em] text-ink-3 hidden sm:inline">
+          <span className="text-xs uppercase tracking-[0.14em] text-ink-3 hidden sm:inline">
             Movement {i + 1} of {n} · {titles[i]}
           </span>
 
@@ -121,7 +121,7 @@ export default function Presenter({
             <button
               onClick={() => go(-1)}
               disabled={i === 0}
-              className="px-3 py-1.5 rounded-full text-sm font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 rounded-full text-sm font-semibold text-ink-1 bg-tile hover:bg-tile disabled:opacity-40 disabled:cursor-not-allowed"
             >
               ← Prev
             </button>

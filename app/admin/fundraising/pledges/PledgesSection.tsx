@@ -67,7 +67,7 @@ export default async function PledgesSection({ embedded = false }: { embedded?: 
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className={`${TYPE.pageTitle} mb-4`}>Pledges</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The pledges tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_pledges.sql</code>, then reload.
         </div>
@@ -134,7 +134,7 @@ export default async function PledgesSection({ embedded = false }: { embedded?: 
                 · {activeRows.length} active · {pledges.length} total
               </span>
             </h2>
-            <p className="text-[11px] text-ink-3 max-w-2xl">
+            <p className="text-xs text-ink-3 max-w-2xl">
               Multi-installment commitments; scheduled installments feed the runway through the
               revenue schedule.
             </p>
@@ -158,13 +158,13 @@ export default async function PledgesSection({ embedded = false }: { embedded?: 
               <ConvertOpportunityForm opportunities={wonOpps} />
               <NewPledgeForm campaigns={campaigns} funds={funds} />
             </div>
-            <Link href="/admin/finance/revenue" className="text-[11px] text-ink-3 hover:text-orange transition-colors">
+            <Link href="/admin/finance/revenue" className="text-xs text-ink-3 hover:text-orange transition-colors">
               See the full revenue schedule →
             </Link>
           </div>
         </div>
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
           {rows.length === 0 ? (
             <p className={`p-8 ${TYPE.bodyMuted}`}>
               No pledges yet. Create one to track a multi-installment commitment; installments
@@ -174,14 +174,14 @@ export default async function PledgesSection({ embedded = false }: { embedded?: 
             <ul className="divide-y divide-hairline">
               {rows.map(({ p, paid, balance, overdue, nextDue }) => (
                 <li key={p.id}>
-                  <Link href={`/admin/fundraising/pledges/${p.id}`} className="px-5 py-3 flex items-center gap-4 hover:bg-[#EFE6D4] transition-colors">
+                  <Link href={`/admin/fundraising/pledges/${p.id}`} className="px-5 py-3 flex items-center gap-4 hover:bg-tile transition-colors">
                     <span className="text-sm font-medium text-ink-1 flex-1 truncate">
                       {p.constituent ? constituentName(p.constituent) : "Unknown"}
                     </span>
                     {overdue > 0 && p.status === "active" && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense">{overdue} overdue</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense">{overdue} overdue</span>
                     )}
-                    <span className="text-[10px] uppercase tracking-wider text-ink-3 w-20">{p.status}</span>
+                    <span className="text-xs uppercase tracking-wider text-ink-3 w-20">{p.status}</span>
                     <span className="text-xs text-ink-2 w-28 [font-variant-numeric:tabular-nums]">
                       {nextDue && p.status === "active" ? `next ${nextDue}` : ""}
                     </span>

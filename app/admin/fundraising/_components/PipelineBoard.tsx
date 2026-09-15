@@ -22,7 +22,7 @@ import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const fmtMoney = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -88,7 +88,7 @@ export function NewOpportunityForm() {
   return (
     <form
       onSubmit={submit}
-      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end"
+      className="w-full bg-surface border-hairline rounded-panel p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end"
     >
       <label className="col-span-2 text-xs text-ink-2">
         Donor / prospect name
@@ -236,8 +236,8 @@ export function OpportunityCard({
 
   return (
     <article
-      className={`bg-surface border rounded-xl p-3 text-sm ${
-        overdue ? "border-expense/30" : "border-outline"
+      className={`bg-surface border rounded-panel p-3 text-sm ${
+        overdue ? "border-expense/30" : "border-hairline"
       } ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -255,20 +255,20 @@ export function OpportunityCard({
             <span className="font-semibold text-ink-1 truncate block">{opp.label}</span>
           )}
           {opp.constituentName && opp.label !== opp.constituentName && (
-            <span className="text-[11px] text-ink-2 truncate block">{opp.constituentName}</span>
+            <span className="text-xs text-ink-2 truncate block">{opp.constituentName}</span>
           )}
         </div>
         {opp.capacityRating != null && <CapacityDots rating={opp.capacityRating} />}
       </div>
 
-      <div className="flex items-center gap-2 mt-2 text-[12px] text-ink-1 tabular-nums">
+      <div className="flex items-center gap-2 mt-2 text-xs text-ink-1 tabular-nums">
         {opp.askAmount != null && <span className="font-semibold">{fmtMoney(opp.askAmount)}</span>}
         {opp.probability != null && (
           <span className="text-ink-2">{opp.probability}%</span>
         )}
         {opp.owner && (
           <span
-            className="ml-auto w-5 h-5 rounded-full bg-tile text-[10px] flex items-center justify-center uppercase"
+            className="ml-auto w-5 h-5 rounded-full bg-tile text-xs flex items-center justify-center uppercase"
             title={opp.owner}
           >
             {opp.owner.charAt(0)}
@@ -277,7 +277,7 @@ export function OpportunityCard({
       </div>
 
       {opp.nextStep && (
-        <p className={`mt-2 text-[12px] leading-snug ${overdue ? "text-expense" : "text-ink-2"}`}>
+        <p className={`mt-2 text-xs leading-snug ${overdue ? "text-expense" : "text-ink-2"}`}>
           {opp.nextStep}
           {opp.nextStepDue && (
             <span className="whitespace-nowrap"> · {opp.nextStepDue.slice(5)}</span>
@@ -290,14 +290,14 @@ export function OpportunityCard({
           <button
             onClick={() => patch({ stage: reopenKey })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
+            className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
           >
             Reopen
           </button>
         )}
         <button
           onClick={() => setEditing((v) => !v)}
-          className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
+          className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
         >
           Edit
         </button>
@@ -312,7 +312,7 @@ export function OpportunityCard({
               if (ok) void patch({ stage: lostKey });
             }}
             disabled={busy}
-            className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
+            className="ml-auto px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense"
           >
             Lost
           </button>
@@ -322,7 +322,7 @@ export function OpportunityCard({
             href={`/admin/fundraising/prospects/by-hubspot/${opp.hubspotId}`}
             draggable={false}
             onClick={(e) => e.stopPropagation()}
-            className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
+            className="ml-auto px-2 py-1 rounded-control text-xs text-ink-2 hover:text-ink-1"
             title="Research brief"
           >
             Brief

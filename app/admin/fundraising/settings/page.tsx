@@ -48,36 +48,36 @@ export default async function FundraisingSettingsPage() {
           flags={flags}
         />
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>Pipeline</h2>
-            <p className="text-[11px] text-ink-3">Stages are per-org configuration, not code</p>
+            <p className="text-xs text-ink-3">Stages are per-org configuration, not code</p>
           </div>
           <div className="px-5 py-4">
             <Link href="/admin/fundraising/settings/stages" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
               Edit pipeline stages →
             </Link>
-            <p className="text-[11px] text-ink-3 mt-1">Add, rename, reorder, and retype board columns; set default probabilities and HubSpot stage mapping.</p>
+            <p className="text-xs text-ink-3 mt-1">Add, rename, reorder, and retype board columns; set default probabilities and HubSpot stage mapping.</p>
           </div>
         </section>
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>Data hygiene</h2>
-            <p className="text-[11px] text-ink-3">Keep the constituent list clean</p>
+            <p className="text-xs text-ink-3">Keep the constituent list clean</p>
           </div>
           <div className="px-5 py-4 space-y-3">
             <div>
               <Link href="/admin/fundraising/import" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
                 Import donors &amp; gifts from CSV →
               </Link>
-              <p className="text-[11px] text-ink-3 mt-1">Map columns, preview, and commit. Dedupes by email against existing constituents.</p>
+              <p className="text-xs text-ink-3 mt-1">Map columns, preview, and commit. Dedupes by email against existing constituents.</p>
             </div>
             <div>
               <Link href="/admin/fundraising/duplicates" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
                 Find &amp; merge duplicates →
               </Link>
-              <p className="text-[11px] text-ink-3 mt-1">Surfaces constituents that share an email so you can merge their history into one record.</p>
+              <p className="text-xs text-ink-3 mt-1">Surfaces constituents that share an email so you can merge their history into one record.</p>
             </div>
           </div>
         </section>

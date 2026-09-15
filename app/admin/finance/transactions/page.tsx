@@ -11,6 +11,7 @@ import AiCategorize from "./_components/AiCategorize";
 import PageHeader from "../../_components/PageHeader";
 import ReconcileSection from "../reconcile/ReconcileSection";
 import CloseSection from "../close/CloseSection";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type SearchParams = {
   q?: string;
@@ -180,7 +181,7 @@ export default async function TransactionsPage({
       <div className="rounded-panel-lg border-hairline bg-surface overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead className="bg-surface text-ink-2 uppercase tracking-wider">
+            <thead className={`bg-surface ${TYPE.tableHeader}`}>
               <tr>
                 <th className="text-left px-3 py-2.5 w-[6.5rem]">Date</th>
                 <th className="text-left px-3 py-2.5">Description</th>
@@ -240,7 +241,7 @@ export default async function TransactionsPage({
                         categories={categories}
                       />
                       {cat?.functional_class && (
-                        <div className="text-xs text-ink-2 mt-1 uppercase tracking-wider">
+                        <div className={`${TYPE.cardLabel} mt-1`}>
                           {cat.functional_class}
                         </div>
                       )}

@@ -204,12 +204,12 @@ export default function RulesEditor({ initialRules, categories }: Props) {
     <div className="space-y-6">
       {/* Create form */}
       <div className="rounded-panel-lg border-hairline bg-surface p-5">
-        <h2 className="text-sm uppercase tracking-wider text-ink-2 mb-3">
+        <h2 className={`${TYPE.sectionHeader} mb-3`}>
           Add rule
         </h2>
         <div className="grid sm:grid-cols-[1fr_auto_1fr_auto] gap-3 items-end">
           <div>
-            <label className="block text-xs uppercase tracking-wider text-ink-2 mb-1">
+            <label className={`block ${TYPE.fieldLabel} mb-1`}>
               When description …
             </label>
             <input
@@ -301,7 +301,7 @@ export default function RulesEditor({ initialRules, categories }: Props) {
       {/* Rule list */}
       <div className="rounded-panel-lg border-hairline bg-surface overflow-hidden">
         <table className="w-full text-xs">
-          <thead className="bg-surface text-ink-2 uppercase tracking-wider">
+          <thead className={`bg-surface ${TYPE.tableHeader}`}>
             <tr>
               <th className="text-left px-3 py-2.5 w-8"></th>
               <th className="text-left px-3 py-2.5">Pattern</th>

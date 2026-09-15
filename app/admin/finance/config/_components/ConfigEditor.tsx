@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type FinConfig = {
   current_year: number;
@@ -206,7 +207,7 @@ export default function ConfigEditor({ initial }: Props) {
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <section className="rounded-panel-lg border-hairline bg-surface p-5">
-      <h2 className="text-sm uppercase tracking-wider text-orange font-medium mb-1">{title}</h2>
+      <h2 className={`${TYPE.sectionHeader} mb-1`}>{title}</h2>
       {hint && <p className="text-xs text-ink-2 mb-4 max-w-2xl">{hint}</p>}
       <div className="grid sm:grid-cols-2 gap-4">{children}</div>
     </section>
@@ -216,7 +217,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">{label}</span>
+      <span className={`block ${TYPE.fieldLabel} mb-1`}>{label}</span>
       {children}
     </label>
   );

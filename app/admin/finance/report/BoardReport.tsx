@@ -128,7 +128,7 @@ export default async function BoardReport() {
       <div id="board-report" className="bg-white text-ink-1 rounded-panel-lg border-hairline p-8 space-y-7">
         {/* Title */}
         <header className="border-b border-hairline pb-4">
-          <div className="text-xs uppercase tracking-widest text-ink-2">{orgName} · Board Financial Report</div>
+          <div className={TYPE.cardLabel}>{orgName} · Board Financial Report</div>
           <h1 className={`${TYPE.pageTitle} mt-1`}>Fiscal Year {cfg.year}</h1>
           <div className="text-xs text-ink-2 mt-1">As of {asOf} · {reconciledTxt}</div>
         </header>
@@ -195,7 +195,7 @@ export default async function BoardReport() {
           ) : (
             <table className="w-full text-xs">
               <thead>
-                <tr className="text-ink-2 uppercase tracking-wider border-b border-hairline">
+                <tr className={`${TYPE.tableHeader} border-b border-hairline`}>
                   <th className="text-left py-1.5">Group</th>
                   <th className="text-right py-1.5">Actual</th>
                   <th className="text-right py-1.5">Budget</th>
@@ -231,7 +231,7 @@ export default async function BoardReport() {
 function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="border border-hairline rounded-panel p-3">
-      <div className="text-xs uppercase tracking-widest text-ink-2">{label}</div>
+      <div className={TYPE.cardLabel}>{label}</div>
       <div className={`${TYPE.sectionTitle} mt-0.5 [font-variant-numeric:tabular-nums]`}>{value}</div>
       {sub && <div className="text-xs text-ink-2 mt-0.5">{sub}</div>}
     </div>

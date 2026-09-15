@@ -5,6 +5,7 @@
 // of their props (server-renderable, no client hooks).
 
 import { CHART } from "@/lib/admin/chartTokens";
+import { TYPE } from "@/lib/admin/typeScale";
 
 const NUM = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 const NUM_2 = new Intl.NumberFormat("en-US", {
@@ -187,7 +188,7 @@ export function CircleGauge({
           <span className="font-display font-black text-ink-1 text-xl leading-none">{value}</span>
         )}
         {label && (
-          <span className="mt-1 text-xs uppercase tracking-wider text-ink-3">{label}</span>
+          <span className={`mt-1 ${TYPE.cardLabel}`}>{label}</span>
         )}
       </div>
     </div>

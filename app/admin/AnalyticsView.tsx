@@ -388,7 +388,7 @@ export default function AnalyticsView() {
             <thead>
               <tr className="border-b border-hairline">
                 {["Page", "Views", "Avg Time on Page", "% of Total"].map((h) => (
-                  <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                  <th key={h} className={`text-left ${TYPE.tableHeader} px-4 py-3 whitespace-nowrap`}>
                     {h}
                   </th>
                 ))}
@@ -485,7 +485,7 @@ export default function AnalyticsView() {
             <thead>
               <tr className="border-b border-hairline">
                 {["Event Name", "Count (period)", "Count all time"].map((h) => (
-                  <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                  <th key={h} className={`text-left ${TYPE.tableHeader} px-4 py-3 whitespace-nowrap`}>
                     {h}
                   </th>
                 ))}
@@ -567,7 +567,7 @@ export default function AnalyticsView() {
             <thead>
               <tr className="border-b border-hairline">
                 {["Page", "Device", "Source", "Time on Page", "When"].map((h) => (
-                  <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
+                  <th key={h} className={`text-left ${TYPE.tableHeader} px-4 py-3 whitespace-nowrap`}>
                     {h}
                   </th>
                 ))}

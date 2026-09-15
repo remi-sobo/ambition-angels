@@ -161,7 +161,7 @@ export default function UploadClient() {
           {errorHint && <div className="text-xs text-expense mb-3">{errorHint}</div>}
           {errorSample && errorSample.length > 0 && (
             <details className="mt-2" open>
-              <summary className="text-xs uppercase tracking-wider text-expense cursor-pointer hover:text-expense">
+              <summary className="text-xs font-semibold text-expense cursor-pointer hover:text-expense">
                 First {errorSample.length} lines we saw in the file
               </summary>
               <pre className="mt-2 text-xs font-mono text-ink-1 bg-surface rounded p-3 overflow-x-auto">
@@ -281,7 +281,7 @@ export default function UploadClient() {
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">{label}</div>
+      <div className={`${TYPE.cardLabel} mb-1`}>{label}</div>
       <div className={`text-lg font-medium ${accent ? "text-orange" : "text-ink-1"}`}>{value}</div>
     </div>
   );

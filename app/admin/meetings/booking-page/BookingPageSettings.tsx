@@ -210,7 +210,7 @@ function TypeRow({
       </div>
 
       <div className="mt-5 pt-5 border-t border-hairline">
-        <div className="text-xs text-ink-3 uppercase tracking-widest mb-2">
+        <div className={`${TYPE.cardLabel} mb-2`}>
           Location options
         </div>
         <div className="flex flex-wrap gap-2 mb-4">
@@ -278,7 +278,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-xs text-ink-3 uppercase tracking-widest mb-1">
+      <span className={`block ${TYPE.fieldLabel} mb-1`}>
         {label}
       </span>
       {children}
@@ -399,7 +399,7 @@ function Blackouts({
           </Field>
         </div>
         <div className="mt-4">
-          <span className="block text-xs text-ink-3 uppercase tracking-widest mb-2">
+          <span className={`block ${TYPE.fieldLabel} mb-2`}>
             Applies to (none selected = all types)
           </span>
           <div className="flex flex-wrap gap-2">

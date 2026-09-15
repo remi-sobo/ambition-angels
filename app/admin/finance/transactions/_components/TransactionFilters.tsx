@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState, useEffect } from "react";
 import type { FinCategory } from "@/lib/finance/types";
+import { TYPE } from "@/lib/admin/typeScale";
 
 type Props = {
   categories: FinCategory[];
@@ -84,7 +85,7 @@ export default function TransactionFilters({ categories }: Props) {
     <div className="rounded-panel border-hairline bg-surface p-4 mb-4">
       <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="lg:col-span-2">
-          <label className="block text-xs uppercase tracking-wider text-ink-2 mb-1">
+          <label className={`block ${TYPE.fieldLabel} mb-1`}>
             Search
           </label>
           <input
@@ -96,7 +97,7 @@ export default function TransactionFilters({ categories }: Props) {
           />
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wider text-ink-2 mb-1">
+          <label className={`block ${TYPE.fieldLabel} mb-1`}>
             Category
           </label>
           <select
@@ -118,7 +119,7 @@ export default function TransactionFilters({ categories }: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wider text-ink-2 mb-1">
+          <label className={`block ${TYPE.fieldLabel} mb-1`}>
             From
           </label>
           <input
@@ -129,7 +130,7 @@ export default function TransactionFilters({ categories }: Props) {
           />
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wider text-ink-2 mb-1">
+          <label className={`block ${TYPE.fieldLabel} mb-1`}>
             To
           </label>
           <input

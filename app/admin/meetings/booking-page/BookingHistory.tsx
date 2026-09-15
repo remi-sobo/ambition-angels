@@ -1,4 +1,5 @@
 import type { Booking, MeetingType } from "@/lib/database.types";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type BookingWithType = Booking & { meeting_type: MeetingType | null };
 
@@ -29,7 +30,7 @@ export default function BookingHistory({
             <div className="overflow-x-auto rounded-control border-hairline bg-surface">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-widest text-ink-3 border-b border-hairline">
+                  <tr className={`text-left ${TYPE.tableHeader} border-b border-hairline`}>
                     <th className="px-4 py-3 font-medium">When (PT)</th>
                     <th className="px-4 py-3 font-medium">Type</th>
                     <th className="px-4 py-3 font-medium">Attendee</th>

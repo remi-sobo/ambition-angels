@@ -142,11 +142,21 @@ tracking are **never typed inline** — consume `TYPE` or a primitive.
 | `nav` | `text-sm font-medium` | Sidebar rows, tabs |
 | `button` | `text-[13px] font-semibold` | Button label |
 | `badge` | `text-xs font-semibold` | Badge / status chip |
+| `tableHeader` | `text-xs font-semibold uppercase tracking-[0.06em] text-ink-2` | Table column header |
+| `fieldLabel` | `text-xs font-medium text-ink-1` | Form field label (what `Field` renders) |
 
 V3 type rules: **no 10px type** (every muted-small role sits on the 12px
 floor); letter spacing is quiet (the eyebrow dropped 0.14em → 0.06em, the
-PageHeader eyebrow 0.25em → 0.04em); uppercase is used sparingly; helper text
-is `ink-2`, never `ink-3`, wherever it carries meaning. Deliberate exemptions
+PageHeader eyebrow 0.25em → 0.04em, and `tracking-widest` — 0.1em — is gone
+from every live surface); helper text is `ink-2`, never `ink-3`, wherever it
+carries meaning.
+
+**Uppercase is used sparingly — exactly two roles have it:** `sectionHeader`
+(a group eyebrow) and `tableHeader` (a column header, one row per table, where
+it genuinely aids scanning). Both sit at 0.06em. Everything else is sentence
+case, including stat labels (`cardLabel`) and form labels (`fieldLabel`) —
+a label you read or type against is not decoration. `tests/type-drift.test.ts`
+pins `tracking-widest` so the old micro-label voice cannot return. Deliberate exemptions
 (D5): `LoginScreen`, the strategic-plan narrative deck, `Greeting.tsx`, and
 `font-mono` for timestamps/amounts.
 

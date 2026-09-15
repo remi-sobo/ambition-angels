@@ -14,13 +14,16 @@
  *   Button                13px / 600
  *   Metadata / helper     12px / 450-500
  *   Badge                 11-12px / 600
+ *   Table header          12px / 600 (uppercase, 0.06em)
+ *   Field label           12px / 500
  *
  * V3 rules encoded here:
  *  - No 10px type. Every muted-small role sits at the 12px floor.
  *  - Letter spacing is quiet: the uppercase eyebrow drops from 0.14em to
  *    0.06em, and nothing else tracks at all.
- *  - Uppercase is used sparingly — `sectionHeader` is the only uppercase role
- *    left. `cardLabel` became sentence case, because a stat label is read, not
+ *  - Uppercase is used sparingly — only `sectionHeader` (a group eyebrow) and
+ *    `tableHeader` (a column header) are uppercase, both at a quiet 0.06em.
+ *    `cardLabel` became sentence case, because a stat label is read, not
  *    decorated.
  *  - Helper text is `ink-2`, never `ink-3`, wherever it carries meaning (§13:
  *    "avoid overly light gray helper text"). `ink-3` is for genuinely inert
@@ -70,4 +73,18 @@ export const TYPE = {
   button: "text-[13px] font-semibold",
   /** Badge / status chip label. 12px/600. */
   badge: "text-xs font-semibold",
+  /**
+   * Table column header. The SECOND (and last) uppercase role: one row per
+   * table, it aids scanning, and it is the canonical "sparing" use §2 allows.
+   * Tracking matches sectionHeader (0.06em, not the 0.1em `tracking-widest`
+   * the product had drifted to) and the ink is ink-2, because a column header
+   * carries meaning and §13 keeps meaningful text off ink-3.
+   */
+  tableHeader: "text-xs font-semibold uppercase tracking-[0.06em] text-ink-2",
+  /**
+   * Form field label. Sentence case and ink-1: a label you are about to type
+   * against is not helper text, so it reads at full strength. Matches the
+   * label the <Field> primitive renders.
+   */
+  fieldLabel: "text-xs font-medium text-ink-1",
 } as const;

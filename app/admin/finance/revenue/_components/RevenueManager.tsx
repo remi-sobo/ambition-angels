@@ -273,7 +273,7 @@ export default function RevenueManager({
 
         {formOpen && (
           <div className="rounded-panel border-orange/40 bg-surface p-4 mb-5">
-            <div className="text-xs uppercase tracking-wider text-ink-2 font-medium mb-3">
+            <div className={`${TYPE.cardLabel} mb-3`}>
               {editingId ? "Edit commitment" : "New manual commitment"}
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -376,7 +376,7 @@ export default function RevenueManager({
 function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
     <div className="rounded-panel border-hairline bg-surface p-3">
-      <div className="text-xs uppercase tracking-widest text-ink-2 mb-1">{label}</div>
+      <div className={`${TYPE.cardLabel} mb-1`}>{label}</div>
       <div className={`text-lg font-medium ${accent ? "text-orange" : "text-ink-1"}`}>{value}</div>
       {sub && <div className="mt-0.5 text-xs text-ink-2">{sub}</div>}
     </div>
@@ -387,7 +387,7 @@ function GroupHeader({ label, sub, total, muted }: { label: string; sub: string;
   return (
     <div className="flex items-baseline justify-between gap-3 mt-5 mb-1 pt-3 border-t border-hairline first:mt-0 first:pt-0 first:border-t-0">
       <div>
-        <span className={`text-xs font-semibold uppercase tracking-wider ${muted ? "text-ink-2" : "text-ink-1"}`}>{label}</span>
+        <span className={`${TYPE.sectionHeader} ${muted ? "" : "!text-ink-1"}`}>{label}</span>
         <span className="ml-2 text-xs text-ink-2">{sub}</span>
       </div>
       <span className={`text-xs font-mono [font-variant-numeric:tabular-nums] ${muted ? "text-ink-2" : "text-ink-1"}`}>{total}</span>
@@ -398,7 +398,7 @@ function GroupHeader({ label, sub, total, muted }: { label: string; sub: string;
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">{label}</span>
+      <span className={`block ${TYPE.fieldLabel} mb-1`}>{label}</span>
       {children}
     </label>
   );

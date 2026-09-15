@@ -59,7 +59,7 @@ export default async function QueueDrilldownPage({
       />
 
       <div className="flex items-center gap-1.5 mb-4">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-3 mr-1">
+        <span className="text-xs font-semibold text-ink-3 mr-1">
           Window
         </span>
         {WINDOWS.map((w) => (
@@ -70,7 +70,7 @@ export default async function QueueDrilldownPage({
             className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${
               w === days
                 ? "border-orange bg-orange/10 text-ink-1"
-                : "border-outline bg-tile text-ink-2 hover:text-ink-1"
+                : "border-hairline bg-tile text-ink-2 hover:text-ink-1"
             }`}
           >
             {w}d
@@ -78,7 +78,7 @@ export default async function QueueDrilldownPage({
         ))}
       </div>
 
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
+      <section className="rounded-panel-lg border-hairline bg-surface p-5">
         {due.length === 0 ? (
           <p className="text-sm text-ink-2">
             Nothing is due in the next {days} days. The window is clear.

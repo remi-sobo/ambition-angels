@@ -34,7 +34,7 @@ export default async function FeatureGate({
     return (
       <div className="px-4 lg:px-8 py-20 flex justify-center">
         <div className="max-w-md text-center">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-orange/80 mb-3">{label}</div>
+          <div className="text-xs font-medium uppercase tracking-[0.04em] text-ink-2 mb-3">{label}</div>
           <h1 className={`${TYPE.sectionTitle} mb-2`}>
             This module isn&rsquo;t enabled
           </h1>

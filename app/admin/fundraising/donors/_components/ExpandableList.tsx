@@ -22,7 +22,7 @@ export default function ExpandableList({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="w-full text-left px-5 py-2.5 border-t border-outline text-[11px] font-semibold text-orange hover:text-orange-dark transition-colors"
+          className="w-full text-left px-5 py-2.5 border-t border-hairline text-xs font-semibold text-orange hover:text-orange-dark transition-colors"
         >
           {expanded ? "Show less" : `Show more · ${hidden} hidden`}
         </button>

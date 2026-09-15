@@ -59,9 +59,9 @@ export default function MergeControls({ members }: { members: DupMember[] }) {
             <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
               <input type="radio" name={`primary-${members[0].id}`} checked={primary === m.id} onChange={() => setPrimary(m.id)} className="accent-orange" />
               <span className="text-sm text-ink-1 truncate">{m.name}</span>
-              <span className="text-[11px] text-ink-3 truncate">{m.email}</span>
+              <span className="text-xs text-ink-3 truncate">{m.email}</span>
             </label>
-            <span className="text-[11px] text-ink-2 [font-variant-numeric:tabular-nums] flex-shrink-0">
+            <span className="text-xs text-ink-2 [font-variant-numeric:tabular-nums] flex-shrink-0">
               {m.gifts} gift{m.gifts === 1 ? "" : "s"} · {m.total}
             </span>
           </li>
@@ -71,11 +71,11 @@ export default function MergeControls({ members }: { members: DupMember[] }) {
         <button
           disabled={busy}
           onClick={merge}
-          className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+          className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
         >
           {busy ? "Merging…" : "Keep selected · merge rest"}
         </button>
-        {error && <span className="text-expense text-[11px]">{error}</span>}
+        {error && <span className="text-expense text-xs">{error}</span>}
       </div>
     </div>
   );

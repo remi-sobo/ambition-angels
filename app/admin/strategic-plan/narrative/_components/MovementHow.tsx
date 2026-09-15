@@ -36,19 +36,19 @@ export default function MovementHow({ how }: { how: HowMovement }) {
       {/* The doors. */}
       <div className="grid sm:grid-cols-2 gap-3 mb-10">
         {angles.map((a) => (
-          <div key={a.id} className="rounded-card-lg border border-hairline bg-surface p-5 flex flex-col">
+          <div key={a.id} className="rounded-panel-lg border border-hairline bg-surface p-5 flex flex-col">
             <div className="flex items-start justify-between gap-2 mb-1.5">
               <h3 className="font-heading font-semibold text-[15px] text-ink-1 leading-snug">{a.name}</h3>
               {a.funderCount > 0 && (
-                <span className="shrink-0 text-[11px] font-heading font-semibold text-orange bg-orange-light rounded-full px-2 py-0.5">
+                <span className="shrink-0 text-xs font-heading font-semibold text-orange bg-orange-light rounded-full px-2 py-0.5">
                   {a.funderCount} {a.funderCount === 1 ? "funder" : "funders"}
                 </span>
               )}
             </div>
-            {a.hook && <p className="text-[13px] text-ink-2 leading-relaxed mb-2 flex-1">{a.hook}</p>}
+            {a.hook && <p className="text-sm text-ink-2 leading-relaxed mb-2 flex-1">{a.hook}</p>}
             {a.ask && (
-              <div className="text-[12px] text-ink-3 pt-2 border-t border-hairline">
-                <span className="font-semibold uppercase tracking-[0.1em] text-[10px]">Ask</span> · {a.ask}
+              <div className="text-xs text-ink-3 pt-2 border-t border-hairline">
+                <span className="font-semibold uppercase tracking-[0.1em] text-xs">Ask</span> · {a.ask}
               </div>
             )}
           </div>
@@ -57,7 +57,7 @@ export default function MovementHow({ how }: { how: HowMovement }) {
 
       {/* Live pipeline by stage. */}
       {pipelineByStage.length > 0 && (
-        <div className="rounded-card-lg border border-hairline bg-surface p-5 mb-8">
+        <div className="rounded-panel-lg border border-hairline bg-surface p-5 mb-8">
           <div className={`${TYPE.cardLabel} mb-4`}>
             Live pipeline by stage
           </div>
@@ -77,7 +77,7 @@ export default function MovementHow({ how }: { how: HowMovement }) {
               </div>
             ))}
           </div>
-          <div className="mt-3 text-[12px] text-ink-3">
+          <div className="mt-3 text-xs text-ink-3">
             Counts and ask totals are live from the pipeline. <strong className="text-ink-2">Steward</strong> is
             the book of already-secured, active relationships up for renewal. Shown for context, and deliberately
             excluded from the weighted ask in Movement 2 so a renewal dollar is never double-counted against a
@@ -88,7 +88,7 @@ export default function MovementHow({ how }: { how: HowMovement }) {
 
       {/* Channel progress. */}
       {channels.length > 0 && (
-        <div className="rounded-card-lg border border-hairline bg-surface p-5">
+        <div className="rounded-panel-lg border border-hairline bg-surface p-5">
           <div className={`${TYPE.cardLabel} mb-3`}>
             Channel progress
           </div>

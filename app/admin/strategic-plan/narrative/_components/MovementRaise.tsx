@@ -62,7 +62,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
 
       {/* Progress toward the floor: secured (solid) within realistic (open). */}
       {floor != null && (
-        <div className="mb-8 rounded-card-lg border border-hairline bg-surface p-5">
+        <div className="mb-8 rounded-panel-lg border border-hairline bg-surface p-5">
           <div className="flex items-baseline justify-between mb-2">
             <span className={TYPE.cardLabel}>
               Toward the committed floor
@@ -79,7 +79,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
               <div className="absolute inset-y-0 left-0 bg-orange" style={{ width: `${securedPct}%` }} />
             )}
           </div>
-          <div className="mt-1.5 text-[12px] text-ink-3">
+          <div className="mt-1.5 text-xs text-ink-3">
             {securedPct ?? 0}% secured · {realisticPct ?? 0}% on a realistic close
           </div>
         </div>
@@ -88,7 +88,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
       {/* The bridge to the floor — every dollar from secured to the floor, in one
           place, with the residual named honestly as coverage still to develop. */}
       {floor != null && (
-        <div className="mb-8 rounded-card-lg border border-hairline bg-surface p-5">
+        <div className="mb-8 rounded-panel-lg border border-hairline bg-surface p-5">
           <div className={`${TYPE.cardLabel} mb-3`}>
             The bridge to the floor
           </div>
@@ -117,7 +117,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
             </div>
           </div>
           {residual != null && residual > 0 && (
-            <div className="mt-3 text-[12px] text-ink-3">
+            <div className="mt-3 text-xs text-ink-3">
               The <strong className="text-orange-dark">{formatUsd(residual)}</strong> is the honest number: net-new
               money to clear the floor beyond what&apos;s secured and the weighted pipeline. It closes by naming
               prospects against the doors in Movement 3, shown here, not hidden.
@@ -142,14 +142,14 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
 
       {/* Near-term runway bridge — the urgent ask, separate from the annual floor. */}
       {runwayBridge > 0 && (
-        <div className="mb-8 rounded-card-lg border border-status-critical/30 bg-status-critical-bg px-5 py-4">
+        <div className="mb-8 rounded-panel-lg border border-status-critical/30 bg-status-critical-bg px-5 py-4">
           <div className={`${TYPE.cardLabel} !text-status-critical-text mb-1`}>
             Near-term runway bridge
           </div>
           <div className="font-display text-3xl sm:text-4xl leading-none tabular-nums text-ink-1">
             {formatUsd(runwayBridge)}
           </div>
-          <div className="mt-1.5 text-[13px] text-ink-2">
+          <div className="mt-1.5 text-sm text-ink-2">
             to restore a {runwayTargetMonths}-month cushion at {formatUsd(monthlyBurn)}/mo burn. Today there is{" "}
             {formatUsd(cashOnHand)} on hand
             {runwayMonths != null && <> ({runwayMonths % 1 === 0 ? runwayMonths : runwayMonths.toFixed(1)} months)</>}. This is
@@ -160,7 +160,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
 
       {/* Stage to the ceiling. */}
       {ceiling != null && floor != null && ceiling > floor && (
-        <div className="mb-8 rounded-card border border-hairline bg-tile px-5 py-3 text-sm text-ink-2">
+        <div className="mb-8 rounded-panel border border-hairline bg-tile px-5 py-3 text-sm text-ink-2">
           Stage to the ceiling: <strong className="text-ink-1">{formatUsd(ceiling)}</strong> everything-on, unlocking{" "}
           <strong className="text-ink-1">{formatUsd(ceiling - floor)}</strong> of staged tiers
           {stagedUnlockAt != null ? <> once the raise clears <strong className="text-ink-1">{formatUsd(stagedUnlockAt)}</strong></> : " as money lands"}.
@@ -169,7 +169,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
 
       {/* How the floor is RAISED FROM — channel targets summing to the floor. */}
       {sources.length > 0 && (
-        <div className="mb-8 rounded-card-lg border border-hairline bg-surface p-5">
+        <div className="mb-8 rounded-panel-lg border border-hairline bg-surface p-5">
           <div className={`${TYPE.cardLabel} mb-3`}>
             How the committed floor is sourced
           </div>
@@ -190,7 +190,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
 
       {/* Where the floor goes — fin_budget by category group. */}
       {bars.length > 0 && (
-        <div className="rounded-card-lg border border-hairline bg-surface p-5">
+        <div className="rounded-panel-lg border border-hairline bg-surface p-5">
           <div className={`${TYPE.cardLabel} mb-3`}>
             Where the committed floor goes
           </div>
@@ -213,13 +213,13 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
                   {a.lines.length > 1 && (
                     <div className="mt-1 ml-0.5 space-y-0.5">
                       {top.map((l) => (
-                        <div key={l.label} className="flex items-baseline justify-between text-[12px] text-ink-3">
+                        <div key={l.label} className="flex items-baseline justify-between text-xs text-ink-3">
                           <span className="truncate pr-3">{l.label}</span>
                           <span className="tabular-nums shrink-0">{formatUsd(l.amount)}</span>
                         </div>
                       ))}
                       {rest.length > 0 && (
-                        <div className="flex items-baseline justify-between text-[12px] text-ink-3">
+                        <div className="flex items-baseline justify-between text-xs text-ink-3">
                           <span>+ {rest.length} more</span>
                           <span className="tabular-nums shrink-0">{formatUsd(restSum)}</span>
                         </div>
@@ -231,7 +231,7 @@ export default function MovementRaise({ money }: { money: MoneySummary }) {
             })}
           </div>
           {staged > 0 && (
-            <div className="mt-4 pt-3 border-t border-hairline text-[12px] text-ink-3">
+            <div className="mt-4 pt-3 border-t border-hairline text-xs text-ink-3">
               Plus <strong className="text-ink-2">{formatUsd(staged)}</strong> staged, off the floor, unlocks as
               money lands{stagedT1 > 0 && <> (tier 1 {formatUsd(stagedT1)}</>}
               {stagedT2 > 0 && <>, tier 2 {formatUsd(stagedT2)}</>}

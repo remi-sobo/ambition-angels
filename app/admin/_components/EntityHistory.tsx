@@ -57,8 +57,8 @@ const fmtWhen = (ts: string) =>
 
 export function EntityHistory({ events }: { events: HistoryEvent[] }) {
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-outline">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-hairline">
         <h2 className={TYPE.cardTitle}>History</h2>
       </div>
       {events.length === 0 ? (

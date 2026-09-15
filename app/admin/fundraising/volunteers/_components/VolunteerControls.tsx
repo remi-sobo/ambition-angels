@@ -11,7 +11,7 @@ import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage } from "@/lib/admin/errors";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40";
 
 export function NewVolunteerForm({ term = "volunteer" }: { term?: string }) {
   const router = useRouter();
@@ -62,7 +62,7 @@ export function NewVolunteerForm({ term = "volunteer" }: { term?: string }) {
 
   return (
     <form onSubmit={submit}
-      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+      className="w-full bg-surface border-hairline rounded-panel p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end">
       <label className="text-xs text-ink-2">
         First name
         <input className={`${inputCls} w-full mt-1`} value={firstName} required autoFocus
@@ -124,7 +124,7 @@ export function UnflagButton({ id, name, term = "volunteer" }: { id: string; nam
 
   return (
     <button onClick={() => void unflag()} disabled={busy}
-      className="text-[11px] text-ink-3 hover:text-expense transition-colors">
+      className="text-xs text-ink-3 hover:text-expense transition-colors">
       Remove
     </button>
   );

@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 type Option = { id: string; name: string };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const METHODS = ["card", "cash", "check", "ach", "in_kind", "stock", "other"];
 
@@ -41,39 +41,39 @@ export default function GiftReportFilters({
   };
 
   return (
-    <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card p-4 flex flex-wrap items-end gap-3">
-      <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
+    <div className="bg-tile border-hairline rounded-panel p-4 flex flex-wrap items-end gap-3">
+      <label className="flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold">
         From
         <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={inputCls} />
       </label>
-      <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
+      <label className="flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold">
         To
         <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={inputCls} />
       </label>
-      <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
+      <label className="flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold">
         Campaign
         <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} className={inputCls}>
-          <option value="" className="bg-tile shadow-tile">Any</option>
+          <option value="" className="bg-tile">Any</option>
           {campaigns.map((c) => (
-            <option key={c.id} value={c.id} className="bg-tile shadow-tile">{c.name}</option>
+            <option key={c.id} value={c.id} className="bg-tile">{c.name}</option>
           ))}
         </select>
       </label>
-      <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
+      <label className="flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold">
         Fund
         <select value={fundId} onChange={(e) => setFundId(e.target.value)} className={inputCls}>
-          <option value="" className="bg-tile shadow-tile">Any</option>
+          <option value="" className="bg-tile">Any</option>
           {funds.map((f) => (
-            <option key={f.id} value={f.id} className="bg-tile shadow-tile">{f.name}</option>
+            <option key={f.id} value={f.id} className="bg-tile">{f.name}</option>
           ))}
         </select>
       </label>
-      <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
+      <label className="flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold">
         Method
         <select value={method} onChange={(e) => setMethod(e.target.value)} className={inputCls}>
-          <option value="" className="bg-tile shadow-tile">Any</option>
+          <option value="" className="bg-tile">Any</option>
           {METHODS.map((m) => (
-            <option key={m} value={m} className="bg-tile shadow-tile">{m}</option>
+            <option key={m} value={m} className="bg-tile">{m}</option>
           ))}
         </select>
       </label>
@@ -86,7 +86,7 @@ export default function GiftReportFilters({
         </button>
         <a
           href={`/api/admin/gifts/export?${query()}`}
-          className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+          className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
         >
           Export CSV
         </a>

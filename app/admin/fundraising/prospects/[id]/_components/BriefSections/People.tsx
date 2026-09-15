@@ -3,7 +3,7 @@ import { TYPE } from "@/lib/admin/typeScale";
 
 function PersonCard({ p }: { p: Person }) {
   return (
-    <div className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-3">
+    <div className="rounded-control border-hairline bg-surface p-3">
       <div className={`font-medium ${TYPE.body}`}>{p.name}</div>
       {p.title && <div className="text-xs text-ink-2 mt-0.5">{p.title}</div>}
       {p.professional_background && (
@@ -35,7 +35,7 @@ export default function People({
   return (
     <details
       {...(defaultOpen ? { open: true } : {})}
-      className="rounded-card border-[1.5px] border-outline bg-surface p-6 group"
+      className="rounded-panel border-hairline bg-surface p-6 group"
     >
       <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1">
         People
@@ -48,7 +48,7 @@ export default function People({
 
         {data.primary_contact && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+            <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               Primary contact
             </div>
             <PersonCard p={data.primary_contact} />
@@ -57,7 +57,7 @@ export default function People({
 
         {data.board_members.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+            <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               Board members
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -70,7 +70,7 @@ export default function People({
 
         {data.staff_of_note.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+            <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               Staff of note
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

@@ -64,7 +64,7 @@ export default async function BookingPagePage() {
           <Link
             href="/meet"
             target="_blank"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-orange hover:text-orange-dark border-[1.5px] border-outline hover:bg-[#EFE6D4] rounded-lg px-3.5 py-2 transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-orange hover:text-orange-dark border-hairline hover:bg-tile rounded-control px-3.5 py-2 transition-colors"
           >
             View public page
             <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">

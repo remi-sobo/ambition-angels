@@ -98,13 +98,13 @@ export default function AgendaList({
       <ul className="space-y-1.5">
         {groups.map(([key, dayItems]) => (
           <li key={key}>
-            <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mt-3 first:mt-0 mb-1">
+            <div className="text-xs uppercase tracking-wider text-ink-3 font-semibold mt-3 first:mt-0 mb-1">
               {labelFor(key)}
             </div>
             <ul className="space-y-1.5">
               {dayItems.map((e) => (
                 <li key={e.id} className="flex items-baseline gap-3">
-                  <span className="text-[11px] text-ink-2 [font-variant-numeric:tabular-nums] w-16 flex-shrink-0">
+                  <span className="text-xs text-ink-2 [font-variant-numeric:tabular-nums] w-16 flex-shrink-0">
                     {fmt.time(e.start, e.allDay)}
                   </span>
                   <span className="text-sm text-ink-1 font-medium truncate min-w-0">{e.title}</span>
@@ -112,7 +112,7 @@ export default function AgendaList({
                     <span className="w-1.5 h-1.5 rounded-full bg-orange flex-shrink-0 self-center" title="External attendee" />
                   )}
                   {showChips && e.ownerUserId && (
-                    <span className="text-[10px] font-semibold text-ink-3 bg-tile border border-outline rounded-full px-1.5 py-0.5 flex-shrink-0 ml-auto">
+                    <span className="text-xs font-semibold text-ink-3 bg-tile border border-hairline rounded-full px-1.5 py-0.5 flex-shrink-0 ml-auto">
                       {(names[e.ownerUserId] ?? "?").slice(0, 2)}
                     </span>
                   )}
@@ -133,7 +133,7 @@ export default function AgendaList({
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${
+            className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${
               view === v ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1"
             }`}
           >
@@ -146,7 +146,7 @@ export default function AgendaList({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-2">
           {lanes.map((lane) => (
             <div key={lane.userId} className="min-w-0">
-              <div className="text-xs font-heading font-semibold text-ink-1 pb-1.5 mb-1 border-b border-outline">
+              <div className="text-xs font-heading font-semibold text-ink-1 pb-1.5 mb-1 border-b border-hairline">
                 {lane.label}
               </div>
               {renderGroups(
@@ -161,7 +161,7 @@ export default function AgendaList({
       )}
 
       <div className="mt-4 flex items-center justify-between">
-        <span className={`text-[11px] ${freshness.stale ? "text-orange" : "text-ink-3"}`}>{freshness.text}</span>
+        <span className={`text-xs ${freshness.stale ? "text-orange" : "text-ink-3"}`}>{freshness.text}</span>
         <button
           onClick={async () => {
             setRefreshing(true);
@@ -173,7 +173,7 @@ export default function AgendaList({
             }
           }}
           disabled={refreshing}
-          className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 disabled:opacity-50"
+          className="text-xs font-semibold text-ink-2 hover:text-ink-1 disabled:opacity-50"
         >
           {refreshing ? "Refreshing…" : "Refresh"}
         </button>

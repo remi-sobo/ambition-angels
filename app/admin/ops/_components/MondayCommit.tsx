@@ -57,7 +57,7 @@ export default function MondayCommit({
     : null;
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6 space-y-4">
+    <section className="rounded-panel border-hairline bg-surface p-6 space-y-4">
       <div>
         <h2 className={TYPE.sectionHeader}>Commit</h2>
         <p className="text-sm text-ink-2 mt-1">
@@ -76,7 +76,7 @@ export default function MondayCommit({
         <button
           onClick={commit}
           disabled={busy}
-          className="text-sm font-medium px-4 py-2 rounded-lg bg-orange text-white hover:bg-orange-dark disabled:opacity-50 transition-colors"
+          className="text-sm font-medium px-4 py-2 rounded-control bg-orange text-white hover:bg-orange-dark disabled:opacity-50 transition-colors"
         >
           {busy ? "Saving…" : savedAt ? "Re-commit the week" : "Commit the week"}
         </button>
@@ -95,9 +95,9 @@ export default function MondayCommit({
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border-[1.5px] border-outline bg-tile/40 px-3 py-3 text-center">
+    <div className="rounded-control border-hairline bg-tile/40 px-3 py-3 text-center">
       <div className="font-display font-black text-2xl text-ink-1 leading-none">{value}</div>
-      <div className="text-[10px] uppercase tracking-wider text-ink-2 mt-1">{label}</div>
+      <div className="text-xs uppercase tracking-wider text-ink-2 mt-1">{label}</div>
     </div>
   );
 }

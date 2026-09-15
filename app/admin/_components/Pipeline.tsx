@@ -43,9 +43,9 @@ export default function Pipeline<T>({
   emptyHint?: ReactNode;
 }) {
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
       {title != null && (
-        <div className="px-5 py-4 border-b border-outline">
+        <div className="px-5 py-4 border-b border-hairline">
           <h2 className={TYPE.cardTitle}>{title}</h2>
         </div>
       )}
@@ -53,15 +53,15 @@ export default function Pipeline<T>({
         <div className="flex gap-3 p-4" style={{ minWidth: minBoardWidth }}>
           {columns.map((col) => (
             <div key={col.key} className="flex-1" style={{ minWidth: minColWidth }}>
-              <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-0.5">
+              <div className="text-xs font-heading font-semibold uppercase tracking-[0.12em] text-ink-3 mb-0.5">
                 {col.label}
               </div>
-              <div className="text-[11px] text-ink-2 mb-2 [font-variant-numeric:tabular-nums]">
+              <div className="text-xs text-ink-2 mb-2 [font-variant-numeric:tabular-nums]">
                 {columnSummary ? columnSummary(col.items) : col.items.length}
               </div>
               <div className="space-y-2">
                 {col.items.length === 0 && emptyHint != null ? (
-                  <div className="text-[11px] text-ink-3">{emptyHint}</div>
+                  <div className="text-xs text-ink-3">{emptyHint}</div>
                 ) : maxVisible != null && col.items.length > maxVisible ? (
                   <>
                     {col.items.slice(0, maxVisible).map((item) => (
@@ -88,7 +88,7 @@ export default function Pipeline<T>({
           ))}
         </div>
       </div>
-      {footer != null && <div className="px-4 py-3 border-t border-outline">{footer}</div>}
+      {footer != null && <div className="px-4 py-3 border-t border-hairline">{footer}</div>}
     </section>
   );
 }

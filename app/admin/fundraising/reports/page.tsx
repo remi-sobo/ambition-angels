@@ -73,7 +73,7 @@ export default async function ReportsPage({
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className={`${TYPE.pageTitle} mb-4`}>Reports</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_fundraising_core.sql</code>, then reload.
         </div>
@@ -119,7 +119,7 @@ export default async function ReportsPage({
           actions={
             <Link
               href="/admin/fundraising/donors"
-              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
             >
               Donors →
             </Link>
@@ -138,8 +138,8 @@ export default async function ReportsPage({
           <StatCard label="Campaigns" value={groups.filter((g) => g.name !== "Unattributed").length} sub="with gifts in range" />
         </div>
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>By campaign</h2>
           </div>
           {groups.length === 0 ? (
@@ -157,8 +157,8 @@ export default async function ReportsPage({
           )}
         </section>
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>Recent gifts in range</h2>
           </div>
           {gifts.length === 0 ? (
@@ -169,21 +169,21 @@ export default async function ReportsPage({
                 <li key={i} className="px-5 py-2.5 flex items-center gap-4">
                   <span className="text-xs text-ink-2 w-24 flex-shrink-0">{fmtDate(g.gift_date)}</span>
                   <span className="text-sm text-ink-1 flex-1 truncate">{g.constituent ? constituentName(g.constituent) : "Anonymous"}</span>
-                  <span className="text-[10px] uppercase tracking-wider text-ink-3">{g.method}</span>
+                  <span className="text-xs uppercase tracking-wider text-ink-3">{g.method}</span>
                   <span className="font-bold text-ink-1 w-24 text-right [font-variant-numeric:tabular-nums]">{money(g.amount)}</span>
                 </li>
               ))}
             </ul>
           )}
           {gifts.length > 50 && (
-            <p className="px-5 py-3 text-[11px] text-ink-3 border-t border-outline">
+            <p className="px-5 py-3 text-xs text-ink-3 border-t border-hairline">
               Showing 50 of {gifts.length}. Export CSV for the full set.
             </p>
           )}
         </section>
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>Saved donor segments</h2>
           </div>
           {segments.length === 0 ? (

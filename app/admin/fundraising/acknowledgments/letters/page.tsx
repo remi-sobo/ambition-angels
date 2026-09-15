@@ -65,7 +65,7 @@ export default async function BatchLettersPage() {
 
   return (
     <div className="min-h-screen bg-white text-[#1a1a1a]">
-      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 flex items-center gap-3 print:hidden">
+      <div className="bg-tile border-b border-hairline px-4 lg:px-8 py-3 flex items-center gap-3 print:hidden">
         <Link href="/admin/fundraising/acknowledgments" className="text-xs font-semibold text-ink-2 hover:text-ink-1">
           ← Acknowledgments
         </Link>

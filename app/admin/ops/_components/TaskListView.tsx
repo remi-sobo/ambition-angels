@@ -279,7 +279,7 @@ export default function TaskListView({
                         setDragId(null);
                         setHoverId(null);
                       }}
-                      className={`flex items-center gap-1 rounded-lg ${
+                      className={`flex items-center gap-1 rounded-control ${
                         isDragOver ? "ring-2 ring-orange/40" : ""
                       } ${useDoneDrawer && isLeaving(t.id) ? "task-leaving" : ""}`}
                     >
@@ -323,7 +323,7 @@ export default function TaskListView({
                       <button
                         type="button"
                         onClick={() => toggleExpand(t.id)}
-                        className="ml-12 mt-0.5 text-[11px] text-ink-3 hover:text-ink-1"
+                        className="ml-12 mt-0.5 text-xs text-ink-3 hover:text-ink-1"
                       >
                         {kids.length} subtask{kids.length === 1 ? "" : "s"}
                       </button>
@@ -348,7 +348,7 @@ export default function TaskListView({
           <button
             type="button"
             onClick={() => setShowCompleted((v) => !v)}
-            className="text-[11px] font-semibold text-ink-3 hover:text-ink-1"
+            className="text-xs font-semibold text-ink-3 hover:text-ink-1"
           >
             {showCompleted ? "Hide" : "Show"} {doneTop.length} completed
           </button>
@@ -374,12 +374,12 @@ export default function TaskListView({
           onChange={(e) => setNewTitle(e.target.value)}
           placeholder="Add a task (Enter to create)…"
           disabled={adding}
-          className="flex-1 bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+          className="flex-1 bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
         />
         <button
           type="submit"
           disabled={adding || !newTitle.trim()}
-          className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg"
+          className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-control"
         >
           {adding ? "Adding…" : "Add"}
         </button>
@@ -411,7 +411,7 @@ function GroupHeader({
   } else if (groupBy === "status") {
     label = (
       <span
-        className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${taskStatusBadgeClass(value)}`}
+        className={`inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${taskStatusBadgeClass(value)}`}
       >
         {statusLabel(value)}
       </span>
@@ -419,7 +419,7 @@ function GroupHeader({
   } else if (groupBy === "category") {
     label = (
       <span
-        className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(value)}`}
+        className={`inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${categoryBadgeClass(value)}`}
       >
         {categoryLabel(value)}
       </span>
@@ -434,7 +434,7 @@ function GroupHeader({
   return (
     <header className="flex items-center gap-2 mb-2">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-2">{label}</h3>
-      <span className="text-[11px] text-ink-3">{count}</span>
+      <span className="text-xs text-ink-3">{count}</span>
     </header>
   );
 }

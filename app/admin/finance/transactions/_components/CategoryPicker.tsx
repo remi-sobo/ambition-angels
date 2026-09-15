@@ -60,8 +60,8 @@ export default function CategoryPicker({
         onChange={(e) => save(e.target.value)}
         className={`bg-ink border rounded px-2 py-1 text-xs text-ink-1 max-w-[14rem] ${
           value === ""
-            ? "border-[#D9BE86] text-amber-200"
-            : "border-outline"
+            ? "border-status-watch/40 text-status-watch-text"
+            : "border-hairline"
         }`}
       >
         <option value="">(Uncategorized)</option>
@@ -76,13 +76,13 @@ export default function CategoryPicker({
         ))}
       </select>
       {status === "saving" && (
-        <span className="text-[10px] text-ink-2">saving…</span>
+        <span className="text-xs text-ink-2">saving…</span>
       )}
       {status === "saved" && (
-        <span className="text-[10px] text-revenue">saved</span>
+        <span className="text-xs text-revenue">saved</span>
       )}
       {status === "error" && (
-        <span className="text-[10px] text-expense">error</span>
+        <span className="text-xs text-expense">error</span>
       )}
     </div>
   );

@@ -93,13 +93,13 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
   }
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-5 py-3 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-3 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className={TYPE.cardTitle}>
             Find prospects <span className="text-ink-3 font-normal">· AI</span>
           </h2>
-          <p className="text-[11px] text-ink-3">
+          <p className="text-xs text-ink-3">
             Web-search net-new prospects that fit this angle, then accept them onto the{" "}
             <Link href={PROSPECTS_HREF} className="text-orange hover:text-orange-dark underline">
               Prospects bench
@@ -111,7 +111,7 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
           <select
             value={type}
             onChange={(e) => setType(e.target.value as DiscoveryType)}
-            className="bg-cream border-[1.5px] border-outline rounded-lg px-2.5 py-1.5 text-xs text-ink-1 focus:outline-none focus:border-orange/50"
+            className="bg-cream border-hairline rounded-control px-2.5 py-1.5 text-xs text-ink-1 focus:outline-none focus:border-orange/50"
           >
             {TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
@@ -120,7 +120,7 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
           <button
             onClick={discover}
             disabled={loading}
-            className="text-xs font-semibold px-4 py-1.5 rounded-full border-[1.5px] border-orange/40 bg-orange/10 text-orange hover:bg-orange/20 transition-colors disabled:opacity-60"
+            className="text-xs font-semibold px-4 py-1.5 rounded-full border-orange/40 bg-orange/10 text-orange hover:bg-orange/20 transition-colors disabled:opacity-60"
           >
             {loading ? "Searching…" : candidates ? "Search again" : "Find prospects"}
           </button>
@@ -128,7 +128,7 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
       </div>
 
       {error && <p className="px-5 py-4 text-sm text-expense">{error}</p>}
-      {warning && <p className="px-5 pt-3 text-[11px] text-status-watch-text">{warning}</p>}
+      {warning && <p className="px-5 pt-3 text-xs text-status-watch-text">{warning}</p>}
       {loading && <p className="px-5 py-4 text-ink-3 text-sm">Researching the web for fits. This can take ~30–60s.</p>}
 
       {candidates && candidates.length === 0 && !loading && (
@@ -143,15 +143,15 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-heading font-semibold text-[14px] text-ink-1">{c.name}</span>
-                    {c.org && <span className="text-[11px] text-ink-3">· {c.org}</span>}
-                    <span className="text-[10px] uppercase tracking-wide text-ink-3 border border-outline rounded px-1 py-px capitalize">{c.type}</span>
+                    {c.org && <span className="text-xs text-ink-3">· {c.org}</span>}
+                    <span className="text-xs text-ink-3 border border-hairline rounded px-1 py-px capitalize">{c.type}</span>
                   </div>
                   <p className="text-xs text-ink-2 mt-1 leading-snug">{c.fit_rationale}</p>
-                  {c.signal && <p className="text-[11px] text-revenue mt-0.5">{c.signal}</p>}
+                  {c.signal && <p className="text-xs text-revenue mt-0.5">{c.signal}</p>}
                   {c.sources.length > 0 && (
                     <div className="mt-1 flex flex-wrap gap-2">
                       {c.sources.slice(0, 4).map((s, j) => (
-                        <a key={j} href={s} target="_blank" rel="noopener noreferrer" className="text-[10px] text-ink-3 hover:text-orange underline truncate max-w-[180px]">
+                        <a key={j} href={s} target="_blank" rel="noopener noreferrer" className="text-xs text-ink-3 hover:text-orange underline truncate max-w-[180px]">
                           {s.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
                         </a>
                       ))}
@@ -171,7 +171,7 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
                     {accepted[i] === "done" ? "On bench ✓" : accepted[i] === "saving" ? "…" : "+ Add to bench"}
                   </button>
                   {accepted[i] === "done" && (
-                    <Link href={PROSPECTS_HREF} className="text-[10px] text-ink-3 hover:text-orange underline">
+                    <Link href={PROSPECTS_HREF} className="text-xs text-ink-3 hover:text-orange underline">
                       View on Prospects →
                     </Link>
                   )}
@@ -183,13 +183,13 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
       )}
 
       {acceptedCount > 0 && (
-        <div className="px-5 py-3 border-t border-outline flex items-center justify-between gap-3 flex-wrap bg-revenue-bg/40">
-          <p className="text-[11px] text-ink-2">
+        <div className="px-5 py-3 border-t border-hairline flex items-center justify-between gap-3 flex-wrap bg-revenue-bg/40">
+          <p className="text-xs text-ink-2">
             Added {acceptedCount} to the Prospects bench (tagged <span className="text-revenue font-semibold">AI</span>).
           </p>
           <Link
             href={PROSPECTS_HREF}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full border-[1.5px] border-orange/40 bg-orange/10 text-orange hover:bg-orange/20 transition-colors"
+            className="text-xs font-semibold px-3 py-1.5 rounded-full border-orange/40 bg-orange/10 text-orange hover:bg-orange/20 transition-colors"
           >
             View prospects →
           </Link>

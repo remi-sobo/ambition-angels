@@ -415,7 +415,7 @@ export default function MessagesView({
 
   return (
     <div className="flex flex-col h-[calc(100dvh-3.5rem-5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] lg:h-[calc(100dvh-0.5rem-env(safe-area-inset-top))] px-3 lg:px-6 py-3 lg:py-4">
-      <div className="flex-1 min-h-0 flex rounded-card-lg border border-hairline bg-surface shadow-tile overflow-hidden">
+      <div className="flex-1 min-h-0 flex rounded-panel-lg border border-hairline bg-surface overflow-hidden">
         {/* ── Thread list ─────────────────────────────────────────────── */}
         <aside
           className={`w-full lg:w-[320px] shrink-0 flex-col border-hairline lg:border-r min-h-0 ${
@@ -428,7 +428,7 @@ export default function MessagesView({
                 conversation — the chat itself lives here). */}
             <div className="min-w-0">
               <h1 className={`${TYPE.sectionTitle} leading-tight`}>Messages</h1>
-              <p className="text-[11px] text-ink-3 truncate">
+              <p className="text-xs text-ink-3 truncate">
                 Chat with your team. Alerts &amp; mentions live in Inbox
               </p>
             </div>
@@ -465,7 +465,7 @@ export default function MessagesView({
                       <button
                         type="button"
                         onClick={() => openThread(t.id)}
-                        className={`w-full flex items-center gap-3 px-2.5 py-2.5 rounded-card text-left transition-colors ${
+                        className={`w-full flex items-center gap-3 px-2.5 py-2.5 rounded-panel text-left transition-colors ${
                           isActive ? "bg-orange-light" : "hover:bg-tile"
                         }`}
                       >
@@ -480,7 +480,7 @@ export default function MessagesView({
                               {t.label}
                             </span>
                             {t.lastMessage && (
-                              <span className="shrink-0 text-[10px] uppercase tracking-wide text-ink-3">
+                              <span className="shrink-0 text-xs text-ink-3">
                                 {relTime(t.lastMessageAt)}
                               </span>
                             )}
@@ -494,7 +494,7 @@ export default function MessagesView({
                               {preview}
                             </span>
                             {unread && (
-                              <span className="shrink-0 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-[10px] font-bold leading-none">
+                              <span className="shrink-0 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-orange text-white text-xs font-bold leading-none">
                                 {t.unread > 9 ? "9+" : t.unread}
                               </span>
                             )}
@@ -539,7 +539,7 @@ export default function MessagesView({
                 <div className="min-w-0 flex-1 leading-tight">
                   <div className="font-heading font-semibold text-ink-1 truncate">{active.label}</div>
                   {active.isGroup && (
-                    <div className="text-[11px] text-ink-3 truncate">
+                    <div className="text-xs text-ink-3 truncate">
                       {active.participants.length} people ·{" "}
                       {active.participants.map((p) => firstName(p.name)).join(", ")}
                     </div>
@@ -661,7 +661,7 @@ function MessageStream({
             {showDivider && (
               <div className="flex items-center gap-3 my-4">
                 <span className="flex-1 h-px bg-hairline" />
-                <span className="text-[10px] font-heading font-semibold uppercase tracking-[0.12em] text-ink-3">
+                <span className="text-xs font-heading font-semibold uppercase tracking-[0.12em] text-ink-3">
                   {dayLabel(m.createdAt)}
                 </span>
                 <span className="flex-1 h-px bg-hairline" />
@@ -683,7 +683,7 @@ function MessageStream({
             />
             {receiptIndex === i && receiptText && (
               <div className="flex justify-end pr-1 mt-0.5">
-                <span className="inline-flex items-center gap-1 text-[10px] text-ink-3">
+                <span className="inline-flex items-center gap-1 text-xs text-ink-3">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M2 13l4 4 7-9M12 16l1.5 1.5 7-9" />
                   </svg>
@@ -746,13 +746,13 @@ function Bubble({
               }
             }}
             rows={2}
-            className="w-full resize-none bg-surface border border-orange rounded-card px-3 py-2 text-sm text-ink-1 focus:outline-none"
+            className="w-full resize-none bg-surface border border-orange rounded-panel px-3 py-2 text-sm text-ink-1 focus:outline-none"
           />
           <div className="flex items-center gap-2 mt-1">
-            <button type="button" onClick={onCancelEdit} className="text-[11px] font-semibold text-ink-2 hover:text-ink-1">
+            <button type="button" onClick={onCancelEdit} className="text-xs font-semibold text-ink-2 hover:text-ink-1">
               Cancel
             </button>
-            <button type="button" onClick={onSaveEdit} className="text-[11px] font-semibold text-orange hover:text-orange-dark">
+            <button type="button" onClick={onSaveEdit} className="text-xs font-semibold text-orange hover:text-orange-dark">
               Save
             </button>
           </div>
@@ -764,7 +764,7 @@ function Bubble({
   return (
     <div className={`group flex ${m.mine ? "justify-end" : "justify-start"} ${tight ? "mt-0.5" : "mt-2"}`}>
       <div className={`flex flex-col max-w-[80%] ${m.mine ? "items-end" : "items-start"}`}>
-        {showName && <span className="text-[11px] font-semibold text-ink-3 px-1 mb-0.5">{m.senderName}</span>}
+        {showName && <span className="text-xs font-semibold text-ink-3 px-1 mb-0.5">{m.senderName}</span>}
 
         <div className={`flex items-center gap-1.5 ${m.mine ? "flex-row" : "flex-row-reverse"}`}>
           {/* Hover/tap action cluster (hidden until hover on desktop). */}
@@ -803,7 +803,7 @@ function Bubble({
               )}
 
               {picker && (
-                <div className={`absolute bottom-9 ${m.mine ? "right-0" : "left-0"} z-10 flex items-center gap-0.5 bg-surface border border-hairline rounded-full shadow-tile px-1.5 py-1`}>
+                <div className={`absolute bottom-9 ${m.mine ? "right-0" : "left-0"} z-10 flex items-center gap-0.5 bg-surface border border-hairline rounded-full px-1.5 py-1`}>
                   {QUICK_EMOJIS.map((e) => (
                     <button
                       key={e}
@@ -820,7 +820,7 @@ function Bubble({
                 </div>
               )}
               {menu && m.mine && (
-                <div className={`absolute bottom-9 ${m.mine ? "right-0" : "left-0"} z-10 w-32 bg-surface border border-hairline rounded-card shadow-tile py-1 text-sm`}>
+                <div className={`absolute bottom-9 ${m.mine ? "right-0" : "left-0"} z-10 w-32 bg-surface border border-hairline rounded-panel py-1 text-sm`}>
                   <button
                     type="button"
                     onClick={() => {
@@ -848,12 +848,12 @@ function Bubble({
 
           {/* The bubble */}
           {deleted ? (
-            <div className="px-3.5 py-2 text-sm italic text-ink-3 rounded-card border border-dashed border-hairline">
+            <div className="px-3.5 py-2 text-sm italic text-ink-3 rounded-panel border border-dashed border-hairline">
               Message deleted
             </div>
           ) : (
             <div
-              className={`px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words rounded-card ${
+              className={`px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words rounded-panel ${
                 m.mine ? `bg-orange text-white ${m.pending ? "opacity-60" : ""}` : "bg-surface text-ink-1 border border-hairline"
               }`}
             >
@@ -872,7 +872,7 @@ function Bubble({
         )}
 
         {showTime && (
-          <span className="text-[10px] text-ink-3 px-1 mt-0.5">
+          <span className="text-xs text-ink-3 px-1 mt-0.5">
             {m.pending ? "Sending…" : shortTime(m.createdAt)}
             {m.editedAt && !deleted ? " · edited" : ""}
           </span>
@@ -891,10 +891,10 @@ function ReactionChip({ r, onClick }: { r: MessageReaction; onClick: () => void 
       className={`inline-flex items-center gap-1 px-1.5 h-6 rounded-full border text-xs leading-none transition-colors ${
         r.mine
           ? "bg-orange-light border-orange/40 text-orange-dark"
-          : "bg-tile border-hairline text-ink-2 hover:bg-[#EFE6D4]"
+          : "bg-tile border-hairline text-ink-2 hover:bg-tile"
       }`}
     >
-      <span className="text-[13px]">{r.emoji}</span>
+      <span className="text-sm">{r.emoji}</span>
       <span className="font-semibold tabular-nums">{r.count}</span>
     </button>
   );
@@ -926,7 +926,7 @@ function Composer({
 
   return (
     <div className="border-t border-hairline px-3 lg:px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-      <div className="flex items-end gap-2 bg-tile border border-outline rounded-card-lg px-3 py-2 focus-within:border-orange transition-colors">
+      <div className="flex items-end gap-2 bg-tile border border-hairline rounded-panel-lg px-3 py-2 focus-within:border-orange transition-colors">
         <textarea
           ref={taRef}
           value={draft}

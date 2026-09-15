@@ -11,8 +11,8 @@ import { userMessage, networkMessage } from "@/lib/admin/errors";
 type Option = { id: string; name: string };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
-const labelCls = "flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+const labelCls = "flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold";
 
 const FREQS = [
   ["monthly", "Monthly"],
@@ -78,7 +78,7 @@ export function NewPledgeForm({ campaigns, funds }: { campaigns: Option[]; funds
     );
   }
   return (
-    <form onSubmit={submit} className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-4 flex flex-wrap items-end gap-3 w-full">
+    <form onSubmit={submit} className="bg-tile border-hairline rounded-panel-lg p-4 flex flex-wrap items-end gap-3 w-full">
       <label className={labelCls}>
         Donor *
         <input required value={donor} onChange={(e) => setDonor(e.target.value)} placeholder="Name" className={inputCls + " w-48"} />
@@ -95,7 +95,7 @@ export function NewPledgeForm({ campaigns, funds }: { campaigns: Option[]; funds
         Frequency
         <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className={inputCls}>
           {FREQS.map(([v, l]) => (
-            <option key={v} value={v} className="bg-tile shadow-tile">{l}</option>
+            <option key={v} value={v} className="bg-tile">{l}</option>
           ))}
         </select>
       </label>
@@ -107,8 +107,8 @@ export function NewPledgeForm({ campaigns, funds }: { campaigns: Option[]; funds
         <label className={labelCls}>
           Campaign
           <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} className={inputCls + " w-40"}>
-            <option value="" className="bg-tile shadow-tile">—</option>
-            {campaigns.map((c) => (<option key={c.id} value={c.id} className="bg-tile shadow-tile">{c.name}</option>))}
+            <option value="" className="bg-tile">—</option>
+            {campaigns.map((c) => (<option key={c.id} value={c.id} className="bg-tile">{c.name}</option>))}
           </select>
         </label>
       )}
@@ -116,8 +116,8 @@ export function NewPledgeForm({ campaigns, funds }: { campaigns: Option[]; funds
         <label className={labelCls}>
           Fund
           <select value={fundId} onChange={(e) => setFundId(e.target.value)} className={inputCls + " w-40"}>
-            <option value="" className="bg-tile shadow-tile">—</option>
-            {funds.map((f) => (<option key={f.id} value={f.id} className="bg-tile shadow-tile">{f.name}</option>))}
+            <option value="" className="bg-tile">—</option>
+            {funds.map((f) => (<option key={f.id} value={f.id} className="bg-tile">{f.name}</option>))}
           </select>
         </label>
       )}
@@ -165,7 +165,7 @@ export function ConvertOpportunityForm({ opportunities }: { opportunities: WonOp
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs font-semibold text-orange border-[1.5px] border-orange/40 hover:bg-orange/10 px-4 py-2 rounded-full transition-colors"
+        className="text-xs font-semibold text-orange border-orange/40 hover:bg-orange/10 px-4 py-2 rounded-full transition-colors"
       >
         Convert won ask →
       </button>
@@ -208,13 +208,13 @@ export function ConvertOpportunityForm({ opportunities }: { opportunities: WonOp
   };
 
   return (
-    <form onSubmit={submit} className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-4 flex flex-wrap items-end gap-3 w-full">
+    <form onSubmit={submit} className="bg-tile border-hairline rounded-panel-lg p-4 flex flex-wrap items-end gap-3 w-full">
       <label className={labelCls}>
         Won opportunity *
         <select required value={oppId} onChange={(e) => setOppId(e.target.value)} className={inputCls + " w-64"}>
-          <option value="" className="bg-tile shadow-tile">Pick a won ask…</option>
+          <option value="" className="bg-tile">Pick a won ask…</option>
           {opportunities.map((o) => (
-            <option key={o.id} value={o.id} className="bg-tile shadow-tile">
+            <option key={o.id} value={o.id} className="bg-tile">
               {o.label} · ${o.askAmount.toLocaleString()}
             </option>
           ))}
@@ -228,7 +228,7 @@ export function ConvertOpportunityForm({ opportunities }: { opportunities: WonOp
         Frequency
         <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className={inputCls}>
           {FREQS.map(([v, l]) => (
-            <option key={v} value={v} className="bg-tile shadow-tile">{l}</option>
+            <option key={v} value={v} className="bg-tile">{l}</option>
           ))}
         </select>
       </label>
@@ -237,7 +237,7 @@ export function ConvertOpportunityForm({ opportunities }: { opportunities: WonOp
         <input required type="date" value={start} onChange={(e) => setStart(e.target.value)} className={inputCls + " w-40"} />
       </label>
       {selected && (
-        <div className="text-[11px] text-ink-2 self-center">
+        <div className="text-xs text-ink-2 self-center">
           {count && Number(count) > 0
             ? `${count} × ${(selected.askAmount / Number(count)).toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 })}`
             : ""}
@@ -276,11 +276,11 @@ export function PledgeStatusSelect({ pledgeId, status }: { pledgeId: string; sta
           setBusy(false);
         }
       }}
-      className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-ink-1 text-xs focus:outline-none focus:border-orange/40 disabled:opacity-50"
+      className="bg-tile border-hairline rounded-control px-2 py-1.5 text-ink-1 text-xs focus:outline-none focus:border-orange/40 disabled:opacity-50"
     >
-      <option value="active" className="bg-tile shadow-tile">Active</option>
-      <option value="completed" className="bg-tile shadow-tile">Completed</option>
-      <option value="cancelled" className="bg-tile shadow-tile">Cancelled</option>
+      <option value="active" className="bg-tile">Active</option>
+      <option value="completed" className="bg-tile">Completed</option>
+      <option value="cancelled" className="bg-tile">Cancelled</option>
     </select>
   );
 }
@@ -311,16 +311,16 @@ export function PaymentActions({ paymentId, status }: { paymentId: string; statu
     <span className="flex items-center gap-3">
       {status === "scheduled" && (
         <>
-          <button disabled={busy} onClick={() => act("paid")} className="text-[11px] font-semibold text-revenue hover:text-revenue transition-colors disabled:opacity-50">
+          <button disabled={busy} onClick={() => act("paid")} className="text-xs font-semibold text-revenue hover:text-revenue transition-colors disabled:opacity-50">
             Mark paid
           </button>
-          <button disabled={busy} onClick={() => act("skip")} className="text-[11px] font-semibold text-ink-3 hover:text-ink-1 transition-colors disabled:opacity-50">
+          <button disabled={busy} onClick={() => act("skip")} className="text-xs font-semibold text-ink-3 hover:text-ink-1 transition-colors disabled:opacity-50">
             Skip
           </button>
         </>
       )}
       {status !== "scheduled" && (
-        <button disabled={busy} onClick={() => act("reset")} className="text-[11px] font-semibold text-ink-3 hover:text-orange transition-colors disabled:opacity-50">
+        <button disabled={busy} onClick={() => act("reset")} className="text-xs font-semibold text-ink-3 hover:text-orange transition-colors disabled:opacity-50">
           Reset
         </button>
       )}

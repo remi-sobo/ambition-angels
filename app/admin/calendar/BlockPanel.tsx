@@ -126,7 +126,7 @@ export default function BlockPanel({
   return (
     <>
       <div className="fixed inset-0 z-30 bg-ink-1/20" onClick={onClose} aria-hidden />
-      <aside className="fixed inset-y-0 right-0 z-40 w-[400px] max-w-[94vw] bg-surface border-l-[1.5px] border-outline shadow-panel flex flex-col">
+      <aside className="fixed inset-y-0 right-0 z-40 w-[400px] max-w-[94vw] bg-surface border-l-[1.5px] border-hairline flex flex-col">
         {/* Header */}
         <div className="px-5 pt-5 pb-4 border-b border-hairline">
           <div className="flex items-start gap-2">
@@ -143,14 +143,14 @@ export default function BlockPanel({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                 }}
-                className={`${TYPE.modalTitle} flex-1 min-w-0 bg-transparent border-b border-transparent focus:border-outline focus:outline-none`}
+                className={`${TYPE.modalTitle} flex-1 min-w-0 bg-transparent border-b border-transparent focus:border-hairline focus:outline-none`}
                 aria-label="Block title"
               />
             )}
             <button
               onClick={onClose}
               aria-label="Close"
-              className="shrink-0 w-7 h-7 rounded-lg text-ink-3 hover:text-ink-1 hover:bg-tile"
+              className="shrink-0 w-7 h-7 rounded-control text-ink-3 hover:text-ink-1 hover:bg-tile"
             >
               ×
             </button>
@@ -181,7 +181,7 @@ export default function BlockPanel({
                 {tasks.map((t) => (
                   <li
                     key={t.linkId}
-                    className="group flex items-center gap-2.5 rounded-lg border border-hairline bg-tile/50 px-2.5 py-2"
+                    className="group flex items-center gap-2.5 rounded-control border border-hairline bg-tile/50 px-2.5 py-2"
                   >
                     <button
                       onClick={() => !readOnly && onToggleTask(t.taskId, t.status !== "done")}
@@ -190,7 +190,7 @@ export default function BlockPanel({
                       className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
                         t.status === "done"
                           ? "bg-status-healthy-bg border-status-healthy/40 text-status-healthy-text"
-                          : "border-outline hover:border-orange/70"
+                          : "border-hairline hover:border-orange/70"
                       }`}
                     >
                       {t.status === "done" && (
@@ -207,7 +207,7 @@ export default function BlockPanel({
                       >
                         {t.title}
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] text-ink-3">
+                      <div className="flex items-center gap-2 text-xs text-ink-3">
                         <span className={`font-semibold uppercase ${priorityFlagClass(t.priority)}`}>
                           {t.priority}
                         </span>
@@ -242,12 +242,12 @@ export default function BlockPanel({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search tasks…"
-                  className="flex-1 min-w-0 text-sm rounded-lg border border-outline bg-tile text-ink-1 px-2.5 py-1.5 placeholder:text-ink-3 focus:outline-none focus:border-orange/60"
+                  className="flex-1 min-w-0 text-sm rounded-control border border-hairline bg-tile text-ink-1 px-2.5 py-1.5 placeholder:text-ink-3 focus:outline-none focus:border-orange/60"
                 />
                 <select
                   value={projectFilter}
                   onChange={(e) => setProjectFilter(e.target.value)}
-                  className="shrink-0 text-[11px] rounded-lg border border-outline bg-tile text-ink-1 px-1.5 py-1.5 max-w-[130px]"
+                  className="shrink-0 text-xs rounded-control border border-hairline bg-tile text-ink-1 px-1.5 py-1.5 max-w-[130px]"
                   aria-label="Filter by project"
                 >
                   <option value="all">All projects</option>
@@ -270,7 +270,7 @@ export default function BlockPanel({
                   <button
                     key={mode}
                     onClick={() => setSort(mode)}
-                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${
                       sort === mode ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1"
                     }`}
                   >
@@ -295,17 +295,17 @@ export default function BlockPanel({
                           }
                         }}
                         disabled={addingId !== null}
-                        className="w-full text-left flex items-center gap-2.5 rounded-lg border border-transparent hover:border-orange/40 hover:bg-orange-light/40 px-2.5 py-1.5 disabled:opacity-50 transition-colors"
+                        className="w-full text-left flex items-center gap-2.5 rounded-control border border-transparent hover:border-orange/40 hover:bg-orange-light/40 px-2.5 py-1.5 disabled:opacity-50 transition-colors"
                       >
                         <span
-                          className="shrink-0 w-5 h-5 rounded-full border border-dashed border-outline flex items-center justify-center text-ink-3 text-xs"
+                          className="shrink-0 w-5 h-5 rounded-full border border-dashed border-hairline flex items-center justify-center text-ink-3 text-xs"
                           aria-hidden
                         >
                           +
                         </span>
                         <span className="flex-1 min-w-0">
                           <span className="block text-sm text-ink-1 truncate">{t.title}</span>
-                          <span className="flex items-center gap-2 text-[10px] text-ink-3">
+                          <span className="flex items-center gap-2 text-xs text-ink-3">
                             <span className={`font-semibold uppercase ${priorityFlagClass(t.priority)}`}>
                               {t.priority}
                             </span>
@@ -317,13 +317,13 @@ export default function BlockPanel({
                         </span>
                         {t.homeDay && (
                           <span
-                            className="shrink-0 text-[10px] font-semibold text-status-watch-text"
+                            className="shrink-0 text-xs font-semibold text-status-watch-text"
                             title="Already on another block. Tapping moves it here"
                           >
                             {t.homeBlockId === block.id ? "" : `On ${homeLabel(t.homeDay)} →`}
                           </span>
                         )}
-                        {addingId === t.id && <span className="shrink-0 text-[10px] text-ink-3">…</span>}
+                        {addingId === t.id && <span className="shrink-0 text-xs text-ink-3">…</span>}
                       </button>
                     </li>
                   ))}
@@ -345,7 +345,7 @@ export default function BlockPanel({
                   onDelete();
                 }
               }}
-              className={`text-[12px] font-semibold rounded-lg px-3 py-1.5 transition-colors ${
+              className={`text-xs font-semibold rounded-control px-3 py-1.5 transition-colors ${
                 confirmDelete
                   ? "bg-expense text-white"
                   : "text-expense hover:bg-expense-bg"
@@ -353,7 +353,7 @@ export default function BlockPanel({
             >
               {confirmDelete ? "Delete block + keep tasks?" : "Delete block"}
             </button>
-            <span className="text-[10px] text-ink-3">Tasks are never deleted</span>
+            <span className="text-xs text-ink-3">Tasks are never deleted</span>
           </div>
         )}
       </aside>

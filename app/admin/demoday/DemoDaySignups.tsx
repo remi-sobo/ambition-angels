@@ -111,21 +111,21 @@ export default function DemoDaySignups() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className={TYPE.pageTitle}>Demo Day</h1>
-          <p className="mt-2 text-zinc-400">
+          <p className="mt-2 text-ink-2">
             Supporters who signed up through the Demo Day form.
           </p>
         </div>
         <button
           onClick={exportCsv}
           disabled={filtered.length === 0}
-          className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-3 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-3 py-2 rounded-control transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Export CSV
         </button>
       </div>
 
       {tableMissing && (
-        <div className="mt-4 rounded-lg border border-orange/40 bg-orange/10 px-4 py-3 text-sm text-orange">
+        <div className="mt-4 rounded-control border border-orange/40 bg-orange/10 px-4 py-3 text-sm text-orange">
           The signups table isn’t set up yet. Apply{" "}
           <code className="font-mono">supabase/migrations/create_demoday_signups.sql</code>{" "}
           to start collecting submissions.
@@ -133,14 +133,14 @@ export default function DemoDaySignups() {
       )}
 
       {error && !tableMissing && (
-        <div className="mt-4 rounded-lg border border-expense/30 bg-expense-bg px-4 py-3 text-sm text-expense">
+        <div className="mt-4 rounded-control border border-expense/30 bg-expense-bg px-4 py-3 text-sm text-expense">
           Couldn’t load signups: {error}
         </div>
       )}
 
       {/* Summary + search */}
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <span className="rounded-full bg-tile border-[1.5px] border-outline px-3 py-1 text-xs text-ink-2">
+        <span className="rounded-full bg-tile border-hairline px-3 py-1 text-xs text-ink-2">
           {signups.length} signup{signups.length === 1 ? "" : "s"}
         </span>
         <input
@@ -148,7 +148,7 @@ export default function DemoDaySignups() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search name, email, company…"
-          className="flex-1 min-w-[200px] max-w-sm rounded-lg bg-tile border-[1.5px] border-outline px-3 py-2 text-sm text-ink-1 placeholder:text-ink-2/60 focus:outline-none focus:border-orange/60"
+          className="flex-1 min-w-[200px] max-w-sm rounded-control bg-tile border-hairline px-3 py-2 text-sm text-ink-1 placeholder:text-ink-2/60 focus:outline-none focus:border-orange/60"
         />
       </div>
 
@@ -164,7 +164,7 @@ export default function DemoDaySignups() {
           {/* Mobile: stacked cards */}
           <div className="mt-5 space-y-3 lg:hidden">
             {filtered.map((s) => (
-              <div key={s.id} className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-4">
+              <div key={s.id} className="rounded-panel border-hairline bg-surface p-4">
                 <div className="flex items-start justify-between gap-3">
                   <span className="font-semibold text-ink-1">
                     {s.first_name} {s.last_name}
@@ -189,7 +189,7 @@ export default function DemoDaySignups() {
                     {s.engagement.map((e) => (
                       <span
                         key={e}
-                        className="rounded-full bg-orange/10 border border-orange/30 px-2 py-0.5 text-[11px] text-orange"
+                        className="rounded-full bg-orange/10 border border-orange/30 px-2 py-0.5 text-xs text-orange"
                       >
                         {e}
                       </span>
@@ -204,10 +204,10 @@ export default function DemoDaySignups() {
           </div>
 
           {/* Desktop: table */}
-          <div className="mt-5 hidden lg:block overflow-x-auto rounded-card border-[1.5px] border-outline">
+          <div className="mt-5 hidden lg:block overflow-x-auto rounded-panel border-hairline">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-outline text-left text-xs uppercase tracking-wide text-ink-2">
+                <tr className="border-b border-hairline text-left text-xs text-ink-2">
                   <th className="px-4 py-3 font-medium">When</th>
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Email</th>
@@ -219,7 +219,7 @@ export default function DemoDaySignups() {
               </thead>
               <tbody>
                 {filtered.map((s) => (
-                  <tr key={s.id} className="border-b border-hairline align-top hover:bg-surface shadow-panel">
+                  <tr key={s.id} className="border-b border-hairline align-top hover:bg-surface">
                     <td className="px-4 py-3 text-ink-2 whitespace-nowrap">{fmtDate(s.created_at)}</td>
                     <td className="px-4 py-3 font-medium text-ink-1 whitespace-nowrap">
                       {s.first_name} {s.last_name}
@@ -239,7 +239,7 @@ export default function DemoDaySignups() {
                           {s.engagement.map((e) => (
                             <span
                               key={e}
-                              className="rounded-full bg-orange/10 border border-orange/30 px-2 py-0.5 text-[11px] text-orange"
+                              className="rounded-full bg-orange/10 border border-orange/30 px-2 py-0.5 text-xs text-orange"
                             >
                               {e}
                             </span>

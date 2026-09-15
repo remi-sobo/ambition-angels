@@ -94,15 +94,15 @@ export default function TaskBoardView({
                 setDragId(null);
                 setHoverCol(null);
               }}
-              className={`rounded-card border-[1.5px] p-3 min-h-[8rem] transition-colors ${
-                isOver ? "border-orange/50 bg-orange/5" : "border-outline bg-surface"
+              className={`rounded-panel p-3 min-h-[8rem] transition-colors ${
+                isOver ? "border-orange/50 bg-orange/5" : "border-hairline bg-surface"
               }`}
             >
               <header className="flex items-center justify-between mb-3 px-1">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-2">
                   {col.label}
                 </h3>
-                <span className="text-[11px] text-ink-3">{items.length}</span>
+                <span className="text-xs text-ink-3">{items.length}</span>
               </header>
               <div className="space-y-2">
                 {items.map((t) => (
@@ -119,7 +119,7 @@ export default function TaskBoardView({
                   />
                 ))}
                 {items.length === 0 && (
-                  <p className="text-[11px] text-ink-3 italic px-1 py-2">Nothing here.</p>
+                  <p className="text-xs text-ink-3 italic px-1 py-2">Nothing here.</p>
                 )}
               </div>
             </div>
@@ -151,7 +151,7 @@ function BoardCard({
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-2.5 cursor-grab active:cursor-grabbing hover:bg-[#EFE6D4] transition-colors"
+      className="rounded-control border-hairline bg-surface p-2.5 cursor-grab active:cursor-grabbing hover:bg-tile transition-colors"
     >
       <div className="flex items-start gap-1.5">
         {!isDone && (
@@ -175,14 +175,14 @@ function BoardCard({
           <Link
             href={`/admin/ops/projects/${task.project_id}`}
             onClick={(e) => e.stopPropagation()}
-            className="text-[11px] text-orange/80 hover:text-orange truncate max-w-[140px]"
+            className="text-xs text-orange/80 hover:text-orange truncate max-w-[140px]"
           >
             #{projectName}
           </Link>
         )}
         {task.assigned_to && (
           <span
-            className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[10px] font-bold uppercase"
+            className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-xs font-bold uppercase"
             title={`Assigned to ${task.assigned_to}`}
           >
             {task.assigned_to.charAt(0)}
@@ -190,7 +190,7 @@ function BoardCard({
         )}
         {task.due_date && (
           <span
-            className={`text-[11px] font-mono ${
+            className={`text-xs font-mono ${
               isOverdue ? "text-expense font-semibold" : "text-ink-2"
             }`}
           >

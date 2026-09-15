@@ -38,7 +38,7 @@ export default function SectionNav() {
     >
       <Link
         href={BASE}
-        className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"
+        className="text-xs font-semibold text-ink-1 bg-tile hover:bg-tile px-4 py-2 rounded-full transition-colors"
       >
         ← Strategic Plan
       </Link>
@@ -55,7 +55,7 @@ export default function SectionNav() {
             className={`text-xs font-semibold px-4 py-2 rounded-full transition-colors ${
               active
                 ? "bg-orange text-white"
-                : "text-ink-1 bg-tile hover:bg-[#EFE6D4]"
+                : "text-ink-1 bg-tile hover:bg-tile"
             }`}
           >
             {s.label}

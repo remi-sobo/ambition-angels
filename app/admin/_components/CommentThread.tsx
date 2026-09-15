@@ -145,20 +145,20 @@ export function CommentThread({
   const Row = ({ c, isReply }: { c: Comment; isReply: boolean }) => (
     <div className={isReply ? "pl-4 border-l-2 border-hairline" : ""}>
       <div className="flex items-start gap-2.5 py-2.5">
-        <span className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-light text-orange-dark text-[11px] font-bold">
+        <span className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-light text-orange-dark text-xs font-bold">
           {initial(c.authorName)}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <span className="text-sm font-semibold text-ink-1">{c.authorName}</span>
-            <span className="text-[11px] text-ink-3">{timeAgo(c.createdAt)}</span>
+            <span className="text-xs text-ink-3">{timeAgo(c.createdAt)}</span>
           </div>
           <MentionBody text={c.body} names={mentionNames} />
           <div className="flex items-center gap-3 mt-1">
             {!isReply && (
               <button
                 onClick={() => { setReplyTo(replyTo === c.id ? null : c.id); setReplyBody(""); }}
-                className="text-[11px] font-semibold text-ink-3 hover:text-orange transition-colors"
+                className="text-xs font-semibold text-ink-3 hover:text-orange transition-colors"
               >
                 {replyTo === c.id ? "Cancel" : "Reply"}
               </button>
@@ -167,7 +167,7 @@ export function CommentThread({
               <button
                 onClick={() => del(c.id)}
                 disabled={busy}
-                className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
+                className="text-xs font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
               >
                 Delete
               </button>
@@ -190,7 +190,7 @@ export function CommentThread({
                 placeholder={`Reply to ${c.authorName}…  (@ to mention)`}
                 rows={2}
                 autoFocus
-                className={`w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y`}
+                className={`w-full bg-tile border-hairline rounded-control px-3 py-2 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y`}
               />
               <div>
                 <button
@@ -210,14 +210,14 @@ export function CommentThread({
   );
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-outline">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-hairline">
         <h2 className={TYPE.cardTitle}>
           Comments {comments.length > 0 && <span className="text-ink-3 font-normal">· {comments.length}</span>}
         </h2>
       </div>
 
-      <div className="px-5 py-4 border-b border-outline bg-surface">
+      <div className="px-5 py-4 border-b border-hairline bg-surface">
         <form
           onSubmit={async (e) => {
             e.preventDefault();
@@ -232,7 +232,7 @@ export function CommentThread({
             members={members}
             placeholder={`Leave a note about ${entityLabel} for the team…  (@ to mention)`}
             rows={2}
-            className={`w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y`}
+            className={`w-full bg-tile border-hairline rounded-control px-3 py-2 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y`}
           />
           <div>
             <button

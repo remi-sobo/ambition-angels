@@ -52,7 +52,7 @@ export default function InfoTip({
           if (open) hide();
           else show();
         }}
-        className="ml-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-outline text-[10px] font-bold leading-none text-ink-2 hover:text-ink-1 hover:border-ink-2 cursor-help transition-colors"
+        className="ml-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-hairline text-xs font-bold leading-none text-ink-2 hover:text-ink-1 hover:border-ink-2 cursor-help transition-colors"
       >
         ?
       </button>
@@ -60,12 +60,12 @@ export default function InfoTip({
         <span
           role="tooltip"
           style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width }}
-          className="z-50 rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-3 text-left pointer-events-none normal-case tracking-normal"
+          className="z-50 rounded-panel border-hairline bg-surface p-3 text-left pointer-events-none normal-case tracking-normal"
         >
-          <span className="block text-[11px] font-semibold uppercase tracking-wider text-ink-1 mb-1">
+          <span className="block text-xs font-semibold uppercase tracking-wider text-ink-1 mb-1">
             {heading}
           </span>
-          <span className="block text-[11px] font-normal text-ink-2 leading-relaxed [&_b]:text-ink-1 [&_b]:font-semibold [&_code]:text-ink-1 [&_code]:font-mono">
+          <span className="block text-xs font-normal text-ink-2 leading-relaxed [&_b]:text-ink-1 [&_b]:font-semibold [&_code]:text-ink-1 [&_code]:font-mono">
             {children}
           </span>
         </span>

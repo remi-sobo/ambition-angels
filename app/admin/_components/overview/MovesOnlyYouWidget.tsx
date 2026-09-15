@@ -33,7 +33,7 @@ export default async function MovesOnlyYouWidget({
                 </span>
               )}
               <span
-                className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
                   m.reason === "overdue" ? "bg-expense-bg text-expense" : "bg-orange/15 text-orange"
                 }`}
               >
@@ -42,7 +42,7 @@ export default async function MovesOnlyYouWidget({
             </li>
           ))}
           {moves.length > shown.length && (
-            <li className="py-2 text-[11px] text-ink-3">+{moves.length - shown.length} more</li>
+            <li className="py-2 text-xs text-ink-3">+{moves.length - shown.length} more</li>
           )}
         </ul>
       )}

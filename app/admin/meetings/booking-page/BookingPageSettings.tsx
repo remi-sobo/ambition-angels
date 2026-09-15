@@ -8,7 +8,7 @@ import { TYPE } from "@/lib/admin/typeScale";
 
 // Shared light-workspace input treatment (matches NewConnectionForm).
 const inputCls =
-  "w-full text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 disabled:opacity-60";
+  "w-full text-sm bg-cream border-hairline rounded-control px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 disabled:opacity-60";
 
 // Meeting types + blackouts, stacked — the whole configuration of the public
 // booking page on one screen instead of separate tabs.
@@ -100,7 +100,7 @@ function TypeRow({
   }
 
   return (
-    <div className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
+    <div className="rounded-control border-hairline bg-surface p-5">
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           <span
@@ -137,7 +137,7 @@ function TypeRow({
             type="color"
             value={draft.color}
             onChange={(e) => setDraft({ ...draft, color: e.target.value })}
-            className="h-10 w-20 bg-transparent border-[1.5px] border-outline rounded cursor-pointer"
+            className="h-10 w-20 bg-transparent border-hairline rounded cursor-pointer"
           />
         </Field>
         <Field label="Description">
@@ -232,7 +232,7 @@ function TypeRow({
                   "px-3 py-1.5 rounded text-xs border transition-colors",
                   selected
                     ? "bg-orange/20 text-orange border-orange/40"
-                    : "bg-tile text-ink-2 border-outline hover:bg-[#EFE6D4]",
+                    : "bg-tile text-ink-2 border-hairline hover:bg-tile",
                 ].join(" ")}
               >
                 {opt === "video" ? "Video" : "In person"}
@@ -366,7 +366,7 @@ function Blackouts({
 
   return (
     <section className="space-y-6">
-      <div className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
+      <div className="rounded-control border-hairline bg-surface p-5">
         <h2 className={`${TYPE.sectionTitle} mb-4`}>Add a blackout</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Start date">
@@ -421,7 +421,7 @@ function Blackouts({
                     "px-3 py-1 rounded-full text-xs border transition-colors",
                     selected
                       ? "bg-orange/20 text-orange border-orange/40"
-                      : "bg-tile text-ink-2 border-outline hover:bg-[#EFE6D4]",
+                      : "bg-tile text-ink-2 border-hairline hover:bg-tile",
                   ].join(" ")}
                 >
                   {t.name}
@@ -450,7 +450,7 @@ function Blackouts({
             {blackouts.map((b) => (
               <li
                 key={b.id}
-                className="flex items-center justify-between gap-4 rounded-lg border-[1.5px] border-outline bg-surface shadow-panel px-4 py-3"
+                className="flex items-center justify-between gap-4 rounded-control border-hairline bg-surface px-4 py-3"
               >
                 <div className="flex-1 min-w-0">
                   <div className="text-ink-1">

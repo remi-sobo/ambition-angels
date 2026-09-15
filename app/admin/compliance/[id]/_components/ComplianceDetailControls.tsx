@@ -31,7 +31,7 @@ export type ComplianceFiling = {
 };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 async function patchItem(id: string, fields: Record<string, unknown>): Promise<string | null> {
   const res = await fetch(`/api/admin/compliance/${id}`, {
@@ -64,28 +64,28 @@ export function ItemStatusActions({ item }: { item: ComplianceItem }) {
     <div className="flex flex-wrap items-center gap-2">
       {item.status === "upcoming" && (
         <button onClick={() => void patch({ status: "in_progress" })} disabled={busy}
-          className="px-3 py-1.5 rounded-full text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2">
+          className="px-3 py-1.5 rounded-full text-xs bg-tile hover:bg-tile text-ink-2">
           Start
         </button>
       )}
       {item.status === "in_progress" && (
-        <span className="px-2 py-1 text-[11px] text-[#A56A1B]">In progress</span>
+        <span className="px-2 py-1 text-xs text-status-watch-text">In progress</span>
       )}
       {openItem && (
         <button onClick={() => void patch({ status: "filed" })} disabled={busy}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-orange/15 text-orange hover:bg-orange/25">
+          className="px-3 py-1.5 rounded-full text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25">
           Mark filed{item.recur !== "none" ? " → rolls forward" : ""}
         </button>
       )}
       {openItem && (
         <button onClick={() => void patch({ status: "waived" })} disabled={busy}
-          className="px-3 py-1.5 rounded-full text-[11px] text-ink-2 hover:text-ink-1">
+          className="px-3 py-1.5 rounded-full text-xs text-ink-2 hover:text-ink-1">
           Waive
         </button>
       )}
       {!openItem && (
         <button onClick={() => void patch({ status: "upcoming" })} disabled={busy}
-          className="px-3 py-1.5 rounded-full text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2">
+          className="px-3 py-1.5 rounded-full text-xs bg-tile hover:bg-tile text-ink-2">
           Reopen
         </button>
       )}
@@ -256,12 +256,12 @@ export function NotesAndChecklist({ item }: { item: ComplianceItem }) {
               void patch({ notes: v || null });
             }}
             disabled={busy}
-            className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+            className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
           >
             Save notes
           </button>
           <button onClick={() => setNotesDraft(item.notes ?? "")}
-            className="text-[11px] text-ink-2 hover:text-ink-1 px-1">
+            className="text-xs text-ink-2 hover:text-ink-1 px-1">
             Discard
           </button>
         </div>
@@ -286,14 +286,14 @@ export function NotesAndChecklist({ item }: { item: ComplianceItem }) {
                   }
                   className="accent-orange w-3.5 h-3.5 shrink-0"
                 />
-                <span className={`text-[12px] leading-relaxed ${c.done ? "line-through text-ink-3" : "text-ink-1"}`}>
+                <span className={`text-xs leading-relaxed ${c.done ? "line-through text-ink-3" : "text-ink-1"}`}>
                   {c.text}
                 </span>
                 <button
                   onClick={() => saveChecklist(checklist.filter((x) => x.id !== c.id))}
                   disabled={busy}
                   aria-label={`Delete "${c.text}"`}
-                  className="ml-auto px-1.5 text-[13px] leading-none text-ink-3 hover:text-expense opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                  className="ml-auto px-1.5 text-sm leading-none text-ink-3 hover:text-expense opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                 >
                   ×
                 </button>
@@ -303,13 +303,13 @@ export function NotesAndChecklist({ item }: { item: ComplianceItem }) {
         )}
         <form onSubmit={addItem} className="flex gap-2">
           <input
-            className={`${inputCls} flex-1 !py-1.5 text-[12px]`}
+            className={`${inputCls} flex-1 !py-1.5 text-xs`}
             value={newText}
             placeholder="Add checklist item"
             onChange={(e) => setNewText(e.target.value)}
           />
           <button type="submit" disabled={busy || !newText.trim()}
-            className="text-[11px] font-semibold px-3 rounded-md bg-tile hover:bg-[#EFE6D4] text-ink-2 disabled:opacity-50">
+            className="text-xs font-semibold px-3 rounded-control bg-tile hover:bg-tile text-ink-2 disabled:opacity-50">
             Add
           </button>
         </form>
@@ -374,33 +374,33 @@ function FilingRow({ itemId, filing }: { itemId: string; filing: ComplianceFilin
     return (
       <li className="px-5 py-3">
         <form onSubmit={save} className="grid grid-cols-2 lg:grid-cols-4 gap-2 items-end">
-          <label className="text-[10px] text-ink-2">
+          <label className="text-xs text-ink-2">
             Filed on
             <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} type="date"
               value={filedDate} required onChange={(e) => setFiledDate(e.target.value)} />
           </label>
-          <label className="text-[10px] text-ink-2">
+          <label className="text-xs text-ink-2">
             Confirmation #
             <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={confirmation}
               onChange={(e) => setConfirmation(e.target.value)} />
           </label>
-          <label className="text-[10px] text-ink-2">
+          <label className="text-xs text-ink-2">
             Fee ($)
             <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} type="number"
               min="0" step="0.01" value={fee} onChange={(e) => setFee(e.target.value)} />
           </label>
-          <label className="col-span-2 lg:col-span-4 text-[10px] text-ink-2">
+          <label className="col-span-2 lg:col-span-4 text-xs text-ink-2">
             Notes
             <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={notes}
               onChange={(e) => setNotes(e.target.value)} />
           </label>
           <div className="col-span-full flex gap-2">
             <button type="submit" disabled={busy}
-              className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full disabled:opacity-50">
+              className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full disabled:opacity-50">
               Save
             </button>
             <button type="button" onClick={() => setEditing(false)}
-              className="text-[11px] text-ink-2 hover:text-ink-1 px-2">
+              className="text-xs text-ink-2 hover:text-ink-1 px-2">
               Cancel
             </button>
           </div>
@@ -432,11 +432,11 @@ function FilingRow({ itemId, filing }: { itemId: string; filing: ComplianceFilin
       </div>
       <span className="flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
         <button onClick={() => setEditing(true)} disabled={busy}
-          className="px-2 py-0.5 rounded-md text-[11px] text-ink-2 hover:text-orange">
+          className="px-2 py-0.5 rounded-control text-xs text-ink-2 hover:text-orange">
           Edit
         </button>
         <button onClick={() => void remove()} disabled={busy}
-          className="px-2 py-0.5 rounded-md text-[11px] text-ink-2 hover:text-expense">
+          className="px-2 py-0.5 rounded-control text-xs text-ink-2 hover:text-expense">
           Delete
         </button>
       </span>
@@ -481,8 +481,8 @@ export function FilingsPanel({ itemId, filings }: { itemId: string; filings: Com
   };
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
         <h2 className={TYPE.cardTitle}>
           Filing history {filings.length > 0 && <span className="text-ink-3 font-normal">· {filings.length}</span>}
         </h2>
@@ -493,7 +493,7 @@ export function FilingsPanel({ itemId, filings }: { itemId: string; filings: Com
       </div>
 
       {open && (
-        <form onSubmit={add} className="px-5 py-4 border-b border-outline bg-surface grid grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+        <form onSubmit={add} className="px-5 py-4 border-b border-hairline bg-surface grid grid-cols-2 lg:grid-cols-4 gap-3 items-end">
           <label className="text-xs text-ink-2">
             Filed on
             <input className={`${inputCls} w-full mt-1`} type="date" value={filedDate} required autoFocus

@@ -115,7 +115,7 @@ export default function OpportunityEditModal({
   }
 
   const inputCls =
-    "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 w-full";
+    "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 w-full";
   const labelCls = "text-xs text-ink-2 block";
 
   return (
@@ -130,7 +130,7 @@ export default function OpportunityEditModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl rounded-card border-[1.5px] border-outline bg-ink shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-xl rounded-panel border-hairline bg-ink shadow-2xl max-h-[90vh] overflow-y-auto"
       >
         <form onSubmit={submit} className="p-6 space-y-4">
           <div className="flex items-start justify-between gap-3">

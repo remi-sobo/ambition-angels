@@ -140,8 +140,8 @@ export default async function ScorecardSection({ embedded = false }: { embedded?
                   {owner.charAt(0).toUpperCase()}
                 </span>
                 <h2 className={TYPE.sectionTitle}>{owner}</h2>
-                <span className="text-[11px] text-ink-2">{cards.length} measures</span>
-                <div className="ml-auto flex items-center gap-2 text-[11px]">
+                <span className="text-xs text-ink-2">{cards.length} measures</span>
+                <div className="ml-auto flex items-center gap-2 text-xs">
                   <span className="rounded-full bg-revenue-bg text-revenue px-2 py-0.5 font-semibold">{on} on track</span>
                   {risk > 0 && <span className="rounded-full bg-expense-bg text-expense px-2 py-0.5 font-semibold">{risk} need attention</span>}
                 </div>
@@ -162,7 +162,7 @@ export default async function ScorecardSection({ embedded = false }: { embedded?
           <h2 className={TYPE.cardTitle}>KPI Scorecard</h2>
           <div className="ml-auto"><RefreshMetricsButton /></div>
         </div>
-        <p className="text-[11px] text-ink-3 mb-4 max-w-2xl">
+        <p className="text-xs text-ink-3 mb-4 max-w-2xl">
           Every measure, by who owns it. Update manual values, status, owner, and notes right
           here. Structural editing (add/delete measures, targets) stays on the{" "}
           <Link href="/admin/strategic-plan" className="text-orange hover:underline">plan</Link>.
@@ -173,7 +173,7 @@ export default async function ScorecardSection({ embedded = false }: { embedded?
   }
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="KPI Scorecard"
         subtitle={

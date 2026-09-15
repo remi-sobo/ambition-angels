@@ -25,7 +25,7 @@ export type RecapMeeting = {
 export default function MeetingRecap({ meetings }: { meetings: RecapMeeting[] }) {
   if (meetings.length === 0) {
     return (
-      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+      <section className="rounded-panel border-hairline bg-surface p-6">
         <h2 className={`${TYPE.sectionHeader} mb-2`}>Recap the meetings</h2>
         <p className="text-sm text-revenue">
           No meetings need follow-up this week. Nothing leaked.
@@ -35,7 +35,7 @@ export default function MeetingRecap({ meetings }: { meetings: RecapMeeting[] })
   }
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6 space-y-4">
+    <section className="rounded-panel border-hairline bg-surface p-6 space-y-4">
       <div>
         <h2 className={TYPE.sectionHeader}>Recap the meetings</h2>
         <p className="text-sm text-ink-2 mt-1">
@@ -102,7 +102,7 @@ function MeetingCard({ meeting }: { meeting: RecapMeeting }) {
   });
 
   return (
-    <div className="rounded-card-lg border-[1.5px] border-outline bg-tile/40 p-4 space-y-3">
+    <div className="rounded-panel-lg border-hairline bg-tile/40 p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Link
           href={`/admin/meetings/${meeting.id}`}
@@ -110,7 +110,7 @@ function MeetingCard({ meeting }: { meeting: RecapMeeting }) {
         >
           {meeting.title || "Untitled meeting"}
         </Link>
-        <span className="text-[11px] text-ink-3 font-mono shrink-0">{when}</span>
+        <span className="text-xs text-ink-3 font-mono shrink-0">{when}</span>
       </div>
 
       {pending.length > 0 ? (
@@ -118,25 +118,25 @@ function MeetingCard({ meeting }: { meeting: RecapMeeting }) {
           {pending.map((s) => (
             <div
               key={s.id}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg border-[1.5px] border-outline bg-surface shadow-panel"
+              className="flex items-center gap-3 px-3 py-2 rounded-control border-hairline bg-surface"
             >
               <span className="text-sm text-ink-1 flex-1 truncate">{s.title}</span>
               {s.category && (
-                <span className="shrink-0 inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border bg-status-neutral-bg text-ink-2 border-outline">
+                <span className="shrink-0 inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border bg-status-neutral-bg text-ink-2 border-hairline">
                   {s.category}
                 </span>
               )}
               <button
                 onClick={() => suggestionAction(s.id, "accept")}
                 disabled={busyKey !== null}
-                className="shrink-0 text-[11px] font-medium px-2.5 py-1 rounded bg-orange/15 text-orange border border-orange/30 hover:bg-orange/25 disabled:opacity-50 transition-colors"
+                className="shrink-0 text-xs font-medium px-2.5 py-1 rounded bg-orange/15 text-orange border border-orange/30 hover:bg-orange/25 disabled:opacity-50 transition-colors"
               >
                 Accept
               </button>
               <button
                 onClick={() => suggestionAction(s.id, "dismiss")}
                 disabled={busyKey !== null}
-                className="shrink-0 text-[11px] font-medium px-2.5 py-1 rounded text-ink-2 hover:text-ink-1 hover:bg-[#EFE6D4] border border-transparent disabled:opacity-50 transition-colors"
+                className="shrink-0 text-xs font-medium px-2.5 py-1 rounded text-ink-2 hover:text-ink-1 hover:bg-tile border border-transparent disabled:opacity-50 transition-colors"
               >
                 Dismiss
               </button>
@@ -144,7 +144,7 @@ function MeetingCard({ meeting }: { meeting: RecapMeeting }) {
           ))}
         </div>
       ) : (
-        <p className="text-[11px] text-ink-3 italic">
+        <p className="text-xs text-ink-3 italic">
           {meeting.suggestions.length === 0
             ? "No suggested tasks. Recap it and move on."
             : "All suggestions handled."}
@@ -154,7 +154,7 @@ function MeetingCard({ meeting }: { meeting: RecapMeeting }) {
       <button
         onClick={markRecapped}
         disabled={busyKey !== null}
-        className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-tile text-ink-1 border-[1.5px] border-outline hover:bg-[#EFE6D4] disabled:opacity-50 transition-colors"
+        className="text-xs font-medium px-3 py-1.5 rounded-control bg-tile text-ink-1 border-hairline hover:bg-tile disabled:opacity-50 transition-colors"
       >
         {busyKey === "recap" ? "Saving…" : "Mark recapped, nothing else"}
       </button>

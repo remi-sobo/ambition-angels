@@ -71,7 +71,7 @@ export default async function BudgetPage({
   const years = [year - 1, year, year + 1].filter((y) => y >= 2024 && y <= 2030);
 
   return (
-    <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8">
+    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
       <header>
         <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
           <Link href="/admin/finance" className="hover:text-ink-1">
@@ -103,7 +103,7 @@ export default async function BudgetPage({
                   className={`px-3 py-1 rounded-full border ${
                     y === year
                       ? "border-orange/60 bg-orange/15 text-orange"
-                      : "border-outline text-ink-2 hover:text-ink-1"
+                      : "border-hairline text-ink-2 hover:text-ink-1"
                   }`}
                 >
                   {y}

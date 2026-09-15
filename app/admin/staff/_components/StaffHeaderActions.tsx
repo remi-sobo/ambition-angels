@@ -51,14 +51,14 @@ export default function StaffHeaderActions({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder="Staff"
-              className="w-28 rounded-md border border-outline bg-surface px-2 py-1 text-sm text-ink-1"
+              className="w-28 rounded-control border border-hairline bg-surface px-2 py-1 text-sm text-ink-1"
               onKeyDown={(e) => e.key === "Enter" && save()}
             />
             <button
               type="button"
               disabled={busy}
               onClick={save}
-              className="rounded-md bg-orange px-2 py-1 text-xs font-semibold text-white disabled:opacity-50"
+              className="rounded-control bg-orange px-2 py-1 text-xs font-semibold text-white disabled:opacity-50"
             >
               Save
             </button>
@@ -78,7 +78,7 @@ export default function StaffHeaderActions({
         ))}
       <Link
         href="/admin/staff/reviews"
-        className="rounded-md border border-outline px-3 py-1.5 text-sm font-semibold text-ink-1 hover:border-orange/50"
+        className="rounded-control border border-hairline px-3 py-1.5 text-sm font-semibold text-ink-1 hover:border-orange/50"
       >
         Reviews
       </Link>

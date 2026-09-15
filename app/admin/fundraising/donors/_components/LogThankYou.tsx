@@ -58,7 +58,7 @@ export default function LogThankYou({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-outline text-ink-2 hover:text-ink-1 transition-colors"
+        className="text-xs font-semibold px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:text-ink-1 transition-colors"
       >
         Log thank-you
       </button>
@@ -66,17 +66,17 @@ export default function LogThankYou({
   }
 
   return (
-    <div className="w-full mt-2 bg-tile border-[1.5px] border-outline rounded-xl p-4 space-y-3">
+    <div className="w-full mt-2 bg-tile border-hairline rounded-panel p-4 space-y-3">
       <div className="flex items-center gap-1.5 flex-wrap">
         {ACK_CHANNELS.map((ch) => (
           <button
             key={ch}
             onClick={() => setChannel(ch)}
             aria-pressed={channel === ch}
-            className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-colors ${
+            className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
               channel === ch
                 ? "bg-orange text-white border-orange"
-                : "bg-tile text-ink-2 border-outline hover:text-ink-1"
+                : "bg-tile text-ink-2 border-hairline hover:text-ink-1"
             }`}
           >
             {CHANNEL_LABEL[ch]}
@@ -88,7 +88,7 @@ export default function LogThankYou({
         onChange={(e) => setNote(e.target.value)}
         rows={3}
         placeholder="A short note for the record (optional)."
-        className={`w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40`}
+        className={`w-full bg-tile border-hairline rounded-control px-3 py-2 ${TYPE.body} leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40`}
       />
       <div className="flex items-center gap-3">
         <button

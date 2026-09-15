@@ -65,7 +65,7 @@ export function NewPartnerForm() {
 
   return (
     <form onSubmit={submit}
-      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+      className="w-full bg-surface border-hairline rounded-panel p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end">
       <label className="text-xs text-ink-2 col-span-2 lg:col-span-2">
         Organization
         <input className={`${inputCls} w-full mt-1`} value={name} required autoFocus

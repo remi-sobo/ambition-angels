@@ -4,6 +4,8 @@
 // general-purpose library's configuration. All components are pure functions
 // of their props (server-renderable, no client hooks).
 
+import { CHART } from "@/lib/admin/chartTokens";
+
 const NUM = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 const NUM_2 = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -57,7 +59,7 @@ export function Donut({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="#E7DCC9"
+          stroke={CHART.axis}
           strokeWidth={thickness}
         />
         {sum > 0 &&
@@ -91,7 +93,7 @@ export function Donut({
                 x={size / 2}
                 y={size / 2 - 4}
                 textAnchor="middle"
-                className="fill-[#2A201A] font-display font-black"
+                className="fill-ink-1 font-heading font-semibold"
                 fontSize={size * 0.18}
               >
                 {centerValue}
@@ -140,8 +142,8 @@ export function CircleGauge({
   pct,
   size = 130,
   thickness = 14,
-  color = "#C0703C",
-  trackColor = "#E7DCC9",
+  color = CHART.accent,
+  trackColor = CHART.axis,
   label,
   value,
 }: {
@@ -185,7 +187,7 @@ export function CircleGauge({
           <span className="font-display font-black text-ink-1 text-xl leading-none">{value}</span>
         )}
         {label && (
-          <span className="mt-1 text-[10px] uppercase tracking-wider text-ink-3">{label}</span>
+          <span className="mt-1 text-xs uppercase tracking-wider text-ink-3">{label}</span>
         )}
       </div>
     </div>
@@ -199,7 +201,7 @@ export function Sparkline({
   values,
   width = 120,
   height = 36,
-  color = "#C0703C",
+  color = CHART.accent,
   fill,
 }: {
   values: number[];
@@ -291,7 +293,7 @@ export function CashFlowChart({
           x2={pad.left + innerW}
           y1={zeroY - innerH * 0.5 * p}
           y2={zeroY - innerH * 0.5 * p}
-          stroke="#E7DCC9"
+          stroke={CHART.axis}
           strokeWidth={1}
         />
       ))}
@@ -302,7 +304,7 @@ export function CashFlowChart({
           x2={pad.left + innerW}
           y1={zeroY + innerH * 0.5 * p}
           y2={zeroY + innerH * 0.5 * p}
-          stroke="#E7DCC9"
+          stroke={CHART.axis}
           strokeWidth={1}
         />
       ))}
@@ -311,7 +313,7 @@ export function CashFlowChart({
         x2={pad.left + innerW}
         y1={zeroY}
         y2={zeroY}
-        stroke="#C7B18C"
+        stroke={CHART.border}
         strokeWidth={1}
       />
 
@@ -329,7 +331,7 @@ export function CashFlowChart({
                 width={innerBarW}
                 height={revH}
                 rx={2}
-                fill="#2D7857"
+                fill={CHART.revenue}
                 opacity={0.85}
               />
             )}
@@ -340,7 +342,7 @@ export function CashFlowChart({
                 width={innerBarW}
                 height={expH}
                 rx={2}
-                fill="#B0462E"
+                fill={CHART.expense}
                 opacity={0.85}
               />
             )}
@@ -362,7 +364,7 @@ export function CashFlowChart({
       <path
         d={balPath}
         fill="none"
-        stroke="#2A201A"
+        stroke={CHART.ink}
         strokeWidth={2}
         strokeLinejoin="round"
         opacity={0.85}
@@ -370,7 +372,7 @@ export function CashFlowChart({
       {data.map((d, i) => {
         const x = pad.left + i * barW + barW / 2;
         const y = pad.top + balScale(d.ending);
-        return <circle key={i} cx={x} cy={y} r={3} fill="#2A201A" />;
+        return <circle key={i} cx={x} cy={y} r={3} fill={CHART.ink} />;
       })}
 
       {/* y-axis labels (left = ±max for bars, right = balance) */}
@@ -386,7 +388,7 @@ export function CashFlowChart({
       <text
         x={pad.left + innerW + 8}
         y={pad.top + balScale(maxBal) + 4}
-        className="fill-[#6B5C4E]"
+        className="fill-ink-2"
         fontSize={10}
       >
         {money(maxBal)}
@@ -394,10 +396,10 @@ export function CashFlowChart({
 
       {/* Legend */}
       <g transform={`translate(${pad.left} ${pad.top - 12})`}>
-        <Swatch x={0} fill="#2D7857" label="Revenue" />
-        <Swatch x={90} fill="#B0462E" label="Expense" />
+        <Swatch x={0} fill={CHART.revenue} label="Revenue" />
+        <Swatch x={90} fill={CHART.expense} label="Expense" />
         <g transform="translate(180 0)">
-          <line x1={0} x2={16} y1={4} y2={4} stroke="#2A201A" strokeWidth={2} />
+          <line x1={0} x2={16} y1={4} y2={4} stroke={CHART.ink} strokeWidth={2} />
           <text x={22} y={8} className="fill-ink-3" fontSize={10}>
             Ending balance
           </text>
@@ -429,8 +431,8 @@ export function ProgressBar({
   intent?: "ok" | "warn" | "over";
   height?: number;
 }) {
-  const c = intent === "over" ? "#B0462E" : intent === "warn" ? "#B5762A" : "#C0703C";
-  const trackC = "#E7DCC9";
+  const c = intent === "over" ? CHART.expense : intent === "warn" ? CHART.warning : CHART.accent;
+  const trackC = CHART.axis;
   const fillPct = Math.min(1, Math.max(0, pct));
   const overflow = pct > 1 ? Math.min(1, pct - 1) : 0;
   return (
@@ -445,7 +447,7 @@ export function ProgressBar({
       {overflow > 0 && (
         <div
           className="absolute inset-y-0 right-0 rounded-full"
-          style={{ width: `${overflow * 100}%`, background: "#B0462E", opacity: 0.7 }}
+          style={{ width: `${overflow * 100}%`, background: CHART.expense, opacity: 0.7 }}
         />
       )}
     </div>

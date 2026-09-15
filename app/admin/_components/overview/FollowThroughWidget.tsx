@@ -35,10 +35,10 @@ export default async function FollowThroughWidget({ className }: { className?: s
     <Widget title="Fundraising follow-through" href="/admin/fundraising/today" hrefLabel="Today's Moves" className={className}>
       <div className="grid grid-cols-3 gap-3">
         {cells.map((c) => (
-          <Link key={c.label} href={c.href} className="block rounded-card border border-outline bg-cream/40 p-3 hover:border-orange/40 transition-colors">
+          <Link key={c.label} href={c.href} className="block rounded-panel border border-hairline bg-cream/40 p-3 hover:border-orange/40 transition-colors">
             <div className={`font-heading font-bold text-2xl [font-variant-numeric:tabular-nums] ${c.tone}`}>{c.value}</div>
-            <div className="text-[11px] text-ink-2 mt-1 leading-tight">{c.label}</div>
-            {c.sub && <div className="text-[11px] text-ink-3 mt-0.5">{c.sub}</div>}
+            <div className="text-xs text-ink-2 mt-1 leading-tight">{c.label}</div>
+            {c.sub && <div className="text-xs text-ink-3 mt-0.5">{c.sub}</div>}
           </Link>
         ))}
       </div>

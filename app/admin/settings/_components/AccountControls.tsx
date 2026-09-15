@@ -7,7 +7,7 @@ import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import type { CalendarConnectionStatus } from "@/lib/google/connection";
 
 const inputCls =
-  "w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export function DisplayNameForm({ initialName }: { initialName: string }) {
   const router = useRouter();
@@ -170,7 +170,7 @@ function CalendarPicker({ onDone }: { onDone: (connected: boolean) => void }) {
   };
 
   return (
-    <div className="space-y-3 bg-tile border-[1.5px] border-outline rounded-lg p-4">
+    <div className="space-y-3 bg-tile border-hairline rounded-control p-4">
       <p className="text-sm text-ink-1 font-medium">
         Choose calendars to connect
         {accountEmail ? <span className="text-ink-2 font-normal"> · {accountEmail}</span> : null}
@@ -212,7 +212,7 @@ function CalendarPicker({ onDone }: { onDone: (connected: boolean) => void }) {
         <button
           onClick={cancel}
           disabled={busy !== null}
-          className="text-xs font-semibold text-ink-1 bg-tile border-[1.5px] border-outline hover:border-orange/40 px-5 py-2.5 rounded-full transition-colors disabled:opacity-50"
+          className="text-xs font-semibold text-ink-1 bg-tile border-hairline hover:border-orange/40 px-5 py-2.5 rounded-full transition-colors disabled:opacity-50"
         >
           Cancel
         </button>
@@ -331,7 +331,7 @@ export function ConnectCalendarControls({
           <button
             onClick={sync}
             disabled={busy !== null || !status.connected}
-            className="text-xs font-semibold text-ink-1 bg-tile border-[1.5px] border-outline hover:border-orange/40 px-5 py-2.5 rounded-full transition-colors disabled:opacity-50"
+            className="text-xs font-semibold text-ink-1 bg-tile border-hairline hover:border-orange/40 px-5 py-2.5 rounded-full transition-colors disabled:opacity-50"
           >
             {busy === "sync" ? "Refreshing…" : "Refresh calendar now"}
           </button>
@@ -424,7 +424,7 @@ export function ChangePasswordForm() {
 
   if (done) {
     return (
-      <div className="text-sm text-revenue bg-revenue-bg border border-revenue/20 rounded-lg px-4 py-3">
+      <div className="text-sm text-revenue bg-revenue-bg border border-revenue/20 rounded-control px-4 py-3">
         Password updated. Your current session stays signed in; other devices will need the new password.{" "}
         <button onClick={() => setDone(false)} className="font-semibold underline hover:no-underline">Change again</button>
       </div>
@@ -468,7 +468,7 @@ export function ChangePasswordForm() {
           required
         />
       </label>
-      <label className="flex items-center gap-2 text-[11px] text-ink-2 select-none">
+      <label className="flex items-center gap-2 text-xs text-ink-2 select-none">
         <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} className="accent-orange" />
         Show passwords
       </label>

@@ -30,7 +30,7 @@ export type ComplianceItem = {
 };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export const KIND_LABELS: Record<string, string> = {
   form_990: "IRS 990",
@@ -188,7 +188,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
 
   if (editing) {
     return (
-      <article className="bg-surface border-[1.5px] border-orange/40 rounded-xl p-3 text-sm">
+      <article className="bg-surface border-orange/40 rounded-panel p-3 text-sm">
         <form onSubmit={saveEdit} className="grid grid-cols-2 lg:grid-cols-6 gap-2 items-end">
           <label className="col-span-2 text-xs text-ink-2">
             Title
@@ -248,12 +248,12 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
 
   return (
     <article
-      className={`bg-surface border rounded-xl p-3 text-sm ${
-        overdue ? "border-expense/30" : "border-outline"
+      className={`bg-surface border rounded-panel p-3 text-sm ${
+        overdue ? "border-expense/30" : "border-hairline"
       } ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
           {KIND_LABELS[item.kind] ?? item.kind}
         </span>
         <Link
@@ -263,15 +263,15 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
           {item.title}
         </Link>
         {item.jurisdiction && item.jurisdiction !== "—" && (
-          <span className="text-[11px] text-ink-2">{item.jurisdiction}</span>
+          <span className="text-xs text-ink-2">{item.jurisdiction}</span>
         )}
         {item.assigned_to && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/10 text-orange">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/10 text-orange">
             {handleLabel(item.assigned_to)}
           </span>
         )}
         <span
-          className={`ml-auto text-[12px] tabular-nums ${
+          className={`ml-auto text-xs tabular-nums ${
             overdue ? "text-expense font-semibold" : "text-ink-1"
           }`}
         >
@@ -286,19 +286,19 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
           <button
             onClick={() => patch({ status: "in_progress" })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
+            className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
           >
             Start
           </button>
         )}
         {item.status === "in_progress" && (
-          <span className="px-2 py-1 text-[11px] text-[#A56A1B]">In progress</span>
+          <span className="px-2 py-1 text-xs text-status-watch-text">In progress</span>
         )}
         {openItem && (
           <button
             onClick={() => patch({ status: "filed" })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] font-semibold bg-orange/15 text-orange hover:bg-orange/25"
+            className="px-2 py-1 rounded-control text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25"
           >
             Mark filed{item.recur !== "none" ? " → rolls forward" : ""}
           </button>
@@ -307,7 +307,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
           <button
             onClick={() => patch({ status: "waived" })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
+            className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-ink-1"
           >
             Waive
           </button>
@@ -316,14 +316,14 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
           <button
             onClick={() => patch({ status: "upcoming" })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
+            className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
           >
             Reopen
           </button>
         )}
         <button
           onClick={() => setShowDetails((v) => !v)}
-          className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-ink-1"
+          className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-ink-1"
         >
           {showDetails ? "Hide details" : "Details"}
           {!showDetails && checklist.length > 0 && (
@@ -333,20 +333,20 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
         <button
           onClick={startEdit}
           disabled={busy}
-          className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-orange"
+          className="ml-auto px-2 py-1 rounded-control text-xs text-ink-2 hover:text-orange"
         >
           Edit
         </button>
         <button
           onClick={() => void remove()}
           disabled={busy}
-          className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
+          className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense"
         >
           Delete
         </button>
       </div>
       {showDetails && (
-        <div className="mt-2 border-t border-outline pt-3 space-y-3">
+        <div className="mt-2 border-t border-hairline pt-3 space-y-3">
           <label className="block text-xs text-ink-2">
             Notes
             <textarea
@@ -366,13 +366,13 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
                   void patch({ notes: v || null });
                 }}
                 disabled={busy}
-                className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+                className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
               >
                 Save notes
               </button>
               <button
                 onClick={() => setNotesDraft(item.notes ?? "")}
-                className="text-[11px] text-ink-2 hover:text-ink-1 px-1"
+                className="text-xs text-ink-2 hover:text-ink-1 px-1"
               >
                 Discard
               </button>
@@ -396,7 +396,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
                       className="accent-orange w-3.5 h-3.5 shrink-0"
                     />
                     <span
-                      className={`text-[12px] leading-relaxed ${
+                      className={`text-xs leading-relaxed ${
                         c.done ? "line-through text-ink-3" : "text-ink-1"
                       }`}
                     >
@@ -406,7 +406,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
                       onClick={() => saveChecklist(checklist.filter((x) => x.id !== c.id))}
                       disabled={busy}
                       aria-label={`Delete "${c.text}"`}
-                      className="ml-auto px-1.5 text-[13px] leading-none text-ink-3 hover:text-expense opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                      className="ml-auto px-1.5 text-sm leading-none text-ink-3 hover:text-expense opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                     >
                       ×
                     </button>
@@ -416,7 +416,7 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
             )}
             <form onSubmit={addCheckItem} className="flex gap-2">
               <input
-                className={`${inputCls} flex-1 !py-1.5 text-[12px]`}
+                className={`${inputCls} flex-1 !py-1.5 text-xs`}
                 value={newCheckText}
                 placeholder="Add checklist item"
                 onChange={(e) => setNewCheckText(e.target.value)}
@@ -424,14 +424,14 @@ export function ComplianceRow({ item }: { item: ComplianceItem }) {
               <button
                 type="submit"
                 disabled={busy || !newCheckText.trim()}
-                className="text-[11px] font-semibold px-3 rounded-md bg-tile hover:bg-[#EFE6D4] text-ink-2 disabled:opacity-50"
+                className="text-xs font-semibold px-3 rounded-control bg-tile hover:bg-tile text-ink-2 disabled:opacity-50"
               >
                 Add
               </button>
             </form>
           </div>
           {item.last_filed_at && (
-            <p className="text-[12px] text-ink-2">
+            <p className="text-xs text-ink-2">
               Last filed {item.last_filed_at.slice(0, 10)}.
             </p>
           )}
@@ -499,7 +499,7 @@ export function NewComplianceForm() {
   return (
     <form
       onSubmit={submit}
-      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
+      className="w-full bg-surface border-hairline rounded-panel p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
     >
       <label className="col-span-2 text-xs text-ink-2">
         Title

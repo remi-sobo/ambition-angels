@@ -76,7 +76,7 @@ function Chip({ children, tone = "neutral" }: { children: React.ReactNode; tone?
     warn: "bg-orange-light text-orange-dark",
   };
   return (
-    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${tones[tone]}`}>
+    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${tones[tone]}`}>
       {children}
     </span>
   );
@@ -95,18 +95,18 @@ function RowEditor({ occ, row }: { occ: PoolOccupation; row: PoolRow | undefined
   const revealDirty = reveal.trim() !== (row?.reveal_line ?? "").trim();
 
   return (
-    <div className="mt-3 border-t border-outline pt-3 space-y-3 text-[13px]">
-      {occ.description && <p className="text-ink-2 text-[12px] leading-relaxed">{occ.description}</p>}
+    <div className="mt-3 border-t border-hairline pt-3 space-y-3 text-sm">
+      {occ.description && <p className="text-ink-2 text-xs leading-relaxed">{occ.description}</p>}
 
       {issues.length > 0 ? (
-        <div className="bg-orange-light rounded-lg px-3 py-2 text-[12px] text-orange-dark">
+        <div className="bg-orange-light rounded-control px-3 py-2 text-xs text-orange-dark">
           Blocked by the rules: {issues.join(", ")}. Fix the import, or leave it out. The pool is
           allowed to be smaller than the catalog.
         </div>
       ) : (
         <>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2 mb-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink-2 mb-1">
               Reveal line · what the projector says when this job is revealed
             </p>
             <input
@@ -114,16 +114,16 @@ function RowEditor({ occ, row }: { occ: PoolOccupation; row: PoolRow | undefined
               maxLength={REVEAL_LINE_MAX}
               value={reveal}
               onChange={(e) => setReveal(e.target.value)}
-              className="w-full border border-outline rounded-lg px-3 py-2 text-[13px] bg-surface"
+              className="w-full border border-hairline rounded-control px-3 py-2 text-sm bg-surface"
             />
-            <p className="text-[11px] text-ink-2 mt-0.5">
+            <p className="text-xs text-ink-2 mt-0.5">
               {reveal.trim().length}/{REVEAL_LINE_MAX}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-4">
             {GAME_FLAGS.map(({ key, label }) => (
-              <label key={key} className="flex items-center gap-1.5 text-[12px] text-ink-1">
+              <label key={key} className="flex items-center gap-1.5 text-xs text-ink-1">
                 <input
                   type="checkbox"
                   checked={flags[key]}
@@ -139,7 +139,7 @@ function RowEditor({ occ, row }: { occ: PoolOccupation; row: PoolRow | undefined
               onClick={() => call("approve", { soc_code: occ.soc_code, action: "approve", reveal_line: reveal, ...flags })}
               disabled={busy !== null || !reveal.trim()}
               title="You read the line. It plays."
-              className="text-[12px] font-semibold bg-revenue text-white px-4 py-1.5 rounded-full disabled:opacity-50"
+              className="text-xs font-semibold bg-revenue text-white px-4 py-1.5 rounded-full disabled:opacity-50"
             >
               {busy === "approve"
                 ? "Approving…"
@@ -151,14 +151,14 @@ function RowEditor({ occ, row }: { occ: PoolOccupation; row: PoolRow | undefined
             </button>
             {eligible && (
               <>
-                <span className="text-[12px] text-ink-2">
+                <span className="text-xs text-ink-2">
                   Approved by {row?.approved_by}
                   {row?.approved_at ? ` · ${new Date(row.approved_at).toLocaleDateString()}` : ""}
                 </span>
                 <button
                   onClick={() => call("revoke", { soc_code: occ.soc_code, action: "revoke" })}
                   disabled={busy !== null}
-                  className="text-[12px] font-semibold bg-tile text-ink-1 px-4 py-1.5 rounded-full disabled:opacity-50"
+                  className="text-xs font-semibold bg-tile text-ink-1 px-4 py-1.5 rounded-full disabled:opacity-50"
                 >
                   {busy === "revoke" ? "Pulling…" : "Pull from pool"}
                 </button>
@@ -169,7 +169,7 @@ function RowEditor({ occ, row }: { occ: PoolOccupation; row: PoolRow | undefined
       )}
 
       {notice && (
-        <p className="text-[12px] text-orange-dark bg-orange-light rounded-lg px-3 py-2">{notice}</p>
+        <p className="text-xs text-orange-dark bg-orange-light rounded-control px-3 py-2">{notice}</p>
       )}
     </div>
   );
@@ -217,7 +217,7 @@ export function PoolControls({
               setView(t.key);
               setOpenSoc(null);
             }}
-            className={`text-[12px] font-semibold px-4 py-1.5 rounded-full ${
+            className={`text-xs font-semibold px-4 py-1.5 rounded-full ${
               view === t.key ? "bg-ink-1 text-surface" : "bg-tile text-ink-2 hover:text-ink-1"
             }`}
           >
@@ -229,13 +229,13 @@ export function PoolControls({
           placeholder="Search title or SOC…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="ml-auto border border-outline rounded-full px-4 py-1.5 text-[13px] bg-surface w-full sm:w-64"
+          className="ml-auto border border-hairline rounded-full px-4 py-1.5 text-sm bg-surface w-full sm:w-64"
         />
       </div>
 
       <div className="space-y-2">
         {rows.length === 0 && (
-          <p className="text-[13px] text-ink-2 py-6 text-center">Nothing here{query ? " for that search" : ""}.</p>
+          <p className="text-sm text-ink-2 py-6 text-center">Nothing here{query ? " for that search" : ""}.</p>
         )}
         {rows.map((occ) => {
           const row = pool[occ.soc_code];
@@ -244,15 +244,15 @@ export function PoolControls({
           return (
             <div
               key={occ.soc_code}
-              className="bg-surface shadow-panel border-[1.5px] border-outline rounded-xl px-4 py-3"
+              className="bg-surface border-hairline rounded-panel px-4 py-3"
             >
               <button
                 onClick={() => setOpenSoc(open ? null : occ.soc_code)}
                 className="w-full flex flex-wrap items-center gap-x-3 gap-y-1 text-left"
               >
-                <span className="font-semibold text-[13px] text-ink-1">{occ.title}</span>
-                <span className="text-[11px] text-ink-2">{occ.soc_code}</span>
-                <span className="text-[12px] text-ink-2">{fmtPay(occ.pay_median)}</span>
+                <span className="font-semibold text-sm text-ink-1">{occ.title}</span>
+                <span className="text-xs text-ink-2">{occ.soc_code}</span>
+                <span className="text-xs text-ink-2">{fmtPay(occ.pay_median)}</span>
                 <span className="ml-auto flex items-center gap-1.5">
                   <Chip>JZ {occ.job_zone}</Chip>
                   {row?.eligible && <Chip tone="good">In pool</Chip>}

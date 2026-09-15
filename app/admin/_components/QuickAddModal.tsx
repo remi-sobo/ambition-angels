@@ -138,7 +138,7 @@ export default function QuickAddModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-card border-[1.5px] border-outline bg-ink shadow-2xl max-h-[92vh] overflow-y-auto"
+        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-panel border-hairline bg-ink shadow-2xl max-h-[92vh] overflow-y-auto"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {/* Drag handle (visual cue on mobile) */}
@@ -159,7 +159,7 @@ export default function QuickAddModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="What needs to happen?"
               required
-              className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
+              className="w-full bg-tile border-hairline rounded-control px-3 py-2.5 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
             />
           </Field>
 
@@ -171,7 +171,7 @@ export default function QuickAddModal({
                   setCategory(e.target.value as TaskCategory);
                   setAssigneeError(null);
                 }}
-                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
+                className="w-full bg-tile border-hairline rounded-control px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               >
                 {TASK_CATEGORIES.map((c) => (
                   <option key={c} value={c}>
@@ -184,7 +184,7 @@ export default function QuickAddModal({
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
+                className="w-full bg-tile border-hairline rounded-control px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               >
                 {TASK_PRIORITIES.map((p) => (
                   <option key={p} value={p}>
@@ -203,7 +203,7 @@ export default function QuickAddModal({
                   setAssignee(e.target.value as AdminUser | "");
                   setAssigneeError(null);
                 }}
-                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
+                className="w-full bg-tile border-hairline rounded-control px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               >
                 <option value="">Unassigned</option>
                 {assigneeOptions.map((a) => (
@@ -219,14 +219,14 @@ export default function QuickAddModal({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
+                className="w-full bg-tile border-hairline rounded-control px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               />
             </Field>
             <Field label="Project">
               <select
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
-                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
+                className="w-full bg-tile border-hairline rounded-control px-3 py-2.5 text-ink-1 focus:outline-none focus:border-orange/50 text-base sm:text-sm"
               >
                 <option value="">None</option>
                 {projects.map((p) => (
@@ -276,7 +276,7 @@ export default function QuickAddModal({
             <button
               type="submit"
               disabled={saving}
-              className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
+              className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-control transition-colors"
             >
               {saving ? "Adding…" : "Add task"}
             </button>
@@ -298,7 +298,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">
+      <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">
         {label} {required && <span className="text-orange">*</span>}
       </div>
       {children}

@@ -87,7 +87,7 @@ export default function ExportControls({
 
   if (done) {
     return (
-      <div className="rounded-xl border border-revenue/40 bg-revenue/10 px-4 py-3 text-sm text-revenue flex items-center gap-3 flex-wrap">
+      <div className="rounded-panel border border-revenue/40 bg-revenue/10 px-4 py-3 text-sm text-revenue flex items-center gap-3 flex-wrap">
         Exported to the file cabinet.
         <a href={`/api/admin/documents/${done}/url`} className="font-semibold underline">
           Open the file
@@ -102,8 +102,8 @@ export default function ExportControls({
   return (
     <div className="space-y-3">
       {gate.blocked && (
-        <div className="rounded-xl border border-[#D9BE86] bg-[#F4E8D0] px-4 py-3 space-y-2">
-          <p className="text-xs text-[#A56A1B] font-semibold">
+        <div className="rounded-panel border border-status-watch/40 bg-status-watch-bg px-4 py-3 space-y-2">
+          <p className="text-xs text-status-watch-text font-semibold">
             Export blocked: {gate.blockers.length} unresolved figure
             {gate.blockers.length === 1 ? "" : "s"}. The draft renders anyway; only the exit is
             gated.
@@ -113,7 +113,7 @@ export default function ExportControls({
             onChange={(e) => setReason(e.target.value)}
             placeholder="Waiver reason (goes into the shipped file and the audit record)"
             maxLength={500}
-            className="w-full text-xs bg-surface border-[1.5px] border-outline rounded-lg px-3 py-1.5 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange"
+            className="w-full text-xs bg-surface border-hairline rounded-control px-3 py-1.5 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange"
           />
           <div className="flex flex-wrap gap-2">
             {gate.blockers.map((b) => (
@@ -122,7 +122,7 @@ export default function ExportControls({
                 type="button"
                 disabled={busy}
                 onClick={() => void waive(b.metricKey)}
-                className="text-[11px] font-semibold text-[#A56A1B] border-[1.5px] border-[#D9BE86] rounded-full px-3 py-1 hover:bg-[#EFE6D4] transition-colors disabled:opacity-40"
+                className="text-xs font-semibold text-status-watch-text border-status-watch/40 rounded-full px-3 py-1 hover:bg-tile transition-colors disabled:opacity-40"
               >
                 Waive {b.metricKey} ({b.reason})
               </button>
@@ -131,13 +131,13 @@ export default function ExportControls({
         </div>
       )}
       {gate.waived.length > 0 && (
-        <p className="text-[11px] text-ink-3">
+        <p className="text-xs text-ink-3">
           Shipping with waivers: {gate.waived.map((w) => w.metricKey).join(", ")}. Printed into
           the exported file.
         </p>
       )}
       {gate.unconfirmed.length > 0 && (
-        <p className="text-[11px] text-ink-3">
+        <p className="text-xs text-ink-3">
           Unconfirmed (flagged, never blocking): {gate.unconfirmed.join(", ")}.
         </p>
       )}

@@ -26,11 +26,11 @@ type CardState = {
 };
 
 const CHANNEL_STYLE: Record<string, string> = {
-  email: "bg-blue-500/15 text-blue-400",
+  email: "bg-tile text-ink-2",
   call: "bg-orange/15 text-orange",
   meeting: "bg-revenue/15 text-revenue",
-  note: "bg-tile text-ink-2 border border-outline",
-  other: "bg-tile text-ink-3 border border-outline",
+  note: "bg-tile text-ink-2 border border-hairline",
+  other: "bg-tile text-ink-3 border border-hairline",
 };
 
 const toCards = (recs: NbaCardRecommendation[]): CardState[] =>
@@ -121,13 +121,13 @@ export default function SuggestedMoves() {
   const decided = stats ? stats.applied + stats.dismissed : 0;
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-5 py-3 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-3 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className={TYPE.cardTitle}>
             Suggested moves <span className="text-ink-3 font-normal">· AI</span>
           </h2>
-          <p className="text-[11px] text-ink-3">
+          <p className="text-xs text-ink-3">
             The agent ranks your open asks and proposes one action each. You approve.
             {decided > 0 && (
               <>
@@ -143,7 +143,7 @@ export default function SuggestedMoves() {
           type="button"
           onClick={suggest}
           disabled={loading}
-          className="text-xs font-semibold px-4 py-2 rounded-full border-[1.5px] border-orange/40 bg-orange/10 text-orange hover:bg-orange/20 transition-colors disabled:opacity-60"
+          className="text-xs font-semibold px-4 py-2 rounded-full border-orange/40 bg-orange/10 text-orange hover:bg-orange/20 transition-colors disabled:opacity-60"
         >
           {loading ? "Thinking…" : cards ? "Refresh suggestions" : "Suggest next moves"}
         </button>
@@ -166,7 +166,7 @@ export default function SuggestedMoves() {
           {cards.map((c, i) => (
             <li key={c.rec.id || c.rec.opportunity_id} className="px-5 py-3">
               <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                <span className="text-[10px] font-bold text-ink-3 [font-variant-numeric:tabular-nums]">
+                <span className="text-xs font-bold text-ink-3 [font-variant-numeric:tabular-nums]">
                   #{c.rec.priority}
                 </span>
                 {c.rec.constituent_id ? (
@@ -179,11 +179,11 @@ export default function SuggestedMoves() {
                 ) : (
                   <span className="font-medium text-ink-1">{c.rec.constituent_name}</span>
                 )}
-                <span className="text-[11px] text-ink-3 capitalize">{c.rec.stage}</span>
+                <span className="text-xs text-ink-3 capitalize">{c.rec.stage}</span>
                 {c.rec.ask_amount ? (
-                  <span className="text-[11px] text-ink-3">· {money(Number(c.rec.ask_amount))}</span>
+                  <span className="text-xs text-ink-3">· {money(Number(c.rec.ask_amount))}</span>
                 ) : null}
-                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full capitalize ${CHANNEL_STYLE[c.rec.channel] ?? CHANNEL_STYLE.other}`}>
+                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full capitalize ${CHANNEL_STYLE[c.rec.channel] ?? CHANNEL_STYLE.other}`}>
                   {c.rec.channel}
                 </span>
               </div>
@@ -199,7 +199,7 @@ export default function SuggestedMoves() {
                     <input
                       value={c.action}
                       onChange={(e) => patch(i, { action: e.target.value })}
-                      className="w-full text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
+                      className="w-full text-sm bg-cream border-hairline rounded-control px-3 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
                     />
                   </label>
                   <label>
@@ -208,7 +208,7 @@ export default function SuggestedMoves() {
                       type="date"
                       value={c.due}
                       onChange={(e) => patch(i, { due: e.target.value })}
-                      className="text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
+                      className="text-sm bg-cream border-hairline rounded-control px-3 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
                     />
                   </label>
                   <button

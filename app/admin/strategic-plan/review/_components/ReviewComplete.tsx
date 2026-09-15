@@ -9,7 +9,7 @@ import { userMessage } from "@/lib/admin/errors";
 // the session, and return to the plan. The KPI/status edits happen live in the
 // objective cards above — this just records the ritual.
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 function defaultNextReview(): string {
   const d = new Date();
@@ -48,7 +48,7 @@ export default function ReviewComplete() {
   return (
     <form
       onSubmit={submit}
-      className="bg-surface border-[1.5px] border-outline rounded-card-lg p-5 space-y-3"
+      className="bg-surface border-hairline rounded-panel-lg p-5 space-y-3"
     >
       <h2 className="font-heading font-semibold text-ink-1">Close out the review</h2>
       <label className="block text-xs text-ink-2">

@@ -115,7 +115,7 @@ export default function AdminPWA() {
       className="fixed inset-x-0 bottom-24 z-[45] flex justify-center px-4 lg:bottom-6"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="flex w-full max-w-md items-center gap-3 rounded-card border border-white/10 bg-navy px-4 py-3 text-cream shadow-2xl">
+      <div className="flex w-full max-w-md items-center gap-3 rounded-panel border border-white/10 bg-navy px-4 py-3 text-cream shadow-2xl">
         <span className="flex-1 text-sm font-heading">
           A new version is ready.
         </span>

@@ -52,8 +52,8 @@ export default function HubSpotSettings({
     <div className="flex items-start justify-between gap-4 py-3">
       <div className="min-w-0">
         <div className="text-sm font-medium text-ink-1">{label}</div>
-        <div className="text-[11px] text-ink-3 leading-snug">{help}</div>
-        {warn && flags[flag] && <div className="text-[11px] text-[#A56A1B] mt-0.5">{warn}</div>}
+        <div className="text-xs text-ink-3 leading-snug">{help}</div>
+        {warn && flags[flag] && <div className="text-xs text-status-watch-text mt-0.5">{warn}</div>}
       </div>
       <button
         role="switch"
@@ -68,25 +68,25 @@ export default function HubSpotSettings({
   );
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3">
         <div>
           <h2 className={TYPE.cardTitle}>HubSpot</h2>
-          <p className="text-[11px] text-ink-3">Two-way CRM sync for orgs that run HubSpot</p>
+          <p className="text-xs text-ink-3">Two-way CRM sync for orgs that run HubSpot</p>
         </div>
-        <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider ${connected ? "bg-revenue/15 text-revenue" : "bg-tile text-ink-3 border border-outline"}`}>
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider ${connected ? "bg-revenue/15 text-revenue" : "bg-tile text-ink-3 border border-hairline"}`}>
           {connected ? "Connected" : "Not connected"}
         </span>
       </div>
 
       <div className="px-5 py-4 space-y-3">
         {!tokenPresent && (
-          <div className="text-[11px] text-[#A56A1B] bg-[#F4E8D0] rounded-lg px-3 py-2">
+          <div className="text-xs text-status-watch-text bg-status-watch-bg rounded-control px-3 py-2">
             <code>HUBSPOT_ACCESS_TOKEN</code> isn&apos;t set. Outbound sync can&apos;t reach HubSpot until it is.
           </div>
         )}
         {!secretPresent && (
-          <div className="text-[11px] text-[#A56A1B] bg-[#F4E8D0] rounded-lg px-3 py-2">
+          <div className="text-xs text-status-watch-text bg-status-watch-bg rounded-control px-3 py-2">
             <code>HUBSPOT_CLIENT_SECRET</code> isn&apos;t set. Inbound webhooks will be rejected until it is.
           </div>
         )}
@@ -98,7 +98,7 @@ export default function HubSpotSettings({
         </div>
       </div>
 
-      <div className="px-5 py-4 border-t border-outline flex items-center gap-3">
+      <div className="px-5 py-4 border-t border-hairline flex items-center gap-3">
         {connected ? (
           <button
             disabled={busy}
@@ -111,7 +111,7 @@ export default function HubSpotSettings({
               });
               if (ok) void call({ action: "disconnect" });
             }}
-            className="text-xs font-semibold text-ink-2 hover:text-expense border-[1.5px] border-outline bg-tile px-4 py-2 rounded-full transition-colors disabled:opacity-50"
+            className="text-xs font-semibold text-ink-2 hover:text-expense border-hairline bg-tile px-4 py-2 rounded-full transition-colors disabled:opacity-50"
           >
             Disconnect
           </button>
@@ -124,7 +124,7 @@ export default function HubSpotSettings({
             Connect HubSpot
           </button>
         )}
-        <span className="text-[11px] text-ink-3">
+        <span className="text-xs text-ink-3">
           {connected ? "Toggle each direction above; standalone otherwise." : "Connecting enables the toggles. BloomOS stays the system of record."}
         </span>
       </div>

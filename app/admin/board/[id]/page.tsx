@@ -90,17 +90,17 @@ export default async function BoardMemberPage({ params }: { params: { id: string
   const termPast = !!member.term_end && member.term_end < today;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <div className="flex items-center gap-3 flex-wrap mb-6">
         <Link href="/admin/board" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
           ← Board
         </Link>
         <h1 className={`${TYPE.pageTitle} !text-lg`}>{member.name}</h1>
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
           {ROLE_LABELS[member.officer_role] ?? member.officer_role}
         </span>
         {member.status !== "active" && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-tile text-ink-2">{member.status}</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-tile text-ink-2">{member.status}</span>
         )}
         <div className="ml-auto">
           <MemberQuickActions member={member} coiYear={year} />
@@ -135,7 +135,7 @@ export default async function BoardMemberPage({ params }: { params: { id: string
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <section className="lg:col-span-5 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3 self-start">
+        <section className="lg:col-span-5 bg-tile border-hairline rounded-panel-lg p-5 space-y-3 self-start">
           <div className="flex items-start justify-between gap-2 mb-1">
             <h2 className={TYPE.cardTitle}>Profile</h2>
             <EditMemberProfile member={member} />
@@ -164,12 +164,12 @@ export default async function BoardMemberPage({ params }: { params: { id: string
             </div>
           ))}
           {member.bio && (
-            <p className="text-xs text-ink-2 border-t border-outline pt-3 whitespace-pre-wrap">{member.bio}</p>
+            <p className="text-xs text-ink-2 border-t border-hairline pt-3 whitespace-pre-wrap">{member.bio}</p>
           )}
           {member.notes && (
-            <p className="text-xs text-ink-2 border-t border-outline pt-3 whitespace-pre-wrap">{member.notes}</p>
+            <p className="text-xs text-ink-2 border-t border-hairline pt-3 whitespace-pre-wrap">{member.notes}</p>
           )}
-          <div className="border-t border-outline pt-3">
+          <div className="border-t border-hairline pt-3">
             <OnboardingChecklist member={member} />
           </div>
         </section>
@@ -183,8 +183,8 @@ export default async function BoardMemberPage({ params }: { params: { id: string
           />
           <EntityDocuments entityType="board_member" entityId={member.id} entityLabel={member.name} />
 
-          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-outline">
+          <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-hairline">
               <h2 className={TYPE.cardTitle}>
                 Meetings {recorded.length > 0 && (
                   <span className="text-ink-3 font-normal">· attended {attended.length} of {recorded.length}</span>
@@ -205,7 +205,7 @@ export default async function BoardMemberPage({ params }: { params: { id: string
                       </span>
                       <span className="text-ink-1 flex-1 min-w-0 truncate">{m.title}</span>
                       <span
-                        className={`text-[11px] font-semibold ${
+                        className={`text-xs font-semibold ${
                           !took ? "text-ink-3" : entry?.present ? "text-revenue" : "text-expense"
                         }`}
                       >
@@ -219,8 +219,8 @@ export default async function BoardMemberPage({ params }: { params: { id: string
           </section>
 
           {member.constituent_id && gifts.length > 0 && (
-            <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-              <div className="px-5 py-4 border-b border-outline">
+            <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+              <div className="px-5 py-4 border-b border-hairline">
                 <h2 className={TYPE.cardTitle}>
                   Giving <span className="text-ink-3 font-normal">· {fmtUsd(lifetime)} lifetime</span>
                 </h2>

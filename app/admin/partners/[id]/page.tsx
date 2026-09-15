@@ -86,21 +86,21 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3 flex-wrap">
+      <div className="bg-tile border-b border-hairline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3 flex-wrap">
         <Link href="/admin/partners" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
           ← Partners
         </Link>
         <span className={`${TYPE.cardTitle} sm:text-base truncate`}>{p.name}</span>
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[p.status]}`}>
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[p.status]}`}>
           {STATUS_LABELS[p.status] ?? p.status}
         </span>
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
           {KIND_LABELS[p.kind] ?? p.kind}
         </span>
         {next && <AdvanceStage partnerId={p.id} next={next} label={`Move to ${STATUS_SHORT[next]}`} />}
       </div>
 
-      <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+      <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Stage" value={STATUS_SHORT[p.status] ?? p.status} sub={geo || undefined} />
           <StatCard label="Contacts" value={contacts.length} sub={contacts.length === 0 ? "add the first" : undefined} />
@@ -119,7 +119,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Profile */}
-          <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
+          <section className="lg:col-span-4 bg-tile border-hairline rounded-panel-lg p-5 space-y-3">
             <div className="flex items-start justify-between gap-2 mb-1">
               <h2 className={TYPE.cardTitle}>Profile</h2>
               <EditPartnerButton partner={{
@@ -143,16 +143,16 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
                 )}
               </div>
             ))}
-            {p.notes && <p className="text-xs text-ink-2 border-t border-outline pt-3 whitespace-pre-wrap">{p.notes}</p>}
+            {p.notes && <p className="text-xs text-ink-2 border-t border-hairline pt-3 whitespace-pre-wrap">{p.notes}</p>}
 
-            <div className="border-t border-outline pt-3">
+            <div className="border-t border-hairline pt-3">
               <RubricEditor
                 partnerId={p.id}
                 initial={(p.score_factors as ScoreFactors | null) ?? null}
               />
             </div>
 
-            <div className="border-t border-outline pt-3">
+            <div className="border-t border-hairline pt-3">
               <h3 className={`${TYPE.sectionHeader} mb-2`}>Agreements</h3>
               <MouControls partner={{
                 id: p.id, mou_status: p.mou_status, mou_end: p.mou_end,
@@ -160,7 +160,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
               }} />
             </div>
 
-            <div className="border-t border-outline pt-3">
+            <div className="border-t border-hairline pt-3">
               <MergeControl keepId={p.id} keepName={p.name} candidates={candidates} />
             </div>
           </section>
@@ -171,7 +171,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
             <EntityTasks entityType="partner" entityId={p.id} entityLabel={p.name} defaultCategory="program" />
             <EntityDocuments entityType="partner" entityId={p.id} entityLabel={p.name} />
 
-            <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5">
+            <section className="bg-tile border-hairline rounded-panel-lg p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <h2 className={TYPE.cardTitle}>
                   Contacts {contacts.length > 0 && <span className="text-ink-3 font-normal">· {contacts.length}</span>}
@@ -187,8 +187,8 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
               )}
             </section>
 
-            <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-              <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+            <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+              <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
                 <h2 className={TYPE.cardTitle}>Activity</h2>
                 <LogPartnerInteraction
                   partnerId={p.id}
@@ -204,7 +204,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
                   {interactions.map((i) => (
                     <li key={i.id} className="px-5 py-3 text-sm flex items-start gap-4">
                       <span className="text-xs text-ink-2 w-24 flex-shrink-0 pt-px">{fmtWhen(i.occurred_at)}</span>
-                      <span className="text-[10px] uppercase tracking-wider text-orange font-semibold w-16 flex-shrink-0 pt-1">
+                      <span className="text-xs uppercase tracking-wider text-orange font-semibold w-16 flex-shrink-0 pt-1">
                         {INT_LABEL[i.kind] ?? i.kind}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -212,7 +212,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
                           <div className="text-xs text-ink-3">with {contactName(i.contact_id)}</div>
                         )}
                         {i.notes && <p className={`${TYPE.body} mt-0.5 whitespace-pre-wrap`}>{i.notes}</p>}
-                        {i.logged_by && <div className="text-[10px] text-ink-3 mt-0.5">logged by {i.logged_by}</div>}
+                        {i.logged_by && <div className="text-xs text-ink-3 mt-0.5">logged by {i.logged_by}</div>}
                       </div>
                     </li>
                   ))}

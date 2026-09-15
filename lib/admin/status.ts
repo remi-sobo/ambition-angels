@@ -10,13 +10,32 @@
 
 export type Status = "critical" | "watch" | "due" | "healthy" | "neutral";
 
-/** Chip styling: pale tint bg + ink-1 label (AAA on every tint) + saturated dot. */
-export const STATUS_CHIP: Record<Status, { bg: string; dot: string }> = {
-  critical: { bg: "bg-status-critical-bg", dot: "bg-status-critical" },
-  watch: { bg: "bg-status-watch-bg", dot: "bg-status-watch" },
-  due: { bg: "bg-status-due-bg", dot: "bg-status-due" },
-  healthy: { bg: "bg-status-healthy-bg", dot: "bg-status-healthy" },
-  neutral: { bg: "bg-status-neutral-bg", dot: "bg-ink-3" },
+/**
+ * Badge styling: pale tint bg + a semantic label + a saturated dot.
+ *
+ * Visual System V3 §13 — each `text` step is the deepened type variant of its
+ * hue (see tailwind.config.ts), chosen so it clears WCAG AA both on the
+ * workspace and on its own tint. The `dot` is the vivid fill value, which is
+ * fill-only and never sits behind a label.
+ */
+export const STATUS_CHIP: Record<Status, { bg: string; dot: string; text: string }> = {
+  critical: {
+    bg: "bg-status-critical-bg",
+    dot: "bg-status-critical",
+    text: "text-status-critical-text",
+  },
+  watch: {
+    bg: "bg-status-watch-bg",
+    dot: "bg-status-watch",
+    text: "text-status-watch-text",
+  },
+  due: { bg: "bg-status-due-bg", dot: "bg-status-due", text: "text-status-due-text" },
+  healthy: {
+    bg: "bg-status-healthy-bg",
+    dot: "bg-status-healthy",
+    text: "text-status-healthy-text",
+  },
+  neutral: { bg: "bg-status-neutral-bg", dot: "bg-ink-3", text: "text-ink-2" },
 };
 
 /** Task status → status scale. in_progress/todo carry no severity → neutral. */
@@ -85,17 +104,19 @@ export function scoreToStatus(score: number | null | undefined): Status {
 // ── Category (taxonomy) dot colors ──────────────────────────────────────────
 // Categories are NOT status, so their chip is neutral (tile + ink-2); the hue
 // survives only as a small dot. Kept muted-but-distinct and legible on cream.
+// Retuned to the Visual System V3 palette. These are DOTS (a 6px fill), never
+// text, so they are judged as non-text contrast against the workspace.
 export const CATEGORY_DOT: Record<string, string> = {
-  fundraising: "#C0703C", // clay
-  program: "#2D7857", // green
+  fundraising: "#C96B38", // terracotta — = --accent
+  program: "#32745B", // green — = --success
   product: "#5B6BB5", // indigo
-  finance: "#A56A1B", // amber
+  finance: "#A96820", // amber — = --warning
   operations: "#8A5A12", // deep amber
-  compliance: "#9E3A24", // deep red
+  compliance: "#C24B40", // red — = --danger
   board: "#7A5BA8", // purple
   recruitment: "#2F7D8A", // teal
-  admin: "#6B5C4E", // ink-2
-  other: "#796A5C", // ink-3
+  admin: "#746C63", // = --text-secondary
+  other: "#756C5B", // = --text-tertiary
 };
 
 export function categoryDot(category: string): string {

@@ -15,7 +15,7 @@ import { useAssignees } from "../_lib/useAssignees";
 import { TYPE } from "@/lib/admin/typeScale";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const UNASSIGNED = { value: "", label: "Unassigned" };
 
@@ -125,13 +125,13 @@ export function EntityTasks({
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
         <h2 className={TYPE.cardTitle}>
           Tasks {openTasks.length > 0 && <span className="text-ink-3 font-normal">· {openTasks.length} open</span>}
         </h2>
         <div className="flex items-center gap-2">
-          <Link href="/admin/ops" className="text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors">Ops →</Link>
+          <Link href="/admin/ops" className="text-xs font-semibold text-ink-2 hover:text-orange transition-colors">Ops →</Link>
           <button onClick={() => setOpen((v) => !v)} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors">
             {open ? "Close" : "+ Task"}
           </button>
@@ -139,7 +139,7 @@ export function EntityTasks({
       </div>
 
       {open && (
-        <form onSubmit={add} className="px-5 py-4 border-b border-outline bg-surface flex flex-wrap items-end gap-3">
+        <form onSubmit={add} className="px-5 py-4 border-b border-hairline bg-surface flex flex-wrap items-end gap-3">
           <label className={`${TYPE.sectionHeader} flex flex-col gap-1 flex-1 min-w-[16rem]`}>
             Task
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={`e.g. Follow up with ${entityLabel}`} className={inputCls + " w-full"} autoFocus />
@@ -178,7 +178,7 @@ export function EntityTasks({
           ))}
           {doneTasks.length > 0 && (
             <li className="px-5 py-2">
-              <button onClick={() => setShowDone((v) => !v)} className="text-[11px] font-semibold text-ink-3 hover:text-ink-1">
+              <button onClick={() => setShowDone((v) => !v)} className="text-xs font-semibold text-ink-3 hover:text-ink-1">
                 {showDone ? "Hide" : "Show"} {doneTasks.length} completed
               </button>
             </li>
@@ -206,27 +206,27 @@ function TaskLi({ t, today, busy, onToggle, leaving = false }: {
         onClick={onToggle}
         disabled={busy || leaving}
         aria-label={done ? "Mark not done" : "Mark done"}
-        className={`w-4 h-4 rounded-full border-[1.5px] flex-shrink-0 flex items-center justify-center transition-colors ${
-          showDone ? "bg-revenue border-revenue" : "border-outline hover:border-orange"
+        className={`w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center transition-colors ${
+          showDone ? "bg-revenue border-revenue" : "border-hairline hover:border-orange"
         }`}
       >
-        {showDone && <span className="block text-white text-[10px] leading-none">✓</span>}
+        {showDone && <span className="block text-white text-xs leading-none">✓</span>}
       </button>
       <span className={`text-sm flex-1 min-w-0 truncate ${showDone ? "text-ink-3 line-through" : "text-ink-1"}`}>
         {t.title}
       </span>
       {!done && (
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${priorityFlagClass(t.priority)}`}>
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${priorityFlagClass(t.priority)}`}>
           {t.priority}
         </span>
       )}
       {t.due_date && (
-        <span className={`text-[11px] tabular-nums ${overdue ? "text-expense font-semibold" : "text-ink-3"}`}>
+        <span className={`text-xs tabular-nums ${overdue ? "text-expense font-semibold" : "text-ink-3"}`}>
           {overdue ? "overdue · " : ""}{t.due_date.slice(5)}
         </span>
       )}
       {t.assigned_to && (
-        <span className="text-[10px] uppercase tracking-wider text-ink-3">{t.assigned_to}</span>
+        <span className="text-xs uppercase tracking-wider text-ink-3">{t.assigned_to}</span>
       )}
     </li>
   );

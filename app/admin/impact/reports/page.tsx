@@ -105,8 +105,8 @@ export default async function ImpactReportsPage({
           backHref="/admin/impact/reports"
         />
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>The numbers</h2>
           </div>
           {keys.length === 0 ? (
@@ -122,8 +122,8 @@ export default async function ImpactReportsPage({
           )}
         </section>
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>Narrative</h2>
           </div>
           {narrative ? (
@@ -173,8 +173,8 @@ export default async function ImpactReportsPage({
         titlePlaceholder="Report title (e.g. FY27 program outcomes update)"
       />
 
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-        <div className="px-5 py-4 border-b border-outline">
+      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+        <div className="px-5 py-4 border-b border-hairline">
           <h2 className={TYPE.cardTitle}>
             Recent exports <span className="text-ink-3 font-normal">· {recent.length}</span>
           </h2>

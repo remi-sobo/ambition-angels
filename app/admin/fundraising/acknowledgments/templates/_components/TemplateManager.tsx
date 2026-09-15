@@ -121,7 +121,7 @@ export default function TemplateManager({ initial }: { initial: AckTemplate[] })
     }
   };
 
-  const field = "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40";
+  const field = "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40";
 
   return (
     <div className="space-y-4">
@@ -137,7 +137,7 @@ export default function TemplateManager({ initial }: { initial: AckTemplate[] })
       </div>
 
       {editing && (
-        <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
+        <div className="bg-tile border-hairline rounded-panel-lg p-5 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <input
               value={form.name}
@@ -195,7 +195,7 @@ export default function TemplateManager({ initial }: { initial: AckTemplate[] })
               />
               Default for this channel
             </label>
-            <span className="text-[11px] text-ink-3">
+            <span className="text-xs text-ink-3">
               Merge token: <code className="text-orange">{"{{first_name}}"}</code>
             </span>
             <div className="ml-auto flex items-center gap-3">
@@ -218,7 +218,7 @@ export default function TemplateManager({ initial }: { initial: AckTemplate[] })
         </div>
       )}
 
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
         {initial.length === 0 ? (
           <p className={`p-8 ${TYPE.bodyMuted}`}>
             No templates yet. Create one to give every thank-you a consistent, on-brand starting point.
@@ -231,11 +231,11 @@ export default function TemplateManager({ initial }: { initial: AckTemplate[] })
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm text-ink-1 font-medium">{t.name}</span>
                     {t.is_default && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
                         Default
                       </span>
                     )}
-                    <span className="text-[10px] uppercase tracking-wider text-ink-3">
+                    <span className="text-xs uppercase tracking-wider text-ink-3">
                       {SUBJECT_TYPE_LABEL[t.subject_type] ?? t.subject_type} · {CHANNEL_LABEL[t.channel] ?? t.channel}
                     </span>
                   </div>
@@ -245,14 +245,14 @@ export default function TemplateManager({ initial }: { initial: AckTemplate[] })
                 <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => startEdit(t)}
-                    className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 transition-colors"
+                    className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => del(t.id)}
                     disabled={busy}
-                    className="text-[11px] font-semibold text-ink-2 hover:text-expense transition-colors disabled:opacity-50"
+                    className="text-xs font-semibold text-ink-2 hover:text-expense transition-colors disabled:opacity-50"
                   >
                     Delete
                   </button>

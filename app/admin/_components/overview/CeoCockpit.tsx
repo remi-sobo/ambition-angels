@@ -23,7 +23,7 @@ export default function CeoCockpit({ ownerName }: { ownerName?: string | null })
     <div className="space-y-6">
       <div className="flex items-center gap-2.5">
         <span
-          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-orange/15 text-orange-mid"
+          className="inline-flex items-center justify-center w-8 h-8 rounded-control bg-orange/15 text-orange-mid"
           aria-hidden
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">

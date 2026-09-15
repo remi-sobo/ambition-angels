@@ -91,7 +91,7 @@ export default async function ConnectionsSection({ embedded = false }: { embedde
               · {connections.length + candidates.length} open
             </span>
           </h2>
-          <p className="text-[11px] text-ink-3 max-w-2xl">
+          <p className="text-xs text-ink-3 max-w-2xl">
             People you owe a meeting. From email intros or added by hand, tracked until each
             one is booked.
           </p>

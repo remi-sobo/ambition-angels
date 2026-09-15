@@ -321,7 +321,7 @@ export default function TaskEditModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-card border-[1.5px] border-outline bg-ink shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg rounded-panel border-hairline bg-ink shadow-2xl max-h-[90vh] overflow-y-auto"
       >
         <form onSubmit={submit} className="p-6 space-y-4">
           <h2 className={TYPE.modalTitle}>
@@ -329,7 +329,7 @@ export default function TaskEditModal({
           </h2>
 
           {showStuckPrompt && (
-            <div className="rounded-lg border border-status-watch/30 bg-status-watch-bg px-3 py-2.5 space-y-2">
+            <div className="rounded-control border border-status-watch/30 bg-status-watch-bg px-3 py-2.5 space-y-2">
               <div className="flex items-start justify-between gap-2">
                 <div className="text-xs text-ink-1">
                   <span className="font-semibold uppercase tracking-wider text-status-watch-text">
@@ -363,13 +363,13 @@ export default function TaskEditModal({
                       }
                     }}
                     placeholder="First concrete step…"
-                    className="flex-1 bg-tile border-[1.5px] border-outline rounded-lg px-2.5 py-1.5 text-xs text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+                    className="flex-1 bg-tile border-hairline rounded-control px-2.5 py-1.5 text-xs text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
                   />
                   <button
                     type="button"
                     onClick={() => void addSubtask()}
                     disabled={promptBusy || !subtaskTitle.trim()}
-                    className="shrink-0 bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
+                    className="shrink-0 bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-control"
                   >
                     Add
                   </button>
@@ -394,7 +394,7 @@ export default function TaskEditModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+              className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
             />
           </Field>
 
@@ -404,13 +404,13 @@ export default function TaskEditModal({
               onChange={(e) => setDescription(e.target.value)}
               rows={hasClaudePrompt ? 6 : 3}
               placeholder="Notes, context, links…"
-              className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+              className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
             />
             {hasClaudePrompt && (
               <button
                 type="button"
                 onClick={copyPrompt}
-                className="mt-2 inline-flex items-center gap-1.5 bg-orange/15 border border-orange/30 text-ink-1 hover:bg-orange/25 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                className="mt-2 inline-flex items-center gap-1.5 bg-orange/15 border border-orange/30 text-ink-1 hover:bg-orange/25 text-xs font-semibold px-3 py-1.5 rounded-control transition-colors"
               >
                 {copied ? "Copied ✓" : "Copy for Claude Code"}
               </button>
@@ -423,7 +423,7 @@ export default function TaskEditModal({
                     <img
                       src={url}
                       alt="Report screenshot"
-                      className="max-h-48 rounded-lg border-[1.5px] border-outline object-contain hover:opacity-90 transition-opacity"
+                      className="max-h-48 rounded-control border-hairline object-contain hover:opacity-90 transition-opacity"
                     />
                   </a>
                 ))}
@@ -439,7 +439,7 @@ export default function TaskEditModal({
                   setCategory(e.target.value as TaskCategory);
                   setAssigneeError(null);
                 }}
-                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
+                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
               >
                 {TASK_CATEGORIES.map((c) => (
                   <option key={c} value={c}>
@@ -452,7 +452,7 @@ export default function TaskEditModal({
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
+                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
               >
                 {TASK_STATUSES.map((s) => (
                   <option key={s} value={s}>
@@ -468,7 +468,7 @@ export default function TaskEditModal({
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
+                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
               >
                 {TASK_PRIORITIES.map((p) => (
                   <option key={p} value={p}>
@@ -483,7 +483,7 @@ export default function TaskEditModal({
                 value={labels}
                 onChange={(e) => setLabels(e.target.value)}
                 placeholder="comma, separated"
-                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
               />
             </Field>
           </div>
@@ -496,7 +496,7 @@ export default function TaskEditModal({
                   setAssignee(e.target.value);
                   setAssigneeError(null);
                 }}
-                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
+                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
               >
                 <option value="">Unassigned</option>
                 {assigneeOptions.map((a) => (
@@ -512,7 +512,7 @@ export default function TaskEditModal({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
+                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
               />
             </Field>
           </div>
@@ -521,7 +521,7 @@ export default function TaskEditModal({
             <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
+              className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
             >
               <option value="">None</option>
               {projects.map((p) => (
@@ -560,7 +560,7 @@ export default function TaskEditModal({
               type="button"
               onClick={handleDelete}
               disabled={busy}
-              className="text-xs text-expense hover:text-expense border border-expense/30 hover:border-expense/30 bg-expense-bg px-3 py-2 rounded-lg disabled:opacity-50"
+              className="text-xs text-expense hover:text-expense border border-expense/30 hover:border-expense/30 bg-expense-bg px-3 py-2 rounded-control disabled:opacity-50"
             >
               {deleting ? "Deleting…" : "Delete task"}
             </button>
@@ -576,7 +576,7 @@ export default function TaskEditModal({
               <button
                 type="submit"
                 disabled={busy}
-                className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors"
+                className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-control transition-colors"
               >
                 {saving ? "Saving…" : "Save changes"}
               </button>
@@ -604,10 +604,10 @@ function StuckAction({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
+      className={`text-xs font-semibold px-3 py-1.5 rounded-control border transition-colors disabled:opacity-50 ${
         danger
           ? "border-expense/30 bg-expense-bg text-expense hover:bg-expense-bg"
-          : "border-outline bg-tile text-ink-1 hover:border-orange/60"
+          : "border-hairline bg-tile text-ink-1 hover:border-orange/60"
       }`}
     >
       {label}
@@ -626,7 +626,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">
+      <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">
         {label} {required && <span className="text-orange">*</span>}
       </div>
       {children}

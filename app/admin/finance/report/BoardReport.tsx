@@ -6,6 +6,7 @@ import { loadRevenueSchedule, loadReceivedTotal, scheduleTotals } from "@/lib/fi
 import { CashFlowChart, Donut, money, type DonutSeg } from "../_components/charts";
 import PrintButton from "./_components/PrintButton";
 import { TYPE } from "@/lib/admin/typeScale";
+import { CHART } from "@/lib/admin/chartTokens";
 
 // Board financial report — a print/PDF-ready one-pager pulling the
 // board-meeting essentials from the same canonical sources as the dashboard, so
@@ -60,10 +61,10 @@ export default async function BoardReport() {
   const fnClassified = fn.program + fn.admin + fn.fundraising;
   const programPct = fnClassified > 0 ? Math.round((fn.program / fnClassified) * 100) : null;
   const functionalSegs: DonutSeg[] = [
-    { label: "Program", value: fn.program, color: "#C0703C" },
-    { label: "Admin", value: fn.admin, color: "#2A201A" },
-    { label: "Fundraising", value: fn.fundraising, color: "#2D7857" },
-    { label: "Uncategorized", value: fn.uncategorized, color: "#B5762A" },
+    { label: "Program", value: fn.program, color: CHART.accent },
+    { label: "Admin", value: fn.admin, color: CHART.ink },
+    { label: "Fundraising", value: fn.fundraising, color: CHART.revenue },
+    { label: "Uncategorized", value: fn.uncategorized, color: CHART.warning },
   ].filter((s) => s.value > 0.0001);
 
   // ── Fundraising (from the canonical revenue schedule + actual gifts) ──
@@ -124,10 +125,10 @@ export default async function BoardReport() {
         <PrintButton />
       </div>
 
-      <div id="board-report" className="bg-white text-ink-1 rounded-card-lg border-[1.5px] border-outline p-8 space-y-7">
+      <div id="board-report" className="bg-white text-ink-1 rounded-panel-lg border-hairline p-8 space-y-7">
         {/* Title */}
-        <header className="border-b border-outline pb-4">
-          <div className="text-[11px] uppercase tracking-widest text-ink-2">{orgName} · Board Financial Report</div>
+        <header className="border-b border-hairline pb-4">
+          <div className="text-xs uppercase tracking-widest text-ink-2">{orgName} · Board Financial Report</div>
           <h1 className={`${TYPE.pageTitle} mt-1`}>Fiscal Year {cfg.year}</h1>
           <div className="text-xs text-ink-2 mt-1">As of {asOf} · {reconciledTxt}</div>
         </header>
@@ -177,7 +178,7 @@ export default async function BoardReport() {
                   <div className="h-2.5 rounded-full bg-[#F0EEE8] overflow-hidden">
                     <div className="h-full rounded-full bg-revenue" style={{ width: `${Math.min(100, goalPct ?? 0)}%` }} />
                   </div>
-                  <div className="text-[11px] text-ink-2 mt-1">
+                  <div className="text-xs text-ink-2 mt-1">
                     {goalPct}% hard · {Math.round(((raisedHard + projectedWeighted) / cfg.goal) * 100)}% with weighted pipeline
                   </div>
                 </div>
@@ -194,7 +195,7 @@ export default async function BoardReport() {
           ) : (
             <table className="w-full text-xs">
               <thead>
-                <tr className="text-ink-2 uppercase tracking-wider border-b border-outline">
+                <tr className="text-ink-2 uppercase tracking-wider border-b border-hairline">
                   <th className="text-left py-1.5">Group</th>
                   <th className="text-right py-1.5">Actual</th>
                   <th className="text-right py-1.5">Budget</th>
@@ -206,7 +207,7 @@ export default async function BoardReport() {
                   const pct = r.budget > 0 ? Math.round((r.actual / r.budget) * 100) : null;
                   return (
                     <tr key={r.group} className="border-b border-hairline">
-                      <td className="py-1.5 uppercase tracking-wide text-ink-1">{r.group}</td>
+                      <td className="py-1.5 text-ink-1">{r.group}</td>
                       <td className="py-1.5 text-right font-mono">{money(r.actual)}</td>
                       <td className="py-1.5 text-right font-mono text-ink-2">{r.budget > 0 ? money(r.budget) : "—"}</td>
                       <td className={`py-1.5 text-right font-mono ${pct !== null && pct > 100 ? "text-expense" : "text-ink-1"}`}>{pct === null ? "—" : `${pct}%`}</td>
@@ -218,7 +219,7 @@ export default async function BoardReport() {
           )}
         </section>
 
-        <footer className="border-t border-outline pt-3 text-[10px] text-ink-2">
+        <footer className="border-t border-hairline pt-3 text-xs text-ink-2">
           Generated {asOf} from imported bank transactions and recorded pledges. Runway = cash on hand ÷ trailing 3-month average expense.
           Forecast figures exclude closed-lost. Figures match the BloomOS Finance dashboard.
         </footer>
@@ -229,10 +230,10 @@ export default async function BoardReport() {
 
 function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="border border-outline rounded-card p-3">
-      <div className="text-[10px] uppercase tracking-widest text-ink-2">{label}</div>
+    <div className="border border-hairline rounded-panel p-3">
+      <div className="text-xs uppercase tracking-widest text-ink-2">{label}</div>
       <div className={`${TYPE.sectionTitle} mt-0.5 [font-variant-numeric:tabular-nums]`}>{value}</div>
-      {sub && <div className="text-[11px] text-ink-2 mt-0.5">{sub}</div>}
+      {sub && <div className="text-xs text-ink-2 mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -251,5 +252,5 @@ function Row({ label, value, muted, strong }: { label: string; value: string; mu
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="text-xs text-ink-2 py-6 text-center border border-dashed border-outline rounded-card">{children}</div>;
+  return <div className="text-xs text-ink-2 py-6 text-center border border-dashed border-hairline rounded-panel">{children}</div>;
 }

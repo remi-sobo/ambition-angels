@@ -17,7 +17,7 @@ type Segment = {
 };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 function toQuery(def: Record<string, string>): string {
   const p = new URLSearchParams();
@@ -95,7 +95,7 @@ export default function SegmentExportPanel() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+        className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
       >
         Segments & export
       </button>
@@ -103,7 +103,7 @@ export default function SegmentExportPanel() {
   }
 
   return (
-    <div className="w-full bg-tile shadow-tile border-[1.5px] border-outline rounded-card p-4 space-y-3">
+    <div className="w-full bg-tile border-hairline rounded-panel p-4 space-y-3">
       <div className="flex items-center justify-between">
         <SectionHeading>
           Segments & CSV export
@@ -144,7 +144,7 @@ export default function SegmentExportPanel() {
           <button
             onClick={() => setSegName("")}
             disabled={busy}
-            className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors disabled:opacity-50"
+            className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors disabled:opacity-50"
           >
             Save as segment
           </button>
@@ -173,7 +173,7 @@ export default function SegmentExportPanel() {
         {segments.map((s) => (
           <span
             key={s.id}
-            className="inline-flex items-center gap-1.5 text-xs bg-tile border-[1.5px] border-outline rounded-full pl-3 pr-1.5 py-1"
+            className="inline-flex items-center gap-1.5 text-xs bg-tile border-hairline rounded-full pl-3 pr-1.5 py-1"
           >
             <button
               onClick={() => exportCsv(s.definition)}

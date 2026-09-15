@@ -477,7 +477,7 @@ export default function WeekGrid({
     <div>
       {/* Toolbar: week nav, owner switcher, summary strip */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="flex items-center rounded-lg border border-outline bg-surface overflow-hidden">
+        <div className="flex items-center rounded-control border border-hairline bg-surface overflow-hidden">
           <button
             onClick={() => goToWeek(addDays(view.weekStart, -7))}
             className="px-2.5 py-1.5 text-ink-2 hover:text-ink-1 hover:bg-tile"
@@ -487,7 +487,7 @@ export default function WeekGrid({
           </button>
           <button
             onClick={() => goToWeek(view.todayISO)}
-            className="px-3 py-1.5 text-[12px] font-heading font-semibold text-ink-1 border-x border-outline hover:bg-tile"
+            className="px-3 py-1.5 text-xs font-heading font-semibold text-ink-1 border-x border-hairline hover:bg-tile"
           >
             Today
           </button>
@@ -509,7 +509,7 @@ export default function WeekGrid({
               params.set("owner", e.target.value);
               router.push(`${basePath}?${params.toString()}`);
             }}
-            className="text-[12px] font-semibold rounded-lg border border-outline bg-surface text-ink-1 px-2.5 py-1.5"
+            className="text-xs font-semibold rounded-control border border-hairline bg-surface text-ink-1 px-2.5 py-1.5"
             aria-label="Whose calendar"
           >
             {view.owners.map((o) => (
@@ -521,7 +521,7 @@ export default function WeekGrid({
         )}
 
         {!isSelf && (
-          <span className="text-[11px] font-semibold text-ink-2 bg-tile border border-outline rounded-full px-2 py-0.5">
+          <span className="text-xs font-semibold text-ink-2 bg-tile border border-hairline rounded-full px-2 py-0.5">
             read-only
           </span>
         )}
@@ -543,7 +543,7 @@ export default function WeekGrid({
         </div>
       </div>
 
-      <div className="rounded-card border-[1.5px] border-outline bg-surface overflow-hidden">
+      <div className="rounded-panel border-hairline bg-surface overflow-hidden">
         <div className="overflow-x-auto">
           <div style={{ minWidth: GUTTER_PX + 7 * MIN_COL_PX }}>
             {/* Day header */}
@@ -554,14 +554,14 @@ export default function WeekGrid({
                 return (
                   <div key={day} className="flex-1 min-w-0 px-2 py-2 text-center border-l border-hairline first:border-l-0">
                     <span
-                      className={`text-[11px] font-heading font-semibold uppercase tracking-[0.1em] ${
+                      className={`text-xs font-heading font-semibold uppercase tracking-[0.1em] ${
                         isToday ? "text-orange" : "text-ink-3"
                       }`}
                     >
                       {DAY_NAMES[i]}
                     </span>{" "}
                     <span
-                      className={`text-[13px] font-heading font-bold tabular-nums ${
+                      className={`text-sm font-heading font-bold tabular-nums ${
                         isToday
                           ? "inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange text-white"
                           : "text-ink-1"
@@ -579,7 +579,7 @@ export default function WeekGrid({
               <div className="flex border-b border-hairline">
                 <div
                   style={{ width: GUTTER_PX }}
-                  className="shrink-0 flex items-center justify-end pr-2 text-[10px] text-ink-3"
+                  className="shrink-0 flex items-center justify-end pr-2 text-xs text-ink-3"
                 >
                   all day
                 </div>
@@ -590,7 +590,7 @@ export default function WeekGrid({
                       .map((e) => (
                         <div
                           key={e.id}
-                          className="truncate rounded px-1.5 py-0.5 text-[10px] font-medium text-ink-2 bg-tile border border-hairline"
+                          className="truncate rounded px-1.5 py-0.5 text-xs font-medium text-ink-2 bg-tile border border-hairline"
                           title={e.title}
                         >
                           {e.title}
@@ -608,7 +608,7 @@ export default function WeekGrid({
                 {hourMarks.map((m) => (
                   <span
                     key={m}
-                    className="absolute right-2 -translate-y-1/2 text-[10px] text-ink-3 tabular-nums"
+                    className="absolute right-2 -translate-y-1/2 text-xs text-ink-3 tabular-nums"
                     style={{ top: (m - gridStart) * PX_PER_MIN }}
                   >
                     {m % 1440 === 0
@@ -651,13 +651,13 @@ export default function WeekGrid({
                         .map((g, i) => (
                           <div
                             key={`gap-${i}`}
-                            className="absolute left-1 right-1 rounded-md border border-dashed border-outline/70 flex items-start justify-center pointer-events-none"
+                            className="absolute left-1 right-1 rounded-control border border-dashed border-hairline/70 flex items-start justify-center pointer-events-none"
                             style={{
                               top: (g.startMin - gridStart) * PX_PER_MIN + 1,
                               height: (g.endMin - g.startMin) * PX_PER_MIN - 2,
                             }}
                           >
-                            <span className="mt-1 text-[10px] uppercase tracking-[0.08em] text-ink-3">
+                            <span className="mt-1 text-xs uppercase tracking-[0.08em] text-ink-3">
                               {formatDuration(g.endMin - g.startMin)} open
                             </span>
                           </div>
@@ -683,7 +683,7 @@ export default function WeekGrid({
                             <div
                               key={`ev-${e.id}`}
                               onPointerDown={(ev) => ev.stopPropagation()}
-                              className={`absolute rounded-md border bg-tile px-1.5 py-1 overflow-hidden shadow-tile cursor-default ${
+                              className={`absolute rounded-control border bg-tile px-1.5 py-1 overflow-hidden cursor-default ${
                                 e.isExternal ? "border-orange/40" : "border-hairline"
                               }`}
                               style={{
@@ -693,16 +693,16 @@ export default function WeekGrid({
                               }}
                               title={`${e.title}${e.location ? ` · ${e.location}` : ""}`}
                             >
-                              <div className="text-[11px] font-medium text-ink-1 leading-tight truncate">
+                              <div className="text-xs font-medium text-ink-1 leading-tight truncate">
                                 {e.title}
                               </div>
                               {height >= 34 && (
-                                <div className="text-[10px] text-ink-3 tabular-nums truncate">
+                                <div className="text-xs text-ink-3 tabular-nums truncate">
                                   {formatMinuteRange(item.startMin, item.endMin)}
                                 </div>
                               )}
                               {height >= 52 && e.location && (
-                                <div className="text-[10px] text-ink-3 truncate">{e.location}</div>
+                                <div className="text-xs text-ink-3 truncate">{e.location}</div>
                               )}
                             </div>
                           );
@@ -714,14 +714,14 @@ export default function WeekGrid({
                           <div
                             key={`blk-${b.id}`}
                             onPointerDown={(ev) => beginBlockDrag(ev, b)}
-                            className={`absolute rounded-md border bg-orange-light px-1.5 py-1 overflow-hidden shadow-tile select-none ${
+                            className={`absolute rounded-control border bg-orange-light px-1.5 py-1 overflow-hidden select-none ${
                               selectedId === b.id ? "border-orange ring-1 ring-orange/50" : "border-orange/35"
                             } ${isSelf ? "cursor-grab active:cursor-grabbing" : ""}`}
                             style={{ ...laneStyle, borderLeftWidth: 3, borderLeftColor: "#E8500A" }}
                             title={b.synced ? b.title : `${b.title} · not on Google yet`}
                           >
                             <div className="flex items-center gap-1">
-                              <span className="text-[11px] font-heading font-semibold text-ink-1 leading-tight truncate">
+                              <span className="text-xs font-heading font-semibold text-ink-1 leading-tight truncate">
                                 {b.title}
                               </span>
                               {!b.synced && (
@@ -732,7 +732,7 @@ export default function WeekGrid({
                               )}
                             </div>
                             {height >= 34 && (
-                              <div className="text-[10px] text-orange-dark/80 tabular-nums truncate">
+                              <div className="text-xs text-orange-dark/80 tabular-nums truncate">
                                 {formatMinuteRange(item.startMin, item.endMin)}
                                 {tasks.length > 0 && ` · ${done}/${tasks.length}`}
                               </div>
@@ -742,7 +742,7 @@ export default function WeekGrid({
                                 {tasks.slice(0, Math.floor((height - 44) / 16)).map((t) => (
                                   <li
                                     key={t.linkId}
-                                    className="flex items-center gap-1 text-[10px] leading-4 truncate"
+                                    className="flex items-center gap-1 text-xs leading-4 truncate"
                                   >
                                     <button
                                       onPointerDown={(ev) => ev.stopPropagation()}
@@ -755,7 +755,7 @@ export default function WeekGrid({
                                       className={`w-3 h-3 rounded-full border shrink-0 flex items-center justify-center ${
                                         t.status === "done"
                                           ? "bg-status-healthy-bg border-status-healthy/40 text-status-healthy-text"
-                                          : "border-outline hover:border-orange/70"
+                                          : "border-hairline hover:border-orange/70"
                                       }`}
                                     >
                                       {t.status === "done" && (
@@ -781,7 +781,7 @@ export default function WeekGrid({
                       {/* Drag preview for this column */}
                       {drag && drag.dayIdx === dayIdx && (
                         <div
-                          className="absolute left-0.5 right-0.5 rounded-md border-2 border-dashed border-orange bg-orange/10 pointer-events-none z-20 flex items-start px-1.5 py-0.5"
+                          className="absolute left-0.5 right-0.5 rounded-control border-2 border-dashed border-orange bg-orange/10 pointer-events-none z-20 flex items-start px-1.5 py-0.5"
                           style={{
                             top: (drag.startMin - gridStart) * PX_PER_MIN,
                             height:
@@ -790,7 +790,7 @@ export default function WeekGrid({
                                 : Math.max(drag.endMin - drag.startMin, SNAP_MIN)) * PX_PER_MIN,
                           }}
                         >
-                          <span className="text-[10px] font-semibold text-orange tabular-nums">
+                          <span className="text-xs font-semibold text-orange tabular-nums">
                             {formatMinuteRange(
                               drag.startMin,
                               drag.kind === "move" ? drag.startMin + drag.len : drag.endMin
@@ -819,11 +819,11 @@ export default function WeekGrid({
 
         {/* Footer: freshness + hint */}
         <div className="flex items-center justify-between border-t border-hairline px-4 py-2">
-          <span className={`text-[11px] ${freshness.stale ? "text-orange" : "text-ink-3"}`}>
+          <span className={`text-xs ${freshness.stale ? "text-orange" : "text-ink-3"}`}>
             {freshness.text}
           </span>
           {isSelf && (
-            <span className="hidden sm:block text-[11px] text-ink-3">
+            <span className="hidden sm:block text-xs text-ink-3">
               Drag on empty space to draw a work block · click a block to fill it
             </span>
           )}
@@ -842,7 +842,7 @@ export default function WeekGrid({
               }
             }}
             disabled={refreshing}
-            className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 disabled:opacity-50"
+            className="text-xs font-semibold text-ink-2 hover:text-ink-1 disabled:opacity-50"
           >
             {refreshing ? "Refreshing…" : "Refresh"}
           </button>

@@ -47,7 +47,7 @@ export default function DocumentActions({
   };
 
   const btn =
-    "text-[11px] font-semibold px-2 py-0.5 rounded-full border border-outline text-ink-2 hover:text-ink-1 transition-colors disabled:opacity-50 whitespace-nowrap";
+    "text-xs font-semibold px-2 py-0.5 rounded-full border border-hairline text-ink-2 hover:text-ink-1 transition-colors disabled:opacity-50 whitespace-nowrap";
 
   return (
     <span className="inline-flex items-center gap-1.5">

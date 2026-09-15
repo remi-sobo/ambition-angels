@@ -16,14 +16,14 @@ export default function EntityChip({
 }) {
   const body = (
     <>
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-3">
+      <span className="text-xs font-semibold text-ink-3">
         {entity.typeLabel}
       </span>
       <span className="truncate">{entity.label}</span>
     </>
   );
   const base =
-    "inline-flex max-w-full items-center gap-1.5 rounded-full border border-outline bg-tile px-2.5 py-1 text-xs font-medium text-ink-1";
+    "inline-flex max-w-full items-center gap-1.5 rounded-full border border-hairline bg-tile px-2.5 py-1 text-xs font-medium text-ink-1";
 
   if (!entity.url) {
     return <span className={`${base} ${className}`}>{body}</span>;

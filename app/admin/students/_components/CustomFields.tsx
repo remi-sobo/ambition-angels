@@ -9,7 +9,7 @@
 import type { CustomFieldDef } from "@/lib/admin/customFields";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export type CustomValues = Record<string, unknown>;
 
@@ -28,7 +28,7 @@ export default function CustomFields({
   if (defs.length === 0) return null;
   const set = (key: string, v: unknown) => onChange({ ...values, [key]: v });
   const cls = compact ? `${inputCls} block w-full mt-0.5 !py-1 !text-xs` : `${inputCls} w-full mt-1`;
-  const labelCls = compact ? "text-[10px] text-ink-2" : "text-xs text-ink-2";
+  const labelCls = compact ? "text-xs text-ink-2" : "text-xs text-ink-2";
 
   return (
     <>
@@ -82,10 +82,10 @@ export default function CustomFields({
                     key={o}
                     type="button"
                     onClick={() => toggle(o)}
-                    className={`px-2 py-1 rounded-full text-[11px] border ${
+                    className={`px-2 py-1 rounded-full text-xs border ${
                       arr.includes(o)
                         ? "bg-orange/15 text-orange border-orange/40"
-                        : "bg-tile text-ink-2 border-outline"
+                        : "bg-tile text-ink-2 border-hairline"
                     }`}
                   >
                     {o}

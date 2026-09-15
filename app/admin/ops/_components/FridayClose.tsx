@@ -67,7 +67,7 @@ export default function FridayClose({
     : null;
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6 space-y-4">
+    <section className="rounded-panel border-hairline bg-surface p-6 space-y-4">
       <div>
         <h2 className={TYPE.sectionHeader}>Close out</h2>
         <p className="text-sm text-ink-2 mt-1">Put the week down.</p>
@@ -80,10 +80,10 @@ export default function FridayClose({
               type="button"
               onClick={() => toggle(item.key)}
               aria-pressed={!!checked[item.key]}
-              className={`shrink-0 w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+              className={`shrink-0 w-5 h-5 rounded-control border flex items-center justify-center transition-colors ${
                 checked[item.key]
                   ? "bg-revenue-bg border-revenue/40 text-revenue"
-                  : "border-outline hover:border-orange/60"
+                  : "border-hairline hover:border-orange/60"
               }`}
             >
               {checked[item.key] && (
@@ -100,7 +100,7 @@ export default function FridayClose({
       </div>
 
       <div>
-        <label className="text-[11px] uppercase tracking-wider text-ink-2 block mb-1">
+        <label className="text-xs uppercase tracking-wider text-ink-2 block mb-1">
           Note to next week
         </label>
         <textarea
@@ -108,7 +108,7 @@ export default function FridayClose({
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
           placeholder="What next-you should know walking into Monday…"
-          className="w-full rounded-lg border-[1.5px] border-outline bg-surface p-3 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60"
+          className="w-full rounded-control border-hairline bg-surface p-3 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60"
         />
       </div>
 
@@ -116,7 +116,7 @@ export default function FridayClose({
         <button
           onClick={close}
           disabled={busy}
-          className="text-sm font-medium px-4 py-2 rounded-lg bg-orange text-white hover:bg-orange-dark disabled:opacity-50 transition-colors"
+          className="text-sm font-medium px-4 py-2 rounded-control bg-orange text-white hover:bg-orange-dark disabled:opacity-50 transition-colors"
         >
           {busy ? "Saving…" : savedAt ? "Update close-out" : "Close the week"}
         </button>

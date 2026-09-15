@@ -14,7 +14,7 @@ import { TYPE } from "@/lib/admin/typeScale";
 // page was opened cold in a different browser), we say so and point to login.
 
 const inputCls =
-  "w-full bg-tile border-[1.5px] border-outline rounded-xl px-4 py-3 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50";
+  "w-full bg-tile border-hairline rounded-panel px-4 py-3 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/50";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -91,7 +91,7 @@ export default function ResetPasswordPage() {
 
       {ready === "ok" && done && (
         <div className="mt-3 space-y-4">
-          <div className="text-sm text-revenue bg-revenue-bg border border-revenue/20 rounded-lg px-4 py-3">
+          <div className="text-sm text-revenue bg-revenue-bg border border-revenue/20 rounded-control px-4 py-3">
             Password set{email ? ` for ${email}` : ""}. You can use it to sign in from now on.
           </div>
           <button
@@ -144,7 +144,7 @@ export default function ResetPasswordPage() {
                 required
               />
             </label>
-            <label className="flex items-center gap-2 text-[11px] text-ink-2 select-none">
+            <label className="flex items-center gap-2 text-xs text-ink-2 select-none">
               <input
                 type="checkbox"
                 checked={show}

@@ -12,11 +12,11 @@ export type HsEngagement = {
 };
 
 const TYPE_STYLES: Record<string, string> = {
-  email: "bg-blue-500/15 text-blue-700 border-blue-500/30",
+  email: "bg-tile text-ink-2 border-hairline",
   meeting: "bg-revenue-bg text-revenue border-revenue/30",
-  note: "bg-gray-500/15 text-ink-2 border-gray-500/30",
-  task: "bg-[#F4E8D0] text-[#A56A1B] border-[#D9BE86]",
-  call: "bg-purple-500/15 text-purple-700 border-purple-500/30",
+  note: "bg-ink-3/15 text-ink-2 border-hairline/30",
+  task: "bg-status-watch-bg text-status-watch-text border-status-watch/40",
+  call: "bg-tile text-ink-2 border-hairline",
 };
 
 const PREVIEW_MAX = 200;
@@ -51,10 +51,10 @@ function fmtAbsolute(iso: string | null): string {
 
 function TypeBadge({ type }: { type: string | null }) {
   const cls =
-    TYPE_STYLES[type ?? ""] ?? "bg-tile text-ink-2 border-outline";
+    TYPE_STYLES[type ?? ""] ?? "bg-tile text-ink-2 border-hairline";
   return (
     <span
-      className={`inline-block px-2 py-0.5 rounded border text-[10px] uppercase tracking-wider font-semibold ${cls}`}
+      className={`inline-block px-2 py-0.5 rounded border text-xs uppercase tracking-wider font-semibold ${cls}`}
     >
       {type ?? "engagement"}
     </span>
@@ -68,7 +68,7 @@ function EngagementRow({ e }: { e: HsEngagement }) {
   const visible = !truncated || expanded ? preview : preview.slice(0, PREVIEW_MAX);
 
   return (
-    <li className="relative pl-6 pb-5 border-l border-outline last:border-l-transparent last:pb-0">
+    <li className="relative pl-6 pb-5 border-l border-hairline last:border-l-transparent last:pb-0">
       <span className="absolute left-[-5px] top-1.5 h-2.5 w-2.5 rounded-full bg-orange/60 ring-2 ring-ink" />
       <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1">
         <TypeBadge type={e.engagement_type} />
@@ -107,7 +107,7 @@ export default function EngagementTimeline({
   engagements: HsEngagement[];
 }) {
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <h2 className={`${TYPE.sectionHeader} mb-4`}>
         Recent Engagement{" "}
         <span className="text-ink-3">

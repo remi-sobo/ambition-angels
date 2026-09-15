@@ -31,7 +31,7 @@ export default function NarrativeHero({ narrative }: { narrative: Narrative }) {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-6 sm:p-7 mb-6">
+    <div className="relative overflow-hidden rounded-panel-lg border-hairline bg-surface p-6 sm:p-7 mb-6">
       {/* subtle brand dot texture, top-right */}
       <div
         aria-hidden
@@ -58,7 +58,7 @@ export default function NarrativeHero({ narrative }: { narrative: Narrative }) {
               Morning Brief
             </span>
           )}
-          <div className="flex items-center gap-3 text-[11px] text-ink-3">
+          <div className="flex items-center gap-3 text-xs text-ink-3">
             {narrative.generatedAt && <span>as of {timeLabel(narrative.generatedAt)}</span>}
             <button
               onClick={regenerate}
@@ -78,8 +78,8 @@ export default function NarrativeHero({ narrative }: { narrative: Narrative }) {
         </p>
 
         {narrative.focus && (
-          <div className="mt-5 flex items-start gap-3 rounded-card border-[1.5px] border-orange/25 bg-orange-light/60 px-4 py-3">
-            <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-orange-dark whitespace-nowrap mt-0.5">
+          <div className="mt-5 flex items-start gap-3 rounded-panel border-orange/25 bg-orange-light/60 px-4 py-3">
+            <span className="text-xs font-heading font-bold uppercase tracking-wider text-orange-dark whitespace-nowrap mt-0.5">
               Do one thing
             </span>
             <span className="text-sm text-ink-1 font-medium flex-1 min-w-0">{narrative.focus}</span>

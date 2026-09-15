@@ -25,7 +25,7 @@ export default function CompanyCard({
   rawCompanyName: string | null;
 }) {
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <h2 className={`${TYPE.sectionHeader} mb-4`}>
         Associated Company
       </h2>
@@ -90,7 +90,7 @@ function Field({
 }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-ink-2">
+      <div className="text-xs uppercase tracking-wider text-ink-2">
         {label}
       </div>
       <div className="mt-0.5">{children}</div>

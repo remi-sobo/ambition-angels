@@ -10,7 +10,7 @@ import { TYPE } from "@/lib/admin/typeScale";
 export default function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30">
+      <div className="bg-tile border-b border-hairline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30">
         <span className={`${TYPE.cardTitle} sm:text-base`}>Website Analytics</span>
       </div>
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8">

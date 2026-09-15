@@ -1,7 +1,8 @@
-import Link from "next/link";
 import PlanSection from "@/app/admin/ops/monday/PlanSection";
 import CloseSection from "@/app/admin/ops/friday/CloseSection";
 import { resolveRitual, ritualForToday } from "@/lib/admin/ops/planClose";
+import SegmentedControl, { type Segment } from "@/app/admin/_components/ui/SegmentedControl";
+import Badge from "@/app/admin/_components/ui/Badge";
 
 // Spec Work W1 — Plan & Close, the merged ritual screen (recon §G: a
 // recomposition of /admin/ops/monday + /admin/ops/friday). One screen, both
@@ -16,9 +17,21 @@ import { resolveRitual, ritualForToday } from "@/lib/admin/ops/planClose";
 // cutover activates the map rows and this seat links itself.
 export const dynamic = "force-dynamic";
 
-const PILLS: Array<{ ritual: "plan" | "close"; label: string; eyebrow: string }> = [
-  { ritual: "plan", label: "Plan", eyebrow: "Monday · Aim" },
-  { ritual: "close", label: "Close", eyebrow: "Friday · Account" },
+/**
+ * Visual System V3 §6 — Plan & Close had too many competing navigation
+ * patterns: the shell's tab row, then a pair of capsule links, then five more
+ * capsules for the workflow steps. Three rows of near-identical pills, none of
+ * which said which level it belonged to.
+ *
+ * V3 gives the screen three DISTINCT levels, and this file owns level 2:
+ *
+ *   Level 1  Work navigation tabs        → V2TabZone (shell, §5)
+ *   Level 2  Plan / Close                → the segmented control below
+ *   Level 3  Workflow progress           → RhythmWizard's stepper (§6)
+ */
+const SEGMENTS: Segment<"plan" | "close">[] = [
+  { value: "plan", label: "Plan", hint: "Monday · Aim" },
+  { value: "close", label: "Close", hint: "Friday · Account" },
 ];
 
 export default async function PlanClosePage({
@@ -31,40 +44,27 @@ export default async function PlanClosePage({
 
   return (
     <div>
-      {/* ── The ritual switch ──────────────────────────────────────────── */}
-      <nav
-        aria-label="Ritual"
-        className="max-w-6xl px-4 lg:px-8 pt-6 lg:pt-8 flex items-center gap-2"
-      >
-        {PILLS.map((p) => {
-          const active = p.ritual === ritual;
-          return (
-            <Link
-              key={p.ritual}
-              href={`/admin/work/plan-close?ritual=${p.ritual}`}
-              className={[
-                "inline-flex items-baseline gap-2 rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors",
-                active
-                  ? "bg-orange-light text-orange-dark border-orange/40"
-                  : "bg-surface text-ink-2 border-outline hover:bg-[#EFE6D4]",
-              ].join(" ")}
-            >
-              <span>{p.label}</span>
-              <span className={active ? "text-orange-dark/70 text-[10px] uppercase tracking-wider" : "text-ink-3 text-[10px] uppercase tracking-wider"}>
-                {p.eyebrow}
-              </span>
-              {p.ritual === lit && (
-                <span className="text-[10px] uppercase tracking-wider font-semibold text-orange-dark border border-orange/40 rounded-full px-1.5 py-px">
-                  Now
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+      {/* ── Level 2: the ritual switch ─────────────────────────────────── */}
+      <div className="max-w-workspace px-4 lg:px-8 pt-6 lg:pt-8">
+        <SegmentedControl
+          label="Ritual"
+          value={ritual}
+          hrefFor={(r) => `/admin/work/plan-close?ritual=${r}`}
+          segments={SEGMENTS.map((seg) =>
+            seg.value === lit
+              ? {
+                  ...seg,
+                  // §13: "now" is a word, not a color — it survives greyscale
+                  // and it is read out by assistive tech.
+                  marker: <Badge tone="accent">Now</Badge>,
+                }
+              : seg,
+          )}
+        />
+      </div>
 
-      {/* ── The lit ritual, verbatim ───────────────────────────────────── */}
-      <div className="-mt-2">{ritual === "plan" ? <PlanSection /> : <CloseSection />}</div>
+      {/* ── Level 3 + the ritual body, verbatim ────────────────────────── */}
+      <div>{ritual === "plan" ? <PlanSection /> : <CloseSection />}</div>
     </div>
   );
 }

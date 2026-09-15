@@ -18,7 +18,7 @@ const TYPES = [
 export const SC_TYPE_LABEL: Record<string, string> = Object.fromEntries(TYPES);
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 text-xs placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-xs placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export function AddSoftCredit({ giftId }: { giftId: string }) {
   const router = useRouter();
@@ -56,7 +56,7 @@ export function AddSoftCredit({ giftId }: { giftId: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-[11px] font-semibold text-ink-3 hover:text-orange transition-colors"
+        className="text-xs font-semibold text-ink-3 hover:text-orange transition-colors"
       >
         + soft credit
       </button>
@@ -70,13 +70,13 @@ export function AddSoftCredit({ giftId }: { giftId: string }) {
       />
       <select value={type} onChange={(e) => setType(e.target.value)} className={inputCls}>
         {TYPES.map(([v, l]) => (
-          <option key={v} value={v} className="bg-tile shadow-tile">{l}</option>
+          <option key={v} value={v} className="bg-tile">{l}</option>
         ))}
       </select>
-      <button type="submit" disabled={busy} className="text-[11px] font-semibold text-orange hover:text-orange-dark transition-colors disabled:opacity-50">
+      <button type="submit" disabled={busy} className="text-xs font-semibold text-orange hover:text-orange-dark transition-colors disabled:opacity-50">
         {busy ? "…" : "Add"}
       </button>
-      <button type="button" onClick={() => setOpen(false)} className="text-[11px] text-ink-3 hover:text-ink-1 transition-colors">
+      <button type="button" onClick={() => setOpen(false)} className="text-xs text-ink-3 hover:text-ink-1 transition-colors">
         ✕
       </button>
     </form>
@@ -96,7 +96,7 @@ export function SoftCreditChip({
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   return (
-    <span className="group/sc inline-flex items-center gap-1 text-[11px] bg-tile border-[1.5px] border-outline rounded-full pl-2.5 pr-1.5 py-0.5 text-ink-2">
+    <span className="group/sc inline-flex items-center gap-1 text-xs bg-tile border-hairline rounded-full pl-2.5 pr-1.5 py-0.5 text-ink-2">
       {label}
       <button
         disabled={busy}

@@ -1,10 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { TodayObligation } from "@/lib/admin/today";
 import { SHOW_CAP } from "@/lib/admin/todayRank";
+import ListRow, { ListRows } from "../../_components/ui/ListRow";
+import Button from "../../_components/ui/Button";
+import Badge from "../../_components/ui/Badge";
+import Alert from "../../_components/ui/Alert";
+import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * Spec Home, stage H1 — the Needs-you feed. At most SHOW_CAP rows, ranked
@@ -52,79 +56,89 @@ export default function NeedsYou({
   const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
 
   if (obligations.length === 0) {
-    return <p className="text-[13px] text-ink-2">Nothing needs you right now. Enjoy it.</p>;
+    return <p className={TYPE.bodyMuted}>Nothing needs you right now. Enjoy it.</p>;
   }
 
   return (
     <div>
-      {error && <p className="mb-2 text-[12px] text-red-700">{error}</p>}
-      <ul className="divide-y divide-outline/60">
+      {error && (
+        <Alert tone="danger" className="mb-3">
+          {error}
+        </Alert>
+      )}
+      <ListRows>
         {visible.map((row) => {
           const overdue = Boolean(row.due_date && row.due_date < today);
+          const dueToday = row.due_date === today;
           return (
-            <li key={row.id} className="flex items-start gap-3 py-2.5">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={row.href}
-                    className="truncate text-[13px] font-heading font-semibold text-ink-1 hover:text-orange"
-                  >
-                    {row.title}
-                  </Link>
-                  {row.due_date && (
-                    <span
-                      className={`shrink-0 rounded-full px-1.5 py-px text-[10px] font-heading font-semibold uppercase tracking-wide ${
-                        overdue
-                          ? "bg-red-50 text-red-700"
-                          : row.due_date === today
-                            ? "bg-orange-light text-orange-dark"
-                            : "bg-gray-light text-ink-2"
-                      }`}
+            /**
+             * Visual System V3 §8 — "For overdue tasks, don't make the entire
+             * line visually red. Prioritize task title, then status/due
+             * information, then contextual explanation. Use red as a signal,
+             * not as dominant typography."
+             *
+             * So the title stays ink-1 at the body weight whatever the row's
+             * state; the ONLY red on an overdue row is the small badge, and
+             * the why-line stays quiet underneath. Previously the due chip was
+             * a 10px uppercase pill in raw Tailwind red-50/red-700 — off the
+             * house palette entirely — and it competed with the title.
+             */
+            <ListRow
+              key={row.id}
+              title={row.title}
+              href={row.href}
+              meta={
+                row.due_date ? (
+                  <Badge tone={overdue ? "danger" : dueToday ? "accent" : "neutral"}>
+                    {overdue ? `Overdue · ${row.due_date}` : dueToday ? "Today" : row.due_date}
+                  </Badge>
+                ) : null
+              }
+              context={
+                <span className={row.whyRecorded ? "" : "italic text-ink-3"}>{row.why}</span>
+              }
+              actions={
+                <>
+                  {row.snoozable && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={busyId === row.id}
+                      onClick={() =>
+                        act(row, "snooze", overdue || dueToday ? tomorrow : nextWeek)
+                      }
+                      title={`Snooze until ${overdue || dueToday ? tomorrow : nextWeek}`}
                     >
-                      {overdue ? `overdue · ${row.due_date}` : row.due_date === today ? "today" : row.due_date}
-                    </span>
+                      Snooze
+                    </Button>
                   )}
-                </div>
-                <p className={`mt-0.5 text-[12px] ${row.whyRecorded ? "text-ink-2" : "text-ink-3 italic"}`}>
-                  {row.why}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
-                {row.snoozable && (
-                  <button
-                    type="button"
-                    disabled={busyId === row.id}
-                    onClick={() => act(row, "snooze", overdue || row.due_date === today ? tomorrow : nextWeek)}
-                    title={`Snooze until ${overdue || row.due_date === today ? tomorrow : nextWeek}`}
-                    className="rounded-lg border border-outline px-2 py-1 text-[11px] text-ink-2 transition-colors hover:bg-gray-light disabled:opacity-50"
-                  >
-                    Snooze
-                  </button>
-                )}
-                {row.resolvable && (
-                  <button
-                    type="button"
-                    disabled={busyId === row.id}
-                    onClick={() => act(row, "resolve")}
-                    title="Mark done"
-                    className="rounded-lg border border-outline px-2 py-1 text-[11px] font-medium text-revenue transition-colors hover:bg-revenue-bg disabled:opacity-50"
-                  >
-                    {busyId === row.id ? "…" : "Done"}
-                  </button>
-                )}
-              </div>
-            </li>
+                  {row.resolvable && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={busyId === row.id}
+                      onClick={() => act(row, "resolve")}
+                      title="Mark done"
+                      className="!text-revenue hover:!bg-revenue-bg"
+                    >
+                      {busyId === row.id ? "…" : "Done"}
+                    </Button>
+                  )}
+                </>
+              }
+            />
           );
         })}
-      </ul>
+      </ListRows>
       {hidden > 0 && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => setShowAll((v) => !v)}
-          className="mt-2 text-[12px] font-medium text-orange hover:text-orange-dark"
+          className="mt-3 !px-0"
         >
           {showAll ? `Show top ${SHOW_CAP}` : `Show all ${obligations.length}`}
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -27,7 +27,7 @@ export type FunderRow = {
 
 const STAGES: { key: string; label: string; cls: string }[] = [
   { key: "shortlist", label: "Shortlist", cls: "text-ink-2" },
-  { key: "qualified", label: "Qualified", cls: "text-blue-400" },
+  { key: "qualified", label: "Qualified", cls: "text-ink-2" },
   { key: "researched", label: "Researched", cls: "text-orange" },
   { key: "pursuing", label: "Pursuing", cls: "text-revenue" },
   { key: "parked", label: "Parked", cls: "text-ink-3" },
@@ -59,7 +59,7 @@ export default function StrategyBoard({ angleId, funders }: { angleId: string; f
           if (items.length === 0) return null;
           return (
             <section key={s.key}>
-              <h2 className="text-[11px] uppercase tracking-wider font-semibold mb-2 flex items-center gap-2">
+              <h2 className="text-xs uppercase tracking-wider font-semibold mb-2 flex items-center gap-2">
                 <span className={s.cls}>{s.label}</span>
                 <span className="text-ink-3">{items.length}</span>
               </h2>
@@ -132,17 +132,17 @@ function AddFunder({ angleId }: { angleId: string }) {
   };
 
   return (
-    <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-4">
+    <div className="bg-tile border-hairline rounded-panel-lg p-4">
       <div className="relative">
         <input
           value={q}
           onChange={(e) => search(e.target.value)}
           disabled={busy}
           placeholder="Add a funder: search by name or organization…"
-          className="w-full text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50 disabled:opacity-60"
+          className="w-full text-sm bg-cream border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50 disabled:opacity-60"
         />
         {(results.length > 0 || q.trim().length >= 2) && (
-          <div className="absolute z-20 left-0 right-0 mt-1 bg-tile border-[1.5px] border-outline rounded-lg shadow-lg overflow-hidden">
+          <div className="absolute z-20 left-0 right-0 mt-1 bg-tile border-hairline rounded-control shadow-lg overflow-hidden">
             {results.map((res) => (
               <button
                 key={res.kind === "prospect" ? `p-${res.hubspotId}` : `c-${res.id}`}
@@ -150,12 +150,12 @@ function AddFunder({ angleId }: { angleId: string }) {
                 onClick={() =>
                   add(res.kind === "prospect" ? { hubspot_id: res.hubspotId! } : { constituent_id: res.id! })
                 }
-                className="w-full text-left px-3 py-2 text-sm hover:bg-[#EFE6D4] flex items-center justify-between gap-2"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-tile flex items-center justify-between gap-2"
               >
                 <span className="text-ink-1 font-medium truncate">
                   {res.name}
                   {res.kind === "prospect" && (
-                    <span className="ml-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">
+                    <span className="ml-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
                       prospect · promote
                     </span>
                   )}
@@ -166,14 +166,14 @@ function AddFunder({ angleId }: { angleId: string }) {
             <button
               type="button"
               onClick={() => add({ constituent_name: q.trim() })}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-[#EFE6D4] text-orange font-semibold border-t border-outline"
+              className="w-full text-left px-3 py-2 text-sm hover:bg-tile text-orange font-semibold border-t border-hairline"
             >
               + Add “{q.trim()}” as a new funder
             </button>
           </div>
         )}
       </div>
-      <p className="text-[11px] text-ink-3 mt-1.5">
+      <p className="text-xs text-ink-3 mt-1.5">
         Pick an existing constituent when you can. It avoids duplicates.
       </p>
     </div>
@@ -262,13 +262,13 @@ function FunderCard({ funder }: { funder: FunderRow }) {
     decision === "pursue"
       ? "bg-revenue/15 text-revenue"
       : decision === "park"
-      ? "bg-[#F4E8D0] text-[#A56A1B]"
+      ? "bg-status-watch-bg text-status-watch-text"
       : decision === "pass"
       ? "bg-expense-bg text-expense"
       : "";
 
   return (
-    <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-4 flex flex-col gap-2.5">
+    <div className="bg-tile border-hairline rounded-panel-lg p-4 flex flex-col gap-2.5">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           {funder.constituentId ? (
@@ -285,7 +285,7 @@ function FunderCard({ funder }: { funder: FunderRow }) {
           {funder.prospectId && (
             <Link
               href={`/admin/fundraising/prospects/${funder.prospectId}`}
-              className="text-[10px] font-semibold text-orange/80 hover:text-orange uppercase tracking-wide"
+              className="text-xs font-semibold text-orange/80 hover:text-orange"
             >
               On the bench ↗
             </Link>
@@ -293,7 +293,7 @@ function FunderCard({ funder }: { funder: FunderRow }) {
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {decision && (
-            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full capitalize ${decisionCls}`}>
+            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full capitalize ${decisionCls}`}>
               {decision}
             </span>
           )}
@@ -310,13 +310,13 @@ function FunderCard({ funder }: { funder: FunderRow }) {
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <label className="text-[11px] text-ink-3">
+        <label className="text-xs text-ink-3">
           Stage{" "}
           <select
             value={funder.stage}
             disabled={busy}
             onChange={(e) => patch({ stage: e.target.value }, true)}
-            className="ml-1 text-xs bg-cream border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 focus:outline-none focus:border-orange/50"
+            className="ml-1 text-xs bg-cream border-hairline rounded-control px-2 py-1 text-ink-1 focus:outline-none focus:border-orange/50"
           >
             {STAGES.map((s) => (
               <option key={s.key} value={s.key}>
@@ -325,7 +325,7 @@ function FunderCard({ funder }: { funder: FunderRow }) {
             ))}
           </select>
         </label>
-        <label className="text-[11px] text-ink-3">
+        <label className="text-xs text-ink-3">
           Decision{" "}
           <select
             value={decision}
@@ -335,7 +335,7 @@ function FunderCard({ funder }: { funder: FunderRow }) {
               setDecision(v);
               void patch({ decision: v === "" ? null : v });
             }}
-            className="ml-1 text-xs bg-cream border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 focus:outline-none focus:border-orange/50"
+            className="ml-1 text-xs bg-cream border-hairline rounded-control px-2 py-1 text-ink-1 focus:outline-none focus:border-orange/50"
           >
             <option value="">—</option>
             <option value="pursue">Pursue</option>
@@ -346,7 +346,7 @@ function FunderCard({ funder }: { funder: FunderRow }) {
       </div>
 
       {(researchEligible || funder.opportunityId || canPursue) && (
-        <div className="flex items-center gap-3 flex-wrap text-[11px]">
+        <div className="flex items-center gap-3 flex-wrap text-xs">
           {researchEligible &&
             (funder.hubspotId ? (
               <Link
@@ -386,7 +386,7 @@ function FunderCard({ funder }: { funder: FunderRow }) {
         }}
         rows={2}
         placeholder="Triage notes: reachable? warm intro? does the ask fit?"
-        className="w-full text-xs bg-cream border-[1.5px] border-outline rounded-lg px-2.5 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50 resize-y"
+        className="w-full text-xs bg-cream border-hairline rounded-control px-2.5 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50 resize-y"
       />
     </div>
   );

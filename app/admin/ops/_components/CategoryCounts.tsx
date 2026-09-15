@@ -41,12 +41,12 @@ export default function CategoryCounts({
   const expandedTasks = expanded ? byCategory.get(expanded) ?? [] : [];
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <header className="flex items-baseline justify-between mb-4">
         <h2 className={TYPE.sectionHeader}>
           By Category
         </h2>
-        <span className="text-[10px] uppercase tracking-wider text-ink-3">
+        <span className="text-xs uppercase tracking-wider text-ink-3">
           Click a category to see its tasks
         </span>
       </header>
@@ -60,21 +60,21 @@ export default function CategoryCounts({
               type="button"
               onClick={() => setExpanded(isOpen ? null : cat)}
               aria-expanded={isOpen}
-              className={`block rounded-lg border-[1.5px] shadow-panel px-3 py-3 text-center transition-colors ${
+              className={`block rounded-control px-3 py-3 text-center transition-colors ${
                 isOpen
-                  ? "border-orange/60 bg-[#EFE6D4]"
-                  : "border-outline bg-surface hover:border-orange/40 hover:bg-[#EFE6D4]"
+                  ? "border-orange/60 bg-tile"
+                  : "border-hairline bg-surface hover:border-orange/40 hover:bg-tile"
               }`}
             >
               <div
-                className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(cat)} mb-2`}
+                className={`inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${categoryBadgeClass(cat)} mb-2`}
               >
                 {categoryLabel(cat)}
               </div>
               <div className="font-display font-black text-ink-1 text-2xl leading-none">
                 {byCategory.get(cat)?.length ?? 0}
               </div>
-              <div className="text-[10px] text-ink-2 mt-1 flex items-center justify-center gap-1">
+              <div className="text-xs text-ink-2 mt-1 flex items-center justify-center gap-1">
                 open
                 <svg
                   viewBox="0 0 16 16"
@@ -93,12 +93,12 @@ export default function CategoryCounts({
       </div>
 
       {expanded && (
-        <div className="mt-4 pt-4 border-t border-outline">
+        <div className="mt-4 pt-4 border-t border-hairline">
           <div className="flex items-baseline gap-2 mb-2">
             <h3 className="text-sm font-semibold text-ink-1">
               {categoryLabel(expanded)}
             </h3>
-            <span className="text-[10px] uppercase tracking-wider text-ink-3">
+            <span className="text-xs uppercase tracking-wider text-ink-3">
               {expandedTasks.length} open
             </span>
           </div>

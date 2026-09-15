@@ -65,18 +65,18 @@ export function DailyControls({
         return (
           <div
             key={day}
-            className="bg-surface shadow-panel border-[1.5px] border-outline rounded-xl px-4 py-2.5"
+            className="bg-surface border-hairline rounded-panel px-4 py-2.5"
           >
             <div className="flex flex-wrap items-center gap-3">
-              <p className="font-semibold text-[13px] text-ink-1 w-28 tabular-nums">
+              <p className="font-semibold text-sm text-ink-1 w-28 tabular-nums">
                 {WEEKDAY[date.getUTCDay()]} {day.slice(5)}
-                {day === today && <span className="text-[10px] text-ink-2 block">today</span>}
+                {day === today && <span className="text-xs text-ink-2 block">today</span>}
               </p>
               <select
                 value={soc}
                 disabled={busy === day}
                 onChange={(e) => save(day, e.target.value || null)}
-                className="flex-1 min-w-56 border border-outline rounded-lg px-2.5 py-1.5 text-[13px] bg-surface"
+                className="flex-1 min-w-56 border border-hairline rounded-control px-2.5 py-1.5 text-sm bg-surface"
               >
                 <option value="">(nothing scheduled)</option>
                 {candidates.map((c) => (
@@ -87,7 +87,7 @@ export function DailyControls({
               </select>
               {picked && (
                 <span
-                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                  className={`text-xs font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                     picked.job_zone <= 3 ? "bg-revenue-bg text-revenue" : "bg-tile text-ink-2"
                   }`}
                 >
@@ -96,7 +96,7 @@ export function DailyControls({
               )}
             </div>
             {notices[day] && (
-              <p className="text-[12px] text-orange-dark bg-orange-light rounded-lg px-3 py-2 mt-2">
+              <p className="text-xs text-orange-dark bg-orange-light rounded-control px-3 py-2 mt-2">
                 {notices[day]}
               </p>
             )}

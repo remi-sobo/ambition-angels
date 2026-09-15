@@ -32,7 +32,7 @@ export function AdvanceStage({ partnerId, next, label }: {
         }
       }}
       disabled={busy}
-      className="ml-auto text-[11px] font-semibold px-3 py-1 rounded-full bg-orange/15 text-orange hover:bg-orange/25 transition-colors disabled:opacity-50 whitespace-nowrap"
+      className="ml-auto text-xs font-semibold px-3 py-1 rounded-full bg-orange/15 text-orange hover:bg-orange/25 transition-colors disabled:opacity-50 whitespace-nowrap"
     >
       {busy ? "…" : `${label} →`}
     </button>

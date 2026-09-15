@@ -62,7 +62,7 @@ type SavedView = {
 };
 
 const btn =
-  "text-xs font-semibold px-3 py-1.5 rounded-full border-[1.5px] border-outline bg-tile text-ink-2 hover:text-ink-1 hover:bg-[#EFE6D4] transition-colors disabled:opacity-50";
+  "text-xs font-semibold px-3 py-1.5 rounded-full border-hairline bg-tile text-ink-2 hover:text-ink-1 hover:bg-tile transition-colors disabled:opacity-50";
 
 function csvEscape(v: string | number | null): string {
   const s = v == null ? "" : String(v);
@@ -264,9 +264,9 @@ export default function DataTable<Row>({
   }, [pickerOpen, viewsOpen]);
 
   return (
-    <div className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+    <div className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
       {/* Toolbar */}
-      <div ref={toolbarRef} className="px-4 py-3 border-b border-outline flex flex-wrap items-center gap-2">
+      <div ref={toolbarRef} className="px-4 py-3 border-b border-hairline flex flex-wrap items-center gap-2">
         <input
           value={search}
           onChange={(e) => {
@@ -274,7 +274,7 @@ export default function DataTable<Row>({
             setPage(0);
           }}
           placeholder={searchPlaceholder}
-          className={`bg-cream/5 border-[1.5px] border-outline rounded-lg px-3 py-1.5 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 min-w-[180px] flex-1 max-w-xs`}
+          className={`bg-cream/5 border-hairline rounded-control px-3 py-1.5 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 min-w-[180px] flex-1 max-w-xs`}
         />
 
         {/* Column picker */}
@@ -283,9 +283,9 @@ export default function DataTable<Row>({
             Columns
           </button>
           {pickerOpen && (
-            <div className="absolute right-0 z-20 mt-1 w-52 bg-tile border-[1.5px] border-outline rounded-card shadow-lg p-2 max-h-72 overflow-auto">
+            <div className="absolute right-0 z-20 mt-1 w-52 bg-tile border-hairline rounded-panel shadow-lg p-2 max-h-72 overflow-auto">
               {columns.filter((c) => !c.alwaysVisible).map((c) => (
-                <label key={c.key} className="flex items-center gap-2 px-2 py-1.5 text-sm text-ink-1 hover:bg-[#EFE6D4] rounded cursor-pointer">
+                <label key={c.key} className="flex items-center gap-2 px-2 py-1.5 text-sm text-ink-1 hover:bg-tile rounded cursor-pointer">
                   <input type="checkbox" checked={!hidden.has(c.key)} onChange={() => toggleCol(c.key)} className="accent-orange" />
                   {c.header}
                 </label>
@@ -301,9 +301,9 @@ export default function DataTable<Row>({
               Views{views.length ? ` (${views.length})` : ""}
             </button>
             {viewsOpen && (
-              <div className="absolute right-0 z-20 mt-1 w-60 bg-tile border-[1.5px] border-outline rounded-card shadow-lg p-2">
+              <div className="absolute right-0 z-20 mt-1 w-60 bg-tile border-hairline rounded-panel shadow-lg p-2">
                 {savingViewName === null ? (
-                  <button onClick={() => setSavingViewName("")} className="w-full text-left px-2 py-1.5 text-sm font-semibold text-orange hover:bg-[#EFE6D4] rounded">
+                  <button onClick={() => setSavingViewName("")} className="w-full text-left px-2 py-1.5 text-sm font-semibold text-orange hover:bg-tile rounded">
                     + Save current view
                   </button>
                 ) : (
@@ -314,7 +314,7 @@ export default function DataTable<Row>({
                       onChange={(e) => setSavingViewName(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") saveView(); if (e.key === "Escape") setSavingViewName(null); }}
                       placeholder="Save this view as…"
-                      className="flex-1 min-w-0 bg-cream border-[1.5px] border-outline rounded px-2 py-1 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+                      className="flex-1 min-w-0 bg-cream border-hairline rounded px-2 py-1 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
                     />
                     <button onClick={saveView} disabled={!savingViewName.trim()} className="text-xs font-semibold text-orange hover:text-orange-dark px-1 disabled:opacity-50">
                       Save
@@ -325,7 +325,7 @@ export default function DataTable<Row>({
                   <p className="px-2 py-1.5 text-xs text-ink-3">No saved views yet.</p>
                 ) : (
                   views.map((v) => (
-                    <div key={v.name} className="flex items-center gap-1 px-2 py-1 hover:bg-[#EFE6D4] rounded">
+                    <div key={v.name} className="flex items-center gap-1 px-2 py-1 hover:bg-tile rounded">
                       <button onClick={() => applyView(v)} className="flex-1 text-left text-sm text-ink-1 truncate">{v.name}</button>
                       <button onClick={() => deleteView(v.name)} title="Delete view" className="w-5 h-5 text-ink-3 hover:text-expense leading-none">×</button>
                     </div>
@@ -370,7 +370,7 @@ export default function DataTable<Row>({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-outline">
+              <tr className="border-b border-hairline">
                 {bulkActions && bulkActions.length > 0 && (
                   <th className="px-4 py-3 w-10">
                     <input type="checkbox" checked={allOnPageSelected} onChange={toggleAllOnPage} className="accent-orange" aria-label="Select all on page" />
@@ -399,7 +399,7 @@ export default function DataTable<Row>({
               {pageRows.map((row) => {
                 const id = getRowId(row);
                 return (
-                  <tr key={id} className="border-b border-hairline hover:bg-[#EFE6D4] transition-colors">
+                  <tr key={id} className="border-b border-hairline hover:bg-tile transition-colors">
                     {bulkActions && bulkActions.length > 0 && (
                       <td className="px-4 py-3.5">
                         <input type="checkbox" checked={selected.has(id)} onChange={() => toggleRow(id)} className="accent-orange" aria-label="Select row" />
@@ -420,13 +420,13 @@ export default function DataTable<Row>({
 
       {/* Pagination */}
       {filtered.length > 0 && (
-        <div className="px-4 py-3 border-t border-outline flex flex-wrap items-center gap-3 text-xs text-ink-2">
+        <div className="px-4 py-3 border-t border-hairline flex flex-wrap items-center gap-3 text-xs text-ink-2">
           <label className="flex items-center gap-1.5">
             Rows
             <select
               value={pageSize}
               onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0); }}
-              className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 focus:outline-none focus:border-orange/40"
+              className="bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 focus:outline-none focus:border-orange/40"
             >
               {pageSizeOptions.map((n) => <option key={n} value={n}>{n}</option>)}
             </select>

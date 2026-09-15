@@ -28,7 +28,7 @@ function fmtMoney(n: number): string {
 
 function confColor(c: number): string {
   if (c >= 0.8) return "bg-revenue-bg text-revenue border-revenue/30";
-  if (c >= 0.5) return "bg-[#F4E8D0] text-[#A56A1B] border-[#D9BE86]";
+  if (c >= 0.5) return "bg-status-watch-bg text-status-watch-text border-status-watch/40";
   return "bg-expense-bg text-expense border-expense/30";
 }
 
@@ -113,10 +113,10 @@ export default function AiCategorize({ uncategorizedCount }: { uncategorizedCoun
       {open && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 overflow-y-auto" onClick={() => busy === "idle" && setOpen(false)}>
           <div
-            className="mt-10 w-full max-w-3xl rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel"
+            className="mt-10 w-full max-w-3xl rounded-panel-lg border-hairline bg-surface"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
+            <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3">
               <h2 className={TYPE.cardTitle}>Suggested categories</h2>
               <button onClick={() => setOpen(false)} disabled={busy !== "idle"} className={`text-ink-2 hover:${TYPE.body} disabled:opacity-40`}>
                 ✕
@@ -171,15 +171,15 @@ export default function AiCategorize({ uncategorizedCount }: { uncategorizedCoun
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-ink-1 truncate" title={r.description}>{r.description}</span>
-                            <span className={`text-[10px] font-mono ${r.amount >= 0 ? "text-revenue" : "text-ink-2"}`}>{fmtMoney(r.amount)}</span>
+                            <span className={`text-xs font-mono ${r.amount >= 0 ? "text-revenue" : "text-ink-2"}`}>{fmtMoney(r.amount)}</span>
                           </div>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <span className="text-xs text-orange font-medium">→ {r.category_name}</span>
-                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${confColor(r.confidence)}`}>
+                            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border ${confColor(r.confidence)}`}>
                               {Math.round(r.confidence * 100)}%
                             </span>
                             {r.rule_pattern && (
-                              <label className="text-[11px] text-ink-2 flex items-center gap-1 cursor-pointer">
+                              <label className="text-xs text-ink-2 flex items-center gap-1 cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={r.createRule}
@@ -199,14 +199,14 @@ export default function AiCategorize({ uncategorizedCount }: { uncategorizedCoun
                     <button
                       onClick={apply}
                       disabled={includedCount === 0 || busy !== "idle"}
-                      className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
+                      className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
                     >
                       {busy === "applying" ? "Applying…" : `Apply ${includedCount}`}
                     </button>
-                    <button onClick={() => setOpen(false)} disabled={busy !== "idle"} className={`px-4 py-2 rounded-lg text-ink-2 hover:${TYPE.body}`}>
+                    <button onClick={() => setOpen(false)} disabled={busy !== "idle"} className={`px-4 py-2 rounded-control text-ink-2 hover:${TYPE.body}`}>
                       Cancel
                     </button>
-                    <span className="text-[11px] text-ink-3 ml-auto">Review before applying. AI can be wrong.</span>
+                    <span className="text-xs text-ink-3 ml-auto">Review before applying. AI can be wrong.</span>
                   </div>
                 </>
               )}

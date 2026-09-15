@@ -21,7 +21,7 @@ function renderInline(text: string, baseKey: string): ReactNode[] {
       out.push(
         <code
           key={`${baseKey}-${i++}`}
-          className="px-1 py-0.5 rounded bg-tile text-ink-1 text-[12px] font-mono"
+          className="px-1 py-0.5 rounded bg-tile text-ink-1 text-xs font-mono"
         >
           {t.slice(1, -1)}
         </code>
@@ -146,7 +146,7 @@ export default function RawResearchNotes({
   return (
     <details
       {...(defaultOpen ? { open: true } : {})}
-      className="rounded-card border-[1.5px] border-outline bg-surface p-6 group"
+      className="rounded-panel border-hairline bg-surface p-6 group"
     >
       <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1">
         Raw research notes

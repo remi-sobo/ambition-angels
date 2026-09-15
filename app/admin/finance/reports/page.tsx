@@ -100,8 +100,8 @@ export default async function FinanceReportsPage({
           unconfirmed: gate.unconfirmed,
         }} />
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>The numbers</h2>
           </div>
           {keys.length === 0 ? (
@@ -117,8 +117,8 @@ export default async function FinanceReportsPage({
           )}
         </section>
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>Narrative</h2>
           </div>
           {narrative ? (
@@ -155,7 +155,7 @@ export default async function FinanceReportsPage({
         actions={
           <Link
             href="/admin/finance/reports?view=board"
-            className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+            className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
           >
             Board financial report →
           </Link>
@@ -173,8 +173,8 @@ export default async function FinanceReportsPage({
           }))}
       />
 
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-        <div className="px-5 py-4 border-b border-outline">
+      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+        <div className="px-5 py-4 border-b border-hairline">
           <h2 className={TYPE.cardTitle}>
             Recent exports <span className="text-ink-3 font-normal">· {recent.length}</span>
           </h2>

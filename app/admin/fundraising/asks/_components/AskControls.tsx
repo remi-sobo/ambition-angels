@@ -18,8 +18,8 @@ import {
 import { TYPE } from "@/lib/admin/typeScale";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
-const fieldLabel = "flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+const fieldLabel = "flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold";
 
 const funderPayload = (f: FunderChoice): Record<string, string> =>
   f.funderId ? { funder_id: f.funderId } : { funder_name: f.funderName.trim() };
@@ -31,11 +31,11 @@ const toneChip = (tone: ReturnType<typeof askStatusTone>) =>
     ? "bg-expense-bg text-expense border-expense/30"
     : tone === "open"
     ? "bg-orange/10 text-orange border-orange/30"
-    : "bg-tile text-ink-2 border-outline";
+    : "bg-tile text-ink-2 border-hairline";
 
 export function StatusChip({ status }: { status: string }) {
   return (
-    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${toneChip(askStatusTone(status))}`}>
+    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${toneChip(askStatusTone(status))}`}>
       {ASK_STATUS_LABELS[status] ?? status}
     </span>
   );
@@ -120,7 +120,7 @@ export function NewAskForm({
   }
 
   return (
-    <form onSubmit={submit} className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-4 flex flex-wrap items-end gap-3 w-full">
+    <form onSubmit={submit} className="bg-tile border-hairline rounded-panel-lg p-4 flex flex-wrap items-end gap-3 w-full">
       {!fixedFunder && (
         <label className={fieldLabel}>
           Funder *
@@ -137,7 +137,7 @@ export function NewAskForm({
         Form
         <select value={form} onChange={(e) => setForm(e.target.value)} className={inputCls}>
           {ASK_FORMS.map(([v, l]) => (
-            <option key={v} value={v} className="bg-tile shadow-tile">{l}</option>
+            <option key={v} value={v} className="bg-tile">{l}</option>
           ))}
         </select>
       </label>
@@ -157,7 +157,7 @@ export function NewAskForm({
         Status
         <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputCls}>
           {ASK_STATUSES.map(([v, l]) => (
-            <option key={v} value={v} className="bg-tile shadow-tile">{l}</option>
+            <option key={v} value={v} className="bg-tile">{l}</option>
           ))}
         </select>
       </label>
@@ -196,10 +196,10 @@ export function AskStatusSelect({ askId, status }: { askId: string; status: stri
           setBusy(false);
         }
       }}
-      className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-ink-1 text-xs focus:outline-none focus:border-orange/40 disabled:opacity-50"
+      className="bg-tile border-hairline rounded-control px-2 py-1.5 text-ink-1 text-xs focus:outline-none focus:border-orange/40 disabled:opacity-50"
     >
       {ASK_STATUSES.map(([v, l]) => (
-        <option key={v} value={v} className="bg-tile shadow-tile">{l}</option>
+        <option key={v} value={v} className="bg-tile">{l}</option>
       ))}
     </select>
   );
@@ -310,7 +310,7 @@ export function EditableAskDetails({ ask }: { ask: AskDetails }) {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className={TYPE.cardTitle}>Details</h2>
-          <button onClick={startEdit} className="text-[11px] font-semibold text-orange hover:text-orange-dark transition-colors">
+          <button onClick={startEdit} className="text-xs font-semibold text-orange hover:text-orange-dark transition-colors">
             Edit
           </button>
         </div>
@@ -320,7 +320,7 @@ export function EditableAskDetails({ ask }: { ask: AskDetails }) {
             <span className="text-ink-1 break-words min-w-0">{value}</span>
           </div>
         ))}
-        {ask.notes && <p className="text-xs text-ink-2 border-t border-outline pt-3 whitespace-pre-wrap">{ask.notes}</p>}
+        {ask.notes && <p className="text-xs text-ink-2 border-t border-hairline pt-3 whitespace-pre-wrap">{ask.notes}</p>}
       </div>
     );
   }
@@ -336,7 +336,7 @@ export function EditableAskDetails({ ask }: { ask: AskDetails }) {
         Form
         <select value={form} onChange={(e) => setForm(e.target.value)} className={inputCls}>
           {ASK_FORMS.map(([v, l]) => (
-            <option key={v} value={v} className="bg-tile shadow-tile">{l}</option>
+            <option key={v} value={v} className="bg-tile">{l}</option>
           ))}
         </select>
       </label>
@@ -470,7 +470,7 @@ export function AskDocuments({ askId, documents }: { askId: string; documents: A
                 >
                   {d.label || d.filename}
                 </a>
-                <div className="text-[11px] text-ink-3 truncate">
+                <div className="text-xs text-ink-3 truncate">
                   {d.label ? `${d.filename} · ` : ""}
                   {fmtSize(d.size_bytes)}
                 </div>
@@ -478,7 +478,7 @@ export function AskDocuments({ askId, documents }: { askId: string; documents: A
               <button
                 disabled={busy}
                 onClick={() => remove(d.id)}
-                className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
+                className="text-xs font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
               >
                 Delete
               </button>
@@ -486,7 +486,7 @@ export function AskDocuments({ askId, documents }: { askId: string; documents: A
           ))}
         </ul>
       )}
-      <div className="flex flex-wrap items-center gap-2 px-5 py-3 border-t border-outline">
+      <div className="flex flex-wrap items-center gap-2 px-5 py-3 border-t border-hairline">
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
@@ -504,7 +504,7 @@ export function AskDocuments({ askId, documents }: { askId: string; documents: A
           }}
           className="text-xs text-ink-2 file:mr-2 file:rounded-full file:border-0 file:bg-orange/10 file:text-orange file:font-semibold file:px-3 file:py-1.5 file:text-xs hover:file:bg-orange/20"
         />
-        {busy && <span className="text-[11px] text-ink-3">Uploading…</span>}
+        {busy && <span className="text-xs text-ink-3">Uploading…</span>}
         {error && <p className="text-expense text-xs w-full">{error}</p>}
       </div>
     </div>
@@ -536,7 +536,7 @@ export function DeleteAskButton({ askId }: { askId: string }) {
           setBusy(false);
         }
       }}
-      className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
+      className="text-xs font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
     >
       Delete ask
     </button>

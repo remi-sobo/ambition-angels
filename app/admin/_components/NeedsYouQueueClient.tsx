@@ -82,7 +82,7 @@ function DueChip({ due }: { due: string | null }) {
   const isToday = due === today;
   return (
     <span
-      className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+      className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
         overdue
           ? "bg-expense-bg text-expense"
           : isToday
@@ -187,7 +187,7 @@ export default function NeedsYouQueueClient({
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">
+        <span className="text-xs font-semibold text-ink-3">
           Action queue
         </span>
         {me && (
@@ -198,7 +198,7 @@ export default function NeedsYouQueueClient({
             className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
               mineOnly
                 ? "border-orange bg-orange/10 text-orange"
-                : "border-outline text-ink-2 hover:text-ink-1"
+                : "border-hairline text-ink-2 hover:text-ink-1"
             }`}
           >
             Mine{mineOnly ? " ✓" : ""}
@@ -215,16 +215,16 @@ export default function NeedsYouQueueClient({
           {groups.map((g) => {
             const isOpen = open.has(g.module);
             return (
-              <div key={g.module} className="rounded-card border-[1.5px] border-outline bg-tile overflow-hidden">
+              <div key={g.module} className="rounded-panel border-hairline bg-tile overflow-hidden">
                 <button
                   type="button"
                   onClick={() => toggle(g.module)}
                   aria-expanded={isOpen}
-                  className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-[#F5EFE0] transition-colors"
+                  className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-tile transition-colors"
                 >
                   <span
                     aria-hidden
-                    className={`text-ink-3 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}
+                    className={`text-ink-3 text-xs transition-transform ${isOpen ? "rotate-90" : ""}`}
                   >
                     ▶
                   </span>
@@ -232,12 +232,12 @@ export default function NeedsYouQueueClient({
                     {MODULE_LABEL[g.module] ?? g.module}
                   </span>
                   {g.overdue > 0 && (
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense whitespace-nowrap">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense whitespace-nowrap">
                       {g.overdue} overdue
                     </span>
                   )}
                   {g.dueToday > 0 && (
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange whitespace-nowrap">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange whitespace-nowrap">
                       {g.dueToday} today
                     </span>
                   )}
@@ -245,7 +245,7 @@ export default function NeedsYouQueueClient({
                 </button>
 
                 {isOpen && (
-                  <ul className="divide-y divide-hairline border-t border-outline bg-surface">
+                  <ul className="divide-y divide-hairline border-t border-hairline bg-surface">
                     {g.items.map((it) => {
                       const k = key(it);
                       const completion = COMPLETION[it.source];
@@ -260,7 +260,7 @@ export default function NeedsYouQueueClient({
                               {it.title}
                             </Link>
                             <div className="mt-0.5 flex items-center gap-2 min-w-0">
-                              <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-3 whitespace-nowrap">
+                              <span className="text-xs font-semibold text-ink-3 whitespace-nowrap">
                                 {SOURCE_LABEL[it.source]}
                               </span>
                               {it.entity && <EntityChip entity={it.entity} className="max-w-[16rem]" />}
@@ -271,14 +271,14 @@ export default function NeedsYouQueueClient({
                               type="button"
                               onClick={() => complete(it)}
                               disabled={busy === k}
-                              className="text-xs font-semibold px-2.5 py-1 rounded-full border border-outline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors disabled:opacity-50 whitespace-nowrap"
+                              className="text-xs font-semibold px-2.5 py-1 rounded-full border border-hairline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors disabled:opacity-50 whitespace-nowrap"
                             >
                               {busy === k ? "…" : completion.label}
                             </button>
                           ) : (
                             <Link
                               href={it.href}
-                              className="text-xs font-semibold px-2.5 py-1 rounded-full border border-outline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors whitespace-nowrap"
+                              className="text-xs font-semibold px-2.5 py-1 rounded-full border border-hairline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors whitespace-nowrap"
                             >
                               Open
                             </Link>

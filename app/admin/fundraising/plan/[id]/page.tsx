@@ -145,7 +145,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
   const tableCovers = levels.reduce((s, l) => s + l.amount * l.count_needed, 0);
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title={strategy.name}
         eyebrow={
@@ -182,16 +182,16 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
       </p>
 
       {strategy.notes && (
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 mb-8">
+        <section className="bg-tile border-hairline rounded-panel-lg p-5 mb-8">
           <h2 className={TYPE.cardTitle}>Playbook notes</h2>
           <p className="text-sm text-ink-2 mt-1 whitespace-pre-wrap">{strategy.notes}</p>
         </section>
       )}
 
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden mb-8">
-        <div className="px-5 py-3 border-b border-outline">
+      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden mb-8">
+        <div className="px-5 py-3 border-b border-hairline">
           <h2 className={TYPE.cardTitle}>The arithmetic underneath</h2>
-          <p className="text-[11px] text-ink-3">
+          <p className="text-xs text-ink-3">
             Gift size × how many, checked against real asks. Identified counts open linked asks at each
             level; committed counts won ones. The generated table is a proposal. Edit it.
           </p>
@@ -200,7 +200,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[520px]">
               <thead>
-                <tr className="text-left text-[11px] uppercase tracking-wider text-ink-3">
+                <tr className="text-left text-xs uppercase tracking-wider text-ink-3">
                   <th className="px-5 py-2 font-semibold">Gift size</th>
                   <th className="px-3 py-2 font-semibold text-right">How many</th>
                   <th className="px-3 py-2 font-semibold text-right">Adds up to</th>
@@ -225,7 +225,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
                   <td className="px-5 py-2.5">Table covers</td>
                   <td className="px-3 py-2.5" />
                   <td className="px-3 py-2.5 text-right">{money(tableCovers)}</td>
-                  <td className="px-3 py-2.5 text-right text-[11px] font-normal text-ink-3" colSpan={2}>
+                  <td className="px-3 py-2.5 text-right text-xs font-normal text-ink-3" colSpan={2}>
                     {tableCovers >= goal ? "covers the goal" : `${money(goal - tableCovers)} short of the goal`}
                   </td>
                 </tr>
@@ -238,12 +238,12 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
         </div>
       </section>
 
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden mb-8">
-        <div className="px-5 py-3 border-b border-outline">
+      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden mb-8">
+        <div className="px-5 py-3 border-b border-hairline">
           <h2 className={TYPE.cardTitle}>
             In this strategy <span className="text-ink-3 font-normal">· {linkedOpps.length + linkedGrants.length + linkedCampaigns.length}</span>
           </h2>
-          <p className="text-[11px] text-ink-3">The asks, grants, and campaigns whose money this strategy counts.</p>
+          <p className="text-xs text-ink-3">The asks, grants, and campaigns whose money this strategy counts.</p>
         </div>
         {linkedOpps.length + linkedGrants.length + linkedCampaigns.length === 0 ? (
           <p className="px-5 py-4 text-ink-3 text-sm">Nothing linked yet. Add from the lists below.</p>
@@ -251,7 +251,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
           <ul className="divide-y divide-hairline">
             {linkedOpps.map((o) => (
               <li key={o.id} className="px-5 py-2.5 flex items-center gap-3 text-sm">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3 w-14 flex-shrink-0">Ask</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-3 w-14 flex-shrink-0">Ask</span>
                 <Link
                   href={o.constituent ? `/admin/fundraising/donors/${o.constituent.id}` : "/admin/fundraising"}
                   className="font-medium text-ink-1 hover:text-orange transition-colors truncate"
@@ -269,7 +269,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
             ))}
             {linkedGrants.map((g) => (
               <li key={g.id} className="px-5 py-2.5 flex items-center gap-3 text-sm">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3 w-14 flex-shrink-0">Grant</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-3 w-14 flex-shrink-0">Grant</span>
                 <Link href={`/admin/fundraising/grants/${g.id}`} className="font-medium text-ink-1 hover:text-orange transition-colors truncate">
                   {g.name}
                 </Link>
@@ -288,7 +288,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
             ))}
             {linkedCampaigns.map((c) => (
               <li key={c.id} className="px-5 py-2.5 flex items-center gap-3 text-sm">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3 w-14 flex-shrink-0">Camp.</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-3 w-14 flex-shrink-0">Camp.</span>
                 <Link href="/admin/fundraising/campaigns" className="font-medium text-ink-1 hover:text-orange transition-colors truncate">
                   {c.name}
                 </Link>
@@ -303,17 +303,17 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
       </section>
 
       {(unassignedOpps.length > 0 || unassignedGrants.length > 0 || unassignedCampaigns.length > 0) && (
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-3 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-3 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>Not in any strategy yet</h2>
-            <p className="text-[11px] text-ink-3">
+            <p className="text-xs text-ink-3">
               Value the plan isn&apos;t counting. Link what belongs here; the rest stays for other strategies.
             </p>
           </div>
           <ul className="divide-y divide-hairline">
             {unassignedOpps.map((o) => (
               <li key={o.id} className="px-5 py-2.5 flex items-center gap-3 text-sm">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3 w-14 flex-shrink-0">Ask</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-3 w-14 flex-shrink-0">Ask</span>
                 <span className="font-medium text-ink-1 truncate">{oppLabel(o)}</span>
                 <span className="text-xs text-ink-2">
                   {o.ask_amount ? money(Number(o.ask_amount)) : "no amount"} · {STAGE_KEY_LABELS[o.stage] ?? o.stage}
@@ -325,7 +325,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
             ))}
             {unassignedGrants.map((g) => (
               <li key={g.id} className="px-5 py-2.5 flex items-center gap-3 text-sm">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3 w-14 flex-shrink-0">Grant</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-3 w-14 flex-shrink-0">Grant</span>
                 <span className="font-medium text-ink-1 truncate">{g.name}</span>
                 <span className="text-xs text-ink-2 capitalize">
                   {g.amount_requested ? money(Number(g.amount_requested)) : "no amount"} · {g.stage}
@@ -337,7 +337,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
             ))}
             {unassignedCampaigns.map((c) => (
               <li key={c.id} className="px-5 py-2.5 flex items-center gap-3 text-sm">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3 w-14 flex-shrink-0">Camp.</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-3 w-14 flex-shrink-0">Camp.</span>
                 <span className="font-medium text-ink-1 truncate">{c.name}</span>
                 <span className="ml-auto">
                   <AssignButton type="campaign" id={c.id} strategyId={strategy.id} label="+ Add here" />

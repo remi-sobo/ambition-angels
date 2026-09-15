@@ -21,7 +21,7 @@ export default function ReedDesignButton() {
   return (
     <button
       onClick={() => reed.open({ surface: "strategy", draft: DESIGN_PROMPT })}
-      className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors inline-flex items-center gap-1.5"
+      className="text-xs font-semibold text-ink-1 bg-tile hover:bg-tile px-4 py-2 rounded-full transition-colors inline-flex items-center gap-1.5"
     >
       <ReedMark className="w-3.5 h-3.5 text-navy" />
       Build with Reed

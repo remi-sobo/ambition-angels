@@ -28,7 +28,7 @@ export function useToast(): ToastApi {
 const KIND_STYLE: Record<ToastKind, string> = {
   success: "border-revenue/40 bg-revenue-bg text-revenue",
   error: "border-expense/40 bg-expense-bg text-expense",
-  info: "border-outline bg-surface text-ink-1",
+  info: "border-hairline bg-surface text-ink-1",
 };
 
 // Errors linger (the person needs to read what to do); successes confirm
@@ -70,7 +70,7 @@ export default function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`pointer-events-auto flex items-start gap-3 rounded-card border-[1.5px] shadow-panel px-4 py-3 text-sm leading-snug ${KIND_STYLE[t.kind]}`}
+            className={`pointer-events-auto flex items-start gap-3 rounded-panel px-4 py-3 text-sm leading-snug ${KIND_STYLE[t.kind]}`}
           >
             <span className="flex-1 min-w-0">{t.message}</span>
             <button

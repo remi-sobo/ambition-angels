@@ -55,11 +55,11 @@ export default function CandidatesQueue({
   }
 
   return (
-    <section className="rounded-lg border-[1.5px] border-outline bg-tile overflow-hidden">
-      <header className="px-5 py-3 border-b border-outline flex items-center gap-2">
+    <section className="rounded-control border-hairline bg-tile overflow-hidden">
+      <header className="px-5 py-3 border-b border-hairline flex items-center gap-2">
         <h2 className="text-sm font-semibold text-ink-1">Candidates from email</h2>
-        <span className="text-[11px] text-ink-3">{candidates.length}</span>
-        <span className="ml-auto text-[11px] text-ink-3">
+        <span className="text-xs text-ink-3">{candidates.length}</span>
+        <span className="ml-auto text-xs text-ink-3">
           Intros with you on them. Add the real ones, dismiss the rest.
         </span>
       </header>
@@ -78,7 +78,7 @@ export default function CandidatesQueue({
               href={gmailThreadUrl(c.threadId)}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors"
+              className="text-xs font-semibold text-ink-2 hover:text-orange transition-colors"
             >
               Open thread →
             </a>

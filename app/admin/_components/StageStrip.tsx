@@ -27,14 +27,14 @@ export default function StageStrip({ cells, className }: { cells: StageCell[]; c
         <div
           key={cell.key}
           title={cell.title}
-          className={`rounded-lg border px-2 py-2.5 text-center ${
-            cell.active ? "bg-orange/10 border-orange/30" : "bg-surface shadow-panel border-outline"
+          className={`rounded-control border px-2 py-2.5 text-center ${
+            cell.active ? "bg-orange/10 border-orange/30" : "bg-surface border-hairline"
           }`}
         >
           <div className={`text-lg font-bold tabular-nums ${cell.active ? "text-orange" : "text-ink-2"}`}>
             {cell.value}
           </div>
-          <div className="text-[10px] uppercase tracking-wider text-ink-2">{cell.label}</div>
+          <div className="text-xs uppercase tracking-wider text-ink-2">{cell.label}</div>
         </div>
       ))}
     </div>

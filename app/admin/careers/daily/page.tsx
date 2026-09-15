@@ -51,7 +51,7 @@ export default async function DailyPage() {
   const scheduledDays = rows.length;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Daily Calendar"
         subtitle="Never Heard of It · one job a day, scheduled by you, rolls at midnight Pacific"
@@ -79,7 +79,7 @@ export default async function DailyPage() {
         <StatCard label="Weekly rule" value="3 of 7" sub="job zone ≤ 3. Enforced on save" muted />
       </div>
 
-      <p className="text-[12px] text-ink-2 mb-6">
+      <p className="text-xs text-ink-2 mb-6">
         Short on candidates? Approve occupations for the daily in the{" "}
         <Link href="/admin/careers/pool" className="underline underline-offset-2">
           Play Pool
@@ -92,7 +92,7 @@ export default async function DailyPage() {
       </p>
 
       {candidates.length === 0 ? (
-        <div className="bg-surface shadow-panel border-[1.5px] border-outline rounded-xl px-4 py-6 text-sm text-ink-2">
+        <div className="bg-surface border-hairline rounded-panel px-4 py-6 text-sm text-ink-2">
           <p className="font-semibold text-ink-1 mb-1">Nothing schedulable yet.</p>
           <p>
             A daily job needs both gates: eligible in the Play Pool (with the Daily flag on) and an

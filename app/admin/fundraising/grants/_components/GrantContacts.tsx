@@ -17,7 +17,7 @@ import {
 } from "@/lib/fundraising/grantContacts";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const CUSTOM_ROLE = "__custom__";
 
@@ -38,9 +38,9 @@ function RoleField({
     <>
       <select value={role} onChange={(e) => setRole(e.target.value)} className={inputCls + " text-xs"}>
         {GRANT_CONTACT_ROLES.map(([v, l]) => (
-          <option key={v} value={v} className="bg-tile shadow-tile">{l}</option>
+          <option key={v} value={v} className="bg-tile">{l}</option>
         ))}
-        <option value={CUSTOM_ROLE} className="bg-tile shadow-tile">Custom…</option>
+        <option value={CUSTOM_ROLE} className="bg-tile">Custom…</option>
       </select>
       {role === CUSTOM_ROLE && (
         <input
@@ -137,12 +137,12 @@ function PersonPicker({
         className={inputCls + " w-full text-xs"}
       />
       {value.constituentId && (
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-revenue bg-revenue-bg border border-revenue/30 px-1.5 py-0.5 rounded-full">
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-revenue bg-revenue-bg border border-revenue/30 px-1.5 py-0.5 rounded-full">
           linked
         </span>
       )}
       {open && typed.length >= 2 && (
-        <div className="absolute z-20 mt-1 w-full bg-tile border-[1.5px] border-outline rounded-lg shadow-tile max-h-64 overflow-auto">
+        <div className="absolute z-20 mt-1 w-full bg-tile border-hairline rounded-control max-h-64 overflow-auto">
           {loading && results.length === 0 && (
             <div className="px-3 py-2 text-xs text-ink-3">Searching…</div>
           )}
@@ -158,7 +158,7 @@ function PersonPicker({
             >
               <span className="text-sm text-ink-1 truncate">{r.name}</span>
               {r.email && (
-                <span className="text-[10px] text-ink-3 truncate flex-shrink-0 max-w-[45%]">{r.email}</span>
+                <span className="text-xs text-ink-3 truncate flex-shrink-0 max-w-[45%]">{r.email}</span>
               )}
             </button>
           ))}
@@ -169,7 +169,7 @@ function PersonPicker({
                 onChange({ constituentId: null, name: typed });
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-2 border-t border-outline hover:bg-orange/10 text-xs text-orange font-semibold"
+              className="w-full text-left px-3 py-2 border-t border-hairline hover:bg-orange/10 text-xs text-orange font-semibold"
             >
               + New person “{typed}”
             </button>
@@ -254,12 +254,12 @@ export function GrantContactRow({ contact: c }: { contact: GrantContact }) {
             <span className="text-sm text-ink-1 font-medium truncate">{name}</span>
           )}
           {c.is_primary && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
               Primary
             </span>
           )}
         </div>
-        <div className="text-[11px] text-ink-2 truncate">
+        <div className="text-xs text-ink-2 truncate">
           {c.role ? GRANT_CONTACT_ROLE_LABELS[c.role] ?? c.role : "No role"}
           {email ? ` · ${email}` : ""}
         </div>
@@ -276,14 +276,14 @@ export function GrantContactRow({ contact: c }: { contact: GrantContact }) {
           <button
             type="submit"
             disabled={busy}
-            className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
+            className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
           >
             {busy ? "Saving…" : "Save"}
           </button>
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 transition-colors"
+            className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
           >
             Cancel
           </button>
@@ -293,7 +293,7 @@ export function GrantContactRow({ contact: c }: { contact: GrantContact }) {
           <button
             disabled={busy}
             onClick={() => setEditing(true)}
-            className="text-[11px] font-semibold text-ink-3 hover:text-orange transition-colors disabled:opacity-50"
+            className="text-xs font-semibold text-ink-3 hover:text-orange transition-colors disabled:opacity-50"
           >
             Edit
           </button>
@@ -301,7 +301,7 @@ export function GrantContactRow({ contact: c }: { contact: GrantContact }) {
             <button
               disabled={busy}
               onClick={() => void patch({ is_primary: true })}
-              className="text-[11px] font-semibold text-ink-3 hover:text-orange transition-colors disabled:opacity-50"
+              className="text-xs font-semibold text-ink-3 hover:text-orange transition-colors disabled:opacity-50"
             >
               Make primary
             </button>
@@ -309,13 +309,13 @@ export function GrantContactRow({ contact: c }: { contact: GrantContact }) {
           <button
             disabled={busy}
             onClick={() => void remove()}
-            className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
+            className="text-xs font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
           >
             Remove
           </button>
         </span>
       )}
-      {error && <p className="text-expense text-[11px] w-full">{error}</p>}
+      {error && <p className="text-expense text-xs w-full">{error}</p>}
     </li>
   );
 }
@@ -371,7 +371,7 @@ export function AddGrantContactForm({ grantId }: { grantId: string }) {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-wrap items-center gap-2 px-5 py-3 border-t border-outline">
+    <form onSubmit={submit} className="flex flex-wrap items-center gap-2 px-5 py-3 border-t border-hairline">
       <PersonPicker value={person} onChange={setPerson} />
       {!person.constituentId && person.name.trim() && (
         <input
@@ -386,7 +386,7 @@ export function AddGrantContactForm({ grantId }: { grantId: string }) {
       <button
         type="submit"
         disabled={busy}
-        className="text-xs font-semibold text-orange bg-orange/10 border border-orange/30 px-3 py-2 rounded-lg hover:bg-orange/20 transition-colors disabled:opacity-50"
+        className="text-xs font-semibold text-orange bg-orange/10 border border-orange/30 px-3 py-2 rounded-control hover:bg-orange/20 transition-colors disabled:opacity-50"
       >
         {busy ? "Adding…" : "+ Add contact"}
       </button>

@@ -53,7 +53,7 @@ export default async function ReconcileSection({ embedded = false }: { embedded?
           <h2 className={TYPE.cardTitle}>
             Reconcile <span className="text-ink-3 font-normal">· {pending.length} pending</span>
           </h2>
-          <p className="text-[11px] text-ink-3 max-w-2xl">
+          <p className="text-xs text-ink-3 max-w-2xl">
             Cowork&apos;s proposed ledger entries from the week&apos;s HubSpot deals and email
             commitments. Nothing touches the books until accepted; the close below blocks while
             any are pending.

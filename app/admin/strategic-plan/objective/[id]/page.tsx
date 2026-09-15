@@ -161,29 +161,29 @@ export default async function ObjectiveDetailPage({ params }: { params: { id: st
             const goal = goalById.get(it.goal_id);
             const iProjs = projsByInit[it.id] ?? [];
             return (
-              <section key={it.id} className="border-[1.5px] border-outline rounded-card-lg p-5 bg-tile/40">
+              <section key={it.id} className="border-hairline rounded-panel-lg p-5 bg-tile/40">
                 <div className="mb-2">
                   <h3 className="font-heading font-semibold text-ink-1">{it.title}</h3>
-                  {goal && <p className="text-[11px] text-ink-3">↳ {goal.title}</p>}
+                  {goal && <p className="text-xs text-ink-3">↳ {goal.title}</p>}
                 </div>
                 <div className="space-y-3">
                   {iProjs.map((p) => {
                     const pTasks = tasksByProject[p.id] ?? [];
                     return (
-                      <div key={p.id} className="bg-surface border border-hairline rounded-card p-3">
-                        <Link href={`/admin/ops/projects/${p.id}`} className="text-[11px] font-semibold text-ink-2 hover:text-orange">
+                      <div key={p.id} className="bg-surface border border-hairline rounded-panel p-3">
+                        <Link href={`/admin/ops/projects/${p.id}`} className="text-xs font-semibold text-ink-2 hover:text-orange">
                           {p.title} →
                         </Link>
                         {pTasks.length === 0 ? (
-                          <p className="text-[11px] text-ink-3 mt-1">No tasks yet.</p>
+                          <p className="text-xs text-ink-3 mt-1">No tasks yet.</p>
                         ) : (
                           <ul className="mt-2 space-y-1">
                             {pTasks.map((t) => (
                               <li key={t.id} className="flex items-center gap-2 text-xs">
                                 <StatusChip status={taskStatusToStatus(t.status)}>{TASK_LABEL[t.status] ?? t.status}</StatusChip>
                                 <span className={`flex-1 min-w-0 truncate ${t.status === "done" ? "text-ink-3 line-through" : "text-ink-1"}`}>{t.title}</span>
-                                {t.assigned_to && <span className="text-[10px] text-ink-3 capitalize shrink-0">{t.assigned_to}</span>}
-                                {t.due_date && <span className="text-[10px] text-ink-3 tabular-nums shrink-0">{t.due_date}</span>}
+                                {t.assigned_to && <span className="text-xs text-ink-3 capitalize shrink-0">{t.assigned_to}</span>}
+                                {t.due_date && <span className="text-xs text-ink-3 tabular-nums shrink-0">{t.due_date}</span>}
                               </li>
                             ))}
                           </ul>

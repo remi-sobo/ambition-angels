@@ -54,6 +54,6 @@ export function scoreBand(score: number | null): "high" | "mid" | "low" | "none"
 export const SCORE_BAND_STYLE: Record<"high" | "mid" | "low" | "none", string> = {
   high: "bg-revenue/15 text-revenue",
   mid: "bg-orange/15 text-orange",
-  low: "bg-tile text-ink-2 border border-outline",
-  none: "bg-tile text-ink-3 border border-outline",
+  low: "bg-tile text-ink-2 border border-hairline",
+  none: "bg-tile text-ink-3 border border-hairline",
 };

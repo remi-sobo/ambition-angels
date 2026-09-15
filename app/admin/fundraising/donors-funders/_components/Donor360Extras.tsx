@@ -90,8 +90,8 @@ export default async function Donor360Extras({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* ── Giving by year ── */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>Giving by Year</h2>
           </div>
           {years.length === 0 ? (
@@ -112,13 +112,13 @@ export default async function Donor360Extras({
         </section>
 
         {/* ── Reporting owed ── */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline flex items-center gap-3">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline flex items-center gap-3">
             <h2 className={TYPE.cardTitle}>Reporting Owed</h2>
             {grants.length > 0 && (
               <Link
                 href="/admin/fundraising/grants"
-                className="ml-auto text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors"
+                className="ml-auto text-xs font-semibold text-ink-2 hover:text-orange transition-colors"
               >
                 Grants →
               </Link>
@@ -139,7 +139,7 @@ export default async function Donor360Extras({
                     <span className="text-sm text-ink-1 font-medium">
                       {r.label || REQUIREMENT_KIND_LABEL[r.kind] || r.kind}
                     </span>
-                    <span className="text-[11px] text-ink-3 truncate max-w-[180px]">{r.grant_name}</span>
+                    <span className="text-xs text-ink-3 truncate max-w-[180px]">{r.grant_name}</span>
                     <span
                       className={`ml-auto text-xs font-semibold [font-variant-numeric:tabular-nums] ${
                         overdue ? "text-expense" : "text-ink-2"
@@ -159,8 +159,8 @@ export default async function Donor360Extras({
       {/* ── Connected (relationships) — launches near-empty by signed ruling:
              bound, not dormant; it waits on data, not a spec. Households
              render in the V1 household panel below. ── */}
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-        <div className="px-5 py-4 border-b border-outline">
+      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+        <div className="px-5 py-4 border-b border-hairline">
           <h2 className={TYPE.cardTitle}>Connected</h2>
         </div>
         {rels.length === 0 ? (
@@ -180,7 +180,7 @@ export default async function Donor360Extras({
                   >
                     {otherNames.get(otherId) ?? "Unknown constituent"}
                   </Link>
-                  <span className="text-[10px] uppercase tracking-wider text-ink-3">{r.kind}</span>
+                  <span className="text-xs uppercase tracking-wider text-ink-3">{r.kind}</span>
                   {r.notes && <span className="text-xs text-ink-3 truncate max-w-[280px]">{r.notes}</span>}
                 </li>
               );

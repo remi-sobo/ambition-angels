@@ -43,10 +43,10 @@ export default async function MyQueueWidget({
                     )}
                     <span className="truncate">{t.title}</span>
                   </Link>
-                  {t.category && <div className="text-[11px] text-ink-2 capitalize">{t.category}</div>}
+                  {t.category && <div className="text-xs text-ink-2 capitalize">{t.category}</div>}
                 </div>
                 <span
-                  className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                  className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
                     overdue ? "bg-expense-bg text-expense" : isToday ? "bg-orange/15 text-orange" : "bg-tile text-ink-2"
                   }`}
                 >

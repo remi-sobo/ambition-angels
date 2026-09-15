@@ -24,7 +24,7 @@ export default function ReedReviewButton() {
   return (
     <button
       onClick={() => reed.open({ surface: "strategy", draft: REVIEW_PROMPT })}
-      className="text-xs font-semibold text-white bg-navy hover:bg-[#19305f] px-4 py-2 rounded-full transition-colors inline-flex items-center gap-1.5"
+      className="text-xs font-semibold text-white bg-navy hover:bg-navy-light px-4 py-2 rounded-full transition-colors inline-flex items-center gap-1.5"
     >
       <ReedMark className="w-3.5 h-3.5 text-orange-mid" />
       Review with Reed

@@ -133,7 +133,7 @@ export default async function ProgramsOverviewPage() {
   const attentionCount = drops.length + noGuardian.length + (toScreen > 0 ? 1 : 0);
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px] space-y-8">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace space-y-8">
       <PageHeader
         title="Overview"
         subtitle={`${terms.programs}, ${terms.students.toLowerCase()}, outcomes. The near-term schedule and what needs a human.`}
@@ -146,9 +146,9 @@ export default async function ProgramsOverviewPage() {
           { label: `enrolled ${terms.students.toLowerCase()}`, value: String(enrolledIds.size) },
           { label: "attendance to date", value: overallRate === null ? "—" : pct(overallRate) },
         ].map((s) => (
-          <div key={s.label} className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel px-4 py-3">
+          <div key={s.label} className="rounded-panel border-hairline bg-surface px-4 py-3">
             <div className="font-display font-black text-ink-1 text-2xl leading-none">{s.value}</div>
-            <div className="text-[11px] uppercase tracking-wider text-ink-3 mt-1">{s.label}</div>
+            <div className="text-xs uppercase tracking-wider text-ink-3 mt-1">{s.label}</div>
           </div>
         ))}
       </section>
@@ -159,7 +159,7 @@ export default async function ProgramsOverviewPage() {
           <h2 className={TYPE.sectionHeader}>
             Next {terms.sessions.toLowerCase()} <span className="text-ink-3 font-normal">({nextSessions.length})</span>
           </h2>
-          <Link href="/admin/programs/attendance" className="text-[12px] font-semibold text-orange hover:text-orange-dark">
+          <Link href="/admin/programs/attendance" className="text-xs font-semibold text-orange hover:text-orange-dark">
             Open Attendance →
           </Link>
         </div>
@@ -180,14 +180,14 @@ export default async function ProgramsOverviewPage() {
               <Link
                 key={s.id}
                 href={`/admin/programs/cohorts/${s.cohort_id}/sessions/${s.id}`}
-                className="group flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel transition-colors hover:bg-[#EFE6D4]"
+                className="group flex items-center gap-3 px-4 py-2.5 rounded-panel border border-hairline bg-surface transition-colors hover:bg-tile"
               >
-                <span className="text-[12px] text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-24 shrink-0">
+                <span className="text-xs text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-24 shrink-0">
                   {s.session_date === todayISO ? "Today" : fmtDate(s.session_date)}
                 </span>
                 <span className="flex-1 min-w-0 truncate text-[14px] text-ink-1 group-hover:text-orange transition-colors">
                   {cohortName.get(s.cohort_id)}
-                  {s.title && <span className="text-[13px] text-ink-2"> · {s.title}</span>}
+                  {s.title && <span className="text-sm text-ink-2"> · {s.title}</span>}
                 </span>
               </Link>
             ))}
@@ -210,15 +210,15 @@ export default async function ProgramsOverviewPage() {
               <Link
                 key={`drop-${student.id}`}
                 href={`/admin/programs/people/${student.id}`}
-                className="group flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel transition-colors hover:bg-[#EFE6D4]"
+                className="group flex items-center gap-3 px-4 py-2.5 rounded-panel border border-hairline bg-surface transition-colors hover:bg-tile"
               >
-                <span className="shrink-0 inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border border-expense/30 bg-expense-bg text-expense">
+                <span className="shrink-0 inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border border-expense/30 bg-expense-bg text-expense">
                   attendance
                 </span>
                 <span className="flex-1 min-w-0 truncate text-[14px] text-ink-1 group-hover:text-orange transition-colors">
                   {fullName(student)}
                 </span>
-                <span className="shrink-0 text-[12px] text-ink-2">
+                <span className="shrink-0 text-xs text-ink-2">
                   absent {absences} of last {LAST_MARKS}
                 </span>
               </Link>
@@ -227,23 +227,23 @@ export default async function ProgramsOverviewPage() {
               <Link
                 key={`guardian-${s.id}`}
                 href={`/admin/programs/people/${s.id}`}
-                className="group flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel transition-colors hover:bg-[#EFE6D4]"
+                className="group flex items-center gap-3 px-4 py-2.5 rounded-panel border border-hairline bg-surface transition-colors hover:bg-tile"
               >
-                <span className="shrink-0 inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border border-[#A56A1B]/30 bg-[#FBF3E4] text-[#A56A1B]">
+                <span className="shrink-0 inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border border-status-watch/30 bg-status-watch-bg text-status-watch-text">
                   no contact
                 </span>
                 <span className="flex-1 min-w-0 truncate text-[14px] text-ink-1 group-hover:text-orange transition-colors">
                   {fullName(s)}
                 </span>
-                <span className="shrink-0 text-[12px] text-ink-2">no email or guardian on file</span>
+                <span className="shrink-0 text-xs text-ink-2">no email or guardian on file</span>
               </Link>
             ))}
             {toScreen > 0 && (
               <Link
                 href="/admin/programs/intake"
-                className="group flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel transition-colors hover:bg-[#EFE6D4]"
+                className="group flex items-center gap-3 px-4 py-2.5 rounded-panel border border-hairline bg-surface transition-colors hover:bg-tile"
               >
-                <span className="shrink-0 inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border border-outline bg-tile text-ink-2">
+                <span className="shrink-0 inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border border-hairline bg-tile text-ink-2">
                   intake
                 </span>
                 <span className="flex-1 min-w-0 text-[14px] text-ink-1 group-hover:text-orange transition-colors">

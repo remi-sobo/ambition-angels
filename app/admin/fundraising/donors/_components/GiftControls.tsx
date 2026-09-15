@@ -23,9 +23,9 @@ const METHODS = [
 ] as const;
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 const labelCls =
-  "flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold";
+  "flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold";
 
 export function GiftEntryForm({
   constituentId,
@@ -104,7 +104,7 @@ export function GiftEntryForm({
   }
 
   return (
-    <form onSubmit={submit} className="px-5 py-4 border-b border-outline flex flex-wrap items-end gap-3 bg-tile">
+    <form onSubmit={submit} className="px-5 py-4 border-b border-hairline flex flex-wrap items-end gap-3 bg-tile">
       <label className={labelCls}>
         Amount ($) *
         <input
@@ -120,7 +120,7 @@ export function GiftEntryForm({
         Method
         <select value={method} onChange={(e) => setMethod(e.target.value)} className={inputCls}>
           {METHODS.map(([v, l]) => (
-            <option key={v} value={v} className="bg-tile shadow-tile">{l}</option>
+            <option key={v} value={v} className="bg-tile">{l}</option>
           ))}
         </select>
       </label>
@@ -128,9 +128,9 @@ export function GiftEntryForm({
         <label className={labelCls}>
           Campaign
           <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} className={inputCls + " w-40"}>
-            <option value="" className="bg-tile shadow-tile">—</option>
+            <option value="" className="bg-tile">—</option>
             {campaigns.map((c) => (
-              <option key={c.id} value={c.id} className="bg-tile shadow-tile">{c.name}</option>
+              <option key={c.id} value={c.id} className="bg-tile">{c.name}</option>
             ))}
           </select>
         </label>
@@ -139,9 +139,9 @@ export function GiftEntryForm({
         <label className={labelCls}>
           Fund
           <select value={fundId} onChange={(e) => setFundId(e.target.value)} className={inputCls + " w-40"}>
-            <option value="" className="bg-tile shadow-tile">—</option>
+            <option value="" className="bg-tile">—</option>
             {funds.map((f) => (
-              <option key={f.id} value={f.id} className="bg-tile shadow-tile">{f.name}</option>
+              <option key={f.id} value={f.id} className="bg-tile">{f.name}</option>
             ))}
           </select>
         </label>
@@ -150,9 +150,9 @@ export function GiftEntryForm({
         <label className={labelCls}>
           Appeal
           <select value={appealId} onChange={(e) => setAppealId(e.target.value)} className={inputCls + " w-40"}>
-            <option value="" className="bg-tile shadow-tile">—</option>
+            <option value="" className="bg-tile">—</option>
             {appeals.map((a) => (
-              <option key={a.id} value={a.id} className="bg-tile shadow-tile">{a.name}</option>
+              <option key={a.id} value={a.id} className="bg-tile">{a.name}</option>
             ))}
           </select>
         </label>
@@ -209,7 +209,7 @@ export function GiftRowActions({ id }: { id: string }) {
           setBusy(false);
         }
       }}
-      className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
+      className="text-xs font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
     >
       Delete
     </button>

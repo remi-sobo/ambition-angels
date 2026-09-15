@@ -18,8 +18,8 @@ const splitOwners = (s: string | null): string[] =>
   (s ?? "").split(/[/,]/).map((p) => p.trim()).filter(Boolean);
 
 const HEALTH_DOT: Record<string, string> = {
-  behind: "bg-expense", at_risk: "bg-[#C8881B]", on_track: "bg-revenue", done: "bg-revenue", not_started: "bg-gray-mid",
-  todo: "bg-gray-mid", in_progress: "bg-[#C8881B]",
+  behind: "bg-expense", at_risk: "bg-status-watch", on_track: "bg-revenue", done: "bg-revenue", not_started: "bg-gray-mid",
+  todo: "bg-gray-mid", in_progress: "bg-status-watch",
 };
 const offTrack = (s: string) => s === "at_risk" || s === "behind";
 const openInit = (s: string) => s !== "done";
@@ -95,10 +95,10 @@ export default async function StrategyPeoplePage() {
               ...p.kpis.filter((k) => offTrack(k.status)).map((k) => ({ kind: "kpi" as const, ...k })),
             ];
             return (
-              <section key={person} className="bg-surface border-[1.5px] border-outline rounded-card-lg p-5">
+              <section key={person} className="bg-surface border-hairline rounded-panel-lg p-5">
                 <div className="flex flex-wrap items-baseline gap-2 mb-3">
                   <h2 className={TYPE.sectionTitle}>{person}</h2>
-                  <span className="text-[11px] text-ink-2">
+                  <span className="text-xs text-ink-2">
                     {p.objectives.length} obj · {p.goals.length} goals · {p.kpis.length} measures · {p.initiatives.length} initiatives
                   </span>
                 </div>
@@ -111,7 +111,7 @@ export default async function StrategyPeoplePage() {
                         <li key={`${m.kind}-${m.id}`} className="flex items-center gap-2 text-sm">
                           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${HEALTH_DOT[m.status] ?? "bg-gray-mid"}`} />
                           <span className="text-ink-1 truncate min-w-0">{m.title}</span>
-                          <span className="text-[10px] text-ink-2 flex-shrink-0">
+                          <span className="text-xs text-ink-2 flex-shrink-0">
                             {m.kind === "kpi" ? `measure · ${m.status === "behind" ? "behind" : "at risk"}` : "initiative"}
                           </span>
                         </li>
@@ -172,7 +172,7 @@ function PersonList({
           <li key={r.id} className="flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${HEALTH_DOT[r.status] ?? "bg-gray-mid"}`} />
             <span className="text-ink-1 truncate min-w-0 flex-1">{r.title}</span>
-            {r.meta && <span className="text-[10px] text-ink-2 tabular-nums flex-shrink-0">{r.meta}</span>}
+            {r.meta && <span className="text-xs text-ink-2 tabular-nums flex-shrink-0">{r.meta}</span>}
           </li>
         ))}
       </ul>

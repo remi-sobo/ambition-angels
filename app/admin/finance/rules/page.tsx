@@ -24,7 +24,7 @@ export default async function RulesPage() {
   const ctx = await getOrgContext();
   if (!ctx) {
     return (
-      <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8">
+      <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
         <PageHeader title="Rules" subtitle="Sign in to view categorization rules." />
       </div>
     );
@@ -50,7 +50,7 @@ export default async function RulesPage() {
   const rules = (rulesRaw ?? []) as Rule[];
 
   return (
-    <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8">
+    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
       <header className="mb-2">
         <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
           <Link href="/admin/finance" className="hover:text-ink-1">

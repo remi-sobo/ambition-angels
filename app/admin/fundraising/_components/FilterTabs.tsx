@@ -28,11 +28,11 @@ export default function FilterTabs({
   // which makes them unclickable (the documents type strip, 13 options).
   wrap?: boolean;
 }) {
-  const pad = size === "sm" ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5 text-xs";
+  const pad = size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-xs";
   return (
     <div
-      className={`items-center gap-1 bg-tile border-[1.5px] border-outline p-1 ${
-        wrap ? "flex flex-wrap rounded-card-lg" : "inline-flex rounded-full"
+      className={`items-center gap-1 bg-tile border-hairline p-1 ${
+        wrap ? "flex flex-wrap rounded-panel-lg" : "inline-flex rounded-full"
       }`}
     >
       {options.map((o) => {

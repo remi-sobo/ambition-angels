@@ -77,7 +77,7 @@ export function EditPartnerButton({ partner }: {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors">
+      <button onClick={() => setOpen(true)} className="text-xs font-semibold text-ink-2 hover:text-orange transition-colors">
         Edit
       </button>
     );
@@ -151,7 +151,7 @@ export function AddContactForm({ partnerId }: { partnerId: string }) {
         });
         if (ok) { setFirst(""); setLast(""); setEmail(""); setPhone(""); setTitle(""); setOpen(false); }
       }}
-      className="w-full bg-surface border-[1.5px] border-outline rounded-xl p-3 grid grid-cols-2 gap-2 mt-2"
+      className="w-full bg-surface border-hairline rounded-panel p-3 grid grid-cols-2 gap-2 mt-2"
     >
       <input value={first} onChange={(e) => setFirst(e.target.value)} placeholder="First name" className={inputCls} autoFocus />
       <input value={last} onChange={(e) => setLast(e.target.value)} placeholder="Last name" className={inputCls} />
@@ -191,7 +191,7 @@ export function ContactCard({ contact }: { contact: ContactT }) {
           });
           if (ok) setEditing(false);
         }}
-        className="bg-surface border-[1.5px] border-outline rounded-xl p-3 grid grid-cols-2 gap-2"
+        className="bg-surface border-hairline rounded-panel p-3 grid grid-cols-2 gap-2"
       >
         <input value={first} onChange={(e) => setFirst(e.target.value)} placeholder="First" className={inputCls} />
         <input value={last} onChange={(e) => setLast(e.target.value)} placeholder="Last" className={inputCls} />
@@ -208,27 +208,27 @@ export function ContactCard({ contact }: { contact: ContactT }) {
   }
 
   return (
-    <div className={`bg-surface border rounded-xl p-3 ${busy ? "opacity-60" : ""} ${contact.is_primary ? "border-orange/40" : "border-outline"}`}>
+    <div className={`bg-surface border rounded-panel p-3 ${busy ? "opacity-60" : ""} ${contact.is_primary ? "border-orange/40" : "border-hairline"}`}>
       <div className="flex items-center gap-2 flex-wrap">
         <span className={`font-semibold ${TYPE.body}`}>{name}</span>
         {contact.is_primary && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">Primary</span>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">Primary</span>
         )}
-        {contact.title && <span className="text-[11px] text-ink-2">{contact.title}</span>}
+        {contact.title && <span className="text-xs text-ink-2">{contact.title}</span>}
         {contact.tags.map((t) => (
-          <span key={t} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 border border-outline">{t}</span>
+          <span key={t} className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 border border-hairline">{t}</span>
         ))}
       </div>
-      <div className="flex items-center gap-3 mt-1 text-[12px] text-ink-2 flex-wrap">
+      <div className="flex items-center gap-3 mt-1 text-xs text-ink-2 flex-wrap">
         {contact.email && <a href={`mailto:${contact.email}`} className="text-orange/80 hover:text-orange">{contact.email}</a>}
         {contact.phone && <span>{contact.phone}</span>}
       </div>
       <div className="flex items-center gap-1 mt-2">
         {!contact.is_primary && (
           <button onClick={() => call(`/api/admin/partners/contacts/${contact.id}`, "PATCH", { is_primary: true })}
-            disabled={busy} className="text-[11px] px-2 py-1 rounded-md bg-tile hover:bg-[#EFE6D4] text-ink-2">Make primary</button>
+            disabled={busy} className="text-xs px-2 py-1 rounded-control bg-tile hover:bg-tile text-ink-2">Make primary</button>
         )}
-        <button onClick={() => setEditing(true)} className="text-[11px] px-2 py-1 rounded-md bg-tile hover:bg-[#EFE6D4] text-ink-2">Edit</button>
+        <button onClick={() => setEditing(true)} className="text-xs px-2 py-1 rounded-control bg-tile hover:bg-tile text-ink-2">Edit</button>
         <button
           onClick={async () => {
             const ok = await confirm({
@@ -239,7 +239,7 @@ export function ContactCard({ contact }: { contact: ContactT }) {
             });
             if (ok) void call(`/api/admin/partners/contacts/${contact.id}`, "DELETE");
           }}
-          disabled={busy} className="ml-auto text-[11px] px-2 py-1 rounded-md text-ink-3 hover:text-expense">Remove</button>
+          disabled={busy} className="ml-auto text-xs px-2 py-1 rounded-control text-ink-3 hover:text-expense">Remove</button>
       </div>
     </div>
   );
@@ -278,20 +278,20 @@ export function LogPartnerInteraction({ partnerId, contacts }: {
         });
         if (ok) { setNotes(""); setOpen(false); }
       }}
-      className="px-5 py-4 border-b border-outline flex flex-wrap items-end gap-3 bg-surface"
+      className="px-5 py-4 border-b border-hairline flex flex-wrap items-end gap-3 bg-surface"
     >
-      <label className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1">
+      <label className="text-xs uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1">
         Kind
         <select value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls}>
           {INT_KINDS.map(([v, l]) => <option key={v} value={v} className="bg-surface">{l}</option>)}
         </select>
       </label>
-      <label className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1">
+      <label className="text-xs uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1">
         Date
         <input type="date" value={when} onChange={(e) => setWhen(e.target.value)} className={inputCls + " w-40"} />
       </label>
       {contacts.length > 0 && (
-        <label className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1">
+        <label className="text-xs uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1">
           With
           <select value={contactId} onChange={(e) => setContactId(e.target.value)} className={inputCls}>
             <option value="" className="bg-surface">—</option>
@@ -299,7 +299,7 @@ export function LogPartnerInteraction({ partnerId, contacts }: {
           </select>
         </label>
       )}
-      <label className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1 flex-1 min-w-[14rem]">
+      <label className="text-xs uppercase tracking-wider text-ink-3 font-semibold flex flex-col gap-1 flex-1 min-w-[14rem]">
         Notes
         <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="what happened" className={inputCls + " w-full"} />
       </label>
@@ -324,17 +324,17 @@ export function MouControls({ partner }: {
 
   return (
     <div className="grid grid-cols-3 gap-2 items-end">
-      <label className="text-[10px] uppercase tracking-wider text-ink-3 font-semibold">
+      <label className="text-xs uppercase tracking-wider text-ink-3 font-semibold">
         MOU
         <select value={mouStatus} onChange={(e) => setMouStatus(e.target.value)} className={inputCls + " w-full mt-1 !py-1.5 !text-xs"}>
           {["none", "drafting", "sent", "signed"].map((s) => <option key={s} value={s} className="bg-surface">{s}</option>)}
         </select>
       </label>
-      <label className="text-[10px] uppercase tracking-wider text-ink-3 font-semibold">
+      <label className="text-xs uppercase tracking-wider text-ink-3 font-semibold">
         MOU ends
         <input type="date" value={mouEnd} onChange={(e) => setMouEnd(e.target.value)} className={inputCls + " w-full mt-1 !py-1.5 !text-xs"} />
       </label>
-      <label className="text-[10px] uppercase tracking-wider text-ink-3 font-semibold">
+      <label className="text-xs uppercase tracking-wider text-ink-3 font-semibold">
         Data agreement
         <input type="date" value={dsa} onChange={(e) => setDsa(e.target.value)} className={inputCls + " w-full mt-1 !py-1.5 !text-xs"} />
       </label>

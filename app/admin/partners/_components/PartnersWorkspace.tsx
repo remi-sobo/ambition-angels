@@ -127,7 +127,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
           onClick={() => setActiveOnly((v) => !v)}
           aria-pressed={activeOnly}
           title={activeOnly ? "Click to show all partners" : "Click to show only active partners"}
-          className={`text-left w-full rounded-card-lg transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-orange/60 ${
+          className={`text-left w-full rounded-panel-lg transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-orange/60 ${
             activeOnly ? "ring-2 ring-orange" : "hover:ring-2 hover:ring-orange/30"
           }`}
         >
@@ -163,7 +163,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
       {/* Tabs (list only) + view toggle */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div
-          className={`inline-flex items-center gap-1 bg-tile border-[1.5px] border-outline rounded-full p-1 ${
+          className={`inline-flex items-center gap-1 bg-tile border-hairline rounded-full p-1 ${
             view === "board" ? "invisible" : ""
           }`}
         >
@@ -182,7 +182,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
             </button>
           ))}
         </div>
-        <div className="inline-flex items-center gap-1 bg-tile border-[1.5px] border-outline rounded-full p-1">
+        <div className="inline-flex items-center gap-1 bg-tile border-hairline rounded-full p-1">
           {(["list", "board"] as const).map((v) => (
             <button
               key={v}
@@ -208,7 +208,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search name, city, contact…"
-          className="bg-tile border-[1.5px] border-outline rounded-full px-4 py-1.5 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/40 w-64"
+          className="bg-tile border-hairline rounded-full px-4 py-1.5 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/40 w-64"
         />
         <Chip active={kind === "all"} onClick={() => setKind("all")}>All types</Chip>
         {["school", "nonprofit"].map((k) => (
@@ -241,7 +241,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
       {view === "list" && !activeOnly && tab !== "prospects" && tabCounts.prospects > 0 && (
         <button
           onClick={() => setTab("prospects")}
-          className="block w-full text-left text-xs text-ink-2 bg-tile border-[1.5px] border-outline rounded-lg px-4 py-2 hover:border-orange/40 hover:text-ink-1 transition-colors"
+          className="block w-full text-left text-xs text-ink-2 bg-tile border-hairline rounded-control px-4 py-2 hover:border-orange/40 hover:text-ink-1 transition-colors"
         >
           {tabCounts.prospects} prospect{tabCounts.prospects === 1 ? "" : "s"} {tabCounts.prospects === 1 ? "isn't" : "aren't"} shown on this tab, {" "}
           <span className="font-semibold text-orange">view Prospects →</span>
@@ -260,7 +260,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
           {groups.map((g) => (
             <section key={g.status}>
               {(activeOnly || tab !== "prospects") && (
-                <h3 className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-2">
+                <h3 className="text-xs uppercase tracking-wider text-ink-3 font-semibold mb-2">
                   {STATUS_LABELS[g.status]} ({g.rows.length})
                 </h3>
               )}
@@ -281,10 +281,10 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 text-xs font-semibold rounded-full border-[1.5px] transition-colors ${
+      className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${
         active
           ? "bg-orange/15 text-orange border-orange/30"
-          : "bg-tile text-ink-2 border-outline hover:text-ink-1"
+          : "bg-tile text-ink-2 border-hairline hover:text-ink-1"
       }`}
     >
       {children}
@@ -326,38 +326,38 @@ function PartnerRow({ partner: p }: { partner: Partner }) {
 
   return (
     <article
-      className={`bg-surface border rounded-xl p-3 text-sm ${
-        mouExpired ? "border-expense/30" : "border-outline"
+      className={`bg-surface border rounded-panel p-3 text-sm ${
+        mouExpired ? "border-expense/30" : "border-hairline"
       } ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <Link href={`/admin/partners/${p.id}`} className="font-semibold text-ink-1 hover:text-orange transition-colors">
           {p.name}
         </Link>
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[p.status]}`}>
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[p.status]}`}>
           {STATUS_SHORT[p.status] ?? p.status}
         </span>
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
           {KIND_LABELS[p.kind] ?? p.kind}
         </span>
         {p.priority_score != null && (
           <span
             title="Fit score"
-            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${SCORE_BAND_STYLE[scoreBand(p.priority_score)]}`}
+            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${SCORE_BAND_STYLE[scoreBand(p.priority_score)]}`}
           >
             {p.priority_score}
           </span>
         )}
-        {geo && <span className="text-[11px] text-ink-2">{geo}</span>}
+        {geo && <span className="text-xs text-ink-2">{geo}</span>}
         {typeof p.contact_count === "number" && p.contact_count > 0 && (
-          <span className="text-[11px] text-ink-3">
+          <span className="text-xs text-ink-3">
             {p.contact_count} contact{p.contact_count === 1 ? "" : "s"}
           </span>
         )}
         {typeof p.open_tasks === "number" && p.open_tasks > 0 && (
           <span
             title={p.overdue_tasks ? `${p.overdue_tasks} overdue` : "open tasks"}
-            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
               p.overdue_tasks ? "bg-expense-bg text-expense" : "bg-orange/15 text-orange"
             }`}
           >
@@ -366,19 +366,19 @@ function PartnerRow({ partner: p }: { partner: Partner }) {
           </span>
         )}
         {p.mou_status === "signed" && (
-          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
             mouExpired ? "bg-expense-bg text-expense" : "bg-revenue-bg text-revenue"
           }`}>
             MOU{p.mou_end ? ` · ${mouExpired ? "expired" : "ends"} ${p.mou_end}` : ""}
           </span>
         )}
-        <span className={`ml-auto text-[11px] tabular-nums ${stale ? "text-[#A56A1B]" : "text-ink-3"}`}>
+        <span className={`ml-auto text-xs tabular-nums ${stale ? "text-status-watch-text" : "text-ink-3"}`}>
           {p.last_touch_at ? `touched ${p.last_touch_at}` : "never touched"}
         </span>
       </div>
 
       {p.primary_contact && (
-        <p className="text-[12px] text-ink-2 mt-1">Primary: {p.primary_contact}</p>
+        <p className="text-xs text-ink-2 mt-1">Primary: {p.primary_contact}</p>
       )}
 
       <div className="flex flex-wrap items-center gap-1 mt-2">
@@ -386,7 +386,7 @@ function PartnerRow({ partner: p }: { partner: Partner }) {
           value={p.status}
           disabled={busy}
           onChange={(e) => patch({ status: e.target.value })}
-          className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1 text-ink-1 cursor-pointer"
+          className="text-xs bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 cursor-pointer"
         >
           {STATUS_ORDER.map((s) => (
             <option key={s} value={s} className="bg-surface">{STATUS_LABELS[s]}</option>
@@ -396,7 +396,7 @@ function PartnerRow({ partner: p }: { partner: Partner }) {
           <button
             onClick={() => patch({ status: next })}
             disabled={busy}
-            className="px-2 py-1 rounded-md text-[11px] font-semibold bg-orange/15 text-orange hover:bg-orange/25"
+            className="px-2 py-1 rounded-control text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25"
           >
             Move to {STATUS_SHORT[next]} →
           </button>
@@ -404,13 +404,13 @@ function PartnerRow({ partner: p }: { partner: Partner }) {
         <button
           onClick={() => patch({ touch: true })}
           disabled={busy}
-          className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
+          className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
         >
           Log touch
         </button>
         <Link
           href={`/admin/partners/${p.id}`}
-          className="ml-auto px-2 py-1 rounded-md text-[11px] font-semibold text-ink-2 hover:text-orange"
+          className="ml-auto px-2 py-1 rounded-control text-xs font-semibold text-ink-2 hover:text-orange"
         >
           Open →
         </Link>

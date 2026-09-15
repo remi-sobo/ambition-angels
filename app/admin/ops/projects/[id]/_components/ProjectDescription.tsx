@@ -28,7 +28,7 @@ function renderInline(text: string, baseKey: string): ReactNode[] {
     const t = m[0];
     if (t.startsWith("`")) {
       out.push(
-        <code key={`${baseKey}-${i++}`} className="px-1 py-0.5 rounded bg-tile text-ink-1 text-[12px] font-mono">
+        <code key={`${baseKey}-${i++}`} className="px-1 py-0.5 rounded bg-tile text-ink-1 text-xs font-mono">
           {t.slice(1, -1)}
         </code>
       );
@@ -175,7 +175,7 @@ export default function ProjectDescription({
   }
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <div className="flex items-baseline justify-between gap-2 mb-3">
         <h2 className={TYPE.sectionHeader}>
           Description
@@ -213,11 +213,11 @@ export default function ProjectDescription({
             onChange={(e) => setDraft(e.target.value)}
             rows={12}
             placeholder="Project plan, in markdown. Headings with #, lists with -, **bold**, *italic*, `code`, [links](url)."
-            className="w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 font-mono focus:outline-none focus:border-orange/50"
+            className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 placeholder-ink-3 font-mono focus:outline-none focus:border-orange/50"
           />
           {error && <p className="text-expense text-xs mt-2">{error}</p>}
           <div className="mt-4 pt-3 border-t border-hairline">
-            <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-2">
+            <div className="text-xs uppercase tracking-wider text-ink-2 mb-2">
               Preview
             </div>
             <div className="text-sm">

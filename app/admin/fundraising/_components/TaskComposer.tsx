@@ -15,7 +15,7 @@ import { TYPE } from "@/lib/admin/typeScale";
 export type TaskTarget = { id: string; name: string };
 
 const fieldCls =
-  "w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2.5 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 text-base sm:text-sm";
+  "w-full bg-tile border-hairline rounded-control px-3 py-2.5 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 text-base sm:text-sm";
 
 export default function TaskComposer({
   targets,
@@ -101,7 +101,7 @@ export default function TaskComposer({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-card border-[1.5px] border-outline bg-ink shadow-2xl max-h-[92vh] overflow-y-auto"
+        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-panel border-hairline bg-ink shadow-2xl max-h-[92vh] overflow-y-auto"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <form onSubmit={submit} className="p-5 sm:p-6 space-y-4">
@@ -110,12 +110,12 @@ export default function TaskComposer({
           </h2>
 
           <label className="block">
-            <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">
+            <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">
               Task <span className="text-orange">*</span>
             </div>
             <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} className={fieldCls} />
             {!single && (
-              <p className="mt-1 text-[11px] text-ink-3">
+              <p className="mt-1 text-xs text-ink-3">
                 One task per person, name appended: &ldquo;{title.trim() || "…"} · {targets[0].name}&rdquo;, …
               </p>
             )}
@@ -123,11 +123,11 @@ export default function TaskComposer({
 
           <div className="grid grid-cols-3 gap-3">
             <label className="block">
-              <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">Due</div>
+              <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Due</div>
               <input type="date" value={due} onChange={(e) => setDue(e.target.value)} className={fieldCls} />
             </label>
             <label className="block">
-              <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">Priority</div>
+              <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Priority</div>
               <select value={priority} onChange={(e) => setPriority(e.target.value as TaskPriority)} className={`${fieldCls} capitalize`}>
                 {TASK_PRIORITIES.map((p) => (
                   <option key={p} value={p} className="bg-surface capitalize">{p}</option>
@@ -135,7 +135,7 @@ export default function TaskComposer({
               </select>
             </label>
             <label className="block">
-              <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">Owner</div>
+              <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Owner</div>
               <select value={assignee} onChange={(e) => setAssignee(e.target.value)} className={fieldCls}>
                 {assigneeOptions.map((a) => (
                   <option key={a.value} value={a.value} className="bg-surface">{a.label}</option>
@@ -150,7 +150,7 @@ export default function TaskComposer({
             <button type="button" onClick={() => onClose(0)} disabled={saving} className="text-sm text-ink-2 hover:text-ink-1 px-4 py-2.5">
               Cancel
             </button>
-            <button type="submit" disabled={saving} className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
+            <button type="submit" disabled={saving} className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-control transition-colors">
               {saving
                 ? "Creating…"
                 : single

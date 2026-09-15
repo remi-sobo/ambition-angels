@@ -9,8 +9,8 @@ import EmptyState from "../../../_components/EmptyState";
 import { StatusChip } from "../../../_components/StatusChip";
 import type { SubjectReviewCycle, ReviewCompetency } from "../../_lib/reviews";
 
-const CARD = "rounded-card border-[1.5px] border-outline bg-tile shadow-tile";
-const FIELD = "w-full rounded-md border border-outline bg-surface px-2 py-1.5 text-sm text-ink-1 placeholder:text-ink-3";
+const CARD = "rounded-panel border-hairline bg-tile";
+const FIELD = "w-full rounded-control border border-hairline bg-surface px-2 py-1.5 text-sm text-ink-1 placeholder:text-ink-3";
 
 const REL_LABEL: Record<string, string> = {
   self: "Self", manager: "Manager", report: "Upward", peer: "Peer",
@@ -64,17 +64,17 @@ function CycleBlock({
       {/* Shared summary (what the subject sees) */}
       {data.canSynthesize ? (
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-ink-3">Synthesis (shared with subject)</label>
+          <label className="text-xs font-semibold text-ink-3">Synthesis (shared with subject)</label>
           <textarea className={FIELD} rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Summarize the feedback for the subject…" />
-          <label className="text-xs font-semibold uppercase tracking-wide text-ink-3">
+          <label className="text-xs font-semibold text-ink-3">
             Private manager notes (never shown to the subject)
           </label>
           <textarea className={FIELD} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="For your eyes / the org's record…" />
           <div className="flex items-center gap-2">
-            <button type="button" disabled={busy} onClick={() => save(false)} className="rounded-md border border-outline px-3 py-1 text-sm font-semibold text-ink-1 disabled:opacity-50">
+            <button type="button" disabled={busy} onClick={() => save(false)} className="rounded-control border border-hairline px-3 py-1 text-sm font-semibold text-ink-1 disabled:opacity-50">
               Save
             </button>
-            <button type="button" disabled={busy} onClick={() => save(true)} className="rounded-md bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50">
+            <button type="button" disabled={busy} onClick={() => save(true)} className="rounded-control bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50">
               Save & share
             </button>
             {data.summaryShared && <span className="text-xs text-status-healthy">Shared with subject</span>}
@@ -82,7 +82,7 @@ function CycleBlock({
         </div>
       ) : data.summary && data.summaryShared ? (
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-3 mb-1">Summary</p>
+          <p className="text-xs font-semibold text-ink-3 mb-1">Summary</p>
           <p className="text-sm text-ink-1 whitespace-pre-wrap">{data.summary}</p>
         </div>
       ) : (
@@ -91,12 +91,12 @@ function CycleBlock({
 
       {/* Feedback rows the viewer is allowed to see */}
       {submitted.length > 0 && (
-        <div className="flex flex-col gap-2 border-t border-outline pt-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">Feedback</p>
+        <div className="flex flex-col gap-2 border-t border-hairline pt-3">
+          <p className="text-xs font-semibold text-ink-3">Feedback</p>
           {submitted.map((f) => (
             <div key={f.id} className="text-sm">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] uppercase tracking-wide text-ink-3">{REL_LABEL[f.relationship] ?? f.relationship}</span>
+                <span className="text-xs text-ink-3">{REL_LABEL[f.relationship] ?? f.relationship}</span>
                 <span className="text-ink-2">· {f.rater_name ?? "Anonymous"}</span>
                 <span className="text-ink-3">· avg {avg(f.ratings)}</span>
               </div>

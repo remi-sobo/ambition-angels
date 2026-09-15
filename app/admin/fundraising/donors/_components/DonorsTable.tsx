@@ -39,25 +39,25 @@ export type DonorRow = {
 };
 
 const FLAG_STYLES: Record<RetentionFlag, string> = {
-  lybunt: "bg-[#F4E8D0] text-[#A56A1B]",
-  sybunt: "bg-tile text-ink-2 border-[1.5px] border-outline",
+  lybunt: "bg-status-watch-bg text-status-watch-text",
+  sybunt: "bg-tile text-ink-2 border-hairline",
   cadence_lapsed: "bg-expense-bg text-expense",
-  second_gift_watch: "bg-blue-500/15 text-blue-400",
+  second_gift_watch: "bg-tile text-ink-2",
 };
 
 const STAGE_STYLES: Record<LifecycleStage, string> = {
-  prospect: "bg-tile text-ink-3 border-[1.5px] border-outline",
-  first_time: "bg-tile text-ink-2 border-[1.5px] border-outline",
-  repeat: "bg-blue-500/15 text-blue-400",
+  prospect: "bg-tile text-ink-3 border-hairline",
+  first_time: "bg-tile text-ink-2 border-hairline",
+  repeat: "bg-tile text-ink-2",
   recurring: "bg-revenue/15 text-revenue",
   major: "bg-orange/20 text-orange",
 };
 
 const BAND_STYLES: Record<EngagementBand, string> = {
   strong: "bg-revenue/15 text-revenue",
-  steady: "bg-blue-500/15 text-blue-400",
-  at_risk: "bg-[#F4E8D0] text-[#A56A1B]",
-  none: "bg-tile text-ink-3 border-[1.5px] border-outline",
+  steady: "bg-tile text-ink-2",
+  at_risk: "bg-status-watch-bg text-status-watch-text",
+  none: "bg-tile text-ink-3 border-hairline",
 };
 
 const fmtDate = (iso: string) =>
@@ -114,13 +114,13 @@ export default function DonorsTable({
           </span>
           <span className="font-medium text-ink-1 group-hover:text-orange transition-colors">{r.name}</span>
           {r.recurring && (
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
+            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
           )}
           {r.doNotContact && (
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-expense-bg text-expense">Do not contact</span>
+            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-expense-bg text-expense">Do not contact</span>
           )}
           {r.flags.map((f) => (
-            <span key={f} title={FLAG_HELP[f]} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${FLAG_STYLES[f]}`}>
+            <span key={f} title={FLAG_HELP[f]} className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${FLAG_STYLES[f]}`}>
               {FLAG_LABELS[f]}
             </span>
           ))}
@@ -172,7 +172,7 @@ export default function DonorsTable({
       render: (r) => (
         <span
           title={LIFECYCLE_HELP[r.stage]}
-          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${STAGE_STYLES[r.stage]}`}
+          className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${STAGE_STYLES[r.stage]}`}
         >
           {LIFECYCLE_LABELS[r.stage]}
         </span>
@@ -199,7 +199,7 @@ export default function DonorsTable({
       render: (r) => (
         <span
           title={`Engagement ${r.engagement}/100 · ${BAND_LABEL[r.band]}`}
-          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full [font-variant-numeric:tabular-nums] ${BAND_STYLES[r.band]}`}
+          className={`text-xs font-semibold px-2 py-0.5 rounded-full [font-variant-numeric:tabular-nums] ${BAND_STYLES[r.band]}`}
         >
           {r.engagement}
         </span>
@@ -214,7 +214,7 @@ export default function DonorsTable({
         r.openTasks > 0 ? (
           <span
             title={r.overdueTasks ? `${r.overdueTasks} overdue` : "open tasks"}
-            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full [font-variant-numeric:tabular-nums] ${
+            className={`text-xs font-semibold px-2 py-0.5 rounded-full [font-variant-numeric:tabular-nums] ${
               r.overdueTasks ? "bg-expense-bg text-expense" : "bg-orange/15 text-orange"
             }`}
           >

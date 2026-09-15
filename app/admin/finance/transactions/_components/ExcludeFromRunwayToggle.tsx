@@ -40,10 +40,10 @@ export default function ExcludeFromRunwayToggle({ transactionId, initial }: Prop
       type="button"
       onClick={toggle}
       disabled={busy}
-      className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border ${
+      className={`text-xs px-1.5 py-0.5 rounded border ${
         value
-          ? "border-[#A56A1B]/60 bg-[#A56A1B]/15 text-[#A56A1B]"
-          : "border-outline text-ink-2 hover:text-ink-1"
+          ? "border-status-watch/60 bg-status-watch-bg text-status-watch-text"
+          : "border-hairline text-ink-2 hover:text-ink-1"
       } ${busy ? "opacity-50" : ""}`}
       title={
         value

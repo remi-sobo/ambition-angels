@@ -7,8 +7,8 @@ import { userMessage } from "@/lib/admin/errors";
 import { StatusChip } from "../../../../_components/StatusChip";
 import type { RaterForm, ReviewCompetency } from "../../../_lib/reviews";
 
-const CARD = "rounded-card border-[1.5px] border-outline bg-tile shadow-tile";
-const FIELD = "w-full rounded-md border border-outline bg-surface px-2 py-1.5 text-sm text-ink-1 placeholder:text-ink-3";
+const CARD = "rounded-panel border-hairline bg-tile";
+const FIELD = "w-full rounded-control border border-hairline bg-surface px-2 py-1.5 text-sm text-ink-1 placeholder:text-ink-3";
 
 const REL_LABEL: Record<string, string> = {
   self: "Self-review",
@@ -65,10 +65,10 @@ function FormCard({ form, competencies }: { form: RaterForm; competencies: Revie
                   type="button"
                   disabled={busy || submitted}
                   onClick={() => setRatings((r) => ({ ...r, [c.id]: n }))}
-                  className={`w-7 h-7 rounded-md text-xs font-semibold border ${
+                  className={`w-7 h-7 rounded-control text-xs font-semibold border ${
                     ratings[c.id] === n
                       ? "bg-orange text-white border-orange"
-                      : "bg-surface text-ink-2 border-outline hover:border-orange/50"
+                      : "bg-surface text-ink-2 border-hairline hover:border-orange/50"
                   } disabled:opacity-60`}
                 >
                   {n}
@@ -110,7 +110,7 @@ function FormCard({ form, competencies }: { form: RaterForm; competencies: Revie
             type="button"
             disabled={busy}
             onClick={() => save(false)}
-            className="rounded-md border border-outline px-3 py-1 text-sm font-semibold text-ink-1 disabled:opacity-50"
+            className="rounded-control border border-hairline px-3 py-1 text-sm font-semibold text-ink-1 disabled:opacity-50"
           >
             Save draft
           </button>
@@ -118,7 +118,7 @@ function FormCard({ form, competencies }: { form: RaterForm; competencies: Revie
             type="button"
             disabled={busy}
             onClick={() => save(true)}
-            className="rounded-md bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-control bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50"
           >
             Submit
           </button>

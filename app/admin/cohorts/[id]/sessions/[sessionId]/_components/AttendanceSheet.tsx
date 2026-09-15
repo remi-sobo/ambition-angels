@@ -26,13 +26,13 @@ const MARK_STYLES: Record<string, { row: string; chip: string; label: string }> 
     label: "Present",
   },
   late: {
-    row: "border-[#D9BE86] bg-yellow-500/[0.07]",
-    chip: "bg-[#F4E8D0] text-[#A56A1B]",
+    row: "border-status-watch/40 bg-status-watch-bg",
+    chip: "bg-status-watch-bg text-status-watch-text",
     label: "Late",
   },
   excused: {
-    row: "border-blue-500/40 bg-blue-500/[0.07]",
-    chip: "bg-blue-500/20 text-blue-400",
+    row: "border-hairline bg-tile",
+    chip: "bg-tile text-ink-2",
     label: "Excused",
   },
   absent: {
@@ -105,14 +105,14 @@ export default function AttendanceSheet({
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span className="text-[12px] tabular-nums text-ink-2">
+        <span className="text-xs tabular-nums text-ink-2">
           <span className="text-revenue font-semibold">{counts.present + counts.late}</span> here
           {" · "}
           <span className="text-expense font-semibold">{counts.absent}</span> absent
           {counts.excused > 0 && (
             <>
               {" · "}
-              <span className="text-blue-400 font-semibold">{counts.excused}</span> excused
+              <span className="text-ink-2 font-semibold">{counts.excused}</span> excused
             </>
           )}
           {" · "}
@@ -122,7 +122,7 @@ export default function AttendanceSheet({
           <button
             onClick={() => void allPresent()}
             disabled={busyAll}
-            className="ml-auto text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+            className="ml-auto text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
           >
             Mark rest present
           </button>
@@ -136,14 +136,14 @@ export default function AttendanceSheet({
             <button
               key={e.studentId}
               onClick={() => tap(e)}
-              className={`w-full flex items-center gap-3 rounded-xl border px-4 py-4 text-left transition-colors select-none active:scale-[0.99] ${
-                style ? style.row : "border-outline bg-surface hover:border-outline"
+              className={`w-full flex items-center gap-3 rounded-panel border px-4 py-4 text-left transition-colors select-none active:scale-[0.99] ${
+                style ? style.row : "border-hairline bg-surface hover:border-hairline"
               }`}
             >
               <span className="font-semibold text-ink-1 text-base">{e.name}</span>
-              {e.grade && <span className="text-[11px] text-ink-2">Grade {e.grade}</span>}
+              {e.grade && <span className="text-xs text-ink-2">Grade {e.grade}</span>}
               <span
-                className={`ml-auto text-[11px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                className={`ml-auto text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider ${
                   style ? style.chip : "bg-tile text-ink-2"
                 }`}
               >
@@ -157,7 +157,7 @@ export default function AttendanceSheet({
         )}
       </div>
 
-      <p className="text-[11px] text-ink-2 mt-4">
+      <p className="text-xs text-ink-2 mt-4">
         Tap a name to cycle present → late → excused → absent → unmarked. Every tap saves
         instantly.
       </p>

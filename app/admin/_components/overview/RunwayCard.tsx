@@ -35,10 +35,10 @@ export default async function RunwayCard() {
   const burnLabel = inputs.baselineSource === "config" ? "burn baseline (set)" : "trailing 3-month burn";
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3">
         <h2 className={TYPE.cardTitle}>Runway &amp; cash</h2>
-        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${t.chip} ${t.chipText}`}>{label}</span>
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${t.chip} ${t.chipText}`}>{label}</span>
       </div>
       <div className="p-5 grid grid-cols-1 lg:grid-cols-[auto,1fr] gap-6 items-center">
         <div>
@@ -61,7 +61,7 @@ export default async function RunwayCard() {
             <span className="text-ink-1 font-semibold text-right [font-variant-numeric:tabular-nums]">{money(d.cashOnHand)}</span>
             <span className="text-ink-3">Monthly burn</span>
             <span className="text-ink-1 font-semibold text-right [font-variant-numeric:tabular-nums]">{money(inputs.baseline)}</span>
-            <span className="text-ink-3 text-[11px] col-span-2 mt-0.5">{burnLabel}</span>
+            <span className="text-ink-3 text-xs col-span-2 mt-0.5">{burnLabel}</span>
           </div>
         </div>
         <div className="min-w-0">

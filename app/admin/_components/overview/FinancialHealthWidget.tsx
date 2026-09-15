@@ -20,7 +20,7 @@ export default async function FinancialHealthWidget({ className }: { className?:
       <div className="grid grid-cols-3 gap-4 mb-5">
         {cells.map((s) => (
           <div key={s.label}>
-            <div className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-1">{s.label}</div>
+            <div className="text-xs uppercase tracking-wider text-ink-3 font-semibold mb-1">{s.label}</div>
             <div className={`font-heading font-semibold text-lg [font-variant-numeric:tabular-nums] ${s.cls}`}>{s.value}</div>
           </div>
         ))}

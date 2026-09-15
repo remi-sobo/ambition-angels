@@ -106,7 +106,7 @@ export default async function CohortsPage() {
   const overallRate = attendedAll + absentAll > 0 ? attendedAll / (attendedAll + absentAll) : null;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className={TYPE.pageTitle}>{terms.cohorts}</h1>
@@ -139,15 +139,15 @@ export default async function CohortsPage() {
             <Link
               key={c.id}
               href={`/admin/cohorts/${c.id}`}
-              className="block bg-surface border-[1.5px] border-outline rounded-card p-4 hover:border-orange/30 transition-colors"
+              className="block bg-surface border-hairline rounded-panel p-4 hover:border-orange/30 transition-colors"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-heading font-semibold text-ink-1">{c.name}</span>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${STATUS_CHIP[c.status] ?? "bg-tile text-ink-2"}`}>
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${STATUS_CHIP[c.status] ?? "bg-tile text-ink-2"}`}>
                   {COHORT_STATUS_LABELS[c.status] ?? c.status}
                 </span>
               </div>
-              <p className="text-[12px] text-ink-2 mt-1">
+              <p className="text-xs text-ink-2 mt-1">
                 {[c.program, c.term].filter(Boolean).join(" · ") || "—"}
                 {c.start_date && (
                   <span className="ml-1.5">
@@ -155,7 +155,7 @@ export default async function CohortsPage() {
                   </span>
                 )}
               </p>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 text-[12px] text-ink-2 tabular-nums">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 text-xs text-ink-2 tabular-nums">
                 <span>
                   <span className="font-semibold text-ink-1">{r.enrolled}</span>
                   {c.capacity ? ` / ${c.capacity}` : ""} enrolled

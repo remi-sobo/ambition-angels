@@ -13,8 +13,8 @@ import { userMessage, networkMessage } from "@/lib/admin/errors";
 type Option = { id: string; name: string };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
-const labelCls = "flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+const labelCls = "flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold";
 
 export function NewCampaignForm({ segments }: { segments: Option[] }) {
   const router = useRouter();
@@ -59,7 +59,7 @@ export function NewCampaignForm({ segments }: { segments: Option[] }) {
     );
   }
   return (
-    <form onSubmit={submit} className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-4 space-y-3 w-full">
+    <form onSubmit={submit} className="bg-tile border-hairline rounded-panel-lg p-4 space-y-3 w-full">
       <div className="flex flex-wrap gap-3">
         <label className={labelCls + " flex-1 min-w-[12rem]"}>
           Campaign name *
@@ -68,8 +68,8 @@ export function NewCampaignForm({ segments }: { segments: Option[] }) {
         <label className={labelCls}>
           Segment
           <select value={segmentId} onChange={(e) => setSegmentId(e.target.value)} className={inputCls + " w-52"}>
-            <option value="" className="bg-tile shadow-tile">(pick to enable send)</option>
-            {segments.map((s) => (<option key={s.id} value={s.id} className="bg-tile shadow-tile">{s.name}</option>))}
+            <option value="" className="bg-tile">(pick to enable send)</option>
+            {segments.map((s) => (<option key={s.id} value={s.id} className="bg-tile">{s.name}</option>))}
           </select>
         </label>
       </div>
@@ -163,28 +163,28 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
           onChange={(e) => setTestEmail(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") void test(); if (e.key === "Escape") setTestEmail(null); }}
           placeholder="Test copy to which email?"
-          className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 text-[11px] w-48 placeholder-ink-3 focus:outline-none focus:border-orange/40"
+          className="bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-xs w-48 placeholder-ink-3 focus:outline-none focus:border-orange/40"
         />
-        <button disabled={busy || !testEmail.trim()} onClick={test} className="text-[11px] font-semibold text-orange hover:text-orange-dark transition-colors disabled:opacity-50">Send test</button>
-        <button disabled={busy} onClick={() => setTestEmail(null)} className="text-[11px] font-semibold text-ink-3 hover:text-ink-1 transition-colors disabled:opacity-50">Cancel</button>
+        <button disabled={busy || !testEmail.trim()} onClick={test} className="text-xs font-semibold text-orange hover:text-orange-dark transition-colors disabled:opacity-50">Send test</button>
+        <button disabled={busy} onClick={() => setTestEmail(null)} className="text-xs font-semibold text-ink-3 hover:text-ink-1 transition-colors disabled:opacity-50">Cancel</button>
       </span>
     );
   }
 
   return (
     <span className="flex items-center gap-3">
-      <button disabled={busy} onClick={() => setTestEmail("")} className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 transition-colors disabled:opacity-50">Test</button>
+      <button disabled={busy} onClick={() => setTestEmail("")} className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors disabled:opacity-50">Test</button>
       {status === "draft" && (
         <button
           disabled={busy || !hasSegment}
           title={hasSegment ? undefined : "Attach a segment first"}
           onClick={send}
-          className="text-[11px] font-semibold text-revenue hover:text-revenue transition-colors disabled:opacity-40"
+          className="text-xs font-semibold text-revenue hover:text-revenue transition-colors disabled:opacity-40"
         >
           Send
         </button>
       )}
-      <button disabled={busy} onClick={del} className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50">Delete</button>
+      <button disabled={busy} onClick={del} className="text-xs font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50">Delete</button>
     </span>
   );
 }

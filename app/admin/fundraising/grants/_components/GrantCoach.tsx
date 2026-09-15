@@ -184,8 +184,8 @@ export default function GrantCoach({
   }
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-outline">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-hairline">
         <h2 className={TYPE.cardTitle}>Reed&apos;s Proposal Review</h2>
         <p className="text-xs text-ink-2 mt-0.5">
           Reed reads your draft the way the actual audience will. Naming the gaps and the
@@ -202,7 +202,7 @@ export default function GrantCoach({
             id={`coach-lens-${grantId}`}
             value={lens}
             onChange={(e) => setLens(e.target.value)}
-            className="bg-ink/40 border border-outline rounded-lg px-3 py-2 text-sm text-ink-1 focus:outline-none focus:border-orange/60 max-w-full"
+            className="bg-ink/40 border border-hairline rounded-control px-3 py-2 text-sm text-ink-1 focus:outline-none focus:border-orange/60 max-w-full"
           >
             {lenses.map((l) => (
               <option key={l.id} value={l.id}>
@@ -225,7 +225,7 @@ export default function GrantCoach({
               id={`coach-source-${grantId}`}
               value={source}
               onChange={(e) => setSource(e.target.value)}
-              className="bg-ink/40 border border-outline rounded-lg px-3 py-2 text-sm text-ink-1 focus:outline-none focus:border-orange/60 max-w-full"
+              className="bg-ink/40 border border-hairline rounded-control px-3 py-2 text-sm text-ink-1 focus:outline-none focus:border-orange/60 max-w-full"
             >
               <option value="paste">Pasted text</option>
               {documents.map((d) => (
@@ -249,7 +249,7 @@ export default function GrantCoach({
               maxLength={80_000}
               rows={8}
               placeholder="Paste the full proposal or LOI draft here…"
-              className="w-full bg-ink/40 border border-outline rounded-card p-3 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60 resize-y"
+              className="w-full bg-ink/40 border border-hairline rounded-panel p-3 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60 resize-y"
             />
             <p className={`${TYPE.metadata} mt-1`}>
               Don&apos;t paste sensitive donor data, client identities, or unreleased financials. 
@@ -270,7 +270,7 @@ export default function GrantCoach({
               maxLength={40_000}
               rows={5}
               placeholder="Paste the RFP, application questions, or their “What We Fund” page. The coach then rates against their criteria and checks eligibility…"
-              className="w-full bg-ink/40 border border-outline rounded-card p-3 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60 resize-y"
+              className="w-full bg-ink/40 border border-hairline rounded-panel p-3 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60 resize-y"
             />
           </div>
         ) : (
@@ -288,7 +288,7 @@ export default function GrantCoach({
             onClick={() => run(assessment.id)}
             disabled={!ready}
             title={assessment.blurb}
-            className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg"
+            className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-control"
           >
             {runningId === assessment.id ? "Assessing…" : assessment.label}
           </button>
@@ -306,7 +306,7 @@ export default function GrantCoach({
               onClick={() => run(p.id)}
               disabled={!ready}
               title={p.blurb}
-              className="text-xs font-medium px-2.5 py-1.5 rounded-full border border-outline text-ink-2 hover:text-ink-1 hover:border-orange/50 disabled:opacity-40 transition-colors"
+              className="text-xs font-medium px-2.5 py-1.5 rounded-full border border-hairline text-ink-2 hover:text-ink-1 hover:border-orange/50 disabled:opacity-40 transition-colors"
             >
               {runningId === p.id ? "Running…" : p.label}
             </button>
@@ -326,7 +326,7 @@ export default function GrantCoach({
         {error && <p className="text-expense text-xs">{error}</p>}
 
         {defendOpen && (
-          <div className="border-[1.5px] border-orange/40 rounded-card p-4 bg-ink/40 space-y-3">
+          <div className="border-orange/40 rounded-panel p-4 bg-ink/40 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <p className={TYPE.cardLabel}>{defend.label}: live interrogation</p>
               <button
@@ -335,7 +335,7 @@ export default function GrantCoach({
                   setDefendHistory([]);
                   setDefendInput("");
                 }}
-                className="text-[11px] text-ink-3 hover:text-ink-1"
+                className="text-xs text-ink-3 hover:text-ink-1"
               >
                 End session
               </button>
@@ -347,7 +347,7 @@ export default function GrantCoach({
                     <CoachText text={t.content} />
                   </div>
                 ) : (
-                  <p key={i} className="text-sm text-ink-1 leading-relaxed pl-3 border-l-2 border-outline">
+                  <p key={i} className="text-sm text-ink-1 leading-relaxed pl-3 border-l-2 border-hairline">
                     {t.content}
                   </p>
                 )
@@ -368,12 +368,12 @@ export default function GrantCoach({
                   onChange={(e) => setDefendInput(e.target.value)}
                   maxLength={4000}
                   placeholder="Answer the reader…"
-                  className="flex-1 bg-ink/40 border border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60"
+                  className="flex-1 bg-ink/40 border border-hairline rounded-control px-3 py-2 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60"
                 />
                 <button
                   type="submit"
                   disabled={defendBusy || !defendInput.trim()}
-                  className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg"
+                  className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-control"
                 >
                   Send
                 </button>
@@ -385,7 +385,7 @@ export default function GrantCoach({
         {runs.length > 0 && (
           <div className="space-y-3">
             {runs.map((r) => (
-              <div key={r.key} className="border-[1.5px] border-outline rounded-card p-4 bg-ink/40">
+              <div key={r.key} className="border-hairline rounded-panel p-4 bg-ink/40">
                 <p className={`${TYPE.cardLabel} mb-2`}>{r.label}</p>
                 <CoachText text={r.text} />
               </div>

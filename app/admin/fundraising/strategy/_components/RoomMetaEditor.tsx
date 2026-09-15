@@ -26,8 +26,8 @@ export type RoomMetaInput = {
 };
 
 const input =
-  "w-full text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50";
-const label = "block text-[11px] font-semibold uppercase tracking-wider text-ink-3 mb-1";
+  "w-full text-sm bg-cream border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50";
+const label = "block text-xs font-semibold uppercase tracking-wider text-ink-3 mb-1";
 
 export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
   const router = useRouter();
@@ -62,7 +62,7 @@ export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
   };
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg mb-5">
+    <section className="bg-tile border-hairline rounded-panel-lg mb-5">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -71,7 +71,7 @@ export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
       >
         <div>
           <h2 className={TYPE.cardTitle}>Strategy Room presentation</h2>
-          <p className="text-[11px] text-ink-3 mt-0.5">The hero, the stat chips, and the “this year” block at the top of the public deck.</p>
+          <p className="text-xs text-ink-3 mt-0.5">The hero, the stat chips, and the “this year” block at the top of the public deck.</p>
         </div>
         <span className="text-ink-3 text-sm shrink-0">{open ? "Hide" : "Edit"}</span>
       </button>
@@ -90,7 +90,7 @@ export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <p className={label + " mb-0"}>Stat chips</p>
-              <button type="button" onClick={() => set("stats", [...f.stats, { value: "", label: "" }])} className="text-[11px] font-semibold text-orange hover:text-orange-dark">+ Add stat</button>
+              <button type="button" onClick={() => set("stats", [...f.stats, { value: "", label: "" }])} className="text-xs font-semibold text-orange hover:text-orange-dark">+ Add stat</button>
             </div>
             <div className="space-y-2">
               {f.stats.map((s, i) => (
@@ -104,7 +104,7 @@ export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
             </div>
           </div>
 
-          <div className="border-t border-outline pt-4 grid sm:grid-cols-2 gap-3">
+          <div className="border-t border-hairline pt-4 grid sm:grid-cols-2 gap-3">
             <div><label className={label}>“This year” heading</label><input className={input} value={f.this_year_heading} onChange={(e) => set("this_year_heading", e.target.value)} /></div>
             <div><label className={label}>“This year” intro</label><textarea rows={2} className={input} value={f.year_intro} onChange={(e) => set("year_intro", e.target.value)} /></div>
           </div>
@@ -112,7 +112,7 @@ export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <p className={label + " mb-0"}>“This year” items</p>
-              <button type="button" onClick={() => set("this_year", [...f.this_year, { label: "", body: "" }])} className="text-[11px] font-semibold text-orange hover:text-orange-dark">+ Add item</button>
+              <button type="button" onClick={() => set("this_year", [...f.this_year, { label: "", body: "" }])} className="text-xs font-semibold text-orange hover:text-orange-dark">+ Add item</button>
             </div>
             <div className="space-y-2">
               {f.this_year.map((y, i) => (
@@ -127,7 +127,7 @@ export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-1">
-            {dirty && <span className="text-[11px] text-ink-3">Unsaved changes</span>}
+            {dirty && <span className="text-xs text-ink-3">Unsaved changes</span>}
             <button type="button" onClick={save} disabled={busy || !dirty} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
               {busy ? "Saving…" : "Save presentation"}
             </button>

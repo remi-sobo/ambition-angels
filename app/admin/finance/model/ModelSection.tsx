@@ -67,7 +67,7 @@ export default async function ModelSection({ embedded = false }: { embedded?: bo
       {embedded ? (
         <div>
           <h2 className={TYPE.cardTitle}>Model</h2>
-          <p className="text-[11px] text-ink-3 max-w-2xl">
+          <p className="text-xs text-ink-3 max-w-2xl">
             The four numbers from the founder model sheet. Refreshes hourly.
           </p>
         </div>
@@ -116,7 +116,7 @@ export default async function ModelSection({ embedded = false }: { embedded?: bo
               href={status.data.sheetUrl}
               target="_blank"
               rel="noreferrer"
-              className="font-semibold text-orange hover:text-orange-dark bg-orange/10 hover:bg-orange/15 border border-orange/30 px-3 py-2 rounded-lg whitespace-nowrap"
+              className="font-semibold text-orange hover:text-orange-dark bg-orange/10 hover:bg-orange/15 border border-orange/30 px-3 py-2 rounded-control whitespace-nowrap"
             >
               View full model ↗
             </a>
@@ -142,13 +142,13 @@ function Card({
 }) {
   const valueClass =
     tone === "warn"
-      ? "text-[#A56A1B]"
+      ? "text-status-watch-text"
       : accent === "orange"
       ? "text-orange"
       : "text-ink-1";
   return (
-    <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
-      <div className="text-[10px] uppercase tracking-widest text-ink-2">
+    <div className="rounded-panel-lg border-hairline bg-surface p-5">
+      <div className="text-xs uppercase tracking-widest text-ink-2">
         {label}
       </div>
       <div
@@ -162,8 +162,8 @@ function Card({
 
 function NotConfigured({ missing }: { missing: string[] }) {
   return (
-    <div className="rounded-card border border-[#D9BE86] bg-[#F4E8D0] p-6 space-y-3">
-      <div className="text-sm font-semibold text-amber-200">
+    <div className="rounded-panel border border-status-watch/40 bg-status-watch-bg p-6 space-y-3">
+      <div className="text-sm font-semibold text-status-watch-text">
         Not configured yet
       </div>
       <p className="text-sm text-ink-1 leading-relaxed">
@@ -171,7 +171,7 @@ function NotConfigured({ missing }: { missing: string[] }) {
         items below are set, this page will render live KPIs from the source
         sheet on every visit (cached 1 hour).
       </p>
-      <ul className="text-xs font-mono text-amber-100/90 space-y-1 pl-4 list-disc">
+      <ul className="text-xs font-mono text-status-watch-text space-y-1 pl-4 list-disc">
         {missing.map((m) => (
           <li key={m}>{m}</li>
         ))}
@@ -188,7 +188,7 @@ function NotConfigured({ missing }: { missing: string[] }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-card border border-expense/30 bg-expense-bg p-6 space-y-2">
+    <div className="rounded-panel border border-expense/30 bg-expense-bg p-6 space-y-2">
       <div className="text-sm font-semibold text-expense">
         Couldn&apos;t reach the sheet
       </div>
@@ -198,7 +198,7 @@ function ErrorPanel({ message }: { message: string }) {
         the spreadsheet ID is wrong, or the private key newline escaping is
         off. Full error below.
       </p>
-      <pre className="mt-2 text-[11px] text-expense font-mono bg-surface border border-hairline rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">
+      <pre className="mt-2 text-xs text-expense font-mono bg-surface border border-hairline rounded-control p-3 overflow-x-auto whitespace-pre-wrap">
         {message}
       </pre>
     </div>

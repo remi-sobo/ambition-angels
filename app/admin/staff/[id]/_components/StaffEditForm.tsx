@@ -12,7 +12,7 @@ import type { StaffRow } from "../../_lib/read";
  * self-service photo control stays separate. The reports_to trigger blocks a
  * cross-org or cyclic manager, surfaced as a clean error.
  */
-const FIELD = "w-full rounded-md border border-outline bg-surface px-2 py-1.5 text-sm text-ink-1";
+const FIELD = "w-full rounded-control border border-hairline bg-surface px-2 py-1.5 text-sm text-ink-1";
 
 export default function StaffEditForm({
   member,
@@ -65,7 +65,7 @@ export default function StaffEditForm({
   }
 
   return (
-    <div className="rounded-card border-[1.5px] border-outline bg-tile shadow-tile p-4 flex flex-col gap-2">
+    <div className="rounded-panel border-hairline bg-tile p-4 flex flex-col gap-2">
       <input className={FIELD} value={f.full_name} onChange={(e) => setF({ ...f, full_name: e.target.value })} placeholder="Full name" />
       <input className={FIELD} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder="Title" />
       <input className={FIELD} value={f.department} onChange={(e) => setF({ ...f, department: e.target.value })} placeholder="Department" />
@@ -93,7 +93,7 @@ export default function StaffEditForm({
       </select>
       <input type="date" className={FIELD} value={f.start_date} onChange={(e) => setF({ ...f, start_date: e.target.value })} />
       <div className="flex items-center gap-2 mt-1">
-        <button type="button" disabled={busy} onClick={save} className="rounded-md bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50">
+        <button type="button" disabled={busy} onClick={save} className="rounded-control bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50">
           Save
         </button>
         <button type="button" onClick={() => setOpen(false)} className="text-sm text-ink-3 hover:text-ink-1">

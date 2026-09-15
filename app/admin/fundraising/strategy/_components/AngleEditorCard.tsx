@@ -40,7 +40,7 @@ const BADGE_LABEL: Record<string, string> = {
 };
 
 const inputCls =
-  "w-full text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50";
+  "w-full text-sm bg-cream border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50";
 
 // Module-level helper, so failure copy comes from the caller's toast.
 async function patchAngle(
@@ -92,7 +92,7 @@ function EditField({
 
   return (
     <div className={busy ? "opacity-60" : ""}>
-      <p className="text-ink-3 uppercase tracking-wider font-semibold text-[10px] mb-0.5">{label}</p>
+      <p className="text-ink-3 uppercase tracking-wider font-semibold text-xs mb-0.5">{label}</p>
       {editing ? (
         multiline ? (
           <textarea
@@ -147,10 +147,10 @@ export default function AngleEditorCard({ angle, funderCount }: { angle: AdminAn
   };
 
   return (
-    <section className={`bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-4 ${busy ? "opacity-60" : ""} ${angle.is_active ? "" : "opacity-70"}`}>
+    <section className={`bg-tile border-hairline rounded-panel-lg p-5 space-y-4 ${busy ? "opacity-60" : ""} ${angle.is_active ? "" : "opacity-70"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-baseline gap-2.5 min-w-0 flex-1">
-          <span className="text-[11px] font-bold text-ink-3 [font-variant-numeric:tabular-nums] pt-0.5">
+          <span className="text-xs font-bold text-ink-3 [font-variant-numeric:tabular-nums] pt-0.5">
             {String(angle.sort_order).padStart(2, "0")}
           </span>
           <div className="min-w-0 flex-1">
@@ -162,7 +162,7 @@ export default function AngleEditorCard({ angle, funderCount }: { angle: AdminAn
             value={angle.status_badge ?? ""}
             onChange={(e) => void patch({ status_badge: e.target.value || null })}
             aria-label="Status badge"
-            className="text-[10px] font-semibold rounded-full px-2 py-0.5 border border-outline bg-cream text-ink-2 cursor-pointer"
+            className="text-xs font-semibold rounded-full px-2 py-0.5 border border-hairline bg-cream text-ink-2 cursor-pointer"
           >
             <option value="">No badge</option>
             {ANGLE_BADGES.map((b) => <option key={b} value={b}>{BADGE_LABEL[b] ?? b}</option>)}
@@ -172,7 +172,7 @@ export default function AngleEditorCard({ angle, funderCount }: { angle: AdminAn
             onChange={(e) => void patch({ tone: e.target.value })}
             aria-label="Tone"
             title="Card accent tone in the Strategy Room"
-            className="text-[10px] font-semibold rounded-full px-2 py-0.5 border border-outline bg-cream text-ink-2 cursor-pointer"
+            className="text-xs font-semibold rounded-full px-2 py-0.5 border border-hairline bg-cream text-ink-2 cursor-pointer"
           >
             {ANGLE_TONES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
@@ -184,18 +184,18 @@ export default function AngleEditorCard({ angle, funderCount }: { angle: AdminAn
       <EditField label="Frame: the case, in our voice" field="frame" value={angle.frame} angleId={angle.id} multiline placeholder="Add the framing paragraph" />
       <EditField label="Lead: a single quotable line" field="lead" value={angle.lead} angleId={angle.id} placeholder="Add a lead line" />
 
-      <div className="grid sm:grid-cols-2 gap-4 border-t border-outline pt-4">
+      <div className="grid sm:grid-cols-2 gap-4 border-t border-hairline pt-4">
         <EditField label={angle.funds_label || "Who funds this"} field="funds" value={angle.funds} angleId={angle.id} multiline placeholder="Named funders / buyers" />
         <EditField label="What they want to see" field="want" value={angle.want} angleId={angle.id} multiline placeholder="The metrics they want" />
       </div>
       <EditField label="Funds label (e.g. “Who funds this” / “Who buys this”)" field="funds_label" value={angle.funds_label} angleId={angle.id} placeholder="Who funds this" />
 
-      <div className="grid sm:grid-cols-2 gap-4 border-t border-outline pt-4">
+      <div className="grid sm:grid-cols-2 gap-4 border-t border-hairline pt-4">
         <EditField label="Catch label (optional)" field="catch_label" value={angle.catch_label} angleId={angle.id} placeholder="e.g. The catch" />
         <EditField label="Catch body (optional)" field="catch_body" value={angle.catch_body} angleId={angle.id} multiline placeholder="The caveat, if any" />
       </div>
 
-      <div className="border-t border-outline pt-4">
+      <div className="border-t border-hairline pt-4">
         <EditField label="The ask" field="ask" value={angle.ask} angleId={angle.id} multiline placeholder="Range, structure, what to request" />
         <div className="mt-3">
           <EditField label="Flag (optional caution)" field="flag" value={angle.flag} angleId={angle.id} placeholder="e.g. a number to pressure-test" />
@@ -205,7 +205,7 @@ export default function AngleEditorCard({ angle, funderCount }: { angle: AdminAn
         </div>
       </div>
 
-      <div className="border-t border-outline pt-3 flex items-center justify-between text-[11px]">
+      <div className="border-t border-hairline pt-3 flex items-center justify-between text-xs">
         <label className="flex items-center gap-1.5 text-ink-2 cursor-pointer">
           <input type="checkbox" checked={angle.is_active} onChange={(e) => void patch({ is_active: e.target.checked })} className="accent-orange" />
           {angle.is_active ? "Shown in the Strategy Room" : "Hidden (inactive)"}

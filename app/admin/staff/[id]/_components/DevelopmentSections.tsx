@@ -43,9 +43,9 @@ function staleness(cadence: string | null, lastUpdated: string | null): string |
   return days <= 0 ? "today" : `${days}d ago`;
 }
 
-const CARD = "rounded-card border-[1.5px] border-outline bg-tile shadow-tile";
+const CARD = "rounded-panel border-hairline bg-tile";
 const FIELD =
-  "rounded-md border border-outline bg-surface px-2 py-1 text-sm text-ink-1 placeholder:text-ink-3";
+  "rounded-control border border-hairline bg-surface px-2 py-1 text-sm text-ink-1 placeholder:text-ink-3";
 
 // ── Goals ─────────────────────────────────────────────────────────────────────
 function GoalsSection({
@@ -138,7 +138,7 @@ function GoalsSection({
               type="button"
               disabled={busy || !form.title.trim()}
               onClick={add}
-              className="rounded-md bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50"
+              className="rounded-control bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50"
             >
               Propose
             </button>
@@ -162,7 +162,7 @@ function GoalsSection({
                     {g.period && <span>{g.period}</span>}
                     {g.target_date && <span>· due {g.target_date}</span>}
                     {g.approval_status !== "approved" && (
-                      <span className="uppercase tracking-wide text-ink-3">{g.approval_status}</span>
+                      <span className=" text-ink-3">{g.approval_status}</span>
                     )}
                   </div>
                 </div>
@@ -354,7 +354,7 @@ function KpisSection({
               type="button"
               disabled={busy}
               onClick={add}
-              className="rounded-md bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50"
+              className="rounded-control bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50"
             >
               Add
             </button>
@@ -379,7 +379,7 @@ function KpisSection({
                       {fmt(k.current, k.unit)}
                       {k.target != null && <span className="text-ink-3"> / {fmt(k.target, k.unit)}</span>}
                     </span>
-                    <span className="uppercase tracking-wide text-ink-3">{k.source}</span>
+                    <span className=" text-ink-3">{k.source}</span>
                     {staleness(k.cadence, k.last_updated_at) && (
                       <span className="text-ink-3">· {staleness(k.cadence, k.last_updated_at)}</span>
                     )}
@@ -425,7 +425,7 @@ function KpisSection({
                     type="button"
                     disabled={busy || !logValue.trim()}
                     onClick={() => logSnapshot(k.id)}
-                    className="rounded-md bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50"
+                    className="rounded-control bg-orange px-3 py-1 text-sm font-semibold text-white disabled:opacity-50"
                   >
                     Save
                   </button>

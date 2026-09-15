@@ -25,7 +25,7 @@ const SOURCE_META: Record<string, { label: string; cls: string }> = {
   hubspot: { label: "HubSpot", cls: "bg-orange/10 text-orange border-orange/30" },
   gmail: { label: "Email", cls: "bg-revenue/10 text-revenue border-revenue/30" },
   stripe: { label: "Stripe", cls: "bg-navy/10 text-navy border-navy/30" },
-  manual: { label: "Manual", cls: "bg-ink/5 text-ink-2 border-outline" },
+  manual: { label: "Manual", cls: "bg-ink/5 text-ink-2 border-hairline" },
 };
 
 const fmtMoney = (n: number | null) =>
@@ -58,20 +58,20 @@ function Card({ item, onResolve }: { item: ReconItem; onResolve: (id: string, ac
   }
 
   return (
-    <div className="rounded-card border-[1.5px] border-outline bg-surface p-4">
+    <div className="rounded-panel border-hairline bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-[10px] font-semibold uppercase tracking-wide border rounded px-1.5 py-0.5 ${src.cls}`}>
+            <span className={`text-xs font-semibold border rounded px-1.5 py-0.5 ${src.cls}`}>
               {src.label}
             </span>
             {item.kind === "flag" && (
-              <span className="text-[10px] font-semibold uppercase tracking-wide border border-status-watch-text/30 text-status-watch-text rounded px-1.5 py-0.5">
+              <span className="text-xs font-semibold border border-status-watch-text/30 text-status-watch-text rounded px-1.5 py-0.5">
                 Needs a look
               </span>
             )}
             {item.confidence && (
-              <span className="text-[10px] text-ink-3 capitalize">{item.confidence} confidence</span>
+              <span className="text-xs text-ink-3 capitalize">{item.confidence} confidence</span>
             )}
           </div>
           <h3 className="mt-1.5 font-heading font-semibold text-ink-1 text-[15px] leading-snug">
@@ -80,7 +80,7 @@ function Card({ item, onResolve }: { item: ReconItem; onResolve: (id: string, ac
           </h3>
           {item.detail && <p className="mt-1 text-xs text-ink-2 leading-relaxed whitespace-pre-wrap">{item.detail}</p>}
           {item.evidence_url && (
-            <a href={item.evidence_url} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-block text-[11px] text-orange hover:text-orange-dark underline">
+            <a href={item.evidence_url} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-block text-xs text-orange hover:text-orange-dark underline">
               View source ↗
             </a>
           )}
@@ -98,7 +98,7 @@ function Card({ item, onResolve }: { item: ReconItem; onResolve: (id: string, ac
           <button
             onClick={() => act("dismiss")}
             disabled={!!busy}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full border border-outline text-ink-2 hover:text-ink-1 hover:bg-[#EFE6D4] transition-colors disabled:opacity-60"
+            className="text-xs font-semibold px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:text-ink-1 hover:bg-tile transition-colors disabled:opacity-60"
           >
             {busy === "dismiss" ? "…" : item.kind === "flag" ? "Resolve" : "Dismiss"}
           </button>
@@ -127,7 +127,7 @@ export default function ReconcileInbox({ pending, resolved }: { pending: ReconIt
           </h2>
         </div>
         {items.length === 0 ? (
-          <div className="rounded-card border-[1.5px] border-dashed border-outline bg-surface/50 p-8 text-center">
+          <div className="rounded-panel border-dashed border-hairline bg-surface/50 p-8 text-center">
             <p className="text-sm text-ink-2 font-medium">Inbox zero. 🎉</p>
             <p className="mt-1 text-xs text-ink-3">
               Nothing to reconcile right now. Ask Cowork to run a sweep, or it&apos;ll post here on the weekly run.
@@ -145,7 +145,7 @@ export default function ReconcileInbox({ pending, resolved }: { pending: ReconIt
       {resolved.length > 0 && (
         <section>
           <h2 className={`${TYPE.cardTitle} mb-2.5`}>Recently resolved</h2>
-          <div className="rounded-card border-[1.5px] border-outline bg-surface divide-y divide-hairline">
+          <div className="rounded-panel border-hairline bg-surface divide-y divide-hairline">
             {resolved.map((it) => (
               <div key={it.id} className="px-4 py-2.5 flex items-center justify-between gap-3 text-xs">
                 <span className="text-ink-2 truncate">

@@ -28,8 +28,8 @@ export const STATUS_SHORT: Record<string, string> = {
 
 // Badge colour per stage (Tailwind classes from the admin palette).
 export const STATUS_STYLE: Record<string, string> = {
-  prospect: "bg-tile text-ink-2 border border-outline",
-  outreach: "bg-blue-500/15 text-blue-400",
+  prospect: "bg-tile text-ink-2 border border-hairline",
+  outreach: "bg-tile text-ink-2",
   pilot: "bg-orange/15 text-orange",
   active: "bg-revenue/15 text-revenue",
   anchor: "bg-revenue/20 text-revenue",

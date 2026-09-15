@@ -50,10 +50,10 @@ export default function ComposeForm({
   }
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-outline">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-hairline">
         <h2 className={TYPE.cardTitle}>Compose a report</h2>
-        <p className="text-[11px] text-ink-3">
+        <p className="text-xs text-ink-3">
           Pick the numbers; the draft flags anything unresolved inline. Only the export is gated.
         </p>
       </div>
@@ -63,7 +63,7 @@ export default function ComposeForm({
           onChange={(e) => setTitle(e.target.value)}
           placeholder={titlePlaceholder}
           maxLength={120}
-          className="w-full text-sm bg-surface border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange"
+          className="w-full text-sm bg-surface border-hairline rounded-control px-3 py-2 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange"
         />
         {metrics.length === 0 ? (
           <EmptyState
@@ -93,7 +93,7 @@ export default function ComposeForm({
                   />
                   <span className="truncate">{m.name}</span>
                   {flagged && (
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#F4E8D0] text-[#A56A1B] uppercase tracking-wider">
+                    <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-status-watch-bg text-status-watch-text uppercase tracking-wider">
                       {m.state === "conflict" ? "conflict" : "stale"}
                     </span>
                   )}

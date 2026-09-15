@@ -147,7 +147,7 @@ export default async function DocumentsHubPage({
   };
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1200px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Documents"
         subtitle="Every file in the org. Attached to the records it belongs to"
@@ -205,12 +205,12 @@ export default async function DocumentsHubPage({
             name="q"
             defaultValue={q}
             placeholder="Search title or filename…"
-            className="bg-tile border-[1.5px] border-outline rounded-full px-4 py-1.5 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/40 w-56"
+            className="bg-tile border-hairline rounded-full px-4 py-1.5 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/40 w-56"
           />
         </form>
       </div>
 
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden mb-8">
+      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden mb-8">
         {docs.length === 0 ? (
           view === "expiring" ? (
             <p className="p-5 text-sm text-ink-2">Nothing expires in the window. All current.</p>
@@ -241,12 +241,12 @@ export default async function DocumentsHubPage({
                     </a>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                       {d.doc_type && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-3">
+                        <span className="text-xs font-semibold text-ink-3">
                           {DOC_TYPE_LABEL[d.doc_type] ?? d.doc_type}
                         </span>
                       )}
                       {d.visibility === "restricted" && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-status-critical-bg text-status-critical-text">
+                        <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-status-critical-bg text-status-critical-text">
                           Restricted
                         </span>
                       )}
@@ -264,24 +264,24 @@ export default async function DocumentsHubPage({
                     )}
                   </div>
                   {d.issued_at && (
-                    <span className="text-[11px] text-ink-3 whitespace-nowrap hidden sm:inline">
+                    <span className="text-xs text-ink-3 whitespace-nowrap hidden sm:inline">
                       Issued {d.issued_at}
                     </span>
                   )}
                   {d.expires_at && (
                     <span
-                      className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                      className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
                         expired ? "bg-expense-bg text-expense" : "bg-status-due-bg text-ink-1"
                       }`}
                     >
                       {expired ? "Expired" : "Expires"} {d.expires_at}
                     </span>
                   )}
-                  <span className="text-[11px] text-ink-3 whitespace-nowrap hidden sm:inline">
+                  <span className="text-xs text-ink-3 whitespace-nowrap hidden sm:inline">
                     {d.uploaded_by ? (names[d.uploaded_by] ?? "—") : "—"}
                   </span>
-                  <span className="text-[11px] text-ink-3 whitespace-nowrap hidden md:inline">{fmtSize(d.size_bytes)}</span>
-                  <span className="text-[11px] text-ink-3 whitespace-nowrap hidden lg:inline">{fmtDate(d.created_at)}</span>
+                  <span className="text-xs text-ink-3 whitespace-nowrap hidden md:inline">{fmtSize(d.size_bytes)}</span>
+                  <span className="text-xs text-ink-3 whitespace-nowrap hidden lg:inline">{fmtDate(d.created_at)}</span>
                   <DocumentActions
                     doc={{
                       id: d.id,
@@ -303,8 +303,8 @@ export default async function DocumentsHubPage({
       </section>
 
       {askDocs.length > 0 && (
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>Ask files (fundraising)</h2>
             <p className="text-xs text-ink-2 mt-0.5">
               Managed on their asks. Shown here so the org&apos;s files read as one list. Consolidation into the hub is
@@ -324,12 +324,12 @@ export default async function DocumentsHubPage({
                 </a>
                 <Link
                   href={`/admin/fundraising/asks/${a.ask_id}`}
-                  className="text-[11px] font-semibold text-orange hover:text-orange-dark whitespace-nowrap"
+                  className="text-xs font-semibold text-orange hover:text-orange-dark whitespace-nowrap"
                 >
                   View ask →
                 </Link>
-                <span className="text-[11px] text-ink-3 whitespace-nowrap hidden md:inline">{fmtSize(a.size_bytes)}</span>
-                <span className="text-[11px] text-ink-3 whitespace-nowrap hidden lg:inline">{fmtDate(a.created_at)}</span>
+                <span className="text-xs text-ink-3 whitespace-nowrap hidden md:inline">{fmtSize(a.size_bytes)}</span>
+                <span className="text-xs text-ink-3 whitespace-nowrap hidden lg:inline">{fmtDate(a.created_at)}</span>
               </li>
             ))}
           </ul>

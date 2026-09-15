@@ -69,7 +69,7 @@ export default async function SessionAttendancePage({
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[640px]">
-      <Link href={`/admin/cohorts/${params.id}`} className="text-[11px] text-ink-2 hover:text-ink-1">
+      <Link href={`/admin/cohorts/${params.id}`} className="text-xs text-ink-2 hover:text-ink-1">
         ← {cohortName}
       </Link>
       <h1 className={`${TYPE.pageTitle} mt-2`}>

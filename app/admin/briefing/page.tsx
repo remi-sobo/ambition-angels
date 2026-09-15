@@ -49,7 +49,7 @@ export default async function BriefingPage() {
       <PulseStrip pulse={pulse} />
 
       {briefing.top.length === 0 ? (
-        <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-10 text-center">
+        <div className="rounded-panel border-hairline bg-surface p-10 text-center">
           <div className="font-heading font-semibold text-lg text-ink-1">Nothing needs you today.</div>
           <div className="text-sm text-ink-2 mt-1">{today}. The spine is clear.</div>
         </div>

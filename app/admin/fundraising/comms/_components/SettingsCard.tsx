@@ -19,8 +19,8 @@ export type CommsSettings = {
 };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
-const labelCls = "flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+const labelCls = "flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold";
 
 export function SettingsCard({ settings }: { settings: CommsSettings | null }) {
   const router = useRouter();
@@ -60,18 +60,18 @@ export function SettingsCard({ settings }: { settings: CommsSettings | null }) {
   };
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
+    <section className="bg-tile border-hairline rounded-panel-lg p-5 space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Sending identity</h2>
+        <h2 className="text-xs uppercase tracking-wider text-ink-3 font-semibold">Sending identity</h2>
         {!editing && (
-          <button onClick={() => setEditing(true)} className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 transition-colors">
+          <button onClick={() => setEditing(true)} className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
             Edit
           </button>
         )}
       </div>
 
       {incomplete && !editing && (
-        <div className="bg-[#F4E8D0] text-[#A56A1B] rounded-xl px-4 py-2.5 text-sm">
+        <div className="bg-status-watch-bg text-status-watch-text rounded-panel px-4 py-2.5 text-sm">
           Sending is disabled until a from address and mailing address are configured
           {settings ? "" : " (not set up for this org yet)"}.
         </div>
@@ -80,21 +80,21 @@ export function SettingsCard({ settings }: { settings: CommsSettings | null }) {
       {!editing ? (
         <dl className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-2 text-sm">
           <div>
-            <dt className="text-[11px] uppercase tracking-wider text-ink-3">From</dt>
+            <dt className="text-xs uppercase tracking-wider text-ink-3">From</dt>
             <dd className="text-ink-1 truncate">
               {settings?.from_email ? `${settings.from_name} <${settings.from_email}>` : "—"}
             </dd>
           </div>
           <div>
-            <dt className="text-[11px] uppercase tracking-wider text-ink-3">Reply-to</dt>
+            <dt className="text-xs uppercase tracking-wider text-ink-3">Reply-to</dt>
             <dd className="text-ink-1 truncate">{settings?.reply_to || "—"}</dd>
           </div>
           <div>
-            <dt className="text-[11px] uppercase tracking-wider text-ink-3">Mailing address</dt>
+            <dt className="text-xs uppercase tracking-wider text-ink-3">Mailing address</dt>
             <dd className="text-ink-1 truncate">{settings?.mailing_address || "—"}</dd>
           </div>
           <div>
-            <dt className="text-[11px] uppercase tracking-wider text-ink-3">Daily cap</dt>
+            <dt className="text-xs uppercase tracking-wider text-ink-3">Daily cap</dt>
             <dd className="text-ink-1 [font-variant-numeric:tabular-nums]">{settings?.daily_send_cap ?? "—"}</dd>
           </div>
         </dl>

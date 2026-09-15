@@ -13,7 +13,7 @@ export default async function FinanceUploadPage() {
   const snap = await getFinanceSnapshot();
 
   return (
-    <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       <PageHeader
         eyebrow="Import hub"
         title="Upload"
@@ -46,7 +46,7 @@ function HubLink({ href, title, desc }: { href: string; title: string; desc: str
   return (
     <Link
       href={href}
-      className="block rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-4 hover:border-orange/40 transition-colors"
+      className="block rounded-panel-lg border-hairline bg-surface p-4 hover:border-orange/40 transition-colors"
     >
       <div className="text-sm font-semibold text-ink-1">{title}</div>
       <div className="text-xs text-ink-2 mt-0.5">{desc}</div>

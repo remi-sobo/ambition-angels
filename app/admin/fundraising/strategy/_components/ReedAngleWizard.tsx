@@ -41,8 +41,8 @@ const BADGE_LABEL: Record<string, string> = {
 };
 
 const input =
-  "w-full text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50";
-const label = "block text-[11px] font-semibold uppercase tracking-wider text-ink-3 mb-1";
+  "w-full text-sm bg-cream border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50";
+const label = "block text-xs font-semibold uppercase tracking-wider text-ink-3 mb-1";
 
 const asStr = (v: unknown) => (typeof v === "string" ? v : "");
 
@@ -102,7 +102,7 @@ export default function ReedAngleWizard() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-navy hover:bg-[#19305f] px-4 py-2 rounded-full transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-navy hover:bg-navy-light px-4 py-2 rounded-full transition-colors"
       >
         <ReedMark className="w-3.5 h-3.5 text-orange-mid" />
         Draft an angle with Reed
@@ -112,7 +112,7 @@ export default function ReedAngleWizard() {
 
   return (
     <div className="fixed inset-0 z-50 bg-ink/40 flex items-start justify-center p-4 overflow-y-auto" onClick={() => !busy && reset()}>
-      <div className="bg-tile border-[1.5px] border-outline rounded-card-lg p-5 w-full max-w-2xl mt-10 space-y-4 shadow-tile" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-tile border-hairline rounded-panel-lg p-5 w-full max-w-2xl mt-10 space-y-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2">
           <ReedMark className="w-4 h-4 text-orange" />
           <h2 className={`${TYPE.cardTitle} flex-1`}>
@@ -135,7 +135,7 @@ export default function ReedAngleWizard() {
             />
             <div className="flex items-center justify-end gap-2">
               <button type="button" onClick={reset} disabled={busy} className="text-xs font-semibold text-ink-2 hover:text-ink-1 px-3 py-2 rounded-full disabled:opacity-60">Cancel</button>
-              <button type="button" onClick={generate} disabled={busy} className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-navy hover:bg-[#19305f] px-4 py-2 rounded-full transition-colors disabled:opacity-60">
+              <button type="button" onClick={generate} disabled={busy} className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-navy hover:bg-navy-light px-4 py-2 rounded-full transition-colors disabled:opacity-60">
                 <ReedMark className="w-3.5 h-3.5 text-orange-mid" />
                 {busy ? "Reed is drafting…" : "Draft with Reed"}
               </button>

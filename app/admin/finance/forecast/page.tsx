@@ -50,7 +50,7 @@ export default async function FinanceForecastPage({
     .slice(0, 30);
 
   return (
-    <div className="max-w-7xl px-4 lg:px-8 py-6 lg:py-8 space-y-8">
+    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-8">
       <div className="max-w-5xl space-y-6">
         <PageHeader
           eyebrow="Scenario planning"

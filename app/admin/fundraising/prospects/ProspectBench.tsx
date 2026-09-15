@@ -151,7 +151,7 @@ export default async function ProspectBench({
   const actions = disqualifiedView ? (
     <Link
       href={toggleHref(null)}
-      className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+      className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
     >
       ← Active prospects
     </Link>
@@ -159,14 +159,14 @@ export default async function ProspectBench({
     <div className="flex items-center gap-2">
       <Link
         href="/admin/fundraising/prospects/import"
-        className="text-xs font-semibold text-orange hover:text-orange-dark bg-orange/10 hover:bg-orange/15 border-[1.5px] border-orange/30 px-4 py-2 rounded-full transition-colors"
+        className="text-xs font-semibold text-orange hover:text-orange-dark bg-orange/10 hover:bg-orange/15 border-orange/30 px-4 py-2 rounded-full transition-colors"
       >
         + Import from HubSpot
       </Link>
       {(disqualifiedCount ?? 0) > 0 && (
         <Link
           href={toggleHref("disqualified")}
-          className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+          className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
         >
           Disqualified ({disqualifiedCount})
         </Link>
@@ -195,7 +195,7 @@ export default async function ProspectBench({
       )}
 
       {benchErr && (
-        <div className="mb-4 bg-expense-bg border border-expense/30 rounded-xl px-5 py-3 text-expense text-sm">
+        <div className="mb-4 bg-expense-bg border border-expense/30 rounded-panel px-5 py-3 text-expense text-sm">
           The bench failed to load. Reload to retry.
         </div>
       )}

@@ -103,7 +103,7 @@ export default async function RevenueSection({
           className={`px-3 py-1 rounded-full border ${
             y === year
               ? "border-orange/60 bg-orange/15 text-orange"
-              : "border-outline text-ink-2 hover:text-ink-1"
+              : "border-hairline text-ink-2 hover:text-ink-1"
           }`}
         >
           {y}
@@ -113,12 +113,12 @@ export default async function RevenueSection({
   );
 
   return (
-    <div className={embedded ? undefined : "max-w-7xl px-4 lg:px-8 py-6 lg:py-8"}>
+    <div className={embedded ? undefined : "max-w-workspace px-4 lg:px-8 py-6 lg:py-8"}>
       {embedded ? (
         <div className="flex items-center gap-3 flex-wrap mb-3">
           <div>
             <h2 className={TYPE.cardTitle}>Revenue · {year}</h2>
-            <p className="text-[11px] text-ink-3 max-w-2xl">
+            <p className="text-xs text-ink-3 max-w-2xl">
               Received = money landed · Committed = signed, not yet in the bank · Projected =
               pipeline, weighted by probability.
             </p>

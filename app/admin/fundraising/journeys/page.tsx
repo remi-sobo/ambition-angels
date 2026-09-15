@@ -38,7 +38,7 @@ export default async function JourneysPage() {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className={`${TYPE.pageTitle} mb-4`}>Journeys</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The journeys tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_journeys.sql</code>, then reload.
         </div>
@@ -75,7 +75,7 @@ export default async function JourneysPage() {
           <NewJourneyForm />
         </div>
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
           {journeys.length === 0 ? (
             <p className={`p-8 ${TYPE.bodyMuted}`}>
               No journeys yet. Create a first-gift welcome series or a lapsed-donor re-engagement. 
@@ -87,14 +87,14 @@ export default async function JourneysPage() {
                 <li key={j.id} className="px-5 py-3 flex items-center gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-ink-1 truncate">{j.name}</div>
-                    <div className="text-[11px] text-ink-3">
+                    <div className="text-xs text-ink-3">
                       {TRIGGER_LABEL[j.trigger] ?? j.trigger} · {stepCounts.get(j.id) ?? 0} step{(stepCounts.get(j.id) ?? 0) === 1 ? "" : "s"}
                     </div>
                   </div>
                   <span className="text-xs text-ink-2 w-28 text-right [font-variant-numeric:tabular-nums]">
                     {activeEnroll.get(j.id) ?? 0} enrolled
                   </span>
-                  <span className={`text-[10px] uppercase tracking-wider w-16 text-right ${j.status === "active" ? "text-revenue" : "text-ink-3"}`}>
+                  <span className={`text-xs uppercase tracking-wider w-16 text-right ${j.status === "active" ? "text-revenue" : "text-ink-3"}`}>
                     {j.status}
                   </span>
                   <JourneyActions id={j.id} status={j.status} />

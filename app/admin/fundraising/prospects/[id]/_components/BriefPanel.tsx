@@ -182,7 +182,7 @@ export default function BriefPanel({
   // ── Empty state ─────────────────────────────────────────────────────────
   if (!brief) {
     return (
-      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+      <section className="rounded-panel border-hairline bg-surface p-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h2 className={TYPE.sectionHeader}>
@@ -193,7 +193,7 @@ export default function BriefPanel({
           <button
             onClick={trigger}
             disabled={running}
-            className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+            className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-control transition-colors"
           >
             {running ? "Researching…" : "Generate research brief"}
           </button>
@@ -208,7 +208,7 @@ export default function BriefPanel({
   const c = brief.content;
   return (
     <section className="space-y-4">
-      <header className="rounded-card border-[1.5px] border-outline bg-surface p-4 flex items-center justify-between gap-4 flex-wrap">
+      <header className="rounded-panel border-hairline bg-surface p-4 flex items-center justify-between gap-4 flex-wrap">
         <div className="text-xs text-ink-2">
           Brief generated{" "}
           <span
@@ -218,7 +218,7 @@ export default function BriefPanel({
             {fmtRelative(brief.generated_at)}
           </span>
           {brief.template_version && (
-            <span className="ml-3 text-[10px] uppercase tracking-wider text-ink-3 font-mono">
+            <span className="ml-3 text-xs uppercase tracking-wider text-ink-3 font-mono">
               tmpl {brief.template_version}
             </span>
           )}
@@ -226,20 +226,20 @@ export default function BriefPanel({
         <button
           onClick={trigger}
           disabled={running}
-          className="text-xs font-semibold text-orange hover:text-orange-dark bg-orange/10 hover:bg-orange/15 border border-orange/30 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
+          className="text-xs font-semibold text-orange hover:text-orange-dark bg-orange/10 hover:bg-orange/15 border border-orange/30 disabled:opacity-50 px-3 py-1.5 rounded-control transition-colors"
         >
           {running ? "Researching…" : "Regenerate"}
         </button>
       </header>
 
       {running && (
-        <div className="rounded-lg border border-orange/30 bg-orange/[0.06] p-3">
+        <div className="rounded-control border border-orange/30 bg-orange/[0.06] p-3">
           <RunningNote label={prospectLabel} />
         </div>
       )}
 
       {warning && (
-        <div className="rounded-lg border border-[#D9BE86] bg-amber-400/[0.05] p-3 text-xs text-amber-200">
+        <div className="rounded-control border border-status-watch/40 bg-status-watch-bg p-3 text-xs text-status-watch-text">
           {warning}
         </div>
       )}
@@ -268,7 +268,7 @@ function ErrorBannerView({
 }) {
   const tone =
     err.kind === "rate_limit"
-      ? "border-[#D9BE86] bg-amber-400/[0.07] text-amber-200"
+      ? "border-status-watch/40 bg-status-watch-bg text-status-watch-text"
       : err.kind === "budget"
       ? "border-expense/30 bg-expense-bg text-expense"
       : "border-expense/30 bg-expense-bg text-expense";
@@ -280,10 +280,10 @@ function ErrorBannerView({
       : "Agent error";
   return (
     <div
-      className={`mt-3 rounded-lg border p-3 text-xs flex items-start justify-between gap-3 ${tone}`}
+      className={`mt-3 rounded-control border p-3 text-xs flex items-start justify-between gap-3 ${tone}`}
     >
       <div>
-        <div className="font-semibold uppercase tracking-wider text-[10px] mb-1">
+        <div className="font-semibold uppercase tracking-wider text-xs mb-1">
           {title}
         </div>
         <div>{err.message}</div>

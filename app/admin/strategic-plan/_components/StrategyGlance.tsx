@@ -18,9 +18,9 @@ import { TYPE } from "@/lib/admin/typeScale";
 const TILE_ACCENT: Record<Status, string> = {
   critical: "border-status-critical/50 bg-status-critical-bg/40",
   watch: "border-status-watch/50 bg-status-watch-bg/40",
-  due: "border-outline bg-surface",
-  healthy: "border-outline bg-surface",
-  neutral: "border-outline bg-surface",
+  due: "border-hairline bg-surface",
+  healthy: "border-hairline bg-surface",
+  neutral: "border-hairline bg-surface",
 };
 
 const BAR: Record<Status, string> = {
@@ -40,11 +40,11 @@ const fmt = (v: number, unit: string | null): string => {
 function MeasureRow({ m }: { m: StrategyHeadlineKpi }) {
   return (
     <li className="flex items-center gap-2">
-      <span className="text-[11px] text-ink-2 truncate min-w-0 flex-1">{m.title}</span>
+      <span className="text-xs text-ink-2 truncate min-w-0 flex-1">{m.title}</span>
       <div className="w-10 h-1.5 rounded-full bg-tile overflow-hidden shrink-0">
         <div className={`h-full ${BAR[planHealthToStatus(m.status)]}`} style={{ width: `${m.pct}%` }} />
       </div>
-      <span className="text-[10px] text-ink-2 tabular-nums shrink-0 w-14 text-right">
+      <span className="text-xs text-ink-2 tabular-nums shrink-0 w-14 text-right">
         {fmt(m.current, m.unit)}
         <span className="text-ink-3">/{fmt(m.target, m.unit)}</span>
       </span>
@@ -62,8 +62,8 @@ export default async function StrategyGlance() {
       <p className="font-heading text-lg text-ink-1 leading-snug">{statusLine}</p>
 
       {exceptions.length > 0 && (
-        <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
-          <h2 className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold mb-2">Needs attention</h2>
+        <section className="rounded-panel-lg border-hairline bg-surface p-5">
+          <h2 className="text-xs uppercase tracking-wider text-ink-3 font-semibold mb-2">Needs attention</h2>
           <ul className="divide-y divide-hairline">
             {exceptions.map((e) => (
               <li key={e.id}>
@@ -88,7 +88,7 @@ export default async function StrategyGlance() {
             <Link
               key={o.id}
               href={`/admin/strategic-plan/objective/${o.id}`}
-              className={`block rounded-card-lg border-[1.5px] p-4 transition-colors hover:border-orange/40 ${TILE_ACCENT[status]}`}
+              className={`block rounded-panel-lg p-4 transition-colors hover:border-orange/40 ${TILE_ACCENT[status]}`}
             >
               <div className="flex items-start justify-between gap-2 mb-1.5">
                 <h3 className={`font-heading font-semibold ${TYPE.body} leading-tight min-w-0`}>{o.title}</h3>
@@ -96,7 +96,7 @@ export default async function StrategyGlance() {
               </div>
               {o.owner && <div className="mb-1.5"><OwnerChip owner={o.owner} people={people} /></div>}
               {o.kpisOffTrack > 0 && (
-                <p className="text-[11px] text-status-critical-text font-semibold mb-1.5">
+                <p className="text-xs text-status-critical-text font-semibold mb-1.5">
                   {o.kpisOffTrack} off target
                 </p>
               )}
@@ -107,7 +107,7 @@ export default async function StrategyGlance() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-[11px] text-ink-3 mt-1">No measures yet</p>
+                <p className="text-xs text-ink-3 mt-1">No measures yet</p>
               )}
             </Link>
           );

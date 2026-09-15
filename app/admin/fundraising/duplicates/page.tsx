@@ -38,7 +38,7 @@ export default async function DuplicatesPage() {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className={`${TYPE.pageTitle} mb-4`}>Duplicates</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet.
         </div>
       </div>
@@ -87,7 +87,7 @@ export default async function DuplicatesPage() {
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+      <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <PageHeader title="Duplicates" subtitle="Constituents sharing an email. Review and merge" />
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -96,13 +96,13 @@ export default async function DuplicatesPage() {
         </div>
 
         {groups.length === 0 ? (
-          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-8">
+          <section className="bg-tile border-hairline rounded-panel-lg p-8">
             <p className={`${TYPE.bodyMuted}`}>No email-based duplicates found. Records sharing an email address will surface here for merging.</p>
           </section>
         ) : (
           <div className="space-y-3">
             {groups.map((grp) => (
-              <section key={grp.key} className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5">
+              <section key={grp.key} className="bg-tile border-hairline rounded-panel-lg p-5">
                 <MergeControls members={grp.members} />
               </section>
             ))}

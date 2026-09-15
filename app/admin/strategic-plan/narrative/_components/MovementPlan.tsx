@@ -21,7 +21,7 @@ function ObjectiveBlock({ objective, index }: { objective: NarrativeObjective; i
             <h3 className="font-display text-2xl text-ink-1">{objective.title}</h3>
             <StatusChip status={objective.status}>{STATUS_LABEL[objective.status]}</StatusChip>
             {objective.owner && (
-              <span className="text-[11px] uppercase tracking-[0.12em] text-ink-3">{objective.owner}</span>
+              <span className="text-xs uppercase tracking-[0.12em] text-ink-3">{objective.owner}</span>
             )}
           </div>
           {objective.statement && <p className="text-sm text-ink-2 leading-relaxed">{objective.statement}</p>}
@@ -30,7 +30,7 @@ function ObjectiveBlock({ objective, index }: { objective: NarrativeObjective; i
 
       {/* KPIs attached directly to the objective (e.g. the WALL numbers). */}
       {objective.objectiveKpis.length > 0 && (
-        <div className="ml-0 sm:ml-20 mb-4 rounded-card bg-tile px-4 py-2">
+        <div className="ml-0 sm:ml-20 mb-4 rounded-panel bg-tile px-4 py-2">
           {objective.objectiveKpis.map((k) => (
             <MeasureRow key={k.id} kpi={k} />
           ))}
@@ -39,12 +39,12 @@ function ObjectiveBlock({ objective, index }: { objective: NarrativeObjective; i
 
       <div className="ml-0 sm:ml-20 space-y-3">
         {objective.goals.map((goal) => (
-          <div key={goal.id} className="rounded-card-lg border border-hairline bg-surface p-5">
+          <div key={goal.id} className="rounded-panel-lg border border-hairline bg-surface p-5">
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <h4 className="font-heading font-semibold text-base text-ink-1">{goal.title}</h4>
               <StatusChip status={goal.status}>{STATUS_LABEL[goal.status]}</StatusChip>
             </div>
-            {goal.description && <p className="text-[13px] text-ink-2 leading-relaxed mb-3">{goal.description}</p>}
+            {goal.description && <p className="text-sm text-ink-2 leading-relaxed mb-3">{goal.description}</p>}
 
             <div className="grid sm:grid-cols-2 gap-x-8 gap-y-4">
               {goal.initiatives.length > 0 && (
@@ -54,7 +54,7 @@ function ObjectiveBlock({ objective, index }: { objective: NarrativeObjective; i
                   </div>
                   <ul className="space-y-1">
                     {goal.initiatives.map((i) => (
-                      <li key={i.id} className="flex items-start gap-2 text-[13px] text-ink-1">
+                      <li key={i.id} className="flex items-start gap-2 text-sm text-ink-1">
                         <span
                           aria-hidden
                           className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${DOT_BG[INITIATIVE_STATUS[i.status] ?? "neutral"]}`}
@@ -111,9 +111,9 @@ export default function MovementPlan({ plan }: { plan: PlanMovement }) {
       {proof.length > 0 && (
         <div className="mb-12 grid grid-cols-2 sm:grid-cols-4 gap-3">
           {proof.map((s) => (
-            <div key={s.label} className="rounded-card border border-hairline bg-surface p-4">
+            <div key={s.label} className="rounded-panel border border-hairline bg-surface p-4">
               <div className="font-display text-2xl sm:text-3xl leading-none tabular-nums text-orange">{s.value}</div>
-              <div className="mt-1 text-[12px] text-ink-2 leading-snug">{s.label}</div>
+              <div className="mt-1 text-xs text-ink-2 leading-snug">{s.label}</div>
             </div>
           ))}
         </div>

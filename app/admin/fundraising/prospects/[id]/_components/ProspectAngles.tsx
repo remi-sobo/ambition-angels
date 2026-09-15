@@ -50,7 +50,7 @@ export default function ProspectAngles({
   }
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <h2 className={`${TYPE.cardTitle} mb-3`}>Strategy angles</h2>
 
       {onAngles.length === 0 ? (
@@ -61,7 +61,7 @@ export default function ProspectAngles({
             <Link
               key={a.id}
               href={`/admin/fundraising/strategy/${a.angleKey}`}
-              className="text-xs font-medium text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline rounded-full px-3 py-1 transition-colors"
+              className="text-xs font-medium text-ink-1 bg-tile hover:bg-tile border-hairline rounded-full px-3 py-1 transition-colors"
             >
               {a.angleName} <span className="text-ink-3 capitalize">· {a.stage}</span>
             </Link>
@@ -74,7 +74,7 @@ export default function ProspectAngles({
           <select
             value={sel}
             onChange={(e) => setSel(e.target.value)}
-            className="bg-tile border-[1.5px] border-outline rounded-lg px-2.5 py-1.5 text-xs text-ink-1 focus:outline-none focus:border-orange/50"
+            className="bg-tile border-hairline rounded-control px-2.5 py-1.5 text-xs text-ink-1 focus:outline-none focus:border-orange/50"
           >
             <option value="">Add to an angle…</option>
             {available.map((a) => (

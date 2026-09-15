@@ -13,7 +13,7 @@ import { userMessage } from "@/lib/admin/errors";
 import { COHORT_STATUSES, COHORT_STATUS_LABELS } from "../../_lib/constants";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const MEMBER_STATUSES = ["enrolled", "completed", "dropped"] as const;
 const MEMBER_STATUS_LABELS: Record<string, string> = {
@@ -88,10 +88,10 @@ export function CohortHeaderControls({
         }
         disabled={busy}
         title="Shows this cohort on the public /apply form"
-        className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+        className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
           acceptingApplications
             ? "bg-revenue-bg text-revenue hover:bg-revenue-bg"
-            : "bg-tile text-ink-2 hover:bg-[#EFE6D4]"
+            : "bg-tile text-ink-2 hover:bg-tile"
         }`}
       >
         {acceptingApplications ? "Accepting applications" : "Applications closed"}
@@ -100,7 +100,7 @@ export function CohortHeaderControls({
         value={status}
         disabled={busy}
         onChange={(e) => call(`/api/admin/cohorts/${cohortId}`, "PATCH", { status: e.target.value })}
-        className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1 text-ink-1 cursor-pointer"
+        className="text-xs bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 cursor-pointer"
       >
         {COHORT_STATUSES.map((s) => (
           <option key={s} value={s} className="bg-surface">{COHORT_STATUS_LABELS[s]}</option>
@@ -108,7 +108,7 @@ export function CohortHeaderControls({
       </select>
       <button
         onClick={() => void remove()}
-        className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
+        className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense"
       >
         Delete
       </button>
@@ -136,21 +136,21 @@ export function MemberRow({ cohortId, member }: { cohortId: string; member: Memb
 
   return (
     <article
-      className={`bg-surface border-[1.5px] border-outline rounded-xl px-3 py-2.5 text-sm flex flex-wrap items-center gap-2 ${busy ? "opacity-60" : ""}`}
+      className={`bg-surface border-hairline rounded-panel px-3 py-2.5 text-sm flex flex-wrap items-center gap-2 ${busy ? "opacity-60" : ""}`}
     >
       <span className="font-semibold text-ink-1">{m.name}</span>
-      {m.grade && <span className="text-[11px] text-ink-2">Grade {m.grade}</span>}
+      {m.grade && <span className="text-xs text-ink-2">Grade {m.grade}</span>}
       {m.regular && (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-revenue-bg text-revenue uppercase tracking-wider">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-revenue-bg text-revenue uppercase tracking-wider">
           Regular
         </span>
       )}
       {m.consecutiveAbsences >= 2 && (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense uppercase tracking-wider">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense uppercase tracking-wider">
           {m.consecutiveAbsences} absences in a row
         </span>
       )}
-      <span className="ml-auto text-[11px] tabular-nums text-ink-2">
+      <span className="ml-auto text-xs tabular-nums text-ink-2">
         {m.rateText}{m.attended + m.absent > 0 ? ` · ${m.attended}/${m.attended + m.absent} sessions` : ""}
       </span>
       <select
@@ -162,7 +162,7 @@ export function MemberRow({ cohortId, member }: { cohortId: string; member: Memb
             status: e.target.value,
           })
         }
-        className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1 text-ink-1 cursor-pointer"
+        className="text-xs bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 cursor-pointer"
       >
         {MEMBER_STATUSES.map((s) => (
           <option key={s} value={s} className="bg-surface">{MEMBER_STATUS_LABELS[s]}</option>
@@ -178,7 +178,7 @@ export function MemberRow({ cohortId, member }: { cohortId: string; member: Memb
           if (ok) void call(`/api/admin/cohorts/${cohortId}/members`, "DELETE", { student_id: m.studentId });
         }}
         disabled={busy}
-        className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
+        className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense"
       >
         Remove
       </button>
@@ -203,7 +203,7 @@ export function AddMemberForm({
       <select
         value={studentId}
         onChange={(e) => setStudentId(e.target.value)}
-        className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1.5 text-ink-1 max-w-[220px]"
+        className="text-xs bg-tile border-hairline rounded-control px-2 py-1.5 text-ink-1 max-w-[220px]"
       >
         <option value="" className="bg-surface">Add student…</option>
         {candidates.map((c) => (
@@ -217,7 +217,7 @@ export function AddMemberForm({
           setStudentId("");
         }}
         disabled={busy || !studentId}
-        className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+        className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
       >
         Enroll
       </button>
@@ -258,21 +258,21 @@ export function SessionRow({
 
   return (
     <article
-      className={`bg-surface border-[1.5px] border-outline rounded-xl px-3 py-2.5 text-sm flex flex-wrap items-center gap-2 ${busy ? "opacity-60" : ""}`}
+      className={`bg-surface border-hairline rounded-panel px-3 py-2.5 text-sm flex flex-wrap items-center gap-2 ${busy ? "opacity-60" : ""}`}
     >
       <span className="font-semibold text-ink-1 tabular-nums">{s.session_date}</span>
       {s.title && <span className="text-ink-1">{s.title}</span>}
-      {time && <span className="text-[11px] text-ink-2">{time}</span>}
-      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${SESSION_CHIP[s.status] ?? ""}`}>
+      {time && <span className="text-xs text-ink-2">{time}</span>}
+      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${SESSION_CHIP[s.status] ?? ""}`}>
         {s.status}
       </span>
-      <span className="ml-auto text-[11px] tabular-nums text-ink-2">
+      <span className="ml-auto text-xs tabular-nums text-ink-2">
         {s.marked > 0 ? `${s.attended}/${s.marked} present` : `${enrolled} enrolled`}
       </span>
       {s.status !== "canceled" && (
         <Link
           href={`/admin/cohorts/${cohortId}/sessions/${s.id}`}
-          className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-orange/15 text-orange hover:bg-orange/25"
+          className="px-2.5 py-1 rounded-full text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25"
         >
           {s.marked > 0 ? "Attendance" : "Take attendance"}
         </Link>
@@ -281,7 +281,7 @@ export function SessionRow({
         <button
           onClick={() => call(`/api/admin/sessions/${s.id}`, "PATCH", { status: "canceled" })}
           disabled={busy}
-          className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
+          className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
         >
           Cancel
         </button>
@@ -297,7 +297,7 @@ export function SessionRow({
           if (ok) void call(`/api/admin/sessions/${s.id}`, "DELETE");
         }}
         disabled={busy}
-        className="px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
+        className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense"
       >
         Delete
       </button>
@@ -316,7 +316,7 @@ export function NewSessionForm({ cohortId }: { cohortId: string }) {
   if (!open) {
     return (
       <button onClick={() => setOpen(true)}
-        className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors">
+        className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors">
         + Add session
       </button>
     );
@@ -336,35 +336,35 @@ export function NewSessionForm({ cohortId }: { cohortId: string }) {
           setOpen(false);
         });
       }}
-      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-3 grid grid-cols-2 lg:grid-cols-5 gap-2 items-end"
+      className="w-full bg-surface border-hairline rounded-panel p-3 grid grid-cols-2 lg:grid-cols-5 gap-2 items-end"
     >
-      <label className="text-[10px] text-ink-2">
+      <label className="text-xs text-ink-2">
         Date
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} type="date"
           value={date} required onChange={(e) => setDate(e.target.value)} />
       </label>
-      <label className="text-[10px] text-ink-2">
+      <label className="text-xs text-ink-2">
         Title
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={title}
           placeholder="Workshop" onChange={(e) => setTitle(e.target.value)} />
       </label>
-      <label className="text-[10px] text-ink-2">
+      <label className="text-xs text-ink-2">
         Starts
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} type="time"
           value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
       </label>
-      <label className="text-[10px] text-ink-2">
+      <label className="text-xs text-ink-2">
         Ends
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} type="time"
           value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
       </label>
       <div className="flex gap-2">
         <button type="submit" disabled={busy}
-          className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full disabled:opacity-50">
+          className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full disabled:opacity-50">
           Add
         </button>
         <button type="button" onClick={() => setOpen(false)}
-          className="text-[11px] text-ink-2 hover:text-ink-1 px-1">
+          className="text-xs text-ink-2 hover:text-ink-1 px-1">
           Cancel
         </button>
       </div>

@@ -23,10 +23,10 @@ function Chip({ tone, children }: { tone: "fresh" | "stale" | "none" | "done"; c
     tone === "fresh" || tone === "done"
       ? "bg-revenue-bg border-revenue/30 text-revenue"
       : tone === "stale"
-      ? "bg-[#A56A1B]/15 border-[#A56A1B]/30 text-[#A56A1B]"
-      : "bg-tile border-outline text-ink-2";
+      ? "bg-status-watch-bg border-status-watch/30 text-status-watch-text"
+      : "bg-tile border-hairline text-ink-2";
   return (
-    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${cls}`}>{children}</span>
+    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${cls}`}>{children}</span>
   );
 }
 
@@ -67,7 +67,7 @@ export default function CloseWizard(props: {
           Upload this week&apos;s Wells Fargo export. New transactions are de-duplicated and
           AI-categorized on import.
         </p>
-        <Link href="/admin/finance/upload" className="inline-block px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium">
+        <Link href="/admin/finance/upload" className="inline-block px-3 py-1.5 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium">
           Open importer →
         </Link>
       </Step>
@@ -87,7 +87,7 @@ export default function CloseWizard(props: {
         </p>
         <Link
           href="/admin/finance/transactions?category=uncategorized"
-          className="inline-block px-3 py-1.5 rounded-lg border-[1.5px] border-outline text-ink-1 hover:bg-tile text-sm font-medium"
+          className="inline-block px-3 py-1.5 rounded-control border-hairline text-ink-1 hover:bg-tile text-sm font-medium"
         >
           {props.uncategorizedCount === 0 ? "Review transactions →" : `Categorize ${props.uncategorizedCount} →`}
         </Link>
@@ -104,7 +104,7 @@ export default function CloseWizard(props: {
         </p>
         <Link
           href="/admin/finance/revenue"
-          className="inline-block px-3 py-1.5 rounded-lg border-[1.5px] border-outline text-ink-1 hover:bg-tile text-sm font-medium"
+          className="inline-block px-3 py-1.5 rounded-control border-hairline text-ink-1 hover:bg-tile text-sm font-medium"
         >
           Open pledges →
         </Link>
@@ -165,12 +165,12 @@ function Step({
   last?: boolean;
 }) {
   return (
-    <li className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
+    <li className="rounded-panel-lg border-hairline bg-surface p-5">
       <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <div className="flex items-center gap-3">
           <span
             className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
-              last ? "bg-orange text-white" : "bg-tile text-ink-1 border border-outline"
+              last ? "bg-orange text-white" : "bg-tile text-ink-1 border border-hairline"
             }`}
           >
             {n}
@@ -233,35 +233,35 @@ function BalanceForm({
       </p>
       <div className="flex items-end gap-3 flex-wrap">
         <label className="block">
-          <span className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">Actual balance ($)</span>
+          <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">Actual balance ($)</span>
           <input
             value={balance}
             onChange={(e) => setBalance(e.target.value)}
             inputMode="decimal"
             placeholder={String(Math.round(cashOnHand))}
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
           />
         </label>
         <label className="block">
-          <span className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">As of</span>
+          <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">As of</span>
           <input
             type="date"
             value={asOf}
             onChange={(e) => setAsOf(e.target.value)}
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
           />
         </label>
         <button
           type="button"
           disabled={!valid || busy}
           onClick={save}
-          className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
+          className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
         >
           {busy ? "Saving…" : "Set balance"}
         </button>
       </div>
       {drift !== null && Math.abs(drift) >= 0.5 && (
-        <p className="text-xs text-[#A56A1B] mt-2">
+        <p className="text-xs text-status-watch-text mt-2">
           {money(Math.abs(drift))} {drift > 0 ? "more than" : "less than"} the computed figure. Likely
           unimported transactions. Setting the balance fixes the displayed cash regardless.
         </p>
@@ -313,20 +313,20 @@ function BaselineForm({
       </p>
       <div className="flex items-end gap-3 flex-wrap">
         <label className="block">
-          <span className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">Baseline ($/mo)</span>
+          <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">Baseline ($/mo)</span>
           <input
             value={value}
             onChange={(e) => setValue(e.target.value)}
             inputMode="decimal"
             placeholder="50000"
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
           />
         </label>
         <button
           type="button"
           disabled={busy}
           onClick={save}
-          className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
+          className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
         >
           {busy ? "Saving…" : "Save baseline"}
         </button>
@@ -405,7 +405,7 @@ function StampButton({ lastClosedAt, onStamped }: { lastClosedAt: string | null;
           type="button"
           disabled={busy}
           onClick={stamp}
-          className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
+          className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
         >
           {busy ? "Stamping…" : "Mark reconciled as of today"}
         </button>
@@ -413,8 +413,8 @@ function StampButton({ lastClosedAt, onStamped }: { lastClosedAt: string | null;
         {err && <span className="text-xs text-expense">{err}</span>}
       </div>
       {blocked && (
-        <div className="rounded-xl border border-[#D9BE86] bg-[#F4E8D0] px-4 py-3 space-y-2 max-w-xl">
-          <p className="text-xs text-[#A56A1B] font-semibold">
+        <div className="rounded-panel border border-status-watch/40 bg-status-watch-bg px-4 py-3 space-y-2 max-w-xl">
+          <p className="text-xs text-status-watch-text font-semibold">
             {blocked.pending} reconciliation proposal{blocked.pending === 1 ? "" : "s"} still
             pending for {blocked.period}. Resolve them in the inbox, or waive on the record.
           </p>
@@ -424,13 +424,13 @@ function StampButton({ lastClosedAt, onStamped }: { lastClosedAt: string | null;
               onChange={(e) => setWaiveReason(e.target.value)}
               placeholder="Why close anyway? (goes in the audit record)"
               maxLength={500}
-              className="flex-1 min-w-[220px] text-xs bg-surface border-[1.5px] border-outline rounded-lg px-3 py-1.5 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange"
+              className="flex-1 min-w-[220px] text-xs bg-surface border-hairline rounded-control px-3 py-1.5 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange"
             />
             <button
               type="button"
               disabled={busy}
               onClick={waiveAndStamp}
-              className="text-xs font-semibold text-[#A56A1B] border-[1.5px] border-[#D9BE86] rounded-lg px-3 py-1.5 hover:bg-[#EFE6D4] transition-colors disabled:opacity-40"
+              className="text-xs font-semibold text-status-watch-text border-status-watch/40 rounded-control px-3 py-1.5 hover:bg-tile transition-colors disabled:opacity-40"
             >
               Waive &amp; close (reports.approve)
             </button>

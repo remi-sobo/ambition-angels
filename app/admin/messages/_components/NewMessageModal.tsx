@@ -76,7 +76,7 @@ export default function NewMessageModal({
         onClick={onClose}
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
       />
-      <div className="relative w-full sm:max-w-md bg-surface rounded-t-card-lg sm:rounded-card-lg border border-hairline shadow-tile max-h-[85vh] flex flex-col">
+      <div className="relative w-full sm:max-w-md bg-surface rounded-t-card-lg sm:rounded-panel-lg border border-hairline max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-hairline">
           <h2 className={TYPE.sectionTitle}>New message</h2>
           <button
@@ -109,7 +109,7 @@ export default function NewMessageModal({
                     <button
                       type="button"
                       onClick={() => toggle(p.userId)}
-                      className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-card text-left transition-colors ${
+                      className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-panel text-left transition-colors ${
                         on ? "bg-orange-light" : "hover:bg-tile"
                       }`}
                     >
@@ -118,7 +118,7 @@ export default function NewMessageModal({
                         {p.name}
                       </span>
                       <span
-                        className={`shrink-0 w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center ${
+                        className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
                           on ? "bg-orange border-orange text-white" : "border-gray-mid"
                         }`}
                       >
@@ -145,7 +145,7 @@ export default function NewMessageModal({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Demo Day crew"
                 maxLength={80}
-                className="w-full bg-tile border border-outline rounded-card px-3 py-2 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange"
+                className="w-full bg-tile border border-hairline rounded-panel px-3 py-2 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange"
               />
             </div>
           )}

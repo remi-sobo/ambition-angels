@@ -274,13 +274,24 @@ describe("B3 shell invariants", () => {
   });
 
   test("DoD 7 structurally: the V2 tab row cannot wrap at any tenant's tab count", () => {
-    const src = readFileSync(
+    // Visual System V3 §5 moved the tab row onto the shared <Tabs> primitive
+    // (text + underline, no capsules), so the no-wrap invariant now lives
+    // there. Both halves are asserted: the zone must route through the
+    // primitive, and the primitive must carry the invariant.
+    const zone = readFileSync(
       join(__dirname, "..", "app", "admin", "_components", "v2", "V2TabZone.tsx"),
       "utf8",
     );
-    expect(src).toMatch(/flex-nowrap/);
-    expect(src).toMatch(/overflow-x-auto/);
-    expect(src).toMatch(/shrink-0/); // pills may scroll, never shrink or stack
+    expect(zone).toMatch(/from "\.\.\/ui\/Tabs"/);
+    expect(zone).toMatch(/<Tabs\b/);
+
+    const tabs = readFileSync(
+      join(__dirname, "..", "app", "admin", "_components", "ui", "Tabs.tsx"),
+      "utf8",
+    );
+    expect(tabs).toMatch(/flex-nowrap/);
+    expect(tabs).toMatch(/overflow-x-auto/);
+    expect(tabs).toMatch(/shrink-0/); // tabs may scroll, never shrink or stack
   });
 
   test("DoD 6 structurally: the Reed edge launcher renders nothing without ai.reed", () => {

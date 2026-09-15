@@ -29,7 +29,7 @@ export default async function CareersPage() {
   const approved = cards.filter((c) => c.status === "approved").length;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Career Library"
         subtitle="O*NET-backed catalog for /ms · Claude drafts, machines gate, a human approves"
@@ -42,7 +42,7 @@ export default async function CareersPage() {
         <StatCard label="Approved" value={approved} sub="live in the catalog" muted={approved === 0} />
       </div>
 
-      <p className="text-[12px] text-ink-2 mb-6">
+      <p className="text-xs text-ink-2 mb-6">
         Which occupations the teen games may use is a separate decision. The{" "}
         <Link href="/admin/careers/pool" className="underline underline-offset-2">
           Play Pool
@@ -61,7 +61,7 @@ export default async function CareersPage() {
           hint={
             <>
               Run the import once from a machine with network access:{" "}
-              <code className="text-[12px] bg-tile px-1.5 py-0.5 rounded">
+              <code className="text-xs bg-tile px-1.5 py-0.5 rounded">
                 npx tsx scripts/import-onet.ts --onet-dir &lt;o*net text db&gt; --oews-csv &lt;national OEWS csv&gt;
               </code>. See the header of that script for where the files come from.
             </>

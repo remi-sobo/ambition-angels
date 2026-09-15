@@ -36,7 +36,7 @@ export type ProspectRow = {
 };
 
 const selectCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/50";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/50";
 
 function displayName(r: ProspectRow): string {
   return r.name || r.email || "Unknown";
@@ -128,12 +128,12 @@ export default function ProspectsTable({
             {displayName(r)}
           </Link>
           {r.type && r.type !== "individual" && (
-            <span className="text-[10px] uppercase tracking-wide text-ink-3 border border-outline rounded px-1 py-px">
+            <span className="text-xs text-ink-3 border border-hairline rounded px-1 py-px">
               {r.type === "foundation" ? "Foundation" : r.type === "corporate" ? "Corp" : r.type}
             </span>
           )}
-          {r.source === "manual" && <span className="text-[10px] uppercase tracking-wide text-orange/80">added</span>}
-          {r.source === "research" && <span className="text-[10px] uppercase tracking-wide text-revenue">AI</span>}
+          {r.source === "manual" && <span className="text-xs text-orange/80">added</span>}
+          {r.source === "research" && <span className="text-xs text-revenue">AI</span>}
         </span>
       ),
     },
@@ -164,7 +164,7 @@ export default function ProspectsTable({
             onClick={() => void identifyOne(r)}
             disabled={identifying === r.id}
             title="Mark as Identified and move into the pipeline"
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-ink-2 hover:text-orange border border-dashed border-outline hover:border-orange/50 rounded-full px-2 py-0.5 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-ink-2 hover:text-orange border border-dashed border-hairline hover:border-orange/50 rounded-full px-2 py-0.5 transition-colors disabled:opacity-50"
           >
             {identifying === r.id ? "Moving…" : "No lifecycle · Identify →"}
           </button>
@@ -199,7 +199,7 @@ export default function ProspectsTable({
         r.openTasks > 0 ? (
           <span
             title={r.overdueTasks ? `${r.overdueTasks} overdue` : "open tasks"}
-            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full [font-variant-numeric:tabular-nums] ${
+            className={`text-xs font-semibold px-2 py-0.5 rounded-full [font-variant-numeric:tabular-nums] ${
               r.overdueTasks ? "bg-expense-bg text-expense" : "bg-orange/15 text-orange"
             }`}
           >

@@ -68,7 +68,7 @@ export default function PhotoControl({
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <div className="rounded-card border-[1.5px] border-outline bg-tile shadow-tile p-4 w-full flex justify-center">
+      <div className="rounded-panel border-hairline bg-tile p-4 w-full flex justify-center">
         {photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -98,7 +98,7 @@ export default function PhotoControl({
           >
             {busy ? "Uploading…" : photoUrl ? "Replace photo" : "Upload photo"}
           </button>
-          {error ? <p className="text-[11px] text-status-critical">{error}</p> : null}
+          {error ? <p className="text-xs text-status-critical">{error}</p> : null}
         </div>
       ) : null}
     </div>

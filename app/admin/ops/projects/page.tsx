@@ -163,7 +163,7 @@ export default async function ProjectsListPage({
   const toIdx = Math.min(offset + PAGE_SIZE, totalCount);
 
   return (
-    <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8">
+    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
       <PageHeader
         title="Projects"
         actions={
@@ -201,16 +201,16 @@ export default async function ProjectsListPage({
             }
           />
         ) : (
-          <div className="rounded-card border-[1.5px] border-outline bg-surface p-8 text-center text-sm text-ink-2">
+          <div className="rounded-panel border-hairline bg-surface p-8 text-center text-sm text-ink-2">
             No projects match your filters. Try clearing them, or use{" "}
             <span className="text-orange">+ New project</span> above.
           </div>
         )
       ) : (
-        <div className="rounded-card border-[1.5px] border-outline bg-surface overflow-hidden">
+        <div className="rounded-panel border-hairline bg-surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-outline bg-tile">
+              <thead className="border-b border-hairline bg-tile">
                 <tr>
                   <SortHeader label="Title"        col="title"           current={sort} dir={dir} buildHref={buildSortHref} />
                   <ColHeader  label="Category" />
@@ -223,7 +223,7 @@ export default async function ProjectsListPage({
               </thead>
               <tbody className="divide-y divide-hairline">
                 {projects.map((p) => (
-                  <tr key={p.id} className="hover:bg-[#EFE6D4] transition-colors">
+                  <tr key={p.id} className="hover:bg-tile transition-colors">
                     <td className="py-2.5 pl-4 pr-4">
                       <Link
                         href={`/admin/ops/projects/${p.id}`}
@@ -233,19 +233,19 @@ export default async function ProjectsListPage({
                       </Link>
                     </td>
                     <td className="py-2.5 pr-4">
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(p.category)}`}>
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${categoryBadgeClass(p.category)}`}>
                         {categoryLabel(p.category)}
                       </span>
                     </td>
                     <td className="py-2.5 pr-4">
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${projectStatusBadgeClass(p.status)}`}>
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${projectStatusBadgeClass(p.status)}`}>
                         {p.status}
                       </span>
                     </td>
                     <td className="py-2.5 pr-4">
                       {p.assigned_to ? (
                         <span className="inline-flex items-center gap-1 text-ink-2">
-                          <span className="inline-flex w-4 h-4 rounded-full bg-tile items-center justify-center text-[10px] font-bold uppercase">
+                          <span className="inline-flex w-4 h-4 rounded-full bg-tile items-center justify-center text-xs font-bold uppercase">
                             {p.assigned_to.charAt(0)}
                           </span>
                           <span className="text-xs">{p.assigned_to}</span>
@@ -289,7 +289,7 @@ export default async function ProjectsListPage({
 
 function ColHeader({ label, align }: { label: string; align?: "left" | "right" }) {
   return (
-    <th className={`text-${align ?? "left"} pb-2 pr-4 text-[10px] uppercase tracking-wider text-ink-2 font-medium`}>
+    <th className={`text-${align ?? "left"} pb-2 pr-4 text-xs uppercase tracking-wider text-ink-2 font-medium`}>
       {label}
     </th>
   );
@@ -312,7 +312,7 @@ function SortHeader({
   const nextDir: "asc" | "desc" = isActive ? (dir === "asc" ? "desc" : "asc") : col === "title" ? "asc" : "desc";
   const arrow = isActive ? (dir === "asc" ? " ↑" : " ↓") : "";
   return (
-    <th className="text-left pb-2 pr-4 text-[10px] uppercase tracking-wider font-medium">
+    <th className="text-left pb-2 pr-4 text-xs uppercase tracking-wider font-medium">
       <Link
         href={buildHref(col, nextDir)}
         className={`hover:text-ink-1 ${isActive ? "text-orange" : "text-ink-2"}`}
@@ -327,7 +327,7 @@ function SortHeader({
 function PageLink({ disabled, href, label }: { disabled: boolean; href: string; label: string }) {
   if (disabled) {
     return (
-      <span className="px-3 py-1.5 rounded-lg border border-hairline text-ink-2/50 cursor-default">
+      <span className="px-3 py-1.5 rounded-control border border-hairline text-ink-2/50 cursor-default">
         {label}
       </span>
     );
@@ -335,7 +335,7 @@ function PageLink({ disabled, href, label }: { disabled: boolean; href: string; 
   return (
     <Link
       href={href}
-      className="px-3 py-1.5 rounded-lg border-[1.5px] border-outline text-ink-1 hover:text-ink-1 hover:bg-[#EFE6D4]"
+      className="px-3 py-1.5 rounded-control border-hairline text-ink-1 hover:text-ink-1 hover:bg-tile"
     >
       {label}
     </Link>

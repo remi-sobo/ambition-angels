@@ -58,7 +58,7 @@ export default async function RecurringPage() {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className={`${TYPE.pageTitle} mb-4`}>Recurring</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet, or{" "}
           <code className="text-orange">add_recurring_plan_health.sql</code> hasn&apos;t been applied. Apply it, then reload.
         </div>
@@ -88,7 +88,7 @@ export default async function RecurringPage() {
           <NewRecurringForm />
         </div>
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
           {sorted.length === 0 ? (
             <p className={`p-8 ${TYPE.bodyMuted}`}>
               No recurring plans yet. Stripe monthly donations create plans automatically; use
@@ -106,12 +106,12 @@ export default async function RecurringPage() {
                       ) : donor}
                     </span>
                     {p.last_payment_failed_at && p.status === "active" && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense">payment failed</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense">payment failed</span>
                     )}
                     {p.external_source === "manual" && (
-                      <span className="text-[10px] uppercase tracking-wider text-ink-3">manual</span>
+                      <span className="text-xs uppercase tracking-wider text-ink-3">manual</span>
                     )}
-                    <span className="text-[10px] uppercase tracking-wider text-ink-3 w-16">{p.status}</span>
+                    <span className="text-xs uppercase tracking-wider text-ink-3 w-16">{p.status}</span>
                     <span className="text-xs text-ink-2 w-28 [font-variant-numeric:tabular-nums]">
                       {p.last_charged_at ? `last ${fmtDate(p.last_charged_at)}` : ""}
                     </span>

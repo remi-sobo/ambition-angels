@@ -89,14 +89,14 @@ export default function ConfigEditor({ initial }: Props) {
             value={year}
             onChange={(e) => setYear(e.target.value)}
             inputMode="numeric"
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-32"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-32"
           />
         </Field>
         <Field label="Fiscal year starts">
           <select
             value={fyMonth}
             onChange={(e) => setFyMonth(e.target.value)}
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
           >
             {MONTHS.map((m, i) => (
               <option key={m} value={i + 1}>
@@ -117,7 +117,7 @@ export default function ConfigEditor({ initial }: Props) {
             onChange={(e) => setGoal(e.target.value)}
             inputMode="decimal"
             placeholder="1247982"
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
           />
         </Field>
         <Field label="Contingency unlock threshold">
@@ -126,7 +126,7 @@ export default function ConfigEditor({ initial }: Props) {
             onChange={(e) => setThreshold(e.target.value)}
             inputMode="decimal"
             placeholder="1.09"
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
           />
         </Field>
       </Section>
@@ -141,7 +141,7 @@ export default function ConfigEditor({ initial }: Props) {
             onChange={(e) => setStartBal(e.target.value)}
             inputMode="decimal"
             placeholder="121589"
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
           />
         </Field>
         <Field label="As of date">
@@ -149,7 +149,7 @@ export default function ConfigEditor({ initial }: Props) {
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
           />
         </Field>
       </Section>
@@ -164,7 +164,7 @@ export default function ConfigEditor({ initial }: Props) {
             onChange={(e) => setBaseline(e.target.value)}
             inputMode="decimal"
             placeholder="50000"
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
           />
         </Field>
         <Field label="Forward horizon (months)">
@@ -173,7 +173,7 @@ export default function ConfigEditor({ initial }: Props) {
             onChange={(e) => setHorizon(e.target.value)}
             inputMode="numeric"
             placeholder="3"
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
           />
         </Field>
         <Field label="Runway target (months)">
@@ -182,7 +182,7 @@ export default function ConfigEditor({ initial }: Props) {
             onChange={(e) => setRunwayTarget(e.target.value)}
             inputMode="numeric"
             placeholder="6"
-            className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
+            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
           />
         </Field>
       </Section>
@@ -192,7 +192,7 @@ export default function ConfigEditor({ initial }: Props) {
           type="button"
           disabled={status === "saving"}
           onClick={save}
-          className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
+          className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
         >
           {status === "saving" ? "Saving…" : "Save changes"}
         </button>
@@ -205,7 +205,7 @@ export default function ConfigEditor({ initial }: Props) {
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
+    <section className="rounded-panel-lg border-hairline bg-surface p-5">
       <h2 className="text-sm uppercase tracking-wider text-orange font-medium mb-1">{title}</h2>
       {hint && <p className="text-xs text-ink-2 mb-4 max-w-2xl">{hint}</p>}
       <div className="grid sm:grid-cols-2 gap-4">{children}</div>
@@ -216,7 +216,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}</span>
+      <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">{label}</span>
       {children}
     </label>
   );

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import EmptyState from "../../../_components/EmptyState";
 import type { FinCategory } from "@/lib/finance/types";
+import { TYPE } from "@/lib/admin/typeScale";
 
 export type BudgetRow = {
   year: number;
@@ -126,7 +127,7 @@ export default function BudgetEditor({ year, categories, initialBudget }: Props)
       {/* Editor table */}
       <div className="rounded-panel-lg border-hairline bg-surface overflow-hidden">
         <table className="w-full text-xs">
-          <thead className="bg-surface text-ink-2 uppercase tracking-wider">
+          <thead className={`bg-surface ${TYPE.tableHeader}`}>
             <tr>
               <th className="text-left px-3 py-2.5">Line item</th>
               <th className="text-right px-3 py-2.5 w-32">Base</th>
@@ -190,7 +191,7 @@ function GroupBlock({
   return (
     <>
       <tr className="bg-tile border-t-2 border-hairline">
-        <td className="px-3 py-2 text-xs uppercase tracking-widest text-orange font-medium">
+        <td className={`px-3 py-2 ${TYPE.sectionHeader} !text-orange`}>
           {name}
         </td>
         <td className="px-3 py-2 text-right text-ink-2 font-mono">
@@ -287,7 +288,7 @@ function AmountCell({
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div className="rounded-panel border-hairline bg-surface p-3">
-      <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">{label}</div>
+      <div className={`${TYPE.cardLabel} mb-1`}>{label}</div>
       <div className={`text-lg font-medium ${accent ? "text-orange" : "text-ink-1"}`}>
         {value}
       </div>

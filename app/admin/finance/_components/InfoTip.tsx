@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Read-only "?" marker that explains where a finance number comes from. Hover
 // or focus (or tap on touch) to see a one-line definition, the source, and the
@@ -62,7 +63,7 @@ export default function InfoTip({
           style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width }}
           className="z-50 rounded-panel border-hairline bg-surface p-3 text-left pointer-events-none normal-case tracking-normal"
         >
-          <span className="block text-xs font-semibold uppercase tracking-wider text-ink-1 mb-1">
+          <span className={`block ${TYPE.fieldLabel} mb-1`}>
             {heading}
           </span>
           <span className="block text-xs font-normal text-ink-2 leading-relaxed [&_b]:text-ink-1 [&_b]:font-semibold [&_code]:text-ink-1 [&_code]:font-mono">

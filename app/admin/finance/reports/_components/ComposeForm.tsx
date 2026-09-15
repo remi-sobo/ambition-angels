@@ -93,7 +93,7 @@ export default function ComposeForm({
                   />
                   <span className="truncate">{m.name}</span>
                   {flagged && (
-                    <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-status-watch-bg text-status-watch-text uppercase tracking-wider">
+                    <span className={`${TYPE.badge} px-2 py-0.5 rounded-full bg-status-watch-bg text-status-watch-text`}>
                       {m.state === "conflict" ? "conflict" : "stale"}
                     </span>
                   )}

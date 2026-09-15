@@ -45,7 +45,7 @@ export function Field({
 }) {
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
-      <label htmlFor={htmlFor} className="text-xs font-medium text-ink-1">
+      <label htmlFor={htmlFor} className={TYPE.fieldLabel}>
         {label}
         {required ? (
           <span className="text-status-critical-text ml-0.5" aria-hidden>

@@ -383,7 +383,7 @@ export default function DataTable<Row>({
                     <th
                       key={c.key}
                       onClick={sortable ? () => toggleSort(c.key) : undefined}
-                      className={`text-xs font-semibold text-ink-3 uppercase tracking-widest px-5 py-3 whitespace-nowrap ${
+                      className={`${TYPE.tableHeader} px-5 py-3 whitespace-nowrap ${
                         c.align === "right" ? "text-right" : "text-left"
                       } ${sortable ? "cursor-pointer select-none hover:text-ink-1" : ""} ${c.thClassName ?? ""}`}
                       aria-sort={active ? (sort!.dir === "asc" ? "ascending" : "descending") : undefined}

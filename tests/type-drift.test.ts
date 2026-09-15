@@ -100,6 +100,18 @@ const FINGERPRINTS: { pattern: string; role: string; allow: { file: string; reas
     ],
   },
   { pattern: "text-[28px]", role: "TYPE.cardMetric", allow: [] },
+  {
+    // Visual System V3 §2 — "Reduce excessive letter spacing." `tracking-widest`
+    // is 0.1em, the widest step Tailwind ships, and it had become the default
+    // for column headers and micro-labels across the product. Both roles now
+    // live in the scale (TYPE.tableHeader at a quiet 0.06em, TYPE.cardLabel in
+    // sentence case), so the only place it survives is the retired dashboard.
+    pattern: "tracking-widest",
+    role: "TYPE.tableHeader / TYPE.cardLabel",
+    allow: [
+      { file: "app/admin/legacy/page.tsx", reason: "legacy dashboard, unrouted — retired surface, not restyled" },
+    ],
+  },
 ];
 
 function tsxFiles(dir: string): string[] {

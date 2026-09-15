@@ -25,6 +25,7 @@ import RunwayTiers from "./_components/RunwayTiers";
 import InfoTip from "./_components/InfoTip";
 import { constituentName } from "@/lib/fundraising/display";
 import { CHART, CHART_SERIES } from "@/lib/admin/chartTokens";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Read live every request: the service-role client's reads go through the
 // global fetch Next caches by default, so without this a freshly-saved config
@@ -341,7 +342,7 @@ export default async function FinanceDashboardPage() {
           <CircleGauge
             pct={receivedPct}
             value={`${Math.round(receivedPct * 100)}%`}
-            label="goal"
+            label="Goal"
             color={CHART.revenue}
           />
         </Hero>
@@ -368,7 +369,7 @@ export default async function FinanceDashboardPage() {
           <CircleGauge
             pct={budgetPct}
             value={`${Math.round(budgetPct * 100)}%`}
-            label="budget"
+            label="Budget"
             color={budgetPct > 1 ? CHART.expense : budgetPct > 0.8 ? CHART.warning : CHART.accent}
           />
         </Hero>
@@ -550,7 +551,7 @@ export default async function FinanceDashboardPage() {
               return (
                 <li key={r.group} className="text-xs">
                   <div className="flex items-baseline justify-between mb-1">
-                    <span className="uppercase tracking-wider text-ink-1 font-medium">
+                    <span className="font-medium text-ink-1">
                       {r.group}
                     </span>
                     <span className="font-mono text-ink-1">
@@ -628,7 +629,7 @@ export default async function FinanceDashboardPage() {
               }
             />
           </div>
-          <div className="text-xs uppercase tracking-wider text-ink-2 mb-2">
+          <div className={`${TYPE.cardLabel} mb-2`}>
             Toward {money(cfg.goal)} goal
           </div>
           <ProgressBar pct={goalPct} intent={goalPct >= 1 ? "ok" : "warn"} height={10} />
@@ -781,7 +782,7 @@ function Hero({
       )}
       <div className={`flex items-start justify-between gap-3 ${href ? "pointer-events-none" : ""}`}>
         <div className="min-w-0">
-          <div className="text-xs uppercase tracking-widest text-ink-2">
+          <div className={TYPE.cardLabel}>
             {label}
             {info && <span className="pointer-events-auto relative z-20">{info}</span>}
           </div>
@@ -837,7 +838,7 @@ function Mini({
       : "text-ink-1";
   const inner = (
     <div className="rounded-panel border-hairline bg-surface p-3 hover:bg-tile transition-colors">
-      <div className="text-xs uppercase tracking-widest text-ink-2 mb-1">{label}{info}</div>
+      <div className={`${TYPE.cardLabel} mb-1`}>{label}{info}</div>
       <div className={`text-lg font-medium ${valueClass}`}>{value}</div>
       {sub && <div className="mt-0.5 text-xs text-ink-2">{sub}</div>}
     </div>
@@ -869,7 +870,7 @@ function Cell({
 }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">{label}{info}</div>
+      <div className={`${TYPE.cardLabel} mb-1`}>{label}{info}</div>
       <div
         className={`text-lg font-medium font-mono ${
           accent ? "text-orange" : subtle ? "text-ink-2" : "text-ink-1"

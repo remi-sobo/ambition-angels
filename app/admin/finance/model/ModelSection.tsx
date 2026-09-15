@@ -148,7 +148,7 @@ function Card({
       : "text-ink-1";
   return (
     <div className="rounded-panel-lg border-hairline bg-surface p-5">
-      <div className="text-xs uppercase tracking-widest text-ink-2">
+      <div className={TYPE.cardLabel}>
         {label}
       </div>
       <div

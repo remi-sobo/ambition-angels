@@ -233,7 +233,7 @@ function BalanceForm({
       </p>
       <div className="flex items-end gap-3 flex-wrap">
         <label className="block">
-          <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">Actual balance ($)</span>
+          <span className={`block ${TYPE.fieldLabel} mb-1`}>Actual balance ($)</span>
           <input
             value={balance}
             onChange={(e) => setBalance(e.target.value)}
@@ -243,7 +243,7 @@ function BalanceForm({
           />
         </label>
         <label className="block">
-          <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">As of</span>
+          <span className={`block ${TYPE.fieldLabel} mb-1`}>As of</span>
           <input
             type="date"
             value={asOf}
@@ -313,7 +313,7 @@ function BaselineForm({
       </p>
       <div className="flex items-end gap-3 flex-wrap">
         <label className="block">
-          <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">Baseline ($/mo)</span>
+          <span className={`block ${TYPE.fieldLabel} mb-1`}>Baseline ($/mo)</span>
           <input
             value={value}
             onChange={(e) => setValue(e.target.value)}

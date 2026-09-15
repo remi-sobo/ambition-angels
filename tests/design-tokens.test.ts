@@ -98,6 +98,8 @@ const FROZEN_TYPE_SCALE = {
   nav: "text-sm font-medium",
   button: "text-[13px] font-semibold",
   badge: "text-xs font-semibold",
+  tableHeader: "text-xs font-semibold uppercase tracking-[0.06em] text-ink-2",
+  fieldLabel: "text-xs font-medium text-ink-1",
 };
 
 function extractCssTokens(css: string): string[] {

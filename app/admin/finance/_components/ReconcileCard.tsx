@@ -76,7 +76,7 @@ export default function ReconcileCard({
     <div className="rounded-panel-lg border-hairline bg-surface p-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="text-xs uppercase tracking-widest text-ink-2">
+          <div className={TYPE.cardLabel}>
             Cash on hand
             <InfoTip heading="Cash on hand">
               The trusted current bank balance: the <b>last balance you set</b> (the
@@ -121,7 +121,7 @@ export default function ReconcileCard({
           </p>
           <div className="grid sm:grid-cols-2 gap-4 max-w-xl">
             <label className="block">
-              <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">Actual bank balance ($)</span>
+              <span className={`block ${TYPE.fieldLabel} mb-1`}>Actual bank balance ($)</span>
               <input
                 value={balance}
                 onChange={(e) => setBalance(e.target.value)}
@@ -132,7 +132,7 @@ export default function ReconcileCard({
               />
             </label>
             <label className="block">
-              <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">As of date</span>
+              <span className={`block ${TYPE.fieldLabel} mb-1`}>As of date</span>
               <input
                 type="date"
                 value={asOf}

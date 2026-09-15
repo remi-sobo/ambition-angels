@@ -250,7 +250,7 @@ export default function ForecastBoard({
 function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "expense" }) {
   return (
     <div className="rounded-panel-lg border-hairline bg-surface p-5">
-      <div className="text-xs uppercase tracking-widest text-ink-2">{label}</div>
+      <div className={TYPE.cardLabel}>{label}</div>
       <div className={`mt-1 font-display font-black text-3xl leading-none ${tone === "expense" ? "text-expense" : "text-ink-1"}`}>{value}</div>
       {sub && <div className="mt-2 text-xs text-ink-2">{sub}</div>}
     </div>
@@ -260,7 +260,7 @@ function Stat({ label, value, sub, tone }: { label: string; value: string; sub?:
 function RunwayStat({ baseLabel, scenLabel, better, worse }: { baseLabel: string; scenLabel: string; better: boolean; worse: boolean }) {
   return (
     <div className="rounded-panel-lg border-hairline bg-surface p-5">
-      <div className="text-xs uppercase tracking-widest text-ink-2">Runway (scenario)</div>
+      <div className={TYPE.cardLabel}>Runway (scenario)</div>
       <div className={`mt-1 font-display font-black text-2xl leading-none ${better ? "text-revenue" : worse ? "text-expense" : "text-ink-1"}`}>{scenLabel}</div>
       <div className="mt-2 text-xs text-ink-2">baseline: {baseLabel}</div>
     </div>

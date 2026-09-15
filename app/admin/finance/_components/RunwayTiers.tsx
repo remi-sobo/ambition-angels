@@ -8,6 +8,7 @@ import {
 } from "@/lib/finance/runway";
 import { money } from "./charts";
 import InfoTip from "./InfoTip";
+import { TYPE } from "@/lib/admin/typeScale";
 
 // Three-tier forward runway, the headline of the Finance dashboard. All three
 // numbers come from the shared pure engine (lib/finance/runway): cash (bank net
@@ -88,7 +89,7 @@ export default function RunwayTiers({
     <section className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
       <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div>
-          <div className="text-xs uppercase tracking-widest text-ink-2">
+          <div className={TYPE.cardLabel}>
             Forward runway
             <InfoTip heading="Forward runway">
               How many months the money lasts, three ways, all divided by the monthly
@@ -192,7 +193,7 @@ function Tier({
 }) {
   return (
     <div className="rounded-panel border-hairline bg-tile p-4">
-      <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">{label}</div>
+      <div className={`${TYPE.cardLabel} mb-1`}>{label}</div>
       <div className="flex items-baseline gap-1.5">
         <span className={`font-display font-black text-4xl leading-none ${valueClass}`}>{months}</span>
         <span className="text-xs text-ink-2">mo</span>

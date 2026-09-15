@@ -173,7 +173,7 @@ export default function QbBudgetImportPage() {
       <section className="rounded-panel-lg border-hairline bg-surface p-5 mb-6">
         <div className="grid sm:grid-cols-[auto_1fr_auto] gap-4 items-end">
           <label className="block">
-            <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">Year</span>
+            <span className={`block ${TYPE.fieldLabel} mb-1`}>Year</span>
             <input
               value={year}
               onChange={(e) => setYear(Number(e.target.value) || year)}
@@ -182,7 +182,7 @@ export default function QbBudgetImportPage() {
             />
           </label>
           <label className="block">
-            <span className="block text-xs uppercase tracking-wider text-ink-2 mb-1">QuickBooks CSV</span>
+            <span className={`block ${TYPE.fieldLabel} mb-1`}>QuickBooks CSV</span>
             <input
               type="file"
               accept=".csv,text/csv"
@@ -229,12 +229,12 @@ export default function QbBudgetImportPage() {
           {/* Matched */}
           <div className="rounded-panel-lg border-hairline bg-surface overflow-hidden">
             <header className="px-4 py-2.5 border-b border-hairline">
-              <div className="text-xs uppercase tracking-widest text-orange font-medium">
+              <div className={`${TYPE.sectionHeader} !text-orange`}>
                 Will overwrite
               </div>
             </header>
             <table className="w-full text-xs">
-              <thead className="bg-surface text-ink-2 uppercase tracking-wider">
+              <thead className={`bg-surface ${TYPE.tableHeader}`}>
                 <tr>
                   <th className="text-left px-3 py-2">QB account</th>
                   <th className="text-left px-3 py-2">→ Category</th>
@@ -274,7 +274,7 @@ export default function QbBudgetImportPage() {
           {preview.unmatched.length > 0 && (
             <div className="rounded-panel-lg border border-status-watch/40 bg-status-watch-bg overflow-hidden">
               <header className="px-4 py-2.5 border-b border-hairline">
-                <div className="text-xs uppercase tracking-widest text-status-watch-text font-medium">
+                <div className={`${TYPE.sectionHeader} !text-status-watch-text`}>
                   Needs mapping
                 </div>
                 <p className="text-xs text-ink-2 mt-1">
@@ -284,7 +284,7 @@ export default function QbBudgetImportPage() {
                 </p>
               </header>
               <table className="w-full text-xs">
-                <thead className="bg-surface text-ink-2 uppercase tracking-wider">
+                <thead className={`bg-surface ${TYPE.tableHeader}`}>
                   <tr>
                     <th className="text-left px-3 py-2">QB account</th>
                     <th className="text-right px-3 py-2 w-32">Amount</th>
@@ -377,7 +377,7 @@ function Stat({
   const valueClass = tone === "warn" ? "text-status-watch-text" : accent ? "text-orange" : "text-ink-1";
   return (
     <div className="rounded-panel border-hairline bg-surface p-3">
-      <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">{label}</div>
+      <div className={`${TYPE.cardLabel} mb-1`}>{label}</div>
       <div className={`text-lg font-medium ${valueClass}`}>{value}</div>
     </div>
   );

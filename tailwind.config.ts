@@ -5,6 +5,13 @@ const config: Config = {
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    // lib/ holds class strings too — above all the canonical type scale in
+    // lib/admin/typeScale.ts. Without this glob every scale value that
+    // appears ONLY there (text-[28px], text-[15px], text-[17px], the
+    // tracking steps) is never generated, and the role silently falls back
+    // to inherited 16px. The page title shipped at 16px instead of 28px
+    // until this line existed.
+    "./lib/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {

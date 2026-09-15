@@ -123,7 +123,7 @@ export default function V2Sidebar({
         )}
       </nav>
 
-      <div className="px-4 py-4 border-t border-white/[0.07] space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="px-4 py-4 border-t border-white/[0.07] space-y-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {orgs.length >= 2 && activeOrgId && <OrgSwitcher orgs={orgs} activeOrgId={activeOrgId} />}
 
         <div className="flex items-center gap-3">
@@ -171,7 +171,7 @@ export default function V2Sidebar({
           </Link>
         </div>
 
-        <div className="text-xs text-[color:var(--sidebar-muted)]/70 leading-relaxed">
+        <div className="text-xs text-[color:var(--sidebar-muted)] leading-relaxed">
           BloomOS™ · built by SOBO Consulting
         </div>
       </div>

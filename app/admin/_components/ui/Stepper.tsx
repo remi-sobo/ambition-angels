@@ -134,7 +134,10 @@ export default function Stepper({
               </div>
 
               <span
-                className={`${TYPE.metadata} sm:mt-2 sm:text-center truncate max-w-full pb-3 sm:pb-0 ${
+                // Vertical mode: the label sits beside a 32px node, so it is
+                // nudged down to sit on the node's centre line rather than its
+                // top edge. Horizontal mode centres it under the node instead.
+                className={`${TYPE.metadata} self-start mt-[7px] sm:self-auto sm:mt-2 sm:text-center truncate max-w-full ${
                   state === "active"
                     ? "!text-ink-1 font-semibold"
                     : state === "complete"

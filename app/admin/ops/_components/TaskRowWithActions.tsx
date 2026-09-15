@@ -40,9 +40,9 @@ const VARIANT_CLASSES: Record<NonNullable<TaskRowAction["variant"]>, string> = {
   danger:
     "bg-expense-bg text-expense border border-expense/30 hover:bg-expense-bg",
   ghost:
-    "text-ink-2 hover:text-ink-1 border border-transparent hover:bg-[#EFE6D4]",
+    "text-ink-2 hover:text-ink-1 border border-transparent hover:bg-tile",
   default:
-    "bg-tile text-ink-1 border-[1.5px] border-outline hover:bg-[#EFE6D4]",
+    "bg-tile text-ink-1 border-hairline hover:bg-tile",
 };
 
 export default function TaskRowWithActions({
@@ -96,12 +96,12 @@ export default function TaskRowWithActions({
   return (
     <>
     <div
-      className={`group flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${
+      className={`group flex items-center gap-3 px-3 py-2 rounded-control border transition-colors ${
         isDone
-          ? "border-hairline bg-surface shadow-panel text-ink-3"
+          ? "border-hairline bg-surface text-ink-3"
           : isBlocked
           ? "border-expense/30 bg-expense-bg"
-          : "border-outline bg-surface shadow-panel hover:bg-[#EFE6D4]"
+          : "border-hairline bg-surface hover:bg-tile"
       }`}
     >
       {showCheckbox && !readOnly && (
@@ -112,7 +112,7 @@ export default function TaskRowWithActions({
           className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
             isDone
               ? "bg-revenue-bg border-revenue/30 text-revenue"
-              : "border-outline hover:border-orange/60"
+              : "border-hairline hover:border-orange/60"
           }`}
         >
           {isDone && (
@@ -127,7 +127,7 @@ export default function TaskRowWithActions({
           className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center ${
             isDone
               ? "bg-revenue-bg border-revenue/30 text-revenue"
-              : "border-outline"
+              : "border-hairline"
           }`}
           aria-label={isDone ? "Done" : "Not done"}
         >
@@ -163,13 +163,13 @@ export default function TaskRowWithActions({
           </button>
         )}
         <span
-          className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(task.category)}`}
+          className={`inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${categoryBadgeClass(task.category)}`}
         >
           {categoryLabel(task.category)}
         </span>
         {task.assigned_to && (
           <span
-            className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[10px] font-bold uppercase"
+            className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-xs font-bold uppercase"
             title={`Assigned to ${task.assigned_to}`}
           >
             {task.assigned_to.charAt(0)}
@@ -178,13 +178,13 @@ export default function TaskRowWithActions({
         {showProject && task.project_id && projectName && (
           <Link
             href={`/admin/ops/projects/${task.project_id}`}
-            className="text-[11px] text-orange/80 hover:text-orange truncate max-w-[140px]"
+            className="text-xs text-orange/80 hover:text-orange truncate max-w-[140px]"
           >
             #{projectName}
           </Link>
         )}
         {isBlocked && (
-          <span className="text-[10px] uppercase tracking-wider text-expense font-semibold">
+          <span className="text-xs uppercase tracking-wider text-expense font-semibold">
             blocked
           </span>
         )}
@@ -211,7 +211,7 @@ export default function TaskRowWithActions({
               key={`${a.label}-${i}`}
               onClick={() => applyPatch(a.patch)}
               disabled={busy}
-              className={`text-[11px] font-medium px-2.5 py-1 rounded transition-colors disabled:opacity-50 ${
+              className={`text-xs font-medium px-2.5 py-1 rounded transition-colors disabled:opacity-50 ${
                 VARIANT_CLASSES[a.variant ?? "default"]
               }`}
             >

@@ -14,9 +14,9 @@ import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 const btnCls =
-  "text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors disabled:opacity-50";
+  "text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors disabled:opacity-50";
 const primaryBtnCls =
   "text-xs font-semibold text-white bg-orange hover:bg-orange/90 px-4 py-2 rounded-full transition-colors disabled:opacity-50";
 
@@ -135,7 +135,7 @@ export function NewStrategyButton({ planYear }: { planYear: number }) {
     );
   }
   return (
-    <div className="w-full bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-4 mt-2">
+    <div className="w-full bg-tile border-hairline rounded-panel-lg p-4 mt-2">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-ink-1">New strategy · {planYear}</span>
         <button className="text-xs text-ink-3 hover:text-ink-1" onClick={() => setOpen(false)}>
@@ -190,7 +190,7 @@ export function EditStrategyPanel({
         </button>
       </div>
       {open && (
-        <div className="mt-3 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-4">
+        <div className="mt-3 bg-tile border-hairline rounded-panel-lg p-4">
           <StrategyForm planYear={planYear} strategy={strategy} onDone={() => setOpen(false)} />
         </div>
       )}
@@ -327,7 +327,7 @@ export function AssignButton({
   const [busy, setBusy] = useState(false);
   return (
     <button
-      className="text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors whitespace-nowrap disabled:opacity-50"
+      className="text-xs font-semibold text-ink-2 hover:text-orange transition-colors whitespace-nowrap disabled:opacity-50"
       disabled={busy}
       onClick={async () => {
         setBusy(true);

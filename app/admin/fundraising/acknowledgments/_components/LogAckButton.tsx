@@ -127,14 +127,14 @@ export default function LogAckButton() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto">
-      <div className="w-full max-w-lg mt-16 bg-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-4 shadow-tile">
+      <div className="w-full max-w-lg mt-16 bg-tile border-hairline rounded-panel-lg p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-heading font-bold text-ink-1 text-base">Log a thank-you</h2>
           <button onClick={close} className={`text-ink-2 hover:${TYPE.body}`}>
             Close
           </button>
         </div>
-        <p className="text-[11px] text-ink-2 leading-relaxed">
+        <p className="text-xs text-ink-2 leading-relaxed">
           For a thank-you with no gift behind it. A proactive note, a grant acknowledgment, a
           volunteer or board thank-you. Gift receipts stay in the queue above. No tax-deductible
           language is ever attached here.
@@ -147,10 +147,10 @@ export default function LogAckButton() {
               key={o.value}
               onClick={() => setSubjectType(o.value)}
               aria-pressed={subjectType === o.value}
-              className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-colors ${
+              className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
                 subjectType === o.value
                   ? "bg-orange text-white border-orange"
-                  : "bg-tile text-ink-2 border-outline hover:text-ink-1"
+                  : "bg-tile text-ink-2 border-hairline hover:text-ink-1"
               }`}
             >
               {o.label}
@@ -160,7 +160,7 @@ export default function LogAckButton() {
 
         {/* Donor picker */}
         {picked ? (
-          <div className="flex items-center gap-3 bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2">
+          <div className="flex items-center gap-3 bg-tile border-hairline rounded-control px-3 py-2">
             <span className="text-sm text-ink-1 font-medium flex-1 truncate">{picked.name}</span>
             <button
               onClick={() => {
@@ -178,10 +178,10 @@ export default function LogAckButton() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search a donor by name or org…"
-              className={`w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} focus:outline-none focus:border-orange/40`}
+              className={`w-full bg-tile border-hairline rounded-control px-3 py-2 ${TYPE.body} focus:outline-none focus:border-orange/40`}
             />
             {(searching || results.length > 0) && (
-              <ul className="absolute z-10 mt-1 w-full bg-tile border-[1.5px] border-outline rounded-lg overflow-hidden shadow-tile max-h-56 overflow-y-auto">
+              <ul className="absolute z-10 mt-1 w-full bg-tile border-hairline rounded-control overflow-hidden max-h-56 overflow-y-auto">
                 {searching && results.length === 0 ? (
                   <li className="px-3 py-2 text-xs text-ink-2">Searching…</li>
                 ) : (
@@ -211,10 +211,10 @@ export default function LogAckButton() {
               key={ch}
               onClick={() => setChannel(ch)}
               aria-pressed={channel === ch}
-              className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-colors ${
+              className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
                 channel === ch
                   ? "bg-orange text-white border-orange"
-                  : "bg-tile text-ink-2 border-outline hover:text-ink-1"
+                  : "bg-tile text-ink-2 border-hairline hover:text-ink-1"
               }`}
             >
               {CHANNEL_LABEL[ch]}
@@ -228,7 +228,7 @@ export default function LogAckButton() {
           onChange={(e) => setNote(e.target.value)}
           rows={3}
           placeholder="What you said, or a short note for the record (optional)."
-          className={`w-full bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 ${TYPE.body} leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40`}
+          className={`w-full bg-tile border-hairline rounded-control px-3 py-2 ${TYPE.body} leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40`}
         />
 
         {/* Follow-up task */}
@@ -244,14 +244,14 @@ export default function LogAckButton() {
           </label>
           {createTask && (
             <div className="flex items-center gap-2 pl-6">
-              <span className="text-[11px] text-ink-2">Due</span>
+              <span className="text-xs text-ink-2">Due</span>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 text-xs focus:outline-none focus:border-orange/40"
+                className="bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-xs focus:outline-none focus:border-orange/40"
               />
-              <span className="text-[11px] text-ink-3">defaults to a week out</span>
+              <span className="text-xs text-ink-3">defaults to a week out</span>
             </div>
           )}
         </div>

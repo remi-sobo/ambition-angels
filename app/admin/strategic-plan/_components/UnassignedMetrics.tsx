@@ -65,12 +65,12 @@ export default function UnassignedMetrics({
   };
 
   return (
-    <section className="rounded-card-lg border-[1.5px] border-dashed border-outline bg-surface p-5 mb-8">
+    <section className="rounded-panel-lg border-dashed border-hairline bg-surface p-5 mb-8">
       <div className="flex items-baseline justify-between gap-3 mb-1">
-        <h2 className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Unassigned vital signs</h2>
-        <span className="text-[11px] text-ink-3">{metrics.length} not attached to a goal</span>
+        <h2 className="text-xs uppercase tracking-wider text-ink-3 font-semibold">Unassigned vital signs</h2>
+        <span className="text-xs text-ink-3">{metrics.length} not attached to a goal</span>
       </div>
-      <p className="text-[11px] text-ink-3 mb-3">Live metrics with no home yet. Attach each to the goal it proves.</p>
+      <p className="text-xs text-ink-3 mb-3">Live metrics with no home yet. Attach each to the goal it proves.</p>
 
       <ul className="divide-y divide-hairline">
         {metrics.map((m) => (
@@ -83,7 +83,7 @@ export default function UnassignedMetrics({
                 onClick={() => setOpenKey(openKey === m.key ? null : m.key)}
                 disabled={goals.length === 0}
                 title={goals.length === 0 ? "Add a goal first" : undefined}
-                className="text-[11px] font-semibold text-orange hover:text-orange-dark shrink-0 disabled:text-ink-3 disabled:cursor-not-allowed"
+                className="text-xs font-semibold text-orange hover:text-orange-dark shrink-0 disabled:text-ink-3 disabled:cursor-not-allowed"
               >
                 {openKey === m.key ? "Cancel" : "Attach →"}
               </button>
@@ -91,7 +91,7 @@ export default function UnassignedMetrics({
             {openKey === m.key && (
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <select
-                  className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-xs text-ink-1 cursor-pointer focus:outline-none focus:border-orange/40 flex-1 min-w-[200px]"
+                  className="bg-tile border-hairline rounded-control px-2 py-1 text-xs text-ink-1 cursor-pointer focus:outline-none focus:border-orange/40 flex-1 min-w-[200px]"
                   value={goalId}
                   onChange={(e) => setGoalId(e.target.value)}
                 >
@@ -106,7 +106,7 @@ export default function UnassignedMetrics({
                   type="button"
                   onClick={() => void attach(m)}
                   disabled={busy || !goalId}
-                  className="text-[11px] bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-lg disabled:opacity-50"
+                  className="text-xs bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-control disabled:opacity-50"
                 >
                   Attach
                 </button>

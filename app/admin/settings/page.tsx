@@ -40,7 +40,7 @@ const usd = (n: number) => `$${n.toFixed(2)}`;
 
 function Card({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <section className="bg-surface border-[1.5px] border-outline rounded-card-lg p-5 lg:p-6">
+    <section className="bg-surface border-hairline rounded-panel-lg p-5 lg:p-6">
       <h2 className="font-heading font-semibold text-ink-1">{title}</h2>
       {description && <p className="text-xs text-ink-2 mt-1 mb-4">{description}</p>}
       {!description && <div className="mb-4" />}
@@ -122,7 +122,7 @@ export default async function SettingsPage({
             </span>
             <span className="text-xs text-ink-2">of {usd(aiCapUsd)} this month</span>
             {spend.totalUsd >= aiCapUsd * 0.8 && (
-              <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full border text-expense bg-expense-bg border-expense/30">
+              <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full border text-expense bg-expense-bg border-expense/30">
                 {spend.totalUsd >= aiCapUsd ? "cap reached" : "near cap"}
               </span>
             )}
@@ -190,7 +190,7 @@ export default async function SettingsPage({
                   </div>
                   <Link
                     href="/admin/imports"
-                    className="shrink-0 text-sm font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-lg transition-colors"
+                    className="shrink-0 text-sm font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-control transition-colors"
                   >
                     Import a CSV
                   </Link>
@@ -202,7 +202,7 @@ export default async function SettingsPage({
                         <span className="text-ink-1 truncate">
                           {r.source === "hubspot" ? "HubSpot sync" : r.filename ?? "Untitled file"}
                         </span>
-                        <span className="text-[10px] text-ink-3 uppercase tracking-wider">{r.status}</span>
+                        <span className="text-xs text-ink-3 uppercase tracking-wider">{r.status}</span>
                         <span className="ml-auto text-ink-3 tabular-nums">{r.created_at.slice(0, 10)}</span>
                       </li>
                     ))}
@@ -212,7 +212,7 @@ export default async function SettingsPage({
             )}
 
             {showHubspot ? (
-              <div className={canImport ? "pt-5 border-t border-outline" : undefined}>
+              <div className={canImport ? "pt-5 border-t border-hairline" : undefined}>
                 <h3 className="text-sm font-semibold text-ink-1">HubSpot</h3>
                 <p className="text-xs text-ink-2 mt-0.5 mb-3">
                   Refresh the fundraising spine from HubSpot, and see how current the data is. Runs on demand.
@@ -220,7 +220,7 @@ export default async function SettingsPage({
                 <HubspotSyncPanel />
               </div>
             ) : (
-              <div className={canImport ? "pt-5 border-t border-outline" : undefined}>
+              <div className={canImport ? "pt-5 border-t border-hairline" : undefined}>
                 <h3 className="text-sm font-semibold text-ink-1">Using a CRM?</h3>
                 <p className="text-xs text-ink-2 mt-0.5">
                   Live CRM sync isn&apos;t available yet. CSV import covers everything today.{" "}

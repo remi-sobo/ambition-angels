@@ -10,7 +10,7 @@ import { TYPE } from "@/lib/admin/typeScale";
  * product. Before this existed each page hand-rolled its own header, which
  * drifted (font-display vs font-heading, different sizes, an unstyled stub).
  *
- * - `title`    — the page name (font-heading, bold, 2xl, cream).
+ * - `title`    — the page name (Visual System V3 §2: 28px/600).
  * - `subtitle` — one-line description; accepts JSX (links etc.).
  * - `eyebrow`  — optional small uppercase label above the title (e.g. the
  *                finance dashboard's "Fiscal year 2026").
@@ -29,19 +29,22 @@ export default function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-      <div>
+    <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
+      <div className="min-w-0">
+        {/* V3 §2: no 10px type, and letter spacing comes way down (0.25em →
+            0.04em). The eyebrow is ink-2 rather than tinted accent — it is
+            context, not a call to action. */}
         {eyebrow ? (
-          <div className="text-[10px] uppercase tracking-[0.25em] text-orange/80 mb-1">
+          <div className="text-xs font-medium uppercase tracking-[0.04em] text-ink-2 mb-1.5">
             {eyebrow}
           </div>
         ) : null}
         <h1 className={TYPE.pageTitle}>{title}</h1>
         {subtitle ? (
-          <p className={`${TYPE.bodyMuted} mt-0.5`}>{subtitle}</p>
+          <p className={`${TYPE.bodyMuted} mt-1.5 max-w-reading`}>{subtitle}</p>
         ) : null}
       </div>
-      {actions}
+      {actions ? <div className="flex items-center gap-2 shrink-0">{actions}</div> : null}
     </div>
   );
 }

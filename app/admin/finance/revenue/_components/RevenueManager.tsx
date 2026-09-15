@@ -38,9 +38,9 @@ const SOURCE_LABEL: Record<string, string> = {
 const SOURCE_CHIP: Record<string, string> = {
   pledge: "bg-revenue-bg text-revenue border-revenue/30",
   grant: "bg-orange/15 text-orange border-orange/30",
-  pipeline: "bg-tile text-ink-2 border-outline",
+  pipeline: "bg-tile text-ink-2 border-hairline",
   commitment: "bg-revenue-bg text-revenue border-revenue/30",
-  manual: "bg-[#EFE6D4] text-ink-1 border-outline",
+  manual: "bg-tile text-ink-1 border-hairline",
 };
 
 function money(n: number): string {
@@ -53,7 +53,7 @@ const monthLabel = (iso: string) =>
 const dayLabel = (iso: string) =>
   new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-const inputCls = "w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1";
+const inputCls = "w-full bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1";
 
 export default function RevenueManager({
   year,
@@ -191,19 +191,19 @@ export default function RevenueManager({
       >
         <span className="font-mono text-xs text-ink-2">{monthLabel(r.month)}</span>
         <span className="hidden sm:block">
-          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${SOURCE_CHIP[r.source_type] ?? SOURCE_CHIP.manual}`}>
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${SOURCE_CHIP[r.source_type] ?? SOURCE_CHIP.manual}`}>
             {SOURCE_LABEL[r.source_type] ?? r.source_type}
           </span>
         </span>
         <span className="min-w-0 truncate text-ink-1" title={r.label}>
           {r.label}
           {r.needs_schedule && (
-            <span className="ml-2 text-[10px] text-[#A56A1B]" title="Awarded but not tranched. Counted as a lump at the period start">
+            <span className="ml-2 text-xs text-status-watch-text" title="Awarded but not tranched. Counted as a lump at the period start">
               needs schedule
             </span>
           )}
           {r.restricted && (
-            <span className="ml-2 text-[10px] text-[#A56A1B]">
+            <span className="ml-2 text-xs text-status-watch-text">
               restricted{r.restricted_to ? ` · ${r.restricted_to}` : ""}
             </span>
           )}
@@ -218,11 +218,11 @@ export default function RevenueManager({
         <span className="text-right whitespace-nowrap">
           {manual ? (
             <>
-              <button onClick={() => startEdit(manual)} className="text-[11px] text-ink-2 hover:text-orange mr-2">Edit</button>
-              <button onClick={() => void remove(manual.id)} className="text-[11px] text-ink-2 hover:text-expense">Delete</button>
+              <button onClick={() => startEdit(manual)} className="text-xs text-ink-2 hover:text-orange mr-2">Edit</button>
+              <button onClick={() => void remove(manual.id)} className="text-xs text-ink-2 hover:text-expense">Delete</button>
             </>
           ) : (
-            <span className="text-[10px] text-ink-3">auto</span>
+            <span className="text-xs text-ink-3">auto</span>
           )}
         </span>
       </li>
@@ -249,14 +249,14 @@ export default function RevenueManager({
             <div className="absolute inset-y-0 left-0 bg-orange/25" style={{ width: `${Math.min(100, goalPctProj)}%` }} />
             <div className="absolute inset-y-0 left-0 bg-orange" style={{ width: `${Math.min(100, goalPct)}%` }} />
           </div>
-          <div className="mt-1.5 text-[11px] text-ink-2">
+          <div className="mt-1.5 text-xs text-ink-2">
             {money(hard)} received + committed toward {money(goal)} goal
           </div>
         </div>
       )}
 
       {/* ── Expected inflows ───────────────────────────────────────────── */}
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
+      <section className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
         <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
           <h2 className={TYPE.sectionTitle}>Expected inflows</h2>
           {!formOpen && (
@@ -272,8 +272,8 @@ export default function RevenueManager({
         </p>
 
         {formOpen && (
-          <div className="rounded-card border-[1.5px] border-orange/40 bg-surface p-4 mb-5">
-            <div className="text-[11px] uppercase tracking-wider text-ink-2 font-medium mb-3">
+          <div className="rounded-panel border-orange/40 bg-surface p-4 mb-5">
+            <div className={`${TYPE.cardLabel} mb-3`}>
               {editingId ? "Edit commitment" : "New manual commitment"}
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -312,16 +312,16 @@ export default function RevenueManager({
             {error && <p className="mt-3 text-xs text-expense">{error}</p>}
             <div className="mt-4 flex items-center gap-2">
               <button disabled={busy || !name || !amount} onClick={save}
-                className="px-3 py-1.5 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40">
+                className="px-3 py-1.5 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40">
                 {busy ? "Saving…" : editingId ? "Save changes" : "Add commitment"}
               </button>
-              <button onClick={resetForm} className={`px-3 py-1.5 rounded-lg text-ink-2 hover:${TYPE.body}`}>Cancel</button>
+              <button onClick={resetForm} className={`px-3 py-1.5 rounded-control text-ink-2 hover:${TYPE.body}`}>Cancel</button>
             </div>
           </div>
         )}
 
         {committedRows.length === 0 && projectedRows.length === 0 ? (
-          <div className="text-sm text-ink-2 py-6 text-center border border-dashed border-outline rounded-card">
+          <div className="text-sm text-ink-2 py-6 text-center border border-dashed border-hairline rounded-panel">
             No dated inflows yet. Awarded grants, scheduled pledges, and weighted pipeline appear here
             once they have an amount and a date.
           </div>
@@ -344,7 +344,7 @@ export default function RevenueManager({
       </section>
 
       {/* ── Received this year ─────────────────────────────────────────── */}
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 sm:p-6">
+      <section className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
         <div className="flex items-baseline justify-between gap-3 mb-1">
           <h2 className={TYPE.sectionTitle}>Received this year</h2>
           <span className="text-xs font-mono text-revenue [font-variant-numeric:tabular-nums]">{money(totalReceived)}</span>
@@ -354,7 +354,7 @@ export default function RevenueManager({
           received money; HubSpot closed-won and manual gifts both land here).
         </p>
         {receivedGifts.length === 0 ? (
-          <div className="text-sm text-ink-2 py-6 text-center border border-dashed border-outline rounded-card">
+          <div className="text-sm text-ink-2 py-6 text-center border border-dashed border-hairline rounded-panel">
             Nothing received yet this year.
           </div>
         ) : (
@@ -375,20 +375,20 @@ export default function RevenueManager({
 
 function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
-    <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-3">
-      <div className="text-[10px] uppercase tracking-widest text-ink-2 mb-1">{label}</div>
+    <div className="rounded-panel border-hairline bg-surface p-3">
+      <div className={`${TYPE.cardLabel} mb-1`}>{label}</div>
       <div className={`text-lg font-medium ${accent ? "text-orange" : "text-ink-1"}`}>{value}</div>
-      {sub && <div className="mt-0.5 text-[10px] text-ink-2">{sub}</div>}
+      {sub && <div className="mt-0.5 text-xs text-ink-2">{sub}</div>}
     </div>
   );
 }
 
 function GroupHeader({ label, sub, total, muted }: { label: string; sub: string; total: string; muted?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 mt-5 mb-1 pt-3 border-t border-outline first:mt-0 first:pt-0 first:border-t-0">
+    <div className="flex items-baseline justify-between gap-3 mt-5 mb-1 pt-3 border-t border-hairline first:mt-0 first:pt-0 first:border-t-0">
       <div>
-        <span className={`text-[11px] font-semibold uppercase tracking-wider ${muted ? "text-ink-2" : "text-ink-1"}`}>{label}</span>
-        <span className="ml-2 text-[11px] text-ink-2">{sub}</span>
+        <span className={`${TYPE.sectionHeader} ${muted ? "" : "!text-ink-1"}`}>{label}</span>
+        <span className="ml-2 text-xs text-ink-2">{sub}</span>
       </div>
       <span className={`text-xs font-mono [font-variant-numeric:tabular-nums] ${muted ? "text-ink-2" : "text-ink-1"}`}>{total}</span>
     </div>
@@ -398,7 +398,7 @@ function GroupHeader({ label, sub, total, muted }: { label: string; sub: string;
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}</span>
+      <span className={`block ${TYPE.fieldLabel} mb-1`}>{label}</span>
       {children}
     </label>
   );

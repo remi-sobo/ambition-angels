@@ -45,7 +45,7 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export function StudentRow({
   student,
@@ -126,7 +126,7 @@ export function StudentRow({
 
   return (
     <article
-      className={`bg-surface border-[1.5px] border-outline rounded-xl p-3 text-sm ${busy ? "opacity-60" : ""}`}
+      className={`bg-surface border-hairline rounded-panel p-3 text-sm ${busy ? "opacity-60" : ""}`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <Link
@@ -135,20 +135,20 @@ export function StudentRow({
         >
           {fullName(student)}
         </Link>
-        {grade && <span className="text-[11px] text-ink-2">Grade {grade}</span>}
-        {school && <span className="text-[11px] text-ink-2">· {school}</span>}
+        {grade && <span className="text-xs text-ink-2">Grade {grade}</span>}
+        {school && <span className="text-xs text-ink-2">· {school}</span>}
         {student.external_source && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
             {SOURCE_LABELS[student.external_source] ?? student.external_source}
           </span>
         )}
-        <span className="ml-auto text-[11px] tabular-nums text-ink-2">
+        <span className="ml-auto text-xs tabular-nums text-ink-2">
           {student.last_activity_at ? `active ${student.last_activity_at}` : "no activity"}
         </span>
       </div>
 
       {(guardianName || contactEmail) && (
-        <p className="text-[12px] text-ink-2 mt-1">
+        <p className="text-xs text-ink-2 mt-1">
           {guardianName ? `Guardian: ${guardianName}` : "Contact:"}
           {contactEmail && (
             <a href={`mailto:${contactEmail}`} className="text-orange/80 hover:text-orange ml-1.5">
@@ -160,7 +160,7 @@ export function StudentRow({
       )}
 
       {leaderName && (
-        <p className="text-[12px] text-ink-2 mt-1">
+        <p className="text-xs text-ink-2 mt-1">
           {volunteerTerm}: <span className="text-ink-1">{leaderName}</span>
         </p>
       )}
@@ -171,7 +171,7 @@ export function StudentRow({
           disabled={busy}
           onChange={(e) => patch({ stage: e.target.value })}
           title={stages.find((s) => s.stage_key === student.stage)?.description ?? undefined}
-          className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1 text-ink-1 cursor-pointer"
+          className="text-xs bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 cursor-pointer"
         >
           {stages.map((s) => (
             <option key={s.stage_key} value={s.stage_key} className="bg-surface" title={s.description ?? undefined}>
@@ -187,7 +187,7 @@ export function StudentRow({
             onClick={() => patch({ stage: next.stage_key, touch: true })}
             disabled={busy}
             title={next.description ?? undefined}
-            className="px-2 py-1 rounded-md text-[11px] font-semibold bg-orange/15 text-orange hover:bg-orange/25"
+            className="px-2 py-1 rounded-control text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25"
           >
             Advance → {next.label}
           </button>
@@ -195,20 +195,20 @@ export function StudentRow({
         <button
           onClick={() => patch({ touch: true })}
           disabled={busy}
-          className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
+          className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
         >
           Log activity
         </button>
         <button
           onClick={() => setEditing((v) => !v)}
-          className="px-2 py-1 rounded-md text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
+          className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
         >
           Edit
         </button>
         <button
           onClick={() => void remove()}
           disabled={busy}
-          className="ml-auto px-2 py-1 rounded-md text-[11px] text-ink-2 hover:text-expense"
+          className="ml-auto px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense"
         >
           Delete
         </button>
@@ -257,19 +257,19 @@ function InlineEdit({
   };
 
   return (
-    <div className="mt-3 pt-3 border-t border-outline grid grid-cols-2 lg:grid-cols-6 gap-2 items-end">
-      <label className="text-[10px] text-ink-2">
+    <div className="mt-3 pt-3 border-t border-hairline grid grid-cols-2 lg:grid-cols-6 gap-2 items-end">
+      <label className="text-xs text-ink-2">
         {term} email
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={email}
           onChange={(e) => setEmail(e.target.value)} />
       </label>
-      <label className="text-[10px] text-ink-2">
+      <label className="text-xs text-ink-2">
         Phone
         <input className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={phone}
           onChange={(e) => setPhone(e.target.value)} />
       </label>
       {leaders.length > 0 && (
-        <label className="text-[10px] text-ink-2">
+        <label className="text-xs text-ink-2">
           {volunteerTerm}
           <select className={`${inputCls} block w-full mt-0.5 !py-1 !text-xs`} value={leaderId}
             onChange={(e) => setLeaderId(e.target.value)}>
@@ -282,11 +282,11 @@ function InlineEdit({
       )}
       <CustomFields defs={defs} values={custom} onChange={setCustom} compact />
       <div className="col-span-full flex justify-end gap-2">
-        <button onClick={onDone} className="text-[11px] text-ink-2 hover:text-ink-1 px-2 py-1">
+        <button onClick={onDone} className="text-xs text-ink-2 hover:text-ink-1 px-2 py-1">
           Cancel
         </button>
         <button onClick={() => void save()}
-          className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full">
+          className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full">
           Save
         </button>
       </div>
@@ -359,7 +359,7 @@ export function NewStudentForm({
 
   return (
     <form onSubmit={submit}
-      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+      className="w-full bg-surface border-hairline rounded-panel p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end">
       <label className="text-xs text-ink-2">
         First name
         <input className={`${inputCls} w-full mt-1`} value={firstName} required autoFocus

@@ -121,19 +121,19 @@ export default function TasksSurface({
   }
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <header className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
           <h2 className={TYPE.sectionHeader}>Tasks</h2>
 
-          <div className="inline-flex rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-1">
+          <div className="inline-flex rounded-control border-hairline bg-surface p-1">
             {(["active", "archived"] as Scope[]).map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setScope(s)}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                  scope === s ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1 hover:bg-[#EFE6D4]"
+                className={`px-3 py-1 text-xs font-medium rounded-control transition-colors ${
+                  scope === s ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1 hover:bg-tile"
                 }`}
               >
                 {s === "active" ? "Active" : `Archived (${archivedTasks.length})`}
@@ -141,7 +141,7 @@ export default function TasksSurface({
             ))}
           </div>
 
-          <span className="text-[11px] text-ink-3">
+          <span className="text-xs text-ink-3">
             {scope === "active" ? visibleTasks.length : archivedTasks.length}
             {scope === "active" && activeTasks.length !== visibleTasks.length
               ? ` / ${activeTasks.length}`
@@ -156,17 +156,17 @@ export default function TasksSurface({
                 type="button"
                 onClick={archiveAllDone}
                 disabled={archiving}
-                className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+                className="text-xs font-semibold text-ink-1 bg-tile hover:bg-tile border-hairline px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
               >
                 {archiving ? "Archiving…" : `Archive done (${doneActive.length})`}
               </button>
             )}
-            <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ink-2">
+            <label className="flex items-center gap-2 text-xs uppercase tracking-wider text-ink-2">
               Assignee
               <select
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value as AssigneeFilter)}
-                className="bg-tile border-[1.5px] border-outline rounded-lg px-2.5 py-1.5 text-xs text-ink-1 normal-case tracking-normal focus:outline-none focus:border-orange/50"
+                className="bg-tile border-hairline rounded-control px-2.5 py-1.5 text-xs text-ink-1 normal-case tracking-normal focus:outline-none focus:border-orange/50"
               >
                 {assigneeOptions.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -175,12 +175,12 @@ export default function TasksSurface({
                 ))}
               </select>
             </label>
-            <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ink-2">
+            <label className="flex items-center gap-2 text-xs uppercase tracking-wider text-ink-2">
               Linked
               <select
                 value={linkFilter}
                 onChange={(e) => setLinkFilter(e.target.value as LinkFilter)}
-                className="bg-tile border-[1.5px] border-outline rounded-lg px-2.5 py-1.5 text-xs text-ink-1 normal-case tracking-normal focus:outline-none focus:border-orange/50"
+                className="bg-tile border-hairline rounded-control px-2.5 py-1.5 text-xs text-ink-1 normal-case tracking-normal focus:outline-none focus:border-orange/50"
               >
                 {LINK_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -190,12 +190,12 @@ export default function TasksSurface({
               </select>
             </label>
             {view === "list" && (
-              <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ink-2">
+              <label className="flex items-center gap-2 text-xs uppercase tracking-wider text-ink-2">
                 Group by
                 <select
                   value={groupBy}
                   onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-                  className="bg-tile border-[1.5px] border-outline rounded-lg px-2.5 py-1.5 text-xs text-ink-1 normal-case tracking-normal focus:outline-none focus:border-orange/50"
+                  className="bg-tile border-hairline rounded-control px-2.5 py-1.5 text-xs text-ink-1 normal-case tracking-normal focus:outline-none focus:border-orange/50"
                 >
                   {GROUP_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>
@@ -206,14 +206,14 @@ export default function TasksSurface({
               </label>
             )}
 
-            <div className="inline-flex rounded-lg border-[1.5px] border-outline bg-surface shadow-panel p-1">
+            <div className="inline-flex rounded-control border-hairline bg-surface p-1">
               {(["list", "board"] as View[]).map((v) => (
                 <button
                   key={v}
                   type="button"
                   onClick={() => setView(v)}
-                  className={`px-3 py-1 text-xs font-medium rounded-md capitalize transition-colors ${
-                    view === v ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1 hover:bg-[#EFE6D4]"
+                  className={`px-3 py-1 text-xs font-medium rounded-control capitalize transition-colors ${
+                    view === v ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1 hover:bg-tile"
                   }`}
                 >
                   {v}

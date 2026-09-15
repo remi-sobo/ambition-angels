@@ -35,7 +35,7 @@ export type ScorecardKpi = {
 const HEALTH: Record<string, { label: string; bar: string; pill: string }> = {
   on_track: { label: "On track", bar: "bg-revenue", pill: "bg-revenue-bg text-revenue" },
   done: { label: "Met", bar: "bg-revenue", pill: "bg-revenue-bg text-revenue" },
-  at_risk: { label: "At risk", bar: "bg-[#C8881B]", pill: "bg-[#F4E8D0] text-[#A56A1B]" },
+  at_risk: { label: "At risk", bar: "bg-status-watch", pill: "bg-status-watch-bg text-status-watch-text" },
   behind: { label: "Behind", bar: "bg-expense", pill: "bg-expense-bg text-expense" },
   not_started: { label: "Not started", bar: "bg-gray-mid", pill: "bg-tile text-ink-2" },
 };
@@ -143,11 +143,11 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
   };
 
   return (
-    <div className={`bg-surface border-[1.5px] border-outline rounded-card p-4 flex flex-col gap-2.5 ${busy ? "opacity-60" : ""}`}>
+    <div className={`bg-surface border-hairline rounded-panel p-4 flex flex-col gap-2.5 ${busy ? "opacity-60" : ""}`}>
       <div className="flex items-start gap-2">
         <span className="text-sm font-heading font-semibold text-ink-1 leading-snug flex-1 min-w-0">{kpi.title}</span>
         <span
-          className={`text-[10px] uppercase tracking-wide rounded px-1 py-0.5 shrink-0 ${
+          className={`text-xs rounded px-1 py-0.5 shrink-0 ${
             prov.editable ? "text-ink-3 bg-tile" : "text-revenue bg-revenue-bg"
           }`}
         >
@@ -161,7 +161,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
             <input
               autoFocus
               inputMode="decimal"
-              className="w-24 rounded-md border border-outline bg-app px-2 py-1 text-lg font-bold tabular-nums text-ink-1 focus:outline-none focus:border-orange"
+              className="w-24 rounded-control border border-hairline bg-app px-2 py-1 text-lg font-bold tabular-nums text-ink-1 focus:outline-none focus:border-orange"
               value={val}
               onChange={(e) => setVal(e.target.value)}
               onKeyDown={(e) => {
@@ -182,7 +182,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
                   setVal(kpi.current?.toString() ?? "");
                   setEditing(true);
                 }}
-                className="text-[10px] font-semibold text-orange bg-orange/10 hover:bg-orange/20 rounded-full px-2 py-0.5 transition-colors"
+                className="text-xs font-semibold text-orange bg-orange/10 hover:bg-orange/20 rounded-full px-2 py-0.5 transition-colors"
                 title="Update this measure's value"
               >
                 ✎ Update
@@ -198,7 +198,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
           <div className="flex-1 h-1.5 rounded-full bg-tile overflow-hidden">
             <div className={`h-full ${h.bar} transition-all`} style={{ width: `${pct}%` }} />
           </div>
-          <span className="text-[11px] text-ink-2 tabular-nums w-9 text-right">{pct}%</span>
+          <span className="text-xs text-ink-2 tabular-nums w-9 text-right">{pct}%</span>
         </div>
       ) : (
         <div className="h-1.5" />
@@ -209,18 +209,18 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
           value={kpi.status}
           onChange={(e) => void patch({ status: e.target.value })}
           title="Set this measure's status"
-          className={`text-[10px] font-semibold rounded-full px-2 py-0.5 border-0 cursor-pointer ${h.pill}`}
+          className={`text-xs font-semibold rounded-full px-2 py-0.5 border-0 cursor-pointer ${h.pill}`}
         >
           {STATUS_ORDER.map((s) => (
             <option key={s} value={s} className="bg-surface text-ink-1">{HEALTH[s].label}</option>
           ))}
         </select>
         {delta !== null && delta !== 0 && (
-          <span className={`text-[10px] font-semibold tabular-nums ${delta > 0 ? "text-revenue" : "text-expense"}`}>
+          <span className={`text-xs font-semibold tabular-nums ${delta > 0 ? "text-revenue" : "text-expense"}`}>
             {delta > 0 ? "▲" : "▼"} {fmtVal(Math.abs(delta), kpi.unit)} since start
           </span>
         )}
-        <span className="text-[10px] text-ink-3 ml-auto">{freshness(kpi.lastUpdatedAt)}</span>
+        <span className="text-xs text-ink-3 ml-auto">{freshness(kpi.lastUpdatedAt)}</span>
       </div>
 
       {/* Notes — the "why" next to the number: context, blockers, expected movement. */}
@@ -229,7 +229,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
           <textarea
             autoFocus
             rows={2}
-            className="flex-1 rounded-md border border-outline bg-app px-2 py-1 text-xs text-ink-1 focus:outline-none focus:border-orange"
+            className="flex-1 rounded-control border border-hairline bg-app px-2 py-1 text-xs text-ink-1 focus:outline-none focus:border-orange"
             value={notesVal}
             placeholder="What's behind this number?"
             onChange={(e) => setNotesVal(e.target.value)}
@@ -246,7 +246,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
             setNotesVal(kpi.notes ?? "");
             setEditingNotes(true);
           }}
-          className="text-left text-[11px] leading-snug hover:underline decoration-dotted underline-offset-2"
+          className="text-left text-xs leading-snug hover:underline decoration-dotted underline-offset-2"
           title="Click to edit the note"
         >
           {kpi.notes ? (
@@ -257,17 +257,17 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
         </button>
       )}
 
-      {error && <p className="text-[11px] text-expense">{error}</p>}
+      {error && <p className="text-xs text-expense">{error}</p>}
 
       {/* Provenance — where this number comes from — and who owns the measure. */}
-      <div className="text-[10px] text-ink-3 leading-snug border-t border-hairline pt-2 flex items-start gap-1">
+      <div className="text-xs text-ink-3 leading-snug border-t border-hairline pt-2 flex items-start gap-1">
         <span aria-hidden>{prov.editable ? "✎" : "⟳"}</span>
         <span className="min-w-0 flex-1">{prov.detail}</span>
         {editingOwner ? (
           <span className="flex items-center gap-1 shrink-0">
             <input
               autoFocus
-              className="w-20 rounded-md border border-outline bg-app px-1.5 py-0.5 text-[10px] text-ink-1 focus:outline-none focus:border-orange"
+              className="w-20 rounded-control border border-hairline bg-app px-1.5 py-0.5 text-xs text-ink-1 focus:outline-none focus:border-orange"
               value={ownerVal}
               placeholder="owner"
               onChange={(e) => setOwnerVal(e.target.value)}
@@ -294,7 +294,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
 
       {(kpi.goalTitle || kpi.objectiveTitle) && (
         <div
-          className="text-[10px] text-ink-3 truncate"
+          className="text-xs text-ink-3 truncate"
           title={`${kpi.goalTitle ?? ""}${kpi.objectiveTitle ? ` · ${kpi.objectiveTitle}` : ""}`}
         >
           ↳ {kpi.goalTitle ?? "—"}{kpi.objectiveTitle ? ` · ${kpi.objectiveTitle}` : ""}

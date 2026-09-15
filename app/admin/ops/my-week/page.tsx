@@ -28,10 +28,10 @@ function Door({
     <Link
       href={href}
       className={[
-        "group flex flex-col rounded-card border-[1.5px] p-6 transition-colors",
+        "group flex flex-col rounded-panel p-6 transition-colors",
         active
-          ? "border-orange bg-orange-light shadow-panel"
-          : "border-outline bg-surface hover:bg-[#EFE6D4]",
+          ? "border-orange bg-orange-light"
+          : "border-hairline bg-surface hover:bg-tile",
       ].join(" ")}
     >
       <div className="flex items-center justify-between">
@@ -44,7 +44,7 @@ function Door({
           {eyebrow}
         </span>
         {active && (
-          <span className="text-[10px] uppercase tracking-wider font-semibold text-orange-dark border border-orange/40 rounded-full px-1.5 py-px">
+          <span className="text-xs uppercase tracking-wider font-semibold text-orange-dark border border-orange/40 rounded-full px-1.5 py-px">
             Now
           </span>
         )}
@@ -103,7 +103,7 @@ export default async function MyWeekHubPage() {
       />
 
       {/* ── WeekStatus ─────────────────────────────────────────────────────── */}
-      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+      <section className="rounded-panel border-hairline bg-surface p-6">
         {status ? (
           <WeekStatusLine status={status} />
         ) : (

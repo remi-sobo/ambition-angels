@@ -111,7 +111,7 @@ export default async function StrategyReviewPage() {
           ))}
 
           {orphanGoals.length > 0 && (
-            <section className="border-[1.5px] border-dashed border-outline rounded-card-lg p-5">
+            <section className="border-dashed border-hairline rounded-panel-lg p-5">
               <h2 className={`font-heading font-semibold ${TYPE.bodyMuted} mb-3`}>Goals without an objective</h2>
               <div className="space-y-3">
                 {orphanGoals.map((g) => (
@@ -124,16 +124,16 @@ export default async function StrategyReviewPage() {
           <ReviewComplete />
 
           {reviews.length > 0 && (
-            <section className="border-[1.5px] border-outline rounded-card-lg p-5">
+            <section className="border-hairline rounded-panel-lg p-5">
               <h2 className={`font-heading font-semibold ${TYPE.body} mb-3`}>Review history</h2>
               <ul className="space-y-3">
                 {reviews.map((r) => (
-                  <li key={r.id} className="text-sm border-b border-outline last:border-0 pb-3 last:pb-0">
+                  <li key={r.id} className="text-sm border-b border-hairline last:border-0 pb-3 last:pb-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-ink-1">{fmtDate(r.conducted_at)}</span>
-                      {r.conducted_by && <span className="text-[11px] text-ink-2">{r.conducted_by}</span>}
+                      {r.conducted_by && <span className="text-xs text-ink-2">{r.conducted_by}</span>}
                       {r.next_review_at && (
-                        <span className="text-[11px] text-ink-2 ml-auto">next: {r.next_review_at}</span>
+                        <span className="text-xs text-ink-2 ml-auto">next: {r.next_review_at}</span>
                       )}
                     </div>
                     {r.notes && <p className="text-ink-2 mt-1 whitespace-pre-wrap">{r.notes}</p>}

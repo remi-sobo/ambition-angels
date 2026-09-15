@@ -10,7 +10,7 @@ export default function HowWeFit({
   return (
     <details
       {...(defaultOpen ? { open: true } : {})}
-      className="rounded-card border-[1.5px] border-outline bg-surface p-6 group"
+      className="rounded-panel border-hairline bg-surface p-6 group"
     >
       <summary className="cursor-pointer select-none text-xs uppercase tracking-wider text-ink-2 hover:text-ink-1">
         How we fit
@@ -18,8 +18,8 @@ export default function HowWeFit({
 
       <div className="mt-4 space-y-5">
         {data.framing_note && (
-          <div className="rounded-lg border-l-4 border-[#D9BE86] bg-amber-400/[0.05] p-3">
-            <div className="text-[10px] uppercase tracking-wider text-[#A56A1B]/90 mb-1">
+          <div className="rounded-control border-l-4 border-status-watch/40 bg-status-watch-bg p-3">
+            <div className="text-xs uppercase tracking-wider text-status-watch-text/90 mb-1">
               Framing
             </div>
             <p className="text-sm text-ink-1 italic leading-relaxed">
@@ -30,7 +30,7 @@ export default function HowWeFit({
 
         {data.matching_priorities.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+            <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               Where we plausibly fit (their language)
             </div>
             <ul className="space-y-1.5 text-sm text-ink-1">
@@ -46,7 +46,7 @@ export default function HowWeFit({
 
         {data.our_matching_stories.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+            <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               How our story maps
             </div>
             <ul className="space-y-1.5 text-sm text-ink-1">
@@ -62,7 +62,7 @@ export default function HowWeFit({
 
         {data.honest_gaps.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+            <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               Honest gaps
             </div>
             <ul className="space-y-1.5 text-sm text-ink-2">

@@ -14,7 +14,7 @@ export type WizKpi = { id: string; goal_id: string | null; objective_id: string 
 export type WizInitiative = { id: string; goal_id: string };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 async function apiRequest(url: string, body: unknown, onError: (message: string) => void): Promise<boolean> {
   const res = await fetch(url, {
@@ -51,17 +51,17 @@ function StepCard({
   children?: React.ReactNode;
 }) {
   return (
-    <section className="bg-surface border-[1.5px] border-outline rounded-card-lg p-5">
+    <section className="bg-surface border-hairline rounded-panel-lg p-5">
       <div className="flex items-center gap-3">
         <span
-          className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 ${
-            done ? "bg-revenue text-white" : "bg-tile text-ink-2 border border-outline"
+          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+            done ? "bg-revenue text-white" : "bg-tile text-ink-2 border border-hairline"
           }`}
         >
           {done ? "✓" : n}
         </span>
         <h2 className="font-heading font-semibold text-ink-1 flex-1">{title}</h2>
-        <span className={`text-[11px] font-semibold ${done ? "text-revenue" : "text-[#A56A1B]"}`}>
+        <span className={`text-xs font-semibold ${done ? "text-revenue" : "text-status-watch-text"}`}>
           {done ? "Done" : "Needs attention"}
         </span>
       </div>
@@ -96,7 +96,7 @@ function QuickAdd({ placeholder, onAdd }: { placeholder: string; onAdd: (title: 
           if (e.key === "Enter") { e.preventDefault(); void submit(); }
         }}
       />
-      <button onClick={() => void submit()} disabled={busy} className="text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2 px-3 rounded-lg">
+      <button onClick={() => void submit()} disabled={busy} className="text-xs bg-tile hover:bg-tile text-ink-2 px-3 rounded-control">
         Add
       </button>
     </div>
@@ -139,7 +139,7 @@ function AddMeasure({ goalId, onDone }: { goalId: string; onDone: () => void }) 
 
   return (
     <div className={`space-y-2 ${busy ? "opacity-60" : ""}`}>
-      <div className="text-[11px] text-ink-2">Wire to live data (computes itself):</div>
+      <div className="text-xs text-ink-2">Wire to live data (computes itself):</div>
       <div className="flex flex-wrap gap-1.5">
         {AUTO_METRIC_CATALOG.map((m) => (
           <button
@@ -147,7 +147,7 @@ function AddMeasure({ goalId, onDone }: { goalId: string; onDone: () => void }) 
             onClick={() => void addAuto(m.key, m.label, m.unit)}
             disabled={busy}
             title={m.description}
-            className="text-[11px] bg-revenue-bg text-revenue rounded-full px-2.5 py-1 hover:opacity-80"
+            className="text-xs bg-revenue-bg text-revenue rounded-full px-2.5 py-1 hover:opacity-80"
           >
             + {m.label}
           </button>
@@ -158,10 +158,10 @@ function AddMeasure({ goalId, onDone }: { goalId: string; onDone: () => void }) 
           <input className={`${inputCls} flex-1 min-w-[160px] !py-1 !text-xs`} placeholder="Manual measure (e.g. Processes documented)" value={title} autoFocus onChange={(e) => setTitle(e.target.value)} />
           <input className={`${inputCls} w-14 !py-1 !text-xs`} placeholder="unit" value={unit} onChange={(e) => setUnit(e.target.value)} />
           <input className={`${inputCls} w-16 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
-          <button onClick={() => void addManual()} disabled={busy} className="text-[11px] bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-lg">Add</button>
+          <button onClick={() => void addManual()} disabled={busy} className="text-xs bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-control">Add</button>
         </div>
       ) : (
-        <button onClick={() => setManual(true)} className="text-[11px] text-ink-2 hover:text-orange">or add a manual measure →</button>
+        <button onClick={() => setManual(true)} className="text-xs text-ink-2 hover:text-orange">or add a manual measure →</button>
       )}
     </div>
   );
@@ -205,31 +205,31 @@ function FoundationForm({ initial, onSaved }: { initial: WizFoundation; onSaved:
 
   return (
     <div className="space-y-2">
-      <label className="block text-[11px] text-ink-2">
+      <label className="block text-xs text-ink-2">
         Mission: why you exist, one sentence
         <textarea className={`${inputCls} block w-full mt-1 !text-xs`} rows={2} value={mission}
           placeholder="e.g. To empower young people with the skills and support to thrive."
           onChange={(e) => setMission(e.target.value)} />
       </label>
-      <label className="block text-[11px] text-ink-2">
+      <label className="block text-xs text-ink-2">
         Vision: the world if you succeed
         <textarea className={`${inputCls} block w-full mt-1 !text-xs`} rows={2} value={vision}
           onChange={(e) => setVision(e.target.value)} />
       </label>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <label className="block text-[11px] text-ink-2">
+        <label className="block text-xs text-ink-2">
           Values (comma-separated)
           <input className={`${inputCls} block w-full mt-1 !text-xs`} value={values}
             placeholder="Integrity, Learning, …" onChange={(e) => setValues(e.target.value)} />
         </label>
-        <label className="block text-[11px] text-ink-2">
+        <label className="block text-xs text-ink-2">
           Behaviors (comma-separated)
           <input className={`${inputCls} block w-full mt-1 !text-xs`} value={behaviors}
             onChange={(e) => setBehaviors(e.target.value)} />
         </label>
       </div>
       <button onClick={() => void save()} disabled={busy || !mission.trim()}
-        className="text-[11px] font-semibold bg-orange hover:bg-orange-dark text-white px-4 py-1.5 rounded-full disabled:opacity-50">
+        className="text-xs font-semibold bg-orange hover:bg-orange-dark text-white px-4 py-1.5 rounded-full disabled:opacity-50">
         {busy ? "Saving…" : "Save foundation"}
       </button>
     </div>
@@ -247,7 +247,7 @@ function AddObjective({ onDone, autoOpen = false }: { onDone: () => void; autoOp
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="text-[11px] font-semibold text-orange hover:text-orange-dark">
+      <button onClick={() => setOpen(true)} className="text-xs font-semibold text-orange hover:text-orange-dark">
         + Add an objective
       </button>
     );
@@ -279,11 +279,11 @@ function AddObjective({ onDone, autoOpen = false }: { onDone: () => void; autoOp
       />
       <div className="flex gap-2">
         <button onClick={() => void submit()} disabled={busy || !title.trim()}
-          className="text-[11px] font-semibold bg-orange hover:bg-orange-dark text-white px-4 py-1.5 rounded-full disabled:opacity-50">
+          className="text-xs font-semibold bg-orange hover:bg-orange-dark text-white px-4 py-1.5 rounded-full disabled:opacity-50">
           Add objective
         </button>
         {!autoOpen && (
-          <button onClick={() => setOpen(false)} className="text-[11px] text-ink-2 hover:text-ink-1 px-2">Cancel</button>
+          <button onClick={() => setOpen(false)} className="text-xs text-ink-2 hover:text-ink-1 px-2">Cancel</button>
         )}
       </div>
     </div>
@@ -314,7 +314,7 @@ function LoadTemplateButton({ onDone }: { onDone: () => void }) {
   };
   return (
     <button onClick={() => void load()} disabled={busy}
-      className="text-[11px] font-semibold text-ink-2 bg-tile hover:bg-[#EFE6D4] border border-outline px-3 py-1.5 rounded-full disabled:opacity-50">
+      className="text-xs font-semibold text-ink-2 bg-tile hover:bg-tile border border-hairline px-3 py-1.5 rounded-full disabled:opacity-50">
       {busy ? "Loading…" : "Load the starter shape (4 generic pillars you'll rename)"}
     </button>
   );
@@ -371,7 +371,7 @@ export default function SetupWizard({
   return (
     <div className="space-y-4">
       {complete && (
-        <div className="bg-revenue-bg border-[1.5px] border-revenue/30 rounded-card-lg p-5">
+        <div className="bg-revenue-bg border-revenue/30 rounded-panel-lg p-5">
           <p className="text-sm text-ink-1 font-semibold">Your plan is measurable. ✓</p>
           <p className="text-xs text-ink-2 mt-1">
             {objectives.length} objectives · {goals.length} goals · {kpis.length} measures ({autoCount} wired to live data) ·{" "}
@@ -397,7 +397,7 @@ export default function SetupWizard({
         {objectives.length === 0 ? (
           <div className="space-y-3">
             <AddObjective onDone={refresh} autoOpen />
-            <div className="flex items-center gap-2 text-[11px] text-ink-3">
+            <div className="flex items-center gap-2 text-xs text-ink-3">
               <span>or</span>
               <LoadTemplateButton onDone={refresh} />
             </div>
@@ -426,7 +426,7 @@ export default function SetupWizard({
         {goalsNoMeasure.length > 0 && (
           <div className="space-y-4">
             {goalsNoMeasure.map((g) => (
-              <div key={g.id} className="border-t border-outline pt-3 first:border-0 first:pt-0">
+              <div key={g.id} className="border-t border-hairline pt-3 first:border-0 first:pt-0">
                 <div className="text-xs text-ink-1 mb-1.5">{g.title}</div>
                 <AddMeasure goalId={g.id} onDone={refresh} />
               </div>
@@ -460,7 +460,7 @@ export default function SetupWizard({
         {!reviewSet && (
           <div className="flex flex-wrap items-center gap-2">
             <input type="date" className={`${inputCls} !py-1.5 !text-xs`} value={reviewDate} onChange={(e) => setReviewDate(e.target.value)} />
-            <button onClick={() => void setReview()} disabled={reviewBusy || !reviewDate} className="text-[11px] font-semibold bg-orange hover:bg-orange-dark text-white px-4 py-1.5 rounded-full disabled:opacity-50">
+            <button onClick={() => void setReview()} disabled={reviewBusy || !reviewDate} className="text-xs font-semibold bg-orange hover:bg-orange-dark text-white px-4 py-1.5 rounded-full disabled:opacity-50">
               {reviewBusy ? "Saving…" : "Set review date"}
             </button>
           </div>

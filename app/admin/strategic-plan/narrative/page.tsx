@@ -28,7 +28,7 @@ function MovementNav() {
     { n: 3, label: "How We Raise It" },
   ];
   return (
-    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-ink-3 mb-8 flex-wrap">
+    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-ink-3 mb-8 flex-wrap">
       {items.map((it, i) => (
         <span key={it.n} className="flex items-center gap-2">
           {i > 0 && <span aria-hidden className="text-ink-3/60">→</span>}
@@ -87,7 +87,7 @@ export default async function StrategyNarrativePage({
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-10 max-w-[920px]">
       {readiness.blockerCount > 0 && (
-        <div className="mb-6 rounded-card border-[1.5px] border-expense/30 bg-expense-bg px-4 py-3 text-sm">
+        <div className="mb-6 rounded-panel border-expense/30 bg-expense-bg px-4 py-3 text-sm">
           <span className="font-semibold text-ink-1">
             {readiness.blockerCount} funder-readiness blocker{readiness.blockerCount === 1 ? "" : "s"} open.
           </span>{" "}

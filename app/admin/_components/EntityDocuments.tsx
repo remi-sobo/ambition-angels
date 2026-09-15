@@ -23,7 +23,7 @@ type DocRow = {
 };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const fmtSize = (n: number | null) => {
   if (n == null) return "";
@@ -112,8 +112,8 @@ export function EntityDocuments({
   };
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
+    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3">
         <h2 className={TYPE.cardTitle}>
           Documents
           {docs.length > 0 && <span className="ml-2 text-xs font-semibold text-ink-2">{docs.length}</span>}
@@ -125,7 +125,7 @@ export function EntityDocuments({
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="text-xs font-semibold px-2.5 py-1 rounded-full border border-outline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors"
+            className="text-xs font-semibold px-2.5 py-1 rounded-full border border-hairline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors"
           >
             {open ? "Cancel" : "Attach"}
           </button>
@@ -180,7 +180,7 @@ export function EntityDocuments({
               <button
                 type="submit"
                 disabled={busy}
-                className="text-xs font-semibold px-3 py-2 rounded-lg bg-orange text-white hover:bg-orange-dark transition-colors disabled:opacity-50"
+                className="text-xs font-semibold px-3 py-2 rounded-control bg-orange text-white hover:bg-orange-dark transition-colors disabled:opacity-50"
               >
                 {busy ? "Uploading…" : "Upload"}
               </button>
@@ -215,22 +215,22 @@ export function EntityDocuments({
                   {d.title || d.filename}
                 </a>
                 {d.doc_type && (
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-3 whitespace-nowrap">
+                  <span className="text-xs font-semibold text-ink-3 whitespace-nowrap">
                     {DOC_TYPE_LABEL[d.doc_type] ?? d.doc_type}
                   </span>
                 )}
                 {d.expires_at && (
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-status-due-bg text-ink-1 whitespace-nowrap">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-status-due-bg text-ink-1 whitespace-nowrap">
                     exp {d.expires_at}
                   </span>
                 )}
-                <span className="text-[11px] text-ink-3 whitespace-nowrap">{fmtSize(d.size_bytes)}</span>
+                <span className="text-xs text-ink-3 whitespace-nowrap">{fmtSize(d.size_bytes)}</span>
                 <button
                   type="button"
                   onClick={() => unlink(d.id)}
                   disabled={busy}
                   title="Unlink from this record (the file stays in the hub)"
-                  className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
+                  className="text-xs font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
                 >
                   Unlink
                 </button>

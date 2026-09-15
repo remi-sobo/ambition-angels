@@ -23,7 +23,7 @@ const BADGES = [
 ] as const;
 
 const input =
-  "w-full text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50";
+  "w-full text-sm bg-cream border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50";
 
 export default function NewAngleForm() {
   const router = useRouter();
@@ -81,7 +81,7 @@ export default function NewAngleForm() {
   return (
     <div className="fixed inset-0 z-50 bg-ink/40 flex items-start justify-center p-4 overflow-y-auto" onClick={() => !busy && setOpen(false)}>
       <div
-        className="bg-tile border-[1.5px] border-outline rounded-card-lg p-5 w-full max-w-lg mt-12 space-y-3 shadow-tile"
+        className="bg-tile border-hairline rounded-panel-lg p-5 w-full max-w-lg mt-12 space-y-3"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className={TYPE.cardTitle}>New funding angle</h2>

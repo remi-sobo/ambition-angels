@@ -10,7 +10,7 @@ import { userMessage } from "@/lib/admin/errors";
 
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export function NewCohortForm({ programs = [] }: { programs?: string[] }) {
   const router = useRouter();
@@ -63,7 +63,7 @@ export function NewCohortForm({ programs = [] }: { programs?: string[] }) {
 
   return (
     <form onSubmit={submit}
-      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+      className="w-full bg-surface border-hairline rounded-panel p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end">
       <label className="text-xs text-ink-2 col-span-2 lg:col-span-1">
         Name
         <input className={`${inputCls} w-full mt-1`} value={name} required autoFocus

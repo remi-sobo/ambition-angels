@@ -23,7 +23,7 @@ export default function SearchTrigger() {
       onClick={open}
       aria-label="Search BloomOS"
       aria-keyshortcuts={isMac ? "Meta+K" : "Control+K"}
-      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-white/10 bg-white/[0.03] text-[#9c8b70] hover:text-cream hover:bg-white/[0.06] hover:border-white/20 transition-colors"
+      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-control border border-white/10 bg-white/[0.03] text-[color:var(--sidebar-muted)] hover:text-cream hover:bg-white/[0.06] hover:border-white/20 transition-colors"
     >
       <svg
         viewBox="0 0 24 24"
@@ -38,8 +38,8 @@ export default function SearchTrigger() {
         <circle cx="11" cy="11" r="7" />
         <path d="m21 21-4.3-4.3" />
       </svg>
-      <span className="flex-1 text-left text-[13px]">Search…</span>
-      <kbd className="shrink-0 text-[10px] font-medium border border-white/10 rounded px-1.5 py-0.5">
+      <span className="flex-1 text-left text-sm">Search…</span>
+      <kbd className="shrink-0 text-xs font-medium border border-white/10 rounded px-1.5 py-0.5">
         {isMac ? "⌘K" : "Ctrl K"}
       </kbd>
     </button>

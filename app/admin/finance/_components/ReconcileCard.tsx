@@ -73,10 +73,10 @@ export default function ReconcileCard({
   }
 
   return (
-    <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5">
+    <div className="rounded-panel-lg border-hairline bg-surface p-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-ink-2">
+          <div className={TYPE.cardLabel}>
             Cash on hand
             <InfoTip heading="Cash on hand">
               The trusted current bank balance: the <b>last balance you set</b> (the
@@ -90,7 +90,7 @@ export default function ReconcileCard({
           <div className="mt-2 flex items-center gap-2 text-xs">
             <span className="text-ink-2">anchored to {anchorDate ?? "— (set a balance)"}</span>
             <span
-              className={`px-1.5 py-0.5 rounded-full border text-[11px] font-semibold ${
+              className={`px-1.5 py-0.5 rounded-full border text-xs font-semibold ${
                 freshness.stale
                   ? "bg-expense-bg border-expense/30 text-expense"
                   : "bg-revenue-bg border-revenue/30 text-revenue"
@@ -105,7 +105,7 @@ export default function ReconcileCard({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium"
+            className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium"
           >
             Set current balance
           </button>
@@ -121,30 +121,30 @@ export default function ReconcileCard({
           </p>
           <div className="grid sm:grid-cols-2 gap-4 max-w-xl">
             <label className="block">
-              <span className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">Actual bank balance ($)</span>
+              <span className={`block ${TYPE.fieldLabel} mb-1`}>Actual bank balance ($)</span>
               <input
                 value={balance}
                 onChange={(e) => setBalance(e.target.value)}
                 inputMode="decimal"
                 placeholder="121589"
                 autoFocus
-                className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+                className="w-full bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
               />
             </label>
             <label className="block">
-              <span className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">As of date</span>
+              <span className={`block ${TYPE.fieldLabel} mb-1`}>As of date</span>
               <input
                 type="date"
                 value={asOf}
                 onChange={(e) => setAsOf(e.target.value)}
-                className="w-full bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1"
+                className="w-full bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
               />
             </label>
           </div>
 
           {drift !== null && Math.abs(drift) >= 0.5 && (
             <p className="text-xs">
-              <span className={Math.abs(drift) > 0 ? "text-[#A56A1B]" : "text-revenue"}>
+              <span className={Math.abs(drift) > 0 ? "text-status-watch-text" : "text-revenue"}>
                 The app currently computes {fmtMoney(computedCash)}. That&apos;s{" "}
                 {fmtMoney(Math.abs(drift))} {drift > 0 ? "less than" : "more than"} your number.
               </span>{" "}
@@ -165,7 +165,7 @@ export default function ReconcileCard({
               type="button"
               disabled={!enteredValid || busy}
               onClick={submit}
-              className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
+              className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
             >
               {busy ? "Saving…" : "Set balance"}
             </button>
@@ -175,7 +175,7 @@ export default function ReconcileCard({
                 setOpen(false);
                 setErr(null);
               }}
-              className={`px-4 py-2 rounded-lg text-ink-2 hover:${TYPE.body}`}
+              className={`px-4 py-2 rounded-control text-ink-2 hover:${TYPE.body}`}
             >
               Cancel
             </button>

@@ -10,7 +10,7 @@ import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export function NewCampaignForm() {
   const router = useRouter();
@@ -66,7 +66,7 @@ export function NewCampaignForm() {
   return (
     <form
       onSubmit={submit}
-      className="w-full bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
+      className="w-full bg-surface border-hairline rounded-panel p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
     >
       <label className="col-span-2 text-xs text-ink-2">
         Name
@@ -134,7 +134,7 @@ export function NewAppealForm({ campaignId }: { campaignId: string }) {
   if (!open) {
     return (
       <button onClick={() => setOpen(true)}
-        className="text-[11px] text-ink-2 hover:text-ink-1 border border-dashed border-outline rounded-full px-3 py-1 transition-colors">
+        className="text-xs text-ink-2 hover:text-ink-1 border border-dashed border-hairline rounded-full px-3 py-1 transition-colors">
         + appeal
       </button>
     );
@@ -145,10 +145,10 @@ export function NewAppealForm({ campaignId }: { campaignId: string }) {
         placeholder="Spring email #2" onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submit(); } }} />
       <button onClick={() => void submit()} disabled={busy}
-        className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full disabled:opacity-50">
+        className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full disabled:opacity-50">
         Add
       </button>
-      <button onClick={() => setOpen(false)} className="text-[11px] text-ink-2 hover:text-ink-1">
+      <button onClick={() => setOpen(false)} className="text-xs text-ink-2 hover:text-ink-1">
         ×
       </button>
     </span>
@@ -188,7 +188,7 @@ export function BulkAttributeForm({
   };
 
   return (
-    <div className="bg-orange/5 border border-orange/20 rounded-card p-4">
+    <div className="bg-orange/5 border border-orange/20 rounded-panel p-4">
       <p className="text-sm text-ink-1 mb-3">
         <span className="font-semibold text-orange">{unattributed}</span> gift
         {unattributed === 1 ? "" : "s"} aren&apos;t attributed to a campaign yet. Assign the

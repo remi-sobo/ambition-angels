@@ -60,7 +60,7 @@ export default function CalendarPrefsCard({ initial }: { initial: Prefs }) {
       <select
         value={value}
         onChange={(e) => onPick(Number(e.target.value))}
-        className="text-sm rounded-lg border border-outline bg-tile text-ink-1 px-2 py-1.5"
+        className="text-sm rounded-control border border-hairline bg-tile text-ink-1 px-2 py-1.5"
       >
         {options.map((o) => (
           <option key={o} value={o}>

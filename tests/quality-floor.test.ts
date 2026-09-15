@@ -31,8 +31,11 @@ describe("Q1: the resilience layer exists (DoD 1-2)", () => {
     expect(s).toMatch(/animate-pulse/);
     expect(s).not.toMatch(/animate-spin/);
     // Page-shaped: the PageHeader and StatCard silhouettes, in house tokens.
-    expect(s).toMatch(/mb-6/);
-    expect(s).toMatch(/rounded-card-lg p-5/);
+    // Visual System V3 moved both — PageHeader's block to mb-8, StatCard to
+    // the 14px panel radius at p-4 — and the skeleton tracks them, so a load
+    // never settles into a different shape than the one it painted.
+    expect(s).toMatch(/mb-8/);
+    expect(s).toMatch(/rounded-panel p-4/);
     const css = readFileSync(join(__dirname, "..", "app", "globals.css"), "utf8");
     expect(css).toMatch(/\.qf-skeleton\s*\{[\s\S]*?0\.15s/); // decision 2: 150ms delay
   });

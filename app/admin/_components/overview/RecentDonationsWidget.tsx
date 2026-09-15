@@ -23,11 +23,11 @@ export default async function RecentDonationsWidget({ className }: { className?:
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-sm text-ink-1 font-medium truncate block">{donorName(x)}</span>
-                <span className="text-[11px] text-ink-2">{timeAgo(x.created_at)}</span>
+                <span className="text-xs text-ink-2">{timeAgo(x.created_at)}</span>
               </div>
               <div className="text-right flex-shrink-0">
                 <div className="text-sm font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(x.amount)}</div>
-                {x.recurring && <div className="text-[10px] text-orange font-semibold">Monthly</div>}
+                {x.recurring && <div className="text-xs text-orange font-semibold">Monthly</div>}
               </div>
             </li>
           ))}

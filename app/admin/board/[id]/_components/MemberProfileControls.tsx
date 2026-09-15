@@ -33,7 +33,7 @@ export type BoardMemberFull = {
 };
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 export const ROLE_LABELS: Record<string, string> = {
   chair: "Chair",
@@ -222,7 +222,7 @@ export function MemberQuickActions({ member, coiYear }: { member: BoardMemberFul
           <button
             onClick={() => void patch({ coi_signed_at: coiDate || true })}
             disabled={busy}
-            className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-orange/15 text-orange hover:bg-orange/25"
+            className="px-3 py-1.5 rounded-full text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25"
           >
             Record COI ({coiDate || `today, ${coiYear}`})
           </button>
@@ -239,7 +239,7 @@ export function MemberQuickActions({ member, coiYear }: { member: BoardMemberFul
         <button
           onClick={() => void patch({ status: "past" })}
           disabled={busy}
-          className="px-3 py-1.5 rounded-full text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
+          className="px-3 py-1.5 rounded-full text-xs bg-tile hover:bg-tile text-ink-2"
         >
           Mark past
         </button>
@@ -247,7 +247,7 @@ export function MemberQuickActions({ member, coiYear }: { member: BoardMemberFul
         <button
           onClick={() => void patch({ status: "active" })}
           disabled={busy}
-          className="px-3 py-1.5 rounded-full text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
+          className="px-3 py-1.5 rounded-full text-xs bg-tile hover:bg-tile text-ink-2"
         >
           Reactivate
         </button>
@@ -310,14 +310,14 @@ export function OnboardingChecklist({ member }: { member: BoardMemberFull }) {
                 }
                 className="accent-orange w-3.5 h-3.5 shrink-0"
               />
-              <span className={`text-[12px] leading-relaxed ${c.done ? "line-through text-ink-3" : "text-ink-1"}`}>
+              <span className={`text-xs leading-relaxed ${c.done ? "line-through text-ink-3" : "text-ink-1"}`}>
                 {c.text}
               </span>
               <button
                 onClick={() => save(items.filter((x) => x.id !== c.id))}
                 disabled={busy}
                 aria-label={`Delete "${c.text}"`}
-                className="ml-auto px-1.5 text-[13px] leading-none text-ink-3 hover:text-expense opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                className="ml-auto px-1.5 text-sm leading-none text-ink-3 hover:text-expense opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
               >
                 ×
               </button>
@@ -327,7 +327,7 @@ export function OnboardingChecklist({ member }: { member: BoardMemberFull }) {
       )}
       <form onSubmit={add} className="flex gap-2">
         <input
-          className={`${inputCls} flex-1 !py-1.5 text-[12px]`}
+          className={`${inputCls} flex-1 !py-1.5 text-xs`}
           value={newText}
           placeholder="e.g. Signed COI · gave orientation packet · intro to staff"
           onChange={(e) => setNewText(e.target.value)}
@@ -335,7 +335,7 @@ export function OnboardingChecklist({ member }: { member: BoardMemberFull }) {
         <button
           type="submit"
           disabled={busy || !newText.trim()}
-          className="text-[11px] font-semibold px-3 rounded-md bg-tile hover:bg-[#EFE6D4] text-ink-2 disabled:opacity-50"
+          className="text-xs font-semibold px-3 rounded-control bg-tile hover:bg-tile text-ink-2 disabled:opacity-50"
         >
           Add
         </button>

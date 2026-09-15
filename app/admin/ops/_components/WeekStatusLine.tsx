@@ -12,7 +12,7 @@ export default function WeekStatusLine({ status }: { status: WeekStatus }) {
       <span className="text-ink-2">This week: </span>
       {status.segments.map((seg, i) => (
         <span key={seg.key}>
-          <span className={seg.flare ? "font-semibold text-[#A56A1B]" : "text-ink-1"}>
+          <span className={seg.flare ? "font-semibold text-status-watch-text" : "text-ink-1"}>
             {seg.text}
           </span>
           {i < status.segments.length - 1 ? <span className="text-ink-3">, </span> : "."}

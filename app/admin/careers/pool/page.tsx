@@ -33,7 +33,7 @@ export default async function PoolPage() {
   const candidates = occupations.length - blocked - eligible;
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Play Pool"
         subtitle="The gate between the O*NET import and the teen games · nothing plays until a row here says so"
@@ -51,7 +51,7 @@ export default async function PoolPage() {
         <StatCard label="Blocked" value={blocked} sub="catch-alls, no pay, thin description" muted />
       </div>
 
-      <p className="text-[12px] text-ink-2 mb-6">
+      <p className="text-xs text-ink-2 mb-6">
         Card writing lives in the{" "}
         <Link href="/admin/careers" className="underline underline-offset-2">
           Career Library

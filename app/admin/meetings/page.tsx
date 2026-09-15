@@ -46,10 +46,10 @@ function PastRow({ item, emphasize = false }: { item: MeetingListItem; emphasize
   const { record, matched } = item;
   return (
     <div
-      className={`group flex items-center gap-3 px-4 py-3 rounded-card border transition-all ${
+      className={`group flex items-center gap-3 px-4 py-3 rounded-panel border transition-all ${
         emphasize
-          ? "border-status-watch/40 bg-status-watch-bg/50 hover:bg-status-watch-bg shadow-panel"
-          : "border-outline bg-surface shadow-panel hover:bg-[#EFE6D4]"
+          ? "border-status-watch/40 bg-status-watch-bg/50 hover:bg-status-watch-bg"
+          : "border-hairline bg-surface hover:bg-tile"
       }`}
     >
       <Link href={`/admin/meetings/${record.id}`} className="flex-1 min-w-0">
@@ -61,7 +61,7 @@ function PastRow({ item, emphasize = false }: { item: MeetingListItem; emphasize
         <div className="mt-1 flex items-center gap-3 text-ink-2">
           <MatchCluster matched={matched} />
           <span className="text-ink-3">·</span>
-          <span className="text-[11px] text-ink-3 font-mono shrink-0">{fmtPastDate(record.occurred_at)}</span>
+          <span className="text-xs text-ink-3 font-mono shrink-0">{fmtPastDate(record.occurred_at)}</span>
         </div>
       </Link>
       {emphasize ? (
@@ -89,7 +89,7 @@ const rowStart = (r: UpcomingRow) =>
 function BookedChip({ typeName }: { typeName?: string | null }) {
   return (
     <span
-      className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full border border-orange/30 bg-orange-light text-[10px] font-medium text-orange-dark"
+      className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full border border-orange/30 bg-orange-light text-xs font-medium text-orange-dark"
       title="Booked through your booking page"
     >
       {typeName ? `Booked · ${typeName}` : "Booked"}
@@ -174,7 +174,7 @@ export default async function MeetingsPage() {
 
       {/* Coverage hero — the load-bearing signal, not a footnote. */}
       {coverage.gapCount > 0 ? (
-        <section className="relative overflow-hidden rounded-card-lg border border-orange/30 bg-orange-light">
+        <section className="relative overflow-hidden rounded-panel-lg border border-orange/30 bg-orange-light">
           <span className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange" aria-hidden />
           <div className="px-6 py-5 flex items-center gap-5">
             <span className="font-display font-black text-orange text-5xl leading-none [font-variant-numeric:tabular-nums]">
@@ -184,7 +184,7 @@ export default async function MeetingsPage() {
               <p className="text-[15px] font-semibold text-ink-1">
                 {coverage.gapCount === 1 ? "meeting needs a follow-up" : "meetings need a follow-up"}
               </p>
-              <p className="text-[13px] text-ink-2 mt-0.5">
+              <p className="text-sm text-ink-2 mt-0.5">
                 of {coverage.total} in the last {coverage.windowDays} days. Open one below to add a
                 follow-up or mark it as not needed.
               </p>
@@ -192,7 +192,7 @@ export default async function MeetingsPage() {
           </div>
         </section>
       ) : past.length > 0 ? (
-        <section className="rounded-card-lg border border-status-healthy/30 bg-status-healthy-bg px-6 py-4 flex items-center gap-3">
+        <section className="rounded-panel-lg border border-status-healthy/30 bg-status-healthy-bg px-6 py-4 flex items-center gap-3">
           <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-revenue-bg text-revenue">
             <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2">
               <path d="M3 8l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -232,7 +232,7 @@ export default async function MeetingsPage() {
           still be reopened if one was dismissed by mistake. */}
       {dismissed.length > 0 && (
         <details className="group">
-          <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-[12px] text-ink-3 hover:text-ink-1 transition-colors">
+          <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-xs text-ink-3 hover:text-ink-1 transition-colors">
             <svg viewBox="0 0 16 16" className="w-3 h-3 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M6 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -272,20 +272,20 @@ export default async function MeetingsPage() {
               return (
                 <div key={key}>
                   <div className="flex items-baseline gap-2 mb-2 px-1">
-                    <span className={`text-[12px] font-semibold uppercase tracking-wider ${isToday ? "text-orange" : "text-ink-2"}`}>
+                    <span className={`text-xs font-semibold uppercase tracking-wider ${isToday ? "text-orange" : "text-ink-2"}`}>
                       {head.label}
                     </span>
-                    {head.sub && <span className="text-[11px] text-ink-3">· {head.sub}</span>}
+                    {head.sub && <span className="text-xs text-ink-3">· {head.sub}</span>}
                   </div>
                   <div className="space-y-1.5">
                     {(byDay.get(key) ?? []).map((r) =>
                       r.kind === "event" ? (
                         <div
                           key={r.meeting.eventId}
-                          className="group flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel transition-colors hover:bg-[#EFE6D4]"
+                          className="group flex items-center gap-3 px-4 py-2.5 rounded-panel border border-hairline bg-surface transition-colors hover:bg-tile"
                         >
                           <Link href={`/admin/meetings/upcoming/${r.meeting.eventId}`} className="flex flex-1 min-w-0 items-center gap-3">
-                            <span className="text-[12px] text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-20 shrink-0">
+                            <span className="text-xs text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-20 shrink-0">
                               {laTime(r.meeting.start)}
                             </span>
                             <span className="flex-1 min-w-0 text-[14px] text-ink-1 group-hover:text-orange truncate transition-colors">
@@ -302,9 +302,9 @@ export default async function MeetingsPage() {
                         // event to open, but it's real and cancellable.
                         <div
                           key={r.booking.id}
-                          className="flex items-center gap-3 px-4 py-2.5 rounded-card border border-outline bg-surface shadow-panel"
+                          className="flex items-center gap-3 px-4 py-2.5 rounded-panel border border-hairline bg-surface"
                         >
-                          <span className="text-[12px] text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-20 shrink-0">
+                          <span className="text-xs text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-20 shrink-0">
                             {laTime(r.booking.start_time)}
                           </span>
                           <span className="flex-1 min-w-0 text-[14px] text-ink-1 truncate">

@@ -35,7 +35,7 @@ const FIELDS: Array<{ key: string; label: string; syn: string[] }> = [
 ];
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40";
 
 function parseCsv(text: string): Parsed {
   const records: string[][] = [];
@@ -183,7 +183,7 @@ export default function ImportWizard() {
 
   if (result) {
     return (
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6 space-y-4">
+      <section className="bg-tile border-hairline rounded-panel-lg p-6 space-y-4">
         <h2 className={TYPE.cardTitle}>Import complete</h2>
         <p className="text-sm text-ink-2">
           <strong className="text-ink-1">{result.created}</strong> created ·{" "}
@@ -216,7 +216,7 @@ export default function ImportWizard() {
                     <td className="text-right py-1">{y.duplicates > 0 ? `${y.duplicates} (${usd(y.duplicateAmount)})` : "—"}</td>
                   </tr>
                 ))}
-                <tr className="border-t border-outline font-semibold text-ink-1 tabular-nums">
+                <tr className="border-t border-hairline font-semibold text-ink-1 tabular-nums">
                   <td className="pr-6 py-1">Total</td>
                   <td className="text-right pr-6 py-1">{result.reconciliation.inserted}</td>
                   <td className="text-right pr-6 py-1">{usd(result.reconciliation.insertedAmount)}</td>
@@ -242,7 +242,7 @@ export default function ImportWizard() {
 
         {result.errors.length > 0 && (
           <details className="text-xs text-ink-3">
-            <summary className="cursor-pointer text-[#A56A1B]">{result.errors.length} row note(s)</summary>
+            <summary className="cursor-pointer text-status-watch-text">{result.errors.length} row note(s)</summary>
             <ul className="mt-2 space-y-0.5">{result.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>
           </details>
         )}
@@ -255,13 +255,13 @@ export default function ImportWizard() {
 
   if (!parsed) {
     return (
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-6 space-y-4">
+      <section className="bg-tile border-hairline rounded-panel-lg p-6 space-y-4">
         <div>
           <h2 className={`${TYPE.cardTitle} mb-1`}>Upload a CSV</h2>
-          <p className="text-[11px] text-ink-3">First row = headers. Donors dedupe by email; an amount + date column adds a gift per row.</p>
+          <p className="text-xs text-ink-3">First row = headers. Donors dedupe by email; an amount + date column adds a gift per row.</p>
         </div>
         <input type="file" accept=".csv,text/csv" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} className="text-sm text-ink-2" />
-        <details className="text-[11px] text-ink-3">
+        <details className="text-xs text-ink-3">
           <summary className="cursor-pointer">or paste CSV</summary>
           <textarea
             onChange={(e) => e.target.value.includes("\n") && ingest(e.target.value)}
@@ -278,30 +278,30 @@ export default function ImportWizard() {
   const preview = buildRows(parsed).slice(0, 5);
   return (
     <div className="space-y-4">
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-4">
+      <section className="bg-tile border-hairline rounded-panel-lg p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className={TYPE.cardTitle}>Map columns · {parsed.rows.length} rows</h2>
-          <button onClick={() => setParsed(null)} className="text-[11px] text-ink-3 hover:text-ink-1">Start over</button>
+          <button onClick={() => setParsed(null)} className="text-xs text-ink-3 hover:text-ink-1">Start over</button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {FIELDS.map((f) => (
-            <label key={f.key} className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
+            <label key={f.key} className="flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold">
               {f.label}
               <select
                 value={map[f.key] ?? ""}
                 onChange={(e) => setMap((m) => { const n = { ...m }; if (e.target.value === "") delete n[f.key]; else n[f.key] = Number(e.target.value); return n; })}
                 className={inputCls}
               >
-                <option value="" className="bg-tile shadow-tile">(ignore)</option>
-                {parsed.headers.map((h, i) => (<option key={i} value={i} className="bg-tile shadow-tile">{h || `Column ${i + 1}`}</option>))}
+                <option value="" className="bg-tile">(ignore)</option>
+                {parsed.headers.map((h, i) => (<option key={i} value={i} className="bg-tile">{h || `Column ${i + 1}`}</option>))}
               </select>
             </label>
           ))}
         </div>
       </section>
 
-      <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-        <div className="px-5 py-3 border-b border-outline"><h3 className="text-xs font-heading font-bold text-ink-1">Preview (first 5)</h3></div>
+      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+        <div className="px-5 py-3 border-b border-hairline"><h3 className="text-xs font-heading font-bold text-ink-1">Preview (first 5)</h3></div>
         <div className="overflow-x-auto">
           <table className="text-xs min-w-full">
             <thead>

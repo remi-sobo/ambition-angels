@@ -76,7 +76,7 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
             <h2 className={TYPE.cardTitle}>
               Thank someone <span className="text-ink-3 font-normal">· {pending.length}</span>
             </h2>
-            <p className="text-[11px] text-ink-3">
+            <p className="text-xs text-ink-3">
               Gifts awaiting an acknowledgment. The receipt language is generated, never edited.
             </p>
           </div>
@@ -92,7 +92,7 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
           </div>
         </div>
       ) : (
-        <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
+        <div className="bg-tile border-b border-hairline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
           <Link href="/admin/fundraising/donors" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
             ← Donors
           </Link>
@@ -116,7 +116,7 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
         </div>
       )}
 
-      <div className={embedded ? "space-y-4" : "max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6"}>
+      <div className={embedded ? "space-y-4" : "max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6"}>
         {!embedded && (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard
@@ -139,7 +139,7 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
         </div>
         )}
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
           {pending.length === 0 ? (
             <p className={`p-8 ${TYPE.bodyMuted}`}>
               Every gift has been thanked. New Stripe donations of $250+ will appear here
@@ -167,14 +167,14 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
                         <div className="text-sm text-ink-1 font-medium truncate">
                           {g.constituent ? constituentName(g.constituent) : "Anonymous"}
                         </div>
-                        <div className="text-[11px] text-ink-2">
+                        <div className="text-xs text-ink-2">
                           {fmtDate(g.gift_date)} · {daysSince(g.gift_date)}d ago
                           {email ? ` · ${email}` : " · no email on file"}
                           {g.taskId ? " · in your queue" : null}
                         </div>
                       </div>
                       {requiresSubstantiation(g.amount) && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense uppercase tracking-wider">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense uppercase tracking-wider">
                           Receipt required
                         </span>
                       )}

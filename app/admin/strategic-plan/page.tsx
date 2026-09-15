@@ -70,7 +70,7 @@ function PlanSection({
               <Link
                 key={l.href}
                 href={l.href}
-                className="text-[11px] font-semibold text-orange hover:text-orange-dark whitespace-nowrap"
+                className="text-xs font-semibold text-orange hover:text-orange-dark whitespace-nowrap"
               >
                 {l.label} →
               </Link>
@@ -292,7 +292,7 @@ export default async function StrategicPlanPage({
             {isEmpty && (
               <Link
                 href="/admin/strategic-plan/setup"
-                className="text-xs font-semibold text-ink-1 bg-tile hover:bg-[#EFE6D4] px-4 py-2 rounded-full transition-colors"
+                className="text-xs font-semibold text-ink-1 bg-tile hover:bg-tile px-4 py-2 rounded-full transition-colors"
               >
                 Set up
               </Link>
@@ -318,7 +318,7 @@ export default async function StrategicPlanPage({
           });
           return (
             <>
-              <div className="bg-surface border-[1.5px] border-outline rounded-card-lg p-6 mb-6">
+              <div className="bg-surface border-hairline rounded-panel-lg p-6 mb-6">
                 <h2 className="font-heading font-semibold text-ink-1 text-lg">
                   {completeness.empty ? "Build your strategy" : "Finish your strategy"}
                 </h2>
@@ -407,7 +407,7 @@ export default async function StrategicPlanPage({
               ))}
 
               {treeOrphans.length > 0 && (
-                <section className="border-[1.5px] border-dashed border-outline rounded-card-lg p-5">
+                <section className="border-dashed border-hairline rounded-panel-lg p-5">
                   <h2 className={`font-heading font-semibold ${TYPE.bodyMuted} mb-3`}>Goals without an objective</h2>
                   <div className="space-y-3">
                     {treeOrphans.map((g) => (

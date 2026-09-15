@@ -77,7 +77,7 @@ export default async function GrantsPage() {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className={`${TYPE.pageTitle} mb-4`}>Grants</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The grants tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_grants.sql</code> via Actions → Apply DB migration,
           then reload.
@@ -156,8 +156,8 @@ export default async function GrantsPage() {
           </div>
 
           {/* ── Requirements calendar ── */}
-          <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-outline">
+          <section className="lg:col-span-4 bg-tile border-hairline rounded-panel-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-hairline">
               <h2 className={TYPE.cardTitle}>Upcoming Deadlines</h2>
             </div>
             {requirements.length === 0 ? (
@@ -178,10 +178,10 @@ export default async function GrantsPage() {
                           <div className="text-sm text-ink-1 font-medium truncate group-hover:text-orange transition-colors">
                             {r.label || KIND_LABELS[r.kind]}
                           </div>
-                          <div className="text-[11px] text-ink-2 truncate">{r.grants?.name}</div>
+                          <div className="text-xs text-ink-2 truncate">{r.grants?.name}</div>
                         </div>
                         <span
-                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                          className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
                             isOverdue ? "bg-expense-bg text-expense" : "bg-tile text-ink-2"
                           }`}
                         >

@@ -22,7 +22,7 @@ function FlagChip({ flag }: { flag: MetricFlag }) {
   if (flag.flag === "blocks-export") {
     return (
       <span
-        className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-heading font-semibold uppercase tracking-wide text-red-700"
+        className="inline-flex items-center rounded-full bg-status-critical-bg px-2 py-0.5 text-xs font-semibold text-status-critical-text"
         title={
           flag.reason === "conflict"
             ? "This metric's definition is contested (confirmed_state: conflict). It renders in drafts but blocks export until resolved or waived."
@@ -36,7 +36,7 @@ function FlagChip({ flag }: { flag: MetricFlag }) {
   if (flag.flag === "unconfirmed") {
     return (
       <span
-        className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-heading font-semibold uppercase tracking-wide text-amber-700"
+        className="inline-flex items-center rounded-full bg-status-watch-bg px-2 py-0.5 text-xs font-semibold text-status-watch-text"
         title="This metric's definition has not been confirmed. It renders and exports, flagged."
       >
         unconfirmed
@@ -46,7 +46,7 @@ function FlagChip({ flag }: { flag: MetricFlag }) {
   if (flag.flag === "no-resolver") {
     return (
       <span
-        className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-heading font-semibold uppercase tracking-wide text-red-700"
+        className="inline-flex items-center rounded-full bg-status-critical-bg px-2 py-0.5 text-xs font-semibold text-status-critical-text"
         title="Computed definition with no registered resolver. This value can never refresh (register one in METRIC_RESOLVERS or set the definition to manual)."
       >
         no resolver
@@ -55,7 +55,7 @@ function FlagChip({ flag }: { flag: MetricFlag }) {
   }
   return (
     <span
-      className="inline-flex items-center rounded-full bg-gray-light px-2 py-0.5 text-[10px] font-heading font-semibold uppercase tracking-wide text-ink-2"
+      className="inline-flex items-center rounded-full bg-gray-light px-2 py-0.5 text-xs font-semibold text-ink-2"
       title="The latest snapshot is older than this metric's cadence allows."
     >
       stale value
@@ -80,7 +80,7 @@ export default async function Metric({
     // showing this chip has a missing Contract 2 definition, not a bug here.
     return (
       <span
-        className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-heading font-semibold text-red-700"
+        className="inline-flex items-center gap-1 rounded-full border border-status-critical/30 bg-status-critical-bg px-2 py-0.5 text-xs font-heading font-semibold text-status-critical-text"
         title={`No metric_definitions row for "${metricKey}" in this org. Define the metric (Contract 2) before rendering it.`}
       >
         undefined metric: {metricKey}

@@ -15,7 +15,7 @@ import type { CustomFieldDef } from "@/lib/admin/customFields";
 import type { Student, StageOption, LeaderOption } from "../../_components/StudentControls";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 async function patchStudent(id: string, fields: Record<string, unknown>): Promise<string | null> {
   const res = await fetch(`/api/admin/students/${id}`, {
@@ -55,7 +55,7 @@ export function StageControls({ student, stages }: { student: Student; stages: S
         disabled={busy}
         onChange={(e) => patch({ stage: e.target.value })}
         title={stages.find((s) => s.stage_key === student.stage)?.description ?? undefined}
-        className="text-[11px] bg-tile border-[1.5px] border-outline rounded-md px-2 py-1 text-ink-1 cursor-pointer"
+        className="text-xs bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 cursor-pointer"
       >
         {stages.map((s) => (
           <option key={s.stage_key} value={s.stage_key} className="bg-surface" title={s.description ?? undefined}>
@@ -71,7 +71,7 @@ export function StageControls({ student, stages }: { student: Student; stages: S
           onClick={() => patch({ stage: next.stage_key, touch: true })}
           disabled={busy}
           title={next.description ?? undefined}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-orange/15 text-orange hover:bg-orange/25"
+          className="px-3 py-1.5 rounded-full text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25"
         >
           Advance → {next.label}
         </button>
@@ -79,7 +79,7 @@ export function StageControls({ student, stages }: { student: Student; stages: S
       <button
         onClick={() => patch({ touch: true })}
         disabled={busy}
-        className="px-3 py-1.5 rounded-full text-[11px] bg-tile hover:bg-[#EFE6D4] text-ink-2"
+        className="px-3 py-1.5 rounded-full text-xs bg-tile hover:bg-tile text-ink-2"
       >
         Log activity
       </button>

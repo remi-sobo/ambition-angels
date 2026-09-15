@@ -42,7 +42,7 @@ type AttendanceRow = {
 
 const ATT_STYLE: Record<string, string> = {
   present: "text-revenue",
-  late: "text-[#A56A1B]",
+  late: "text-status-watch-text",
   excused: "text-ink-3",
   absent: "text-expense",
 };
@@ -117,14 +117,14 @@ export default async function StudentProfilePage({ params }: { params: { id: str
   const school = cf(student, "school");
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <div className="flex items-center gap-3 flex-wrap mb-6">
         <Link href="/admin/students" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
           ← {terms.students}
         </Link>
         <h1 className={`${TYPE.pageTitle} !text-lg`}>{fullName(student)}</h1>
         {student.external_source && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
             {student.external_source}
           </span>
         )}
@@ -159,7 +159,7 @@ export default async function StudentProfilePage({ params }: { params: { id: str
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <section className="lg:col-span-5 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3 self-start">
+        <section className="lg:col-span-5 bg-tile border-hairline rounded-panel-lg p-5 space-y-3 self-start">
           <div className="flex items-start justify-between gap-2 mb-1">
             <h2 className={TYPE.cardTitle}>Profile</h2>
             <EditStudentProfile
@@ -186,7 +186,7 @@ export default async function StudentProfilePage({ params }: { params: { id: str
             </div>
           ))}
           {(guardianName || guardianEmail || guardianPhone) && (
-            <div className="border-t border-outline pt-3">
+            <div className="border-t border-hairline pt-3">
               <h3 className={`${TYPE.sectionHeader} mb-2`}>Guardian</h3>
               <p className="text-xs text-ink-1">
                 {guardianName || "—"}
@@ -200,7 +200,7 @@ export default async function StudentProfilePage({ params }: { params: { id: str
             </div>
           )}
           {student.notes && (
-            <p className="text-xs text-ink-2 border-t border-outline pt-3 whitespace-pre-wrap">{student.notes}</p>
+            <p className="text-xs text-ink-2 border-t border-hairline pt-3 whitespace-pre-wrap">{student.notes}</p>
           )}
         </section>
 
@@ -213,8 +213,8 @@ export default async function StudentProfilePage({ params }: { params: { id: str
           />
           <EntityDocuments entityType="student" entityId={student.id} entityLabel={fullName(student)} />
 
-          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-outline">
+          <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-hairline">
               <h2 className={TYPE.cardTitle}>
                 Enrollments {enrollments.length > 0 && (
                   <span className="text-ink-3 font-normal">· {enrollments.length}</span>
@@ -241,7 +241,7 @@ export default async function StudentProfilePage({ params }: { params: { id: str
                       <span className="text-ink-1 flex-1">—</span>
                     )}
                     <span
-                      className={`text-[11px] font-semibold ${
+                      className={`text-xs font-semibold ${
                         e.status === "enrolled" ? "text-revenue" : e.status === "completed" ? "text-ink-2" : "text-expense"
                       }`}
                     >
@@ -255,8 +255,8 @@ export default async function StudentProfilePage({ params }: { params: { id: str
           </section>
 
           {attendance.length > 0 && (
-            <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-              <div className="px-5 py-4 border-b border-outline">
+            <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+              <div className="px-5 py-4 border-b border-hairline">
                 <h2 className={TYPE.cardTitle}>
                   Attendance <span className="text-ink-3 font-normal">· {attended.length} of {attendance.length} attended</span>
                 </h2>
@@ -273,7 +273,7 @@ export default async function StudentProfilePage({ params }: { params: { id: str
                         <span className="text-ink-3"> · {a.session.cohort.name}</span>
                       )}
                     </span>
-                    <span className={`text-[11px] font-semibold ${ATT_STYLE[a.status] ?? "text-ink-2"}`}>
+                    <span className={`text-xs font-semibold ${ATT_STYLE[a.status] ?? "text-ink-2"}`}>
                       {a.status}
                     </span>
                   </li>

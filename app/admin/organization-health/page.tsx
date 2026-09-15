@@ -46,16 +46,16 @@ export default async function OrganizationHealthPage() {
       />
 
       {rows.length === 0 ? (
-        <p className="text-[13px] text-ink-2">No health rows are enabled for this organization.</p>
+        <p className="text-sm text-ink-2">No health rows are enabled for this organization.</p>
       ) : (
-        <ul className="divide-y divide-outline/60 rounded-card border border-outline bg-white/50">
+        <ul className="divide-y divide-outline/60 rounded-panel border border-hairline bg-white/50">
           {rows.map((row) => (
             <li key={row.key} className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-start sm:gap-4">
               <div className="flex w-full shrink-0 items-center justify-between sm:w-56 sm:justify-start sm:gap-3">
-                <span className="font-heading font-semibold text-[13px] text-ink-1">{row.label}</span>
+                <span className="font-heading font-semibold text-sm text-ink-1">{row.label}</span>
                 <StatusChip status={row.status}>{STATUS_LABEL[row.status]}</StatusChip>
               </div>
-              <p className="min-w-0 text-[13px] leading-relaxed text-ink-2">{row.cause}</p>
+              <p className="min-w-0 text-sm leading-relaxed text-ink-2">{row.cause}</p>
             </li>
           ))}
         </ul>

@@ -57,7 +57,7 @@ export default async function AskDetail({ id, v2 = false }: { id: string; v2?: b
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className={`${TYPE.pageTitle} mb-4`}>Ask Log</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The ask log tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_asks_log.sql</code>, then reload.
         </div>
@@ -82,7 +82,7 @@ export default async function AskDetail({ id, v2 = false }: { id: string; v2?: b
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+      <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <PageHeader
           eyebrow={
             <Link
@@ -95,7 +95,7 @@ export default async function AskDetail({ id, v2 = false }: { id: string; v2?: b
           title={
             <span className="flex items-center gap-3 flex-wrap">
               <span className="truncate">{heading}</span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange uppercase tracking-wider">
                 {ASK_FORM_LABELS[ask.form] ?? ask.form}
               </span>
             </span>
@@ -104,7 +104,7 @@ export default async function AskDetail({ id, v2 = false }: { id: string; v2?: b
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <section className="lg:col-span-5 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-4">
+          <section className="lg:col-span-5 bg-tile border-hairline rounded-panel-lg p-5 space-y-4">
             <EditableAskDetails
               ask={{
                 id: ask.id,
@@ -122,7 +122,7 @@ export default async function AskDetail({ id, v2 = false }: { id: string; v2?: b
             />
 
             {(grant || opportunity) && (
-              <div className="border-t border-outline pt-3 space-y-2">
+              <div className="border-t border-hairline pt-3 space-y-2">
                 <div className={TYPE.sectionHeader}>Linked to</div>
                 {grant && (
                   <Link href={`/admin/fundraising/grants/${grant.id}`} className="block text-sm text-orange hover:text-orange-dark transition-colors">
@@ -137,15 +137,15 @@ export default async function AskDetail({ id, v2 = false }: { id: string; v2?: b
               </div>
             )}
 
-            <div className="border-t border-outline pt-3">
+            <div className="border-t border-hairline pt-3">
               <DeleteAskButton askId={ask.id} />
             </div>
           </section>
 
-          <section className="lg:col-span-7 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-outline flex items-center justify-between">
+          <section className="lg:col-span-7 bg-tile border-hairline rounded-panel-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-hairline flex items-center justify-between">
               <h2 className={TYPE.cardTitle}>Documents</h2>
-              <span className="text-[11px] text-ink-3">{documents.length} file{documents.length === 1 ? "" : "s"}</span>
+              <span className="text-xs text-ink-3">{documents.length} file{documents.length === 1 ? "" : "s"}</span>
             </div>
             <AskDocuments askId={ask.id} documents={documents} />
           </section>

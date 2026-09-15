@@ -212,7 +212,7 @@ export default function DemoDayTracker() {
   }, [search, typeFilter, tagFilter, statusFilter, starredOnly, notedOnly, notes]);
 
   const selectCls =
-    "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 focus:outline-none focus:border-orange/50";
+    "bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 focus:outline-none focus:border-orange/50";
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -220,7 +220,7 @@ export default function DemoDayTracker() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className={TYPE.pageTitle}>Demo Day</h1>
-          <p className="mt-2 text-zinc-400">
+          <p className="mt-2 text-ink-2">
             Fast Forward demo-day contacts. Note, star, and track the people to
             look out for.
           </p>
@@ -229,14 +229,14 @@ export default function DemoDayTracker() {
           href="/demoday"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-3 py-2 rounded-lg transition-colors"
+          className="text-xs font-semibold text-ink-1 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-3 py-2 rounded-control transition-colors"
         >
           Open lookbook ↗
         </a>
       </div>
 
       {tableMissing && (
-        <div className="mt-4 rounded-lg border border-orange/40 bg-orange/10 px-4 py-3 text-sm text-orange">
+        <div className="mt-4 rounded-control border border-orange/40 bg-orange/10 px-4 py-3 text-sm text-orange">
           The notes table isn’t set up yet. Apply{" "}
           <code className="font-mono">supabase/migrations/create_demoday_notes.sql</code>{" "}
           to start saving: you can browse and filter now, but saves won’t persist.
@@ -254,7 +254,7 @@ export default function DemoDayTracker() {
       </div>
 
       {/* Filters */}
-      <div className="admin-sticky-top sticky z-10 -mx-4 sm:-mx-6 lg:-mx-8 mt-5 px-4 sm:px-6 lg:px-8 py-3 bg-ink/95 backdrop-blur border-y border-outline">
+      <div className="admin-sticky-top sticky z-10 -mx-4 sm:-mx-6 lg:-mx-8 mt-5 px-4 sm:px-6 lg:px-8 py-3 bg-ink/95 backdrop-blur border-y border-hairline">
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="search"
@@ -292,10 +292,10 @@ export default function DemoDayTracker() {
           <button
             onClick={() => setStarredOnly((v) => !v)}
             className={[
-              "px-3 py-2 rounded-lg text-sm font-medium border transition-colors",
+              "px-3 py-2 rounded-control text-sm font-medium border transition-colors",
               starredOnly
                 ? "bg-orange/15 text-orange border-orange/30"
-                : "bg-tile text-ink-2 border-outline hover:text-ink-1",
+                : "bg-tile text-ink-2 border-hairline hover:text-ink-1",
             ].join(" ")}
           >
             ★ Starred
@@ -303,10 +303,10 @@ export default function DemoDayTracker() {
           <button
             onClick={() => setNotedOnly((v) => !v)}
             className={[
-              "px-3 py-2 rounded-lg text-sm font-medium border transition-colors",
+              "px-3 py-2 rounded-control text-sm font-medium border transition-colors",
               notedOnly
                 ? "bg-orange/15 text-orange border-orange/30"
-                : "bg-tile text-ink-2 border-outline hover:text-ink-1",
+                : "bg-tile text-ink-2 border-hairline hover:text-ink-1",
             ].join(" ")}
           >
             Has note
@@ -346,7 +346,7 @@ export default function DemoDayTracker() {
 
 function Chip({ label }: { label: string }) {
   return (
-    <span className="rounded-full bg-tile border-[1.5px] border-outline px-3 py-1 text-ink-2">
+    <span className="rounded-full bg-tile border-hairline px-3 py-1 text-ink-2">
       {label}
     </span>
   );
@@ -371,7 +371,7 @@ function AttendeeCard({
 }) {
   const typeColor = TYPE_COLORS[a.type] ?? "#9A8B7C";
   return (
-    <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-4">
+    <div className="rounded-panel border-hairline bg-surface p-4">
       <div className="flex items-start gap-3">
         <button
           onClick={onToggleStar}
@@ -388,7 +388,7 @@ function AttendeeCard({
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-semibold text-ink-1">{a.name}</span>
             <span
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide"
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
               style={{ backgroundColor: `${typeColor}22`, color: typeColor }}
             >
               <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: typeColor }} />
@@ -406,7 +406,7 @@ function AttendeeCard({
               {a.tags.map((t) => (
                 <span
                   key={t}
-                  className="rounded bg-tile px-1.5 py-0.5 text-[10px] text-ink-2"
+                  className="rounded bg-tile px-1.5 py-0.5 text-xs text-ink-2"
                 >
                   {t}
                 </span>
@@ -438,7 +438,7 @@ function AttendeeCard({
           </div>
 
           {a.ffwdNote && (
-            <p className="mt-2 rounded-md bg-surface shadow-panel border border-hairline px-2.5 py-1.5 text-xs italic text-ink-2">
+            <p className="mt-2 rounded-control bg-surface border border-hairline px-2.5 py-1.5 text-xs italic text-ink-2">
               <span className="not-italic font-semibold text-ink-3">FF intel: </span>
               {a.ffwdNote}
             </p>
@@ -454,10 +454,10 @@ function AttendeeCard({
                 key={s.value}
                 onClick={() => onSetStatus(s.value)}
                 className={[
-                  "rounded-md px-2 py-1 text-[11px] font-medium border transition-colors text-left whitespace-nowrap",
+                  "rounded-control px-2 py-1 text-xs font-medium border transition-colors text-left whitespace-nowrap",
                   active
                     ? "bg-orange/15 text-orange border-orange/30"
-                    : "bg-tile text-ink-3 border-outline hover:text-ink-1",
+                    : "bg-tile text-ink-3 border-hairline hover:text-ink-1",
                 ].join(" ")}
               >
                 {active ? "✓ " : ""}
@@ -476,9 +476,9 @@ function AttendeeCard({
           onBlur={onNoteBlur}
           rows={2}
           placeholder="Add a note…"
-          className="w-full resize-y rounded-lg bg-tile border-[1.5px] border-outline px-3 py-2 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/50"
+          className="w-full resize-y rounded-control bg-tile border-hairline px-3 py-2 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/50"
         />
-        <div className="mt-1 flex items-center justify-between text-[11px] text-ink-2">
+        <div className="mt-1 flex items-center justify-between text-xs text-ink-2">
           <span>
             {state.updated_by
               ? `Last edited by ${state.updated_by} ${fmtAgo(state.updated_at)}`

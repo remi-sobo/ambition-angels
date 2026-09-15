@@ -145,7 +145,7 @@ export default function ReedPanel({
             </span>
             <div className="leading-tight">
               <div className="font-heading font-bold text-cream">Reed</div>
-              <div className="text-[11px] text-cream/50">Your BloomOS assistant</div>
+              <div className="text-xs text-cream/50">Your BloomOS assistant</div>
             </div>
           </div>
           <button onClick={onClose} aria-label="Close" className="text-cream/55 hover:text-cream transition-colors text-xl leading-none">
@@ -167,13 +167,13 @@ export default function ReedPanel({
                     key={job.href}
                     href={job.href}
                     onClick={onClose}
-                    className="group rounded-card border border-white/10 bg-white/5 px-4 py-3 transition-colors hover:border-orange/40 hover:bg-white/10"
+                    className="group rounded-panel border border-white/10 bg-white/5 px-4 py-3 transition-colors hover:border-orange/40 hover:bg-white/10"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-heading font-semibold text-cream text-sm">{job.label}</span>
                       <span className="text-cream/50 group-hover:text-orange transition-colors">→</span>
                     </div>
-                    <span className="text-[12px] text-cream/50">{job.blurb}</span>
+                    <span className="text-xs text-cream/50">{job.blurb}</span>
                   </Link>
                 ))}
               </div>
@@ -182,7 +182,7 @@ export default function ReedPanel({
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[12px] text-cream/70 hover:border-orange/40 hover:text-cream transition-colors"
+                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-cream/70 hover:border-orange/40 hover:text-cream transition-colors"
                   >
                     {s}
                   </button>
@@ -191,7 +191,7 @@ export default function ReedPanel({
               <Link
                 href="/admin/reed"
                 onClick={onClose}
-                className="mt-4 inline-flex items-center gap-1 text-[12px] font-semibold text-orange-mid hover:text-orange transition-colors"
+                className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-orange-mid hover:text-orange transition-colors"
               >
                 Review Reed&apos;s drafts &amp; suggestions →
               </Link>
@@ -202,13 +202,13 @@ export default function ReedPanel({
                 <MessageBubble key={i} message={m} />
               ))}
               {busy && (
-                <div className="flex items-center gap-2 text-[12px] text-cream/50">
+                <div className="flex items-center gap-2 text-xs text-cream/50">
                   <ReedMark className="w-3.5 h-3.5 animate-pulse" /> Reed is thinking…
                 </div>
               )}
             </div>
           )}
-          {notice && <p className="mt-3 rounded-card border border-orange/30 bg-orange/10 px-3 py-2 text-[12px] text-orange-mid">{notice}</p>}
+          {notice && <p className="mt-3 rounded-panel border border-orange/30 bg-orange/10 px-3 py-2 text-xs text-orange-mid">{notice}</p>}
         </div>
 
         {/* ask bar */}
@@ -238,7 +238,7 @@ export default function ReedPanel({
               ↑
             </button>
           </div>
-          <p className="mt-2 text-center text-[11px] text-cream/50">Reed explains, recommends, and drafts for your review. He never sends or changes anything.</p>
+          <p className="mt-2 text-center text-xs text-cream/50">Reed explains, recommends, and drafts for your review. He never sends or changes anything.</p>
         </form>
       </aside>
     </div>
@@ -248,7 +248,7 @@ export default function ReedPanel({
 function MessageBubble({ message }: { message: ChatMessage }) {
   if (message.role === "user") {
     return (
-      <div className="self-end max-w-[85%] rounded-card rounded-br-sm bg-orange/90 px-3.5 py-2 text-sm text-white whitespace-pre-wrap">
+      <div className="self-end max-w-[85%] rounded-panel rounded-br-sm bg-orange/90 px-3.5 py-2 text-sm text-white whitespace-pre-wrap">
         {message.text}
       </div>
     );
@@ -256,7 +256,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   return (
     <div className="self-start flex gap-2 max-w-[90%]">
       <ReedMark className="w-4 h-4 text-orange-mid shrink-0 mt-1" />
-      <div className="rounded-card rounded-bl-sm bg-white/8 px-3.5 py-2 text-sm text-cream whitespace-pre-wrap">{message.text}</div>
+      <div className="rounded-panel rounded-bl-sm bg-white/8 px-3.5 py-2 text-sm text-cream whitespace-pre-wrap">{message.text}</div>
     </div>
   );
 }

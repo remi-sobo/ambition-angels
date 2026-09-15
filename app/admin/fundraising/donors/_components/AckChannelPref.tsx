@@ -37,7 +37,7 @@ export default function AckChannelPref({
         value={current ?? ""}
         disabled={busy}
         onChange={(e) => save(e.target.value)}
-        className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 text-xs focus:outline-none focus:border-orange/40 disabled:opacity-50"
+        className="bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-xs focus:outline-none focus:border-orange/40 disabled:opacity-50"
       >
         <option value="">No preference</option>
         {ACK_CHANNELS.map((ch) => (

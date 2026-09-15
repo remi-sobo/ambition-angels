@@ -132,7 +132,7 @@ export default function ReedInbox({
           <SectionHeading className="!text-orange mb-1">
             Strategy proposals
           </SectionHeading>
-          <p className="text-[12px] text-ink-3 mb-3">
+          <p className="text-xs text-ink-3 mb-3">
             Reed&apos;s proposed plan elements. Accepting adds the element to your plan; dismissing discards it.
           </p>
           <div className="flex flex-col gap-3">
@@ -147,7 +147,7 @@ export default function ReedInbox({
         <SectionHeading className="!text-orange mb-1">
           Conversation history
         </SectionHeading>
-        <p className="text-[12px] text-ink-3 mb-3">
+        <p className="text-xs text-ink-3 mb-3">
           Every question you&apos;ve asked Reed and his answer, saved permanently. Newest first.
         </p>
         {history.length === 0 ? (
@@ -166,20 +166,20 @@ export default function ReedInbox({
 
 function ThreadCard({ thread }: { thread: HistoryThread }) {
   return (
-    <div className="rounded-card border-[1.5px] border-outline bg-surface p-4">
-      <div className="text-[11px] text-ink-3 mb-2">{timeAgo(thread.created_at)}</div>
+    <div className="rounded-panel border-hairline bg-surface p-4">
+      <div className="text-xs text-ink-3 mb-2">{timeAgo(thread.created_at)}</div>
       <div className="flex flex-col gap-2.5">
         {thread.messages.map((m) => (
           <div key={m.id} className="flex gap-2.5">
             <span
-              className={`shrink-0 mt-px text-[10px] font-heading font-bold uppercase ${
+              className={`shrink-0 mt-px text-xs font-heading font-bold uppercase ${
                 m.role === "user" ? "text-orange-mid" : "text-ink-3"
               }`}
             >
               {m.role === "user" ? "Q" : "A"}
             </span>
             <p
-              className={`min-w-0 text-[13px] leading-relaxed whitespace-pre-wrap ${
+              className={`min-w-0 text-sm leading-relaxed whitespace-pre-wrap ${
                 m.role === "user" ? "font-semibold text-ink-1" : "text-ink-2"
               }`}
             >
@@ -230,15 +230,15 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
   }
 
   return (
-    <div className="rounded-card border-[1.5px] border-outline bg-surface p-4">
+    <div className="rounded-panel border-hairline bg-surface p-4">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border border-orange/30 bg-orange/10 text-orange-mid">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-orange/30 bg-orange/10 text-orange-mid">
           {PROPOSED_TYPE_LABEL[proposal.proposed_type] ?? proposal.proposed_type}
         </span>
       </div>
       <h3 className={`font-heading font-semibold ${TYPE.body}`}>{title}</h3>
-      {detail && <p className="mt-0.5 text-[12px] text-ink-3">{detail}</p>}
-      {proposal.rationale && <p className="mt-1 text-[13px] text-ink-2 leading-relaxed">{proposal.rationale}</p>}
+      {detail && <p className="mt-0.5 text-xs text-ink-3">{detail}</p>}
+      {proposal.rationale && <p className="mt-1 text-sm text-ink-2 leading-relaxed">{proposal.rationale}</p>}
       <div className="mt-3 flex items-center gap-2">
         <button
           onClick={() => decide("accept")}
@@ -279,10 +279,10 @@ function DraftCard({ draft }: { draft: Draft }) {
   }
 
   return (
-    <div className="rounded-card border-[1.5px] border-outline bg-surface p-4">
+    <div className="rounded-panel border-hairline bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-ink-3">
+          <span className="text-xs font-heading font-semibold uppercase tracking-wider text-ink-3">
             {KIND_LABEL[draft.kind] ?? draft.kind}
           </span>
           <h3 className={`font-heading font-semibold ${TYPE.body} mt-0.5`}>{draft.title ?? "Untitled draft"}</h3>
@@ -291,7 +291,7 @@ function DraftCard({ draft }: { draft: Draft }) {
           {open ? "Hide" : "Read"}
         </button>
       </div>
-      {open && <p className="mt-3 text-[13px] text-ink-2 leading-relaxed whitespace-pre-wrap">{draft.body}</p>}
+      {open && <p className="mt-3 text-sm text-ink-2 leading-relaxed whitespace-pre-wrap">{draft.body}</p>}
       <div className="mt-3 flex items-center gap-2">
         <button
           onClick={() => decide("approve")}
@@ -342,16 +342,16 @@ function ApprovedCard({ draft }: { draft: Draft }) {
   }
 
   return (
-    <div className="rounded-card border-[1.5px] border-orange/25 bg-orange-light/[0.06] p-4">
+    <div className="rounded-panel border-orange/25 bg-orange-light/[0.06] p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-ink-3">
+          <span className="text-xs font-heading font-semibold uppercase tracking-wider text-ink-3">
             {KIND_LABEL[draft.kind] ?? draft.kind}
           </span>
           <h3 className={`font-heading font-semibold ${TYPE.body} mt-0.5`}>{draft.title ?? "Untitled draft"}</h3>
         </div>
       </div>
-      <p className="mt-3 text-[13px] text-ink-2 leading-relaxed whitespace-pre-wrap">{draft.body}</p>
+      <p className="mt-3 text-sm text-ink-2 leading-relaxed whitespace-pre-wrap">{draft.body}</p>
       <div className="mt-3 flex items-center gap-2">
         <button
           onClick={copy}
@@ -410,13 +410,13 @@ function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
   }
 
   return (
-    <div className="rounded-card border-[1.5px] border-outline bg-surface p-4">
+    <div className="rounded-panel border-hairline bg-surface p-4">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-ink-3">
+        <span className="text-xs font-heading font-semibold uppercase tracking-wider text-ink-3">
           {suggestion.domain}
         </span>
         <span
-          className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border ${
+          className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
             PRIORITY_STYLE[suggestion.priority] ?? PRIORITY_STYLE.medium
           }`}
         >
@@ -424,7 +424,7 @@ function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
         </span>
       </div>
       <h3 className={`font-heading font-semibold ${TYPE.body}`}>{suggestion.title}</h3>
-      {suggestion.rationale && <p className="mt-1 text-[13px] text-ink-2 leading-relaxed">{suggestion.rationale}</p>}
+      {suggestion.rationale && <p className="mt-1 text-sm text-ink-2 leading-relaxed">{suggestion.rationale}</p>}
       {extraction && (
         <p className={`mt-1.5 text-xs leading-relaxed ${extraction.unknown ? "text-ink-3 font-mono break-all" : "text-ink-2 font-semibold"}`}>
           {extraction.unknown ? <>Unsupported proposal payload (nothing will be applied): {extraction.text}</> : extraction.text}
@@ -451,5 +451,5 @@ function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-card border border-dashed border-white/10 px-4 py-6 text-[13px] text-ink-3">{children}</div>;
+  return <div className="rounded-panel border border-dashed border-white/10 px-4 py-6 text-sm text-ink-3">{children}</div>;
 }

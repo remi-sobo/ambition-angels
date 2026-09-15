@@ -34,7 +34,7 @@ const REVIEW_OPTS = [
 ];
 
 const selectCls =
-  "bg-tile border-[1.5px] border-outline rounded-full px-3 py-1.5 text-xs font-semibold text-ink-1 cursor-pointer focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-full px-3 py-1.5 text-xs font-semibold text-ink-1 cursor-pointer focus:outline-none focus:border-orange/40";
 
 export default function StrategyControls({
   lens,
@@ -95,7 +95,7 @@ export default function StrategyControls({
 
   return (
     <div className="space-y-3 mb-6">
-      <div className="inline-flex p-1 bg-tile border-[1.5px] border-outline rounded-full">
+      <div className="inline-flex p-1 bg-tile border-hairline rounded-full">
         {LENSES.map((l) => {
           const on = lens === l.key;
           return (
@@ -105,7 +105,7 @@ export default function StrategyControls({
               onClick={() => chooseLens(l.key)}
               aria-pressed={on}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                on ? "bg-orange text-white shadow-tile" : "text-ink-2 hover:text-ink-1"
+                on ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1"
               }`}
             >
               {l.label}
@@ -166,7 +166,7 @@ export default function StrategyControls({
           </select>
 
           {lens === "mine" && (
-            <span className="text-[11px] text-ink-2">Showing what you own</span>
+            <span className="text-xs text-ink-2">Showing what you own</span>
           )}
         </div>
       )}

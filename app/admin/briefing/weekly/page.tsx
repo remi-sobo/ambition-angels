@@ -64,7 +64,7 @@ export default async function WeeklyBriefingPage() {
       </Link>
 
       {crm.total > 0 && (
-        <section className="mb-6 bg-surface border-[1.5px] border-expense/30 rounded-card p-5">
+        <section className="mb-6 bg-surface border-expense/30 rounded-panel p-5">
           <SectionHeading as="h3" className="mb-3">
             ⏰ Overdue across CRM ({crm.total})
           </SectionHeading>
@@ -78,7 +78,7 @@ export default async function WeeklyBriefingPage() {
         </p>
       ) : (
         <article className="space-y-6">
-          <div className="text-[11px] text-ink-2">
+          <div className="text-xs text-ink-2">
             {b.kind === "weekly" ? "Monday edition" : "On demand"} ·{" "}
             {b.created_at.slice(0, 10)}
             {b.model ? ` · narrated by ${b.model}` : " · data-only (narration unavailable)"}
@@ -91,7 +91,7 @@ export default async function WeeklyBriefingPage() {
           )}
 
           {b.narrative && (
-            <div className="bg-surface border border-orange/20 rounded-card p-5 text-[15px] text-ink-1 leading-relaxed whitespace-pre-wrap">
+            <div className="bg-surface border border-orange/20 rounded-panel p-5 text-[15px] text-ink-1 leading-relaxed whitespace-pre-wrap">
               {b.narrative}
             </div>
           )}
@@ -104,7 +104,7 @@ export default async function WeeklyBriefingPage() {
               <ol className="space-y-2">
                 {b.priorities.map((p, i) => (
                   <li key={i} className="flex gap-3 text-sm text-ink-1">
-                    <span className="w-5 h-5 rounded-full bg-orange/15 text-orange text-[11px] font-bold flex items-center justify-center shrink-0">
+                    <span className="w-5 h-5 rounded-full bg-orange/15 text-orange text-xs font-bold flex items-center justify-center shrink-0">
                       {i + 1}
                     </span>
                     {p}
@@ -125,8 +125,8 @@ export default async function WeeklyBriefingPage() {
                 ["Pipeline moves", String(b.data.week.pipelineMoves)],
                 ["Awaiting acknowledgment", String(b.data.todos.pendingAcks)],
               ].map(([label, value]) => (
-                <div key={label} className="bg-surface border-[1.5px] border-outline rounded-xl p-3">
-                  <div className="text-[10px] uppercase tracking-wider text-ink-2">{label}</div>
+                <div key={label} className="bg-surface border-hairline rounded-panel p-3">
+                  <div className="text-xs uppercase tracking-wider text-ink-2">{label}</div>
                   <div className="font-bold text-ink-1 tabular-nums">{value}</div>
                 </div>
               ))}

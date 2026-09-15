@@ -13,6 +13,7 @@ import { TYPE } from "@/lib/admin/typeScale";
 // normalized (comments stripped, whitespace collapsed). Includes the :root
 // brand + channel tokens and the .admin-shell overrides.
 const FROZEN_CSS_TOKENS = [
+  // :root — the public Ambition Angels brand (untouched by Visual System V3).
   "--orange: #E8500A;",
   "--orange-dark: #B83D06;",
   "--orange-light: #FFF0EA;",
@@ -31,32 +32,74 @@ const FROZEN_CSS_TOKENS = [
   "--c-cream: 250 250 248;",
   "--c-navy: 16 33 75;",
   "--c-navy-light: 26 47 99;",
-  "--c-orange: 192 112 60;",
-  "--c-orange-dark: 168 94 48;",
-  "--c-orange-light: 243 230 221;",
-  "--c-orange-mid: 206 144 112;",
-  "--c-ink: 245 239 226;",
-  "--c-cream: 240 239 226;",
-  "--c-navy: 31 24 17;",
-  "--c-navy-light: 45 33 23;",
-  "--orange: #c0703c;",
-  "--font-display: var(--font-grotesk);",
-  "--font-heading: var(--font-grotesk);",
+  "--c-accent: 232 80 10;",
+  // .admin-shell — the BloomOS Visual System V3 semantic layer.
+  "--bg-app: #F7F4EE;",
+  "--bg-surface: #FFFDF9;",
+  "--bg-tile: #FBF8F2;",
+  "--bg-sidebar: #1C1814;",
+  "--bg-sidebar-raised: #2A241E;",
+  "--text-primary: #29241F;",
+  "--text-secondary: #746C63;",
+  "--text-tertiary: #756C5B;",
+  "--sidebar-text: #F3EDE4;",
+  "--sidebar-muted: #A89B8D;",
+  "--border-subtle: #E3D9CB;",
+  "--border-strong: #CDBEAA;",
+  "--accent: #C96B38;",
+  "--accent-ink: #9D532C;",
+  "--accent-hover: #7D4223;",
+  "--accent-mid: #8D4B27;",
+  "--accent-soft: #F5E5DB;",
+  "--success: #32745B;",
+  "--success-soft: #E2EFE8;",
+  "--warning: #A96820;",
+  "--warning-text: #965C1C;",
+  "--warning-soft: #F5EAD6;",
+  "--danger: #C24B40;",
+  "--danger-text: #AE4339;",
+  "--danger-soft: #F5E2E0;",
+  "--radius-control: 9px;",
+  "--radius-card: 15px;",
+  "--radius-modal: 18px;",
+  "--c-accent: 201 107 56;",
+  "--c-orange: 157 83 44;",
+  "--c-orange-dark: 125 66 35;",
+  "--c-orange-light: 245 229 219;",
+  "--c-orange-mid: 141 75 39;",
+  "--c-ink: 247 244 238;",
+  "--c-cream: 243 237 228;",
+  "--c-navy: 28 24 20;",
+  "--c-navy-light: 42 36 30;",
+  "--orange: #9d532c;",
+  "--font-display: var(--font-instrument);",
+  "--font-heading: var(--font-instrument);",
+  "--font-body: var(--font-instrument);",
 ];
 
 // The one canonical type scale (lib/admin/typeScale.ts, specs/bloomos-typography.md §2).
 // Muted-small roles sit on the Quality Floor Q4 12px minimum (text-xs).
 const FROZEN_TYPE_SCALE = {
-  pageTitle: "font-heading font-bold text-2xl text-ink-1",
-  sectionHeader: "font-heading font-semibold text-xs uppercase tracking-[0.14em] text-ink-3",
-  sectionTitle: "font-heading font-bold text-lg text-ink-1",
-  cardTitle: "font-heading font-bold text-sm text-ink-1",
-  modalTitle: "font-heading font-bold text-lg text-ink-1",
-  cardMetric: "font-heading font-semibold text-[28px] leading-none tracking-tight tabular-nums text-ink-1",
-  cardLabel: "text-xs font-heading font-semibold uppercase tracking-[0.12em] text-ink-3",
+  pageTitle:
+    "font-heading font-semibold text-[28px] leading-tight tracking-[-0.02em] text-ink-1",
+  sectionTitle:
+    "font-heading font-semibold text-xl leading-snug tracking-[-0.01em] text-ink-1",
+  subsectionTitle: "font-heading font-semibold text-[17px] leading-snug text-ink-1",
+  sectionHeader:
+    "font-heading font-semibold text-xs uppercase tracking-[0.06em] text-ink-2",
+  cardTitle: "font-heading font-semibold text-[15px] leading-snug text-ink-1",
+  modalTitle: "font-heading font-semibold text-lg leading-snug text-ink-1",
+  cardMetric:
+    "font-heading font-semibold text-[28px] leading-none tracking-[-0.02em] tabular-nums text-ink-1",
+  cardLabel: "text-xs font-medium text-ink-2",
   body: "text-sm text-ink-1",
   bodyMuted: "text-sm text-ink-2",
   metadata: "text-xs text-ink-2",
+  nav: "text-sm font-medium",
+  button: "text-[13px] font-semibold",
+  badge: "text-xs font-semibold",
+  tableHeader: "text-xs font-semibold uppercase tracking-[0.06em] text-ink-2",
+  fieldLabel: "text-xs font-medium text-ink-1",
 };
 
 function extractCssTokens(css: string): string[] {
@@ -112,42 +155,97 @@ function contrast(fg: string, bg: string): number {
 // the config can't change without this test changing, and this test can't
 // carry a failing value past the ratio asserts below.
 const BACKGROUNDS = {
-  app: ["#F5EFE2", 'app: "#F5EFE2"'],
-  surface: ["#FFFDF8", 'surface: "#FFFDF8"'],
-  tile: ["#FBF6EC", 'tile: "#FBF6EC"'],
+  app: ["#F7F4EE", 'app: "#F7F4EE"'],
+  surface: ["#FFFDF9", 'surface: "#FFFDF9"'],
+  tile: ["#FBF8F2", 'tile: "#FBF8F2"'],
 } as const;
 
+// Visual System V3 §13 vs §3. The spec's literal values for the accent
+// (#C96B38 → 3.39 on app), warning (#A96820 → 4.08), danger (#C24B40 → 4.37)
+// and tertiary text (#948A7E → 3.09) all fall UNDER the AA floor as small
+// text. §3 allows tuning, §13 requires the contrast, so each hue keeps its
+// vivid value as a FILL and gains a deepened step for type. Only the type
+// steps are gated here; the fill-only values (accent, status.watch,
+// status.due, status.critical) are asserted separately below as non-text.
 const TEXT_TOKENS = {
-  "ink-1": ["#2A201A", '1: "#2A201A"'],
-  "ink-2": ["#6B5C4E", '2: "#6B5C4E"'],
-  "ink-3": ["#796A5C", '3: "#796A5C"'],
-  revenue: ["#2D7857", 'DEFAULT: "#2D7857"'],
-  expense: ["#B0462E", 'DEFAULT: "#B0462E"'],
-  "status.critical": ["#B0462E", 'critical: "#B0462E"'],
-  "status.critical-text": ["#9E3A24", '"critical-text": "#9E3A24"'],
-  "status.watch-text": ["#8A5A12", '"watch-text": "#8A5A12"'],
-  "status.due-text": ["#96582F", '"due-text": "#96582F"'],
-  "status.healthy": ["#2D7857", 'healthy: "#2D7857"'],
-  "status.healthy-text": ["#2D7857", '"healthy-text": "#2D7857"'],
-  "status.neutral": ["#6B5C4E", 'neutral: "#6B5C4E"'],
+  "ink-1": ["#29241F", '1: "#29241F"'],
+  "ink-2": ["#746C63", '2: "#746C63"'],
+  "ink-3": ["#756C5B", '3: "#756C5B"'],
+  orange: ["#9D532C", "--c-orange: 157 83 44;"],
+  "orange-dark": ["#7D4223", "--c-orange-dark: 125 66 35;"],
+  "orange-mid": ["#8D4B27", "--c-orange-mid: 141 75 39;"],
+  revenue: ["#32745B", 'DEFAULT: "#32745B"'],
+  expense: ["#AE4339", 'DEFAULT: "#AE4339"'],
+  "status.critical-text": ["#AE4339", '"critical-text": "#AE4339"'],
+  "status.watch-text": ["#965C1C", '"watch-text": "#965C1C"'],
+  "status.due-text": ["#9D532C", '"due-text": "#9D532C"'],
+  "status.healthy-text": ["#32745B", '"healthy-text": "#32745B"'],
+  "status.neutral": ["#746C63", 'neutral: "#746C63"'],
 } as const;
+
+// Fill-only tokens: they carry meaning as a dot/bar/indicator, never behind
+// small text. WCAG 1.4.11 sets 3:1 for such non-text UI components.
+const FILL_TOKENS: Array<[string, string, string]> = [
+  ["accent", "#C96B38", "--accent: #C96B38;"],
+  ["status.critical", "#C24B40", 'critical: "#C24B40"'],
+  ["status.watch", "#A96820", 'watch: "#A96820"'],
+  ["status.due", "#C96B38", 'due: "#C96B38"'],
+  ["status.healthy", "#32745B", 'healthy: "#32745B"'],
+];
+
+// A fill that DOES sit under a white label (primary button, active stepper
+// node, count badge) has to clear 4.5:1 against white as well.
+const WHITE_LABEL_FILLS: Array<[string, string]> = [
+  ["orange", "#9D532C"],
+  ["orange-dark", "#7D4223"],
+  ["revenue", "#32745B"],
+  ["status.critical", "#C24B40"],
+];
 
 // The chip/toast pairs: a text step must also clear 4.5:1 on its own pale
 // bg. The fourth column is the literal declaration line pinned in config.
 const PAIRS: Array<[keyof typeof TEXT_TOKENS, string, string, string]> = [
-  ["revenue", "revenue-bg", "#E2EFE5", 'bg: "#E2EFE5"'],
-  ["expense", "expense-bg", "#F6E3DC", 'bg: "#F6E3DC"'],
-  ["status.critical-text", "critical-bg", "#F6E3DC", '"critical-bg": "#F6E3DC"'],
-  ["status.watch-text", "watch-bg", "#F4E8D0", '"watch-bg": "#F4E8D0"'],
-  ["status.due-text", "due-bg", "#F6E3D2", '"due-bg": "#F6E3D2"'],
-  ["status.healthy-text", "healthy-bg", "#E2EFE5", '"healthy-bg": "#E2EFE5"'],
+  ["revenue", "revenue-bg", "#E2EFE8", 'bg: "#E2EFE8"'],
+  ["expense", "expense-bg", "#F5E2E0", 'bg: "#F5E2E0"'],
+  ["status.critical-text", "critical-bg", "#F5E2E0", '"critical-bg": "#F5E2E0"'],
+  ["status.watch-text", "watch-bg", "#F5EAD6", '"watch-bg": "#F5EAD6"'],
+  ["status.due-text", "due-bg", "#F5E5DB", '"due-bg": "#F5E5DB"'],
+  ["status.healthy-text", "healthy-bg", "#E2EFE8", '"healthy-bg": "#E2EFE8"'],
 ];
 
 describe("Q4 contrast gate (DoD 5): text tokens ≥ 4.5:1 on every admin background", () => {
   test("the frozen hexes are the shipped hexes (config pin)", () => {
+    // A token now lives in one of two places: a plain hex in
+    // tailwind.config.ts, or a custom property / channel triple in
+    // globals.css. Either source pins it.
+    const SOURCES = TAILWIND + readFileSync(join(process.cwd(), "app", "globals.css"), "utf8");
     for (const [hex, decl] of [...Object.values(BACKGROUNDS), ...Object.values(TEXT_TOKENS)]) {
-      expect(TAILWIND, `${decl} missing from tailwind.config.ts`).toContain(decl);
-      expect(decl).toContain(hex);
+      expect(SOURCES, `${decl} missing from tailwind.config.ts / globals.css`).toContain(decl);
+      // Channel-triple declarations pin the value by rgb(), not by hex.
+      if (decl.includes("#")) expect(decl).toContain(hex);
+    }
+    for (const [name, hex, decl] of FILL_TOKENS) {
+      expect(SOURCES, `${name}: ${decl} missing`).toContain(decl);
+      if (decl.includes("#")) expect(decl).toContain(hex);
+    }
+  });
+
+  test("fill-only tokens clear the 3:1 non-text floor (WCAG 1.4.11)", () => {
+    for (const [name, hex] of FILL_TOKENS) {
+      for (const [bgName, [bg]] of Object.entries(BACKGROUNDS)) {
+        const r = contrast(hex, bg);
+        expect(r, `${name} (${hex}) on ${bgName} (${bg}) = ${r.toFixed(2)}`).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
+  test("fills that carry a white label clear AA against white", () => {
+    // Visual System V3 §4 puts a white label on the primary button and the
+    // active stepper node. The vivid --accent (#C96B38) is only 3.72 under
+    // white, which is why those surfaces use --accent-ink instead.
+    for (const [name, hex] of WHITE_LABEL_FILLS) {
+      const r = contrast("#FFFFFF", hex);
+      expect(r, `white on ${name} (${hex}) = ${r.toFixed(2)}`).toBeGreaterThanOrEqual(4.5);
     }
   });
 

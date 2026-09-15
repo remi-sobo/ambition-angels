@@ -240,7 +240,7 @@ export default async function CloseSection() {
   const truth = (
     <div className="space-y-6">
       {/* The week, day by day */}
-      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+      <section className="rounded-panel border-hairline bg-surface p-6">
         <header className="flex items-baseline justify-between mb-4 gap-4 flex-wrap">
           <h2 className={TYPE.sectionHeader}>The week, day by day</h2>
           <div>
@@ -261,19 +261,19 @@ export default async function CloseSection() {
             return (
               <div
                 key={dayISO}
-                className={`rounded-lg border p-4 ${
-                  isToday ? "border-orange/40 bg-orange-light/40" : "border-outline bg-surface"
+                className={`rounded-control border p-4 ${
+                  isToday ? "border-orange/40 bg-orange-light/40" : "border-hairline bg-surface"
                 }`}
               >
                 <h3
-                  className={`text-[11px] uppercase tracking-wider mb-2 flex items-baseline gap-2 ${
+                  className={`text-xs uppercase tracking-wider mb-2 flex items-baseline gap-2 ${
                     isToday ? "text-orange font-semibold" : "text-ink-3"
                   }`}
                 >
                   {formatDayLabel(dayISO)}
                   {isToday && <span className="text-orange">· today</span>}
                   {dayTasks.length > 0 && (
-                    <span className="ml-auto text-[10px] text-ink-3 font-mono">
+                    <span className="ml-auto text-xs text-ink-3 font-mono">
                       {doneCount}/{dayTasks.length} done
                     </span>
                   )}
@@ -299,8 +299,8 @@ export default async function CloseSection() {
         </div>
 
         {noDay.length > 0 && (
-          <div className="mt-4 rounded-lg border border-dashed border-outline bg-tile/40 p-4">
-            <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+          <div className="mt-4 rounded-control border border-dashed border-hairline bg-tile/40 p-4">
+            <h3 className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               Planned this week, no day set ({noDay.length})
             </h3>
             <div className="space-y-1.5">
@@ -319,7 +319,7 @@ export default async function CloseSection() {
 
         {alsoCompleted.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-[10px] uppercase tracking-wider text-ink-3 mb-2">
+            <h3 className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               Also completed this week ({alsoCompleted.length})
             </h3>
             <div className="space-y-1.5">
@@ -338,7 +338,7 @@ export default async function CloseSection() {
       </section>
 
       {/* Still open — roll forward */}
-      <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+      <section className="rounded-panel border-hairline bg-surface p-6">
         <h2 className={`${TYPE.sectionHeader} mb-4`}>
           Still open: truth it <span className="text-ink-3">({stillPinned.length})</span>
         </h2>
@@ -360,17 +360,17 @@ export default async function CloseSection() {
 
       {/* Slipped by category (only if non-zero) */}
       {slippedRows.length > 0 && (
-        <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+        <section className="rounded-panel border-hairline bg-surface p-6">
           <h2 className={`${TYPE.sectionHeader} mb-1`}>Slipped categories</h2>
           <p className="text-xs text-ink-2 mb-4">Visibility only. Patterns in what got pushed.</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {slippedRows.map(([cat, count]) => (
               <div
                 key={cat}
-                className="rounded-lg border-[1.5px] border-outline bg-surface shadow-panel px-3 py-2 flex items-center justify-between"
+                className="rounded-control border-hairline bg-surface px-3 py-2 flex items-center justify-between"
               >
                 <span
-                  className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(cat)}`}
+                  className={`inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${categoryBadgeClass(cat)}`}
                 >
                   {categoryLabel(cat)}
                 </span>

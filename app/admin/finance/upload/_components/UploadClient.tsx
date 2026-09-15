@@ -95,7 +95,7 @@ export default function UploadClient() {
   return (
     <div className="space-y-6">
       {/* Form */}
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-6">
+      <section className="rounded-panel-lg border-hairline bg-surface p-6">
         <h2 className={`${TYPE.cardTitle} mb-1`}>Bank transactions (CSV)</h2>
         <p className="text-xs text-ink-2 mb-4 max-w-2xl">
           Pick a CSV exported from your bank and click <span className="text-ink-1">Upload</span>. We parse it, dedupe
@@ -105,11 +105,11 @@ export default function UploadClient() {
         </p>
         <div className="grid sm:grid-cols-[1fr_auto] gap-4 items-end">
           <div className="flex-1">
-            <label className="block text-xs uppercase tracking-wide text-ink-2 mb-2">Bank format</label>
+            <label className="block text-xs text-ink-2 mb-2">Bank format</label>
             <select
               value={format}
               onChange={(e) => setFormat(e.target.value as BankFormat)}
-              className="w-full bg-ink border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1"
+              className="w-full bg-ink border-hairline rounded-control px-3 py-2 text-sm text-ink-1"
             >
               {FORMATS.map((f) => (
                 <option key={f.value} value={f.value}>
@@ -119,7 +119,7 @@ export default function UploadClient() {
             </select>
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-wide text-ink-2 mb-2">CSV file</label>
+            <label className="block text-xs text-ink-2 mb-2">CSV file</label>
             <input
               type="file"
               accept=".csv,text/csv"
@@ -129,7 +129,7 @@ export default function UploadClient() {
                 setError(null);
                 setResult(null);
               }}
-              className="block text-sm text-ink-1 file:mr-3 file:rounded-lg file:border-0 file:bg-orange file:text-white file:px-3 file:py-2 file:text-xs file:font-medium file:cursor-pointer hover:file:bg-orange-dark"
+              className="block text-sm text-ink-1 file:mr-3 file:rounded-control file:border-0 file:bg-orange file:text-white file:px-3 file:py-2 file:text-xs file:font-medium file:cursor-pointer hover:file:bg-orange-dark"
             />
           </div>
         </div>
@@ -139,11 +139,11 @@ export default function UploadClient() {
             type="button"
             disabled={!file || busy !== "idle"}
             onClick={doPreview}
-            className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {busy === "previewing" ? "Reading…" : "Upload"}
           </button>
-          <span className="text-[11px] text-ink-2">
+          <span className="text-xs text-ink-2">
             Reads the file, dedupes against existing transactions, shows a preview. You confirm before anything is saved.
           </span>
           {file && (
@@ -156,15 +156,15 @@ export default function UploadClient() {
 
       {/* Error */}
       {error && (
-        <div className="rounded-card border border-expense/30 bg-expense-bg p-4 text-sm text-expense">
+        <div className="rounded-panel border border-expense/30 bg-expense-bg p-4 text-sm text-expense">
           <div className="font-medium mb-1">{error}</div>
           {errorHint && <div className="text-xs text-expense mb-3">{errorHint}</div>}
           {errorSample && errorSample.length > 0 && (
             <details className="mt-2" open>
-              <summary className="text-xs uppercase tracking-wider text-expense cursor-pointer hover:text-expense">
+              <summary className="text-xs font-semibold text-expense cursor-pointer hover:text-expense">
                 First {errorSample.length} lines we saw in the file
               </summary>
-              <pre className="mt-2 text-[11px] font-mono text-ink-1 bg-surface rounded p-3 overflow-x-auto">
+              <pre className="mt-2 text-xs font-mono text-ink-1 bg-surface rounded p-3 overflow-x-auto">
                 {errorSample.join("\n")}
               </pre>
             </details>
@@ -174,7 +174,7 @@ export default function UploadClient() {
 
       {/* Commit result */}
       {result && (
-        <div className="rounded-card border border-revenue/30 bg-revenue-bg p-4 text-sm text-revenue">
+        <div className="rounded-panel border border-revenue/30 bg-revenue-bg p-4 text-sm text-revenue">
           Imported <b>{result.inserted}</b> transactions
           {result.duplicates_skipped > 0 && <> · skipped <b>{result.duplicates_skipped}</b> duplicates</>}
           {result.categorized > 0 && <> · auto-categorized <b>{result.categorized}</b></>}
@@ -191,9 +191,9 @@ export default function UploadClient() {
 
       {/* Preview */}
       {preview && (
-        <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-6">
+        <section className="rounded-panel-lg border-hairline bg-surface p-6">
           {preview.file_already_imported && (
-            <div className="mb-4 rounded-card border border-[#D9BE86] bg-[#F4E8D0] p-3 text-xs text-amber-100">
+            <div className="mb-4 rounded-panel border border-status-watch/40 bg-status-watch-bg p-3 text-xs text-status-watch-text">
               This file&apos;s hash matches a prior import. Committing will be refused. Re-upload only after rotating the
               file or trimming its date range.
             </div>
@@ -213,7 +213,7 @@ export default function UploadClient() {
           <div className="overflow-x-auto mb-6">
             <table className="w-full text-xs">
               <thead>
-                <tr className="text-ink-2 uppercase tracking-wide">
+                <tr className="text-ink-2">
                   <th className="text-left px-2 py-2">Date</th>
                   <th className="text-left px-2 py-2">Description</th>
                   <th className="text-right px-2 py-2">Amount</th>
@@ -230,7 +230,7 @@ export default function UploadClient() {
                       {fmtMoney(r.amount)}
                     </td>
                     <td className="px-2 py-2 text-ink-2">
-                      {r.category_id ?? <span className="text-[#A56A1B]">uncategorized</span>}
+                      {r.category_id ?? <span className="text-status-watch-text">uncategorized</span>}
                     </td>
                     <td className="px-2 py-2">
                       {r.is_duplicate ? (
@@ -255,7 +255,7 @@ export default function UploadClient() {
               type="button"
               disabled={busy !== "idle" || preview.new_count === 0 || preview.file_already_imported}
               onClick={doCommit}
-              className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {busy === "committing"
                 ? "Importing…"
@@ -267,7 +267,7 @@ export default function UploadClient() {
                 setPreview(null);
                 setError(null);
               }}
-              className={`px-4 py-2 rounded-lg text-ink-1 hover:${TYPE.body}`}
+              className={`px-4 py-2 rounded-control text-ink-1 hover:${TYPE.body}`}
             >
               Cancel
             </button>
@@ -281,7 +281,7 @@ export default function UploadClient() {
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}</div>
+      <div className={`${TYPE.cardLabel} mb-1`}>{label}</div>
       <div className={`text-lg font-medium ${accent ? "text-orange" : "text-ink-1"}`}>{value}</div>
     </div>
   );

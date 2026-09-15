@@ -70,14 +70,14 @@ export default function InboxList({ items }: { items: InboxItem[] }) {
           type="button"
           onClick={markAll}
           disabled={unreadCount === 0 || busy}
-          className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Mark all read
         </button>
       </div>
 
       {items.length === 0 ? (
-        <div className="bg-surface border border-hairline rounded-card-lg p-8 text-center text-sm text-ink-2">
+        <div className="bg-surface border border-hairline rounded-panel-lg p-8 text-center text-sm text-ink-2">
           No notifications yet. When research finishes, a task is assigned, or
           someone mentions you, it shows up here.
         </div>
@@ -97,17 +97,17 @@ export default function InboxList({ items }: { items: InboxItem[] }) {
                   {item.body && (
                     <span className="block text-sm text-ink-2 mt-0.5 line-clamp-2">{item.body}</span>
                   )}
-                  <span className="block text-[11px] uppercase tracking-wide text-ink-3 mt-1">
+                  <span className="block text-xs text-ink-3 mt-1">
                     {timeAgo(item.createdAt)}
                   </span>
                 </span>
               </>
             );
 
-            const base = "w-full text-left flex gap-3 items-start rounded-card-lg border px-4 py-3 transition-colors";
+            const base = "w-full text-left flex gap-3 items-start rounded-panel-lg border px-4 py-3 transition-colors";
             const tone = item.read
               ? "bg-app/40 border-hairline"
-              : "bg-surface border-outline shadow-tile";
+              : "bg-surface border-hairline";
 
             return (
               <li key={item.id}>
@@ -115,7 +115,7 @@ export default function InboxList({ items }: { items: InboxItem[] }) {
                   <button
                     type="button"
                     onClick={() => open(item)}
-                    className={`${base} ${tone} hover:bg-[#EFE6D4]`}
+                    className={`${base} ${tone} hover:bg-tile`}
                   >
                     {inner}
                   </button>

@@ -29,7 +29,7 @@ const KINDS = [
 ] as const;
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const KIND_LABELS: Record<string, string> = {
   loi: "LOI", application: "Application", interim_report: "Interim report",
@@ -98,24 +98,24 @@ export function NewGrantForm() {
     );
   }
   return (
-    <form onSubmit={submit} className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-4 flex flex-wrap items-end gap-3 w-full">
-      <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
+    <form onSubmit={submit} className="bg-tile border-hairline rounded-panel-lg p-4 flex flex-wrap items-end gap-3 w-full">
+      <label className="flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold">
         Grant name *
         <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Koshland 2026" className={inputCls + " w-52"} />
       </label>
-      <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
+      <label className="flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold">
         Funder *
         <FunderPicker value={funder} onChange={setFunder} placeholder="Foundation name" className="w-56" />
       </label>
-      <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
+      <label className="flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold">
         Ask ($)
         <input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputCls + " w-28"} />
       </label>
-      <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
+      <label className="flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold">
         First deadline
         <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputCls + " w-40"} />
       </label>
-      <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold">
+      <label className="flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold">
         Period end
         <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} className={inputCls + " w-40"} />
       </label>
@@ -256,7 +256,7 @@ export function EditableGrantDetails({ grant }: { grant: GrantDetails }) {
           <h2 className={TYPE.cardTitle}>Details</h2>
           <button
             onClick={startEdit}
-            className="text-[11px] font-semibold text-orange hover:text-orange-dark transition-colors"
+            className="text-xs font-semibold text-orange hover:text-orange-dark transition-colors"
           >
             Edit
           </button>
@@ -267,12 +267,12 @@ export function EditableGrantDetails({ grant }: { grant: GrantDetails }) {
             <span className="text-ink-1 break-words min-w-0">{value}</span>
           </div>
         ))}
-        {grant.notes && <p className="text-xs text-ink-2 border-t border-outline pt-3 whitespace-pre-wrap">{grant.notes}</p>}
+        {grant.notes && <p className="text-xs text-ink-2 border-t border-hairline pt-3 whitespace-pre-wrap">{grant.notes}</p>}
       </div>
     );
   }
 
-  const fieldLabel = "flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold";
+  const fieldLabel = "flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold";
   return (
     <form onSubmit={save} className="space-y-3">
       <div className="flex items-center justify-between">
@@ -368,12 +368,12 @@ export function StageSelect({
   if (pendingAward) {
     return (
       <span className="flex items-center gap-2 flex-wrap">
-        <span className="text-[11px] text-ink-2">Grant period end (plots the final report):</span>
+        <span className="text-xs text-ink-2">Grant period end (plots the final report):</span>
         <input
           type="date"
           value={awardPeriodEnd}
           onChange={(e) => setAwardPeriodEnd(e.target.value)}
-          className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1 text-ink-1 text-xs focus:outline-none focus:border-orange/40"
+          className="bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-xs focus:outline-none focus:border-orange/40"
         />
         <button
           disabled={busy}
@@ -384,14 +384,14 @@ export function StageSelect({
                 : { stage: "awarded" }
             )
           }
-          className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
+          className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
         >
           {busy ? "Saving…" : "Mark awarded"}
         </button>
         <button
           disabled={busy}
           onClick={() => setPendingAward(false)}
-          className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 transition-colors"
+          className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
         >
           Cancel
         </button>
@@ -411,10 +411,10 @@ export function StageSelect({
         }
         void patch({ stage: next });
       }}
-      className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-ink-1 text-xs focus:outline-none focus:border-orange/40 disabled:opacity-50"
+      className="bg-tile border-hairline rounded-control px-2 py-1.5 text-ink-1 text-xs focus:outline-none focus:border-orange/40 disabled:opacity-50"
     >
       {STAGES.map((s) => (
-        <option key={s} value={s} className="bg-tile shadow-tile">
+        <option key={s} value={s} className="bg-tile">
           {STAGE_LABELS[s]}
         </option>
       ))}
@@ -495,18 +495,18 @@ export function RequirementRow({ requirement: r, today }: { requirement: Require
         <form onSubmit={save} className="flex flex-wrap items-center gap-2">
           <select value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls + " text-xs"}>
             {KINDS.map(([v, l]) => (
-              <option key={v} value={v} className="bg-tile shadow-tile">{l}</option>
+              <option key={v} value={v} className="bg-tile">{l}</option>
             ))}
           </select>
           <input type="date" required value={due} onChange={(e) => setDue(e.target.value)} className={inputCls + " text-xs"} />
           <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (optional)" className={inputCls + " text-xs w-44"} />
-          <button type="submit" disabled={busy} className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-2.5 py-1 rounded-full transition-colors disabled:opacity-50">
+          <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-2.5 py-1 rounded-full transition-colors disabled:opacity-50">
             {busy ? "Saving…" : "Save"}
           </button>
-          <button type="button" onClick={() => setEditing(false)} className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 transition-colors">
+          <button type="button" onClick={() => setEditing(false)} className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
             Cancel
           </button>
-          {error && <p className="text-expense text-[11px] w-full">{error}</p>}
+          {error && <p className="text-expense text-xs w-full">{error}</p>}
         </form>
       </li>
     );
@@ -515,7 +515,7 @@ export function RequirementRow({ requirement: r, today }: { requirement: Require
   return (
     <li className="px-5 py-3 flex items-center gap-3">
       <span
-        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+        className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
           isOverdue ? "bg-expense-bg text-expense" : open ? "bg-tile text-ink-2" : "bg-revenue-bg text-revenue"
         }`}
       >
@@ -525,19 +525,19 @@ export function RequirementRow({ requirement: r, today }: { requirement: Require
         <div className={`text-sm font-medium truncate ${open ? "text-ink-1" : "text-ink-3 line-through"}`}>
           {r.label || KIND_LABELS[r.kind] || r.kind}
         </div>
-        {r.notes && <div className="text-[11px] text-ink-2 truncate">{r.notes}</div>}
+        {r.notes && <div className="text-xs text-ink-2 truncate">{r.notes}</div>}
       </div>
       {r.status === "submitted" && r.submitted_at && (
-        <span className="text-[11px] text-revenue whitespace-nowrap">
+        <span className="text-xs text-revenue whitespace-nowrap">
           Submitted {new Date(r.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
         </span>
       )}
-      {r.status === "waived" && <span className="text-[11px] text-ink-3">Waived</span>}
+      {r.status === "waived" && <span className="text-xs text-ink-3">Waived</span>}
       <span className="flex items-center gap-2">
         <button
           disabled={busy}
           onClick={startEdit}
-          className="text-[11px] font-semibold text-ink-3 hover:text-orange transition-colors disabled:opacity-50"
+          className="text-xs font-semibold text-ink-3 hover:text-orange transition-colors disabled:opacity-50"
         >
           Edit
         </button>
@@ -553,7 +553,7 @@ export function RequirementRow({ requirement: r, today }: { requirement: Require
                 })
               )
             }
-            className="text-[11px] font-semibold text-revenue hover:text-revenue transition-colors disabled:opacity-50"
+            className="text-xs font-semibold text-revenue hover:text-revenue transition-colors disabled:opacity-50"
           >
             Mark submitted
           </button>
@@ -569,7 +569,7 @@ export function RequirementRow({ requirement: r, today }: { requirement: Require
             if (!ok) return;
             void act(() => fetch(`/api/admin/grants/requirements/${r.id}`, { method: "DELETE" }));
           }}
-          className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
+          className="text-xs font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
         >
           Delete
         </button>
@@ -611,15 +611,15 @@ export function AddRequirementForm({ grantId }: { grantId: string }) {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-wrap items-center gap-2 px-5 py-3 border-t border-outline">
+    <form onSubmit={submit} className="flex flex-wrap items-center gap-2 px-5 py-3 border-t border-hairline">
       <select value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls + " text-xs"}>
         {KINDS.map(([v, l]) => (
-          <option key={v} value={v} className="bg-tile shadow-tile">{l}</option>
+          <option key={v} value={v} className="bg-tile">{l}</option>
         ))}
       </select>
       <input type="date" required value={due} onChange={(e) => setDue(e.target.value)} className={inputCls + " text-xs"} />
       <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (optional)" className={inputCls + " text-xs w-44"} />
-      <button type="submit" disabled={busy} className="text-xs font-semibold text-orange bg-orange/10 border border-orange/30 px-3 py-2 rounded-lg hover:bg-orange/20 transition-colors disabled:opacity-50">
+      <button type="submit" disabled={busy} className="text-xs font-semibold text-orange bg-orange/10 border border-orange/30 px-3 py-2 rounded-control hover:bg-orange/20 transition-colors disabled:opacity-50">
         {busy ? "Adding…" : "+ Add deadline"}
       </button>
       {error && <p className="text-expense text-xs w-full">{error}</p>}

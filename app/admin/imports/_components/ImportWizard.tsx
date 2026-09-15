@@ -22,7 +22,7 @@ const ENTITY_CHOICES: { value: EntityType; label: string; hint: string }[] = [
 ];
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/40";
 const btnCls =
   "text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50";
 const quietBtnCls = "text-xs text-ink-2 hover:text-ink-1 px-2 py-2";
@@ -143,9 +143,9 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
   );
 
   return (
-    <div className="bg-surface shadow-panel border-[1.5px] border-outline rounded-card p-4">
+    <div className="bg-surface border-hairline rounded-panel p-4">
       {error && (
-        <p className="text-xs text-expense bg-expense-bg rounded-lg px-3 py-2 mb-3">{error}</p>
+        <p className="text-xs text-expense bg-expense-bg rounded-control px-3 py-2 mb-3">{error}</p>
       )}
 
       {step === "upload" && (
@@ -160,10 +160,10 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
                 key={c.value}
                 type="button"
                 onClick={() => setEntity(c.value)}
-                className={`text-xs font-semibold px-4 py-2 rounded-full border-[1.5px] transition-colors ${
+                className={`text-xs font-semibold px-4 py-2 rounded-full transition-colors ${
                   entity === c.value
                     ? "border-orange/50 bg-orange/10 text-orange"
-                    : "border-outline bg-tile text-ink-2 hover:text-ink-1"
+                    : "border-hairline bg-tile text-ink-2 hover:text-ink-1"
                 }`}
               >
                 {c.label}
@@ -212,11 +212,11 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
             <span className="text-ink-3">{counts.total ?? 0} total</span>
           </div>
           {problems.length > 0 && (
-            <div className="max-h-56 overflow-y-auto rounded-lg border border-outline mb-3">
-              <table className="w-full text-[12px]">
+            <div className="max-h-56 overflow-y-auto rounded-control border border-hairline mb-3">
+              <table className="w-full text-xs">
                 <tbody>
                   {problems.slice(0, 100).map((r) => (
-                    <tr key={r.row_num} className="border-b border-outline last:border-0">
+                    <tr key={r.row_num} className="border-b border-hairline last:border-0">
                       <td className="px-2 py-1 text-ink-3 tabular-nums w-14">#{r.row_num}</td>
                       <td className={`px-2 py-1 w-20 ${r.status === "invalid" ? "text-expense" : "text-ink-2"}`}>
                         {r.status}

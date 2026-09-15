@@ -75,14 +75,14 @@ export default async function AngleFunnelPage({ params }: { params: { key: strin
   }));
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1100px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title={angle.name}
         subtitle={angle.hook ?? "Funding angle"}
         actions={
           <Link
             href="/admin/fundraising/strategy"
-            className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-[#EFE6D4] border-[1.5px] border-outline px-4 py-2 rounded-full transition-colors"
+            className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
           >
             ← Strategy
           </Link>

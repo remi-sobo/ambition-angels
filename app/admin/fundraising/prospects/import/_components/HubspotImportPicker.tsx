@@ -124,12 +124,12 @@ export default function HubspotImportPicker({ lifecycles }: { lifecycles: string
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search name, email, or company…"
-          className="flex-1 min-w-[220px] text-sm bg-cream border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
+          className="flex-1 min-w-[220px] text-sm bg-cream border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
         />
         <select
           value={lifecycle}
           onChange={(e) => setLifecycle(e.target.value)}
-          className="text-sm bg-cream border-[1.5px] border-outline rounded-lg px-2.5 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
+          className="text-sm bg-cream border-hairline rounded-control px-2.5 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
         >
           <option value="">All lifecycle stages</option>
           {lifecycles.map((l) => (
@@ -142,14 +142,14 @@ export default function HubspotImportPicker({ lifecycles }: { lifecycles: string
       </div>
 
       {flash && (
-        <div className="bg-revenue-bg border border-revenue/30 rounded-xl px-4 py-2.5 text-sm text-revenue">{flash}</div>
+        <div className="bg-revenue-bg border border-revenue/30 rounded-panel px-4 py-2.5 text-sm text-revenue">{flash}</div>
       )}
 
       {/* Results */}
-      <div className="rounded-card border-[1.5px] border-outline bg-surface overflow-hidden">
+      <div className="rounded-panel border-hairline bg-surface overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-[10px] uppercase tracking-wider text-ink-3 border-b border-hairline">
+            <tr className="text-xs uppercase tracking-wider text-ink-3 border-b border-hairline">
               <th className="w-10 px-3 py-2 text-left">
                 <input type="checkbox" checked={allVisibleOn} onChange={toggleAllVisible} aria-label="Select all" />
               </th>
@@ -167,7 +167,7 @@ export default function HubspotImportPicker({ lifecycles }: { lifecycles: string
                 <tr
                   key={c.hubspot_id}
                   onClick={() => toggle(c.hubspot_id)}
-                  className={`cursor-pointer ${on ? "bg-orange/5" : "hover:bg-[#EFE6D4]/40"}`}
+                  className={`cursor-pointer ${on ? "bg-orange/5" : "hover:bg-tile/40"}`}
                 >
                   <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={on} onChange={() => toggle(c.hubspot_id)} />
@@ -193,7 +193,7 @@ export default function HubspotImportPicker({ lifecycles }: { lifecycles: string
         {hasMore && !loading && (
           <button
             onClick={() => load(q, lifecycle, nextOffset)}
-            className="w-full px-3 py-2.5 text-xs font-semibold text-ink-2 hover:text-ink-1 hover:bg-[#EFE6D4] border-t border-hairline"
+            className="w-full px-3 py-2.5 text-xs font-semibold text-ink-2 hover:text-ink-1 hover:bg-tile border-t border-hairline"
           >
             Load more
           </button>
@@ -202,7 +202,7 @@ export default function HubspotImportPicker({ lifecycles }: { lifecycles: string
 
       {/* Sticky action bar */}
       {selected.size > 0 && (
-        <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-full border-[1.5px] border-outline bg-ink text-cream px-5 py-2.5 shadow-lg">
+        <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-full border-hairline bg-ink text-cream px-5 py-2.5 shadow-lg">
           <span className="text-sm font-medium">{selected.size} selected</span>
           <button
             onClick={addSelected}

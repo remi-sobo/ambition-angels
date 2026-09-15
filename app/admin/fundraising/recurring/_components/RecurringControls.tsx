@@ -10,8 +10,8 @@ import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
-const labelCls = "flex flex-col gap-1 text-[11px] uppercase tracking-wider text-ink-3 font-semibold";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+const labelCls = "flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold";
 
 const FREQS = [
   ["monthly", "Monthly"],
@@ -67,7 +67,7 @@ export function NewRecurringForm() {
     );
   }
   return (
-    <form onSubmit={submit} className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-4 flex flex-wrap items-end gap-3 w-full">
+    <form onSubmit={submit} className="bg-tile border-hairline rounded-panel-lg p-4 flex flex-wrap items-end gap-3 w-full">
       <label className={labelCls}>
         Donor *
         <input required value={donor} onChange={(e) => setDonor(e.target.value)} placeholder="Name" className={inputCls + " w-48"} />
@@ -79,7 +79,7 @@ export function NewRecurringForm() {
       <label className={labelCls}>
         Frequency
         <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className={inputCls}>
-          {FREQS.map(([v, l]) => (<option key={v} value={v} className="bg-tile shadow-tile">{l}</option>))}
+          {FREQS.map(([v, l]) => (<option key={v} value={v} className="bg-tile">{l}</option>))}
         </select>
       </label>
       <div className="flex items-center gap-2">
@@ -115,12 +115,12 @@ export function RecurringActions({ id, status }: { id: string; status: string })
   return (
     <span className="flex items-center gap-3">
       {status === "active" && (
-        <button disabled={busy} onClick={() => patch({ status: "paused" })} className="text-[11px] font-semibold text-ink-3 hover:text-ink-1 transition-colors disabled:opacity-50">
+        <button disabled={busy} onClick={() => patch({ status: "paused" })} className="text-xs font-semibold text-ink-3 hover:text-ink-1 transition-colors disabled:opacity-50">
           Pause
         </button>
       )}
       {status === "paused" && (
-        <button disabled={busy} onClick={() => patch({ status: "active" })} className="text-[11px] font-semibold text-revenue hover:text-revenue transition-colors disabled:opacity-50">
+        <button disabled={busy} onClick={() => patch({ status: "active" })} className="text-xs font-semibold text-revenue hover:text-revenue transition-colors disabled:opacity-50">
           Resume
         </button>
       )}
@@ -136,7 +136,7 @@ export function RecurringActions({ id, status }: { id: string; status: string })
             });
             if (ok) void patch({ status: "cancelled" });
           }}
-          className="text-[11px] font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
+          className="text-xs font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
         >
           Cancel
         </button>

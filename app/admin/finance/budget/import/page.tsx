@@ -149,7 +149,7 @@ export default function QbBudgetImportPage() {
   }
 
   return (
-    <div className="max-w-6xl px-4 lg:px-8 py-6 lg:py-8">
+    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
       <header>
         <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
           <Link href={`/admin/finance/budget?year=${year}`} className="hover:text-ink-1">
@@ -170,19 +170,19 @@ export default function QbBudgetImportPage() {
         />
       </header>
 
-      <section className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel p-5 mb-6">
+      <section className="rounded-panel-lg border-hairline bg-surface p-5 mb-6">
         <div className="grid sm:grid-cols-[auto_1fr_auto] gap-4 items-end">
           <label className="block">
-            <span className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">Year</span>
+            <span className={`block ${TYPE.fieldLabel} mb-1`}>Year</span>
             <input
               value={year}
               onChange={(e) => setYear(Number(e.target.value) || year)}
               inputMode="numeric"
-              className="bg-ink border-[1.5px] border-outline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
+              className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
             />
           </label>
           <label className="block">
-            <span className="block text-[10px] uppercase tracking-wider text-ink-2 mb-1">QuickBooks CSV</span>
+            <span className={`block ${TYPE.fieldLabel} mb-1`}>QuickBooks CSV</span>
             <input
               type="file"
               accept=".csv,text/csv"
@@ -192,14 +192,14 @@ export default function QbBudgetImportPage() {
                 setError(null);
                 setSuccess(null);
               }}
-              className="block text-sm text-ink-1 file:mr-3 file:rounded-lg file:border-0 file:bg-orange file:text-white file:px-3 file:py-2 file:text-xs file:font-medium file:cursor-pointer hover:file:bg-orange-dark"
+              className="block text-sm text-ink-1 file:mr-3 file:rounded-control file:border-0 file:bg-orange file:text-white file:px-3 file:py-2 file:text-xs file:font-medium file:cursor-pointer hover:file:bg-orange-dark"
             />
           </label>
           <button
             type="button"
             disabled={!file || busy !== "idle"}
             onClick={doPreview}
-            className={`px-4 py-2 rounded-lg bg-tile hover:bg-[#EFE6D4] ${TYPE.body} font-medium disabled:opacity-40`}
+            className={`px-4 py-2 rounded-control bg-tile hover:bg-tile ${TYPE.body} font-medium disabled:opacity-40`}
           >
             {busy === "previewing" ? "Parsing…" : "Preview"}
           </button>
@@ -207,12 +207,12 @@ export default function QbBudgetImportPage() {
       </section>
 
       {error && (
-        <div className="mb-6 rounded-card border border-expense/30 bg-expense-bg p-4 text-sm text-expense">
+        <div className="mb-6 rounded-panel border border-expense/30 bg-expense-bg p-4 text-sm text-expense">
           {error}
         </div>
       )}
       {success && (
-        <div className="mb-6 rounded-card border border-revenue/30 bg-revenue-bg p-4 text-sm text-revenue">
+        <div className="mb-6 rounded-panel border border-revenue/30 bg-revenue-bg p-4 text-sm text-revenue">
           {success}
         </div>
       )}
@@ -227,14 +227,14 @@ export default function QbBudgetImportPage() {
           </div>
 
           {/* Matched */}
-          <div className="rounded-card-lg border-[1.5px] border-outline bg-surface shadow-panel overflow-hidden">
+          <div className="rounded-panel-lg border-hairline bg-surface overflow-hidden">
             <header className="px-4 py-2.5 border-b border-hairline">
-              <div className="text-[10px] uppercase tracking-widest text-orange font-medium">
+              <div className={`${TYPE.sectionHeader} !text-orange`}>
                 Will overwrite
               </div>
             </header>
             <table className="w-full text-xs">
-              <thead className="bg-surface shadow-panel text-ink-2 uppercase tracking-wider">
+              <thead className={`bg-surface ${TYPE.tableHeader}`}>
                 <tr>
                   <th className="text-left px-3 py-2">QB account</th>
                   <th className="text-left px-3 py-2">→ Category</th>
@@ -272,19 +272,19 @@ export default function QbBudgetImportPage() {
 
           {/* Unmatched with manual mapping */}
           {preview.unmatched.length > 0 && (
-            <div className="rounded-card-lg border border-[#D9BE86] bg-[#F4E8D0] overflow-hidden">
+            <div className="rounded-panel-lg border border-status-watch/40 bg-status-watch-bg overflow-hidden">
               <header className="px-4 py-2.5 border-b border-hairline">
-                <div className="text-[10px] uppercase tracking-widest text-[#A56A1B] font-medium">
+                <div className={`${TYPE.sectionHeader} !text-status-watch-text`}>
                   Needs mapping
                 </div>
-                <p className="text-[11px] text-ink-2 mt-1">
+                <p className="text-xs text-ink-2 mt-1">
                   We couldn&apos;t auto-match these QB accounts. Pick a category
                   for each, or leave as &ldquo;skip&rdquo; to leave that QB line out of
                   the import.
                 </p>
               </header>
               <table className="w-full text-xs">
-                <thead className="bg-surface shadow-panel text-ink-2 uppercase tracking-wider">
+                <thead className={`bg-surface ${TYPE.tableHeader}`}>
                   <tr>
                     <th className="text-left px-3 py-2">QB account</th>
                     <th className="text-right px-3 py-2 w-32">Amount</th>
@@ -302,7 +302,7 @@ export default function QbBudgetImportPage() {
                           onChange={(e) =>
                             setOverrides((o) => ({ ...o, [u.account]: e.target.value }))
                           }
-                          className="bg-ink border-[1.5px] border-outline rounded px-2 py-1 text-xs text-ink-1 max-w-xs"
+                          className="bg-ink border-hairline rounded px-2 py-1 text-xs text-ink-1 max-w-xs"
                         >
                           <option value="">(skip this row)</option>
                           {/* Suggested first */}
@@ -345,14 +345,14 @@ export default function QbBudgetImportPage() {
               type="button"
               disabled={busy !== "idle"}
               onClick={doCommit}
-              className="px-4 py-2 rounded-lg bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
+              className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
             >
               {busy === "committing" ? "Writing…" : `Commit ${preview.matched_count + Object.values(overrides).filter(Boolean).length} budget lines`}
             </button>
             <button
               type="button"
               onClick={() => { setPreview(null); setOverrides({}); }}
-              className={`px-4 py-2 rounded-lg text-ink-1 hover:${TYPE.body}`}
+              className={`px-4 py-2 rounded-control text-ink-1 hover:${TYPE.body}`}
             >
               Cancel
             </button>
@@ -374,10 +374,10 @@ function Stat({
   accent?: boolean;
   tone?: "warn";
 }) {
-  const valueClass = tone === "warn" ? "text-[#A56A1B]" : accent ? "text-orange" : "text-ink-1";
+  const valueClass = tone === "warn" ? "text-status-watch-text" : accent ? "text-orange" : "text-ink-1";
   return (
-    <div className="rounded-card border-[1.5px] border-outline bg-surface shadow-panel p-3">
-      <div className="text-[10px] uppercase tracking-wider text-ink-2 mb-1">{label}</div>
+    <div className="rounded-panel border-hairline bg-surface p-3">
+      <div className={`${TYPE.cardLabel} mb-1`}>{label}</div>
       <div className={`text-lg font-medium ${valueClass}`}>{value}</div>
     </div>
   );

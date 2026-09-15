@@ -67,7 +67,7 @@ export default async function StaffProfilePage({ params }: { params: { id: strin
             photoUrl={photoUrl}
             canEdit={canEditPhoto}
           />
-          <div className="rounded-card border-[1.5px] border-outline bg-tile shadow-tile px-4 py-3">
+          <div className="rounded-panel border-hairline bg-tile px-4 py-3">
             <MetaRow label="Reports to" value={managerName ?? "—"} />
             <MetaRow label="Department" value={member.department ?? "—"} />
             <MetaRow

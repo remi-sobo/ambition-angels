@@ -13,7 +13,7 @@ import { userMessage } from "@/lib/admin/errors";
 import Link from "next/link";
 
 const inputCls =
-  "bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 type Member = { id: string; name: string; total: string };
 type Household = { id: string; name: string; salutation: string | null; total: string; members: Member[] };
@@ -80,7 +80,7 @@ function MemberPicker({
         className={inputCls + " text-xs w-52 disabled:opacity-50"}
       />
       {shown.length > 0 && (
-        <ul className="absolute z-20 mt-1 w-60 max-h-56 overflow-auto bg-tile border-[1.5px] border-outline rounded-lg shadow-tile">
+        <ul className="absolute z-20 mt-1 w-60 max-h-56 overflow-auto bg-tile border-hairline rounded-control">
           {shown.map((r) => (
             <li key={r.id}>
               <button
@@ -218,14 +218,14 @@ export function HouseholdControls({
                 setEditing((v) => !v);
                 setError("");
               }}
-              className="text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors"
+              className="text-xs font-semibold text-ink-2 hover:text-orange transition-colors"
             >
               {editing ? "Cancel" : "Rename"}
             </button>
             <button
               disabled={busy}
               onClick={() => setHousehold(null)}
-              className="text-[11px] font-semibold text-ink-2 hover:text-expense transition-colors disabled:opacity-50"
+              className="text-xs font-semibold text-ink-2 hover:text-expense transition-colors disabled:opacity-50"
             >
               Leave household
             </button>
@@ -248,7 +248,7 @@ export function HouseholdControls({
               value={editSalutation} onChange={(e) => setEditSalutation(e.target.value)}
               placeholder="Salutation (e.g. Matt & Lisa)" className={inputCls + " text-xs w-56"}
             />
-            <button type="submit" disabled={busy} className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50">
+            <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50">
               {busy ? "…" : "Save"}
             </button>
           </form>
@@ -259,7 +259,7 @@ export function HouseholdControls({
             <li key={m.id} className="flex items-center">
               <Link
                 href={`/admin/fundraising/donors/${m.id}`}
-                className={`text-[11px] rounded-l-full pl-3 pr-2 py-1 border-[1.5px] border-r-0 border-outline transition-colors ${
+                className={`text-xs rounded-l-full pl-3 pr-2 py-1 border-r-0 border-hairline transition-colors ${
                   m.id === constituentId ? "bg-orange/10 text-orange" : "bg-tile text-ink-2 hover:text-orange"
                 }`}
               >
@@ -269,7 +269,7 @@ export function HouseholdControls({
                 disabled={busy}
                 onClick={() => patchHousehold({ remove_member_ids: [m.id] })}
                 title={`Remove ${m.name} from household`}
-                className="text-[11px] rounded-r-full pr-2.5 pl-1 py-1 border-[1.5px] border-l-0 border-outline bg-tile text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
+                className="text-xs rounded-r-full pr-2.5 pl-1 py-1 border-l-0 border-hairline bg-tile text-ink-3 hover:text-expense transition-colors disabled:opacity-50"
               >
                 ×
               </button>
@@ -284,7 +284,7 @@ export function HouseholdControls({
             />
           </li>
         </ul>
-        {error && <span className="text-expense text-[11px]">{error}</span>}
+        {error && <span className="text-expense text-xs">{error}</span>}
       </div>
     );
   }
@@ -304,17 +304,17 @@ export function HouseholdControls({
               value={salutation} onChange={(e) => setSalutation(e.target.value)}
               placeholder="Salutation (optional)" className={inputCls + " text-xs w-52"}
             />
-            <button type="submit" disabled={busy} className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50">
+            <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50">
               {busy ? "…" : "Create"}
             </button>
-            <button type="button" onClick={() => { setCreating(false); setStaged([]); setError(""); }} className="text-[11px] font-semibold text-ink-2 hover:text-ink-1 transition-colors">
+            <button type="button" onClick={() => { setCreating(false); setStaged([]); setError(""); }} className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
               Cancel
             </button>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] text-ink-3">Members: this donor</span>
+            <span className="text-xs text-ink-3">Members: this donor</span>
             {staged.map((s) => (
-              <span key={s.id} className="flex items-center text-[11px] rounded-full bg-tile border-[1.5px] border-outline text-ink-2">
+              <span key={s.id} className="flex items-center text-xs rounded-full bg-tile border-hairline text-ink-2">
                 <span className="pl-3 pr-1.5 py-1">{s.name}</span>
                 <button
                   type="button"
@@ -337,7 +337,7 @@ export function HouseholdControls({
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => setCreating(true)}
-            className="text-[11px] font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors"
+            className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors"
           >
             + Create household
           </button>
@@ -348,15 +348,15 @@ export function HouseholdControls({
               onChange={(e) => e.target.value && setHousehold(e.target.value)}
               className={inputCls + " text-xs"}
             >
-              <option value="" className="bg-tile shadow-tile">Join existing…</option>
+              <option value="" className="bg-tile">Join existing…</option>
               {households.map((h) => (
-                <option key={h.id} value={h.id} className="bg-tile shadow-tile">{h.name}</option>
+                <option key={h.id} value={h.id} className="bg-tile">{h.name}</option>
               ))}
             </select>
           )}
         </div>
       )}
-      {error && <span className="text-expense text-[11px]">{error}</span>}
+      {error && <span className="text-expense text-xs">{error}</span>}
     </div>
   );
 }

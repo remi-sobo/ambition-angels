@@ -218,7 +218,7 @@ export default function ProjectTaskList({
 
   return (
     <>
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6">
+    <section className="rounded-panel border-hairline bg-surface p-6">
       <h2 className={`${TYPE.sectionHeader} mb-4`}>
         Tasks{" "}
         <span className="text-ink-3">
@@ -245,16 +245,16 @@ export default function ProjectTaskList({
                   onDragOver={(e) => onDragOver(e, idx)}
                   onDrop={() => onDrop(idx)}
                   onDragEnd={onDragEnd}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-control border text-sm transition-colors ${
                     leaving ? "task-leaving " : ""
                   }${
                     isDragOver
                       ? "border-orange/50 bg-orange/5"
                       : leaving
-                      ? "border-hairline bg-surface shadow-panel text-ink-3"
+                      ? "border-hairline bg-surface text-ink-3"
                       : isBlocked
                       ? "border-expense/30 bg-expense-bg"
-                      : "border-outline bg-surface shadow-panel hover:bg-[#EFE6D4]"
+                      : "border-hairline bg-surface hover:bg-tile"
                   }`}
                 >
                   <span
@@ -271,7 +271,7 @@ export default function ProjectTaskList({
                     className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center ${
                       leaving
                         ? "bg-revenue-bg border-revenue/30 text-revenue"
-                        : "border-outline hover:border-orange/60"
+                        : "border-hairline hover:border-orange/60"
                     }`}
                   >
                     {leaving && (
@@ -292,14 +292,14 @@ export default function ProjectTaskList({
                   </button>
                   {t.assigned_to && (
                     <span
-                      className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[10px] font-bold uppercase"
+                      className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-xs font-bold uppercase"
                       title={`Assigned to ${t.assigned_to}`}
                     >
                       {t.assigned_to.charAt(0)}
                     </span>
                   )}
                   {t.due_date && (
-                    <span className="text-[11px] text-ink-2 font-mono">
+                    <span className="text-xs text-ink-2 font-mono">
                       {formatDueLabel(t.due_date)}
                     </span>
                   )}
@@ -321,14 +321,14 @@ export default function ProjectTaskList({
             <div className="mb-5">
               <button
                 onClick={() => setShowDone((v) => !v)}
-                className="text-[11px] font-semibold text-ink-3 hover:text-ink-1"
+                className="text-xs font-semibold text-ink-3 hover:text-ink-1"
               >
                 {showDone ? "Hide" : "Show"} {doneTasks.length} completed
               </button>
               {showDone && (
                 <ul className="space-y-1.5 mt-2">
                   {doneTasks.map((t) => (
-                    <li key={t.id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-hairline bg-surface shadow-panel text-sm text-ink-3">
+                    <li key={t.id} className="flex items-center gap-2 px-3 py-2 rounded-control border border-hairline bg-surface text-sm text-ink-3">
                       <button
                         onClick={() => toggleDone(t)}
                         disabled={busy}
@@ -373,12 +373,12 @@ export default function ProjectTaskList({
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Add a task (Enter to create)…"
             disabled={adding}
-            className="flex-1 bg-tile border-[1.5px] border-outline rounded-lg px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+            className="flex-1 bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
           />
           <button
             type="submit"
             disabled={adding || !newTitle.trim()}
-            className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg"
+            className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-control"
           >
             {adding ? "Adding…" : "Add"}
           </button>
@@ -389,7 +389,7 @@ export default function ProjectTaskList({
             onChange={(e) => setNewAssignee(e.target.value as AdminUserId | "")}
             disabled={adding}
             aria-label="Assignee"
-            className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
+            className="bg-tile border-hairline rounded-control px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
           >
             <option value="">Unassigned</option>
             {assigneeOptions.map((a) => (
@@ -402,14 +402,14 @@ export default function ProjectTaskList({
             onChange={(e) => setNewDue(e.target.value)}
             disabled={adding}
             aria-label="Due date"
-            className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
+            className="bg-tile border-hairline rounded-control px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
           />
           <select
             value={newPriority}
             onChange={(e) => setNewPriority(e.target.value as TaskPriority)}
             disabled={adding}
             aria-label="Priority"
-            className="bg-tile border-[1.5px] border-outline rounded-lg px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
+            className="bg-tile border-hairline rounded-control px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
           >
             {TASK_PRIORITIES.map((p) => (
               <option key={p} value={p}>

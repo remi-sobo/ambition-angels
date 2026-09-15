@@ -70,7 +70,7 @@ export default async function MessagesPage({
     return (
       <Shell>
         <Centered>
-          <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+          <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
             The messaging tables aren&apos;t in this database yet. Apply{" "}
             <code className="text-orange">create_messaging.sql</code>, then reload.
           </div>

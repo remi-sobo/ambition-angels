@@ -119,16 +119,16 @@ export default function GmailSyncButton() {
         type="button"
         onClick={start}
         disabled={running}
-        className={`text-xs font-semibold px-4 py-2 rounded-full border-[1.5px] transition-colors disabled:opacity-60 ${
+        className={`text-xs font-semibold px-4 py-2 rounded-full transition-colors disabled:opacity-60 ${
           failed
             ? "text-expense border-expense/30 bg-expense-bg hover:bg-expense-bg"
-            : "text-ink-2 hover:text-ink-1 border-outline bg-tile hover:bg-[#EFE6D4]"
+            : "text-ink-2 hover:text-ink-1 border-hairline bg-tile hover:bg-tile"
         }`}
       >
         {label}
       </button>
       {hint && (
-        <span className="text-[10px] text-ink-3 max-w-[230px] text-right leading-tight">{hint}</span>
+        <span className="text-xs text-ink-3 max-w-[230px] text-right leading-tight">{hint}</span>
       )}
     </div>
   );

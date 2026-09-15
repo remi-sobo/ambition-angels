@@ -59,7 +59,7 @@ export default async function CommsPage() {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className={`${TYPE.pageTitle} mb-4`}>Comms</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The comms tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_email_campaigns.sql</code>, then reload.
         </div>
@@ -90,12 +90,12 @@ export default async function CommsPage() {
         <SettingsCard settings={settings} />
 
         {segments.length === 0 && (
-          <div className="bg-[#F4E8D0] text-[#A56A1B] rounded-xl px-5 py-3 text-sm">
+          <div className="bg-status-watch-bg text-status-watch-text rounded-panel px-5 py-3 text-sm">
             No saved segments yet. Build one on the Donors page (Segments &amp; export) to target a campaign.
           </div>
         )}
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
           {campaigns.length === 0 ? (
             <div className="p-4">
               <EmptyState
@@ -109,18 +109,18 @@ export default async function CommsPage() {
                 <li key={c.id} className="px-5 py-3 flex items-center gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-ink-1 truncate">{c.name}</div>
-                    <div className="text-[11px] text-ink-3 truncate">
+                    <div className="text-xs text-ink-3 truncate">
                       {c.subject}
                       {c.segment?.name ? ` · ${c.segment.name}` : " · no segment"}
                     </div>
                   </div>
                   {c.status === "sent" ? (
-                    <span className="text-[11px] text-ink-2 [font-variant-numeric:tabular-nums] w-40 text-right">
+                    <span className="text-xs text-ink-2 [font-variant-numeric:tabular-nums] w-40 text-right">
                       {c.sent_count} sent{c.failed_count ? ` · ${c.failed_count} failed` : ""}
                       {c.sent_at ? ` · ${fmtDate(c.sent_at)}` : ""}
                     </span>
                   ) : (
-                    <span className="text-[10px] uppercase tracking-wider text-orange w-40 text-right">{c.status}</span>
+                    <span className="text-xs uppercase tracking-wider text-orange w-40 text-right">{c.status}</span>
                   )}
                   <CampaignActions id={c.id} status={c.status} hasSegment={!!c.segment_id} />
                 </li>

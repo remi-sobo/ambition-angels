@@ -30,13 +30,13 @@ export default function OwnerChip({
     <span className={`inline-flex items-center gap-1.5 max-w-full align-middle ${className}`} title={r.label}>
       <span
         aria-hidden
-        className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-          person ? "bg-orange/15 text-orange" : "border border-outline text-ink-3"
+        className={`w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+          person ? "bg-orange/15 text-orange" : "border border-hairline text-ink-3"
         }`}
       >
         {initials}
       </span>
-      <span className="text-[11px] text-ink-2 truncate">
+      <span className="text-xs text-ink-2 truncate">
         {r.label}
         {!person && <span className="text-ink-3"> · ext</span>}
       </span>

@@ -22,7 +22,7 @@ export default function V2ReedEdge() {
       type="button"
       onClick={() => reed.open({ surface: "v2-edge" })}
       aria-label="Open Reed"
-      className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-40 flex-col items-center gap-1.5 rounded-l-xl border border-r-0 border-white/10 bg-[#23160D] px-2 py-4 text-cream/80 shadow-lg transition-colors hover:text-cream hover:bg-[#2d1d10]"
+      className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-40 flex-col items-center gap-1.5 rounded-l-panel border border-r-0 border-white/10 bg-navy px-2 py-4 text-cream/80 shadow-lg transition-colors hover:text-cream hover:bg-navy-light"
       style={{
         backgroundImage:
           "radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)",
@@ -36,7 +36,7 @@ export default function V2ReedEdge() {
         strokeWidth="1.75"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="w-4 h-4 text-[#F47840]"
+        className="w-4 h-4 text-accent"
         aria-hidden
       >
         <path d="M12 4l1.6 4.9 4.9 1.6-4.9 1.6L12 17l-1.6-4.9L5.5 10.5l4.9-1.6L12 4z" />

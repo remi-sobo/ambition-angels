@@ -121,14 +121,14 @@ export default function TaskRow({
   return (
     <>
     <div
-      className={`group flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${
+      className={`group flex items-center gap-3 px-3 py-2 rounded-control border transition-colors ${
         leaving ? "task-leaving " : ""
       }${
         showDone
-          ? "border-hairline bg-surface shadow-panel text-ink-3"
+          ? "border-hairline bg-surface text-ink-3"
           : isBlocked
           ? "border-expense/30 bg-expense-bg hover:bg-expense-bg"
-          : "border-outline bg-surface shadow-panel hover:bg-[#EFE6D4]"
+          : "border-hairline bg-surface hover:bg-tile"
       }`}
     >
       <button
@@ -138,7 +138,7 @@ export default function TaskRow({
         className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
           showDone
             ? "bg-revenue-bg border-revenue/30 text-revenue"
-            : "border-outline hover:border-orange/60"
+            : "border-hairline hover:border-orange/60"
         }`}
       >
         {showDone && (
@@ -167,24 +167,24 @@ export default function TaskRow({
           {task.title}
         </button>
         <span
-          className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border ${categoryBadgeClass(task.category)}`}
+          className={`inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${categoryBadgeClass(task.category)}`}
         >
           {categoryLabel(task.category)}
         </span>
         {(task.labels ?? []).filter((l) => !l.startsWith("sys:")).map((label) => (
           <span
             key={label}
-            className="inline-block px-1.5 py-0.5 rounded text-[10px] tracking-wide font-medium border bg-tile text-ink-2 border-outline"
+            className="inline-block px-1.5 py-0.5 rounded text-xs tracking-wide font-medium border bg-tile text-ink-2 border-hairline"
           >
             {label}
           </span>
         ))}
         {task.assigned_to && (
           <span
-            className="inline-flex items-center gap-1 text-[11px] text-ink-2"
+            className="inline-flex items-center gap-1 text-xs text-ink-2"
             title={`Assigned to ${task.assigned_to}`}
           >
-            <span className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-[10px] font-bold uppercase">
+            <span className="inline-flex w-4 h-4 rounded-full bg-tile text-ink-1 items-center justify-center text-xs font-bold uppercase">
               {task.assigned_to.charAt(0)}
             </span>
           </span>
@@ -192,7 +192,7 @@ export default function TaskRow({
         {task.project_id && projectName && !hideProjectLink && (
           <Link
             href={`/admin/ops/projects/${task.project_id}`}
-            className="text-[11px] text-orange/80 hover:text-orange truncate max-w-[140px]"
+            className="text-xs text-orange/80 hover:text-orange truncate max-w-[140px]"
           >
             #{projectName}
           </Link>
@@ -204,7 +204,7 @@ export default function TaskRow({
                 ? `/admin/partners/${task.linked_entity_id}`
                 : `/admin/fundraising/donors/${task.linked_entity_id}`
             }
-            className="inline-flex items-center gap-1 text-[11px] text-ink-2 hover:text-orange bg-tile border border-outline rounded-full px-2 py-0.5 truncate max-w-[180px] transition-colors"
+            className="inline-flex items-center gap-1 text-xs text-ink-2 hover:text-orange bg-tile border border-hairline rounded-full px-2 py-0.5 truncate max-w-[180px] transition-colors"
             title={`${task.linked_entity_type === "partner" ? "Partner" : "Donor"}: ${task.linked_label ?? ""}`}
           >
             <span className="text-ink-3">{task.linked_entity_type === "partner" ? "◆" : "♥"}</span>
@@ -212,13 +212,13 @@ export default function TaskRow({
           </Link>
         )}
         {isBlocked && (
-          <span className="text-[10px] uppercase tracking-wider text-expense font-semibold">
+          <span className="text-xs uppercase tracking-wider text-expense font-semibold">
             blocked
           </span>
         )}
         {!showDone && isStuck && (
           <span
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold border bg-status-watch-bg text-status-watch-text border-status-watch/30"
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border bg-status-watch-bg text-status-watch-text border-status-watch/30"
             title={stuckReason ?? "Stuck"}
           >
             stuck
@@ -228,7 +228,7 @@ export default function TaskRow({
             failure mode #2): neutral chip, counts deliberate week-pushes. */}
         {!showDone && (task.roll_count ?? 0) > 0 && (
           <span
-            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] tracking-wide font-medium border bg-tile text-ink-2 border-outline tabular-nums"
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs tracking-wide font-medium border bg-tile text-ink-2 border-hairline tabular-nums"
             title={`Rolled to a later week ${task.roll_count} time${task.roll_count === 1 ? "" : "s"}`}
           >
             ↻{task.roll_count}
@@ -252,13 +252,13 @@ export default function TaskRow({
           onClick={() => setShowMenu((v) => !v)}
           disabled={busy}
           aria-label="Task actions"
-          className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded hover:bg-[#EFE6D4] text-ink-2 hover:text-ink-1 flex items-center justify-center"
+          className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded hover:bg-tile text-ink-2 hover:text-ink-1 flex items-center justify-center"
         >
           ⋯
         </button>
         {showMenu && (
           <div
-            className="absolute right-0 top-7 z-20 w-48 rounded-lg border-[1.5px] border-outline bg-ink shadow-xl py-1 text-xs"
+            className="absolute right-0 top-7 z-20 w-48 rounded-control border-hairline bg-ink shadow-xl py-1 text-xs"
             onMouseLeave={() => setShowMenu(false)}
           >
             <ActionItem
@@ -285,7 +285,7 @@ export default function TaskRow({
               onClick={() => patch({ archived_at: task.archived_at ? null : new Date().toISOString() })}
               label={task.archived_at ? "Unarchive" : "Archive"}
             />
-            <div className="border-t border-outline my-1" />
+            <div className="border-t border-hairline my-1" />
             <ActionItem onClick={deleteTask} label="Delete" danger />
           </div>
         )}
@@ -310,7 +310,7 @@ function ActionItem({
   return (
     <button
       onClick={onClick}
-      className={`block w-full text-left px-3 py-1.5 hover:bg-[#EFE6D4] ${
+      className={`block w-full text-left px-3 py-1.5 hover:bg-tile ${
         danger ? "text-expense hover:text-expense" : "text-ink-1 hover:text-ink-1"
       }`}
     >

@@ -130,7 +130,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
         <h1 className={`${TYPE.pageTitle} mb-4`}>Donors</h1>
-        <div className="bg-tile shadow-tile border border-orange/30 rounded-card-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
+        <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The fundraising tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_fundraising_core.sql</code> via Actions → Apply DB
           migration, then reload.
@@ -274,22 +274,22 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
     : null;
   const ENG_STYLES: Record<EngagementBand, string> = {
     strong: "bg-revenue/15 text-revenue",
-    steady: "bg-blue-500/15 text-blue-400",
-    at_risk: "bg-[#F4E8D0] text-[#A56A1B]",
-    none: "bg-tile text-ink-3 border border-outline",
+    steady: "bg-tile text-ink-2",
+    at_risk: "bg-status-watch-bg text-status-watch-text",
+    none: "bg-tile text-ink-3 border border-hairline",
   };
   const STAGE_STYLES: Record<LifecycleStage, string> = {
-    prospect: "bg-tile text-ink-3 border-[1.5px] border-outline",
-    first_time: "bg-tile text-ink-2 border-[1.5px] border-outline",
-    repeat: "bg-blue-500/15 text-blue-400",
+    prospect: "bg-tile text-ink-3 border-hairline",
+    first_time: "bg-tile text-ink-2 border-hairline",
+    repeat: "bg-tile text-ink-2",
     recurring: "bg-revenue/15 text-revenue",
     major: "bg-orange/20 text-orange",
   };
   const FLAG_STYLES: Record<RetentionFlag, string> = {
-    lybunt: "bg-[#F4E8D0] text-[#A56A1B]",
+    lybunt: "bg-status-watch-bg text-status-watch-text",
     sybunt: "bg-tile text-ink-2",
     cadence_lapsed: "bg-expense-bg text-expense",
-    second_gift_watch: "bg-blue-500/15 text-blue-400",
+    second_gift_watch: "bg-tile text-ink-2",
   };
   const pendingAcks = gifts.filter((g) => g.acknowledgment_status === "pending").length;
 
@@ -442,7 +442,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
   const PLEDGE_STATUS_STYLE: Record<Exclude<HubSpotPledgeStatus, "ignore">, string> = {
     received: "bg-revenue/15 text-revenue",
     secured: "bg-orange/20 text-orange",
-    projected: "bg-blue-500/15 text-blue-400",
+    projected: "bg-tile text-ink-2",
   };
   const PLEDGE_STATUS_LABEL: Record<Exclude<HubSpotPledgeStatus, "ignore">, string> = {
     received: "Received", secured: "Secured", projected: "Projected",
@@ -450,7 +450,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
 
   return (
     <div className="min-h-screen bg-ink">
-      <div className="bg-tile border-b border-outline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
+      <div className="bg-tile border-b border-hairline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
         <Link
           href={v2 ? "/admin/fundraising/donors-funders" : "/admin/fundraising/donors"}
           className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
@@ -460,25 +460,25 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
         <span className={`${TYPE.cardTitle} sm:text-base truncate`}>{name}</span>
         <span
           title={LIFECYCLE_HELP[stage]}
-          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STAGE_STYLES[stage]}`}
+          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STAGE_STYLES[stage]}`}
         >
           {LIFECYCLE_LABELS[stage]}
         </span>
         {activePlan && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">
             Monthly · {money(Number(activePlan.amount))}
           </span>
         )}
         {c.do_not_contact && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense">Do not contact</span>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense">Do not contact</span>
         )}
         {c.archived_at && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-warm/20 text-ink-2">Archived</span>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-warm/20 text-ink-2">Archived</span>
         )}
         {engagement.band !== "none" && (
           <span
             title={`Engagement ${engagement.score}/100`}
-            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${ENG_STYLES[engagement.band]}`}
+            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ENG_STYLES[engagement.band]}`}
           >
             Engagement {engagement.score} · {BAND_LABEL[engagement.band]}
           </span>
@@ -487,7 +487,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
           <span
             key={f}
             title={FLAG_HELP[f]}
-            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${FLAG_STYLES[f]}`}
+            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${FLAG_STYLES[f]}`}
           >
             {FLAG_LABELS[f]}
           </span>
@@ -495,14 +495,14 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
         {hubspotId && (
           <Link
             href={`/admin/fundraising/prospects/by-hubspot/${hubspotId}`}
-            className="ml-auto text-[11px] font-semibold px-3 py-1 rounded-full bg-tile border-[1.5px] border-outline text-ink-1 hover:text-ink-1 hover:bg-[#EFE6D4] transition-colors whitespace-nowrap"
+            className="ml-auto text-xs font-semibold px-3 py-1 rounded-full bg-tile border-hairline text-ink-1 hover:text-ink-1 hover:bg-tile transition-colors whitespace-nowrap"
           >
             {hasBrief ? "Research brief →" : "Run research →"}
           </Link>
         )}
       </div>
 
-      <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+      <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="Lifetime Giving"
@@ -524,14 +524,14 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
         {/* Lifecycle stage strip — stage is derived at read time, never
             stored. Lapsed overlays as retention-flag badges, not a stage:
             a lapsed major donor is still Major, visibly flagged. */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg px-5 py-4">
+        <section className="bg-tile border-hairline rounded-panel-lg px-5 py-4">
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             <h2 className={TYPE.cardTitle}>Lifecycle Stage</h2>
             {flags.map((f) => (
               <span
                 key={f}
                 title={FLAG_HELP[f]}
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${FLAG_STYLES[f]}`}
+                className={`text-xs font-semibold px-2 py-0.5 rounded-full ${FLAG_STYLES[f]}`}
               >
                 {FLAG_LABELS[f]}
               </span>
@@ -562,8 +562,8 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
 
         {/* Journeys panel (spec Phase 2, read-only): which sequences this
             donor is in and where they stand. Enrollment actions are Phase 3. */}
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3">
             <h2 className={TYPE.cardTitle}>Journeys</h2>
             <div className="ml-auto flex items-center gap-3">
               <EnrollInJourney
@@ -574,7 +574,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
               />
               <Link
                 href="/admin/fundraising/journeys"
-                className="text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors whitespace-nowrap"
+                className="text-xs font-semibold text-ink-2 hover:text-orange transition-colors whitespace-nowrap"
               >
                 Manage journeys →
               </Link>
@@ -601,11 +601,11 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                 return (
                   <li key={e.id} className="px-5 py-3 flex items-center gap-3 flex-wrap">
                     <span className="text-sm font-medium text-ink-1">{e.journey?.name ?? "(journey removed)"}</span>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider bg-revenue/15 text-revenue">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider bg-revenue/15 text-revenue">
                       Active
                     </span>
                     {e.journey && (
-                      <span className="text-[11px] text-ink-3">{TRIGGER_LABEL[e.journey.trigger] ?? e.journey.trigger}</span>
+                      <span className="text-xs text-ink-3">{TRIGGER_LABEL[e.journey.trigger] ?? e.journey.trigger}</span>
                     )}
                     <span className="ml-auto text-xs text-ink-2 [font-variant-numeric:tabular-nums]">
                       Step {upcoming} of {totalSteps || "?"}
@@ -628,8 +628,8 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                   <li key={e.id} className="px-5 py-3 flex items-center gap-3 flex-wrap">
                     <span className="text-sm text-ink-2">{e.journey?.name ?? "(journey removed)"}</span>
                     <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                        done ? "bg-tile text-ink-2 border-[1.5px] border-outline" : "bg-expense-bg text-expense"
+                      className={`text-xs font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                        done ? "bg-tile text-ink-2 border-hairline" : "bg-expense-bg text-expense"
                       }`}
                     >
                       {done ? "Completed" : "Cancelled"}
@@ -658,8 +658,8 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
         )}
 
         {openOpps.length > 0 && (
-          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg px-5 py-4 flex items-center gap-4 flex-wrap">
-            <span className="text-[10px] uppercase tracking-wider text-orange font-semibold">Next move</span>
+          <section className="bg-tile border-hairline rounded-panel-lg px-5 py-4 flex items-center gap-4 flex-wrap">
+            <span className="text-xs uppercase tracking-wider text-orange font-semibold">Next move</span>
             {nextMove ? (
               <>
                 <span className="text-sm text-ink-1 font-medium">{nextMove.next_step}</span>
@@ -673,9 +673,9 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                     {fmtDate(nextMove.next_step_due)}
                   </span>
                 )}
-                <span className="text-[11px] text-ink-3 capitalize">{nextMove.stage}</span>
+                <span className="text-xs text-ink-3 capitalize">{nextMove.stage}</span>
                 {nextMove.ask_amount ? (
-                  <span className="text-[11px] text-ink-3">· ask {money(Number(nextMove.ask_amount))}</span>
+                  <span className="text-xs text-ink-3">· ask {money(Number(nextMove.ask_amount))}</span>
                 ) : null}
               </>
             ) : (
@@ -685,7 +685,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
             )}
             <Link
               href="/admin/fundraising"
-              className="ml-auto text-[11px] font-semibold text-ink-2 hover:text-orange transition-colors"
+              className="ml-auto text-xs font-semibold text-ink-2 hover:text-orange transition-colors"
             >
               Pipeline →
             </Link>
@@ -693,7 +693,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <section className="lg:col-span-4 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg p-5 space-y-3">
+          <section className="lg:col-span-4 bg-tile border-hairline rounded-panel-lg p-5 space-y-3">
             <div className="flex items-start justify-between gap-2 mb-1">
               <h2 className={TYPE.cardTitle}>Profile</h2>
               <EditDonorButton
@@ -729,7 +729,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
               </div>
             ))}
             <AckChannelPref constituentId={c.id} current={(c.preferred_ack_channel as string | null) ?? null} />
-            {c.notes && <p className="text-xs text-ink-2 border-t border-outline pt-3">{c.notes}</p>}
+            {c.notes && <p className="text-xs text-ink-2 border-t border-hairline pt-3">{c.notes}</p>}
             <ConstituentDangerZone
               id={c.id}
               name={name}
@@ -738,8 +738,8 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
             />
           </section>
 
-          <section className="lg:col-span-8 bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+          <section className="lg:col-span-8 bg-tile border-hairline rounded-panel-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
               <h2 className={TYPE.cardTitle}>Activity</h2>
               <div className="flex items-center gap-2">
                 <LogThankYou
@@ -771,13 +771,13 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                       <li key={`g-${g.id}`} className="px-5 py-3 group">
                         <div className="flex items-center gap-4">
                           <span className="text-xs text-ink-2 w-24 flex-shrink-0">{fmtWhen(g.gift_date)}</span>
-                          <span className="text-[10px] uppercase tracking-wider text-revenue font-semibold w-14 flex-shrink-0">Gift</span>
+                          <span className="text-xs uppercase tracking-wider text-revenue font-semibold w-14 flex-shrink-0">Gift</span>
                           <span className="font-bold text-ink-1 [font-variant-numeric:tabular-nums]">{money(g.amount)}</span>
-                          <span className="text-[10px] uppercase tracking-wider text-ink-3">{g.method}</span>
+                          <span className="text-xs uppercase tracking-wider text-ink-3">{g.method}</span>
                           {g.recurring_plan_id && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
+                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
                           )}
-                          <span className="ml-auto text-[11px] flex items-center gap-3">
+                          <span className="ml-auto text-xs flex items-center gap-3">
                             {g.acknowledgment_status === "sent" ? (
                               <span className="text-revenue">Thanked</span>
                             ) : g.acknowledgment_status === "pending" ? (
@@ -827,7 +827,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                     return (
                       <li key={`i-${i.id}`} className="px-5 py-3 text-sm flex items-start gap-4 group">
                         <span className="text-xs text-ink-2 w-24 flex-shrink-0 pt-px">{fmtWhen(i.occurred_at)}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-orange font-semibold w-14 flex-shrink-0 pt-1">
+                        <span className="text-xs uppercase tracking-wider text-orange font-semibold w-14 flex-shrink-0 pt-1">
                           {isEmail ? (i.direction === "outbound" ? "Sent" : "Email") : i.kind}
                         </span>
                         <div className="min-w-0 flex-1">
@@ -840,7 +840,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                                   <span className="text-ink-3 italic">(no subject)</span>
                                 )}
                                 {i.direction && (
-                                  <span className="text-[10px] text-ink-3 whitespace-nowrap">
+                                  <span className="text-xs text-ink-3 whitespace-nowrap">
                                     {i.direction === "outbound" ? "→ sent" : "← received"}
                                   </span>
                                 )}
@@ -854,7 +854,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                                     href={gmailUrl}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-[10px] text-ink-3 hover:text-orange"
+                                    className="text-xs text-ink-3 hover:text-orange"
                                   >
                                     Open in Gmail ↗
                                   </a>
@@ -877,7 +877,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                   return (
                     <li key={`a-${ev.at}-${ev.channel}-${ev.amount ?? "x"}`} className="px-5 py-3 flex items-center gap-4">
                       <span className="text-xs text-ink-2 w-24 flex-shrink-0">{fmtWhen(ev.at)}</span>
-                      <span className="text-[10px] uppercase tracking-wider text-revenue font-semibold w-14 flex-shrink-0">Thanked</span>
+                      <span className="text-xs uppercase tracking-wider text-revenue font-semibold w-14 flex-shrink-0">Thanked</span>
                       <span className="text-xs text-ink-2">
                         {CHANNEL_PAST[ev.channel] ?? "Thanked"} ·{" "}
                         {ev.amount != null ? `thank-you for a ${money(ev.amount)} gift` : "thank-you"}
@@ -892,11 +892,11 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
 
         {/* ── Recurring (native plans) + HubSpot Comms / Pledges ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
+          <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-hairline flex items-center gap-3 flex-wrap">
               <h2 className={TYPE.cardTitle}>Recurring</h2>
               {activePlan && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/20 text-orange">
                   {money(Number(activePlan.amount))}/{activePlan.frequency.slice(0, 2)} active
                 </span>
               )}
@@ -914,12 +914,12 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                       {money(Number(p.amount))}
                       <span className="text-ink-3 font-normal">/{p.frequency.slice(0, 2)}</span>
                     </span>
-                    <span className="text-[10px] uppercase tracking-wider text-ink-3">{p.status}</span>
+                    <span className="text-xs uppercase tracking-wider text-ink-3">{p.status}</span>
                     {p.external_source === "manual" && (
-                      <span className="text-[10px] uppercase tracking-wider text-ink-3">manual</span>
+                      <span className="text-xs uppercase tracking-wider text-ink-3">manual</span>
                     )}
                     {p.last_payment_failed_at && p.status === "active" && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense">payment failed</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-expense-bg text-expense">payment failed</span>
                     )}
                     <span className="ml-auto text-xs text-ink-2 [font-variant-numeric:tabular-nums]">
                       {p.last_charged_at ? `last ${fmtWhen(p.last_charged_at)}` : ""}
@@ -931,10 +931,10 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
           </section>
 
           {hubspotId && (
-            <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-              <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
+            <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+              <div className="px-5 py-4 border-b border-hairline flex items-center gap-3 flex-wrap">
                 <h2 className={TYPE.cardTitle}>Pledges</h2>
-                <span className="text-[10px] uppercase tracking-wider text-ink-3">from HubSpot</span>
+                <span className="text-xs uppercase tracking-wider text-ink-3">from HubSpot</span>
               </div>
               {hsPledgesError ? (
                 <p className={`p-6 ${TYPE.bodyMuted}`}>HubSpot deals are unavailable right now. Try a sync, then reload.</p>
@@ -945,7 +945,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                   {hsPledges.map((p) => (
                     <li key={p.id} className="px-5 py-3 flex items-center gap-3">
                       <span className="text-sm text-ink-1 flex-1 truncate">{p.name}</span>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${PLEDGE_STATUS_STYLE[p.status]}`}>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${PLEDGE_STATUS_STYLE[p.status]}`}>
                         {PLEDGE_STATUS_LABEL[p.status]}
                       </span>
                       {p.close_date && (
@@ -961,10 +961,10 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
         </div>
 
         {hubspotId && (
-          <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
+          <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-hairline flex items-center gap-3 flex-wrap">
               <h2 className={TYPE.cardTitle}>Comms</h2>
-              <span className="text-[10px] uppercase tracking-wider text-ink-3">from HubSpot</span>
+              <span className="text-xs uppercase tracking-wider text-ink-3">from HubSpot</span>
             </div>
             {hsCommsError ? (
               <p className={`p-6 ${TYPE.bodyMuted}`}>HubSpot communications are unavailable right now. Try a sync, then reload.</p>
@@ -975,7 +975,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                 {hsComms.map((e) => (
                   <li key={e.id} className="px-5 py-3 flex items-start gap-4">
                     <span className="text-xs text-ink-2 w-24 flex-shrink-0 pt-px">{e.at ? fmtWhen(e.at) : "—"}</span>
-                    <span className="text-[10px] uppercase tracking-wider text-orange font-semibold w-16 flex-shrink-0 pt-1">
+                    <span className="text-xs uppercase tracking-wider text-orange font-semibold w-16 flex-shrink-0 pt-1">
                       {COMM_TYPE_LABEL[e.type] ?? e.type}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -998,8 +998,8 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
         <EntityDocuments entityType="constituent" entityId={c.id} entityLabel={name} />
         <CommentThread entityType="constituent" entityId={c.id} entityLabel={name} />
 
-        <section className="bg-tile shadow-tile border-[1.5px] border-outline rounded-card-lg overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline flex items-center gap-3 flex-wrap">
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline flex items-center gap-3 flex-wrap">
             <h2 className={TYPE.cardTitle}>
               Household{household ? ` · ${household.name}` : ""}
             </h2>

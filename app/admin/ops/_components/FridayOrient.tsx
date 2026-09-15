@@ -15,7 +15,7 @@ export default async function FridayOrient() {
       : null;
 
   return (
-    <section className="rounded-card border-[1.5px] border-outline bg-surface p-6 space-y-3">
+    <section className="rounded-panel border-hairline bg-surface p-6 space-y-3">
       <h2 className={TYPE.sectionHeader}>Status</h2>
       {status ? (
         <>

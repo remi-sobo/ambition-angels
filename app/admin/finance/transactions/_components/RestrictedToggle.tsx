@@ -37,10 +37,10 @@ export default function RestrictedToggle({ transactionId, initial }: Props) {
       type="button"
       onClick={toggle}
       disabled={busy}
-      className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border ${
+      className={`text-xs px-1.5 py-0.5 rounded border ${
         value
           ? "border-orange/60 bg-orange/15 text-orange"
-          : "border-outline text-ink-2 hover:text-ink-1 hover:border-outline"
+          : "border-hairline text-ink-2 hover:text-ink-1 hover:border-hairline"
       } ${busy ? "opacity-50" : ""}`}
       title={value ? "Restricted to a specific purpose" : "Unrestricted"}
     >

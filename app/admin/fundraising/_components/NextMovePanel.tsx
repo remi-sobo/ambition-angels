@@ -15,12 +15,12 @@ import { useAdminUser } from "@/app/admin/_components/AdminUserContext";
 import { TYPE } from "@/lib/admin/typeScale";
 
 const CHANNEL_STYLE: Record<string, string> = {
-  email: "bg-blue-500/15 text-blue-400",
+  email: "bg-tile text-ink-2",
   call: "bg-orange/15 text-orange",
   meeting: "bg-revenue/15 text-revenue",
-  note: "bg-tile text-ink-2 border border-outline",
-  wait: "bg-tile text-ink-3 border border-outline",
-  other: "bg-tile text-ink-3 border border-outline",
+  note: "bg-tile text-ink-2 border border-hairline",
+  wait: "bg-tile text-ink-3 border border-hairline",
+  other: "bg-tile text-ink-3 border border-hairline",
 };
 
 export default function NextMovePanel({
@@ -153,13 +153,13 @@ export default function NextMovePanel({
       : null;
 
   return (
-    <section className="bg-tile shadow-tile border-[1.5px] border-orange/25 rounded-card-lg overflow-hidden">
-      <div className="px-5 py-3 border-b border-outline flex items-center justify-between gap-3 flex-wrap">
+    <section className="bg-tile border-orange/25 rounded-panel-lg overflow-hidden">
+      <div className="px-5 py-3 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className={TYPE.cardTitle}>
             Next move <span className="text-ink-3 font-normal">· Reed</span>
           </h2>
-          <p className="text-[11px] text-ink-3">
+          <p className="text-xs text-ink-3">
             Grounded in {entityLabel}&rsquo;s giving, conversations, and research on file. Nothing sends
             without you.
           </p>
@@ -168,7 +168,7 @@ export default function NextMovePanel({
           type="button"
           onClick={generate}
           disabled={generating}
-          className="text-xs font-semibold px-4 py-2 rounded-full border-[1.5px] border-orange/40 bg-orange/10 text-orange hover:bg-orange/20 transition-colors disabled:opacity-60"
+          className="text-xs font-semibold px-4 py-2 rounded-full border-orange/40 bg-orange/10 text-orange hover:bg-orange/20 transition-colors disabled:opacity-60"
         >
           {generating ? "Thinking…" : suggestion ? "Refresh" : "Suggest next move"}
         </button>
@@ -187,19 +187,19 @@ export default function NextMovePanel({
         <div className="px-5 py-4 space-y-3">
           <div className="flex items-start gap-2 flex-wrap">
             <span
-              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize mt-0.5 ${CHANNEL_STYLE[suggestion.channel] ?? CHANNEL_STYLE.other}`}
+              className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize mt-0.5 ${CHANNEL_STYLE[suggestion.channel] ?? CHANNEL_STYLE.other}`}
             >
               {suggestion.channel}
             </span>
             <p className="text-sm font-medium text-ink-1 flex-1 min-w-[200px]">{suggestion.action}</p>
-            <span className="text-[11px] text-ink-3 whitespace-nowrap">
+            <span className="text-xs text-ink-3 whitespace-nowrap">
               {suggestion.dueInDays === 0 ? "today" : `in ${suggestion.dueInDays} day${suggestion.dueInDays === 1 ? "" : "s"}`}
             </span>
           </div>
           <p className="text-xs text-ink-3 leading-snug">{suggestion.rationale}</p>
 
           {suggestion.emailBody && (
-            <div className="bg-cream border-[1.5px] border-outline rounded-xl p-4">
+            <div className="bg-cream border-hairline rounded-panel p-4">
               {suggestion.emailSubject && (
                 <p className="text-xs font-semibold text-ink-1 mb-2">
                   <span className="text-ink-3 font-normal">Subject:</span> {suggestion.emailSubject}
@@ -226,7 +226,7 @@ export default function NextMovePanel({
               <button
                 type="button"
                 onClick={copyEmail}
-                className="text-xs font-semibold px-4 py-2 rounded-full border-[1.5px] border-outline bg-tile text-ink-2 hover:text-ink-1 hover:bg-[#EFE6D4] transition-colors"
+                className="text-xs font-semibold px-4 py-2 rounded-full border-hairline bg-tile text-ink-2 hover:text-ink-1 hover:bg-tile transition-colors"
               >
                 {copied ? "Copied ✓" : "Copy email"}
               </button>
@@ -234,7 +234,7 @@ export default function NextMovePanel({
             {mailto && (
               <a
                 href={mailto}
-                className="text-xs font-semibold px-4 py-2 rounded-full border-[1.5px] border-outline bg-tile text-ink-2 hover:text-ink-1 hover:bg-[#EFE6D4] transition-colors"
+                className="text-xs font-semibold px-4 py-2 rounded-full border-hairline bg-tile text-ink-2 hover:text-ink-1 hover:bg-tile transition-colors"
               >
                 Open in mail ↗
               </a>

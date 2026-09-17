@@ -43,6 +43,9 @@ const salesConfig = (): PipelineConfig => ({
     externalStageId: null,
     probabilityDefault: null,
     isActive: true,
+    // Seeded true on the pledged stage in every tenant
+    // (seed_pledged_stage_flag.MANUAL.sql); false everywhere else.
+    countsAsPledged: key === "pledged",
   })),
   fromConfig: true,
 });

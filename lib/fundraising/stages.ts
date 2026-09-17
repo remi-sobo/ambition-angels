@@ -10,6 +10,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * seeded rows), everything degrades to the legacy five-stage moves funnel, so
  * deploying this code ahead of the migration changes nothing.
  *
+ * NOTE: that fallback now also depends on fundraising_gift_tables.sql, which
+ * adds `counts_as_pledged`. The select below names the column, so against a
+ * database missing it the query errors and EVERY caller silently drops to the
+ * legacy funnel — the board included. It is applied in production; if you are
+ * pointing this at a database that predates it, apply that migration first.
+ *
  * For cheap "is this stage open/won/lost" checks in peripheral consumers, use
  * lib/fundraising/stage-sets.ts instead — it needs no query.
  */
@@ -26,6 +32,13 @@ export type PipelineStage = {
   externalStageId: string | null;
   probabilityDefault: number | null;
   isActive: boolean;
+  /**
+   * True when this OPEN stage means "the donor committed, the money has not
+   * landed" (specs/fundraising-gift-tables.md). Gift tables read this instead
+   * of hardcoding a 'pledged' key, so a tenant that renamed its stages still
+   * gets a working Collect card. Meaningless on won/lost/on_hold.
+   */
+  countsAsPledged: boolean;
 };
 
 export type PipelineOption = {
@@ -50,7 +63,14 @@ export const LEGACY_STAGES: PipelineStage[] = [
   { key: "solicit", label: "Solicitation", sortOrder: 4, stageType: "open", probabilityDefault: 75 },
   { key: "steward", label: "Stewardship", sortOrder: 5, stageType: "won", probabilityDefault: 100 },
   { key: "lost", label: "Lost", sortOrder: 6, stageType: "lost", probabilityDefault: 0 },
-].map((s) => ({ ...s, pipeline: "default", externalStageId: null, isActive: true })) as PipelineStage[];
+].map((s) => ({
+  ...s,
+  pipeline: "default",
+  externalStageId: null,
+  isActive: true,
+  // The legacy funnel predates the flag and has no pledged stage of its own.
+  countsAsPledged: false,
+})) as PipelineStage[];
 
 const LEGACY_PIPELINES: PipelineOption[] = [
   { key: "default", label: "Sales Pipeline", sortOrder: 0, isDefault: true },
@@ -82,7 +102,9 @@ export async function loadPipelineConfig(
       .order("sort_order");
     const stageQuery = supabase
       .from("pipeline_stages")
-      .select("pipeline, key, label, sort_order, stage_type, external_stage_id, probability_default, is_active")
+      .select(
+        "pipeline, key, label, sort_order, stage_type, external_stage_id, probability_default, is_active, counts_as_pledged",
+      )
       .eq("org_id", orgId)
       .order("sort_order");
     const [{ data: pipelines, error: pErr }, { data: stages, error: sErr }] =
@@ -105,6 +127,7 @@ export async function loadPipelineConfig(
         externalStageId: (s.external_stage_id as string | null) ?? null,
         probabilityDefault: (s.probability_default as number | null) ?? null,
         isActive: s.is_active !== false,
+        countsAsPledged: s.counts_as_pledged === true,
       })),
       fromConfig: true,
     };

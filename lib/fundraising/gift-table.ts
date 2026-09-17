@@ -959,8 +959,17 @@ function addDays(iso: string, n: number): string {
 
 // ── The verdict ─────────────────────────────────────────────────────────────
 
-const usd = (v: number): string =>
-  `$${Math.round(v).toLocaleString("en-US")}`;
+/**
+ * Gift-table money, to the dollar. The admin's general `money()` abbreviates
+ * ($420k), which is right for a dashboard tile and wrong here: a gift table is
+ * read against a workbook, and "$420k" can't be checked against "$420,000".
+ * Exported so the verdict sentence and the table itself can't disagree.
+ */
+export function formatGiftMoney(v: number): string {
+  return `$${Math.round(v).toLocaleString("en-US")}`;
+}
+
+const usd = formatGiftMoney;
 
 /**
  * One deterministic paragraph, no AI. It leads with unfilled slots rather

@@ -161,22 +161,25 @@ pipe as (
   returning org_id
 ),
 pipe_stages as (
+  -- counts_as_pledged marks the open stage meaning "committed, not yet
+  -- collected" (specs/fundraising-gift-tables.md). Set it in the seed so her
+  -- gift table's Collect card works without a follow-up data fix.
   insert into public.pipeline_stages
-    (org_id, pipeline, key, label, sort_order, stage_type, probability_default)
-  select distinct org_id, 'default', v.key, v.label, v.sort_order, v.stage_type, v.prob
+    (org_id, pipeline, key, label, sort_order, stage_type, probability_default, counts_as_pledged)
+  select distinct org_id, 'default', v.key, v.label, v.sort_order, v.stage_type, v.prob, v.pledged
   from pipe,
   (values
-    ('identified',            'Identified',                        1, 'open',    10),
-    ('researched',            'Researched',                        2, 'open',    20),
-    ('needs_appointment',     'Needs Appointment',                 3, 'open',    30),
-    ('appointment_scheduled', 'Appointment Scheduled',             4, 'open',    40),
-    ('meeting_complete',      'Meeting Complete / Ready for Ask',  5, 'open',    60),
-    ('ask_made',              'Ask Made',                          6, 'open',    75),
-    ('pledged',               'Pledged',                           7, 'open',    90),
-    ('closed_won',            'Closed Won',                        8, 'won',    100),
-    ('closed_lost',           'Closed Lost',                       9, 'lost',     0),
-    ('on_hold',               'On Hold',                          10, 'on_hold', null::int)
-  ) as v(key, label, sort_order, stage_type, prob)
+    ('identified',            'Identified',                        1, 'open',    10,        false),
+    ('researched',            'Researched',                        2, 'open',    20,        false),
+    ('needs_appointment',     'Needs Appointment',                 3, 'open',    30,        false),
+    ('appointment_scheduled', 'Appointment Scheduled',             4, 'open',    40,        false),
+    ('meeting_complete',      'Meeting Complete / Ready for Ask',  5, 'open',    60,        false),
+    ('ask_made',              'Ask Made',                          6, 'open',    75,        false),
+    ('pledged',               'Pledged',                           7, 'open',    90,        true),
+    ('closed_won',            'Closed Won',                        8, 'won',    100,        false),
+    ('closed_lost',           'Closed Lost',                       9, 'lost',     0,        false),
+    ('on_hold',               'On Hold',                          10, 'on_hold', null::int, false)
+  ) as v(key, label, sort_order, stage_type, prob, pledged)
   returning org_id
 ),
 progs as (

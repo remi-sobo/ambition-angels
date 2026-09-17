@@ -41,6 +41,84 @@ export async function POST(req: NextRequest) {
   const duplicate = (rows ?? []).find((r) => r.id === duplicateId);
   if (!primary || !duplicate) return NextResponse.json({ error: "Both constituents must exist" }, { status: 404 });
 
+  // 0) Gift-table placements go FIRST, and they are not a plain reassign.
+  //
+  //    fr_gift_table_placements.constituent_id is ON DELETE RESTRICT, so if
+  //    this route ever forgot them the final delete would fail — loudly, but
+  //    only after every other child table had already been reassigned, and
+  //    this route has no transaction. Handling them before anything else
+  //    means a failure here aborts while nothing has moved.
+  //
+  //    A straight UPDATE is not enough either: one placement per household
+  //    (or per unhouseholded person) per table is enforced by partial unique
+  //    indexes, so if BOTH constituents are placed on the same gift table the
+  //    reassign collides. The primary's placement wins and the duplicate's is
+  //    marked removed with a note naming the merge — the journey_enrollments
+  //    precedent, except the row is kept rather than deleted, because a
+  //    placement carries scores, a warm path and a why-note that someone
+  //    wrote down.
+  const { data: dupPlacements } = await supabase
+    .from("fr_gift_table_placements")
+    .select("id, gift_table_id")
+    .eq("constituent_id", duplicateId);
+  if (dupPlacements && dupPlacements.length > 0) {
+    const tableIds = dupPlacements.map((p) => p.gift_table_id as string);
+    const { data: primaryPlacements } = await supabase
+      .from("fr_gift_table_placements")
+      .select("gift_table_id")
+      .eq("constituent_id", primaryId)
+      .in("gift_table_id", tableIds)
+      .neq("status", "removed");
+    const taken = new Set((primaryPlacements ?? []).map((p) => p.gift_table_id as string));
+
+    const markRemoved = (id: string) =>
+      supabase
+        .from("fr_gift_table_placements")
+        .update({
+          constituent_id: primaryId,
+          status: "removed",
+          why_note: `Removed by a constituent merge into ${primaryId}. The surviving record already held this table's slot.`,
+        })
+        .eq("id", id);
+
+    for (const p of dupPlacements) {
+      const id = p.id as string;
+      let collides = taken.has(p.gift_table_id as string);
+      let { error } = collides
+        ? await markRemoved(id)
+        : await supabase
+            .from("fr_gift_table_placements")
+            .update({ constituent_id: primaryId })
+            .eq("id", id);
+
+      // The slot can also be held by a THIRD member of the primary's
+      // household: household_id is re-derived by trigger on this very update,
+      // so the collision only becomes visible when the partial unique index
+      // rejects it. Treat the index as the authority rather than trying to
+      // predict every shape.
+      if (error?.code === "23505" && !collides) {
+        collides = true;
+        ({ error } = await markRemoved(id));
+      }
+      if (error) {
+        console.error("[merge] gift table placement reassign failed:", error.message);
+        return NextResponse.json(
+          { error: "Failed reassigning gift table placements; nothing was changed." },
+          { status: 500 },
+        );
+      }
+      await audit(req, {
+        action: collides
+          ? "fundraising.gift_table_placement.merged_removed"
+          : "fundraising.gift_table_placement.merged",
+        entityType: "fr_gift_table_placement",
+        entityId: p.id as string,
+        before: { constituent_id: duplicateId },
+        after: { constituent_id: primaryId, ...(collides ? { status: "removed" } : {}) },
+      });
+    }
+  }
+
   // 1) Reassign child records by constituent_id. Abort before deleting if any
   //    reassignment fails, so a partial merge can't strand the donor link.
   for (const table of CHILD_TABLES) {

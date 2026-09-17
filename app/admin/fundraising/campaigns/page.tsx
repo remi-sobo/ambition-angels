@@ -9,6 +9,11 @@ import {
   NewAppealForm,
   BulkAttributeForm,
 } from "./_components/CampaignControls";
+import NewGiftTableForm from "./_components/GiftTableControls";
+import GiftTablesSection, {
+  type GiftTableRow,
+  type GiftLevelRow,
+} from "./_components/GiftTablesSection";
 
 // Campaigns — the umbrella axis of three-axis attribution (campaign /
 // fund / appeal, modules/03-fundraising.md). Every gift should carry a
@@ -27,7 +32,7 @@ export default async function CampaignsPage() {
     );
   }
   const supabase = createServerSupabase();
-  const [campaignsRes, appealsRes, giftsRes, unattributedRes] = await Promise.all([
+  const [campaignsRes, appealsRes, giftsRes, unattributedRes, giftTablesRes, giftLevelsRes] = await Promise.all([
     supabase
       .from("campaigns")
       .select("id, name, goal, starts_on, ends_on")
@@ -41,6 +46,21 @@ export default async function CampaignsPage() {
       .select("id", { count: "exact", head: true })
       .eq("org_id", ctx.orgId)
       .is("campaign_id", null),
+    // Gift tables live INSIDE Campaigns (spec Open decision 1) rather than
+    // behind a sixth fundraising tab. Archived tables stay out of the default
+    // list; closed ones stay visible, because plan vs actual is the point.
+    supabase
+      .from("fr_gift_tables")
+      .select("id, name, starts_on, ends_on, status, target, multiplier, goal_round_to, coverage_basis, default_term_years, monthly_modeled_years")
+      .eq("org_id", ctx.orgId)
+      .neq("status", "archived")
+      .order("starts_on", { ascending: false })
+      .limit(50),
+    supabase
+      .from("fr_gift_table_levels")
+      .select("gift_table_id, amount, cadence, term_years, gifts_needed, prospects_per_gift")
+      .eq("org_id", ctx.orgId)
+      .limit(1000),
   ]);
 
   const campaigns = (campaignsRes.data ?? []) as Array<{
@@ -90,6 +110,12 @@ export default async function CampaignsPage() {
           muted={unattributed === 0}
         />
       </div>
+
+      <GiftTablesSection
+        tables={(giftTablesRes.data ?? []) as GiftTableRow[]}
+        levels={(giftLevelsRes.data ?? []) as GiftLevelRow[]}
+        action={<NewGiftTableForm />}
+      />
 
       {unattributed > 0 && campaigns.length > 0 && (
         <div className="mb-8">

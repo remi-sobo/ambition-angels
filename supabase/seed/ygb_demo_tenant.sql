@@ -84,20 +84,24 @@ insert into public.pipelines (id, org_id, key, label, sort_order, is_default)
 values (md5('ygb:pipeline:default')::uuid, md5('ygb:org')::uuid, 'default', 'Pipeline', 0, true)
 on conflict do nothing;
 
-insert into public.pipeline_stages (id, org_id, pipeline, key, label, sort_order, stage_type, probability_default)
-select md5('ygb:pstage:'||v.key)::uuid, md5('ygb:org')::uuid, 'default', v.key, v.label, v.sort_order, v.stage_type, v.prob
+-- counts_as_pledged marks the open stage that means "committed, not yet
+-- collected" (specs/fundraising-gift-tables.md). Gift tables read the flag
+-- instead of hardcoding the 'pledged' key, so a tenant seeded from this
+-- template gets working Collect work cards from day one.
+insert into public.pipeline_stages (id, org_id, pipeline, key, label, sort_order, stage_type, probability_default, counts_as_pledged)
+select md5('ygb:pstage:'||v.key)::uuid, md5('ygb:org')::uuid, 'default', v.key, v.label, v.sort_order, v.stage_type, v.prob, v.pledged
 from (values
-  ('identified',            'Identified',                        1, 'open',    10),
-  ('researched',            'Researched',                        2, 'open',    20),
-  ('needs_appointment',     'Needs Appointment',                 3, 'open',    30),
-  ('appointment_scheduled', 'Appointment Scheduled',             4, 'open',    40),
-  ('meeting_complete',      'Meeting Complete / Ready for Ask',  5, 'open',    60),
-  ('ask_made',              'Ask Made',                          6, 'open',    75),
-  ('pledged',               'Pledged',                           7, 'open',    90),
-  ('closed_won',            'Closed Won',                        8, 'won',    100),
-  ('closed_lost',           'Closed Lost',                       9, 'lost',     0),
-  ('on_hold',               'On Hold',                          10, 'on_hold', null::int)
-) as v(key, label, sort_order, stage_type, prob)
+  ('identified',            'Identified',                        1, 'open',    10,          false),
+  ('researched',            'Researched',                        2, 'open',    20,          false),
+  ('needs_appointment',     'Needs Appointment',                 3, 'open',    30,          false),
+  ('appointment_scheduled', 'Appointment Scheduled',             4, 'open',    40,          false),
+  ('meeting_complete',      'Meeting Complete / Ready for Ask',  5, 'open',    60,          false),
+  ('ask_made',              'Ask Made',                          6, 'open',    75,          false),
+  ('pledged',               'Pledged',                           7, 'open',    90,          true),
+  ('closed_won',            'Closed Won',                        8, 'won',    100,          false),
+  ('closed_lost',           'Closed Lost',                       9, 'lost',     0,          false),
+  ('on_hold',               'On Hold',                          10, 'on_hold', null::int,   false)
+) as v(key, label, sort_order, stage_type, prob, pledged)
 on conflict do nothing;
 
 insert into public.programs (id, org_id, name, description, active)

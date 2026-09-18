@@ -9,7 +9,6 @@ import { TYPE } from "@/lib/admin/typeScale";
 import {
   Alert,
   Badge,
-  ButtonLink,
   Card,
   PageHeader,
   PageSection,
@@ -106,6 +105,12 @@ export default async function GiftTablePage({ params }: { params: { id: string }
     raw && typeof raw === "object" && Array.isArray((raw as ClosedSnapshot).levels)
       ? (raw as ClosedSnapshot)
       : null;
+
+  // A closed or archived table is frozen: the edit route rejects every write
+  // with a 409 so the snapshot cannot disagree with the rows it was taken
+  // from. The page has to agree, or it offers controls that only fail.
+  const frozen = table.status === "closed" || table.status === "archived";
+  const canEdit = canWrite && !frozen;
 
   const ctxValue = valueContext(table);
 
@@ -282,14 +287,17 @@ export default async function GiftTablePage({ params }: { params: { id: string }
         }
         actions={
           <div className="flex items-center gap-2">
-            {/* Export is a READ, so it is not gated on write permission: a
-                board member with read access is exactly who needs the file. */}
-            <ButtonLink
+            {/* A plain anchor, NOT next/link, and the same shape every other
+                export in the app uses. A client Link prefetches on hover and
+                intercepts the click, which here would run the pool queries and
+                write an export audit row for a file nobody ever receives. */}
+            <a
               href={`/api/admin/fundraising/gift-tables/${table.id}/export`}
-              size="sm"
+              download
+              className="inline-flex items-center justify-center rounded-control text-[13px] font-semibold h-8 px-3 bg-surface text-ink-1 border border-hairline hover:bg-tile hover:border-outline transition-colors"
             >
               Export workbook
-            </ButtonLink>
+            </a>
             {canWrite ? (
               <>
                 <StatusControl id={table.id} status={table.status} />
@@ -446,7 +454,7 @@ export default async function GiftTablePage({ params }: { params: { id: string }
                             needed={s.needed}
                             placements={viewsByLevel.get(l.id) ?? []}
                             owners={owners}
-                            canWrite={canWrite}
+                            canWrite={canEdit}
                           />
                         </td>
                         <td
@@ -496,11 +504,11 @@ export default async function GiftTablePage({ params }: { params: { id: string }
 
       {matches.length > 0 && (
         <PageSection title="Possible matches">
-          <PossibleMatches tableId={table.id} matches={matches} canWrite={canWrite} />
+          <PossibleMatches tableId={table.id} matches={matches} canWrite={canEdit} />
         </PageSection>
       )}
 
-      {canWrite && (
+      {canEdit && (
         <>
           <PageSection title="Edit the levels">
             <LevelsEditor

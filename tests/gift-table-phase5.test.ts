@@ -314,3 +314,40 @@ describe("archived tables are hidden, never unreachable", () => {
     expect(page).not.toContain('.neq("status", "closed")');
   });
 });
+
+describe("the export link is a download, not a client navigation", () => {
+  const page = read("app/admin/fundraising/campaigns/gift-tables/[id]/page.tsx");
+
+  test("it is a plain anchor, like every other export in the app", () => {
+    // next/link prefetches on hover and intercepts the click. On a route that
+    // returns an attachment that means the pool queries run and an export
+    // audit row is written for a file nobody ever receives, and the click may
+    // never produce a download at all.
+    expect(page).toMatch(/<a\s+href=\{`\/api\/admin\/fundraising\/gift-tables\/\$\{table\.id\}\/export`\}/);
+    expect(page).not.toMatch(/<ButtonLink[^>]*\/export/);
+    expect(page).not.toMatch(/<Link[^>]*\/export/);
+  });
+});
+
+describe("a closed table offers nothing that would only 409", () => {
+  const page = read("app/admin/fundraising/campaigns/gift-tables/[id]/page.tsx");
+
+  test("frozen covers both closed and archived", () => {
+    expect(page).toContain('const frozen = table.status === "closed" || table.status === "archived"');
+    expect(page).toContain("const canEdit = canWrite && !frozen");
+  });
+
+  test("every write surface is gated on canEdit, not canWrite", () => {
+    // The edit route rejects writes to a closed table so its snapshot cannot
+    // disagree with the rows it came from. A page that still renders the
+    // editors just hands the user a button that fails.
+    const editors = page.slice(page.indexOf("const canEdit"));
+    expect(editors).toMatch(/<PossibleMatches[\s\S]*?canWrite=\{canEdit\}/);
+    expect(editors).toContain("{canEdit && (");
+    expect(editors).toContain("canWrite={canEdit}");
+  });
+
+  test("but the lifecycle controls stay, or a closed table could never reopen", () => {
+    expect(page).toContain("<CloseControls id={table.id} status={table.status} />");
+  });
+});

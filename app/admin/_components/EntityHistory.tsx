@@ -31,9 +31,24 @@ function actionLabel(action: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-// Compact "what changed" summary from the recorded patch. Scalars render as
-// field: value; nested values (checklist, agenda) collapse to the field name.
-function changeSummary(after: Record<string, unknown> | null): string {
+const short = (v: unknown): string => {
+  const s = String(v);
+  return s.length > 60 ? s.slice(0, 57) + "…" : s;
+};
+
+/**
+ * Compact "what changed" summary from the recorded patch. Scalars render as
+ * field: value; nested values (checklist, agenda) collapse to the field name.
+ *
+ * Where the API recorded a `before`, the field renders as an actual change —
+ * "capacity score: 5 → 2" — because the prior value is usually the part
+ * somebody is trying to reconstruct. A field that has no recorded before, or
+ * whose before matches, falls back to the plain form.
+ */
+function changeSummary(
+  after: Record<string, unknown> | null,
+  before?: Record<string, unknown> | null,
+): string {
   if (!after) return "";
   const parts: string[] = [];
   for (const [key, value] of Object.entries(after)) {
@@ -42,11 +57,18 @@ function changeSummary(after: Record<string, unknown> | null): string {
       break;
     }
     const label = key.replace(/_/g, " ");
-    if (value === null || value === "") parts.push(`${label} cleared`);
-    else if (typeof value === "object") parts.push(label);
-    else {
-      const s = String(value);
-      parts.push(`${label}: ${s.length > 60 ? s.slice(0, 57) + "…" : s}`);
+    const prior = before ? before[key] : undefined;
+    const hadPrior =
+      prior !== undefined && prior !== null && prior !== "" && typeof prior !== "object";
+
+    if (value === null || value === "") {
+      parts.push(hadPrior ? `${label} cleared (was ${short(prior)})` : `${label} cleared`);
+    } else if (typeof value === "object") {
+      parts.push(label);
+    } else if (hadPrior && String(prior) !== String(value)) {
+      parts.push(`${label}: ${short(prior)} → ${short(value)}`);
+    } else {
+      parts.push(`${label}: ${short(value)}`);
     }
   }
   return parts.join(" · ");
@@ -75,8 +97,10 @@ export function EntityHistory({ events }: { events: HistoryEvent[] }) {
               <div className="min-w-0 flex-1">
                 <span className="text-ink-1 font-medium">{actionLabel(e.action)}</span>
                 {e.actorName && <span className="text-xs text-ink-3">, {e.actorName}</span>}
-                {changeSummary(e.after) && (
-                  <p className="text-xs text-ink-2 mt-0.5 break-words">{changeSummary(e.after)}</p>
+                {changeSummary(e.after, e.before) && (
+                  <p className="text-xs text-ink-2 mt-0.5 break-words">
+                    {changeSummary(e.after, e.before)}
+                  </p>
                 )}
               </div>
             </li>

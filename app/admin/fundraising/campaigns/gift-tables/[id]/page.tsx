@@ -26,6 +26,7 @@ import {
   placementTarget,
   possibleMatches,
   slotNames,
+  workGroups,
   stageRoles,
   suggestAffinity,
   suggestCapacity,
@@ -41,6 +42,7 @@ import {
 import { GiftTableSettings, LevelsEditor, StatusControl } from "./_components/GiftTableEditor";
 import LevelDrawer, { type PlacementView } from "./_components/LevelDrawer";
 import PossibleMatches, { type MatchRow } from "./_components/PossibleMatches";
+import WorkCards from "./_components/WorkCards";
 
 /**
  * One gift table (specs/fundraising-gift-tables.md, Phase 2).
@@ -403,6 +405,43 @@ export default async function GiftTablePage({ params }: { params: { id: string }
     reason: m.reason,
   }));
 
+  // Work the table. Only an active table produces any: workGroups() returns
+  // empty for every other status, so a draft puts nothing in anyone's queue.
+  const { data: duePledges } = table.status === "active"
+    ? await supabase
+        .from("pledge_payments")
+        .select("id, due_date, expected_amount, pledge:pledges ( constituent_id )")
+        .eq("org_id", ctx.orgId)
+        .eq("status", "scheduled")
+        .lte("due_date", new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10))
+        .limit(100)
+    : { data: [] as unknown[] };
+
+  const placedSet = new Set(placements.map((p) => p.constituentId));
+  const work = workGroups({
+    table,
+    slots,
+    placements,
+    roles,
+    pledgeDue: ((duePledges ?? []) as unknown as Array<{
+      id: string;
+      due_date: string;
+      expected_amount: number;
+      pledge: { constituent_id: string | null } | null;
+    }>)
+      // Only money owed by someone on THIS table. A pledge from a household
+      // nobody placed is not this table's work.
+      .filter((p) => p.pledge?.constituent_id && placedSet.has(p.pledge.constituent_id))
+      .map((p) => ({
+        id: p.id,
+        label: nameById.get(p.pledge!.constituent_id as string) ?? "A placed donor",
+        amount: Number(p.expected_amount),
+        dueOn: p.due_date,
+      })),
+    renewals: [],
+    today,
+  });
+
   const verdictText = levels.length
     ? verdict({ table, shape, goal, gaps: g, uncreditedPledged: null })
     : "No levels yet. A gift table starts with the shape of the ask: how many gifts, at what size.";
@@ -441,6 +480,12 @@ export default async function GiftTablePage({ params }: { params: { id: string }
           </p>
         )}
       </Card>
+
+      {table.status === "active" && (
+        <div className="mb-6">
+          <WorkCards work={work} />
+        </div>
+      )}
 
       {/* Two numbers, labelled, never merged. Overshoot is normal: gifts
           arrive in sensible bands, not in amounts that sum to a target. */}

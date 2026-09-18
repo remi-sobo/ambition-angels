@@ -54,24 +54,43 @@ const STATUS_TONE: Record<string, "neutral" | "success" | "accent"> = {
   draft: "neutral",
   active: "success",
   closed: "accent",
+  archived: "neutral",
 };
 
 export default function GiftTablesSection({
   tables,
   levels,
   action,
+  showArchived = false,
 }: {
   tables: GiftTableRow[];
   levels: GiftLevelRow[];
   action?: ReactNode;
+  /** Viewing the archive rather than the working list. */
+  showArchived?: boolean;
 }) {
   return (
-    <PageSection title="Gift tables" action={action}>
+    <PageSection
+      title={showArchived ? "Archived gift tables" : "Gift tables"}
+      action={action}
+    >
+      {/* Archived tables are hidden, never deleted. The way back is a link,
+          not a setting somebody has to know exists. */}
+      <p className={`${TYPE.metadata} mb-3`}>
+        <Link
+          href={showArchived ? "/admin/fundraising/campaigns" : "/admin/fundraising/campaigns?archived=1"}
+          className="hover:text-orange transition-colors"
+        >
+          {showArchived ? "Back to the working list" : "Show archived tables"}
+        </Link>
+      </p>
+
       {tables.length === 0 ? (
         <Card>
           <p className={TYPE.bodyMuted}>
-            No gift tables yet. A gift table turns a target into a shape: how many gifts, at what
-            size. Then into the names who could give them.
+            {showArchived
+              ? "Nothing archived. A table is archived after it is closed, when it should stop appearing in the list."
+              : "No gift tables yet. A gift table turns a target into a shape: how many gifts, at what size. Then into the names who could give them."}
           </p>
         </Card>
       ) : (

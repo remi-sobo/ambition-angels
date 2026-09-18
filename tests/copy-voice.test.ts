@@ -29,6 +29,9 @@ const FILES = [
   "lib/fundraising/grants.ts",
   "lib/fundraising/enroll.ts",
   "lib/fundraising/plan.ts",
+  // The workbook's copy leaves the building entirely — a funder or a board
+  // member reads it with nobody to ask what it meant. It gets the same gate.
+  "lib/fundraising/gift-table-workbook.ts",
   "lib/fundraising/grantContacts.ts",
   "lib/comms/settings.ts",
   "lib/meetings/dossier.ts",

@@ -14,11 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { resolveConstituent } from "@/lib/fundraising/constituent-resolve";
-import {
-  loadPipelineConfig,
-  stagesForPipeline,
-  firstOpenStageKey,
-} from "@/lib/fundraising/stages";
+import { createOpportunity } from "@/lib/fundraising/create-opportunity";
 import { pushOpportunityToHubSpot } from "@/lib/hubspot/sync-out";
 import { audit } from "@/lib/audit";
 
@@ -51,10 +47,6 @@ export async function POST(req: NextRequest) {
   const supabase = createServerSupabase();
   const by = await getAdminUser();
 
-  // Promoted prospects open at the Sales pipeline's first stage, from config.
-  const config = await loadPipelineConfig(supabase, ctx.orgId);
-  const entryStage = firstOpenStageKey(stagesForPipeline(config, "default"));
-
   const { data: prospects } = await supabase
     .from("fr_prospects")
     .select("id, name, status, constituent_id, opportunity_id")
@@ -79,22 +71,18 @@ export async function POST(req: NextRequest) {
     }
     const constituentId = resolved.constituentId;
 
-    const { data: opp, error: oppErr } = await supabase
-      .from("opportunities")
-      .insert({
-        org_id: ctx.orgId,
-        constituent_id: constituentId,
-        stage: entryStage,
-        pipeline: "default",
-        owner: by ?? null,
-      })
-      .select("id")
-      .single();
-    if (oppErr || !opp) {
-      console.error("[prospects/promote] opportunity insert failed:", oppErr?.message);
-      results.push({ id: p.id, error: "Could not open an opportunity" });
+    // One shared create path for every Bloom-opened ask: the default
+    // pipeline from pipelines.is_default and its first open stage
+    // (lib/fundraising/create-opportunity.ts).
+    const created = await createOpportunity(supabase, ctx.orgId, {
+      constituentId,
+      owner: by ?? null,
+    });
+    if ("error" in created) {
+      results.push({ id: p.id, error: created.error });
       continue;
     }
+    const opp = { id: created.opportunityId };
 
     await supabase
       .from("fr_prospects")
@@ -110,7 +98,12 @@ export async function POST(req: NextRequest) {
       action: "fundraising.prospect.promote",
       entityType: "opportunity",
       entityId: opp.id,
-      after: { prospect_id: p.id, constituent_id: constituentId, stage: entryStage },
+      after: {
+        prospect_id: p.id,
+        constituent_id: constituentId,
+        pipeline: created.pipeline,
+        stage: created.stage,
+      },
     });
     await pushOpportunityToHubSpot(opp.id).catch(() => {});
 

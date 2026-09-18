@@ -10,13 +10,12 @@ import { constituentName } from "@/lib/fundraising/display";
 import {
   rollupStrategy,
   statusWord,
-  matchGiftLevels,
   type PlanOppRow,
   type PlanGrantRow,
 } from "@/lib/fundraising/plan";
 import { STAGE_KEY_LABELS, isWonStage } from "@/lib/fundraising/stage-sets";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
-import { EditStrategyPanel, GiftTableEditor, AssignButton } from "../_components/PlanControls";
+import { EditStrategyPanel, AssignButton } from "../_components/PlanControls";
 
 // One strategy of the Fundraising Plan: its gift-range table (the arithmetic
 // underneath the goal, matched against real asks), the spine objects filed
@@ -81,7 +80,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
     "id, name, stage, ask_amount, expected_close, plan_strategy_id, " +
     "constituent:constituents ( id, type, first_name, last_name, org_name )";
 
-  const [linkedOppsRes, linkedGrantsRes, linkedCampaignsRes, levelsRes, unassignedOppsRes, unassignedGrantsRes, unassignedCampaignsRes] =
+  const [linkedOppsRes, linkedGrantsRes, linkedCampaignsRes, unassignedOppsRes, unassignedGrantsRes, unassignedCampaignsRes] =
     await Promise.all([
       supabase.from("opportunities").select(oppSelect).eq("org_id", ctx.orgId).eq("plan_strategy_id", strategy.id).limit(500),
       supabase
@@ -91,11 +90,6 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
         .eq("plan_strategy_id", strategy.id)
         .limit(200),
       supabase.from("campaigns").select("id, name").eq("org_id", ctx.orgId).eq("plan_strategy_id", strategy.id).limit(100),
-      supabase
-        .from("fr_plan_gift_levels")
-        .select("amount, count_needed, sort")
-        .eq("strategy_id", strategy.id)
-        .order("sort", { ascending: true }),
       // Pickers: value nobody has filed under any strategy yet.
       supabase
         .from("opportunities")
@@ -119,10 +113,6 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
   const linkedOpps = (linkedOppsRes.data ?? []) as unknown as LinkedOpp[];
   const linkedGrants = (linkedGrantsRes.data ?? []) as unknown as LinkedGrant[];
   const linkedCampaigns = (linkedCampaignsRes.data ?? []) as { id: string; name: string }[];
-  const levels = ((levelsRes.data ?? []) as { amount: number; count_needed: number }[]).map((l) => ({
-    amount: Number(l.amount),
-    count_needed: l.count_needed,
-  }));
   const unassignedOpps = (unassignedOppsRes.data ?? []) as unknown as LinkedOpp[];
   const unassignedGrants = (unassignedGrantsRes.data ?? []) as unknown as LinkedGrant[];
   const unassignedCampaigns = (unassignedCampaignsRes.data ?? []) as { id: string; name: string }[];
@@ -141,8 +131,6 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
   }
 
   const rollup = rollupStrategy({ goal, planYear: year, opps: linkedOpps, grants: linkedGrants, campaignGifts });
-  const matched = matchGiftLevels(levels, linkedOpps, year);
-  const tableCovers = levels.reduce((s, l) => s + l.amount * l.count_needed, 0);
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
@@ -188,53 +176,22 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
         </section>
       )}
 
+      {/* The v1 gift-range table lived here: gift size x how many, matched
+          against linked asks. It is retired. Gift tables are their own
+          surface now, with a window, a coverage basis, real names placed at
+          each level and the work that follows
+          (specs/fundraising-gift-tables.md). */}
       <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden mb-8">
-        <div className="px-5 py-3 border-b border-hairline">
-          <h2 className={TYPE.cardTitle}>The arithmetic underneath</h2>
-          <p className="text-xs text-ink-3">
-            Gift size × how many, checked against real asks. Identified counts open linked asks at each
-            level; committed counts won ones. The generated table is a proposal. Edit it.
-          </p>
-        </div>
-        {matched.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[520px]">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-wider text-ink-3">
-                  <th className="px-5 py-2 font-semibold">Gift size</th>
-                  <th className="px-3 py-2 font-semibold text-right">How many</th>
-                  <th className="px-3 py-2 font-semibold text-right">Adds up to</th>
-                  <th className="px-3 py-2 font-semibold text-right">Identified</th>
-                  <th className="px-5 py-2 font-semibold text-right">Committed</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-hairline [font-variant-numeric:tabular-nums]">
-                {matched.map((l) => (
-                  <tr key={l.amount} className={l.committed >= l.count_needed ? "text-ink-3" : undefined}>
-                    <td className="px-5 py-2.5 font-medium text-ink-1">{money(l.amount)}</td>
-                    <td className="px-3 py-2.5 text-right">{l.count_needed}</td>
-                    <td className="px-3 py-2.5 text-right">{money(l.amount * l.count_needed)}</td>
-                    <td className="px-3 py-2.5 text-right">{l.identified || "—"}</td>
-                    <td className="px-5 py-2.5 text-right">
-                      {l.committed || "—"}
-                      {l.committed >= l.count_needed && l.count_needed > 0 ? " ✓" : ""}
-                    </td>
-                  </tr>
-                ))}
-                <tr className="font-semibold text-ink-1">
-                  <td className="px-5 py-2.5">Table covers</td>
-                  <td className="px-3 py-2.5" />
-                  <td className="px-3 py-2.5 text-right">{money(tableCovers)}</td>
-                  <td className="px-3 py-2.5 text-right text-xs font-normal text-ink-3" colSpan={2}>
-                    {tableCovers >= goal ? "covers the goal" : `${money(goal - tableCovers)} short of the goal`}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
         <div className="px-5 py-4">
-          <GiftTableEditor strategyId={strategy.id} goal={goal} initial={levels} />
+          <h2 className={TYPE.cardTitle}>The arithmetic underneath</h2>
+          <p className="text-sm text-ink-2 mt-1">
+            Gift tables moved to Campaigns, where a table carries its own window, its coverage
+            basis, and the real names placed at each level.{" "}
+            <Link href="/admin/fundraising/campaigns" className="text-orange hover:underline">
+              Open Campaigns
+            </Link>
+            .
+          </p>
         </div>
       </section>
 

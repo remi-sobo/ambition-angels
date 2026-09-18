@@ -2,8 +2,6 @@ import { describe, expect, test } from "vitest";
 import {
   rollupStrategy,
   statusWord,
-  generateGiftLevels,
-  matchGiftLevels,
   upcomingAskMoments,
   groupByMonth,
   addDaysISO,
@@ -89,70 +87,6 @@ describe("statusWord", () => {
   });
 });
 
-describe("generateGiftLevels", () => {
-  test("descends, uses whole counts, and always covers the goal", () => {
-    for (const goal of [1000, 24000, 120000, 199245, 1_000_000]) {
-      const levels = generateGiftLevels(goal);
-      expect(levels.length).toBeGreaterThan(0);
-      for (let i = 1; i < levels.length; i++) {
-        expect(levels[i].amount).toBeLessThan(levels[i - 1].amount);
-      }
-      for (const l of levels) {
-        expect(l.count_needed).toBeGreaterThanOrEqual(1);
-        expect(Number.isInteger(l.count_needed)).toBe(true);
-        expect(l.amount).toBeGreaterThanOrEqual(250);
-      }
-      const covered = levels.reduce((s, l) => s + l.amount * l.count_needed, 0);
-      expect(covered).toBeGreaterThanOrEqual(goal);
-    }
-  });
-
-  test("lead gift is a nice figure near 20% of the goal", () => {
-    const levels = generateGiftLevels(120000);
-    expect(levels[0].amount).toBe(25000);
-    expect(levels[0].count_needed).toBe(1);
-  });
-
-  test("empty for a zero goal", () => {
-    expect(generateGiftLevels(0)).toEqual([]);
-  });
-});
-
-describe("matchGiftLevels", () => {
-  const levels = [
-    { amount: 10000, count_needed: 1 },
-    { amount: 5000, count_needed: 2 },
-    { amount: 2500, count_needed: 4 },
-  ];
-
-  test("assigns each opp to the highest level its ask reaches", () => {
-    const matched = matchGiftLevels(
-      levels,
-      [
-        opp({ stage: "ask_made", ask_amount: 12000 }), // → 10k, identified
-        opp({ stage: "closed_won", ask_amount: 8000 }), // → 5k, committed
-        opp({ stage: "cultivate", ask_amount: 2500 }), // → 2.5k, identified
-        opp({ stage: "ask_made", ask_amount: 100 }), // under the base — off the table
-        opp({ stage: "closed_lost", ask_amount: 9999 }), // lost — nowhere
-      ],
-      2026
-    );
-    expect(matched.map((l) => l.amount)).toEqual([10000, 5000, 2500]);
-    expect(matched[0].identified).toBe(1);
-    expect(matched[0].committed).toBe(0);
-    expect(matched[1].committed).toBe(1);
-    expect(matched[2].identified).toBe(1);
-  });
-
-  test("respects the plan year", () => {
-    const matched = matchGiftLevels(
-      levels,
-      [opp({ stage: "closed_won", ask_amount: 10000, expected_close: "2025-11-01" })],
-      2026
-    );
-    expect(matched[0].committed).toBe(0);
-  });
-});
 
 describe("upcomingAskMoments", () => {
   const moment = (date: string, label = "x"): AskMoment => ({

@@ -19,9 +19,10 @@ const isISODate = (v: unknown): v is string =>
 
 const BASES = ["window", "annual", "full_term"] as const;
 
-/** Statuses Phase 2 can set. `closed` writes a plan-vs-actual snapshot and
- *  `archived` hides the table — both ship in Phase 5, so accepting them now
- *  would leave a closed table with no snapshot and no way back. */
+/** Statuses this route can set. `closed` and `archived` are NOT among them:
+ *  closing writes a plan-vs-actual snapshot and archiving requires a closed
+ *  table, so both go through POST [id]/close, which can do it atomically. A
+ *  plain PATCH here would leave a closed table with no snapshot. */
 const SETTABLE_STATUS = ["draft", "active"] as const;
 
 const money = (v: number): number => Math.round(v * 100) / 100;
@@ -123,7 +124,7 @@ function tableFields(body: Fields): { fields: Fields } | { error: string } {
       return {
         error:
           body.status === "closed" || body.status === "archived"
-            ? "Closing and archiving a table ship with the close snapshot"
+            ? "Close and archive a table from the table itself, so its result is recorded"
             : "Status must be draft or active",
       };
     }
@@ -210,11 +211,12 @@ export async function PATCH(req: NextRequest) {
   }) | null;
   if (!before) return NextResponse.json({ error: "Gift table not found" }, { status: 404 });
 
-  // A closed or archived table is frozen; reopening ships with the close
-  // snapshot, so don't let an edit quietly resurrect one.
+  // A closed or archived table is frozen. Editing one would change the
+  // numbers its snapshot was taken against, so the snapshot and the table
+  // would then disagree about the same window.
   if (before.status === "closed" || before.status === "archived") {
     return NextResponse.json(
-      { error: "This table is closed. Reopening ships with the close snapshot." },
+      { error: "This table is closed. Reopen it before editing." },
       { status: 409 },
     );
   }

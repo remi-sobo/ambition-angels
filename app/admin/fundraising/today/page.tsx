@@ -15,6 +15,7 @@ import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 import { fetchAskMoments } from "@/lib/fundraising/plan-moments";
 import type { AskMoment } from "@/lib/fundraising/plan";
 import AckQueue from "../acknowledgments/AckQueue";
+import { TodayGiftTableRow } from "../campaigns/gift-tables/[id]/_components/WorkCards";
 
 // Today's Fundraising Moves (Phase 2) — the operator home screen. Answers "who
 // needs me today," assembled deterministically from the spine (opportunities +
@@ -61,6 +62,23 @@ const addDays = (iso: string, n: number) => {
   return d.toISOString().slice(0, 10);
 };
 
+type GiftTableMoveRow = {
+  id: string;
+  next_step: string | null;
+  next_step_due: string;
+  // Its own shape: this select asks for do_not_contact, which the page's
+  // shared ConstituentLite does not carry.
+  constituent: {
+    id: string;
+    type: string;
+    first_name: string | null;
+    last_name: string | null;
+    org_name: string | null;
+    do_not_contact: boolean;
+  } | null;
+  gift_table: { id: string; name: string; status: string } | null;
+};
+
 const oppName = (o: OppRow) => o.name ?? (o.constituent ? constituentName(o.constituent) : "Unknown");
 const profileHref = (c: ConstituentLite) => (c ? `/admin/fundraising/donors/${c.id}` : "/admin/fundraising");
 
@@ -90,7 +108,8 @@ export default async function TodaysMovesPage() {
     "id, amount, gift_date, acknowledgment_status, " +
     "constituent:constituents ( id, type, first_name, last_name, org_name )";
 
-  const [overdueRes, closingRes, unownedRes, acksRes, recentRes, askMoments] = await Promise.all([
+  const [overdueRes, closingRes, unownedRes, acksRes, recentRes, askMoments, giftTableRes] =
+    await Promise.all([
     // Overdue next steps on open asks.
     supabase
       .from("opportunities")
@@ -143,6 +162,24 @@ export default async function TodaysMovesPage() {
     // deadlines, pledge installments (specs/fundraising-plan.md). Grants and
     // pledges have no other seat on this page.
     fetchAskMoments(supabase, ctx.orgId, today, 7),
+    // Gift-table next steps, from ACTIVE tables only. A draft table feeds
+    // nothing, and a closed one stops creating work — otherwise a finished
+    // window keeps nagging from this queue (specs/fundraising-gift-tables.md,
+    // "Zombie work").
+    supabase
+      .from("fr_gift_table_placements")
+      .select(
+        "id, next_step, next_step_due, " +
+          "constituent:constituents ( id, type, first_name, last_name, org_name, do_not_contact ), " +
+          "gift_table:fr_gift_tables!inner ( id, name, status )",
+      )
+      .eq("org_id", ctx.orgId)
+      .eq("gift_table.status", "active")
+      .not("next_step_due", "is", null)
+      .lte("next_step_due", addDays(today, 7))
+      .not("status", "in", "(declined,removed)")
+      .order("next_step_due", { ascending: true })
+      .limit(50),
   ]);
 
   const overdue = (overdueRes.data ?? []) as unknown as OppRow[];
@@ -150,6 +187,11 @@ export default async function TodaysMovesPage() {
   const unowned = (unownedRes.data ?? []) as unknown as OppRow[];
   const acks = (acksRes.data ?? []) as unknown as GiftRow[];
   const recent = (recentRes.data ?? []) as unknown as GiftRow[];
+  // A donor who has since gone do-not-contact drops out: their money still
+  // counts on the table, but this queue is contact.
+  const giftTableMoves = ((giftTableRes.data ?? []) as unknown as GiftTableMoveRow[]).filter(
+    (m) => m.constituent?.do_not_contact !== true,
+  );
 
   const acksValue = acks.reduce((s, g) => s + Number(g.amount), 0);
   const recentValue = recent.reduce((s, g) => s + Number(g.amount), 0);
@@ -186,6 +228,28 @@ export default async function TodaysMovesPage() {
       )}
 
       <div className="space-y-4">
+        {giftTableMoves.length > 0 && (
+          <QueueShell
+            title="Gift table moves"
+            hint="Next steps due on an active gift table"
+            count={giftTableMoves.length}
+          >
+            <ul className="divide-y divide-hairline">
+              {giftTableMoves.map((m) => (
+                <TodayGiftTableRow
+                  key={m.id}
+                  tableId={m.gift_table?.id ?? ""}
+                  tableName={m.gift_table?.name ?? "Gift table"}
+                  label={m.constituent ? constituentName(m.constituent) : "Unknown"}
+                  detail={m.next_step ?? "Next step due"}
+                  dueOn={m.next_step_due}
+                  overdue={m.next_step_due < today}
+                />
+              ))}
+            </ul>
+          </QueueShell>
+        )}
+
         <MomentQueue
           title="Asks due soon"
           hint="Expected closes, grant deadlines, and pledge installments in the next 7 days."
@@ -288,7 +352,7 @@ const MOMENT_KIND_LABELS: Record<AskMoment["kind"], string> = {
 function MomentQueue({ title, hint, rows }: { title: string; hint: string; rows: AskMoment[] }) {
   const shown = rows.slice(0, 8);
   return (
-    <QueueShell title={title} hint={hint} count={rows.length} href="/admin/fundraising/plan" hrefLabel="Plan calendar →">
+    <QueueShell title={title} hint={hint} count={rows.length} href="/admin/fundraising/campaigns" hrefLabel="Campaigns →">
       <ul className="divide-y divide-hairline">
         {shown.map((m, i) => (
           <li key={`${m.kind}-${i}`} className="px-5 py-2.5 flex items-center gap-3 text-sm">

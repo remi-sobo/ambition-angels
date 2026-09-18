@@ -125,91 +125,13 @@ export function statusWord(r: { committed: number; openPipeline: number }, goal:
   return "Not started";
 }
 
-// ── The gift-range table ────────────────────────────────────────────────────
-
-export type GiftLevel = { amount: number; count_needed: number };
-
-/** Round UP to a "nice" ask figure (1 / 2.5 / 5 × a power of ten). */
-function niceUp(v: number): number {
-  if (v <= 0) return 0;
-  const mag = Math.pow(10, Math.floor(Math.log10(v)));
-  for (const m of [1, 2.5, 5, 10]) {
-    if (v <= m * mag) return m * mag;
-  }
-  return 10 * mag;
-}
-
-/** Round DOWN to a "nice" ask figure, so halving a level never bounces up. */
-function niceDown(v: number): number {
-  if (v <= 0) return 0;
-  const mag = Math.pow(10, Math.floor(Math.log10(v)));
-  for (const m of [5, 2.5, 1]) {
-    if (m * mag <= v) return m * mag;
-  }
-  return mag;
-}
-
-/**
- * The standard gift pyramid for a goal: the lead gift is ~20% of the goal,
- * each level below halves the amount and grows the count (1, 2, 4, 6, then
- * ×2), and the base stops once a level would fall under $250 or the table
- * covers the goal. The result always sums to ≥ goal (the base level's count
- * is topped up to close any remainder). This is a starting proposal a human
- * edits — never a commitment.
- */
-export function generateGiftLevels(goal: number): GiftLevel[] {
-  if (goal <= 0) return [];
-  const levels: GiftLevel[] = [];
-  let amount = Math.max(250, niceUp(goal * 0.2));
-  const counts = [1, 2, 4, 6];
-  let covered = 0;
-  let i = 0;
-  while (covered < goal && amount >= 250 && levels.length < 8) {
-    const count = i < counts.length ? counts[i] : counts[counts.length - 1] * 2 ** (i - counts.length + 1);
-    levels.push({ amount, count_needed: count });
-    covered += amount * count;
-    amount = niceDown(amount / 2);
-    i += 1;
-  }
-  // Top up the base level so the table always covers the goal.
-  if (covered < goal && levels.length > 0) {
-    const base = levels[levels.length - 1];
-    base.count_needed += Math.ceil((goal - covered) / base.amount);
-  }
-  return levels;
-}
-
-export type LevelMatch = GiftLevel & {
-  /** Open linked opportunities whose ask lands at this level. */
-  identified: number;
-  /** Won linked opportunities at this level (plan year). */
-  committed: number;
-};
-
-/**
- * Match real opportunities onto the gift table: each opp is assigned to the
- * highest level its ask reaches (an $8k ask counts toward the $5k level of a
- * 10/5/2.5k table; asks under the base level fall off the table). Levels are
- * returned largest-first, the display order of a gift-range table.
- */
-export function matchGiftLevels(
-  levels: GiftLevel[],
-  opps: PlanOppRow[],
-  planYear: number
-): LevelMatch[] {
-  const sorted = [...levels].sort((a, b) => b.amount - a.amount);
-  const out: LevelMatch[] = sorted.map((l) => ({ ...l, identified: 0, committed: 0 }));
-  for (const o of opps) {
-    if (!oppInYear(o, planYear)) continue;
-    const ask = Number(o.ask_amount ?? 0);
-    if (ask <= 0) continue;
-    const level = out.find((l) => ask >= l.amount);
-    if (!level) continue;
-    if (isWonStage(o.stage)) level.committed += 1;
-    else if (isOpenStage(o.stage)) level.identified += 1;
-  }
-  return out;
-}
+// ── The gift-range table (RETIRED) ──────────────────────────────────────────
+// generateGiftLevels / matchGiftLevels and the fr_plan_gift_levels table they
+// served are gone. A gift table is now its own thing: a window, a coverage
+// basis, levels native to their cadence, real names placed at each level, and
+// the work that follows from the gaps (lib/fundraising/gift-table.ts,
+// specs/fundraising-gift-tables.md). Matching open asks onto amount bands was
+// never the hard part; knowing who is actually at each level is.
 
 // ── The ask calendar ────────────────────────────────────────────────────────
 // Every scheduled ask moment in one stream: opportunity expected closes,

@@ -169,6 +169,45 @@ export default function LevelDrawer({
     }
   };
 
+  /**
+   * Start ask opens a real opportunity on the org's default pipeline and links
+   * it to the placement. From then on the placement's status follows the
+   * stage and its target displays the ask.
+   *
+   * Expected close is deliberately NOT collected here and so stays null: a
+   * fabricated close date makes a forecast nobody chose. It is set on the
+   * opportunity when somebody actually knows.
+   */
+  const startAsk = async (p: PlacementView) => {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch(
+        `/api/admin/fundraising/gift-tables/${tableId}/placements/${p.id}/start-ask`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ask_amount: p.targetAmount ?? undefined,
+            next_step: p.nextStep ?? undefined,
+            next_step_due: p.nextStepDue ?? undefined,
+            owner: p.owner ?? undefined,
+          }),
+        },
+      );
+      if (!res.ok) {
+        setError(userMessage(res, await res.json().catch(() => ({}))));
+        return;
+      }
+      toast.success(`Ask opened for ${p.displayName}. This placement now follows it.`);
+      router.refresh();
+    } catch {
+      setError(networkMessage());
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const remove = async (p: PlacementView) => {
     setBusy(true);
     try {
@@ -280,6 +319,16 @@ export default function LevelDrawer({
                         <Button variant="ghost" size="sm" onClick={() => remove(p)} disabled={busy}>
                           Remove
                         </Button>
+                        {!p.linked && !p.doNotContact && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => startAsk(p)}
+                            disabled={busy}
+                          >
+                            Start ask
+                          </Button>
+                        )}
                       </div>
                     )}
 

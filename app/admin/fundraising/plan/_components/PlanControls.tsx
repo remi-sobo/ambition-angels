@@ -8,7 +8,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { generateGiftLevels, type GiftLevel } from "@/lib/fundraising/plan";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage, networkMessage } from "@/lib/admin/errors";
@@ -197,116 +196,6 @@ export function EditStrategyPanel({
     </div>
   );
 }
-
-// ── Gift-table editor ───────────────────────────────────────────────────────
-
-export function GiftTableEditor({
-  strategyId,
-  goal,
-  initial,
-}: {
-  strategyId: string;
-  goal: number;
-  initial: GiftLevel[];
-}) {
-  const router = useRouter();
-  const [levels, setLevels] = useState<GiftLevel[]>(initial);
-  const [dirty, setDirty] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-
-  const set = (i: number, field: keyof GiftLevel, value: number) => {
-    setLevels((ls) => ls.map((l, j) => (j === i ? { ...l, [field]: value } : l)));
-    setDirty(true);
-  };
-
-  const save = async () => {
-    setBusy(true);
-    setError("");
-    const err = await call("/api/admin/fundraising/plan/levels", "PUT", {
-      strategy_id: strategyId,
-      levels,
-    });
-    setBusy(false);
-    if (err) {
-      setError(err);
-      return;
-    }
-    setDirty(false);
-    router.refresh();
-  };
-
-  return (
-    <div className="space-y-3">
-      {levels.length > 0 && (
-        <div className="space-y-1.5">
-          {levels.map((l, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input
-                className={`${inputCls} w-36`}
-                type="number"
-                min="1"
-                step="0.01"
-                value={l.amount}
-                onChange={(e) => set(i, "amount", Number(e.target.value))}
-                aria-label={`Level ${i + 1} amount`}
-              />
-              <span className="text-xs text-ink-3">×</span>
-              <input
-                className={`${inputCls} w-20`}
-                type="number"
-                min="1"
-                step="1"
-                value={l.count_needed}
-                onChange={(e) => set(i, "count_needed", Number(e.target.value))}
-                aria-label={`Level ${i + 1} count`}
-              />
-              <button
-                className="text-xs text-ink-3 hover:text-expense"
-                onClick={() => {
-                  setLevels((ls) => ls.filter((_, j) => j !== i));
-                  setDirty(true);
-                }}
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="flex items-center gap-2 flex-wrap">
-        <button
-          className={btnCls}
-          onClick={() => {
-            setLevels(generateGiftLevels(goal));
-            setDirty(true);
-          }}
-          disabled={goal <= 0}
-          title={goal <= 0 ? "Set a goal on the strategy first" : undefined}
-        >
-          {levels.length > 0 ? "Regenerate from goal" : "Generate gift table"}
-        </button>
-        <button
-          className={btnCls}
-          onClick={() => {
-            setLevels((ls) => [...ls, { amount: 1000, count_needed: 1 }]);
-            setDirty(true);
-          }}
-        >
-          + Level
-        </button>
-        {dirty && (
-          <button className={primaryBtnCls} onClick={save} disabled={busy}>
-            Save table
-          </button>
-        )}
-        {error && <span className="text-xs text-expense">{error}</span>}
-      </div>
-    </div>
-  );
-}
-
-// ── Link / unlink spine objects ─────────────────────────────────────────────
 
 export type AssignType = "opportunity" | "grant" | "campaign";
 

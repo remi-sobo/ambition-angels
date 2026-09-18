@@ -231,6 +231,7 @@ ordered=(
   spec_fin_report_artifacts.sql
   spec_impact_report_artifacts.sql
   fundraising_gift_tables.sql
+  drop_fr_plan_gift_levels.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

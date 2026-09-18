@@ -37,7 +37,7 @@ export default async function Donor360Extras({
   const supabase = createServerSupabase();
   const today = todayISO();
 
-  const [grantsRes, relRes] = await Promise.all([
+  const [grantsRes, relRes, placementRes] = await Promise.all([
     supabase
       .from("grants")
       .select("id, name, stage, amount_awarded, grant_requirements ( id, kind, label, due_date, status )")
@@ -48,6 +48,20 @@ export default async function Donor360Extras({
       .select("id, a_id, b_id, kind, notes")
       .or(`a_id.eq.${constituentId},b_id.eq.${constituentId}`)
       .limit(100),
+    // Gift-table placements this donor sits on. Active and draft only:
+    // a closed table is history, and the chip is about live strategy
+    // (specs/fundraising-gift-tables.md, Phase 4).
+    supabase
+      .from("fr_gift_table_placements")
+      .select(
+        "id, warm_path, status, next_step, next_step_due, " +
+          "level:fr_gift_table_levels ( label, amount ), " +
+          "gift_table:fr_gift_tables!inner ( id, name, status )",
+      )
+      .eq("constituent_id", constituentId)
+      .neq("status", "removed")
+      .in("gift_table.status", ["active", "draft"])
+      .limit(10),
   ]);
 
   type GrantRow = {
@@ -84,9 +98,61 @@ export default async function Donor360Extras({
 
   const years = givingByYear(history);
 
+  const placements = ((placementRes.data ?? []) as unknown as Array<{
+    id: string;
+    warm_path: string | null;
+    status: string;
+    next_step: string | null;
+    next_step_due: string | null;
+    level: { label: string; amount: number | string } | null;
+    gift_table: { id: string; name: string; status: string } | null;
+  }>).filter((p) => p.gift_table);
+
   return (
     <>
       <WhyTheyMatter constituentId={constituentId} name={name} initial={whyMatters} />
+
+      {/* Gift table placements. The warm path shows here as well as in the
+          level drawer: it is the single most actionable thing recorded about
+          this person, and the donor profile is where somebody looks before
+          picking up the phone. */}
+      {placements.length > 0 && (
+        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
+            <h2 className={TYPE.cardTitle}>On a gift table</h2>
+          </div>
+          <ul className="divide-y divide-hairline">
+            {placements.map((p) => (
+              <li key={p.id} className="px-5 py-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <Link
+                    href={`/admin/fundraising/campaigns/gift-tables/${p.gift_table!.id}`}
+                    className={`${TYPE.body} font-medium hover:text-orange transition-colors`}
+                  >
+                    {p.gift_table!.name}
+                  </Link>
+                  <span className={TYPE.metadata}>
+                    {p.level ? `Level ${p.level.label} · ${money(Number(p.level.amount))}` : ""}
+                    {p.gift_table!.status === "draft" ? " · draft" : ""}
+                  </span>
+                </div>
+                {p.warm_path && (
+                  <p className={`${TYPE.body} mt-1`}>
+                    <span className={TYPE.cardLabel}>Warm path. </span>
+                    {p.warm_path}
+                  </p>
+                )}
+                {p.next_step && (
+                  <p className={`${TYPE.metadata} mt-0.5`}>
+                    Next: {p.next_step}
+                    {p.next_step_due ? ` (${p.next_step_due})` : ""}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* ── Giving by year ── */}

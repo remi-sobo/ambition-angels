@@ -3,9 +3,8 @@ import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { hasPermission } from "@/lib/admin/permissions";
-import { loadPipelineConfig, stagesForPipeline } from "@/lib/fundraising/stages";
-import { constituentName } from "@/lib/fundraising/display";
 import { deriveAssigneeOptions } from "@/lib/admin/assignees";
+import { loadGiftTableSpine } from "@/lib/fundraising/gift-table-server";
 import { TYPE } from "@/lib/admin/typeScale";
 import {
   Alert,
@@ -18,31 +17,27 @@ import {
 } from "@/app/admin/_components/ui";
 import {
   formatGiftMoney,
-  gaps,
+  type ClosedSnapshot,
+  type GiftTable,
   hasPledgedStage,
   hasStaleCloseDate,
   isEstimated,
   placementState,
   placementTarget,
   possibleMatches,
-  slotNames,
   workGroups,
-  stageRoles,
   suggestAffinity,
   suggestCapacity,
-  tableGoal,
-  tableShape,
   tableShapeOverTerm,
   valueContext,
   verdict,
-  type GiftLevel,
-  type GiftTable,
-  type Placement,
 } from "@/lib/fundraising/gift-table";
 import { GiftTableSettings, LevelsEditor, StatusControl } from "./_components/GiftTableEditor";
 import LevelDrawer, { type PlacementView } from "./_components/LevelDrawer";
 import PossibleMatches, { type MatchRow } from "./_components/PossibleMatches";
 import WorkCards from "./_components/WorkCards";
+import CloseControls from "./_components/CloseControls";
+import PlanVsActual from "./_components/PlanVsActual";
 
 /**
  * One gift table (specs/fundraising-gift-tables.md, Phase 2).
@@ -60,51 +55,6 @@ import WorkCards from "./_components/WorkCards";
  * cannot yet be worked.
  */
 export const dynamic = "force-dynamic";
-
-type TableRow = GiftTable & {
-  target_rationale: string | null;
-  multiplier_rationale: string | null;
-  notes: string | null;
-  campaign_id: string | null;
-};
-
-type PlacementRow = {
-  id: string;
-  level_id: string;
-  constituent_id: string;
-  household_id: string | null;
-  target_amount: number | string | null;
-  cadence: Placement["cadence"];
-  term_years: number | null;
-  capacity_score: number | null;
-  affinity_score: number | null;
-  connection_score: number | null;
-  readiness_score: number | null;
-  warm_path: string | null;
-  why_note: string | null;
-  status: Placement["status"];
-  next_step: string | null;
-  next_step_due: string | null;
-  owner: string | null;
-  constituent: {
-    id: string;
-    type: string;
-    first_name: string | null;
-    last_name: string | null;
-    org_name: string | null;
-    do_not_contact: boolean;
-    household_id: string | null;
-  } | null;
-  opportunity: {
-    id: string;
-    stage: string;
-    ask_amount: number | string | null;
-    expected_close: string | null;
-    next_step: string | null;
-    next_step_due: string | null;
-    owner: string | null;
-  } | null;
-};
 
 const BASIS_LABEL: Record<GiftTable["coverageBasis"], string> = {
   window: "Window",
@@ -130,145 +80,45 @@ export default async function GiftTablePage({ params }: { params: { id: string }
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
 
   const supabase = createServerSupabase();
-  // Concatenated select strings defeat PostgREST's type inference, so both
-  // result sets are cast — the same shape the other fundraising pages use.
-  const [
-    { data: rawRow },
-    { data: rawLevels },
-    { data: rawPlacements },
-    { data: rawCredits },
-    canWrite,
-    pipelineConfig,
-    members,
-  ] = await Promise.all([
-    supabase
-      .from("fr_gift_tables")
-      .select(
-        "id, name, starts_on, ends_on, status, target, multiplier, goal_round_to, coverage_basis, " +
-          "default_term_years, monthly_modeled_years, target_rationale, multiplier_rationale, " +
-          "notes, campaign_id",
-      )
-      .eq("id", params.id)
-      .eq("org_id", ctx.orgId)
-      .maybeSingle(),
-    supabase
-      .from("fr_gift_table_levels")
-      .select("id, label, amount, cadence, term_years, gifts_needed, prospects_per_gift, purpose, sort")
-      .eq("gift_table_id", params.id)
-      .eq("org_id", ctx.orgId)
-      .order("sort"),
-    supabase
-      .from("fr_gift_table_placements")
-      .select(
-        "id, level_id, constituent_id, household_id, target_amount, cadence, term_years, " +
-          "capacity_score, affinity_score, connection_score, readiness_score, warm_path, " +
-          "why_note, status, next_step, next_step_due, owner, " +
-          "constituent:constituents ( id, type, first_name, last_name, org_name, do_not_contact, household_id ), " +
-          "opportunity:opportunities ( id, stage, ask_amount, expected_close, next_step, next_step_due, owner )",
-      )
-      .eq("gift_table_id", params.id)
-      .eq("org_id", ctx.orgId),
-    supabase
-      .from("fr_gift_table_credits")
-      .select("id, source_type, source_id")
-      .eq("gift_table_id", params.id)
-      .eq("org_id", ctx.orgId),
+  // The spine — table, levels, placements, credits, stage roles, and every
+  // derived number — comes from ONE loader shared with the close action and
+  // the workbook export (lib/fundraising/gift-table-server.ts). Three readers
+  // of the same figures is exactly how the spreadsheets this replaced drifted,
+  // so none of them computes a level's value on its own.
+  const [spine, canWrite, members] = await Promise.all([
+    loadGiftTableSpine(supabase, ctx.orgId, params.id),
     hasPermission(supabase, ctx.orgId, "fundraising.write"),
-    loadPipelineConfig(supabase, ctx.orgId),
     supabase
       .from("memberships")
       .select("role, profile:profiles ( display_name )")
       .eq("org_id", ctx.orgId),
   ]);
-  const row = rawRow as unknown as Record<string, unknown> | null;
-  const levelRows = (rawLevels ?? []) as unknown as Record<string, unknown>[];
-  if (!row) notFound();
+  if (!spine) notFound();
+  const { table, levels, placements, credits, roles, stages, goal, shape, slots } = spine;
+  const g = spine.gaps;
 
-  const table: TableRow = {
-    id: row.id as string,
-    name: row.name as string,
-    startsOn: row.starts_on as string,
-    endsOn: row.ends_on as string,
-    status: row.status as GiftTable["status"],
-    target: Number(row.target ?? 0),
-    multiplier: Number(row.multiplier ?? 1),
-    goalRoundTo: row.goal_round_to === null ? null : Number(row.goal_round_to),
-    coverageBasis: row.coverage_basis as GiftTable["coverageBasis"],
-    defaultTermYears: Number(row.default_term_years ?? 1),
-    monthlyModeledYears: Number(row.monthly_modeled_years ?? 1),
-    target_rationale: (row.target_rationale as string | null) ?? null,
-    multiplier_rationale: (row.multiplier_rationale as string | null) ?? null,
-    notes: (row.notes as string | null) ?? null,
-    campaign_id: (row.campaign_id as string | null) ?? null,
-  };
+  // The close snapshot is jsonb, so it is whatever was written — including
+  // nothing, or something an older shape wrote. It is shaped-checked rather
+  // than trusted: a table whose history cannot be read should still render.
+  const raw = table.closedSnapshot;
+  const closedSnapshot =
+    raw && typeof raw === "object" && Array.isArray((raw as ClosedSnapshot).levels)
+      ? (raw as ClosedSnapshot)
+      : null;
 
-  const levels: GiftLevel[] = levelRows.map((l) => ({
-    id: l.id as string,
-    label: l.label as string,
-    amount: Number(l.amount),
-    cadence: l.cadence as GiftLevel["cadence"],
-    termYears: l.term_years === null ? null : Number(l.term_years),
-    giftsNeeded: Number(l.gifts_needed),
-    prospectsPerGift: Number(l.prospects_per_gift),
-    purpose: (l.purpose as string | null) ?? null,
-    sort: Number(l.sort),
-  }));
+  // A closed or archived table is frozen: the edit route rejects every write
+  // with a 409 so the snapshot cannot disagree with the rows it was taken
+  // from. The page has to agree, or it offers controls that only fail.
+  const frozen = table.status === "closed" || table.status === "archived";
+  const canEdit = canWrite && !frozen;
 
-  // Household salutation wins over the person's own name when they have one:
-  // a household takes one slot, so it should read as one name.
-  const householdIds = Array.from(
-    new Set(
-      ((rawPlacements ?? []) as unknown as Array<{ household_id: string | null }>)
-        .map((p) => p.household_id)
-        .filter((h): h is string => !!h),
-    ),
+  const ctxValue = valueContext(table);
+
+  const termYears = Math.max(
+    table.defaultTermYears,
+    ...levels.map((l) => l.termYears ?? table.defaultTermYears),
   );
-  const { data: householdRows } = householdIds.length
-    ? await supabase
-        .from("households")
-        .select("id, name, salutation")
-        .eq("org_id", ctx.orgId)
-        .in("id", householdIds)
-    : { data: [] as Array<{ id: string; name: string; salutation: string | null }> };
-  const householdName = new Map(
-    ((householdRows ?? []) as Array<{ id: string; name: string; salutation: string | null }>).map(
-      (h) => [h.id, (h.salutation || h.name) ?? ""],
-    ),
-  );
-
-  const placements: Placement[] = ((rawPlacements ?? []) as unknown as PlacementRow[]).map((p) => ({
-    id: p.id,
-    levelId: p.level_id,
-    constituentId: p.constituent_id,
-    householdId: p.household_id,
-    displayName:
-      (p.household_id && householdName.get(p.household_id)) ||
-      (p.constituent ? constituentName(p.constituent) : "Unnamed"),
-    targetAmount: p.target_amount === null ? null : Number(p.target_amount),
-    cadence: p.cadence,
-    termYears: p.term_years === null ? null : Number(p.term_years),
-    capacityScore: p.capacity_score,
-    affinityScore: p.affinity_score,
-    connectionScore: p.connection_score,
-    readinessScore: p.readiness_score,
-    warmPath: p.warm_path,
-    status: p.status,
-    nextStep: p.next_step,
-    nextStepDue: p.next_step_due,
-    owner: p.owner,
-    doNotContact: p.constituent?.do_not_contact === true,
-    opportunity: p.opportunity
-      ? {
-          id: p.opportunity.id,
-          stage: p.opportunity.stage,
-          askAmount: p.opportunity.ask_amount === null ? null : Number(p.opportunity.ask_amount),
-          expectedClose: p.opportunity.expected_close,
-          nextStep: p.opportunity.next_step,
-          nextStepDue: p.opportunity.next_step_due,
-          owner: p.opportunity.owner,
-        }
-      : null,
-  }));
+  const showTerm = table.coverageBasis === "annual" && termYears > 1;
 
   // Suggested capacity and affinity, from giving history, for the placed
   // names only — a bounded read, not the whole gift table. Always LABELLED
@@ -302,29 +152,6 @@ export default async function GiftTablePage({ params }: { params: { id: string }
     const stat = giftStats.get(id);
     if (stat) stat.years = set.size;
   }
-
-  // Stage config drives placement status. It is read here also so the page
-  // can say, honestly, that this tenant has no stage flagged as pledged —
-  // an empty Collect card would otherwise read as "nothing is owed" rather
-  // than "nothing is configured".
-  const stages = stagesForPipeline(pipelineConfig, "default").map((s) => ({
-    key: s.key,
-    stageType: s.stageType,
-    countsAsPledged: s.countsAsPledged,
-  }));
-  const roles = stageRoles(stages);
-
-  const ctxValue = valueContext(table);
-  const goal = tableGoal(table);
-  const shape = tableShape(levels, table);
-  const slots = slotNames(levels, placements, table, roles);
-  const g = gaps(slots);
-
-  const termYears = Math.max(
-    table.defaultTermYears,
-    ...levels.map((l) => l.termYears ?? table.defaultTermYears),
-  );
-  const showTerm = table.coverageBasis === "annual" && termYears > 1;
 
   // Assignee options come from the org's memberships, never a hardcoded list
   // (lib/admin/assignees.ts; tenant_neutral_assignees.sql dropped the old
@@ -369,11 +196,6 @@ export default async function GiftTablePage({ params }: { params: { id: string }
 
   // Possible matches: in-window money from a placed household that no
   // opportunity, campaign or credit row ties to this table.
-  const credits = ((rawCredits ?? []) as unknown as Array<{
-    id: string;
-    source_type: MatchRow["sourceType"];
-    source_id: string;
-  }>).map((c) => ({ sourceType: c.source_type, sourceId: c.source_id }));
   const nameById = new Map(placements.map((p) => [p.constituentId, p.displayName]));
   const matches: MatchRow[] = possibleMatches({
     // The real gift id: Attach writes a credit row whose source_id the
@@ -395,7 +217,7 @@ export default async function GiftTablePage({ params }: { params: { id: string }
     placements,
     credits,
     window: { startsOn: table.startsOn, endsOn: table.endsOn },
-    tableCampaignId: table.campaign_id,
+    tableCampaignId: table.campaignId,
   }).map((m) => ({
     sourceType: m.row.sourceType,
     sourceId: m.row.id,
@@ -464,9 +286,27 @@ export default async function GiftTablePage({ params }: { params: { id: string }
           </>
         }
         actions={
-          canWrite ? <StatusControl id={table.id} status={table.status} /> : (
-            <Badge tone={table.status === "active" ? "success" : "neutral"}>{table.status}</Badge>
-          )
+          <div className="flex items-center gap-2">
+            {/* A plain anchor, NOT next/link, and the same shape every other
+                export in the app uses. A client Link prefetches on hover and
+                intercepts the click, which here would run the pool queries and
+                write an export audit row for a file nobody ever receives. */}
+            <a
+              href={`/api/admin/fundraising/gift-tables/${table.id}/export`}
+              download
+              className="inline-flex items-center justify-center rounded-control text-[13px] font-semibold h-8 px-3 bg-surface text-ink-1 border border-hairline hover:bg-tile hover:border-outline transition-colors"
+            >
+              Export workbook
+            </a>
+            {canWrite ? (
+              <>
+                <StatusControl id={table.id} status={table.status} />
+                <CloseControls id={table.id} status={table.status} />
+              </>
+            ) : (
+              <Badge tone={table.status === "active" ? "success" : "neutral"}>{table.status}</Badge>
+            )}
+          </div>
         }
       />
 
@@ -480,6 +320,17 @@ export default async function GiftTablePage({ params }: { params: { id: string }
           </p>
         )}
       </Card>
+
+      {closedSnapshot && (
+        <div className="mb-6">
+          <PlanVsActual
+            snapshot={closedSnapshot}
+            slots={slots}
+            liveGoal={goal}
+            liveShape={shape}
+          />
+        </div>
+      )}
 
       {table.status === "active" && (
         <div className="mb-6">
@@ -603,7 +454,7 @@ export default async function GiftTablePage({ params }: { params: { id: string }
                             needed={s.needed}
                             placements={viewsByLevel.get(l.id) ?? []}
                             owners={owners}
-                            canWrite={canWrite}
+                            canWrite={canEdit}
                           />
                         </td>
                         <td
@@ -653,11 +504,11 @@ export default async function GiftTablePage({ params }: { params: { id: string }
 
       {matches.length > 0 && (
         <PageSection title="Possible matches">
-          <PossibleMatches tableId={table.id} matches={matches} canWrite={canWrite} />
+          <PossibleMatches tableId={table.id} matches={matches} canWrite={canEdit} />
         </PageSection>
       )}
 
-      {canWrite && (
+      {canEdit && (
         <>
           <PageSection title="Edit the levels">
             <LevelsEditor
@@ -688,8 +539,8 @@ export default async function GiftTablePage({ params }: { params: { id: string }
                 coverage_basis: table.coverageBasis,
                 default_term_years: table.defaultTermYears,
                 monthly_modeled_years: table.monthlyModeledYears,
-                target_rationale: table.target_rationale ?? "",
-                multiplier_rationale: table.multiplier_rationale ?? "",
+                target_rationale: table.targetRationale ?? "",
+                multiplier_rationale: table.multiplierRationale ?? "",
                 notes: table.notes ?? "",
               }}
             />
@@ -697,20 +548,20 @@ export default async function GiftTablePage({ params }: { params: { id: string }
         </>
       )}
 
-      {(table.target_rationale || table.multiplier_rationale) && (
+      {(table.targetRationale || table.multiplierRationale) && (
         <PageSection title="Why these numbers">
           <Card className="space-y-3">
-            {table.target_rationale && (
+            {table.targetRationale && (
               <div>
                 <p className={TYPE.cardLabel}>Target · {formatGiftMoney(table.target)}</p>
-                <p className={`${TYPE.body} mt-1 whitespace-pre-line`}>{table.target_rationale}</p>
+                <p className={`${TYPE.body} mt-1 whitespace-pre-line`}>{table.targetRationale}</p>
               </div>
             )}
-            {table.multiplier_rationale && (
+            {table.multiplierRationale && (
               <div>
                 <p className={TYPE.cardLabel}>Multiplier · {table.multiplier}</p>
                 <p className={`${TYPE.body} mt-1 whitespace-pre-line`}>
-                  {table.multiplier_rationale}
+                  {table.multiplierRationale}
                 </p>
               </div>
             )}

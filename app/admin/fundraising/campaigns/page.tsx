@@ -20,7 +20,15 @@ import GiftTablesSection, {
 // campaign; the bulk-attribute tool clears the unattributed backlog.
 export const dynamic = "force-dynamic";
 
-export default async function CampaignsPage() {
+export default async function CampaignsPage({
+  searchParams,
+}: {
+  searchParams?: { archived?: string };
+}) {
+  // Archived tables are out of the default list but never unreachable. The
+  // filter is a search param rather than client state so the "show archived"
+  // view is a link somebody can send.
+  const showArchived = searchParams?.archived === "1";
   // Every read is pinned to the ACTIVE org — RLS alone would merge rows from
   // every org the user belongs to.
   const ctx = await getOrgContext();
@@ -49,11 +57,18 @@ export default async function CampaignsPage() {
     // Gift tables live INSIDE Campaigns (spec Open decision 1) rather than
     // behind a sixth fundraising tab. Archived tables stay out of the default
     // list; closed ones stay visible, because plan vs actual is the point.
-    supabase
-      .from("fr_gift_tables")
-      .select("id, name, starts_on, ends_on, status, target, multiplier, goal_round_to, coverage_basis, default_term_years, monthly_modeled_years")
-      .eq("org_id", ctx.orgId)
-      .neq("status", "archived")
+    (showArchived
+      ? supabase
+          .from("fr_gift_tables")
+          .select("id, name, starts_on, ends_on, status, target, multiplier, goal_round_to, coverage_basis, default_term_years, monthly_modeled_years")
+          .eq("org_id", ctx.orgId)
+          .eq("status", "archived")
+      : supabase
+          .from("fr_gift_tables")
+          .select("id, name, starts_on, ends_on, status, target, multiplier, goal_round_to, coverage_basis, default_term_years, monthly_modeled_years")
+          .eq("org_id", ctx.orgId)
+          .neq("status", "archived")
+    )
       .order("starts_on", { ascending: false })
       .limit(50),
     supabase
@@ -114,7 +129,8 @@ export default async function CampaignsPage() {
       <GiftTablesSection
         tables={(giftTablesRes.data ?? []) as GiftTableRow[]}
         levels={(giftLevelsRes.data ?? []) as GiftLevelRow[]}
-        action={<NewGiftTableForm />}
+        showArchived={showArchived}
+        action={showArchived ? undefined : <NewGiftTableForm />}
       />
 
       {unattributed > 0 && campaigns.length > 0 && (

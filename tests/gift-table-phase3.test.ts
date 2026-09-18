@@ -21,6 +21,7 @@ const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
 const PLACEMENTS = "app/api/admin/fundraising/gift-tables/[id]/placements/route.ts";
 const CREDITS = "app/api/admin/fundraising/gift-tables/[id]/credits/route.ts";
 const POOLS = "app/api/admin/fundraising/gift-tables/[id]/pools/route.ts";
+const SERVER = "lib/fundraising/gift-table-server.ts";
 const MERGE = "app/api/admin/constituents/merge/route.ts";
 
 describe("placements honour the rules the schema cannot express", () => {
@@ -82,22 +83,38 @@ describe("attribution stays traceable", () => {
 });
 
 describe("pools never read the stale rollup", () => {
-  const src = read(POOLS);
+  // Phase 5 moved the pool loading into the shared server module so the level
+  // drawer and the exported workbook list the same candidates. The guarantee
+  // is unchanged; it is asserted where the query now lives. Both files are
+  // checked so neither can reintroduce the view.
+  const route = read(POOLS);
+  const shared = read(SERVER);
 
   test("v_fr_rollups is never queried", () => {
     // Its open-ask filter is V1 five-stage math, so under the ten-stage
     // taxonomy it admits closed asks. Open work comes from `opportunities`
-    // through the org's own stage config instead. The route's comment names
-    // the view to explain why, so this checks for the QUERY, not the word.
-    expect(src).not.toMatch(/from\(\s*["'`]v_fr_rollups/);
-    expect(src).toMatch(/from\(\s*["'`]opportunities/);
+    // through the org's own stage config instead. The comment names the view
+    // to explain why, so this checks for the QUERY, not the word.
+    for (const src of [route, shared]) {
+      expect(src).not.toMatch(/from\(\s*["'`]v_fr_rollups/);
+    }
+    expect(shared).toMatch(/from\(\s*["'`]opportunities/);
   });
 
   test("stage meaning comes from config, not the static unions", () => {
-    expect(src).toContain("stageRoles");
-    expect(src).not.toContain("OPEN_STAGE_KEYS");
-    expect(src).not.toContain("WON_STAGE_KEYS");
-    expect(src).not.toContain("stage-sets");
+    expect(shared).toContain("stageRoles");
+    for (const src of [route, shared]) {
+      expect(src).not.toContain("OPEN_STAGE_KEYS");
+      expect(src).not.toContain("WON_STAGE_KEYS");
+      expect(src).not.toContain("stage-sets");
+    }
+  });
+
+  test("the route still delegates rather than growing its own copy", () => {
+    // If the pool queries come back into the route, the workbook and the
+    // drawer can disagree again.
+    expect(route).toContain("loadPools");
+    expect(route).not.toMatch(/from\(\s*["'`]constituents/);
   });
 });
 

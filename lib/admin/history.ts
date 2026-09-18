@@ -13,6 +13,14 @@ export type HistoryEvent = {
   ts: string;
   action: string;
   actorName: string | null;
+  /**
+   * The prior values of the keys the patch touched, where the API recorded
+   * them. Without this a timeline can only say what a field became, never
+   * what it was — and "capacity 2" is a very different sentence from
+   * "capacity 5 to 2" (specs/fundraising-gift-tables.md, audit and history).
+   * Null for older rows and for writes that pass only `after`.
+   */
+  before: Record<string, unknown> | null;
   /** The update patch (or insert) the API recorded — what changed. */
   after: Record<string, unknown> | null;
 };
@@ -26,7 +34,7 @@ export async function getEntityHistory(
   const supabase = getSupabaseAdmin();
   const { data } = await supabase
     .from("audit_log")
-    .select("id, ts, action, actor_user_id, after")
+    .select("id, ts, action, actor_user_id, before, after")
     .eq("org_id", orgId)
     .eq("entity_type", entityType)
     .eq("entity_id", entityId)
@@ -37,6 +45,7 @@ export async function getEntityHistory(
     ts: string;
     action: string;
     actor_user_id: string | null;
+    before: Record<string, unknown> | null;
     after: Record<string, unknown> | null;
   }>;
 
@@ -60,6 +69,7 @@ export async function getEntityHistory(
     ts: r.ts,
     action: r.action,
     actorName: r.actor_user_id ? names[r.actor_user_id] ?? null : null,
+    before: r.before,
     after: r.after,
   }));
 }

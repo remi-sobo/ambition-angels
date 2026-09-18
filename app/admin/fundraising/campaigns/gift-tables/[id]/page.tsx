@@ -4,6 +4,8 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { hasPermission } from "@/lib/admin/permissions";
 import { loadPipelineConfig, stagesForPipeline } from "@/lib/fundraising/stages";
+import { constituentName } from "@/lib/fundraising/display";
+import { deriveAssigneeOptions } from "@/lib/admin/assignees";
 import { TYPE } from "@/lib/admin/typeScale";
 import {
   Alert,
@@ -18,9 +20,15 @@ import {
   formatGiftMoney,
   gaps,
   hasPledgedStage,
+  hasStaleCloseDate,
   isEstimated,
+  placementState,
+  placementTarget,
+  possibleMatches,
   slotNames,
   stageRoles,
+  suggestAffinity,
+  suggestCapacity,
   tableGoal,
   tableShape,
   tableShapeOverTerm,
@@ -28,8 +36,11 @@ import {
   verdict,
   type GiftLevel,
   type GiftTable,
+  type Placement,
 } from "@/lib/fundraising/gift-table";
 import { GiftTableSettings, LevelsEditor, StatusControl } from "./_components/GiftTableEditor";
+import LevelDrawer, { type PlacementView } from "./_components/LevelDrawer";
+import PossibleMatches, { type MatchRow } from "./_components/PossibleMatches";
 
 /**
  * One gift table (specs/fundraising-gift-tables.md, Phase 2).
@@ -53,6 +64,44 @@ type TableRow = GiftTable & {
   multiplier_rationale: string | null;
   notes: string | null;
   campaign_id: string | null;
+};
+
+type PlacementRow = {
+  id: string;
+  level_id: string;
+  constituent_id: string;
+  household_id: string | null;
+  target_amount: number | string | null;
+  cadence: Placement["cadence"];
+  term_years: number | null;
+  capacity_score: number | null;
+  affinity_score: number | null;
+  connection_score: number | null;
+  readiness_score: number | null;
+  warm_path: string | null;
+  why_note: string | null;
+  status: Placement["status"];
+  next_step: string | null;
+  next_step_due: string | null;
+  owner: string | null;
+  constituent: {
+    id: string;
+    type: string;
+    first_name: string | null;
+    last_name: string | null;
+    org_name: string | null;
+    do_not_contact: boolean;
+    household_id: string | null;
+  } | null;
+  opportunity: {
+    id: string;
+    stage: string;
+    ask_amount: number | string | null;
+    expected_close: string | null;
+    next_step: string | null;
+    next_step_due: string | null;
+    owner: string | null;
+  } | null;
 };
 
 const BASIS_LABEL: Record<GiftTable["coverageBasis"], string> = {
@@ -81,7 +130,15 @@ export default async function GiftTablePage({ params }: { params: { id: string }
   const supabase = createServerSupabase();
   // Concatenated select strings defeat PostgREST's type inference, so both
   // result sets are cast — the same shape the other fundraising pages use.
-  const [{ data: rawRow }, { data: rawLevels }, canWrite, pipelineConfig] = await Promise.all([
+  const [
+    { data: rawRow },
+    { data: rawLevels },
+    { data: rawPlacements },
+    { data: rawCredits },
+    canWrite,
+    pipelineConfig,
+    members,
+  ] = await Promise.all([
     supabase
       .from("fr_gift_tables")
       .select(
@@ -98,8 +155,28 @@ export default async function GiftTablePage({ params }: { params: { id: string }
       .eq("gift_table_id", params.id)
       .eq("org_id", ctx.orgId)
       .order("sort"),
+    supabase
+      .from("fr_gift_table_placements")
+      .select(
+        "id, level_id, constituent_id, household_id, target_amount, cadence, term_years, " +
+          "capacity_score, affinity_score, connection_score, readiness_score, warm_path, " +
+          "why_note, status, next_step, next_step_due, owner, " +
+          "constituent:constituents ( id, type, first_name, last_name, org_name, do_not_contact, household_id ), " +
+          "opportunity:opportunities ( id, stage, ask_amount, expected_close, next_step, next_step_due, owner )",
+      )
+      .eq("gift_table_id", params.id)
+      .eq("org_id", ctx.orgId),
+    supabase
+      .from("fr_gift_table_credits")
+      .select("id, source_type, source_id")
+      .eq("gift_table_id", params.id)
+      .eq("org_id", ctx.orgId),
     hasPermission(supabase, ctx.orgId, "fundraising.write"),
     loadPipelineConfig(supabase, ctx.orgId),
+    supabase
+      .from("memberships")
+      .select("role, profile:profiles ( display_name )")
+      .eq("org_id", ctx.orgId),
   ]);
   const row = rawRow as unknown as Record<string, unknown> | null;
   const levelRows = (rawLevels ?? []) as unknown as Record<string, unknown>[];
@@ -135,10 +212,99 @@ export default async function GiftTablePage({ params }: { params: { id: string }
     sort: Number(l.sort),
   }));
 
-  // Stage config drives placement status in Phase 3. It is read here only so
-  // the page can say, honestly and early, that this tenant has no stage
-  // flagged as pledged — an empty Collect card would otherwise read as
-  // "nothing is owed" rather than "nothing is configured".
+  // Household salutation wins over the person's own name when they have one:
+  // a household takes one slot, so it should read as one name.
+  const householdIds = Array.from(
+    new Set(
+      ((rawPlacements ?? []) as unknown as Array<{ household_id: string | null }>)
+        .map((p) => p.household_id)
+        .filter((h): h is string => !!h),
+    ),
+  );
+  const { data: householdRows } = householdIds.length
+    ? await supabase
+        .from("households")
+        .select("id, name, salutation")
+        .eq("org_id", ctx.orgId)
+        .in("id", householdIds)
+    : { data: [] as Array<{ id: string; name: string; salutation: string | null }> };
+  const householdName = new Map(
+    ((householdRows ?? []) as Array<{ id: string; name: string; salutation: string | null }>).map(
+      (h) => [h.id, (h.salutation || h.name) ?? ""],
+    ),
+  );
+
+  const placements: Placement[] = ((rawPlacements ?? []) as unknown as PlacementRow[]).map((p) => ({
+    id: p.id,
+    levelId: p.level_id,
+    constituentId: p.constituent_id,
+    householdId: p.household_id,
+    displayName:
+      (p.household_id && householdName.get(p.household_id)) ||
+      (p.constituent ? constituentName(p.constituent) : "Unnamed"),
+    targetAmount: p.target_amount === null ? null : Number(p.target_amount),
+    cadence: p.cadence,
+    termYears: p.term_years === null ? null : Number(p.term_years),
+    capacityScore: p.capacity_score,
+    affinityScore: p.affinity_score,
+    connectionScore: p.connection_score,
+    readinessScore: p.readiness_score,
+    warmPath: p.warm_path,
+    status: p.status,
+    nextStep: p.next_step,
+    nextStepDue: p.next_step_due,
+    owner: p.owner,
+    doNotContact: p.constituent?.do_not_contact === true,
+    opportunity: p.opportunity
+      ? {
+          id: p.opportunity.id,
+          stage: p.opportunity.stage,
+          askAmount: p.opportunity.ask_amount === null ? null : Number(p.opportunity.ask_amount),
+          expectedClose: p.opportunity.expected_close,
+          nextStep: p.opportunity.next_step,
+          nextStepDue: p.opportunity.next_step_due,
+          owner: p.opportunity.owner,
+        }
+      : null,
+  }));
+
+  // Suggested capacity and affinity, from giving history, for the placed
+  // names only — a bounded read, not the whole gift table. Always LABELLED
+  // with where the number came from: EPA scores capacity from a wealth
+  // estimate and AA from largest gift, and a bare 5 that doesn't say which
+  // will be believed by someone who shouldn't.
+  const placedIds = Array.from(new Set(placements.map((p) => p.constituentId)));
+  const { data: giftRows } = placedIds.length
+    ? await supabase
+        .from("gifts")
+        .select("id, constituent_id, amount, gift_date")
+        .eq("org_id", ctx.orgId)
+        .in("constituent_id", placedIds)
+    : { data: [] as Array<{ id: string; constituent_id: string; amount: number; gift_date: string }> };
+  const giftStats = new Map<string, { largest: number; years: number }>();
+  const yearsSeen = new Map<string, Set<number>>();
+  for (const g of (giftRows ?? []) as Array<{
+    id: string;
+    constituent_id: string;
+    amount: number;
+    gift_date: string;
+  }>) {
+    const prev = giftStats.get(g.constituent_id) ?? { largest: 0, years: 0 };
+    prev.largest = Math.max(prev.largest, Number(g.amount));
+    giftStats.set(g.constituent_id, prev);
+    const set = yearsSeen.get(g.constituent_id) ?? new Set<number>();
+    set.add(Number(g.gift_date.slice(0, 4)));
+    yearsSeen.set(g.constituent_id, set);
+  }
+  for (const [id, set] of Array.from(yearsSeen.entries())) {
+    const stat = giftStats.get(id);
+    if (stat) stat.years = set.size;
+  }
+
+  // Stage config drives placement status. It is read here also so the page
+  // can say, honestly, that this tenant has no stage flagged as pledged —
+  // an empty Collect card would otherwise read as "nothing is owed" rather
+  // than "nothing is configured".
   const stages = stagesForPipeline(pipelineConfig, "default").map((s) => ({
     key: s.key,
     stageType: s.stageType,
@@ -149,9 +315,7 @@ export default async function GiftTablePage({ params }: { params: { id: string }
   const ctxValue = valueContext(table);
   const goal = tableGoal(table);
   const shape = tableShape(levels, table);
-  // No placements yet — Phase 3 fetches them. Passing none is the truthful
-  // input, and it is why every level reads 0 of N today.
-  const slots = slotNames(levels, [], table, roles);
+  const slots = slotNames(levels, placements, table, roles);
   const g = gaps(slots);
 
   const termYears = Math.max(
@@ -159,6 +323,85 @@ export default async function GiftTablePage({ params }: { params: { id: string }
     ...levels.map((l) => l.termYears ?? table.defaultTermYears),
   );
   const showTerm = table.coverageBasis === "annual" && termYears > 1;
+
+  // Assignee options come from the org's memberships, never a hardcoded list
+  // (lib/admin/assignees.ts; tenant_neutral_assignees.sql dropped the old
+  // Remi/Shannon check constraints for exactly this reason).
+  const owners = deriveAssigneeOptions(
+    ((members as { data?: Array<{ role: string | null; profile?: { display_name?: string } | null }> })
+      ?.data ?? [])
+      .map((m) => ({ displayName: m.profile?.display_name ?? "", role: m.role }))
+      .filter((m) => m.displayName),
+  );
+
+  const today = new Date().toISOString().slice(0, 10);
+  const viewsByLevel = new Map<string, PlacementView[]>();
+  for (const p of placements) {
+    const state = placementState(p, roles);
+    if (state === "removed") continue;
+    const list = viewsByLevel.get(p.levelId) ?? [];
+    list.push({
+      id: p.id,
+      constituentId: p.constituentId,
+      displayName: p.displayName,
+      householdId: p.householdId,
+      state,
+      targetAmount: placementTarget(p),
+      linked: !!p.opportunity,
+      staleClose: hasStaleCloseDate(p, today),
+      doNotContact: p.doNotContact,
+      capacityScore: p.capacityScore,
+      affinityScore: p.affinityScore,
+      connectionScore: p.connectionScore,
+      readinessScore: p.readinessScore,
+      warmPath: p.warmPath,
+      whyNote: null,
+      nextStep: p.nextStep,
+      nextStepDue: p.nextStepDue,
+      owner: p.owner,
+      capacityHint: suggestCapacity(giftStats.get(p.constituentId)?.largest ?? null)?.source ?? null,
+      affinityHint: suggestAffinity(giftStats.get(p.constituentId)?.years ?? 0)?.source ?? null,
+    });
+    viewsByLevel.set(p.levelId, list);
+  }
+
+  // Possible matches: in-window money from a placed household that no
+  // opportunity, campaign or credit row ties to this table.
+  const credits = ((rawCredits ?? []) as unknown as Array<{
+    id: string;
+    source_type: MatchRow["sourceType"];
+    source_id: string;
+  }>).map((c) => ({ sourceType: c.source_type, sourceId: c.source_id }));
+  const nameById = new Map(placements.map((p) => [p.constituentId, p.displayName]));
+  const matches: MatchRow[] = possibleMatches({
+    // The real gift id: Attach writes a credit row whose source_id the
+    // org-match trigger resolves in `gifts`, so a synthetic key would be
+    // rejected at the database.
+    money: ((giftRows ?? []) as Array<{
+      id: string;
+      constituent_id: string;
+      amount: number;
+      gift_date: string;
+    }>).map((gft) => ({
+      id: gft.id,
+      sourceType: "gift" as const,
+      constituentId: gft.constituent_id,
+      amount: Number(gft.amount),
+      occurredOn: gft.gift_date,
+      campaignId: null,
+    })),
+    placements,
+    credits,
+    window: { startsOn: table.startsOn, endsOn: table.endsOn },
+    tableCampaignId: table.campaign_id,
+  }).map((m) => ({
+    sourceType: m.row.sourceType,
+    sourceId: m.row.id,
+    label: nameById.get(m.row.constituentId ?? "") ?? "A placed donor",
+    amount: m.row.amount,
+    occurredOn: m.row.occurredOn,
+    reason: m.reason,
+  }));
 
   const verdictText = levels.length
     ? verdict({ table, shape, goal, gaps: g, uncreditedPledged: null })
@@ -307,8 +550,16 @@ export default async function GiftTablePage({ params }: { params: { id: string }
                             {l.prospectsPerGift} per gift
                           </span>
                         </td>
-                        <td className={`${TYPE.body} px-4 py-3 text-right tabular-nums`}>
-                          {s.placed}
+                        <td className="px-4 py-3 text-right tabular-nums">
+                          <LevelDrawer
+                            tableId={table.id}
+                            levelId={l.id}
+                            levelLabel={l.label}
+                            needed={s.needed}
+                            placements={viewsByLevel.get(l.id) ?? []}
+                            owners={owners}
+                            canWrite={canWrite}
+                          />
                         </td>
                         <td
                           className={`px-4 py-3 text-right tabular-nums ${
@@ -354,6 +605,12 @@ export default async function GiftTablePage({ params }: { params: { id: string }
           </Card>
         )}
       </PageSection>
+
+      {matches.length > 0 && (
+        <PageSection title="Possible matches">
+          <PossibleMatches tableId={table.id} matches={matches} canWrite={canWrite} />
+        </PageSection>
+      )}
 
       {canWrite && (
         <>

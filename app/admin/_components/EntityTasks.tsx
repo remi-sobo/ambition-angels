@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useToast } from "./feedback/ToastProvider";
 import { userMessage } from "@/lib/admin/errors";
 import Link from "next/link";
-import { TASK_PRIORITIES, priorityFlagClass, taskHasAssignee, type OpsTask, type TaskPriority } from "../ops/_types/ops";
+import { TASK_PRIORITIES, priorityFlagClass, taskHasAssignee, type OpsTask, type TaskPriority, ASSIGNEE_REQUIRED_MESSAGE } from "../ops/_types/ops";
 import { useTaskComplete } from "../_lib/useTaskComplete";
 import { useAssignees } from "../_lib/useAssignees";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -17,7 +17,8 @@ import { TYPE } from "@/lib/admin/typeScale";
 const inputCls =
   "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
-const UNASSIGNED = { value: "", label: "Unassigned" };
+// Placeholder only — a task can't be saved without a person (taskHasAssignee).
+const CHOOSE_PERSON = { value: "", label: "Choose a person…" };
 
 export function EntityTasks({
   entityType,
@@ -45,7 +46,7 @@ export function EntityTasks({
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [assignee, setAssignee] = useState("");
   const [assigneeError, setAssigneeError] = useState<string | null>(null);
-  const assigneeOptions = [UNASSIGNED, ...useAssignees()];
+  const assigneeOptions = [CHOOSE_PERSON, ...useAssignees()];
 
   const load = useCallback(async () => {
     const params = new URLSearchParams({
@@ -64,10 +65,8 @@ export function EntityTasks({
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    // Category comes from the entity context (a real department today), so
-    // this only fires if a call site ever passes a non-department category.
-    if (!taskHasAssignee(assignee, defaultCategory)) {
-      setAssigneeError("Every task needs an owner. Pick a team member to assign this to.");
+    if (!taskHasAssignee(assignee)) {
+      setAssigneeError(ASSIGNEE_REQUIRED_MESSAGE);
       return;
     }
     setAssigneeError(null);
@@ -81,7 +80,7 @@ export function EntityTasks({
           category: defaultCategory,
           priority,
           due_date: due || null,
-          assigned_to: assignee || null,
+          assigned_to: assignee,
           linked_entity_type: entityType,
           linked_entity_id: entityId,
           linked_label: entityLabel,
@@ -155,15 +154,15 @@ export function EntityTasks({
             </select>
           </label>
           <label className={`${TYPE.sectionHeader} flex flex-col gap-1`}>
-            Owner
-            <select value={assignee} onChange={(e) => { setAssignee(e.target.value); setAssigneeError(null); }} className={inputCls}>
+            Owner <span className="text-orange">*</span>
+            <select value={assignee} aria-required="true" aria-invalid={assigneeError ? "true" : undefined} onChange={(e) => { setAssignee(e.target.value); setAssigneeError(null); }} className={inputCls}>
               {assigneeOptions.map((a) => <option key={a.value} value={a.value} className="bg-surface">{a.label}</option>)}
             </select>
           </label>
           <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full disabled:opacity-50">
             {busy ? "Adding…" : "Add task"}
           </button>
-          {assigneeError && <p className="w-full text-expense text-xs">{assigneeError}</p>}
+          {assigneeError && <p role="alert" className="w-full text-expense text-xs">{assigneeError}</p>}
         </form>
       )}
 

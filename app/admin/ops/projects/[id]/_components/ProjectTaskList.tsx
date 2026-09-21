@@ -18,6 +18,7 @@ import {
   type Category,
   type OpsTask,
   type TaskPriority,
+  ASSIGNEE_REQUIRED_MESSAGE,
 } from "../../../_types/ops";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -79,8 +80,8 @@ export default function ProjectTaskList({
     // "other" when the project's category isn't a valid task category.
     const category = isTaskCategory(projectCategory) ? projectCategory : "other";
     setError(null);
-    if (!taskHasAssignee(newAssignee, category)) {
-      setError("Every task needs an owner. Pick a team member to assign this to.");
+    if (!taskHasAssignee(newAssignee)) {
+      setError(ASSIGNEE_REQUIRED_MESSAGE);
       return;
     }
     setAdding(true);
@@ -92,7 +93,7 @@ export default function ProjectTaskList({
           title,
           category,
           project_id: projectId,
-          assigned_to: newAssignee || null,
+          assigned_to: newAssignee,
           due_date: newDue || undefined,
           priority: newPriority,
         }),
@@ -386,12 +387,16 @@ export default function ProjectTaskList({
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <select
             value={newAssignee}
-            onChange={(e) => setNewAssignee(e.target.value as AdminUserId | "")}
+            onChange={(e) => {
+              setNewAssignee(e.target.value as AdminUserId | "");
+              setError(null);
+            }}
             disabled={adding}
-            aria-label="Assignee"
+            aria-required="true"
+            aria-label="Assignee (required)"
             className="bg-tile border-hairline rounded-control px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
           >
-            <option value="">Unassigned</option>
+            <option value="">Choose a person…</option>
             {assigneeOptions.map((a) => (
               <option key={a.value} value={a.value}>{a.label}</option>
             ))}

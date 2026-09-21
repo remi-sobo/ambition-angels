@@ -103,3 +103,51 @@ export function whyFallback(row: ObligationRow, today: string): string {
       return `Filed under ${row.module} · ${due}.`;
   }
 }
+
+// ── Needs-you views ─────────────────────────────────────────────────────────
+// Today defaults to the signed-in person's own obligations (owner_id = the
+// caller): an org-wide feed was the whole team's list on everyone's Home, so
+// one person's tasks drowned in everyone else's. "Unassigned" is the honest
+// name for a row nobody owns (owner_id NULL — an ops task, grant requirement
+// or compliance item saved without an assignee, or a derived arm that never
+// carries one); it stays one tap away so those rows are never silently lost.
+// "Everyone" is the full org feed. Pure; the page reads the view from the URL
+// so a refresh (and the resolve/snooze router.refresh()) keeps it.
+
+export const NEEDS_YOU_VIEWS = ["mine", "unassigned", "all"] as const;
+export type NeedsYouView = (typeof NEEDS_YOU_VIEWS)[number];
+export const DEFAULT_NEEDS_YOU_VIEW: NeedsYouView = "mine";
+
+export function parseNeedsYouView(v: unknown): NeedsYouView {
+  return typeof v === "string" && (NEEDS_YOU_VIEWS as readonly string[]).includes(v)
+    ? (v as NeedsYouView)
+    : DEFAULT_NEEDS_YOU_VIEW;
+}
+
+export type OwnedObligation = { owner_id: string | null };
+
+export function filterObligationsByView<T extends OwnedObligation>(
+  rows: readonly T[],
+  view: NeedsYouView,
+  userId: string,
+): T[] {
+  switch (view) {
+    case "mine":
+      return rows.filter((r) => r.owner_id === userId);
+    case "unassigned":
+      return rows.filter((r) => r.owner_id == null);
+    default:
+      return [...rows];
+  }
+}
+
+export function countObligationsByView<T extends OwnedObligation>(
+  rows: readonly T[],
+  userId: string,
+): Record<NeedsYouView, number> {
+  return {
+    mine: filterObligationsByView(rows, "mine", userId).length,
+    unassigned: filterObligationsByView(rows, "unassigned", userId).length,
+    all: rows.length,
+  };
+}

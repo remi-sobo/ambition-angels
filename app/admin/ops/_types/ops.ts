@@ -180,20 +180,21 @@ export function isAdminUserId(v: unknown): v is AdminUserId {
 }
 
 // ── Assignee requirement ───────────────────────────────────────────────────
-// Every task must have an owner so it can't slip through unnoticed: either a
-// team member (assigned_to) or an owning department/team via category —
-// 'other' is the catch-all bucket, not a department, so it doesn't count.
-// Enforced by the create/edit forms only; automated writers (ingest, the
-// reporter, MCP) may still file unassigned tasks for triage.
-export function taskHasAssignee(
-  assignedTo: string | null | undefined,
-  category: string
-): boolean {
-  return Boolean(assignedTo) || (isTaskCategory(category) && category !== "other");
+// Every task must have a PERSON as its owner so it can't slip through
+// unnoticed. A category used to count as an owner ("Fundraising owns it"),
+// which is how tasks ended up saved with nobody assigned and got missed —
+// especially once more than two people share an org. Now only assigned_to
+// satisfies the rule. Enforced by every human create/edit form AND by the
+// human-facing task routes (POST /api/admin/ops/tasks; PATCH rejects clearing
+// it); automated writers (ingest, the issue reporter, MCP, crons) write the
+// table directly and may still file unassigned tasks for triage — those
+// surface on Today's "Unassigned" view rather than being lost.
+export function taskHasAssignee(assignedTo: string | null | undefined): boolean {
+  return typeof assignedTo === "string" && assignedTo.trim().length > 0;
 }
 
 export const ASSIGNEE_REQUIRED_MESSAGE =
-  "Every task needs an owner. Assign a team member, or set the category to the owning team (e.g. Fundraising, Finance).";
+  "Every task needs an owner. Choose who this task is assigned to before saving.";
 
 // ── Style helpers ──────────────────────────────────────────────────────────
 // Centralized so all components render consistent colors.

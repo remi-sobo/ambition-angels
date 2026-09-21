@@ -2,12 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 import type { TodayObligation } from "@/lib/admin/today";
-import { SHOW_CAP } from "@/lib/admin/todayRank";
+import {
+  SHOW_CAP,
+  DEFAULT_NEEDS_YOU_VIEW,
+  countObligationsByView,
+  filterObligationsByView,
+  type NeedsYouView,
+} from "@/lib/admin/todayRank";
 import ListRow, { ListRows } from "../../_components/ui/ListRow";
 import Button from "../../_components/ui/Button";
 import Badge from "../../_components/ui/Badge";
 import Alert from "../../_components/ui/Alert";
+import SegmentedControl from "../../_components/ui/SegmentedControl";
 import { TYPE } from "@/lib/admin/typeScale";
 
 /**
@@ -16,21 +24,43 @@ import { TYPE } from "@/lib/admin/typeScale";
  * /admin/queue's 308 lands here at cutover, not on a new screen). Every row
  * carries its why-line — never a bare checkbox — and resolve/snooze go
  * through the A3 RPCs (the API route re-implements no permission logic).
+ *
+ * Views: the feed is PER-USER by default ("Mine" — rows whose owner_id is
+ * the signed-in person). The org-wide feed used to be everyone's Home, so a
+ * teammate's list buried your own. "Unassigned" keeps rows nobody owns one
+ * tap away (with a banner on the default view when any exist) so an
+ * ownerless task is never silently lost; "Everyone" is the full org feed.
+ * The segmented control is link-driven (?needs=…) so the choice survives the
+ * router.refresh() that resolve/snooze trigger.
  */
+const VIEW_HREF: Record<NeedsYouView, string> = {
+  mine: "/admin/today",
+  unassigned: "/admin/today?needs=unassigned",
+  all: "/admin/today?needs=all",
+};
+
 export default function NeedsYou({
   obligations,
   today,
+  userId,
+  view = DEFAULT_NEEDS_YOU_VIEW,
 }: {
+  /** The FULL ranked org list; this component filters to `view`. */
   obligations: TodayObligation[];
   today: string;
+  /** auth user id of the signed-in person — "Mine" keys on owner_id. */
+  userId: string;
+  view?: NeedsYouView;
 }) {
   const router = useRouter();
   const [showAll, setShowAll] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const visible = showAll ? obligations : obligations.slice(0, SHOW_CAP);
-  const hidden = obligations.length - SHOW_CAP;
+  const counts = countObligationsByView(obligations, userId);
+  const inView = filterObligationsByView(obligations, view, userId);
+  const visible = showAll ? inView : inView.slice(0, SHOW_CAP);
+  const hidden = inView.length - SHOW_CAP;
 
   async function act(row: TodayObligation, action: "resolve" | "snooze", until?: string) {
     setBusyId(row.id);
@@ -59,8 +89,62 @@ export default function NeedsYou({
     return <p className={TYPE.bodyMuted}>Nothing needs you right now. Enjoy it.</p>;
   }
 
+  const segments = (
+    <SegmentedControl<NeedsYouView>
+      label="Needs-you view"
+      value={view}
+      hrefFor={(v) => VIEW_HREF[v]}
+      segments={[
+        { value: "mine", label: "Mine", hint: counts.mine },
+        { value: "unassigned", label: "Unassigned", hint: counts.unassigned },
+        { value: "all", label: "Everyone", hint: counts.all },
+      ]}
+      className="mb-3"
+    />
+  );
+
+  // The default view never hides ownerless work silently: when any exists,
+  // say so and link straight to it.
+  const unassignedBanner =
+    view === "mine" && counts.unassigned > 0 ? (
+      <Alert
+        tone="warning"
+        className="mb-3"
+        action={
+          <Link
+            href={VIEW_HREF.unassigned}
+            className="text-sm font-semibold text-orange hover:text-orange-dark whitespace-nowrap"
+          >
+            View unassigned →
+          </Link>
+        }
+      >
+        {counts.unassigned === 1
+          ? "1 item has no owner and could be missed."
+          : `${counts.unassigned} items have no owner and could be missed.`}
+      </Alert>
+    ) : null;
+
+  if (inView.length === 0) {
+    return (
+      <div>
+        {segments}
+        {unassignedBanner}
+        <p className={TYPE.bodyMuted}>
+          {view === "mine"
+            ? "Nothing is assigned to you right now."
+            : view === "unassigned"
+              ? "Every open item has an owner."
+              : "Nothing needs anyone right now."}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div>
+      {segments}
+      {unassignedBanner}
       {error && (
         <Alert tone="danger" className="mb-3">
           {error}
@@ -137,7 +221,7 @@ export default function NeedsYou({
           onClick={() => setShowAll((v) => !v)}
           className="mt-3 !px-0"
         >
-          {showAll ? `Show top ${SHOW_CAP}` : `Show all ${obligations.length}`}
+          {showAll ? `Show top ${SHOW_CAP}` : `Show all ${inView.length}`}
         </Button>
       )}
     </div>

@@ -4,10 +4,12 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { thisMonday, mondayOf } from "@/lib/admin/ops/week";
 import {
+  ASSIGNEE_REQUIRED_MESSAGE,
   isTaskCategory,
   isTaskStatus,
   isTaskPriority,
   isAdminUserId,
+  taskHasAssignee,
   type OpsTask,
 } from "@/app/admin/ops/_types/ops";
 
@@ -142,10 +144,15 @@ export async function PATCH(
     }
   }
   if ("assigned_to" in body) {
-    if (body.assigned_to !== null && !isAdminUserId(body.assigned_to)) {
+    // An edit may hand a task to someone else, never clear its owner — an
+    // unowned task is how work gets missed (see taskHasAssignee).
+    if (!taskHasAssignee(body.assigned_to as string | null | undefined)) {
+      return NextResponse.json({ error: ASSIGNEE_REQUIRED_MESSAGE }, { status: 400 });
+    }
+    if (!isAdminUserId(body.assigned_to)) {
       return NextResponse.json({ error: "assigned_to is invalid" }, { status: 400 });
     }
-    updates.assigned_to = body.assigned_to;
+    updates.assigned_to = (body.assigned_to as string).trim();
   }
   if ("project_id" in body) {
     if (body.project_id !== null && typeof body.project_id !== "string") {

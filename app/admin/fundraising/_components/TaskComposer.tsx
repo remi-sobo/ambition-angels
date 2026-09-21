@@ -7,7 +7,12 @@
 // EntityTasks, just launchable from the tables where segments live.
 
 import { useEffect, useState } from "react";
-import { TASK_PRIORITIES, type TaskPriority } from "../../ops/_types/ops";
+import {
+  ASSIGNEE_REQUIRED_MESSAGE,
+  TASK_PRIORITIES,
+  taskHasAssignee,
+  type TaskPriority,
+} from "../../ops/_types/ops";
 import { useAssignees, withSelected } from "../../_lib/useAssignees";
 import { useAdminUser } from "../../_components/AdminUserContext";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -57,6 +62,10 @@ export default function TaskComposer({
       setError("Give the task a title.");
       return;
     }
+    if (!taskHasAssignee(assignee)) {
+      setError(ASSIGNEE_REQUIRED_MESSAGE);
+      return;
+    }
     setSaving(true);
     let created = 0;
     const failed: string[] = [];
@@ -70,7 +79,7 @@ export default function TaskComposer({
             category: "fundraising",
             priority,
             due_date: due || null,
-            assigned_to: assignee || null,
+            assigned_to: assignee,
             linked_entity_type: entityType,
             linked_entity_id: t.id,
             linked_label: t.name,
@@ -135,8 +144,11 @@ export default function TaskComposer({
               </select>
             </label>
             <label className="block">
-              <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Owner</div>
-              <select value={assignee} onChange={(e) => setAssignee(e.target.value)} className={fieldCls}>
+              <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">
+                Owner <span className="text-orange">*</span>
+              </div>
+              <select value={assignee} aria-required="true" onChange={(e) => setAssignee(e.target.value)} className={fieldCls}>
+                {!assignee && <option value="">Choose a person…</option>}
                 {assigneeOptions.map((a) => (
                   <option key={a.value} value={a.value} className="bg-surface">{a.label}</option>
                 ))}

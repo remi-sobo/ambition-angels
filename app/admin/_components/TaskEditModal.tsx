@@ -245,7 +245,7 @@ export default function TaskEditModal({
       setError("Title is required.");
       return;
     }
-    if (!taskHasAssignee(assignee, category)) {
+    if (!taskHasAssignee(assignee)) {
       setAssigneeError(ASSIGNEE_REQUIRED_MESSAGE);
       return;
     }
@@ -264,7 +264,7 @@ export default function TaskEditModal({
             ...labels.split(",").map((l) => l.trim()).filter(Boolean),
             ...(task.labels ?? []).filter((l) => l.startsWith("sys:")),
           ],
-          assigned_to: assignee || null,
+          assigned_to: assignee,
           due_date: dueDate || null,
           project_id: projectId || null,
           pinned_for_today: pinToday,
@@ -489,22 +489,28 @@ export default function TaskEditModal({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Assigned to">
+            <Field label="Assigned to" required>
               <select
                 value={assignee}
+                aria-required="true"
+                aria-invalid={assigneeError ? "true" : undefined}
                 onChange={(e) => {
                   setAssignee(e.target.value);
                   setAssigneeError(null);
                 }}
-                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
+                className={`w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50 ${
+                  assigneeError ? "!border-status-critical" : ""
+                }`}
               >
-                <option value="">Unassigned</option>
+                {/* A legacy task saved with no owner shows the placeholder;
+                    saving it now requires picking someone. */}
+                <option value="">Choose a person…</option>
                 {assigneeOptions.map((a) => (
                   <option key={a.value} value={a.value}>{a.label}</option>
                 ))}
               </select>
               {assigneeError && (
-                <p className="mt-1 text-expense text-xs">{assigneeError}</p>
+                <p role="alert" className="mt-1 text-expense text-xs">{assigneeError}</p>
               )}
             </Field>
             <Field label="Due date">

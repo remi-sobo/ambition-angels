@@ -3,7 +3,12 @@ import { cache } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
-import { rankObligations, whyFallback, type ObligationRow } from "@/lib/admin/todayRank";
+import {
+  countObligationsByView,
+  rankObligations,
+  whyFallback,
+  type ObligationRow,
+} from "@/lib/admin/todayRank";
 import { SOURCE_FALLBACK_HREF } from "@/lib/admin/actionQueue";
 
 /**
@@ -29,6 +34,9 @@ import { SOURCE_FALLBACK_HREF } from "@/lib/admin/actionQueue";
 
 export type TodayObligation = ObligationRow & {
   source_id: string;
+  /** v_obligations.owner_id — auth user id of the assignee, NULL when nobody
+   *  owns the row. Today's default view keeps rows where this is the caller. */
+  owner_id: string | null;
   /** why_it_matters, or the honest type-specific fallback. */
   why: string;
   /** True when `why` is the real recorded sentence, not the fallback. */
@@ -47,8 +55,11 @@ export type TodayEvent = { id: string; title: string; start: string; end: string
 
 export type TodayData = {
   todayISO: string;
-  /** Ranked, FULL list — the page slices to SHOW_CAP and offers "show all N"
-   *  (open decision 1, resolved: expand-in-place). */
+  /** The signed-in user — NeedsYou's "mine" view keys on owner_id = this. */
+  userId: string;
+  /** Ranked, FULL org list — the page filters to the chosen view (mine by
+   *  default), slices to SHOW_CAP and offers "show all N" (open decision 1,
+   *  resolved: expand-in-place). */
   obligations: TodayObligation[];
   orientation: { line: string; source: "briefing" | "composed" };
   myDay: { events: TodayEvent[]; pendingDrafts: number };
@@ -66,7 +77,7 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
   const [obRes, narrativeRes, eventsRes, draftsRes] = await Promise.all([
     supabase
       .from("v_obligations")
-      .select("id, type, title, why_it_matters, due_date, state, module")
+      .select("id, type, title, why_it_matters, owner_id, due_date, state, module")
       .eq("org_id", ctx.orgId)
       .limit(500),
     admin
@@ -93,13 +104,14 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
       .eq("status", "drafted"),
   ]);
 
-  const rows = (obRes.data ?? []) as (ObligationRow & { id: string })[];
+  const rows = (obRes.data ?? []) as (ObligationRow & { id: string; owner_id: string | null })[];
   const ranked = rankObligations(rows, todayISO).map((r): TodayObligation => {
     const sourceId = r.id.slice(r.id.indexOf(":") + 1);
     const why = r.why_it_matters?.trim() || whyFallback(r, todayISO);
     return {
       ...r,
       source_id: sourceId,
+      owner_id: r.owner_id ?? null,
       why,
       whyRecorded: Boolean(r.why_it_matters?.trim()),
       href: SOURCE_FALLBACK_HREF[r.type as keyof typeof SOURCE_FALLBACK_HREF] ?? "/admin",
@@ -108,19 +120,28 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
     };
   });
 
-  const overdue = ranked.filter((r) => r.due_date && r.due_date < todayISO).length;
-  const dueToday = ranked.filter((r) => r.due_date === todayISO).length;
+  // The composed line describes the DEFAULT view — the caller's own rows —
+  // and names the unowned count so unassigned work is never silently lost.
+  const mine = ranked.filter((r) => r.owner_id === ctx.userId);
+  const counts = countObligationsByView(ranked, ctx.userId);
+  const overdue = mine.filter((r) => r.due_date && r.due_date < todayISO).length;
+  const dueToday = mine.filter((r) => r.due_date === todayISO).length;
   const headline = (narrativeRes.data?.headline as string | null | undefined)?.trim();
+  const unowned =
+    counts.unassigned > 0
+      ? ` ${counts.unassigned} item${counts.unassigned === 1 ? " has" : "s have"} no owner.`
+      : "";
   const composed =
-    ranked.length === 0
-      ? "Nothing needs you right now."
-      : `${ranked.length} thing${ranked.length === 1 ? "" : "s"} need${ranked.length === 1 ? "s" : ""} you` +
+    (mine.length === 0
+      ? "Nothing is assigned to you right now."
+      : `${mine.length} thing${mine.length === 1 ? "" : "s"} need${mine.length === 1 ? "s" : ""} you` +
         (overdue ? `: ${overdue} overdue` : "") +
         (dueToday ? `${overdue ? "," : ":"} ${dueToday} due today` : "") +
-        ".";
+        ".") + unowned;
 
   return {
     todayISO,
+    userId: ctx.userId,
     obligations: ranked,
     orientation: headline
       ? { line: headline, source: "briefing" }

@@ -4,10 +4,12 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { thisMonday } from "@/lib/admin/ops/week";
 import {
+  ASSIGNEE_REQUIRED_MESSAGE,
   isTaskCategory,
   isTaskStatus,
   isTaskPriority,
   isAdminUserId,
+  taskHasAssignee,
   type OpsTask,
 } from "@/app/admin/ops/_types/ops";
 
@@ -77,7 +79,12 @@ export async function POST(req: NextRequest) {
   if (body.parent_id !== undefined && body.parent_id !== null && typeof body.parent_id !== "string") {
     return NextResponse.json({ error: "parent_id must be a string" }, { status: 400 });
   }
-  if (body.assigned_to !== undefined && body.assigned_to !== null && !isAdminUserId(body.assigned_to)) {
+  // Every human-created task needs a person as its owner (the forms block
+  // this first; the route is the backstop so nothing slips in unassigned).
+  if (!taskHasAssignee(body.assigned_to as string | null | undefined)) {
+    return NextResponse.json({ error: ASSIGNEE_REQUIRED_MESSAGE }, { status: 400 });
+  }
+  if (!isAdminUserId(body.assigned_to)) {
     return NextResponse.json({ error: "assigned_to is invalid" }, { status: 400 });
   }
   if (body.due_date !== undefined && body.due_date !== null && !isISODate(body.due_date)) {
@@ -111,7 +118,7 @@ export async function POST(req: NextRequest) {
     parent_id: (body.parent_id as string | null | undefined) ?? null,
     labels: isLabelArray(body.labels) ? body.labels : [],
     project_id: (body.project_id as string | null | undefined) ?? null,
-    assigned_to: (body.assigned_to as string | null | undefined) ?? null,
+    assigned_to: (body.assigned_to as string).trim(),
     created_by: createdBy,
     due_date: (body.due_date as string | null | undefined) ?? null,
     pinned_for_today: body.pinned_for_today === true,

@@ -17,6 +17,8 @@ import {
   taskStatusBadgeClass,
   type OpsTask,
   type TaskPriority,
+  ASSIGNEE_REQUIRED_MESSAGE,
+  taskHasAssignee,
 } from "../_types/ops";
 
 export type GroupBy = "priority" | "status" | "category" | "project";
@@ -210,8 +212,14 @@ export default function TaskListView({
     e.preventDefault();
     const title = newTitle.trim();
     if (!title) return;
-    setAdding(true);
     setAddError(null);
+    // Inline add owns the task to the signed-in person; no user handle means
+    // nobody to own it, and an unowned task is how work gets missed.
+    if (!taskHasAssignee(currentUser)) {
+      setAddError(ASSIGNEE_REQUIRED_MESSAGE);
+      return;
+    }
+    setAdding(true);
     try {
       const r = await fetch("/api/admin/ops/tasks", {
         method: "POST",
@@ -220,7 +228,7 @@ export default function TaskListView({
           title,
           category: "other",
           priority: "medium",
-          assigned_to: currentUser ?? null,
+          assigned_to: currentUser,
         }),
       });
       if (!r.ok) {

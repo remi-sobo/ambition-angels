@@ -7,6 +7,7 @@ import Card, { CardHeader, CardMetric, CardFooter } from "../_components/ui/Card
 import Badge from "../_components/ui/Badge";
 import NeedsYou from "./_components/NeedsYou";
 import { getTodayData } from "@/lib/admin/today";
+import { parseNeedsYouView } from "@/lib/admin/todayRank";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
@@ -77,7 +78,16 @@ function Tile({
   );
 }
 
-export default async function TodayPage() {
+export default async function TodayPage({
+  searchParams,
+}: {
+  searchParams?: { needs?: string | string[] };
+}) {
+  // Needs-you view lives in the URL (?needs=mine|unassigned|all) so the
+  // choice survives a refresh; anything else — including no param — is
+  // "mine", the per-user default.
+  const needsParam = Array.isArray(searchParams?.needs) ? searchParams?.needs[0] : searchParams?.needs;
+  const needsView = parseNeedsYouView(needsParam);
   const ctx = await getOrgContext();
   if (!ctx) {
     return (
@@ -117,7 +127,12 @@ export default async function TodayPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2">
           <Tile title="Needs you">
-            <NeedsYou obligations={data.obligations} today={data.todayISO} />
+            <NeedsYou
+              obligations={data.obligations}
+              today={data.todayISO}
+              userId={data.userId}
+              view={needsView}
+            />
           </Tile>
         </div>
 

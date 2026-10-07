@@ -12,6 +12,8 @@ import PageHeader from "../../_components/PageHeader";
 import ReconcileSection from "../reconcile/ReconcileSection";
 import CloseSection from "../close/CloseSection";
 import { TYPE } from "@/lib/admin/typeScale";
+import QuickBooksRegister from "../_components/QuickBooksRegister";
+import { getQuickBooksStatus } from "@/lib/quickbooks/connection";
 
 type SearchParams = {
   q?: string;
@@ -20,6 +22,9 @@ type SearchParams = {
   to?: string;
   status?: string;
   page?: string;
+  /** Connect round-trip outcome from /api/admin/finance/quickbooks/*. */
+  qbo?: string;
+  reason?: string;
 };
 
 const PAGE_SIZE = 100;
@@ -118,7 +123,7 @@ export default async function TransactionsPage({
   const start = (page - 1) * PAGE_SIZE;
   qb = qb.range(start, start + PAGE_SIZE - 1);
 
-  const [{ data: rowsRaw, count, error }, { count: orgTxnCount }] = await Promise.all([
+  const [{ data: rowsRaw, count, error }, { count: orgTxnCount }, qboStatus] = await Promise.all([
     qb,
     // Any transaction at all, unfiltered — the first-run signal for Q5's
     // EmptyState (a filtered-to-zero view is not a first run).
@@ -126,6 +131,7 @@ export default async function TransactionsPage({
       .from("fin_transactions")
       .select("id", { count: "exact", head: true })
       .eq("org_id", orgId),
+    getQuickBooksStatus(orgId),
   ]);
   if (error) {
     console.error("[finance/transactions] query failed:", error.message);
@@ -175,6 +181,8 @@ export default async function TransactionsPage({
           }
         />
       </header>
+
+      <QuickBooksRegister status={qboStatus} notice={{ qbo: searchParams.qbo, reason: searchParams.reason }} />
 
       <TransactionFilters categories={categories} />
 

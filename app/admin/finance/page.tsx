@@ -23,6 +23,7 @@ import {
 import ReconcileCard from "./_components/ReconcileCard";
 import RunwayTiers from "./_components/RunwayTiers";
 import InfoTip from "./_components/InfoTip";
+import { getQuickBooksStatus } from "@/lib/quickbooks/connection";
 import { constituentName } from "@/lib/fundraising/display";
 import { CHART, CHART_SERIES } from "@/lib/admin/chartTokens";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -58,6 +59,7 @@ export default async function FinanceDashboardPage() {
     recentGiftsRes,
     scheduleRows,
     receivedYTD,
+    qbo,
   ] = await Promise.all([
     supabase
       .from("fin_categories")
@@ -107,6 +109,9 @@ export default async function FinanceDashboardPage() {
       .limit(5),
     loadRevenueSchedule(supabase, orgId),
     loadReceivedTotal(supabase, orgId, fy.start, fy.end),
+    // QuickBooks cash-in-account pull (when connected): shown on the cash card
+    // as the source of the runway anchor.
+    getQuickBooksStatus(orgId),
   ]);
 
   // Canonical inflows from the revenue schedule (opportunities + grants +
@@ -302,7 +307,12 @@ export default async function FinanceDashboardPage() {
 
       {/* Cash anchor + reconcile — the trusted current-balance number, with a
           one-tap "set current balance" and a freshness indicator. */}
-      <ReconcileCard computedCash={cashOnHand} anchorDate={cfg.startDate} reconciledAt={cfg.reconciledAt} />
+      <ReconcileCard
+        computedCash={cashOnHand}
+        anchorDate={cfg.startDate}
+        reconciledAt={cfg.reconciledAt}
+        qboCash={qbo.connected ? qbo.cash : null}
+      />
 
       {/* Forward runway — three tiers from the shared engine. */}
       <RunwayTiers

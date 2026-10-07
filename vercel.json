@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/metric-snapshots",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/quickbooks-sync",
+      "schedule": "0 12 * * *"
     }
   ]
 }

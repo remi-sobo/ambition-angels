@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import InfoTip from "./InfoTip";
 import { TYPE } from "@/lib/admin/typeScale";
+import type { CashBalance } from "@/lib/quickbooks/register";
 
 // "Set current balance" / reconcile. Lets the user anchor cash to a real,
 // bank-verified number in one field: type today's actual balance, see how far
@@ -28,10 +29,14 @@ export default function ReconcileCard({
   computedCash,
   anchorDate,
   reconciledAt,
+  qboCash = null,
 }: {
   computedCash: number;
   anchorDate: string | null;
   reconciledAt: string | null;
+  /** Cash in account from the QuickBooks pull, when QuickBooks is connected.
+   *  The daily pull also writes it to the anchor, so it is the runway base. */
+  qboCash?: CashBalance | null;
 }) {
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
@@ -99,6 +104,18 @@ export default function ReconcileCard({
               {freshness.label}
             </span>
           </div>
+          {qboCash && (
+            <div className="mt-2 text-xs text-ink-2">
+              QuickBooks cash in account: <b className="text-ink-1">{fmtMoney(qboCash.balance)}</b> as of{" "}
+              {qboCash.asOf}
+              {qboCash.accounts.length > 0 && (
+                <span>
+                  {" "}
+                  ({qboCash.accounts.map((a) => `${a.name} ${fmtMoney(a.balance)}`).join(", ")})
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {!open && (

@@ -511,3 +511,145 @@ sample request and response from a unit-level run, and a short list of anything 
 this prompt that didn't match the repo. Merge order: I apply the RPC migration
 first, then the PR merges, because the route calls the RPC. Stop there.
 ```
+
+---
+
+## C2 as built (verified in production 2026-10-09)
+
+PR #548, squash `21840d3`, ledger row `20261009184818 capture_match_rpc`. `capture_match_candidates(q, org, lim)` is live, security invoker, stable, pinned search_path. Execute is granted to `anon` as well as `authenticated`; harmless under RLS, revoked in C3's migration. As of this check: 0 captures, 0 cards, 0 `ai_calls` with surface `capture`, so the parse path has only run in tests.
+
+---
+
+## C3 kickoff prompt (paste into Claude Code)
+
+```
+Build stage C3 of specs/bloomos-capture.md: confirm, discard, edit, undo, and the
+four appliers. API only, no UI. Read the spec's rulings, "C1 as built", and
+"C2 as built" first. Branch from main (21840d3 or later). One PR. Do not apply
+the migration; I apply it through the connector after review.
+
+GOAL: a proposed card becomes exactly one real row in its destination table, on a
+human request, through the session client, with provenance, idempotently, and can
+be undone shortly after if nobody has touched the row.
+
+0. Migration supabase/migrations/capture_rpc_grants.sql (guarded form): revoke
+   execute on capture_match_candidates(text, uuid, int) from public, anon; keep
+   authenticated. Nothing else. Extend capture-match-rpc-migration.test.ts or
+   add a sibling asserting the revoke.
+
+1. Fence test update. Split tests/capture-fence.test.ts in two:
+   - Parse path (lib/capture/{spans,match,prompt,validate,context,staff,constants,
+     types}.ts and app/api/admin/capture/route.ts, [id]/route.ts GET) keeps the
+     full C2 fence: no destination tables, no students, no getSupabaseAdmin.
+   - New lib/capture/apply/** may reference ONLY its own destination table
+     (interactions.ts -> interactions; partnerInteraction.ts ->
+     partner_interactions + partners for last_touch_at; task.ts -> ops_tasks;
+     draft.ts -> reed_drafts) plus capture_cards/captures. Still no students
+     family, no getSupabaseAdmin, no pushInteractionToHubSpot (ruling 9), no
+     resolveConstituent. Assert per file.
+
+2. lib/capture/apply/*.ts, one applier per destination, all session client.
+   Shared contract: apply(supabase, ctx, card, capture) -> { table, id, snapshot }
+   where snapshot is the inserted row's editable fields (used by undo). Each
+   applier first LOOKS UP an existing row by provenance and returns it if found
+   (crash recovery and double-tap safety), then inserts.
+   - interaction (entity_type constituent): interactions insert
+     { org_id: ctx.orgId, constituent_id, kind (call|meeting|note|event; reject
+     email), occurred_at, notes (<= 4000 chars), logged_by: user handle,
+     external_source: 'capture', external_id: card.id }. Lookup by
+     (external_source, external_id, constituent_id). Validate kind exactly like
+     app/api/admin/interactions/route.ts.
+   - interaction (entity_type partner): partner_interactions insert, same
+     provenance, lookup by (org_id, external_source, external_id, partner_id),
+     then bump partners.last_touch_at to greatest(existing, occurred_at), as the
+     existing partners interactions route does.
+   - task and thought: ops_tasks insert { org_id, title, category (fallback
+     'other'), created_by: handle, assigned_to + assigned_to_id (both or
+     neither), due_date (task only), linked_entity_type/id/label when matched,
+     labels: ['capture', 'sys:ref:capture_card:<card.id>'] plus 'parking-lot'
+     for thoughts, origin_path: sanitizeOriginPath('/admin/capture/<capture.id>'),
+     status default }. Lookup by labels @> '{sys:ref:capture_card:<card.id>}'.
+     Never linked_entity_type 'student'.
+   - message_draft: reed_drafts insert { org_id, kind: 'capture_message', title:
+     'Message to <name>', body, status: 'drafted', created_by: handle,
+     model_used: capture.model_used, context_ref: { capture_id, capture_card_id,
+     entity_type, entity_id, channel } }. Lookup by
+     context_ref->>capture_card_id. Never sends anything.
+   Each applier writes an audit() row like the manual interactions route
+   (action e.g. 'capture.interaction.create', entityType = the table).
+
+3. Confirm flow (lib/capture/confirm.ts) with claim-then-apply ordering:
+   a. Load card + capture via RLS. 404 if not visible.
+   b. If status confirmed and applied_id set: return it (idempotent).
+   c. If status confirmed and applied_id null (crash between claim and apply):
+      run the applier (its provenance lookup finds or creates), then set
+      applied_table/applied_id.
+   d. If status held: 409 'pick a match first' unless the request includes the
+      pick (see edit). If discarded: 409.
+   e. Claim: update capture_cards set status 'confirmed', decided_by auth.uid(),
+      decided_at now() where id = card.id and status = 'proposed' returning *.
+      Zero rows -> re-read and go to b/c (someone else claimed it).
+   f. Apply. On failure: revert the claim (status 'proposed', decided_* null),
+      map RLS/permission errors to 403 with a plain message naming the
+      destination ("You can't file to donor records in this org"), others 500.
+   g. Set applied_table, applied_id, and payload.applied_snapshot = snapshot.
+   h. If no proposed or held cards remain on the capture, set captures.status
+      'done'.
+   Pre-check the destination permission with hasPermission (fundraising.write,
+   program.write, ops.write; reed_drafts membership) to fail fast with 403
+   before claiming.
+
+4. Edit (proposed or held cards only): patch text fields (notes, title, text,
+   body, kind, due, assignee, category), dest change among the four, and entity
+   pick. A pick must be either one of match_candidates or an id returned by
+   capture_match_candidates for this org (re-verify server-side by id and kind,
+   constituent or partner only). A successful pick moves held -> proposed.
+   Re-run the same validation used in C2 (reuse validate.ts helpers, do not
+   duplicate rules). cleanVoiceText on prose fields only.
+
+5. Discard: proposed or held -> discarded. Confirmed cards can't be discarded
+   (use undo).
+
+6. Undo: confirmed cards only, within UNDO_WINDOW_MINUTES = 10 of decided_at
+   (constant in lib/capture/constants.ts), and only if the destination row still
+   matches payload.applied_snapshot (compare the snapshot fields; for ops_tasks
+   and reed_drafts also require updated_at unchanged). Delete the destination
+   row via the session client, then card back to 'proposed' with applied_* and
+   decided_* cleared and applied_snapshot removed, capture back to 'ready' if it
+   was 'done'. Partner last_touch_at is not rolled back (say so in a comment).
+   Outside the window or changed: 409 with reason. Audit 'capture.<dest>.undo'.
+
+7. Routes:
+   - POST /api/admin/capture/cards/[id]  body { action: 'confirm' | 'discard' |
+     'undo' | 'edit', patch? }  -> { card, applied?: { table, id } }
+   - POST /api/admin/capture/[id]/confirm-all -> applies every proposed card in
+     position order, sequentially, returns per-card { id, ok, error? }; held
+     cards are skipped and counted.
+   - GET /api/admin/capture/candidates?q=&kind= -> typeahead for the pick sheet,
+     wraps capture_match_candidates, returns constituent and partner only (drop
+     prospect), limit 8.
+   All: requireEntitlement('ai.capture') -> 401/402, createServerSupabase only.
+   No rate limit on these (no AI cost), but reject transcripts/patch text over
+   the C2 limits.
+
+8. Tests:
+   - Each applier: insert shape, provenance, lookup-returns-existing, permission
+     denied -> 403 mapping, never emits student.
+   - Confirm: double confirm returns same applied id; crash-recovery path (c);
+     held without pick -> 409; claim race (two confirms, one insert).
+   - Undo: within window and unchanged -> deleted; changed row -> 409; outside
+     window -> 409.
+   - Edit: pick outside candidates re-verified; prospect pick rejected; held ->
+     proposed on pick; dest change re-validated.
+   - confirm-all: mixed proposed/held/confirmed set.
+   - Capture status moves ready -> done -> ready on undo.
+   Add an rls-leak-test block: user B can't confirm user A's card (RLS hides it,
+   404); a board_viewer in AA gets 403 on every destination.
+
+9. npm run lint, typecheck, npm test. Nothing against production.
+
+PR body: the migration SQL under "SQL for Remi to review", a table of the four
+appliers with the exact insert payload each sends, and anything in this prompt
+that didn't match the repo. Merge order: apply the grants migration, then merge.
+Stop there.
+```

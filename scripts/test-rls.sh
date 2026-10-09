@@ -234,6 +234,7 @@ ordered=(
   drop_fr_plan_gift_levels.sql
   capture_tables.sql
   capture_match_rpc.sql
+  capture_rpc_grants.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

@@ -1767,4 +1767,117 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+-- ════ Capture C2: capture_match_candidates RPC (specs/bloomos-capture.md) ═
+-- SECURITY INVOKER trigram search pinned to the caller's active org. Org B
+-- gets zero rows for org A's id (and its own rows for its own id); an AA
+-- board_viewer (no fundraising.read / program.read) gets only what RLS
+-- allows, i.e. nothing; a stranger gets nothing; anon cannot call it at all.
+reset role;
+reset request.jwt.claim.sub;
+
+do $$
+declare aa uuid; t2 uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  insert into constituents (org_id, type, first_name, last_name, source)
+    values (aa, 'person', 'Marisol', 'Quintero', 'manual');
+  insert into constituents (org_id, type, org_name, source)
+    values (aa, 'organization', 'Harbor Light Foundation', 'manual');
+  insert into partners (org_id, name, kind) values (aa, 'Harbor Light Academy', 'school');
+  insert into fr_prospects (org_id, name, org_name) values (aa, 'Marisol Prospect', 'Harbor Light Trust');
+  insert into constituents (org_id, type, first_name, last_name, source)
+    values (t2, 'person', 'Marisol', 'Tenant', 'manual');
+  insert into partners (org_id, name, kind) values (t2, 'Tenant Two Academy', 'school');
+end $$;
+
+set role authenticated;
+
+-- AA owner: finds the AA rows across all three kinds, never tenant-two's.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare aa uuid; t2 uuid; n int;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  select count(*) into n from public.capture_match_candidates('Marisol', aa, 10) where kind = 'constituent';
+  if n = 0 then raise exception 'AA owner cannot match an AA constituent through capture_match_candidates'; end if;
+  select count(*) into n from public.capture_match_candidates('Harbor Light', aa, 10) where kind = 'partner';
+  if n = 0 then raise exception 'AA owner cannot match an AA partner through capture_match_candidates'; end if;
+  select count(*) into n from public.capture_match_candidates('Marisol', aa, 10) where kind = 'prospect';
+  if n = 0 then raise exception 'AA owner cannot match an AA prospect through capture_match_candidates'; end if;
+  if (select count(*) from public.capture_match_candidates('Marisol', aa, 10) where name like '%Tenant%') <> 0 then
+    raise exception 'LEAK: AA owner sees a tenant-two constituent through capture_match_candidates';
+  end if;
+  -- The org argument can only narrow: asking for tenant-two with AA's session yields nothing.
+  if (select count(*) from public.capture_match_candidates('Marisol', t2, 10)) <> 0 then
+    raise exception 'LEAK: AA owner reads tenant-two rows by passing its org id';
+  end if;
+  if (select count(*) from public.capture_match_candidates('Marisol', aa, 10) where kind not in ('constituent','partner','prospect')) <> 0 then
+    raise exception 'capture_match_candidates returned a kind outside constituent/partner/prospect';
+  end if;
+end $$;
+
+-- Tenant-two owner: zero AA rows for AA's id, its own rows for its own id.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare aa uuid; t2 uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  if (select count(*) from public.capture_match_candidates('Marisol', aa, 10)) <> 0 then
+    raise exception 'LEAK: tenant-two matches AA names through capture_match_candidates';
+  end if;
+  if (select count(*) from public.capture_match_candidates('Harbor Light', aa, 10)) <> 0 then
+    raise exception 'LEAK: tenant-two matches AA partners/prospects through capture_match_candidates';
+  end if;
+  if (select count(*) from public.capture_match_candidates('Marisol', t2, 10) where kind = 'constituent') = 0 then
+    raise exception 'tenant-two owner cannot match its OWN constituent';
+  end if;
+  if (select count(*) from public.capture_match_candidates('Tenant Two', t2, 10) where kind = 'partner') = 0 then
+    raise exception 'tenant-two owner cannot match its OWN partner';
+  end if;
+end $$;
+
+-- AA board_viewer: no fundraising.read / program.read, so RLS admits nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from public.capture_match_candidates('Marisol', aa, 10)) <> 0 then
+    raise exception 'LEAK: board_viewer matches names through capture_match_candidates';
+  end if;
+  if (select count(*) from public.capture_match_candidates('Harbor Light', aa, 10)) <> 0 then
+    raise exception 'LEAK: board_viewer matches partners through capture_match_candidates';
+  end if;
+end $$;
+
+-- Stranger (session, no membership): nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from public.capture_match_candidates('Marisol', aa, 10)) <> 0 then
+    raise exception 'LEAK: non-member matches names through capture_match_candidates';
+  end if;
+end $$;
+
+-- Anon: execute is revoked.
+reset role;
+reset request.jwt.claim.sub;
+set role anon;
+do $$
+declare aa uuid; n int;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select count(*) into n from public.capture_match_candidates('Marisol', aa, 10);
+  raise exception 'LEAK: anon can call capture_match_candidates';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

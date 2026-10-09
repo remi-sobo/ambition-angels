@@ -1,6 +1,6 @@
 # BloomOS Capture: say it once, confirm the cards
 
-**Spec status:** Phase 0 complete (`docs/recon/capture-phase0.md`, branch `claude/pensive-einstein-sgcg5s`). Rulings below supersede anything they contradict further down. C1 is cleared to start once Remi accepts the rulings.
+**Spec status:** Phase 0 complete (`docs/recon/capture-phase0.md`, branch `claude/pensive-einstein-sgcg5s`). Rulings below were accepted by Remi on 2026-10-08 and supersede anything they contradict further down. C1 is cleared to start.
 **Source of the pattern:** the Team Esface coach app redesign (`app/record.jsx`, `SU_DESIGN_PROMPT_RECORDER_TRUST.md`). We're porting the interaction contract, not the code, the brand, or the KPI scoring.
 **Proposed path:** `specs/bloomos-capture.md`
 
@@ -8,7 +8,7 @@
 
 ## Phase 0 rulings (2026-10-08)
 
-Each line answers one of the recon's 16 spec changes. "Recommended" means it's waiting on Remi's yes.
+Each line answers one of the recon's 16 spec changes. All accepted 2026-10-08.
 
 1. **Matcher builds on what exists.** `lib/capture/match.ts` is a session-client query over `constituents` (first, last, org_name) and `partners.name`, modeled on `meetings/[id]/connect/route.ts` and the scoring in `bloomos_search_people`. Never `resolveConstituent` (creates rows, ignores archived, no org pin). Never the global search route (it reads `students`). C1 adds `partners_name_trgm`.
 2. **Universe is ~2,826 names, not 3,586.** The 756 nameless HubSpot-import rows are unreachable by voice and that's fine. Tune the near-tie hold on the Sobomehin family and the 32 exact-duplicate pairs, not on common first names. The 20-note DoD test set is recorded speech, not typed text.
@@ -18,10 +18,10 @@ Each line answers one of the recon's 16 spec changes. "Recommended" means it's w
 6. **Cap and ledger.** Route checks `orgOverAICap` and returns 429 when over (402 stays the entitlement signal). Route writes `logAICall` with `surface: 'capture'`. New per-user rate limit, 30 parses per hour, implemented as a count of the caller's `captures` rows in the last hour (no new infra).
 7. **Gateway.** `generateStructured` with a `submit_capture_cards` tool. `cleanVoiceText` runs in the validator on prose fields only (interaction notes, task title, draft body), never on names, dates, or handles.
 8. **Task cards.** Category chosen from `TASK_CATEGORIES`, fallback `other`. Set both `assigned_to` (handle) and `assigned_to_id` (uuid). Assignee candidates are org members holding `ops.write`.
-9. **HubSpot mirror: recommend no.** HubSpot is staging-only and being retired, and the spine is the system of record. Capture-filed interactions don't call `pushInteractionToHubSpot`. That keeps the feature off the service-role client entirely and avoids adding new traffic to a sync we're removing. **Remi's call.**
+9. **HubSpot mirror: recommend no.** HubSpot is staging-only and being retired, and the spine is the system of record. Capture-filed interactions don't call `pushInteractionToHubSpot`. That keeps the feature off the service-role client entirely and avoids adding new traffic to a sync we're removing. **Decided: no mirror (Remi, 2026-10-08).**
 10. **Obligations arm.** One row per `captures` row with pending cards, `contains_participant_data = true` (free-text precedent), all six app-side edit points listed in C5, plus `resolve_obligation` and `snooze_obligation` branches.
 11. **Seed before gate.** `ai.capture` rows for `ambition-angels` and `young-gifted-black` ship in C1 and are applied before C2's route deploys.
-12. **Apply path.** The live ledger shows recent migrations recorded with `name` = filename stem (e.g. `spec_fr_next_step_obligations`), so whatever path Remi used in September writes the ledger. C1's file is `supabase/migrations/capture_tables.sql`, and Remi applies it the same way so `migration-ledger.yml` stays green. **Remi to confirm which path that is.**
+12. **Apply path.** The live ledger shows recent migrations recorded with `name` = filename stem (e.g. `spec_fr_next_step_obligations`), so whatever path Remi used in September writes the ledger. **Decided (Remi, 2026-10-08):** migrations are applied through the Supabase connector's `apply_migration` with `name` set to the filename stem, which writes the ledger and keeps `migration-ledger.yml` green. C1's file is `supabase/migrations/capture_tables.sql`, applied as `name: capture_tables`, only after Remi reviews the SQL and explicitly says to apply it. Claude Code never applies it as part of a build stage.
 13. **Retention.** Cron is healthy now: 24 `gmail_sync_jobs` in the last 24 hours, one per hour. So the 90-day transcript purge ships as a cron in C5. C1 just carries `transcript` and `created_at`.
 14. **Speech hook.** C4 builds `useContinuousSpeech` as a new hook (auto-restart on silence end, accumulated transcript, interim display and flush on stop, visible errors, timer, 4-minute cap, single recognizer). ReportModal keeps the old hook untouched.
 15. **Current behavior** gains the donor "+ Log" form (1 AA row ever) and partner "+ Log touch" (0 AA rows ever). The appliers reuse those routes' validation rules; the partner applier also bumps `partners.last_touch_at`.
@@ -281,7 +281,9 @@ then a short "Changes to the spec" list. Stop there for my review.
 Build stage C1 of specs/bloomos-capture.md: the Capture migration and nothing else.
 Read the spec's "Phase 0 rulings" section and docs/recon/capture-phase0.md first.
 Branch from main. One PR. Do NOT apply the migration to any database, do NOT call
-apply_migration or execute_sql with DDL. I apply it myself.
+apply_migration or execute_sql with DDL. After I review the PR, I'll apply it myself
+through the Supabase connector's apply_migration with name: capture_tables (the
+filename stem), so the migration ledger matches the file.
 
 Also commit specs/bloomos-capture.md (I'll paste the current version) and
 docs/recon/capture-phase0.md into this PR so the spec and its recon live with the code.

@@ -1,0 +1,9 @@
+{
+  "name": "Call with a school partner, follow-up task",
+  "transcript": "Quick call with Dmitri Volkov at Harbor Light Academy. They want to add a second cohort in the spring and asked for the MOU draft. Remind me to send the MOU next Tuesday.",
+  "context": null,
+  "expected": [
+    { "dest": "interaction", "entity": "Harbor Light Academy" },
+    { "dest": "task", "entity": "Harbor Light Academy" }
+  ]
+}

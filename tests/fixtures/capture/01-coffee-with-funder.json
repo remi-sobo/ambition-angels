@@ -1,0 +1,10 @@
+{
+  "name": "Coffee with a funder, task for staff, a lead",
+  "transcript": "Just had coffee with Priya Natarajan from the Lanternfish Foundation. She wants the impact numbers before their December board meeting. Have Shannon send her the one-pager by Friday. Also she mentioned Cedar Grove Community Trust is opening a youth workforce round.",
+  "context": null,
+  "expected": [
+    { "dest": "interaction", "entity": "Priya Natarajan" },
+    { "dest": "task", "entity": "Priya Natarajan" },
+    { "dest": "thought", "entity": null }
+  ]
+}

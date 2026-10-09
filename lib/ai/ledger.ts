@@ -6,7 +6,7 @@
  * (reed_activity_log, fr_agent_activity_log), which keep working unchanged; the
  * ledger is written additively so nothing here can break a call it records.
  *
- * `logAICall` is fire-and-forget (never throws). `monthToDateSpendUsd` is the
+ * `logAICall` never throws (it returns the row id, or null on failure). `monthToDateSpendUsd` is the
  * read the per-org cap and the spend view use; it returns 0 on any error so a
  * read hiccup never blocks a call.
  *
@@ -39,23 +39,35 @@ export function startOfUtcMonth(now: Date = new Date()): string {
   return d.toISOString();
 }
 
-/** Append one row to the unified ledger. Never throws. */
-export async function logAICall(supabase: SupabaseClient, rec: AICallRecord): Promise<void> {
+/** Append one row to the unified ledger. Never throws. Returns the new row's
+ *  id so a caller can link to it (captures.ai_call_id), or null on failure;
+ *  existing callers ignore the return value. */
+export async function logAICall(supabase: SupabaseClient, rec: AICallRecord): Promise<string | null> {
   try {
-    const { error } = await supabase.from("ai_calls").insert({
-      org_id: rec.orgId,
-      surface: rec.surface,
-      triggered_by: rec.triggeredBy ?? null,
-      model_used: rec.model,
-      tokens_input: Math.max(0, Math.round(rec.tokensInput || 0)),
-      tokens_output: Math.max(0, Math.round(rec.tokensOutput || 0)),
-      cost_usd: Number((rec.costUsd || 0).toFixed(6)),
-      status: rec.status ?? "success",
-      metadata: rec.metadata ?? {},
-    });
-    if (error) console.error("[ai/ledger] logAICall failed:", (error as { message?: string }).message);
+    const { data, error } = await supabase
+      .from("ai_calls")
+      .insert({
+        org_id: rec.orgId,
+        surface: rec.surface,
+        triggered_by: rec.triggeredBy ?? null,
+        model_used: rec.model,
+        tokens_input: Math.max(0, Math.round(rec.tokensInput || 0)),
+        tokens_output: Math.max(0, Math.round(rec.tokensOutput || 0)),
+        cost_usd: Number((rec.costUsd || 0).toFixed(6)),
+        status: rec.status ?? "success",
+        metadata: rec.metadata ?? {},
+      })
+      .select("id")
+      .single();
+    if (error) {
+      console.error("[ai/ledger] logAICall failed:", (error as { message?: string }).message);
+      return null;
+    }
+    const id = (data as { id?: unknown } | null)?.id;
+    return typeof id === "string" ? id : null;
   } catch (e) {
     console.error("[ai/ledger] logAICall threw:", e instanceof Error ? e.message : e);
+    return null;
   }
 }
 

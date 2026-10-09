@@ -1,0 +1,9 @@
+{
+  "name": "Lowercase speech-to-text, no punctuation to speak of",
+  "transcript": "ran into theo marchetti at the chamber breakfast he said saltmarsh ventures might match gifts this year ask shannon to look up their matching program",
+  "context": null,
+  "expected": [
+    { "dest": "interaction", "entity": "Theo Marchetti" },
+    { "dest": "task", "entity": null }
+  ]
+}

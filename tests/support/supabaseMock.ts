@@ -16,6 +16,8 @@ export function mockSupabase(results: QueuedResult[]) {
     contains: [] as [unknown, unknown][],
     insert: [] as unknown[],
     update: [] as unknown[],
+    delete: [] as boolean[],
+    rpc: [] as [string, unknown][],
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const builder: any = {
@@ -30,6 +32,13 @@ export function mockSupabase(results: QueuedResult[]) {
     not: () => builder,
     limit: () => builder,
     order: () => builder,
+    in: () => builder,
+    lt: () => builder,
+    lte: () => builder,
+    gt: () => builder,
+    ilike: () => builder,
+    delete: () => (calls.delete.push(true), builder),
+    rpc: (name: string, args: unknown) => (calls.rpc.push([name, args]), builder),
     insert: (o: unknown) => (calls.insert.push(o), builder),
     update: (o: unknown) => (calls.update.push(o), builder),
     single: () => Promise.resolve(next()),

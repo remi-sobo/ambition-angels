@@ -1,0 +1,10 @@
+{
+  "name": "A student is mentioned; no card may be made for that part",
+  "transcript": "Met with Priya Natarajan about the spring showcase. She is in. Separately one of our students, Jamal, asked about a letter of recommendation, I will handle that myself. Thought: the showcase could be a donor event too.",
+  "context": null,
+  "expected": [
+    { "dest": "interaction", "entity": "Priya Natarajan" },
+    { "dest": "thought", "entity": null }
+  ],
+  "expected_youth_skipped_min": 1
+}

@@ -363,3 +363,151 @@ Deliver: the PR, plus the full SQL of capture_tables.sql pasted in the PR body u
 "SQL for Remi to review", and a 5-line note on anything in this prompt that didn't
 match the repo. Stop there.
 ```
+
+---
+
+## C1 as built (verified in production 2026-10-09)
+
+PR #547, squash `bd54cec`, ledger row `20261009130610 capture_tables`. Verified live: both tables with RLS on and four owner-scoped policies each (`ops.read` select, `ops.write` insert/update/delete, all AND `created_by = auth.uid()`), composite FK `(capture_id, org_id)` so a card can't point across orgs, no `org_id` default on either table, `updated_at` triggers, `partners_name_trgm`, `capture_message` on `reed_drafts.kind`, `ai.capture` on for `ambition-angels` and `young-gifted-black` only.
+
+**Migration convention from C2 on (Remi, 2026-10-09):** migrations applied through the connector are written in the guarded form from the start (`do $$ ... if not exists (select 1 from pg_policies ...) ... $$`, `create or replace`, `if not exists`), because the connector stalls on `drop policy` and `drop trigger`. The committed file is exactly what gets applied. C1's committed file (drop-and-recreate) and its applied form (guarded) are equivalent in effect; left as is.
+
+---
+
+## C2 kickoff prompt (paste into Claude Code)
+
+```
+Build stage C2 of specs/bloomos-capture.md: the matcher and the parse route.
+No UI. No writes to any destination table. Read the spec's "Phase 0 rulings" and
+"C1 as built" sections and docs/recon/capture-phase0.md first. Branch from main
+(bd54cec or later). One PR. Do not apply any migration; I apply it through the
+Supabase connector after review.
+
+GOAL: POST a transcript, get back a captures row in status 'ready' with
+capture_cards rows (proposed or held). Nothing else in the database changes
+except one ai_calls row.
+
+1. Migration supabase/migrations/capture_match_rpc.sql (guarded form, see spec).
+   public.capture_match_candidates(q text, org uuid, lim int default 5)
+   returns table (id uuid, kind text, name text, org_name text, meta text, sim real)
+   language sql stable security invoker, set search_path = public, extensions, pg_temp,
+   set check_function_bodies = off at the top (same reason as
+   search_people_org_scope.sql). Model it on bloomos_search_people.
+   Branches, each pinned to `org` and archived_at is null where the column exists:
+     - constituents, kind 'constituent' (person: first || ' ' || last; org: org_name).
+       meta = a short disambiguator: type, plus the date of the most recent
+       interaction if cheap (lateral max(occurred_at)), else just type.
+     - partners, kind 'partner', name = partners.name, meta = partners.kind or city.
+     - fr_prospects, kind 'prospect' (hint only; the validator never files to it).
+   NEVER students, applications, cohort_members, attendance, imports.
+   Order by sim desc, limit lim per call. Register in scripts/test-rls.sh, add a
+   leak-test block: org B user gets zero rows for org A's id; a board_viewer gets
+   only what RLS allows.
+
+2. lib/ai/ledger.ts: make logAICall return the inserted id (string | null),
+   still never throwing. Existing callers ignore the return value. Nothing else
+   in ledger.
+
+3. lib/capture/spans.ts (pure). extractNameSpans(transcript): runs of capitalized
+   tokens not at sentence start, plus spans after cue words (with, from, call,
+   email, text, tell, met, coffee with, ask), deduped, max 12. Unit tests with
+   10 sentences including "Maria Chen from the Koshland Foundation", "Kendra",
+   "the Sobomehins", lowercase speech-to-text output, and a sentence-initial name.
+
+4. lib/capture/match.ts (session client only). findCandidates(supabase, orgId,
+   spans, context?) calls capture_match_candidates per span (Promise.all),
+   attaches span -> candidates, and if a context entity is given, injects it
+   as a candidate with a prior (sim floor 0.95, flagged context: true).
+   Returns a flat, deduped candidate list with stable short refs (c1, c2...) the
+   model will cite, plus the span map.
+
+5. lib/capture/prompt.ts (pure, no I/O, modeled on lib/meetings/transcript-prompt.ts).
+   buildCaptureSystem(), buildCapturePrompt({ transcript, todayIso, tz, userName,
+   staff: [{ref, name, handle}], context, candidates: [{ref, kind, name, org_name,
+   meta}] }), and CAPTURE_TOOL (name submit_capture_cards). Rules the prompt must
+   state:
+     - One card per distinct thing to file. dest in interaction | task | thought |
+       message_draft. Max 15 cards.
+     - Cite people and orgs ONLY by candidate ref. If a name was heard but no ref
+       fits, set heard_name and leave ref null. Never invent a ref.
+     - Never add facts not in the transcript: no amounts, dates, or commitments
+       that weren't said. Resolve relative dates ("Friday", "next week") against
+       todayIso in tz.
+     - interaction: kind in call | meeting | note | event (not email), notes is
+       one or two plain sentences, occurred_at defaults to today.
+     - task: title imperative, category from TASK_CATEGORIES (import it), assignee
+       by staff ref or null, due date or null.
+     - thought: text only, no due date.
+     - message_draft: recipient ref, channel email | text, body in the user's
+       voice, never claims it was sent.
+     - If something is about a student or youth participant, do not make a card
+       for it; increment youth_skipped instead.
+     - Voice: no em dashes, no exclamation marks.
+     - Return per-card confidence 0..1 for the person match.
+   Tool schema output: { cards: [...], youth_skipped: int }.
+
+6. lib/capture/validate.ts (pure). parseCaptureCards(input, { candidates, staff,
+   todayIso }) returns { cards, youthSkipped, dropped: [{reason}] }. Enforce:
+     - dest enum; unknown dest dropped with reason.
+     - ref must exist in candidates; else treat as unmatched.
+     - kind 'prospect' never becomes entity_id. An interaction whose only match is
+       a prospect becomes a thought, text prefixed with the prospect name.
+     - interaction with no matched entity -> status 'held', heard_name kept.
+     - Hold rules (named constants in lib/capture/constants.ts):
+       MATCH_CONFIDENCE_MIN = 0.75; NEAR_TIE_DELTA = 0.1 (top two candidates for
+       the same span within delta and neither is the context entity) -> 'held',
+       with the top 3 candidates in match_candidates.
+     - dates must parse and fall within -30 / +365 days of today; else null.
+     - assignee must be a staff ref; else null.
+     - cleanVoiceText on notes, title, text, body only. Never on names or refs.
+     - entity_type only constituent | partner.
+   Tests: invented ref, prospect-only interaction, near tie (two Kendra
+   Sobomehins), context prior wins a tie, bad date, non-staff assignee, em dash
+   in notes cleaned but not in a name, youth_skipped passthrough, 16th card dropped.
+
+7. app/api/admin/capture/route.ts  POST.
+   Body: { transcript, source_surface, context_type?, context_id?,
+           duration_seconds?, capture_id? }  (capture_id = re-parse a failed one).
+   Order, matching the recon's call shape:
+     requireEntitlement("ai.capture") -> 401/402
+     createServerSupabase()  (getSupabaseAdmin must not be imported anywhere in
+       lib/capture or app/api/admin/capture; add a text test)
+     rate limit: count of caller's captures in the last hour >= 30 -> 429
+     orgOverAICap -> 429 with capped: true
+     transcript 1..20,000 chars after trim -> else 400
+     insert captures row (status parsing; org_id from getOrgContext, never a default)
+     staff = org members holding ops.write, read via the session client (find the
+       existing helper; if none, the smallest readable query, and say which)
+     spans -> candidates -> generateStructured (tier fast, maxTokens 2000)
+     parseCaptureCards -> insert capture_cards (position order, created_by default)
+     logAICall(surface 'capture', metadata {capture_id, card_count, youth_skipped,
+       dropped}) and store the returned id on captures.ai_call_id
+     update captures: status ready, model_used
+     return { capture_id, status, cards, youth_skipped }
+   On model or validation failure: captures.status failed, parse_error set, 502
+   with capture_id so the UI can retry. AIKeyMissingError -> 503.
+   Transcript is stored on the captures row (ruling: retention purge comes in C5).
+
+8. app/api/admin/capture/[id]/route.ts  GET: the capture and its cards, through
+   RLS, 404 when not visible. No other methods in this stage.
+
+9. Fence tests (vitest text tests over lib/capture/** and app/api/admin/capture/**):
+   no from("students" | "applications" | "cohort_members" | "attendance" |
+   "imports" | "interactions" | "partner_interactions" | "ops_tasks" |
+   "reed_drafts"), no getSupabaseAdmin, no resolveConstituent, no
+   type: "student". C2 must not be able to write a destination row.
+
+10. scripts/capture-eval.ts: reads tests/fixtures/capture/*.json (transcript +
+    expected dest and expected entity name per card), calls the parse pipeline
+    functions directly against a session for my user (or prints the prompt and
+    exits when no session is available), and prints a pass/fail table. Ship 5
+    typed fixtures using fictional names that are NOT in AA's data; I'll add the
+    20 recorded real-speech notes later. Not wired into CI.
+
+11. npm run lint, typecheck, npm test. Nothing against production.
+
+PR body: the full SQL of capture_match_rpc.sql under "SQL for Remi to review", a
+sample request and response from a unit-level run, and a short list of anything in
+this prompt that didn't match the repo. Merge order: I apply the RPC migration
+first, then the PR merges, because the route calls the RPC. Stop there.
+```

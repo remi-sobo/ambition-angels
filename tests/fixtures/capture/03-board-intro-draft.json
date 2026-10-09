@@ -1,0 +1,9 @@
+{
+  "name": "Board member offers an intro, asks for a draft email",
+  "transcript": "Rosalind Achebe-Park offered to introduce me to the program officer at Saltmarsh Ventures. Draft a thank-you email to Rosalind saying yes and asking for the best way to make the intro.",
+  "context": null,
+  "expected": [
+    { "dest": "interaction", "entity": "Rosalind Achebe-Park" },
+    { "dest": "message_draft", "entity": "Rosalind Achebe-Park" }
+  ]
+}

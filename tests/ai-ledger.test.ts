@@ -5,8 +5,8 @@ import { mockSupabase } from "./support/supabaseMock";
 
 describe("logAICall", () => {
   test("maps a record onto the ai_calls row, rounding tokens and cost", async () => {
-    const { client, calls } = mockSupabase([{ error: null }]);
-    await logAICall(client as unknown as SupabaseClient, {
+    const { client, calls } = mockSupabase([{ data: { id: "call-1" }, error: null }]);
+    const id = await logAICall(client as unknown as SupabaseClient, {
       orgId: "org-1",
       surface: "reed",
       model: "claude-sonnet-4-6",
@@ -15,6 +15,7 @@ describe("logAICall", () => {
       costUsd: 0.0036123456,
       triggeredBy: "remi@ambitionangels.org",
     });
+    expect(id).toBe("call-1");
     expect(calls.from).toEqual(["ai_calls"]);
     expect(calls.insert).toHaveLength(1);
     expect(calls.insert[0]).toMatchObject({
@@ -41,7 +42,7 @@ describe("logAICall", () => {
         tokensOutput: 5,
         costUsd: 0.0001,
       }),
-    ).resolves.toBeUndefined();
+    ).resolves.toBeNull();
   });
 });
 

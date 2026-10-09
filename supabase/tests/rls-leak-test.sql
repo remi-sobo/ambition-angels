@@ -1582,4 +1582,189 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+
+-- ════ Capture C1: captures + capture_cards (specs/bloomos-capture.md) ═════
+-- Personal, org-scoped staging rows. Every policy requires the caller's own
+-- created_by on top of ops.read / ops.write, and a composite FK ties a card
+-- to a capture in the SAME org. Assertions: tenant-two sees and touches
+-- nothing of AA's; an AA staffer cannot read the AA owner's captures (but can
+-- write her own); a board_viewer (no ops.write) cannot insert; anon sees
+-- nothing; a card can never point at another org's capture.
+reset role;
+reset request.jwt.claim.sub;
+
+-- Seeds go through the SESSION client on purpose: this is also the proof that
+-- the insert policies admit the owner's own rows.
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare aa uuid; cap uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into captures (org_id, source_surface, transcript, status)
+    values (aa, 'mobile_plus', 'leak-test AA capture', 'ready')
+    returning id into cap;
+  insert into capture_cards (org_id, capture_id, position, dest, payload)
+    values (aa, cap, 1, 'thought', '{"text":"leak-test"}'::jsonb);
+  if (select count(*) from captures where id = cap) = 0 then
+    raise exception 'AA owner cannot read back the capture she just inserted';
+  end if;
+  if (select count(*) from capture_cards where capture_id = cap) = 0 then
+    raise exception 'AA owner cannot read back the card she just inserted';
+  end if;
+  -- Stash the id for cross-org probes below (RLS hides the row from them).
+  perform set_config('leak.aa_capture_id', cap::text, false);
+end $$;
+
+-- Tenant-two owner seeds its own capture, then probes AA's.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare t2 uuid; cap uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  insert into captures (org_id, source_surface, transcript, status)
+    values (t2, 'paste', 'leak-test T2 capture', 'ready')
+    returning id into cap;
+  insert into capture_cards (org_id, capture_id, position, dest)
+    values (t2, cap, 1, 'thought');
+  perform set_config('leak.t2_capture_id', cap::text, false);
+end $$;
+
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from captures where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA captures';
+  end if;
+  if (select count(*) from capture_cards where org_id = aa) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA capture_cards';
+  end if;
+  if (select count(*) from captures) = 0 then
+    raise exception 'tenant-two owner cannot read its OWN captures';
+  end if;
+  if (select count(*) from capture_cards) = 0 then
+    raise exception 'tenant-two owner cannot read its OWN capture_cards';
+  end if;
+end $$;
+
+-- Insert into AA: denied by WITH CHECK.
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into captures (org_id, source_surface) values (aa, 'paste');
+  raise exception 'LEAK: tenant-two inserted a capture into the AA org';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- Update / delete of the AA capture: RLS hides the row, so zero rows move.
+do $$
+declare aa_cap uuid := current_setting('leak.aa_capture_id')::uuid; n int;
+begin
+  update captures set transcript = 'tampered' where id = aa_cap;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: tenant-two updated an AA capture'; end if;
+  delete from captures where id = aa_cap;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: tenant-two deleted an AA capture'; end if;
+  update capture_cards set status = 'discarded' where capture_id = aa_cap;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: tenant-two updated an AA capture_card'; end if;
+end $$;
+
+-- A card in tenant-two's org pointing at AA's capture: the composite FK
+-- (capture_id, org_id) → captures(id, org_id) rejects it.
+do $$
+declare t2 uuid; aa_cap uuid := current_setting('leak.aa_capture_id')::uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  insert into capture_cards (org_id, capture_id, position, dest)
+    values (t2, aa_cap, 9, 'thought');
+  raise exception 'LEAK: a tenant-two card points at an AA capture';
+exception when foreign_key_violation then null; -- expected: composite FK
+end $$;
+
+-- A card stamped with AA's org pointing at AA's capture: RLS WITH CHECK.
+do $$
+declare aa uuid; aa_cap uuid := current_setting('leak.aa_capture_id')::uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into capture_cards (org_id, capture_id, position, dest)
+    values (aa, aa_cap, 9, 'thought');
+  raise exception 'LEAK: tenant-two inserted a card into the AA org';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- AA staff (ops.write, same org): cannot see the owner's rows, can write her own.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$
+declare aa uuid; aa_cap uuid := current_setting('leak.aa_capture_id')::uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from captures where id = aa_cap) <> 0 then
+    raise exception 'LEAK: AA staff reads the AA owner''s capture (captures are personal)';
+  end if;
+  if (select count(*) from capture_cards where capture_id = aa_cap) <> 0 then
+    raise exception 'LEAK: AA staff reads the AA owner''s capture_cards';
+  end if;
+  insert into captures (org_id, source_surface) values (aa, 'quick_add');
+  if (select count(*) from captures) = 0 then
+    raise exception 'AA staff cannot read her OWN capture (ops.write member locked out)';
+  end if;
+end $$;
+
+-- Impersonation: a row whose created_by is someone else is rejected.
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into captures (org_id, source_surface, created_by)
+    values (aa, 'quick_add', '00000000-0000-0000-0000-000000000001');
+  raise exception 'LEAK: AA staff inserted a capture as the owner';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- AA board_viewer (no ops.write): cannot insert.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into captures (org_id, source_surface) values (aa, 'quick_add');
+  raise exception 'LEAK: board_viewer inserted a capture';
+exception when insufficient_privilege then null; -- expected
+end $$;
+do $$ begin
+  if (select count(*) from captures) <> 0 then raise exception 'LEAK: board_viewer reads captures'; end if;
+end $$;
+
+-- Stranger (session, no membership): nothing.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from captures) <> 0 then raise exception 'LEAK: non-member reads captures'; end if;
+  if (select count(*) from capture_cards) <> 0 then raise exception 'LEAK: non-member reads capture_cards'; end if;
+end $$;
+
+-- Anon: nothing, and no insert (policies are TO authenticated).
+reset role;
+reset request.jwt.claim.sub;
+set role anon;
+do $$ begin
+  if (select count(*) from captures) <> 0 then raise exception 'LEAK: anon reads captures'; end if;
+  if (select count(*) from capture_cards) <> 0 then raise exception 'LEAK: anon reads capture_cards'; end if;
+end $$;
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into captures (org_id, source_surface, created_by)
+    values (aa, 'paste', '00000000-0000-0000-0000-000000000001');
+  raise exception 'LEAK: anon inserted a capture';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

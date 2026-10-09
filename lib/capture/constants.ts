@@ -42,3 +42,13 @@ export const CAPTURE_MAX_OUTPUT_TOKENS = 2000;
 
 /** Timezone relative dates resolve in until org settings carry one. */
 export const CAPTURE_DEFAULT_TZ = "America/Los_Angeles";
+
+/** Undo is offered for this long after a card is confirmed (C3). */
+export const UNDO_WINDOW_MINUTES = 10;
+
+/** A confirm claimed less than this long ago, with no applied row yet, is
+ *  treated as in flight (409) rather than as a crashed apply to recover. */
+export const CONFIRM_IN_FLIGHT_SECONDS = 30;
+
+/** Rows the pick-a-match typeahead returns. */
+export const CANDIDATE_TYPEAHEAD_LIMIT = 8;

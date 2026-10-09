@@ -46,6 +46,7 @@ export const FEATURE_KEYS = [
   // Feature/tier switches.
   "ai.reed",
   "ai.prospect_research",
+  "ai.capture", // Capture (voice → confirm cards), specs/bloomos-capture.md. Own switch, not riding ai.reed.
   "coaching",
   // AA-only flags — on for AA, never seeded for anyone else. These fence the
   // marketing-site-coupled surfaces (core fence spec §6a, AA-site class).

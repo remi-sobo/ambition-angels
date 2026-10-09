@@ -232,6 +232,7 @@ ordered=(
   spec_impact_report_artifacts.sql
   fundraising_gift_tables.sql
   drop_fr_plan_gift_levels.sql
+  capture_tables.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

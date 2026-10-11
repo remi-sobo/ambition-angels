@@ -38,6 +38,17 @@
       "mcp__Vercel__replace_domain_dns_records",
       "mcp__Vercel__create_record",
       "mcp__Vercel__update_record"
+    ],
+    "ask": [
+      "mcp__Gmail__send_message",
+      "mcp__Gmail__forward",
+      "mcp__Gmail__reply",
+      "mcp__Slack__slack_send_message",
+      "mcp__Google_Drive__share_file",
+      "mcp__Read_AI__share_meeting_report",
+      "mcp__github__merge_pull_request",
+      "mcp__github__actions_run_trigger",
+      "mcp__Supabase__execute_sql"
     ]
   }
 }

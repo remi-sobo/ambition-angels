@@ -1880,4 +1880,193 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+-- ════ Capture C3: confirm, undo, and the four destinations (specs/bloomos-capture.md) ═
+-- The appliers run on the SESSION client, so these are the fences they rely on:
+--   * a card is claimed by a conditional update the claimer must be able to
+--     see; another member (AA staff) or another tenant moves zero rows (404);
+--   * the exact insert shapes the appliers send are accepted for the AA owner,
+--     and the provenance unique keys turn a second apply into 23505;
+--   * an AA board_viewer is refused at the RLS layer on interactions,
+--     partner_interactions, and ops_tasks (the app's 403s).
+-- reed_drafts is membership-only RLS (create_reed_drafts.sql, pre-existing,
+-- flagged in the spec's security backlog), so a board_viewer insert there is
+-- NOT refused by the database; the app pre-checks ops.write before filing a
+-- draft. That gap is asserted below as the current behavior, so tightening
+-- the policy later shows up here as a deliberate test change.
+reset role;
+reset request.jwt.claim.sub;
+set role authenticated;
+
+-- AA owner: claim the C1 card, file one row in every destination with the
+-- applier's exact shape, prove the provenance keys, then clean up.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare
+  aa uuid; aa_cap uuid := current_setting('leak.aa_capture_id')::uuid;
+  card uuid; marisol uuid; harbor uuid; n int; row_id uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select id into card from capture_cards where capture_id = aa_cap order by position limit 1;
+  if card is null then raise exception 'AA owner cannot read her own capture card'; end if;
+  perform set_config('leak.aa_card_id', card::text, false);
+  select id into marisol from constituents where org_id = aa and first_name = 'Marisol' and last_name = 'Quintero' limit 1;
+  select id into harbor from partners where org_id = aa and name = 'Harbor Light Academy' limit 1;
+  if marisol is null or harbor is null then raise exception 'C3 block needs the C2 seed rows'; end if;
+
+  -- Claim: proposed -> confirmed moves exactly one row, a second claim none.
+  update capture_cards set status = 'confirmed', decided_by = current_setting('request.jwt.claim.sub')::uuid, decided_at = now()
+    where id = card and status = 'proposed';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'AA owner cannot claim her own proposed card'; end if;
+  update capture_cards set status = 'confirmed' where id = card and status = 'proposed';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'a second claim moved a confirmed card'; end if;
+
+  -- interactions (constituent), exactly the applier's insert.
+  insert into interactions (org_id, constituent_id, kind, occurred_at, notes, logged_by, external_source, external_id)
+    values (aa, marisol, 'meeting', '2026-10-08T12:00:00Z', 'leak-test capture note', 'remi', 'capture', card::text)
+    returning id into row_id;
+  begin
+    insert into interactions (org_id, constituent_id, kind, occurred_at, notes, logged_by, external_source, external_id)
+      values (aa, marisol, 'meeting', '2026-10-08T12:00:00Z', 'dup', 'remi', 'capture', card::text);
+    raise exception 'interactions accepted a second row with the same capture provenance';
+  exception when unique_violation then null; -- expected
+  end;
+  delete from interactions where id = row_id and external_source = 'capture' and external_id = card::text;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'AA owner cannot undo (delete) her capture interaction'; end if;
+
+  -- partner_interactions, then the last_touch_at bump.
+  insert into partner_interactions (org_id, partner_id, kind, occurred_at, notes, logged_by, external_source, external_id)
+    values (aa, harbor, 'call', '2026-10-08T12:00:00Z', 'leak-test capture touch', 'remi', 'capture', card::text)
+    returning id into row_id;
+  begin
+    insert into partner_interactions (org_id, partner_id, kind, occurred_at, notes, logged_by, external_source, external_id)
+      values (aa, harbor, 'call', '2026-10-08T12:00:00Z', 'dup', 'remi', 'capture', card::text);
+    raise exception 'partner_interactions accepted a second row with the same capture provenance';
+  exception when unique_violation then null; -- expected
+  end;
+  update partners set last_touch_at = '2026-10-08'
+    where org_id = aa and id = harbor and (last_touch_at is null or last_touch_at < '2026-10-08');
+  delete from partner_interactions where id = row_id and external_source = 'capture' and external_id = card::text;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'AA owner cannot undo (delete) her capture partner touch'; end if;
+
+  -- ops_tasks (task with a linked constituent and the provenance label).
+  insert into ops_tasks (org_id, title, description, category, created_by, assigned_to, assigned_to_id, due_date,
+                         linked_entity_type, linked_entity_id, linked_label, labels, origin_path)
+    values (aa, 'leak-test capture task', null, 'fundraising', 'remi', null, null, '2026-10-16',
+            'constituent', marisol, 'Marisol Quintero',
+            array['capture', 'sys:ref:capture_card:' || card::text], '/admin/capture/' || aa_cap::text)
+    returning id into row_id;
+  if (select count(*) from ops_tasks where org_id = aa and labels @> array['sys:ref:capture_card:' || card::text]) <> 1 then
+    raise exception 'the capture task is not found by its provenance label';
+  end if;
+  delete from ops_tasks where id = row_id;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'AA owner cannot undo (delete) her capture task'; end if;
+
+  -- reed_drafts (capture_message, provenance in context_ref).
+  insert into reed_drafts (org_id, kind, title, body, status, created_by, model_used, context_ref)
+    values (aa, 'capture_message', 'Message to Marisol Quintero', 'leak-test draft', 'drafted', 'remi', 'claude-sonnet-4-6',
+            jsonb_build_object('capture_id', aa_cap, 'capture_card_id', card, 'entity_type', 'constituent',
+                               'entity_id', marisol, 'channel', 'email', 'subject', null))
+    returning id into row_id;
+  if (select count(*) from reed_drafts where org_id = aa and context_ref->>'capture_card_id' = card::text) <> 1 then
+    raise exception 'the capture draft is not found by context_ref';
+  end if;
+  delete from reed_drafts where id = row_id;
+
+  -- Put the card back for the probes below.
+  update capture_cards set status = 'proposed', decided_by = null, decided_at = null where id = card;
+end $$;
+
+-- Tenant-two owner and AA staff: cannot claim, edit, or discard the AA owner's card.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare card uuid := current_setting('leak.aa_card_id')::uuid; n int;
+begin
+  update capture_cards set status = 'confirmed', decided_by = current_setting('request.jwt.claim.sub')::uuid, decided_at = now()
+    where id = card and status = 'proposed';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: tenant-two confirmed an AA capture card'; end if;
+end $$;
+
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$
+declare card uuid := current_setting('leak.aa_card_id')::uuid; n int;
+begin
+  if (select count(*) from capture_cards where id = card) <> 0 then
+    raise exception 'LEAK: AA staff sees the AA owner''s card';
+  end if;
+  update capture_cards set status = 'confirmed', decided_by = current_setting('request.jwt.claim.sub')::uuid, decided_at = now()
+    where id = card and status = 'proposed';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: AA staff confirmed the AA owner''s capture card'; end if;
+  update capture_cards set payload = '{"title":"tampered"}'::jsonb where id = card;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: AA staff edited the AA owner''s capture card'; end if;
+  update capture_cards set status = 'discarded' where id = card;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: AA staff discarded the AA owner''s capture card'; end if;
+end $$;
+
+-- AA board_viewer: refused on every permission-gated destination.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$
+declare aa uuid; marisol uuid; card uuid := current_setting('leak.aa_card_id')::uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  -- The board_viewer cannot read constituents; any uuid exercises the WITH CHECK.
+  marisol := gen_random_uuid();
+  begin
+    insert into interactions (org_id, constituent_id, kind, occurred_at, notes, logged_by, external_source, external_id)
+      values (aa, marisol, 'note', now(), 'bv', 'bv', 'capture', card::text);
+    raise exception 'LEAK: board_viewer filed an interaction';
+  exception when insufficient_privilege then null; -- expected (403)
+  end;
+  begin
+    insert into partner_interactions (org_id, partner_id, kind, occurred_at, notes, logged_by, external_source, external_id)
+      values (aa, gen_random_uuid(), 'note', now(), 'bv', 'bv', 'capture', card::text);
+    raise exception 'LEAK: board_viewer filed a partner interaction';
+  exception when insufficient_privilege then null; -- expected (403)
+  end;
+  begin
+    insert into ops_tasks (org_id, title, category, created_by, labels)
+      values (aa, 'bv task', 'other', 'bv', array['capture', 'sys:ref:capture_card:' || card::text]);
+    raise exception 'LEAK: board_viewer created a task';
+  exception when insufficient_privilege then null; -- expected (403)
+  end;
+end $$;
+
+-- reed_drafts: membership-only today (pre-existing). Pinned as current
+-- behavior; the app's ops.write pre-check is the gate until the policy moves.
+do $$
+declare aa uuid; row_id uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into reed_drafts (org_id, kind, title, body, status, created_by)
+    values (aa, 'capture_message', 'bv draft', 'bv', 'drafted', 'bv')
+    returning id into row_id;
+  delete from reed_drafts where id = row_id;
+exception when insufficient_privilege then
+  raise notice 'reed_drafts now refuses board_viewer: tighten this block and the C3 note';
+end $$;
+
+-- Anon: the match RPC stays closed after capture_rpc_grants.sql.
+reset role;
+reset request.jwt.claim.sub;
+set role anon;
+do $$
+declare aa uuid; n int;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select count(*) into n from public.capture_match_candidates('Marisol', aa, 10);
+  raise exception 'LEAK: anon can call capture_match_candidates after the grants migration';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

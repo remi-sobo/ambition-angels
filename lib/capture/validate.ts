@@ -41,7 +41,8 @@ const MAX_PROSE = 2000;
 const MAX_TITLE = 160;
 const MAX_SOURCE = 300;
 
-type Raw = Record<string, unknown>;
+/** An untrusted card in the tool-input shape. */
+export type Raw = Record<string, unknown>;
 
 /** Prose fields only: em dashes become pauses, exclamation marks become periods. */
 export function cleanProse(s: string, max = MAX_PROSE): string {
@@ -103,6 +104,63 @@ function nearTie(picked: Candidate, all: Candidate[]): Candidate[] | null {
   if (top.context || second.context) return null;
   if (top.sim - second.sim > NEAR_TIE_DELTA) return null;
   return sorted.slice(0, 3);
+}
+
+export type DestFieldsOptions = {
+  todayIso: string;
+  staffByRef: Map<string, StaffMember>;
+  sourceSentence: string | null;
+  recipientName: string | null;
+};
+
+/**
+ * The per-destination payload rules, shared by the parse validator (C2) and
+ * the edit action (C3) so a field means the same thing on both paths. `r` is
+ * a raw, untrusted object in the tool-input shape (notes, title, text, body,
+ * kind, occurred_at, due_date, category, assignee_ref, channel, subject).
+ * Returns null when the card would be empty for its destination.
+ */
+export function buildDestFields(dest: CaptureDest, r: Raw, opts: DestFieldsOptions): Record<string, unknown> | null {
+  const out: Record<string, unknown> = {};
+  if (dest === "interaction") {
+    const kindRaw = str(r.kind) as InteractionKind | null;
+    const kind: InteractionKind = kindRaw && INTERACTION_KINDS.includes(kindRaw) ? kindRaw : "note";
+    const notes = cleanProse(str(r.notes) ?? opts.sourceSentence ?? "");
+    if (!notes) return null;
+    out.kind = kind;
+    out.notes = notes;
+    out.occurred_at = validDate(r.occurred_at, opts.todayIso) ?? opts.todayIso;
+    return out;
+  }
+  if (dest === "task") {
+    const title = cleanProse(str(r.title) ?? "", MAX_TITLE);
+    if (!title) return null;
+    const cat = str(r.category);
+    out.title = title;
+    out.category = isTaskCategory(cat) ? cat : "other";
+    out.notes = cleanProse(str(r.notes) ?? "") || null;
+    out.due_date = validDate(r.due_date, opts.todayIso);
+    const ref = str(r.assignee_ref);
+    const assignee = ref ? opts.staffByRef.get(ref) ?? null : null;
+    out.assignee = assignee ? { handle: assignee.handle, user_id: assignee.userId, name: assignee.name } : null;
+    return out;
+  }
+  if (dest === "thought") {
+    const text = cleanProse(str(r.text) ?? str(r.notes) ?? opts.sourceSentence ?? "");
+    if (!text) return null;
+    out.text = text;
+    out.label = "parking-lot";
+    return out;
+  }
+  const channelRaw = str(r.channel) as DraftChannel | null;
+  const channel: DraftChannel = channelRaw && DRAFT_CHANNELS.includes(channelRaw) ? channelRaw : "email";
+  const body = cleanProse(str(r.body) ?? "", 4000);
+  if (!body) return null;
+  out.channel = channel;
+  out.subject = channel === "email" ? cleanProse(str(r.subject) ?? "", 140) || null : null;
+  out.body = body;
+  out.recipient_name = opts.recipientName;
+  return out;
 }
 
 export function parseCaptureCards(input: unknown, ctx: ValidateContext): ParseResult {
@@ -181,53 +239,20 @@ export function parseCaptureCards(input: unknown, ctx: ValidateContext): ParseRe
     if (orgMatch) payload.org_match = orgMatch;
     if (prospectName) payload.prospect_name = prospectName;
 
-    if (dest === "interaction") {
-      const kindRaw = str(r.kind) as InteractionKind | null;
-      const kind: InteractionKind = kindRaw && INTERACTION_KINDS.includes(kindRaw) ? kindRaw : "note";
-      const notes = cleanProse(str(r.notes) ?? sourceSentence ?? "");
-      if (!notes) {
-        dropped.push({ index, reason: "empty" });
-        return;
-      }
-      payload.kind = kind;
-      payload.notes = notes;
-      payload.occurred_at = validDate(r.occurred_at, ctx.todayIso) ?? ctx.todayIso;
-      // An interaction needs a record to land on; without one it waits for a pick.
-      if (!entityId) status = "held";
-    } else if (dest === "task") {
-      const title = cleanProse(str(r.title) ?? "", MAX_TITLE);
-      if (!title) {
-        dropped.push({ index, reason: "empty" });
-        return;
-      }
-      const cat = str(r.category);
-      payload.title = title;
-      payload.category = isTaskCategory(cat) ? cat : "other";
-      payload.notes = cleanProse(str(r.notes) ?? "") || null;
-      payload.due_date = validDate(r.due_date, ctx.todayIso);
-      const assignee = str(r.assignee_ref) ? staffByRef.get(str(r.assignee_ref) as string) ?? null : null;
-      payload.assignee = assignee ? { handle: assignee.handle, user_id: assignee.userId, name: assignee.name } : null;
-    } else if (dest === "thought") {
-      const text = cleanProse(str(r.text) ?? str(r.notes) ?? sourceSentence ?? "");
-      if (!text) {
-        dropped.push({ index, reason: "empty" });
-        return;
-      }
-      payload.text = text;
-      payload.label = "parking-lot";
-    } else {
-      const channelRaw = str(r.channel) as DraftChannel | null;
-      const channel: DraftChannel = channelRaw && DRAFT_CHANNELS.includes(channelRaw) ? channelRaw : "email";
-      const body = cleanProse(str(r.body) ?? "", 4000);
-      if (!body) {
-        dropped.push({ index, reason: "empty" });
-        return;
-      }
-      payload.channel = channel;
-      payload.subject = channel === "email" ? cleanProse(str(r.subject) ?? "", 140) || null : null;
-      payload.body = body;
-      payload.recipient_name = picked?.name ?? effectiveHeard ?? null;
+    const fields = buildDestFields(dest, r, {
+      todayIso: ctx.todayIso,
+      staffByRef,
+      sourceSentence,
+      recipientName: picked?.name ?? effectiveHeard ?? null,
+    });
+    if (!fields) {
+      dropped.push({ index, reason: "empty" });
+      return;
     }
+    Object.assign(payload, fields);
+    if (entityId && picked) payload.entity_name = picked.name;
+    // An interaction needs a record to land on; without one it waits for a pick.
+    if (dest === "interaction" && !entityId) status = "held";
 
     cards.push({
       position: cards.length + 1,

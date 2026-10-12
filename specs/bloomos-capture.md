@@ -653,3 +653,128 @@ appliers with the exact insert payload each sends, and anything in this prompt
 that didn't match the repo. Merge order: apply the grants migration, then merge.
 Stop there.
 ```
+
+---
+
+## C3 as built (verified in production 2026-10-11)
+
+PR #549, squash `8d33f9a`, ledger row `20261011154159 capture_rpc_grants`. Anon no longer has execute on `capture_match_candidates`; authenticated keeps it (checked with `has_function_privilege`). The card action route (`POST /api/admin/capture/cards/[id]`), confirm-all (`POST /api/admin/capture/[id]/confirm-all`), and the pick-a-match typeahead (`GET /api/admin/capture/candidates`) are live behind `ai.capture`, session client only. As of this check: 0 captures, 0 cards, and 0 rows with capture provenance in `interactions`, `partner_interactions`, `ops_tasks`, or `reed_drafts`. Confirm and undo have only run in unit tests and the scratch RLS harness.
+
+Where C3 differs from its kickoff, all accepted at merge:
+
+- **Draft pre-check is `ops.write`.** `reed_drafts` RLS is membership only, so the app gates drafts on `ops.write`. The leak test pins that a board_viewer can still insert into `reed_drafts` directly. Security backlog, unchanged.
+- **`occurred_at` is noon UTC on the card's day,** so the calendar day holds in any US timezone.
+- **30-second in-flight window** (`CONFIRM_IN_FLIGHT_SECONDS`). `ops_tasks` and `reed_drafts` have no unique provenance index, so a card claimed under 30 seconds ago with no row yet returns 409 instead of re-running the applier.
+- **Undo on a row already deleted elsewhere** resets the card to proposed instead of 409.
+- **Undo leaves `partners.last_touch_at` alone.** The prior value isn't stored.
+- **`buildDestFields`** was extracted from `validate.ts`, so an edit runs the same per-destination rules as the parse.
+- **A held card that changes destination stays held** until a pick or an explicit unpick (`entity: null`).
+- **`ops_tasks.origin_path` points at `/admin/capture/<capture_id>`,** a page that doesn't exist yet. C4 builds it.
+
+---
+
+## C4 kickoff prompt (paste into Claude Code)
+
+```
+Build stage C4 of specs/bloomos-capture.md: the record and confirm screens. UI on
+top of the C2 and C3 routes. Read the spec's Desired behavior, Failure modes,
+rulings 7 and 14, docs/recon/capture-phase0.md sections 1 and 2, and "C3 as built"
+first. Branch from main (8d33f9a or later). One PR. No migration expected; if one
+turns out to be needed, stop and tell me before writing it.
+
+GOAL: I tap Record on my phone, talk, tap stop, and clear the cards in under a
+minute without leaving the screen. Nothing writes to a real record until I tap
+Confirm. If the mic or the parse fails, I can always type instead and lose nothing.
+
+0. API. Build against the existing routes. If the UI truly can't work without a
+   change, make the narrowest one, test it, and list it in the PR body. Don't
+   touch lib/capture/apply/** or the fence.
+
+1. Hook: lib/hooks/useContinuousSpeech.ts (ruling 14, recon section 1, items 1-8).
+   One recognizer per mount. Auto-restart from onend while a wantListening ref is
+   true, after a short delay (Safari InvalidStateError). no-speech and aborted
+   restart; they are not terminal. Accumulated final transcript survives restarts.
+   Interim exposed for grey display and flushed into the transcript on stop. Timer
+   and a 4-minute cap that auto-stops. Errors as states, not tooltips:
+   not-allowed -> mic denied, network / audio-capture -> speech failed. A
+   supported flag. Restart and start checks read refs, not state (fixes the stale
+   closure). Put the transitions in a pure reducer and unit-test it.
+   useSpeechRecognition and ReportModal stay untouched.
+
+2. Entry points. Compute captureEnabled in app/admin/layout.tsx from the same
+   entitlement read as reedEnabled and pass it to V2MobileBar and V2QuickAdd.
+   - Mobile: a Record row in the ＋ actions sheet, under Ask Reed and above Add
+     task, plus the same row in the More sheet. source_surface 'mobile_plus'.
+   - Desktop: a Record chip in Quick Add. source_surface 'quick_add'.
+   - Hidden entirely without ai.capture. Update tests/v2-quickadd.test.ts and
+     tests/v2-mobile.test.ts for the new prop and rows.
+   Entity pages are C5. Don't add them here.
+
+3. The capture flow, one modal over the shell
+   (app/admin/capture/_components/). States:
+   - Recording: timer, live transcript (finals plus grey interim), Stop, Cancel,
+     and a "Type instead" link that carries the words so far.
+   - Type or paste: textarea, same pipeline, source_surface 'paste'. Also the
+     screen shown when speech isn't supported.
+   - Processing: "Sorting it out" with step labels. Never a blank spinner.
+     POST /api/admin/capture with transcript and duration_seconds.
+   - Mic denied: a real screen with how to re-enable the mic in iOS Safari and
+     the installed app, and Type instead.
+   - Failed: on 502, keep the transcript and offer Retry (re-post with
+     capture_id) and Type instead (prefilled). Plain-words screens for 429 rate
+     limit, 429 AI cap, and 503 key missing.
+   - Confirm stack, "Here's what I heard":
+     * Held cards pinned to the top as "Which <heard_name>?" with each candidate's
+       name and meta line, plus a search box over GET candidates. Confirm stays
+       disabled until a pick.
+     * Each card shows the destination tag, the matched name and meta line, the
+       text, and one line saying what Confirm will do ("Logs a meeting on Maria
+       Chen's record", "Creates a task for Shannon, due Fri Oct 16"). Tap shows
+       the source sentence. Actions: Confirm, Edit, Discard.
+     * Confirm all files every proposed card and reports how many held cards it
+       skipped.
+     * A confirmed card shows Undo for UNDO_WINDOW_MINUTES, then "Filed" with a
+       link to the record or task.
+     * "See transcript" is always one tap away.
+     * 403 shows the destination's message on the card. 409 re-reads the card
+       and shows what changed.
+   - Edit sheet: fields per destination, matching EditPatch in
+     lib/capture/edit.ts. Assignee options from the existing useAssignees hook
+     (the edit route accepts a handle). Changing destination is allowed.
+
+4. Page /admin/capture/[id]: server component, notFound() without ai.capture
+   or when the capture isn't the caller's. Renders the same confirm stack from
+   the capture and its cards. This is where ops_tasks.origin_path already points,
+   and it's how an interrupted session resumes before C5 puts pending cards on
+   Today. No list page in this stage.
+
+5. Design: the V2 system (navy chrome, orange accent, Big Shoulders / Poppins /
+   DM Sans), 390px first, 52px targets, focus trapped in the modal, Escape and
+   Cancel never lose a transcript that has already been parsed,
+   prefers-reduced-motion respected. Copy follows the voice rules (no em dashes;
+   tests/copy-voice.test.ts). UI words: "Record" on the button, "Here's what I
+   heard" on the stack.
+
+6. Tests:
+   - Hook reducer: restart on silence, accumulate across restarts, flush interim
+     on stop, cap auto-stop, mic-denied and network error states.
+   - Pure card-view helpers: the "what Confirm will do" line per destination,
+     Confirm disabled while held, Undo window countdown, Confirm-all summary.
+   - Fence: nothing under app/admin/capture/** or the new hook imports the
+     service-role client, calls a destination table, or calls any route outside
+     /api/admin/capture/**.
+   - Entry points render only with captureEnabled.
+
+7. Visual check: use the verify skill to drive /admin locally without real
+   credentials, mocking the capture routes. Screenshot every state at 390px
+   and the confirm stack at desktop width.
+
+8. npm run lint, typecheck, npm test. Nothing against production. No real
+   recordings, no real parses.
+
+PR body: the screenshots, every API change (or "none"), and anything in this
+prompt that didn't match the repo. Before merge I record a real note on my
+iPhone in the installed app on the preview deploy; that is the Web Speech test
+Phase 0 couldn't run. If it fails there, Type instead is the floor and we decide
+speech-to-text after. Stop there.
+```

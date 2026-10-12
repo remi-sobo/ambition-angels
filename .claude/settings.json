@@ -48,7 +48,18 @@
       "mcp__Read_AI__share_meeting_report",
       "mcp__github__merge_pull_request",
       "mcp__github__actions_run_trigger",
-      "mcp__Supabase__execute_sql"
+      "mcp__Supabase__execute_sql",
+      "mcp__Slack__slack_schedule_message",
+      "mcp__Gmail__trash_message",
+      "mcp__Gmail__trash_thread",
+      "mcp__Google_Calendar__create_event",
+      "mcp__Google_Calendar__update_event",
+      "mcp__Google_Calendar__delete_event",
+      "mcp__github__push_files",
+      "mcp__github__create_or_update_file",
+      "mcp__github__enable_pr_auto_merge",
+      "mcp__HubSpot__manage_crm_objects",
+      "mcp__Read_AI__share_folder"
     ]
   }
 }

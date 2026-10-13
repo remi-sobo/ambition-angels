@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
+import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
+import RecordButton from "@/app/admin/capture/_components/RecordButton";
 import StatCard from "../../_components/StatCard";
 import { KIND_LABELS, type Partner } from "../_lib/partners";
 import { STATUS_LABELS, STATUS_STYLE, NEXT_STATUS, STATUS_SHORT, type PartnerStatus } from "../_lib/status";
@@ -39,6 +41,8 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
   const ctx = await getOrgContext();
   if (!ctx) notFound();
   const orgId = ctx.orgId;
+  // Capture C5: Record from this page, with this partner as the context prior.
+  const captureEnabled = hasFeature(await getEntitlements(orgId), "ai.capture");
 
   const [pRes, contactsRes, intsRes, candRes] = await Promise.all([
     supabase.from("partners").select("*").eq("org_id", orgId).eq("id", params.id).maybeSingle(),
@@ -190,12 +194,15 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
             <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
               <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
                 <h2 className={TYPE.cardTitle}>Activity</h2>
+                <div className="flex items-center gap-2">
+                {captureEnabled && <RecordButton context={{ type: "partner", id: p.id, name: p.name }} />}
                 <LogPartnerInteraction
                   partnerId={p.id}
                   contacts={contacts.map((c) => ({
                     id: c.id, name: [c.first_name, c.last_name].filter(Boolean).join(" ") || c.email || "Contact",
                   }))}
                 />
+                </div>
               </div>
               {interactions.length === 0 ? (
                 <p className={`p-6 ${TYPE.bodyMuted}`}>No touches logged yet. Calls, emails, and meetings appear here.</p>

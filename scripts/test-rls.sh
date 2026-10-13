@@ -235,6 +235,7 @@ ordered=(
   capture_tables.sql
   capture_match_rpc.sql
   capture_rpc_grants.sql
+  capture_obligations.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

@@ -7,7 +7,7 @@ import { MAX_TRANSCRIPT_CHARS } from "@/lib/capture/constants";
 import { SPEECH_CAP_SECONDS, formatElapsed } from "@/lib/hooks/continuousSpeech";
 import { useContinuousSpeech } from "@/lib/hooks/useContinuousSpeech";
 import { useConfirm } from "../../_components/feedback/ConfirmProvider";
-import { parseCapture, parseFailureMessage, type Surface } from "../_lib/captureApi";
+import { parseCapture, parseFailureMessage, type CaptureContext, type Surface } from "../_lib/captureApi";
 import { useFocusTrap } from "../_lib/useFocusTrap";
 import ConfirmStack from "./ConfirmStack";
 
@@ -32,7 +32,16 @@ type Mode = "record" | "type" | "working" | "denied" | "failed" | "cards";
 
 const STEPS = ["Reading what you said", "Matching names to your records", "Drafting cards"];
 
-export default function CaptureModal({ surface, onClose }: { surface: Exclude<Surface, "paste" | "entity_page">; onClose: () => void }) {
+export default function CaptureModal({
+  surface,
+  context = null,
+  onClose,
+}: {
+  surface: Exclude<Surface, "paste">;
+  /** The record this was started from (entity pages, C5). */
+  context?: CaptureContext | null;
+  onClose: () => void;
+}) {
   const router = useRouter();
   const confirm = useConfirm();
   const speech = useContinuousSpeech();
@@ -83,7 +92,11 @@ export default function CaptureModal({ surface, onClose }: { surface: Exclude<Su
       setMode("working");
       const r = await parseCapture({
         transcript: transcript.slice(0, MAX_TRANSCRIPT_CHARS),
-        source_surface: viaSpeech ? surface : "paste",
+        // Typed notes are 'paste' unless they started on a record's page,
+        // where the context is the more useful fact.
+        source_surface: viaSpeech || context ? surface : "paste",
+        context_type: context?.type ?? null,
+        context_id: context?.id ?? null,
         duration_seconds: viaSpeech ? speech.elapsed : null,
         capture_id: captureId,
       });
@@ -97,7 +110,7 @@ export default function CaptureModal({ surface, onClose }: { surface: Exclude<Su
       setFailure({ message: parseFailureMessage(r.status, r.body, r.error), words: transcript, viaSpeech });
       setMode("failed");
     },
-    [captureId, speech.elapsed, surface],
+    [captureId, speech.elapsed, surface, context],
   );
 
   // Stop (or the 4-minute cap) sends the note straight to the parse.
@@ -181,6 +194,11 @@ export default function CaptureModal({ surface, onClose }: { surface: Exclude<Su
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
+          {context && mode !== "cards" && mode !== "working" && (
+            <p className={`${TYPE.metadata} mb-4 rounded-control border border-hairline bg-tile px-3 py-2`}>
+              About <span className="font-semibold text-ink-1">{context.name}</span>. You don&apos;t have to say the name.
+            </p>
+          )}
           {mode === "record" && <RecordPane speech={speech} onTypeInstead={() => typeInstead(speech.transcript)} />}
 
           {mode === "type" && (

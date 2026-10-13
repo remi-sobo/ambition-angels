@@ -59,6 +59,7 @@ const SOURCE_LABEL: Record<QueueItem["source"], string> = {
   application_pending: "Application",
   session_unrecorded: "Attendance",
   fr_next_step: "Next move", // F5 arm — v_obligations only, never in this V1 queue
+  capture: "Recording", // Capture C5 — v_obligations only, never in this V1 queue
 };
 
 const todayISO = () => new Date().toISOString().slice(0, 10);

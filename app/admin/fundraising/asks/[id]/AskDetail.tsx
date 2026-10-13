@@ -1,4 +1,6 @@
 import Link from "next/link";
+import RecordButton from "@/app/admin/capture/_components/RecordButton";
+import { hasEntitlement } from "@/lib/admin/entitlements";
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { constituentName } from "@/lib/fundraising/display";
@@ -80,6 +82,16 @@ export default async function AskDetail({ id, v2 = false }: { id: string; v2?: b
   const funderName = funder ? constituentName(funder) : "";
   const heading = ask.title || funderName || "Ask";
 
+  // Capture C5: Record from the ask. The opportunity is the context when the
+  // ask has one (the matcher resolves it to its constituent); otherwise the
+  // funder is.
+  const captureEnabled = await hasEntitlement("ai.capture");
+  const recordContext = opportunity?.id
+    ? { type: "opportunity" as const, id: opportunity.id, name: funderName || opportunity.name || heading }
+    : funder?.id
+      ? { type: "constituent" as const, id: funder.id, name: funderName }
+      : null;
+
   return (
     <div className="min-h-screen bg-ink">
       <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6">
@@ -100,7 +112,12 @@ export default async function AskDetail({ id, v2 = false }: { id: string; v2?: b
               </span>
             </span>
           }
-          actions={<AskStatusSelect askId={ask.id} status={ask.status} />}
+          actions={
+            <span className="flex items-center gap-2">
+              {captureEnabled && recordContext && <RecordButton context={recordContext} />}
+              <AskStatusSelect askId={ask.id} status={ask.status} />
+            </span>
+          }
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">

@@ -24,11 +24,16 @@ async function call<T>(url: string, init?: RequestInit): Promise<ApiResult<T>> {
 
 export type Surface = "mobile_plus" | "quick_add" | "entity_page" | "paste";
 
+/** The record a capture was started from (C5): a strong prior for the matcher. */
+export type CaptureContext = { type: "constituent" | "partner" | "opportunity"; id: string; name: string };
+
 export function parseCapture(input: {
   transcript: string;
   source_surface: Surface;
   duration_seconds?: number | null;
   capture_id?: string | null;
+  context_type?: CaptureContext["type"] | null;
+  context_id?: string | null;
 }) {
   return call<{ capture_id: string; status: string; youth_skipped: number }>("/api/admin/capture", {
     method: "POST",

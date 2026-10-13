@@ -18,6 +18,7 @@ import StageStrip from "../../../_components/StageStrip";
 import { todayISO } from "../../../ops/_types/ops";
 import { GiftEntryForm, GiftRowActions } from "../_components/GiftControls";
 import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentControls";
+import RecordButton from "@/app/admin/capture/_components/RecordButton";
 import LogThankYou from "../_components/LogThankYou";
 import AckChannelPref from "../_components/AckChannelPref";
 import { type AckChannel } from "@/lib/fundraising/ack-channels";
@@ -61,6 +62,8 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
 
   // Reed's next-move panel is a Grow-tier feature (the route 402s without ai.reed).
   const reedEnabled = await hasEntitlement("ai.reed");
+  // Capture C5: Record from this page, with this donor as the context prior.
+  const captureEnabled = await hasEntitlement("ai.capture");
   // Active-org fence for the org-wide list reads below (RLS alone spans every
   // org the user belongs to); the by-constituent reads inherit the scope from
   // the constituent row itself.
@@ -748,6 +751,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                   subjectLabel={name}
                   defaultChannel={(c.preferred_ack_channel as AckChannel | null) ?? null}
                 />
+                {captureEnabled && <RecordButton context={{ type: "constituent", id: c.id, name }} />}
                 <LogInteractionForm constituentId={c.id} />
                 <GiftEntryForm
                   constituentId={c.id}

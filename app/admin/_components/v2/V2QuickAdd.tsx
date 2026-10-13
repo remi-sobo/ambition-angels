@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import QuickAddModal from "../QuickAddModal";
+import CaptureModal from "../../capture/_components/CaptureModal";
 import ReportModal from "../ReportModal";
 import { useReedLauncher } from "../reed/ReedLauncherProvider";
 import { ReedMark } from "../reed/ReedPanel";
@@ -20,12 +21,15 @@ import type { AdminUser } from "@/lib/admin/auth";
 export default function V2QuickAdd({
   currentUser,
   reedEnabled,
+  captureEnabled = false,
 }: {
   currentUser: AdminUser | null;
   reedEnabled: boolean;
+  /** Record (Capture, C4) behind ai.capture. */
+  captureEnabled?: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [modal, setModal] = useState<"task" | "report" | null>(null);
+  const [modal, setModal] = useState<"task" | "report" | "record" | null>(null);
   const { open: openReed } = useReedLauncher();
 
   useEffect(() => {
@@ -67,6 +71,11 @@ export default function V2QuickAdd({
               <ReedMark className="w-4 h-4 text-orange-mid" />
             </Chip>
           )}
+          {captureEnabled && (
+            <Chip label="Record" onClick={act(() => setModal("record"))}>
+              <MicGlyph />
+            </Chip>
+          )}
           <Chip label="Search" kbd="⌘K" onClick={act(() => window.dispatchEvent(new CustomEvent("bloomos:search:open")))}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden>
               <circle cx="11" cy="11" r="7" />
@@ -101,6 +110,7 @@ export default function V2QuickAdd({
 
       {modal === "task" && <QuickAddModal currentUser={currentUser} onClose={() => setModal(null)} />}
       {modal === "report" && <ReportModal onClose={() => setModal(null)} />}
+      {modal === "record" && <CaptureModal surface="quick_add" onClose={() => setModal(null)} />}
     </>
   );
 }
@@ -126,5 +136,14 @@ function Chip({
       {label}
       {kbd && <kbd className="ml-1 text-xs font-medium border border-white/10 rounded px-1.5 py-0.5 text-cream/60">{kbd}</kbd>}
     </button>
+  );
+}
+
+function MicGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+    </svg>
   );
 }

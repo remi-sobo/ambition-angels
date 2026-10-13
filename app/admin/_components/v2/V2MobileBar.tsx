@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin/v2shellNav";
 import { Icon } from "../Icon";
 import QuickAddModal from "../QuickAddModal";
+import CaptureModal from "../../capture/_components/CaptureModal";
 import ReportModal from "../ReportModal";
 import { useReedLauncher } from "../reed/ReedLauncherProvider";
 import { ReedMark } from "../reed/ReedPanel";
@@ -86,10 +87,13 @@ export default function V2MobileBar({
   nav,
   currentUser,
   reedEnabled,
+  captureEnabled = false,
 }: {
   nav: ShellNav;
   currentUser: AdminUser | null;
   reedEnabled: boolean;
+  /** Record (Capture, C4) behind ai.capture. */
+  captureEnabled?: boolean;
 }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -100,7 +104,7 @@ export default function V2MobileBar({
   const { messages: msgUnread, notifications: unread } = useAdminBadges();
 
   const [sheet, setSheet] = useState<"more" | "actions" | null>(null);
-  const [modal, setModal] = useState<"task" | "report" | null>(null);
+  const [modal, setModal] = useState<"task" | "report" | "record" | null>(null);
   // Org lacking modules.messages has no Messages tab — the sheet row follows.
   const hasMessages = nav.inbox?.tabs.some((t) => t.key === "messages") ?? false;
 
@@ -222,6 +226,24 @@ export default function V2MobileBar({
                 </Svg>
                 <span className="font-heading font-semibold text-sm">Settings</span>
               </Link>
+              {captureEnabled && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSheet(null);
+                    setModal("record");
+                  }}
+                  className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 text-left transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
+                >
+                  <Svg className="w-5 h-5 shrink-0 opacity-80">
+                    <>
+                      <rect x="9" y="3" width="6" height="11" rx="3" />
+                      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+                    </>
+                  </Svg>
+                  <span className="font-heading font-semibold text-sm">Record</span>
+                </button>
+              )}
               {/* Report an issue lives in the More sheet too (DoD 5: the
                   trigger works from Quick Add AND mobile More). */}
               <button
@@ -273,6 +295,24 @@ export default function V2MobileBar({
                   blurb="Your BloomOS assistant"
                   accent
                   icon={<ReedMark className="w-5 h-5 text-orange-mid" />}
+                />
+              )}
+              {captureEnabled && (
+                <ActionRow
+                  onClick={() => {
+                    setSheet(null);
+                    setModal("record");
+                  }}
+                  title="Record"
+                  blurb="Say it once, confirm the cards"
+                  icon={
+                  <Svg className="w-5 h-5 text-cream">
+                    <>
+                      <rect x="9" y="3" width="6" height="11" rx="3" />
+                      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+                    </>
+                  </Svg>
+                  }
                 />
               )}
               <ActionRow
@@ -329,6 +369,7 @@ export default function V2MobileBar({
 
       {modal === "task" && <QuickAddModal currentUser={currentUser} onClose={() => setModal(null)} />}
       {modal === "report" && <ReportModal onClose={() => setModal(null)} />}
+      {modal === "record" && <CaptureModal surface="mobile_plus" onClose={() => setModal(null)} />}
     </>
   );
 }

@@ -90,6 +90,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // base the FAB simply doesn't mount — and /api/reed/* will 402 server-side
   // (Phase 4), so hiding it here is an affordance, not the security boundary.
   const reedEnabled = !!ents && hasFeature(ents, "ai.reed");
+  // Capture's Record entry points (specs/bloomos-capture.md, C4). Same rule:
+  // hidden without `ai.capture`; /api/admin/capture is the real boundary (402).
+  const captureEnabled = !!ents && hasFeature(ents, "ai.capture");
 
   // The user's orgs feed the sidebar-footer switcher (C1) — it only renders
   // with 2+ memberships, so single-org users never see it.
@@ -144,10 +147,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <V2ReedEdge />
           {/* B5: the V2 bottom bar — Today · Work · ＋ · Programs · More,
               derived from the same resolved nav as the sidebar. */}
-          <V2MobileBar nav={nav} currentUser={user} reedEnabled={reedEnabled} />
+          <V2MobileBar nav={nav} currentUser={user} reedEnabled={reedEnabled} captureEnabled={captureEnabled} />
           {/* B6: the shell-level Quick Add — capture, report-an-issue, and
               the search overlay, at every desktop width (V2 has no rail). */}
-          <V2QuickAdd currentUser={user} reedEnabled={reedEnabled} />
+          <V2QuickAdd currentUser={user} reedEnabled={reedEnabled} captureEnabled={captureEnabled} />
         </ReedLauncherProvider>
         <GlobalSearch />
       </div>

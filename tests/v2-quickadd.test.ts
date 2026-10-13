@@ -64,7 +64,7 @@ describe("the shell triggers (structural)", () => {
 
   test("the layout mounts V2QuickAdd; the V1 FAB retired with the V1 chrome", () => {
     const src = read("app", "admin", "layout.tsx");
-    expect(src).toMatch(/<V2QuickAdd currentUser=\{user\} reedEnabled=\{reedEnabled\} \/>/);
+    expect(src).toMatch(/<V2QuickAdd currentUser=\{user\} reedEnabled=\{reedEnabled\} captureEnabled=\{captureEnabled\} \/>/);
     // The V1 branch (and its FAB) were deleted with NAV_SECTIONS — Spec B's
     // named cleanup, discharged after Spec Inbox X2.
     expect(src).not.toMatch(/QuickAddButton/);

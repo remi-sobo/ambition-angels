@@ -2069,4 +2069,147 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+-- ════ Capture C5: pending captures on Today, snooze/resolve, the purge ═════
+-- One v_obligations row per capture with pending cards, visible ONLY to its
+-- creator (captures are personal), flagged as participant data. snooze and
+-- resolve are SECURITY DEFINER, so their created_by check is the fence:
+-- another member or another tenant gets not-found. The purge clears
+-- transcripts older than 90 days and nothing newer.
+reset role;
+reset request.jwt.claim.sub;
+set role authenticated;
+
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare aa uuid; cap uuid; ob record;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into captures (org_id, source_surface, transcript, status)
+    values (aa, 'mobile_plus', 'leak-test C5 capture', 'ready')
+    returning id into cap;
+  insert into capture_cards (org_id, capture_id, position, dest, payload)
+    values (aa, cap, 1, 'task', '{"title":"leak-test C5 one"}'::jsonb),
+           (aa, cap, 2, 'thought', '{"text":"leak-test C5 two"}'::jsonb);
+  perform set_config('leak.c5_capture_id', cap::text, false);
+
+  select * into ob from v_obligations where id = 'capture:' || cap;
+  if ob.id is null then raise exception 'C5: the owner cannot see her pending capture on v_obligations'; end if;
+  if ob.title not like '2 cards waiting from your %' then raise exception 'C5: unexpected title %', ob.title; end if;
+  if ob.contains_participant_data is distinct from true then raise exception 'C5: capture arm must be flagged participant data'; end if;
+  if ob.owner_id is distinct from current_setting('request.jwt.claim.sub')::uuid then raise exception 'C5: capture owner_id is not the creator'; end if;
+  if ob.module <> 'ops' or ob.state <> 'open' then raise exception 'C5: capture arm module/state wrong'; end if;
+  if (select count(*) from v_obligations where type = 'capture' and contains_participant_data is not true) <> 0 then
+    raise exception 'C5: a capture row escaped the participant flag';
+  end if;
+end $$;
+
+-- AA staff (same org): cannot see, snooze, or resolve the owner's capture.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$
+declare cap uuid := current_setting('leak.c5_capture_id')::uuid;
+begin
+  if (select count(*) from v_obligations where id = 'capture:' || cap) <> 0 then
+    raise exception 'LEAK: AA staff sees the owner''s pending capture on v_obligations';
+  end if;
+  begin
+    perform public.snooze_obligation('capture', cap, current_date + 1);
+    raise exception 'LEAK: AA staff snoozed the owner''s capture';
+  exception when no_data_found then null; -- expected
+  end;
+  begin
+    perform public.resolve_obligation('capture', cap);
+    raise exception 'LEAK: AA staff resolved the owner''s capture';
+  exception when no_data_found then null; -- expected
+  end;
+end $$;
+
+-- Tenant-two owner: nothing, and no reach through the RPCs.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare cap uuid := current_setting('leak.c5_capture_id')::uuid; aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from v_obligations where type = 'capture' and (org_id = aa or id = 'capture:' || cap)) <> 0 then
+    raise exception 'LEAK: tenant-two sees AA captures on v_obligations';
+  end if;
+  -- Its own pending capture (seeded in the C1 block) is visible to it.
+  if (select count(*) from v_obligations where type = 'capture') = 0 then
+    raise exception 'C5: tenant-two cannot see its OWN pending capture';
+  end if;
+  begin
+    perform public.resolve_obligation('capture', cap);
+    raise exception 'LEAK: tenant-two resolved an AA capture';
+  exception when no_data_found then null; -- expected
+  end;
+end $$;
+
+-- Owner: snooze hides it; resolve discards what's pending and closes it.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare cap uuid := current_setting('leak.c5_capture_id')::uuid; r jsonb;
+begin
+  perform public.snooze_obligation('capture', cap, current_date + 1);
+  if (select count(*) from v_obligations where id = 'capture:' || cap) <> 0 then
+    raise exception 'C5: a snoozed capture still shows on v_obligations';
+  end if;
+  update captures set snoozed_until = null where id = cap;
+  if (select count(*) from v_obligations where id = 'capture:' || cap) <> 1 then
+    raise exception 'C5: an unsnoozed capture does not come back';
+  end if;
+
+  r := public.resolve_obligation('capture', cap);
+  if (r ->> 'resolved_at') is null then raise exception 'C5: resolve did not resolve: %', r; end if;
+  if (select count(*) from capture_cards where capture_id = cap and status in ('proposed', 'held')) <> 0 then
+    raise exception 'C5: resolve left pending cards behind';
+  end if;
+  if (select status from captures where id = cap) <> 'done' then raise exception 'C5: resolve did not close the capture'; end if;
+  if (select count(*) from v_obligations where id = 'capture:' || cap) <> 0 then
+    raise exception 'C5: a resolved capture still shows on v_obligations';
+  end if;
+  r := public.resolve_obligation('capture', cap);
+  if (r ->> 'already_resolved') is distinct from 'true' then raise exception 'C5: second resolve is not idempotent: %', r; end if;
+end $$;
+
+-- The purge: 100-day-old transcript and source sentences go; a fresh one stays.
+reset role;
+reset request.jwt.claim.sub;
+do $$
+declare aa uuid; owner uuid := '00000000-0000-0000-0000-000000000001'; old_cap uuid; new_cap uuid; n int;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into public.captures (org_id, created_by, source_surface, transcript, status, created_at)
+    values (aa, owner, 'paste', 'leak-test C5 old transcript', 'done', now() - interval '100 days')
+    returning id into old_cap;
+  insert into public.captures (org_id, created_by, source_surface, transcript, status)
+    values (aa, owner, 'paste', 'leak-test C5 fresh transcript', 'done')
+    returning id into new_cap;
+  insert into public.capture_cards (org_id, capture_id, created_by, position, dest, status, payload)
+    values (aa, old_cap, owner, 1, 'thought', 'discarded', '{"text":"x","source_sentence":"old words"}'::jsonb),
+           (aa, new_cap, owner, 1, 'thought', 'discarded', '{"text":"y","source_sentence":"new words"}'::jsonb);
+
+  n := private.capture_purge_transcripts(90);
+  if n < 1 then raise exception 'C5: purge cleared nothing'; end if;
+  if (select transcript from public.captures where id = old_cap) is not null then raise exception 'C5: purge kept a 100-day transcript'; end if;
+  if (select payload ? 'source_sentence' from public.capture_cards where capture_id = old_cap) then
+    raise exception 'C5: purge kept an old source_sentence';
+  end if;
+  if (select transcript from public.captures where id = new_cap) is null then raise exception 'C5: purge cleared a fresh transcript'; end if;
+  if not (select payload ? 'source_sentence' from public.capture_cards where capture_id = new_cap) then
+    raise exception 'C5: purge cleared a fresh source_sentence';
+  end if;
+end $$;
+
+-- Members can't run the purge themselves.
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+begin
+  perform private.capture_purge_transcripts(0);
+  raise exception 'LEAK: a member can run the transcript purge';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

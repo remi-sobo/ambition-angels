@@ -16,6 +16,7 @@ const SOURCES = new Set([
   "reconciliation_item", "document_renewal", "metric_stale",
   "application_pending", "session_unrecorded",
   "fr_next_step", // the F5 arm (Spec Fundraising decision 2)
+  "capture", // Capture C5: snooze from Today; resolve is creator-only in the RPC
 ]);
 const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);

@@ -45,7 +45,9 @@ export type ActionItemRow = {
     | "session_unrecorded"
     // The F5 arm (v_obligations only — v_action_items never emits it; the
     // union widens so SOURCE_FALLBACK_HREF covers every Contract 3 type).
-    | "fr_next_step";
+    | "fr_next_step"
+    // Capture C5: a recording with cards still waiting (v_obligations only).
+    | "capture";
   source_id: string;
   title: string;
   entity_type: string | null;
@@ -102,6 +104,9 @@ export const SOURCE_FALLBACK_HREF: Record<ActionItemRow["source"], string> = {
   // today, and its F6 activation carries this to Fundraising → Today, whose
   // overdue-moves list is the detail surface.
   fr_next_step: v2Href("/admin/fundraising"),
+  // Each capture has its own page; Today links there per row (lib/admin/
+  // today.ts). This type-level fallback only applies if a row ever lacks an id.
+  capture: "/admin/today",
 };
 
 const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };

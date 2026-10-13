@@ -778,3 +778,77 @@ iPhone in the installed app on the preview deploy; that is the Web Speech test
 Phase 0 couldn't run. If it fails there, Type instead is the floor and we decide
 speech-to-text after. Stop there.
 ```
+
+---
+
+## C4 as built (merged 2026-10-13)
+
+PR #551, squash `02657dd`. No migration and no API change. Record lives in the mobile ＋ sheet, the mobile More sheet, and desktop Quick Add, all behind `ai.capture`. The record modal, the "Here's what I heard" confirm stack, the edit sheet, and `/admin/capture/[id]` are live. `lib/hooks/useContinuousSpeech.ts` (pure reducer in `lib/hooks/continuousSpeech.ts`) restarts after the browser's silence cut-off, keeps every word across restarts, flushes unfinished words on Stop without doubling a trailing final, and caps at 4 minutes. As of 2026-10-13: 0 captures, 0 cards, 0 `ai_calls` with surface `capture` in production. **The iPhone Web Speech test in the installed app has not been run yet**; it is still the one real-device check owed before Capture is called done.
+
+Where C4 differs from its kickoff, accepted at merge:
+
+- **The parse route returns cards without ids,** so the modal re-reads the capture through the GET route after a parse. One extra request, no API change.
+- **Recording starts on a tap inside the modal,** because iOS starts the mic only from a user gesture.
+- **Stop sends straight to the parse.** Corrections go through Type instead, Edit as text, and See transcript.
+- **Discard has no undo** (the C3 API has no un-discard).
+- **Drafts show "Draft saved" with no link;** there is no drafts page yet.
+
+---
+
+## C5 kickoff prompt (paste into Claude Code)
+
+```
+Build stage C5 of specs/bloomos-capture.md: entity context and needs-you.
+Read rulings 10 and 13, docs/recon/capture-phase0.md section 7, and
+"C4 as built" first. Branch from main (02657dd or later). One PR. Do not apply
+the migration; I apply it through the connector after review.
+
+GOAL: a recording that wasn't finished shows up on Today until it is, and
+recording from a donor, partner, or ask page starts with that record as the
+context. Transcripts don't outlive 90 days.
+
+0. Migration supabase/migrations/capture_obligations.sql (guarded form):
+   - captures.snoozed_until (A1 pattern).
+   - v_obligations re-created with an eleventh arm, `capture`: one row per
+     capture in status ready with proposed or held cards, created_by =
+     auth.uid(), owner_id = creator, due = the day it was recorded (Pacific),
+     title "N cards waiting from your <Dy h:mm AM> recording" (never
+     transcript text), module ops, contains_participant_data TRUE (ruling 10).
+     The ten existing arms verbatim; check them against production first.
+   - resolve_obligation / snooze_obligation re-created with a capture branch.
+     Creator only (SECURITY DEFINER bypasses RLS, so the created_by check is
+     the fence), ops.write floor. Resolve discards whatever is still pending
+     and closes the capture; snooze sets captures.snoozed_until. Other
+     branches verbatim.
+   - private.capture_purge_transcripts(days default 90): clears
+     captures.transcript and each card's payload.source_sentence past the
+     window; never touches a destination table. Scheduled daily with pg_cron
+     only where pg_cron exists. Revoked from public.
+   Register it in scripts/test-rls.sh; add a migration shape test.
+
+1. Today: `capture` in every source map (ActionItemRow union,
+   SOURCE_FALLBACK_HREF, SOURCE_WEIGHT, whyFallback, SNOOZABLE, the
+   obligations route allowlist, NeedsYouQueueClient labels). Each row links
+   to /admin/capture/<id>. Snooze yes. No one-tap Done on Today: resolving
+   discards unreviewed cards, which belongs on the capture page.
+
+2. Entity pages: a Record button that opens the C4 modal with
+   source_surface 'entity_page' and the context:
+   - donor profile (constituent),
+   - partner profile (partner),
+   - ask detail (the ask's opportunity when linked, else its funder).
+   Behind ai.capture. The modal shows "About <name>" so the person knows they
+   don't have to say it.
+
+3. Tests: migration shape; Today ranking and wiring; page gates. RLS leak
+   block: the creator sees the row, AA staff and tenant-two don't and can't
+   snooze or resolve it (not found), snooze hides it, resolve discards and
+   closes it and is idempotent, the purge clears a 100-day transcript and
+   keeps a fresh one, a member can't run the purge.
+
+4. npm run lint, typecheck, npm test, the RLS harness. Nothing against
+   production.
+
+PR body: the migration SQL under "SQL for Remi to review", and anything that
+didn't match. Merge order: apply capture_obligations, then merge. Stop there.
+```

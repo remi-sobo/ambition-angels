@@ -514,6 +514,16 @@ begin
 end $$;
 
 revoke all on function private.capture_purge_transcripts(int) from public;
+-- Supabase's default privileges can grant execute to these roles directly
+-- (the C3 lesson on capture_match_candidates), so revoke them by name too.
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'anon') then
+    revoke all on function private.capture_purge_transcripts(int) from anon;
+  end if;
+  if exists (select 1 from pg_roles where rolname = 'authenticated') then
+    revoke all on function private.capture_purge_transcripts(int) from authenticated;
+  end if;
+end $$;
 
 do $$ begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then

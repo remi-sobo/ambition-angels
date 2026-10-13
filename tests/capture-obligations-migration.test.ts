@@ -72,6 +72,8 @@ describe("capture_obligations.sql (C5)", () => {
     expect(body).toMatch(/set transcript = null/);
     expect(body).toMatch(/payload = k\.payload - 'source_sentence'/);
     expect(body).toMatch(/revoke all on function private\.capture_purge_transcripts\(int\) from public;/);
+    expect(body).toMatch(/revoke all on function private\.capture_purge_transcripts\(int\) from anon;/);
+    expect(body).toMatch(/revoke all on function private\.capture_purge_transcripts\(int\) from authenticated;/);
     expect(body).toMatch(/if exists \(select 1 from pg_extension where extname = 'pg_cron'\)/);
     expect(body).toMatch(/if not exists \(select 1 from cron\.job where jobname = 'capture-transcript-purge'\)/);
     expect(body).toMatch(/cron\.schedule\('capture-transcript-purge', '17 10 \* \* \*', 'select private\.capture_purge_transcripts\(90\)'\)/);

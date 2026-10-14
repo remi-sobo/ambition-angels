@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { thisMonday, mondayOf } from "@/lib/admin/ops/week";
+import { parseEstimate } from "@/lib/admin/ops/estimates";
 import {
   isTaskCategory,
   isTaskStatus,
@@ -164,6 +165,16 @@ export async function PATCH(
       return NextResponse.json({ error: "archived_at must be an ISO timestamp or null" }, { status: 400 });
     }
     updates.archived_at = body.archived_at;
+  }
+  if ("estimated_minutes" in body) {
+    const est = parseEstimate(body.estimated_minutes);
+    if (est === undefined) {
+      return NextResponse.json(
+        { error: "estimated_minutes must be a whole number from 1 to 960, or null" },
+        { status: 400 }
+      );
+    }
+    updates.estimated_minutes = est;
   }
   if ("pinned_for_today" in body) updates.pinned_for_today = body.pinned_for_today === true;
   if ("pinned_for_this_week" in body) updates.pinned_for_this_week = body.pinned_for_this_week === true;

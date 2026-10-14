@@ -1,6 +1,7 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getAgenda } from "@/lib/agenda/service";
+import { isOwnMeeting } from "@/lib/agenda/own-events";
 import { resolveUserHandle, type ResolvedUser } from "./identity";
 import {
   thisMonday,
@@ -72,7 +73,7 @@ export async function loadRhythmSnapshot(
     const openRows = (openRes.data as Array<{ category: string }> | null) ?? [];
     const areas = new Set(openRows.map((r) => r.category)).size;
 
-    const { meetings, openHours } = await calendarShape(mondayISO);
+    const { meetings, openHours } = await calendarShape(mondayISO, who.userId);
 
     const counts: MondayCounts = {
       open: openRows.length,
@@ -158,7 +159,10 @@ export async function loadRhythmSnapshot(
  * calendar can't be read (no connection / sync lag) so the hub never looks
  * broken — the day walk surfaces the real "connect your calendar" state.
  */
-async function calendarShape(mondayISO: string): Promise<{ meetings: number; openHours: number }> {
+async function calendarShape(
+  mondayISO: string,
+  userId: string
+): Promise<{ meetings: number; openHours: number }> {
   try {
     const agenda = await getAgenda({
       start: new Date(dayStartInstant(mondayISO)),
@@ -167,6 +171,9 @@ async function calendarShape(mondayISO: string): Promise<{ meetings: number; ope
     let meetings = 0;
     const busyByDay = new Map<string, number>(); // dayISO → busy hours, capped per day
     for (const it of agenda.items) {
+      // The viewer's own events only (not delegated or direct reports'
+      // calendars), and never a work-block mirror. Same rule as the grid.
+      if (!isOwnMeeting(it, userId, true)) continue;
       if (it.allDay) continue;
       meetings += 1;
       if (!it.end) continue;

@@ -85,4 +85,5 @@ style={{
 - `ANTHROPIC_API_KEY` — career quiz/match routes
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — Supabase
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — donations
+- `QBO_CLIENT_ID`, `QBO_CLIENT_SECRET`, `QBO_ENVIRONMENT` (`production` | `sandbox`) — QuickBooks Online connection (`lib/quickbooks/`). Reads only the to-date register (P&L Detail, cash basis) and bank-account cash balance; daily via `/api/cron/quickbooks-sync`. The cash pull writes the `fin_config` runway anchor.
 - Plus admin-only integrations (HubSpot, Google, Resend) — see the relevant `lib/` modules.

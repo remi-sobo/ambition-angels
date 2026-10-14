@@ -3,18 +3,16 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { OrgContext } from "@/lib/admin/auth";
 import { getAgenda } from "@/lib/agenda/service";
-import { isOwnMeeting } from "@/lib/agenda/own-events";
+import { isWorkday, projectOwnEvents, summarizeOwnWeek } from "@/lib/agenda/own-events";
 import { getCalendarPrefs, type CalendarPrefs } from "@/lib/agenda/prefs";
 import { getDisplayNames } from "@/lib/admin/profile";
 import {
   addDays,
   dayStartInstant,
-  laDateOf,
   weekDays,
-  weekdayIndex,
 } from "@/lib/admin/ops/week";
 import { computeOpenBlocks, type Interval } from "@/lib/admin/ops/open-blocks";
-import { computeWeekSummary, type WeekSummary } from "@/lib/agenda/week-summary";
+import type { WeekSummary } from "@/lib/agenda/week-summary";
 import type {
   GridBlock,
   GridBlockTask,
@@ -132,12 +130,6 @@ export async function getCalendarOwners(ctx: OrgContext): Promise<CalendarOwner[
   }));
 }
 
-/** Minutes from the day's org-TZ midnight for an instant, clamped to 0..1440. */
-function minutesInto(dayISO: string, instantISO: string): number {
-  const midnight = Date.parse(dayStartInstant(dayISO));
-  return Math.max(0, Math.min(1440, Math.round((Date.parse(instantISO) - midnight) / 60_000)));
-}
-
 export async function getWeekView(args: {
   ctx: OrgContext;
   weekStart: string; // Monday YYYY-MM-DD
@@ -152,7 +144,6 @@ export async function getWeekView(args: {
   const isSelf = owner.relation === "self";
 
   const days = weekDays(weekStart);
-  const daySet = new Set(days);
   const rangeStart = new Date(dayStartInstant(weekStart));
   const rangeEnd = new Date(dayStartInstant(addDays(weekStart, 7)));
 
@@ -162,31 +153,11 @@ export async function getWeekView(args: {
   // Bookings carry no owner (org-level /meet meetings) — they belong on the
   // viewer's own grid, not superimposed on a report's.
   const agenda = await getAgenda({ start: rangeStart, end: rangeEnd });
-  const timed: GridEvent[] = [];
-  const allDay: GridEvent[] = [];
-  for (const item of agenda.items) {
-    // Owner's own events only; block mirrors render from work_blocks.
-    if (!isOwnMeeting(item, owner.userId, isSelf)) continue;
-    const day = item.allDay ? item.start.slice(0, 10) : laDateOf(item.start);
-    if (!daySet.has(day)) continue;
-    const ev: GridEvent = {
-      id: item.id,
-      day,
-      startMin: item.allDay ? 0 : minutesInto(day, item.start),
-      endMin: item.allDay
-        ? 1440
-        : item.end
-          ? minutesInto(day, item.end)
-          : minutesInto(day, item.start) + 30,
-      title: item.title,
-      location: item.location,
-      isExternal: item.isExternal,
-      allDay: item.allDay,
-      source: item.source,
-    };
-    if (ev.allDay) allDay.push(ev);
-    else if (ev.endMin > ev.startMin) timed.push(ev);
-  }
+  const { timed, allDay } = projectOwnEvents(agenda.items, {
+    ownerUserId: owner.userId,
+    isSelf,
+    days,
+  });
 
   // Work blocks + checklists via the session client — RLS's three arms decide.
   const session = createServerSupabase();
@@ -248,10 +219,6 @@ export async function getWeekView(args: {
   // Open gaps per day: working hours minus meetings and blocks. Weekends are
   // not working days — blocks can still be drawn there, but nothing there
   // reads as "open time" (matches the planner and the rhythm math).
-  const isWorkday = (day: string) => {
-    const dow = weekdayIndex(day);
-    return dow >= 1 && dow <= 5;
-  };
   const openGaps: GridOpenGap[] = [];
   for (const day of days) {
     if (!isWorkday(day)) continue;
@@ -351,18 +318,11 @@ export async function getWeekView(args: {
   }
 
   const doneCount = blockTasks.filter((t) => t.status === "done").length;
-  const summary = computeWeekSummary({
-    days: days.map((day) => ({
-      meetings: timed
-        .filter((e) => e.day === day)
-        .map((e) => ({ startMin: e.startMin, endMin: e.endMin })),
-      blocks: blocks
-        .filter((b) => b.day === day)
-        .map((b) => ({ startMin: b.startMin, endMin: b.endMin })),
-      workday: isWorkday(day),
-    })),
-    workStartMin: prefs.dayStartMinute,
-    workEndMin: prefs.dayEndMinute,
+  const summary = summarizeOwnWeek({
+    days,
+    timed,
+    blocks,
+    prefs,
     blockTasksTotal: blockTasks.length,
     blockTasksDone: doneCount,
   });

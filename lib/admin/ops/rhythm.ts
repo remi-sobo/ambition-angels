@@ -1,15 +1,10 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getAgenda } from "@/lib/agenda/service";
-import { isOwnMeeting } from "@/lib/agenda/own-events";
+import { isWorkday, projectOwnEvents, summarizeOwnWeek } from "@/lib/agenda/own-events";
+import { getCalendarPrefs } from "@/lib/agenda/prefs";
 import { resolveUserHandle, type ResolvedUser } from "./identity";
-import {
-  thisMonday,
-  nextMonday,
-  dayStartInstant,
-  laDateOf,
-  weekdayIndex,
-} from "./week";
+import { thisMonday, nextMonday, dayStartInstant, weekDays } from "./week";
 import type { MondayCounts, FridayCounts } from "./statusLine";
 
 /**
@@ -26,13 +21,6 @@ import type { MondayCounts, FridayCounts } from "./statusLine";
 // path.
 import { rhythmModeForToday, type RhythmMode } from "./rhythmMode";
 export { rhythmModeForToday, type RhythmMode };
-
-// Working window used for the (approximate) open-hours figure. Precise
-// open-block computation against real busy gaps lands with the day walk (P5);
-// here we just need a defensible number for the status, hence the "~".
-const WORK_HOURS_PER_DAY = 8; // 9–5
-const WORK_DAYS = 5; // Mon–Fri
-const WORK_HOURS_PER_WEEK = WORK_HOURS_PER_DAY * WORK_DAYS;
 
 export type RhythmSnapshot =
   | { mode: "monday_plan"; weekOf: string; who: ResolvedUser; counts: MondayCounts }
@@ -73,14 +61,14 @@ export async function loadRhythmSnapshot(
     const openRows = (openRes.data as Array<{ category: string }> | null) ?? [];
     const areas = new Set(openRows.map((r) => r.category)).size;
 
-    const { meetings, openHours } = await calendarShape(mondayISO, who.userId);
+    const { meetingMin, openMin } = await calendarShape(who, mondayISO);
 
     const counts: MondayCounts = {
       open: openRows.length,
       areas,
       carriedOver: carriedRes.count ?? 0,
-      meetings,
-      openHours,
+      meetingMin,
+      openMin,
     };
     return { mode, weekOf: mondayISO, who, counts };
   }
@@ -154,42 +142,64 @@ export async function loadRhythmSnapshot(
 }
 
 /**
- * Meetings booked this week + an approximate open-hours figure, read through the
- * session client (RLS) like the Monday page. Degrades to a calm shape if the
- * calendar can't be read (no connection / sync lag) so the hub never looks
- * broken — the day walk surfaces the real "connect your calendar" state.
+ * This week's meeting and open minutes for the viewer, through the same
+ * projection and summary as the week grid (lib/agenda/own-events.ts), so the
+ * status line and the grid always agree for the same user and week. Working
+ * hours come from calendar_prefs (9 to 5 when unset); the viewer's own work
+ * blocks count as busy, exactly as on the grid.
+ *
+ * Calendar read through the session client (RLS) like the Monday page; blocks
+ * on the service-role client, org- and owner-scoped. Degrades to a calm shape
+ * (no meetings, the full working week open) if the calendar can't be read, so
+ * the hub never looks broken.
  */
 async function calendarShape(
-  mondayISO: string,
-  userId: string
-): Promise<{ meetings: number; openHours: number }> {
+  who: ResolvedUser,
+  mondayISO: string
+): Promise<{ meetingMin: number; openMin: number }> {
+  const days = weekDays(mondayISO);
+  const prefs = await getCalendarPrefs(who.userId);
   try {
-    const agenda = await getAgenda({
-      start: new Date(dayStartInstant(mondayISO)),
-      end: new Date(dayStartInstant(nextMonday())),
+    const [agenda, blockRes] = await Promise.all([
+      getAgenda({
+        start: new Date(dayStartInstant(mondayISO)),
+        end: new Date(dayStartInstant(nextMonday())),
+      }),
+      getSupabaseAdmin()
+        .from("work_blocks")
+        .select("day, start_minute, duration_minute")
+        .eq("org_id", who.orgId)
+        .eq("owner_user_id", who.userId)
+        .gte("day", days[0])
+        .lte("day", days[6]),
+    ]);
+    const { timed } = projectOwnEvents(agenda.items, {
+      ownerUserId: who.userId,
+      isSelf: true,
+      days,
     });
-    let meetings = 0;
-    const busyByDay = new Map<string, number>(); // dayISO → busy hours, capped per day
-    for (const it of agenda.items) {
-      // The viewer's own events only (not delegated or direct reports'
-      // calendars), and never a work-block mirror. Same rule as the grid.
-      if (!isOwnMeeting(it, userId, true)) continue;
-      if (it.allDay) continue;
-      meetings += 1;
-      if (!it.end) continue;
-      const dow = weekdayIndex(laDateOf(it.start));
-      if (dow < 1 || dow > 5) continue; // only weekday working hours count toward openness
-      const hrs = (new Date(it.end).getTime() - new Date(it.start).getTime()) / 3_600_000;
-      if (hrs <= 0) continue;
-      const dayISO = laDateOf(it.start);
-      busyByDay.set(dayISO, Math.min(WORK_HOURS_PER_DAY, (busyByDay.get(dayISO) ?? 0) + hrs));
-    }
-    let busy = 0;
-    busyByDay.forEach((h) => (busy += h));
-    const openHours = Math.max(0, Math.round(WORK_HOURS_PER_WEEK - busy));
-    return { meetings, openHours };
+    const blocks = (
+      (blockRes.data ?? []) as Array<{ day: string; start_minute: number; duration_minute: number }>
+    ).map((b) => ({
+      day: b.day,
+      startMin: b.start_minute,
+      endMin: Math.min(1440, b.start_minute + b.duration_minute),
+    }));
+    const summary = summarizeOwnWeek({
+      days,
+      timed,
+      blocks,
+      prefs,
+      blockTasksTotal: 0,
+      blockTasksDone: 0,
+    });
+    return { meetingMin: summary.meetingMin, openMin: summary.openMin };
   } catch (e) {
     console.error("[rhythm] calendar read failed:", e);
-    return { meetings: 0, openHours: WORK_HOURS_PER_WEEK };
+    const workdays = days.filter(isWorkday).length;
+    return {
+      meetingMin: 0,
+      openMin: Math.max(0, prefs.dayEndMinute - prefs.dayStartMinute) * workdays,
+    };
   }
 }

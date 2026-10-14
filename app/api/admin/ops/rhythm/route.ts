@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
     .select("status, planned_day, calendar_event_id")
     .eq("org_id", ctx.orgId)
     .eq("planned_week", weekOf)
+    .is("archived_at", null)
     .or(mineFilter);
   const rows = (planned ?? []) as Array<{
     status: string;

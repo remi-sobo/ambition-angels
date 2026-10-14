@@ -79,6 +79,7 @@ export default async function PlanSection() {
       .eq("org_id", orgId)
       .lt("planned_week", mondayISO)
       .neq("status", "done")
+      .is("archived_at", null)
       .or(mineFilter)
       .order("planned_week", { ascending: true })
       .order("due_date", { ascending: true, nullsFirst: true }),
@@ -89,6 +90,7 @@ export default async function PlanSection() {
       .eq("org_id", orgId)
       .eq("planned_week", mondayISO)
       .neq("status", "done")
+      .is("archived_at", null)
       .or(mineFilter)
       .order("due_date", { ascending: true, nullsFirst: true }),
   ]);

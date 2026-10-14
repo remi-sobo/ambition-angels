@@ -28,6 +28,9 @@ import MondayOrient from "../_components/MondayOrient";
 import AreaWalk from "../_components/AreaWalk";
 import MondayCommit from "../_components/MondayCommit";
 import CalendarSyncBanner from "../_components/CalendarSyncBanner";
+import CapacityMeter from "./CapacityMeter";
+import { computeWeekCapacity } from "@/lib/admin/ops/capacity";
+import { minutesInto } from "@/lib/agenda/own-events";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // The Monday plan ritual — orient, carryover, areas, days, commit — over
@@ -252,6 +255,32 @@ export default async function PlanSection() {
   };
   tasksByDay.forEach((list) => list.sort(byDayOrder));
 
+  // ── Capacity (Weekly Plan v2, PR 2): estimates vs open time from now on ───
+  // A task on a work block is already busy time on the board (its block's
+  // mirror is an event above), same as a task with its own calendar block.
+  const workBlockedIds = new Set<string>();
+  if (pinnedThisWeek.length > 0) {
+    const { data: wbt } = await supabase
+      .from("work_block_tasks")
+      .select("task_id")
+      .eq("org_id", orgId)
+      .in(
+        "task_id",
+        pinnedThisWeek.map((t) => t.id)
+      );
+    for (const r of (wbt ?? []) as Array<{ task_id: string }>) workBlockedIds.add(r.task_id);
+  }
+  const capacity = computeWeekCapacity({
+    days: weekDayList.map((iso) => ({ iso, openBlocks: openBlocksByDay.get(iso) ?? [] })),
+    todayISO,
+    nowMinute: minutesInto(todayISO, new Date().toISOString()),
+    tasks: pinnedThisWeek.map((t) => ({
+      estimated_minutes: t.estimated_minutes ?? null,
+      timeBlocked: !!scheduled[t.id] || workBlockedIds.has(t.id),
+    })),
+    defaultBlockMinute: calPrefs.defaultBlockMinute,
+  });
+
   const plannerDays: PlannerDay[] = weekDayList.map((iso) => ({
     iso,
     label: formatDayLabel(iso),
@@ -375,6 +404,7 @@ export default async function PlanSection() {
           Open the week grid →
         </Link>
       </div>
+      <CapacityMeter capacity={capacity} defaultBlockMinute={calPrefs.defaultBlockMinute} />
       <WeekPlanner
         days={plannerDays}
         unscheduled={unscheduled}

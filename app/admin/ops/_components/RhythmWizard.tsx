@@ -26,6 +26,7 @@ export default function RhythmWizard({
   eyebrow,
   title,
   subtitle,
+  notice,
   steps,
 }: {
   /** e.g. "Monday · Aim" / "Friday · Account". */
@@ -33,6 +34,8 @@ export default function RhythmWizard({
   /** "Plan" / "Close". */
   title: string;
   subtitle?: ReactNode;
+  /** Optional strip under the header, on every step (e.g. a stale-sync warning). */
+  notice?: ReactNode;
   steps: WizardStep[];
 }) {
   const router = useRouter();
@@ -76,6 +79,8 @@ export default function RhythmWizard({
           ← My Week
         </ButtonLink>
       </header>
+
+      {notice && <div className="mt-6">{notice}</div>}
 
       {/* ── Level 3: workflow progress (Visual System V3 §6) ───────────────
           The five steps used to render as five more capsules — the third row

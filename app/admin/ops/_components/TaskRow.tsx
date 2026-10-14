@@ -6,6 +6,7 @@ import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { useState, useTransition } from "react";
 import TaskEditModal from "@/app/admin/_components/TaskEditModal";
+import { ESTIMATE_CHIPS, formatEstimate } from "@/lib/admin/ops/estimates";
 import {
   categoryBadgeClass,
   categoryLabel,
@@ -234,6 +235,14 @@ export default function TaskRow({
             ↻{task.roll_count}
           </span>
         )}
+        {!showDone && task.estimated_minutes != null && (
+          <span
+            className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border bg-tile text-ink-2 border-hairline tabular-nums"
+            title="Estimated time"
+          >
+            {formatEstimate(task.estimated_minutes)}
+          </span>
+        )}
       </div>
 
       {task.due_date && (
@@ -275,6 +284,29 @@ export default function TaskRow({
                 task.pinned_for_this_week ? "Unpin from week" : "Pin for week"
               }
             />
+            <div className="px-3 py-1.5">
+              <div className="text-ink-3 mb-1">Estimate</div>
+              <div className="flex flex-wrap gap-1">
+                {ESTIMATE_CHIPS.map((m) => {
+                  const on = task.estimated_minutes === m;
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => patch({ estimated_minutes: on ? null : m })}
+                      aria-pressed={on}
+                      className={`px-1.5 py-0.5 rounded border tabular-nums ${
+                        on
+                          ? "bg-orange text-white border-orange"
+                          : "border-hairline text-ink-1 hover:bg-tile"
+                      }`}
+                    >
+                      {formatEstimate(m)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="border-t border-hairline my-1" />
             <ActionItem
               onClick={() =>
                 patch({ status: isBlocked ? "todo" : "blocked" })

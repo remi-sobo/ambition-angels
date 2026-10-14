@@ -27,6 +27,7 @@ import RhythmWizard from "../_components/RhythmWizard";
 import MondayOrient from "../_components/MondayOrient";
 import AreaWalk from "../_components/AreaWalk";
 import MondayCommit from "../_components/MondayCommit";
+import CalendarSyncBanner from "../_components/CalendarSyncBanner";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // The Monday plan ritual — orient, carryover, areas, days, commit — over
@@ -389,6 +390,7 @@ export default async function PlanSection() {
     <RhythmWizard
       eyebrow="Monday · Aim"
       title="Plan"
+      notice={<CalendarSyncBanner />}
       subtitle={
         <>
           <span>Week of {formatWeekHeader(mondayISO)}</span>

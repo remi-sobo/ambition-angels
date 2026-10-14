@@ -3,6 +3,7 @@ import { loadRhythmSnapshot, rhythmModeForToday } from "@/lib/admin/ops/rhythm";
 import { buildMondayStatus, buildFridayStatus, type WeekStatus } from "@/lib/admin/ops/statusLine";
 import { formatWeekHeader, formatDayLabel, todayInTZ } from "@/lib/admin/ops/week";
 import WeekStatusLine from "../_components/WeekStatusLine";
+import CalendarSyncBanner from "../_components/CalendarSyncBanner";
 import PageHeader from "../../_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -101,6 +102,8 @@ export default async function MyWeekHubPage() {
           </span>
         }
       />
+
+      <CalendarSyncBanner />
 
       {/* ── WeekStatus ─────────────────────────────────────────────────────── */}
       <section className="rounded-panel border-hairline bg-surface p-6">

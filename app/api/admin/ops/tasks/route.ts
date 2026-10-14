@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { thisMonday } from "@/lib/admin/ops/week";
+import { parseEstimate } from "@/lib/admin/ops/estimates";
 import {
   isTaskCategory,
   isTaskStatus,
@@ -89,6 +90,13 @@ export async function POST(req: NextRequest) {
   if (body.project_id !== undefined && body.project_id !== null && typeof body.project_id !== "string") {
     return NextResponse.json({ error: "project_id must be a string" }, { status: 400 });
   }
+  const estimate = body.estimated_minutes === undefined ? null : parseEstimate(body.estimated_minutes);
+  if (estimate === undefined) {
+    return NextResponse.json(
+      { error: "estimated_minutes must be a whole number from 1 to 960, or null" },
+      { status: 400 }
+    );
+  }
   const linkType = body.linked_entity_type;
   if (
     linkType !== undefined &&
@@ -114,6 +122,7 @@ export async function POST(req: NextRequest) {
     assigned_to: (body.assigned_to as string | null | undefined) ?? null,
     created_by: createdBy,
     due_date: (body.due_date as string | null | undefined) ?? null,
+    estimated_minutes: estimate,
     pinned_for_today: body.pinned_for_today === true,
     pinned_for_this_week: body.pinned_for_this_week === true,
     // Keep planned_week in sync with the week pin (explicit value wins).

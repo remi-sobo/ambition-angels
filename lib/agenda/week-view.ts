@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { OrgContext } from "@/lib/admin/auth";
 import { getAgenda } from "@/lib/agenda/service";
+import { isOwnMeeting } from "@/lib/agenda/own-events";
 import { getCalendarPrefs, type CalendarPrefs } from "@/lib/agenda/prefs";
 import { getDisplayNames } from "@/lib/admin/profile";
 import {
@@ -164,9 +165,8 @@ export async function getWeekView(args: {
   const timed: GridEvent[] = [];
   const allDay: GridEvent[] = [];
   for (const item of agenda.items) {
-    const mine = item.ownerUserId === owner.userId || (item.ownerUserId === null && isSelf);
-    if (!mine) continue;
-    if (item.source === "bloomos") continue; // block mirrors render from work_blocks
+    // Owner's own events only; block mirrors render from work_blocks.
+    if (!isOwnMeeting(item, owner.userId, isSelf)) continue;
     const day = item.allDay ? item.start.slice(0, 10) : laDateOf(item.start);
     if (!daySet.has(day)) continue;
     const ev: GridEvent = {

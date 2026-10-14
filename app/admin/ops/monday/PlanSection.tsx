@@ -153,6 +153,12 @@ export default async function PlanSection() {
     });
     for (const it of agenda.items) {
       if (linkedEventIds.has(it.id)) continue; // it's a task's own block
+      // My own calendar only: a direct report's or delegated meeting is not
+      // busy time on my week. Owner-less bookings stay (they're mine). Block
+      // mirrors (source='bloomos') are kept here on purpose: until Plan writes
+      // work_blocks (Weekly Plan v2, PR 7) they are how a drawn block reads
+      // as busy on this board.
+      if (it.ownerUserId !== null && it.ownerUserId !== me.userId) continue;
       const dayISO = laDateOf(it.start);
       const list = eventsByDay.get(dayISO) ?? [];
       list.push({

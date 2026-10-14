@@ -92,6 +92,7 @@ export async function loadRhythmSnapshot(
       .select("status")
       .eq("org_id", who.orgId)
       .eq("planned_week", mondayISO)
+      .is("archived_at", null)
       .or(mineFilter),
     // This-week meetings still needing follow-up are mine by owner_user_id.
     sb

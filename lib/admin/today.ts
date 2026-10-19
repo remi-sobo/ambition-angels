@@ -50,7 +50,10 @@ export type TodayObligation = ObligationRow & {
 
 type ViewRow = ObligationRow & { related_entity_id: string | null };
 
-const SNOOZABLE = new Set(["ops_task", "grant_requirement", "compliance_item"]);
+// capture (C5) snoozes from Today but is never "Done" here: resolving a
+// capture discards the cards still waiting, which belongs on its own page
+// where you can see them, not behind a one-tap button.
+const SNOOZABLE = new Set(["ops_task", "grant_requirement", "compliance_item", "capture"]);
 const RESOLVABLE = new Set(["ops_task", "grant_requirement", "compliance_item", "acknowledgment"]);
 
 export type TodayEvent = { id: string; title: string; start: string; end: string; allDay: boolean };
@@ -127,7 +130,10 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
       source_id: sourceId,
       why,
       whyRecorded: Boolean(r.why_it_matters?.trim()),
-      href: SOURCE_FALLBACK_HREF[r.type as keyof typeof SOURCE_FALLBACK_HREF] ?? "/admin",
+      href:
+        r.type === "capture"
+          ? `/admin/capture/${sourceId}`
+          : SOURCE_FALLBACK_HREF[r.type as keyof typeof SOURCE_FALLBACK_HREF] ?? "/admin",
       snoozable: SNOOZABLE.has(r.type),
       resolvable: RESOLVABLE.has(r.type),
     };

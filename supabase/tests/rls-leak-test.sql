@@ -1378,6 +1378,115 @@ begin
 exception when insufficient_privilege then null; -- expected
 end $$;
 
+-- ════ Week commitments: the Monday Plan snapshot (Weekly Plan v2, PR 3) ══
+-- create_week_commitments.sql. Same arms as work_blocks: read = own OR
+-- delegated OR a direct report's; write = own, always. Reuses the staff +
+-- delegation seed above (shannon reports to remi; remi delegates to shannon).
+reset role;
+reset request.jwt.claim.sub;
+
+do $$
+declare aa uuid; t2 uuid; s_remi uuid; s_shannon uuid; s_t2 uuid;
+begin
+  select id into aa from orgs where slug = 'ambition-angels';
+  select id into t2 from orgs where slug = 'tenant-two';
+  insert into rhythm_sessions (org_id, user_id, kind, week_of, status)
+  values (aa, '00000000-0000-0000-0000-000000000001', 'monday_plan', '2026-09-07', 'completed')
+  returning id into s_remi;
+  insert into rhythm_sessions (org_id, user_id, kind, week_of, status)
+  values (aa, '00000000-0000-0000-0000-000000000002', 'monday_plan', '2026-09-07', 'completed')
+  returning id into s_shannon;
+  insert into rhythm_sessions (org_id, user_id, kind, week_of, status)
+  values (t2, '00000000-0000-0000-0000-000000000004', 'monday_plan', '2026-09-07', 'completed')
+  returning id into s_t2;
+  insert into week_commitments (org_id, session_id, user_id, week_of, task_title, decision, placement)
+  values (aa, s_remi, '00000000-0000-0000-0000-000000000001', '2026-09-07', 'leak-test-remi-commit', 'commit', 'floating'),
+         (aa, s_shannon, '00000000-0000-0000-0000-000000000002', '2026-09-07', 'leak-test-shannon-commit', 'commit', 'day'),
+         (t2, s_t2, '00000000-0000-0000-0000-000000000004', '2026-09-07', 'leak-test-t2-commit', 'commit', 'floating');
+end $$;
+
+set role authenticated;
+
+-- Remi (owner; manages shannon): own + shannon's, never tenant-two's; looks,
+-- never touches a report's row.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare n int;
+begin
+  if (select count(*) from week_commitments where task_title = 'leak-test-remi-commit') <> 1 then
+    raise exception 'owner cannot read his own week commitment';
+  end if;
+  if (select count(*) from week_commitments where task_title = 'leak-test-shannon-commit') <> 1 then
+    raise exception 'manager cannot read a direct report''s week commitment';
+  end if;
+  if (select count(*) from week_commitments where task_title = 'leak-test-t2-commit') <> 0 then
+    raise exception 'LEAK: AA owner reads a tenant-two week commitment';
+  end if;
+  with upd as (
+    update week_commitments set outcome = 'done' where task_title = 'leak-test-shannon-commit' returning 1
+  )
+  select count(*) into n from upd;
+  if n <> 0 then raise exception 'LEAK: manager updated a report''s week commitment'; end if;
+end $$;
+do $$
+declare aa uuid; s uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select session_id into s from week_commitments where task_title = 'leak-test-shannon-commit';
+  insert into week_commitments (org_id, session_id, user_id, week_of, task_title, decision, placement)
+  values (aa, s, '00000000-0000-0000-0000-000000000002', '2026-09-07', 'leak-test-forged', 'commit', 'day');
+  raise exception 'LEAK: manager inserted a week commitment as a report';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+-- Shannon (staff; delegate of remi): own + remi's via delegation; her own
+-- write works; remi's row is untouchable.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$
+declare n int; aa uuid; s uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  if (select count(*) from week_commitments where task_title like 'leak-test-%-commit') <> 2 then
+    raise exception 'staff/delegate week commitment visibility is wrong (saw %)',
+      (select count(*) from week_commitments where task_title like 'leak-test-%-commit');
+  end if;
+  select session_id into s from week_commitments where task_title = 'leak-test-shannon-commit';
+  insert into week_commitments (org_id, session_id, user_id, week_of, task_title, decision, reason)
+  values (aa, s, '00000000-0000-0000-0000-000000000002', '2026-09-07', 'leak-test-shannon-defer', 'defer', 'next week');
+  with upd as (
+    update week_commitments set outcome = 'done' where task_title = 'leak-test-remi-commit' returning 1
+  )
+  select count(*) into n from upd;
+  if n <> 0 then raise exception 'LEAK: delegate updated the grantor''s week commitment'; end if;
+end $$;
+
+-- Tenant-two owner: its own row only.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$ begin
+  if (select count(*) from week_commitments) <> 1
+     or (select count(*) from week_commitments where task_title = 'leak-test-t2-commit') <> 1 then
+    raise exception 'LEAK: tenant-two week commitment visibility is wrong';
+  end if;
+end $$;
+
+-- Stranger: nothing, and no write.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from week_commitments) <> 0 then
+    raise exception 'LEAK: non-member reads week_commitments';
+  end if;
+end $$;
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  -- RLS WITH CHECK runs before the session FK, so any session id proves it.
+  insert into week_commitments (org_id, session_id, user_id, week_of, task_title, decision, placement)
+  values (aa, gen_random_uuid(), '00000000-0000-0000-0000-000000000003', '2026-09-07', 'leak-test-stranger', 'commit', 'day');
+  raise exception 'LEAK: non-member inserted a week commitment';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
 -- ════ Spec A A2: v_obligations (Contract 3 read) ═════════════════════════
 -- Same construction as v_action_items: security_invoker over the nine
 -- RLS-gated sources. If the invoker option were dropped, tenants would

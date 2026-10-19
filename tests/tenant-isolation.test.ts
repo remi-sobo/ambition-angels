@@ -57,7 +57,7 @@ const TENANT_TABLES = new Set([
   "relationships", "research_runs", "review_competencies", "review_cycles", "review_feedback",
   "review_manager_notes", "review_summaries", "rhythm_sessions", "segments", "soft_credits",
   "staff", "staff_goals", "staff_kpi_snapshots", "staff_kpis", "stewardship_rules",
-  "strategy_angles", "strategy_room_meta", "students", "user_org_state", "ygb_attendance",
+  "strategy_angles", "strategy_room_meta", "students", "user_org_state", "week_commitments", "ygb_attendance",
   "ygb_registrations",
 ]);
 

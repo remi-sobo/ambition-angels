@@ -237,6 +237,7 @@ ordered=(
   capture_rpc_grants.sql
   capture_obligations.sql
   add_estimated_minutes_to_ops_tasks.sql
+  create_week_commitments.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

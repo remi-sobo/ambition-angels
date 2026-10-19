@@ -11,6 +11,7 @@ import {
 } from "@/lib/admin/todayAck";
 import { rankObligations, type ObligationRow } from "@/lib/admin/todayRank";
 import type { StewardshipRule } from "@/lib/fundraising/stewardship";
+import { calendarDayFilter } from "@/lib/admin/ops/week";
 
 // specs/needs-you-popout-thank-yous.md, PR 1: named acknowledgment rows on
 // Today, due dates from the stewardship matrix, overdue-then-amount order.
@@ -137,5 +138,20 @@ describe("orderAckSlots: overdue first, then amount descending", () => {
   test("no acknowledgments: the ranking is untouched", () => {
     const ranked = rankObligations([row({ id: "a", due_date: "2026-10-01" }), row({ id: "b" })], TODAY);
     expect(orderAckSlots(ranked, TODAY)).toEqual(ranked);
+  });
+});
+
+describe("calendarDayFilter: My day covers the org's day, all-day events included", () => {
+  test("timed events by Pacific midnight; all-day events by their UTC-midnight date", () => {
+    // PDT (UTC-7)
+    expect(calendarDayFilter("2026-10-19")).toBe(
+      "and(all_day.not.is.true,start_time.gte.2026-10-19T07:00:00.000Z,start_time.lt.2026-10-20T07:00:00.000Z)," +
+        "and(all_day.is.true,start_time.gte.2026-10-19T00:00:00.000Z,start_time.lt.2026-10-20T00:00:00.000Z)",
+    );
+  });
+  test("across the DST change the timed window is 25 hours (PDT start, PST end)", () => {
+    expect(calendarDayFilter("2026-11-01")).toContain(
+      "start_time.gte.2026-11-01T07:00:00.000Z,start_time.lt.2026-11-02T08:00:00.000Z",
+    );
   });
 });

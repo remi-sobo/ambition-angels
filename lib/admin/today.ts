@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { rankObligations, whyFallback, type ObligationRow } from "@/lib/admin/todayRank";
 import { SOURCE_FALLBACK_HREF } from "@/lib/admin/actionQueue";
-import { addDays, dayStartInstant, todayInTZ } from "@/lib/admin/ops/week";
+import { calendarDayFilter, todayInTZ } from "@/lib/admin/ops/week";
 import { loadStewardshipRules } from "@/lib/fundraising/stewardship";
 import { ackTitle, buildAckFacts, orderAckSlots, type AckFacts, type AckGift } from "@/lib/admin/todayAck";
 
@@ -75,8 +75,6 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
   // The org's calendar day, not UTC's: after 5pm Pacific a UTC "today" is
   // already tomorrow, which flipped due-today rows to overdue a day early.
   const todayISO = todayInTZ();
-  const dayStart = dayStartInstant(todayISO);
-  const dayEnd = dayStartInstant(addDays(todayISO, 1));
   // The briefing cron keys its narrative by UTC date (lib/admin/briefing/narrate.ts).
   const briefDate = new Date().toISOString().slice(0, 10);
 
@@ -99,8 +97,7 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
       .eq("org_id", ctx.orgId)
       .eq("owner_user_id", ctx.userId)
       .neq("status", "cancelled")
-      .gte("start_time", dayStart)
-      .lt("start_time", dayEnd)
+      .or(calendarDayFilter(todayISO))
       .order("start_time", { ascending: true })
       .limit(8),
     supabase

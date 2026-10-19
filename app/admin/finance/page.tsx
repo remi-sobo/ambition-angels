@@ -177,10 +177,17 @@ export default async function FinanceDashboardPage() {
     "revenue.interest": "other",
     "revenue.other": "other",
   };
+  // fin_categories.id is a global text key, so a tenant other than the
+  // resident org namespaces its ids ("nb.revenue.foundations"): route by the
+  // canonical suffix, or every tenant's revenue lands in "Other".
+  const sourceForCat = (id: string): string =>
+    sourceFromCat[id] ??
+    Object.entries(sourceFromCat).find(([k]) => id.endsWith(`.${k}`))?.[1] ??
+    "other";
   for (const t of txns) {
     if (t.amount <= 0) continue;
     const cat = t.category_id ? catById.get(t.category_id) : null;
-    const src = cat ? sourceFromCat[cat.id] ?? "other" : "other";
+    const src = cat ? sourceForCat(cat.id) : "other";
     sourceTotals.set(src, (sourceTotals.get(src) ?? 0) + t.amount);
   }
   const SOURCE_COLOR: Record<string, string> = {

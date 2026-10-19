@@ -11,8 +11,8 @@ import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
+import { KIND_LABELS } from "../../_lib/kinds";
 import {
-  KIND_LABELS,
   RECUR_OPTIONS,
   type ComplianceItem,
   type ChecklistItem,

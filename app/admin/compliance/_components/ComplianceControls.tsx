@@ -12,6 +12,7 @@ import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage } from "@/lib/admin/errors";
 import { useAssignees, withSelected } from "../../_lib/useAssignees";
 import { normalizeAssignee, handleLabel } from "@/lib/admin/assignees";
+import { KIND_LABELS } from "../_lib/kinds";
 
 export type ChecklistItem = { id: string; text: string; done: boolean };
 
@@ -32,17 +33,6 @@ export type ComplianceItem = {
 const inputCls =
   "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
-export const KIND_LABELS: Record<string, string> = {
-  form_990: "IRS 990",
-  state_charitable: "Charitable reg.",
-  corporate_report: "Corporate",
-  employment_tax: "Payroll tax",
-  insurance: "Insurance",
-  policy: "Policy",
-  public_disclosure: "Disclosure",
-  contract: "Contract",
-  custom: "Custom",
-};
 
 export const RECUR_OPTIONS: Array<[string, string]> = [
   ["annual", "Annually"],

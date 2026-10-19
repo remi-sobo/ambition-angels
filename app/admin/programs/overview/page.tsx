@@ -8,6 +8,7 @@ import { cf, fullName, type Student } from "@/app/admin/students/_lib/studentFie
 import PageHeader from "@/app/admin/_components/PageHeader";
 import EmptyState from "@/app/admin/_components/EmptyState";
 import { TYPE } from "@/lib/admin/typeScale";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 
 // Spec Programs P2 — Overview, the destination's landing. Until P2 this host
 // re-exported /admin/program, a nine-line placeholder — the only V2 landing
@@ -63,11 +64,15 @@ export default async function ProgramsOverviewPage() {
       .eq("org_id", orgId)
       .order("session_date", { ascending: true }),
     supabase.from("cohort_members").select("cohort_id, student_id, status").eq("org_id", orgId),
-    supabase
-      .from("attendance")
-      .select("student_id, session_id, status, recorded_at")
-      .eq("org_id", orgId)
-      .order("recorded_at", { ascending: true }),
+    fetchAll((from, to) =>
+      supabase
+        .from("attendance")
+        .select("student_id, session_id, status, recorded_at")
+        .eq("org_id", orgId)
+        .order("recorded_at", { ascending: true })
+        .order("id")
+        .range(from, to),
+    ),
     supabase.from("students").select("*").eq("org_id", orgId),
     supabase.from("applications").select("id, status").eq("org_id", orgId),
     getProgramTerms(),

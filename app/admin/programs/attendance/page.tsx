@@ -7,6 +7,7 @@ import { todayInTZ } from "@/lib/admin/ops/week";
 import { pct } from "@/app/admin/cohorts/_lib/rollups";
 import PageHeader from "@/app/admin/_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 
 // Spec Programs P1 — Attendance, the model's one seatless screen (recon §G:
 // cohort_sessions + attendance, "bindable"). One surface across every
@@ -62,7 +63,9 @@ export default async function AttendancePage() {
         .eq("org_id", orgId)
         .order("session_date", { ascending: true }),
       supabase.from("cohort_members").select("cohort_id, status").eq("org_id", orgId),
-      supabase.from("attendance").select("session_id, status").eq("org_id", orgId),
+      fetchAll((from, to) =>
+        supabase.from("attendance").select("session_id, status").eq("org_id", orgId).order("id").range(from, to),
+      ),
       getProgramTerms(),
     ]);
 

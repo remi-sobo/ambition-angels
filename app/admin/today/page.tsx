@@ -38,9 +38,13 @@ const MISSION_PREFERENCE = [
   "active_on_platform",
 ];
 
+// Server-rendered, so format in the org's zone explicitly — the server runs
+// in UTC (same convention as the Meetings and Calendar pages).
+const ORG_TZ = "America/Los_Angeles";
+
 function fmtTime(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: ORG_TZ });
 }
 
 /** The cash anchor's honesty chip: fresh within 4 days, else stale-flagged. */

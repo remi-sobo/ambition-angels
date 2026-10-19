@@ -6,6 +6,8 @@ import { thisMonday } from "@/lib/admin/ops/week";
 import {
   buildCommitRows,
   candidatePrepEventIds,
+  lightWeekReason,
+  LIGHT_WEEK_REASON_MIN,
   type CommitTask,
 } from "@/lib/admin/ops/commitments";
 
@@ -46,7 +48,24 @@ export async function POST(req: NextRequest) {
     .is("archived_at", null)
     .or(mineFilter);
   const rows = (planned ?? []) as Array<CommitTask & { status: string }>;
-  const stats = buildStats(kind as Kind, rows);
+  const stats: Record<string, unknown> = buildStats(kind as Kind, rows);
+
+  // Light-week guard (Weekly Plan v2, PR 3): committing nothing is allowed,
+  // but only on purpose. The reason rides stats, so no column change.
+  const openTasks = rows.filter((r) => r.status !== "done");
+  if (kind === "monday_plan") {
+    const reason = lightWeekReason(openTasks.length, body?.light_week_reason);
+    if (reason === undefined) {
+      return NextResponse.json(
+        {
+          error: `Nothing is planned this week. Add a reason (at least ${LIGHT_WEEK_REASON_MIN} characters) to commit an intentionally light week.`,
+          code: "light_week_reason_required",
+        },
+        { status: 400 }
+      );
+    }
+    if (reason) stats.light_week_reason = reason;
+  }
 
   const checklist =
     body?.checklist && typeof body.checklist === "object" && !Array.isArray(body.checklist)
@@ -79,7 +98,6 @@ export async function POST(req: NextRequest) {
 
   // Monday Plan: freeze what was committed (Weekly Plan v2, PR 3).
   if (kind === "monday_plan") {
-    const openTasks = rows.filter((r) => r.status !== "done");
     const snap = await writeCommitments(supabase, {
       orgId: ctx.orgId,
       userId: ctx.userId,

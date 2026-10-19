@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { TYPE } from "@/lib/admin/typeScale";
+import { LIGHT_WEEK_REASON_MIN } from "@/lib/admin/ops/commitments";
 
 /**
  * Step 5 of the Monday Plan: commit. Shows the week-ahead summary and writes the
@@ -27,6 +28,10 @@ export default function MondayCommit({
   const [, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(committedAt);
+  const [reason, setReason] = useState("");
+  // Nothing planned: committing is allowed only as a deliberate light week.
+  const light = planned === 0;
+  const reasonReady = reason.trim().length >= LIGHT_WEEK_REASON_MIN;
 
   async function commit() {
     setBusy(true);
@@ -34,15 +39,24 @@ export default function MondayCommit({
       const r = await fetch("/api/admin/ops/rhythm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "monday_plan" }),
+        body: JSON.stringify(
+          light ? { kind: "monday_plan", light_week_reason: reason.trim() } : { kind: "monday_plan" }
+        ),
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) {
+        const body = (await r.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? `HTTP ${r.status}`);
+      }
       const { session } = await r.json();
       setSavedAt(session?.completed_at ?? new Date().toISOString());
       startTransition(() => router.refresh());
     } catch (e) {
       console.error("Commit failed:", e);
-      toast.error("Couldn't commit the week. Try again.");
+      toast.error(
+        e instanceof Error && !e.message.startsWith("HTTP")
+          ? e.message
+          : "Couldn't commit the week. Try again."
+      );
     } finally {
       setBusy(false);
     }
@@ -72,13 +86,35 @@ export default function MondayCommit({
         <Stat label="Time-blocked" value={scheduled} />
       </div>
 
+      {light && (
+        <label className="block">
+          <span className="text-sm text-ink-1">
+            Nothing is planned for this week. If that&apos;s on purpose, say why.
+          </span>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={2}
+            maxLength={500}
+            placeholder="Board retreat, out sick, deliberate rest week…"
+            className="mt-1.5 w-full bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 focus:outline-none focus:border-orange/50"
+          />
+        </label>
+      )}
+
       <div className="flex items-center gap-3 pt-1">
         <button
           onClick={commit}
-          disabled={busy}
+          disabled={busy || (light && !reasonReady)}
           className="text-sm font-medium px-4 py-2 rounded-control bg-orange text-white hover:bg-orange-dark disabled:opacity-50 transition-colors"
         >
-          {busy ? "Saving…" : savedAt ? "Re-commit the week" : "Commit the week"}
+          {busy
+            ? "Saving…"
+            : light
+              ? "Commit an intentionally light week"
+              : savedAt
+                ? "Re-commit the week"
+                : "Commit the week"}
         </button>
         {savedLabel && (
           <span className="text-sm text-revenue inline-flex items-center gap-1.5">

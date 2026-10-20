@@ -57,6 +57,7 @@ const PARSE_PATH = [
   "lib/capture/staff.ts",
   "lib/capture/constants.ts",
   "lib/capture/types.ts",
+  "lib/capture/evalScore.ts",
   "app/api/admin/capture/route.ts",
   "app/api/admin/capture/[id]/route.ts",
 ];

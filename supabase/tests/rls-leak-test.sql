@@ -1888,11 +1888,9 @@ reset request.jwt.claim.sub;
 --     and the provenance unique keys turn a second apply into 23505;
 --   * an AA board_viewer is refused at the RLS layer on interactions,
 --     partner_interactions, and ops_tasks (the app's 403s).
--- reed_drafts is membership-only RLS (create_reed_drafts.sql, pre-existing,
--- flagged in the spec's security backlog), so a board_viewer insert there is
--- NOT refused by the database; the app pre-checks ops.write before filing a
--- draft. That gap is asserted below as the current behavior, so tightening
--- the policy later shows up here as a deliberate test change.
+-- reed_drafts was membership-only RLS (create_reed_drafts.sql). Since
+-- capture_drafts_permission.sql, capture_message rows need ops.write in the
+-- database too; the block after the board_viewer probes asserts it.
 reset role;
 reset request.jwt.claim.sub;
 set role authenticated;
@@ -2039,19 +2037,60 @@ begin
   end;
 end $$;
 
--- reed_drafts: membership-only today (pre-existing). Pinned as current
--- behavior; the app's ops.write pre-check is the gate until the policy moves.
+-- reed_drafts: capture_message rows need ops.write (capture_drafts_permission.sql).
+-- Restrictive policies scoped to that one kind: a board_viewer can no longer
+-- insert, update, or delete a Capture draft, while every other draft kind
+-- keeps its membership-only behavior (pinned so a change there is deliberate).
+reset role;
+reset request.jwt.claim.sub;
 do $$
-declare aa uuid; row_id uuid;
+declare aa uuid; d uuid;
 begin
   select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into public.reed_drafts (org_id, kind, title, body, status, created_by)
+    values (aa, 'capture_message', 'leak-test capture draft', 'x', 'drafted', 'remi')
+    returning id into d;
+  perform set_config('leak.capture_draft_id', d::text, false);
+end $$;
+
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$
+declare aa uuid; d uuid := current_setting('leak.capture_draft_id')::uuid; row_id uuid; n int;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  begin
+    insert into reed_drafts (org_id, kind, title, body, status, created_by)
+      values (aa, 'capture_message', 'bv draft', 'bv', 'drafted', 'bv');
+    raise exception 'LEAK: board_viewer inserted a capture_message draft';
+  exception when insufficient_privilege then null; -- expected
+  end;
+  update reed_drafts set body = 'tampered' where id = d;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: board_viewer edited a capture_message draft'; end if;
+  delete from reed_drafts where id = d;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: board_viewer deleted a capture_message draft'; end if;
+  -- Other kinds are untouched by this migration (membership-only, as before).
   insert into reed_drafts (org_id, kind, title, body, status, created_by)
-    values (aa, 'capture_message', 'bv draft', 'bv', 'drafted', 'bv')
+    values (aa, 'board_update', 'bv board draft', 'bv', 'drafted', 'bv')
     returning id into row_id;
   delete from reed_drafts where id = row_id;
-exception when insufficient_privilege then
-  raise notice 'reed_drafts now refuses board_viewer: tighten this block and the C3 note';
 end $$;
+
+-- AA staff hold ops.write: they may edit the org's capture draft.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$
+declare d uuid := current_setting('leak.capture_draft_id')::uuid; n int;
+begin
+  update reed_drafts set body = 'edited by staff' where id = d;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'AA staff (ops.write) cannot edit a capture_message draft'; end if;
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+delete from public.reed_drafts where id = current_setting('leak.capture_draft_id')::uuid;
 
 -- Anon: the match RPC stays closed after capture_rpc_grants.sql.
 reset role;

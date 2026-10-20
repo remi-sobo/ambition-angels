@@ -171,6 +171,7 @@ Commit: `capture: fix after confirm`
 
 - Remi records a 30-second note on his phone after a real meeting and clears the cards in under a minute.
 - On a test set of 20 real-style notes (Phase 0 builds it from AA's actual constituent names), the matcher picks the right record or correctly holds for a pick on at least 18, and files to a wrong record on zero.
+  - *As built (2026-10-18):* scored by `scripts/capture-dod.ts` (rules in `lib/capture/evalScore.ts`, unit-tested on fictional data). The 20-note answer key and read-aloud sheet name real donors and live only in `tests/fixtures/capture/private/` (gitignored). Notes are recorded for real in production, exported read-only, paired to the key by transcript overlap, and scored on what the matcher proposed (discarding the test cards does not change the score). The set covers clean names, near-duplicate spellings, exact duplicate records and a bare first name (must hold), a staff first name that is also a donor (must not file), a student name, a context note with no name, and an organization not in BloomOS next to similar ones (must file nothing).
 - Nothing writes to `interactions`, `partner_interactions`, `ops_tasks`, or `reed_drafts` without a confirm click. Verified by a test that runs the parse route and asserts those tables are untouched.
 - A user in org B can't see, match against, or apply into org A. Verified in `rls-leak-test.sql`.
 - No student row is ever read by the capture pipeline. Verified by a test.

@@ -51,7 +51,9 @@ describe("Today ranks and explains a pending capture", () => {
 describe("Today wiring (structural)", () => {
   test("capture links to its own page, snoozes, and is never a one-tap Done", () => {
     const src = read("lib", "admin", "today.ts");
-    expect(src).toMatch(/r\.type === "capture"\s*\?\s*`\/admin\/capture\/\$\{sourceId\}`/);
+    // The per-row link lives in the Needs-you registry (PR 2 of the popout spec).
+    expect(src).toMatch(/href:\s*recordHref\(/);
+    expect(read("lib", "admin", "needsYou.ts")).toMatch(/case "capture":\s*return `\/admin\/capture\/\$\{r\.source_id\}`/);
     expect(src).toMatch(/const SNOOZABLE = new Set\(\[[^\]]*"capture"[^\]]*\]\)/);
     const resolvable = src.match(/const RESOLVABLE = new Set\(\[([^\]]*)\]\)/)?.[1] ?? "";
     expect(resolvable).not.toContain("capture");

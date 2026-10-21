@@ -105,3 +105,20 @@ export function dayStartInstant(dateISO: string, tz: string = ORG_TZ): string {
   const offsetMs = asTZ.getTime() - asUTC.getTime(); // tz east of UTC (LA: negative)
   return new Date(probe.getTime() - offsetMs).toISOString();
 }
+
+/**
+ * PostgREST `or` filter for calendar_events on one org-local day. Timed
+ * events fall between local midnight and the next; all-day events are
+ * stored at UTC midnight of their date (lib/agenda/calendar-sync.ts), which
+ * is BEFORE local midnight west of UTC, so they are matched on that date.
+ */
+export function calendarDayFilter(dateISO: string, tz: string = ORG_TZ): string {
+  const start = dayStartInstant(dateISO, tz);
+  const end = dayStartInstant(addDays(dateISO, 1), tz);
+  const utcStart = `${dateISO}T00:00:00.000Z`;
+  const utcEnd = `${addDays(dateISO, 1)}T00:00:00.000Z`;
+  return (
+    `and(all_day.not.is.true,start_time.gte.${start},start_time.lt.${end}),` +
+    `and(all_day.is.true,start_time.gte.${utcStart},start_time.lt.${utcEnd})`
+  );
+}

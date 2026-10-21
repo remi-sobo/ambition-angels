@@ -36,11 +36,22 @@ export default function NeedsYou({
     setBusyId(row.id);
     setError(null);
     try {
-      const r = await fetch("/api/admin/obligations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, source: row.type, sourceId: row.source_id, until }),
-      });
+      // A thank-you goes through the acknowledgments write path, not the
+      // generic RPC: /mark also stamps acknowledged_at (the milestone and
+      // journey crons key on it), closes the gift's ack task, and logs the
+      // touch. resolve_obligation does none of the three.
+      const r =
+        row.type === "acknowledgment" && action === "resolve"
+          ? await fetch("/api/admin/acknowledgments/mark", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ gift_id: row.source_id }),
+            })
+          : await fetch("/api/admin/obligations", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action, source: row.type, sourceId: row.source_id, until }),
+            });
       const j = (await r.json().catch(() => null)) as { error?: string } | null;
       if (!r.ok) {
         setError(j?.error ?? "Something went wrong.");

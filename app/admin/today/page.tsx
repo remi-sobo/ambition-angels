@@ -103,8 +103,10 @@ export default async function TodayPage() {
     ...program.map((m) => m.metric_key).filter((k) => !MISSION_PREFERENCE.includes(k)),
   ].slice(0, 3);
 
-  const dateLine = new Date().toLocaleDateString("en-US", {
-    weekday: "long", month: "long", day: "numeric",
+  // The org's day (the same one Needs you ranks against), not the server's
+  // UTC clock, which is already tomorrow after 5pm Pacific.
+  const dateLine = new Date(`${data.todayISO}T12:00:00Z`).toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric", timeZone: "UTC",
   });
 
   return (

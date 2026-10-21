@@ -2251,4 +2251,66 @@ end $$;
 reset role;
 reset request.jwt.claim.sub;
 
+-- ════ resolve_obligation('acknowledgment') stamps the gift and closes its task ═
+-- resolve_obligation_ack_stamps.sql: the RPC path must leave the same state as
+-- /api/admin/acknowledgments/mark (acknowledged_at set, sys:gift task done),
+-- and must not reach across tenants.
+reset role;
+reset request.jwt.claim.sub;
+create temp table if not exists ack_stamp_fixture (gift_id uuid, task_id uuid, t2_gift uuid);
+do $$
+declare aa uuid; t2 uuid; c uuid; t2c uuid; g uuid; t uuid; g2 uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  select id into c from public.constituents where org_id = aa limit 1;
+  select id into t2c from public.constituents where org_id = t2 limit 1;
+  insert into public.gifts (org_id, constituent_id, amount, gift_date, method, external_source, external_id, acknowledgment_status)
+    values (aa, c, 40, current_date, 'card', 'leak-test', 'leak-test-ack-stamp', 'pending')
+    returning id into g;
+  insert into public.ops_tasks (org_id, title, category, created_by, labels)
+    values (aa, 'ack-stamp bridge task', 'operations', 'remi', array['sys:ack', 'sys:gift:' || g::text])
+    returning id into t;
+  insert into public.gifts (org_id, constituent_id, amount, gift_date, method, external_source, external_id, acknowledgment_status)
+    values (t2, t2c, 30, current_date, 'card', 'leak-test', 'leak-test-ack-stamp-t2', 'pending')
+    returning id into g2;
+  insert into ack_stamp_fixture values (g, t, g2);
+end $$;
+grant select on ack_stamp_fixture to authenticated;
+
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare g uuid; g2 uuid;
+begin
+  select gift_id, t2_gift into g, g2 from ack_stamp_fixture;
+  perform public.resolve_obligation('acknowledgment', g);
+  begin
+    perform public.resolve_obligation('acknowledgment', g2);
+    raise exception 'LEAK: an AA owner resolved a tenant-two acknowledgment';
+  exception when insufficient_privilege then null; -- expected
+  end;
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+do $$
+declare g uuid; t uuid; g2 uuid;
+begin
+  select gift_id, task_id, t2_gift into g, t, g2 from ack_stamp_fixture;
+  if (select acknowledgment_status from public.gifts where id = g) <> 'sent' then
+    raise exception 'ack-stamp: resolve did not mark the gift sent';
+  end if;
+  if (select acknowledged_at from public.gifts where id = g) is null then
+    raise exception 'ack-stamp: resolve left acknowledged_at null';
+  end if;
+  if (select status from public.ops_tasks where id = t) <> 'done'
+     or (select completed_at from public.ops_tasks where id = t) is null then
+    raise exception 'ack-stamp: resolve left the sys:gift task open';
+  end if;
+  if (select acknowledgment_status from public.gifts where id = g2) <> 'pending' then
+    raise exception 'LEAK: the tenant-two gift changed state';
+  end if;
+end $$;
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

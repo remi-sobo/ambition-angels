@@ -7,6 +7,7 @@ import { rankObligations, whyFallback, type ObligationRow } from "@/lib/admin/to
 import { SOURCE_FALLBACK_HREF } from "@/lib/admin/actionQueue";
 import { calendarDayFilter, todayInTZ } from "@/lib/admin/ops/week";
 import { loadStewardshipRules } from "@/lib/fundraising/stewardship";
+import { recordHref } from "@/lib/admin/needsYou";
 import { ackTitle, buildAckFacts, orderAckSlots, type AckFacts, type AckGift } from "@/lib/admin/todayAck";
 
 /**
@@ -38,8 +39,12 @@ export type TodayObligation = ObligationRow & {
   why: string;
   /** True when `why` is the real recorded sentence, not the fallback. */
   whyRecorded: boolean;
-  /** Deep link to the obligation's source screen (the B2-piped map). */
+  /** Deep link to the obligation's record when it has one (the popout's
+   *  "Open full record"), else its source screen (the B2-piped map). */
   href: string;
+  /** What the row points at (view columns), for the popout's panels. */
+  related_entity_type: string | null;
+  related_entity_id: string | null;
   /** Snoozable/resolvable per the A3 dispatch rules. */
   snoozable: boolean;
   resolvable: boolean;
@@ -48,7 +53,7 @@ export type TodayObligation = ObligationRow & {
   amount?: number;
 };
 
-type ViewRow = ObligationRow & { related_entity_id: string | null };
+type ViewRow = ObligationRow & { related_entity_type: string | null; related_entity_id: string | null };
 
 // capture (C5) snoozes from Today but is never "Done" here: resolving a
 // capture discards the cards still waiting, which belongs on its own page
@@ -81,7 +86,7 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
   const [obRes, narrativeRes, eventsRes, draftsRes] = await Promise.all([
     supabase
       .from("v_obligations")
-      .select("id, type, title, why_it_matters, due_date, state, module, related_entity_id")
+      .select("id, type, title, why_it_matters, due_date, state, module, related_entity_type, related_entity_id")
       .eq("org_id", ctx.orgId)
       .limit(500),
     admin
@@ -113,8 +118,8 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
     ctx.orgId,
     viewRows.filter((r) => r.type === "acknowledgment" && r.related_entity_id).map((r) => r.related_entity_id!),
   );
-  const rows = viewRows.map(({ related_entity_id, ...r }) => {
-    const gift = r.type === "acknowledgment" && related_entity_id ? ackFacts.get(related_entity_id) : undefined;
+  const rows = viewRows.map((r): ViewRow & { gift?: AckFacts; amount?: number } => {
+    const gift = r.type === "acknowledgment" && r.related_entity_id ? ackFacts.get(r.related_entity_id) : undefined;
     return gift
       ? { ...r, title: ackTitle(gift, todayISO), due_date: gift.dueDate, gift, amount: gift.amount }
       : r;
@@ -128,9 +133,9 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
       why,
       whyRecorded: Boolean(r.why_it_matters?.trim()),
       href:
-        r.type === "capture"
-          ? `/admin/capture/${sourceId}`
-          : SOURCE_FALLBACK_HREF[r.type as keyof typeof SOURCE_FALLBACK_HREF] ?? "/admin",
+        recordHref({ ...r, source_id: sourceId, constituent_id: r.gift?.constituentId }) ??
+        SOURCE_FALLBACK_HREF[r.type as keyof typeof SOURCE_FALLBACK_HREF] ??
+        "/admin",
       snoozable: SNOOZABLE.has(r.type),
       resolvable: RESOLVABLE.has(r.type),
     };

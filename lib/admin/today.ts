@@ -8,7 +8,15 @@ import { SOURCE_FALLBACK_HREF } from "@/lib/admin/actionQueue";
 import { calendarDayFilter, todayInTZ } from "@/lib/admin/ops/week";
 import { loadStewardshipRules } from "@/lib/fundraising/stewardship";
 import { recordHref } from "@/lib/admin/needsYou";
-import { ackTitle, buildAckFacts, orderAckSlots, type AckFacts, type AckGift } from "@/lib/admin/todayAck";
+import {
+  ackTitle,
+  buildAckFacts,
+  foldAckTasks,
+  orderAckSlots,
+  type AckFacts,
+  type AckGift,
+  type LinkedTask,
+} from "@/lib/admin/todayAck";
 
 /**
  * Spec Home, stage H1 — Today's data spine. Every panel binds to something
@@ -51,6 +59,8 @@ export type TodayObligation = ObligationRow & {
   /** Acknowledgment rows only: the gift + donor behind the thank-you. */
   gift?: AckFacts;
   amount?: number;
+  /** Acknowledgment rows only: the gift's own tasks, folded into this row. */
+  linkedTasks?: LinkedTask[];
 };
 
 type ViewRow = ObligationRow & { related_entity_type: string | null; related_entity_id: string | null };
@@ -112,16 +122,21 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
       .eq("status", "drafted"),
   ]);
 
-  const viewRows = (obRes.data ?? []) as ViewRow[];
-  const ackFacts = await loadAckFacts(
-    supabase,
-    ctx.orgId,
-    viewRows.filter((r) => r.type === "acknowledgment" && r.related_entity_id).map((r) => r.related_entity_id!),
-  );
-  const rows = viewRows.map((r): ViewRow & { gift?: AckFacts; amount?: number } => {
+  const allRows = (obRes.data ?? []) as ViewRow[];
+  const [ackFacts, ackTasks] = await Promise.all([
+    loadAckFacts(
+      supabase,
+      ctx.orgId,
+      allRows.filter((r) => r.type === "acknowledgment" && r.related_entity_id).map((r) => r.related_entity_id!),
+    ),
+    loadTaskLabels(supabase, ctx.orgId, allRows.filter((r) => r.type === "ops_task").map((r) => r.id.slice("ops_task:".length))),
+  ]);
+  const { rows: viewRows, linked } = foldAckTasks(allRows, ackTasks);
+  const rows = viewRows.map((r): ViewRow & { gift?: AckFacts; amount?: number; linkedTasks?: LinkedTask[] } => {
     const gift = r.type === "acknowledgment" && r.related_entity_id ? ackFacts.get(r.related_entity_id) : undefined;
+    const linkedTasks = r.related_entity_id ? linked.get(r.related_entity_id) : undefined;
     return gift
-      ? { ...r, title: ackTitle(gift, todayISO), due_date: gift.dueDate, gift, amount: gift.amount }
+      ? { ...r, title: ackTitle(gift, todayISO), due_date: gift.dueDate, gift, amount: gift.amount, linkedTasks }
       : r;
   });
   const ranked = orderAckSlots(rankObligations(rows, todayISO), todayISO).map((r): TodayObligation => {
@@ -205,4 +220,25 @@ async function loadAckFacts(
   if (historyRes.error) console.error("[today] gift history read failed:", historyRes.error.message);
   const history = (historyRes.data ?? []) as { id: string; constituent_id: string | null; gift_date: string }[];
   return buildAckFacts(gifts, history, rules);
+}
+
+/** Labels for the ops_task rows on the list, so a thank-you's own tasks can
+ *  fold into it (foldAckTasks). Org-fenced like every read here; a failed
+ *  read just leaves the tasks as their own rows. */
+async function loadTaskLabels(
+  supabase: ReturnType<typeof createServerSupabase>,
+  orgId: string,
+  taskIds: string[],
+): Promise<{ id: string; title: string; due_date: string | null; labels: string[] | null }[]> {
+  if (taskIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from("ops_tasks")
+    .select("id, title, due_date, labels")
+    .eq("org_id", orgId)
+    .in("id", taskIds);
+  if (error) {
+    console.error("[today] task labels read failed:", error.message);
+    return [];
+  }
+  return (data ?? []) as { id: string; title: string; due_date: string | null; labels: string[] | null }[];
 }

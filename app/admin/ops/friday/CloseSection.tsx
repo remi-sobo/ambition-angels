@@ -95,6 +95,7 @@ export default async function CloseSection() {
       .select("*")
       .eq("org_id", orgId)
       .eq("planned_week", mondayISO)
+      .is("archived_at", null)
       .or(mineFilter),
   ]);
 

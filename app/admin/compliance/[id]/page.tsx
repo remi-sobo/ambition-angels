@@ -9,10 +9,8 @@ import { EntityDocuments } from "../../_components/EntityDocuments";
 import { CommentThread } from "../../_components/CommentThread";
 import { EntityHistory } from "../../_components/EntityHistory";
 import { TYPE } from "@/lib/admin/typeScale";
-import {
-  KIND_LABELS,
-  type ComplianceItem,
-} from "../_components/ComplianceControls";
+import { type ComplianceItem } from "../_components/ComplianceControls";
+import { KIND_LABELS } from "../_lib/kinds";
 import { handleLabel } from "@/lib/admin/assignees";
 import {
   ItemStatusActions,

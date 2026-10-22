@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
+import { ROLE_LABELS } from "../../_lib/roles";
 
 export type ChecklistItem = { id: string; text: string; done: boolean };
 
@@ -35,13 +36,6 @@ export type BoardMemberFull = {
 const inputCls =
   "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
-export const ROLE_LABELS: Record<string, string> = {
-  chair: "Chair",
-  vice_chair: "Vice Chair",
-  secretary: "Secretary",
-  treasurer: "Treasurer",
-  member: "Member",
-};
 
 const STATUS_OPTIONS: Array<[string, string]> = [
   ["active", "Active"],

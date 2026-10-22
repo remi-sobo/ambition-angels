@@ -237,6 +237,7 @@ ordered=(
   capture_rpc_grants.sql
   capture_obligations.sql
   capture_drafts_permission.sql
+  ack_draft_seed.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

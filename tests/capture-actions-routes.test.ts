@@ -174,3 +174,47 @@ describe("GET /api/admin/capture/candidates", () => {
     expect((await get("?q=Mari")).status).toBe(402);
   });
 });
+
+describe("POST /api/admin/capture/cards/[id]: fix after confirm (C6)", () => {
+  test("revise, move, and remove each work on a filed note", async () => {
+    const c = interactionCard();
+    w = world([c]);
+    const DANA = "00000000-0000-0000-0000-00000000d004";
+    w.db.tables.constituents.push({ id: DANA, org_id: ORG, type: "person", first_name: "Dana", last_name: "Whitfield", org_name: null, archived_at: null });
+    expect((await post(cardAction, c.id, { action: "confirm" })).status).toBe(200);
+
+    const revised = await post(cardAction, c.id, { action: "revise", patch: { notes: "Better notes." } });
+    expect(revised.status).toBe(200);
+    expect(w.db.tables.interactions[0]).toMatchObject({ notes: "Better notes.", edited_by: "remi" });
+
+    const moved = await post(cardAction, c.id, { action: "move", entity: { type: "constituent", id: DANA } });
+    expect(moved.status).toBe(200);
+    expect((await moved.json()).card.entity_id).toBe(DANA);
+
+    const removed = await post(cardAction, c.id, { action: "remove" });
+    expect(removed.status).toBe(200);
+    expect(await removed.json()).toMatchObject({ removed: true, card: { status: "discarded" } });
+    expect(w.db.tables.interactions).toHaveLength(0);
+  });
+
+  test("wrong shapes are 400: revise without patch, move without entity, extras on remove", async () => {
+    const c = interactionCard();
+    w = world([c]);
+    expect((await post(cardAction, c.id, { action: "revise" })).status).toBe(400);
+    expect((await post(cardAction, c.id, { action: "revise", patch: { notes: "x" }, entity: { type: "constituent", id: MARISOL } })).status).toBe(400);
+    expect((await post(cardAction, c.id, { action: "move" })).status).toBe(400);
+    expect((await post(cardAction, c.id, { action: "move", entity: { type: "constituent", id: MARISOL }, patch: { notes: "x" } })).status).toBe(400);
+    expect((await post(cardAction, c.id, { action: "remove", patch: { notes: "x" } })).status).toBe(400);
+  });
+
+  test("a card that isn't filed is 409; without permission is 403 naming donor records", async () => {
+    const c = interactionCard();
+    w = world([c]);
+    expect((await post(cardAction, c.id, { action: "remove" })).status).toBe(409);
+    await post(cardAction, c.id, { action: "confirm" });
+    perms.delete("fundraising.write");
+    const res = await post(cardAction, c.id, { action: "revise", patch: { notes: "x" } });
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toMatch(/donor records/);
+  });
+});

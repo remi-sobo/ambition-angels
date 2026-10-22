@@ -47,6 +47,7 @@ export const FEATURE_KEYS = [
   "ai.reed",
   "ai.prospect_research",
   "ai.capture", // Capture (voice → confirm cards), specs/bloomos-capture.md. Own switch, not riding ai.reed.
+  "ai.ack_draft", // AI thank-you drafts in the Needs-you popout, specs/needs-you-popout-thank-yous.md (PR 4).
   "coaching",
   // AA-only flags — on for AA, never seeded for anyone else. These fence the
   // marketing-site-coupled surfaces (core fence spec §6a, AA-site class).

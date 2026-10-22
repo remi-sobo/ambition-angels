@@ -9,6 +9,7 @@ import { ACK_CHANNELS, CHANNEL_LABEL, isAckChannel } from "@/lib/fundraising/ack
 import Alert from "../../../_components/ui/Alert";
 import { Field, Select } from "../../../_components/ui/Input";
 import { TYPE } from "@/lib/admin/typeScale";
+import AckDraft from "./AckDraft";
 
 /**
  * The acknowledgment panel (specs/needs-you-popout-thank-yous.md, PR 3): the
@@ -35,6 +36,7 @@ export default function AckPanel({
 }) {
   const [ctx, setCtx] = useState<AckContext | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [canDraft, setCanDraft] = useState(false);
   const [channel, setChannel] = useState("email");
   const [closeIds, setCloseIds] = useState<Set<string>>(new Set());
   const today = new Date().toISOString().slice(0, 10);
@@ -44,16 +46,18 @@ export default function AckPanel({
   useEffect(() => {
     let alive = true;
     setCtx(null);
+    setCanDraft(false);
     setLoadError(null);
     fetch(`/api/admin/acknowledgments/context?gift_id=${row.source_id}`)
       .then(async (r) => {
-        const j = (await r.json().catch(() => null)) as { context?: AckContext; error?: string } | null;
+        const j = (await r.json().catch(() => null)) as { context?: AckContext; canDraft?: boolean; error?: string } | null;
         if (!alive) return;
         if (!r.ok || !j?.context) {
           setLoadError(j?.error ?? "Couldn't load this gift.");
           return;
         }
         setCtx(j.context);
+        setCanDraft(j.canDraft === true);
         const c = isAckChannel(j.context.recommendation.channel) ? j.context.recommendation.channel : "email";
         setChannel(c);
         // Done personally → the "Personally thank" task is done too, by
@@ -149,6 +153,18 @@ export default function AckPanel({
           </Link>{" "}
           if it hasn&apos;t gone out.
         </p>
+      )}
+
+      {canDraft && (
+        <AckDraft
+          giftId={ctx.giftId}
+          major={rec.major}
+          email={donor.email}
+          onUsedEmail={() => {
+            setChannel("email");
+            setCloseIds(new Set());
+          }}
+        />
       )}
 
       <Field

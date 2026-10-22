@@ -10,6 +10,7 @@ import Badge from "../../../_components/ui/Badge";
 import { TYPE } from "@/lib/admin/typeScale";
 import { PANELS } from "./panels";
 import type { TaskPatch } from "./OpsTaskPanel";
+import type { AckChoice } from "./AckPanel";
 
 /**
  * The shared popout shell for every Needs-you row: title, type chip, due
@@ -31,6 +32,7 @@ export default function NeedsYouPopout({
   onOpenTask,
   onTaskLoaded,
   onPatched,
+  onAckChoice,
 }: {
   row: TodayObligation;
   position: number;
@@ -45,6 +47,7 @@ export default function NeedsYouPopout({
   onOpenTask: () => void;
   onTaskLoaded: (task: OpsTask | null) => void;
   onPatched: (patch: TaskPatch) => void;
+  onAckChoice: (choice: AckChoice) => void;
 }) {
   const meta = obligationMeta(row.type);
   const Panel = PANELS[row.type];
@@ -113,7 +116,7 @@ export default function NeedsYouPopout({
     >
       <div className="space-y-4">
         <p className={row.whyRecorded ? TYPE.body : `${TYPE.bodyMuted} italic`}>{row.why}</p>
-        {Panel ? <Panel row={row} onLoaded={onTaskLoaded} onPatched={onPatched} /> : null}
+        {Panel ? <Panel row={row} onLoaded={onTaskLoaded} onPatched={onPatched} onAckChoice={onAckChoice} /> : null}
         <p className={`${TYPE.metadata} hidden sm:block`}>
           J / K to move · O to open · Esc to close
         </p>

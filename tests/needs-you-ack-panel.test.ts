@@ -135,11 +135,13 @@ describe("one row per thank-you", () => {
 
 describe("wiring fences", () => {
   const read = (...p: string[]) => readFileSync(join(process.cwd(), ...p), "utf8");
-  test("the context route fences the active org on every read", () => {
+  test("the context route fences the active org on every read (via the shared loader)", () => {
     const src = read("app", "api", "admin", "acknowledgments", "context", "route.ts");
     expect(src).toMatch(/getOrgContext\(\)/);
-    expect((src.match(/\.eq\("org_id", ctx\.orgId\)/g) ?? []).length).toBeGreaterThanOrEqual(4);
-    expect(src).not.toMatch(/getSupabaseAdmin|SERVICE_ROLE/);
+    expect(src).toMatch(/loadAckContext\(createServerSupabase\(\), ctx\.orgId, giftId\)/);
+    const loader = read("lib", "admin", "ackContextLoad.ts");
+    expect((loader.match(/\.eq\("org_id", orgId\)/g) ?? []).length).toBeGreaterThanOrEqual(4);
+    expect(src + loader).not.toMatch(/getSupabaseAdmin|SERVICE_ROLE/);
   });
   test("/mark logs any ack channel (email = sent it myself), fenced to the active org, and never sends", () => {
     const src = read("app", "api", "admin", "acknowledgments", "mark", "route.ts");
@@ -165,6 +167,7 @@ describe("client bundle fence", () => {
     ["NeedsYou.tsx"],
     ["popout/NeedsYouPopout.tsx"],
     ["popout/AckPanel.tsx"],
+    ["popout/AckDraft.tsx"],
     ["popout/OpsTaskPanel.tsx"],
     ["popout/panels.tsx"],
     ["popout/useDeferredActions.ts"],

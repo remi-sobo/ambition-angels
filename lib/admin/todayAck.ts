@@ -1,6 +1,11 @@
 import { addDays } from "@/lib/admin/ops/week";
 import { constituentName } from "@/lib/fundraising/display";
 import { evaluateStewardship, type StewardshipRule } from "@/lib/fundraising/stewardship";
+import { ackAmount, ackShortDate, ordinalLabel } from "@/lib/admin/ackFormat";
+
+// Display helpers live in ackFormat.ts (client-safe: this module pulls in the
+// server-only stewardship engine); re-exported so existing imports hold.
+export { ackAmount, ackShortDate, ordinalLabel };
 
 /**
  * Needs you, named thank-yous (specs/needs-you-popout-thank-yous.md, PR 1).
@@ -119,33 +124,8 @@ export function buildAckFacts(
   return out;
 }
 
-export function ordinalLabel(n: number): string {
-  const mod100 = n % 100;
-  const suffix =
-    mod100 >= 11 && mod100 <= 13 ? "th" : n % 10 === 1 ? "st" : n % 10 === 2 ? "nd" : n % 10 === 3 ? "rd" : "th";
-  return `${n}${suffix} gift`;
-}
 
-export function ackAmount(amount: number): string {
-  const whole = Math.round(amount) === amount;
-  return amount.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: whole ? 0 : 2,
-    maximumFractionDigits: whole ? 0 : 2,
-  });
-}
 
-/** "Jun 26" (adds the year only when it isn't the current one). */
-export function ackShortDate(dateISO: string, today: string): string {
-  const [y, m, d] = dateISO.split("-").map(Number);
-  const label = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
-  return dateISO.slice(0, 4) === today.slice(0, 4) ? label : `${label}, ${y}`;
-}
 
 /** "Thank Lynne O'Hara · $50,000 · Jun 26 · 6th gift" */
 export function ackTitle(f: AckFacts, today: string): string {
@@ -183,4 +163,51 @@ export function orderAckSlots<T extends { type: string; due_date: string | null;
     out[slot] = acks[i];
   });
   return out;
+}
+
+/**
+ * One obligation per thank-you (specs/needs-you-popout-thank-yous.md, PR 3).
+ * The ack-task bridge (lib/fundraising/ack-tasks.ts) mirrors a pending gift
+ * into an ops_task labelled `sys:gift:<id>`, and a major gift also gets a
+ * `sys:escalate:<id>` "Personally thank…" task for its owner. On Today those
+ * read as two or three items for one thank-you. When the gift's own
+ * acknowledgment row is in the list, its tasks fold into it: they leave the
+ * list and ride along on the acknowledgment as `linkedTasks`. A task whose
+ * gift is not pending (or not in the list) stays its own row.
+ */
+export type LinkedTask = {
+  id: string;
+  title: string;
+  due_date: string | null;
+  /** ack: closed by Mark thanked itself (/mark). escalation: the owner's own
+   *  touch, closed only when the person asks to. */
+  kind: "ack" | "escalation";
+};
+
+export function ackTaskLink(labels: readonly string[] | null | undefined): { giftId: string; kind: LinkedTask["kind"] } | null {
+  for (const l of labels ?? []) {
+    if (l.startsWith("sys:gift:")) return { giftId: l.slice("sys:gift:".length), kind: "ack" };
+    if (l.startsWith("sys:escalate:")) return { giftId: l.slice("sys:escalate:".length), kind: "escalation" };
+  }
+  return null;
+}
+
+export function foldAckTasks<T extends { id: string; type: string; related_entity_id: string | null }>(
+  rows: readonly T[],
+  tasks: readonly { id: string; title: string; due_date: string | null; labels: string[] | null }[],
+): { rows: T[]; linked: Map<string, LinkedTask[]> } {
+  const pendingGifts = new Set(
+    rows.filter((r) => r.type === "acknowledgment" && r.related_entity_id).map((r) => r.related_entity_id as string),
+  );
+  const linked = new Map<string, LinkedTask[]>();
+  const folded = new Set<string>();
+  for (const t of tasks) {
+    const link = ackTaskLink(t.labels);
+    if (!link || !pendingGifts.has(link.giftId)) continue;
+    const list = linked.get(link.giftId) ?? [];
+    list.push({ id: t.id, title: t.title, due_date: t.due_date, kind: link.kind });
+    linked.set(link.giftId, list);
+    folded.add(`ops_task:${t.id}`);
+  }
+  return { rows: rows.filter((r) => !folded.has(r.id)), linked };
 }

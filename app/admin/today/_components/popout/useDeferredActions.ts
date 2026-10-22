@@ -14,7 +14,14 @@ import type { TodayObligation } from "@/lib/admin/today";
 
 export const UNDO_MS = 5000;
 
-export type DeferredAction = { action: "resolve" | "snooze"; until?: string };
+export type DeferredAction = {
+  action: "resolve" | "snooze";
+  until?: string;
+  /** Thank-yous: how it was done (letter, call, email…), logged by /mark. */
+  channel?: string;
+  /** Thank-yous: folded escalation tasks to close with it, by request. */
+  alsoClose?: string[];
+};
 
 export type PendingItem = DeferredAction & {
   row: TodayObligation;
@@ -24,12 +31,15 @@ export type PendingItem = DeferredAction & {
 
 /** The write itself. A thank-you's Done goes through the acknowledgments
  *  path (stamps acknowledged_at, closes the ack task, logs the touch); every
- *  other type through the A3 obligation RPCs. Returns an error message or null. */
+ *  other type through the A3 obligation RPCs. `wrote` is whether the main
+ *  write landed (a follow-up can still fail after it); `error` says what
+ *  went wrong, if anything. */
+export type SendResult = { wrote: boolean; error: string | null };
 export async function sendObligationAction(
   row: TodayObligation,
   a: DeferredAction,
   keepalive = false,
-): Promise<string | null> {
+): Promise<SendResult> {
   const init = (body: unknown): RequestInit => ({
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -39,16 +49,33 @@ export async function sendObligationAction(
   try {
     const r =
       row.type === "acknowledgment" && a.action === "resolve"
-        ? await fetch("/api/admin/acknowledgments/mark", init({ gift_id: row.source_id }))
+        ? await fetch("/api/admin/acknowledgments/mark", init({ gift_id: row.source_id, channel: a.channel }))
         : await fetch(
             "/api/admin/obligations",
             init({ action: a.action, source: row.type, sourceId: row.source_id, until: a.until }),
           );
-    if (r.ok) return null;
-    const j = (await r.json().catch(() => null)) as { error?: string } | null;
-    return j?.error ?? "Something went wrong.";
+    if (!r.ok) {
+      const j = (await r.json().catch(() => null)) as { error?: string } | null;
+      return { wrote: false, error: j?.error ?? "Something went wrong." };
+    }
+    // The thank-you is recorded; now the tasks the person chose to close
+    // with it. A failure here can't un-thank the gift, so it says so plainly.
+    const stuck: string[] = [];
+    for (const id of a.alsoClose ?? []) {
+      const t = await fetch(
+        "/api/admin/obligations",
+        init({ action: "resolve", source: "ops_task", sourceId: id }),
+      ).catch(() => null);
+      if (!t?.ok) stuck.push(id);
+    }
+    return {
+      wrote: true,
+      error: stuck.length
+        ? `Marked thanked, but ${stuck.length === 1 ? "a linked task" : `${stuck.length} linked tasks`} couldn't be closed. Close ${stuck.length === 1 ? "it" : "them"} from the task list.`
+        : null,
+    };
   } catch {
-    return "Couldn't reach BloomOS. Check your connection and try again.";
+    return { wrote: false, error: "Couldn't reach BloomOS. Check your connection and try again." };
   }
 }
 
@@ -57,7 +84,9 @@ export function useDeferredActions({
   onFailed,
 }: {
   onCommitted: () => void;
-  onFailed: (row: TodayObligation, message: string) => void;
+  /** `wrote`: the main write landed and only a follow-up failed, so the row
+   *  must stay gone (the refresh will drop it). */
+  onFailed: (row: TodayObligation, message: string, wrote: boolean) => void;
 }) {
   const [pending, setPending] = useState<PendingItem[]>([]);
   const timers = useRef(new Map<string, number>());
@@ -70,10 +99,10 @@ export function useDeferredActions({
     timers.current.delete(id);
     const item = pendingRef.current.find((p) => p.row.id === id);
     if (!item) return;
-    const err = await sendObligationAction(item.row, item);
+    const res = await sendObligationAction(item.row, item);
     setPending((prev) => prev.filter((p) => p.row.id !== id));
-    if (err) cb.current.onFailed(item.row, err);
-    else cb.current.onCommitted();
+    if (res.wrote) cb.current.onCommitted();
+    if (res.error) cb.current.onFailed(item.row, res.error, res.wrote);
   }, []);
 
   const schedule = useCallback(

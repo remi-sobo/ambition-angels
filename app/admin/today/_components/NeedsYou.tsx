@@ -14,6 +14,7 @@ import TaskEditModal from "../../_components/TaskEditModal";
 import { TYPE } from "@/lib/admin/typeScale";
 import NeedsYouPopout from "./popout/NeedsYouPopout";
 import type { TaskPatch } from "./popout/OpsTaskPanel";
+import type { AckChoice } from "./popout/AckPanel";
 import { UNDO_MS, useDeferredActions, type DeferredAction } from "./popout/useDeferredActions";
 
 /**
@@ -39,6 +40,8 @@ export default function NeedsYou({
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [task, setTask] = useState<OpsTask | null>(null);
+  // The open thank-you's panel choices (channel, linked tasks to close).
+  const [ackChoice, setAckChoice] = useState<(AckChoice & { rowId: string }) | null>(null);
   const [editingTask, setEditingTask] = useState<OpsTask | null>(null);
   // Written and waiting for the refreshed list to drop them.
   const [gone, setGone] = useState<Set<string>>(new Set());
@@ -47,12 +50,14 @@ export default function NeedsYou({
 
   const { pending, schedule, undo } = useDeferredActions({
     onCommitted: () => router.refresh(),
-    onFailed: (row, message) => {
-      setGone((g) => {
-        const next = new Set(g);
-        next.delete(row.id);
-        return next;
-      });
+    onFailed: (row, message, wrote) => {
+      if (!wrote) {
+        setGone((g) => {
+          const next = new Set(g);
+          next.delete(row.id);
+          return next;
+        });
+      }
       setError(`${row.title}: ${message}`);
     },
   });
@@ -87,11 +92,15 @@ export default function NeedsYou({
   const act = useCallback(
     (row: TodayObligation, a: DeferredAction) => {
       setError(null);
+      // A thank-you marked from its own panel carries the panel's choices.
+      if (row.type === "acknowledgment" && a.action === "resolve" && ackChoice?.rowId === row.id) {
+        a = { ...a, channel: ackChoice.channel, alsoClose: ackChoice.alsoClose };
+      }
       if (openId === row.id) open(afterRemoval(ids, row.id));
       setGone((g) => new Set(g).add(row.id));
       schedule(row, a);
     },
-    [ids, open, openId, schedule],
+    [ackChoice, ids, open, openId, schedule],
   );
 
   const undoAction = useCallback(
@@ -129,6 +138,11 @@ export default function NeedsYou({
       router.refresh();
     },
     [openId, router],
+  );
+
+  const onAckChoice = useCallback(
+    (c: AckChoice) => setAckChoice(openId ? { ...c, rowId: openId } : null),
+    [openId],
   );
 
   // J / K / O while the popout is open. Esc is the modal's own.
@@ -210,7 +224,12 @@ export default function NeedsYou({
                 ) : null
               }
               context={
-                <span className={row.whyRecorded ? "" : "italic text-ink-3"}>{row.why}</span>
+                <span className={row.whyRecorded ? "" : "italic text-ink-3"}>
+                  {row.why}
+                  {row.linkedTasks?.length
+                    ? ` Also on your list: ${row.linkedTasks.map((t) => t.title).join("; ")}.`
+                    : ""}
+                </span>
               }
               actions={
                 <>
@@ -269,6 +288,7 @@ export default function NeedsYou({
           onOpenTask={() => openRecord(openRow)}
           onTaskLoaded={setTask}
           onPatched={onPatched}
+          onAckChoice={onAckChoice}
         />
       )}
       {editingTask && (

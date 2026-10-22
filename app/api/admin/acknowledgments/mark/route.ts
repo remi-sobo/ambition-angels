@@ -3,7 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { closeAckTaskForGift } from "@/lib/fundraising/ack-tasks";
-import { isOfflineChannel } from "@/lib/fundraising/ack-channels";
+import { isAckChannel } from "@/lib/fundraising/ack-channels";
 
 // POST /api/admin/acknowledgments/mark — record that a gift was thanked on a
 // non-email channel (handwritten letter, phone call, text, in person). The
@@ -24,9 +24,11 @@ export async function POST(req: NextRequest) {
   if (!/^[0-9a-f-]{36}$/i.test(giftId)) {
     return NextResponse.json({ error: "gift_id is required" }, { status: 400 });
   }
-  // Real channel when the caller names one (letter/call/text/in_person); the
-  // legacy "other" stays the fallback so older clients keep working.
-  const channel = isOfflineChannel(body?.channel) ? (body!.channel as string) : "other";
+  // Real channel when the caller names one; the legacy "other" stays the
+  // fallback so older clients keep working. "email" here means "I emailed
+  // them myself" (the Needs-you popout's copy / open-in-mail path); sending
+  // an email through BloomOS is /send, which this route never does.
+  const channel = isAckChannel(body?.channel) ? (body!.channel as string) : "other";
 
   const supabase = createServerSupabase();
   const sentAt = new Date().toISOString();
@@ -35,6 +37,9 @@ export async function POST(req: NextRequest) {
     .from("gifts")
     .update({ acknowledgment_status: "sent", acknowledged_at: sentAt })
     .eq("id", giftId)
+    // RLS is permission-scoped; the active org is the fence for owners of
+    // several orgs, so a gift id from another org is a 409, never a write.
+    .eq("org_id", ctx.orgId)
     .neq("acknowledgment_status", "sent")
     .select("id");
   if (claimErr) {

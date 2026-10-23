@@ -1,9 +1,39 @@
 # BloomOS Fundraising — Phased Build Plan
 
-> Status: proposed (June 2026). Sequenced follow-on to the Phase 0B layout
-> standardization (shared `Pipeline`, `PageHeader`, `DataTable`). This plan
-> closes the gap between our fundraising stack and commercial nonprofit CRMs
-> (Bloomerang, Virtuous, Salesforce NPSP, Instrumentl, Givebutter).
+> Status: **shipped** (June 2026). Phases 0B, 1, 2, and 3 plus the HubSpot
+> two-way sync (X1–X4, X6, X7) are all merged and live; DB migrations applied.
+> Only Epic L (enrichment / QuickBooks) and X8 (encrypted token) remain. See
+> `docs/current.md` for the as-built state. This plan closes the gap between our
+> fundraising stack and commercial nonprofit CRMs (Bloomerang, Virtuous,
+> Salesforce NPSP, Instrumentl, Givebutter).
+
+## Delivery status
+
+| Epic | Scope | PR | Status |
+|---|---|---|---|
+| 0B | Shared `Pipeline` + standardize Grants/Major Gifts/Campaigns | #112–#114 | ✅ shipped |
+| A | Manual & batch gift entry | #116 | ✅ shipped |
+| B | Constituent CRUD + interaction logging | #117 | ✅ shipped |
+| C | Unified donor activity timeline | #119 | ✅ shipped |
+| D | Households + soft credits + recognition rollup | #121, #122 | ✅ shipped |
+| E | Reports page + gifts reporting | #124 | ✅ shipped |
+| F | Pledges + installment schedules | #125 | ✅ shipped |
+| G | Recurring-giving management | #126 | ✅ shipped |
+| H | Donate-page conversion (wallets, cover-fee, stock/DAF) | #127 | ✅ shipped |
+| K | Donor engagement score | #130 | ✅ shipped |
+| I | Donor communications (segment → send) | #131 | ✅ shipped |
+| J | Journey automation | #132 | ✅ shipped |
+| M | Duplicate merge (#133) + CSV import (#134) | #133, #134 | ✅ shipped |
+| X1–X4 | HubSpot outbound (contacts/companies/engagements/deals) | #118, #120, #123 | ✅ shipped |
+| X6 | HubSpot inbound webhooks | #128 | ✅ shipped |
+| X7 | HubSpot connection-management UI | #129 | ✅ shipped |
+| **L** | Wealth/firmographic enrichment + QuickBooks sync | — | ⏳ remaining |
+| **X5** | Durable outbound queue + Stripe-gift→deal hook | — | ⏳ remaining |
+| **X8** | Encrypted HubSpot token in `connections` | — | ⏳ remaining |
+
+All migrations below were applied to the live `Ambition-Angels` Supabase project.
+
+---
 
 ## Where we stand
 

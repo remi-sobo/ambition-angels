@@ -66,6 +66,7 @@ const ORCHESTRATION = [
   "lib/capture/confirm.ts",
   "lib/capture/edit.ts",
   "lib/capture/deps.ts",
+  "lib/capture/fix.ts",
   "app/api/admin/capture/cards/[id]/route.ts",
   "app/api/admin/capture/[id]/confirm-all/route.ts",
   "app/api/admin/capture/candidates/route.ts",

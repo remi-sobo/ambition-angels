@@ -29,6 +29,8 @@ export type FakeDbOptions = {
   denyInsert?: Set<string>;
   /** Tables whose deletes silently match nothing (RLS USING false). */
   denyDelete?: Set<string>;
+  /** Tables whose updates silently match nothing (RLS USING false). */
+  denyUpdate?: Set<string>;
   /** Row visibility per table (RLS USING). Rows failing it are invisible. */
   visible?: Record<string, (row: Row) => boolean>;
   /** Tables that get a fresh updated_at on every update (set_updated_at triggers). */
@@ -139,6 +141,7 @@ export function fakeDb(seed: Record<string, Row[]> = {}, opts: FakeDbOptions = {
         return { data: matched.map(clone), error: null, count: countMode ? matched.length : null };
       }
       if (op === "update") {
+        if (opts.denyUpdate?.has(t)) return { data: returning ? [] : null, error: null };
         for (const r of matched) {
           Object.assign(r, clone(payload as Row));
           if (opts.touchUpdatedAt?.has(t)) r.updated_at = new Date(Date.parse(now()) + Math.floor(Math.random() * 1000) + 1).toISOString();

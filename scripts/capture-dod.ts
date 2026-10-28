@@ -77,4 +77,5 @@ function main() {
   process.exitCode = report.pass ? 0 : 1;
 }
 
-main();
+// Run only as a script, so the test can import exportSql without the CLI.
+if (/capture-dod\.ts$/.test(process.argv[1] ?? "")) main();

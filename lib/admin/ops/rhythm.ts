@@ -129,7 +129,11 @@ export async function loadRhythmSnapshot(
     }
   }
 
+  // Against the Monday commit (Weekly Plan v2, PR 4), when there is one.
+  const commit = await committedProgress(sb, who, mondayISO);
+
   const counts: FridayCounts = {
+    ...(commit ?? {}),
     planned: plannedRows.length,
     done,
     open: plannedRows.length - done,
@@ -202,4 +206,48 @@ async function calendarShape(
       openMin: Math.max(0, prefs.dayEndMinute - prefs.dayStartMinute) * workdays,
     };
   }
+}
+
+/**
+ * How many of this week's committed tasks are done, or null without a Monday
+ * commit. Service-role reads, org- and owner-scoped like the rest of the
+ * snapshot. "Done" is the task's live status, the same rule Close uses.
+ */
+async function committedProgress(
+  sb: ReturnType<typeof getSupabaseAdmin>,
+  who: ResolvedUser,
+  mondayISO: string
+): Promise<{ committed: number; committedDone: number } | null> {
+  const { data: sess } = await sb
+    .from("rhythm_sessions")
+    .select("id")
+    .eq("org_id", who.orgId)
+    .eq("user_id", who.userId)
+    .eq("kind", "monday_plan")
+    .eq("week_of", mondayISO)
+    .eq("status", "completed")
+    .maybeSingle();
+  if (!sess?.id) return null;
+  const { data: rows } = await sb
+    .from("week_commitments")
+    .select("task_id")
+    .eq("org_id", who.orgId)
+    .eq("session_id", sess.id as string)
+    .eq("decision", "commit");
+  const ids = ((rows ?? []) as Array<{ task_id: string | null }>)
+    .map((r) => r.task_id)
+    .filter((x): x is string => !!x);
+  const committed = (rows ?? []).length;
+  if (committed === 0) return null;
+  let committedDone = 0;
+  if (ids.length > 0) {
+    const { count } = await sb
+      .from("ops_tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", who.orgId)
+      .in("id", ids)
+      .eq("status", "done");
+    committedDone = count ?? 0;
+  }
+  return { committed, committedDone };
 }

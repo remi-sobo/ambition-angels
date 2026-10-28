@@ -156,6 +156,9 @@ export default async function CloseSection() {
   );
   const outcomeOf = (c: Commitment): Outcome =>
     deriveOutcome(c.task_id ? committedTaskById.get(c.task_id) ?? null : null, mondayISO, c.outcome);
+  // Planned for this week but not in the commit: added after Monday. Shown on
+  // their own, and left out of the commitment numbers.
+  const addedMidweek = hasCommit ? weekTasks.filter((t) => !committedIds.has(t.id)) : [];
 
   const stillPinned = weekTasks
     .filter((t) => t.status !== "done")
@@ -484,6 +487,39 @@ export default async function CloseSection() {
           </div>
         )}
       </section>
+
+      {/* Added midweek (only with a commit, only if any) */}
+      {addedMidweek.length > 0 && (
+        <section className="rounded-panel border-hairline bg-surface p-6">
+          <h2 className={`${TYPE.sectionHeader} mb-1`}>
+            Added midweek <span className="text-ink-3">({addedMidweek.length})</span>
+          </h2>
+          <p className="text-xs text-ink-2 mb-4">
+            Planned for this week after Monday&apos;s commit. Truth them too; they don&apos;t
+            count toward what you committed.
+          </p>
+          <div className="space-y-1.5">
+            {addedMidweek.map((t) =>
+              t.status === "done" ? (
+                <TaskRowWithActions
+                  key={t.id}
+                  task={t}
+                  projectName={t.project_id ? projectNames.get(t.project_id) : null}
+                  readOnly
+                  completedTimestamp={t.completed_at}
+                />
+              ) : (
+                <TaskRowWithActions
+                  key={t.id}
+                  task={t}
+                  projectName={t.project_id ? projectNames.get(t.project_id) : null}
+                  actions={stillPinnedActions}
+                />
+              )
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Slipped by category (only if non-zero) */}
       {slippedRows.length > 0 && (

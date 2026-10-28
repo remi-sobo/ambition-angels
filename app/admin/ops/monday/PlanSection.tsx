@@ -31,6 +31,7 @@ import CalendarSyncBanner from "../_components/CalendarSyncBanner";
 import CapacityMeter from "./CapacityMeter";
 import { computeWeekCapacity } from "@/lib/admin/ops/capacity";
 import { minutesInto } from "@/lib/agenda/own-events";
+import { carryoverOutcomeLabel, type Outcome } from "@/lib/admin/ops/close";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // The Monday plan ritual — orient, carryover, areas, days, commit — over
@@ -101,6 +102,29 @@ export default async function PlanSection() {
 
   const slippedRaw = (slippedRes.data as OpsTask[] | null) ?? [];
   const pinnedThisWeekAll = (pinnedThisWeekRes.data as OpsTask[] | null) ?? [];
+
+  // Last week's outcome on each slipped task (Weekly Plan v2, PR 4): Friday
+  // Close leaves missed and partly done work where it was, so it lands here.
+  // The newest commitment row per task wins; own rows only, org-scoped.
+  const carryoverOutcome = new Map<string, string>();
+  if (slippedRaw.length > 0) {
+    const { data: wc } = await supabase
+      .from("week_commitments")
+      .select("task_id, outcome, week_of")
+      .eq("org_id", orgId)
+      .eq("user_id", me.userId)
+      .lt("week_of", mondayISO)
+      .in(
+        "task_id",
+        slippedRaw.map((t) => t.id)
+      )
+      .order("week_of", { ascending: false });
+    for (const r of (wc ?? []) as Array<{ task_id: string; outcome: Outcome | null }>) {
+      if (carryoverOutcome.has(r.task_id)) continue; // newest already taken
+      const label = carryoverOutcomeLabel(r.outcome);
+      carryoverOutcome.set(r.task_id, label ?? "");
+    }
+  }
 
   // Keep the carryover and this-week surfaces mutually exclusive so the same
   // task isn't reviewed in both places.
@@ -369,6 +393,11 @@ export default async function PlanSection() {
                     actions={carryoverActions}
                   />
                   <div className="text-xs pl-3 flex items-center gap-2">
+                    {carryoverOutcome.get(t.id) && (
+                      <span className="text-expense font-semibold" title="Outcome at last Friday's Close">
+                        {carryoverOutcome.get(t.id)}
+                      </span>
+                    )}
                     {rolls > 0 && (
                       <span
                         className={

@@ -27,6 +27,7 @@ import RhythmWizard from "../_components/RhythmWizard";
 import MondayOrient from "../_components/MondayOrient";
 import AreaWalk from "../_components/AreaWalk";
 import MondayCommit from "../_components/MondayCommit";
+import CalendarSyncBanner from "../_components/CalendarSyncBanner";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // The Monday plan ritual — orient, carryover, areas, days, commit — over
@@ -79,6 +80,7 @@ export default async function PlanSection() {
       .eq("org_id", orgId)
       .lt("planned_week", mondayISO)
       .neq("status", "done")
+      .is("archived_at", null)
       .or(mineFilter)
       .order("planned_week", { ascending: true })
       .order("due_date", { ascending: true, nullsFirst: true }),
@@ -89,6 +91,7 @@ export default async function PlanSection() {
       .eq("org_id", orgId)
       .eq("planned_week", mondayISO)
       .neq("status", "done")
+      .is("archived_at", null)
       .or(mineFilter)
       .order("due_date", { ascending: true, nullsFirst: true }),
   ]);
@@ -151,6 +154,12 @@ export default async function PlanSection() {
     });
     for (const it of agenda.items) {
       if (linkedEventIds.has(it.id)) continue; // it's a task's own block
+      // My own calendar only: a direct report's or delegated meeting is not
+      // busy time on my week. Owner-less bookings stay (they're mine). Block
+      // mirrors (source='bloomos') are kept here on purpose: until Plan writes
+      // work_blocks (Weekly Plan v2, PR 7) they are how a drawn block reads
+      // as busy on this board.
+      if (it.ownerUserId !== null && it.ownerUserId !== me.userId) continue;
       const dayISO = laDateOf(it.start);
       const list = eventsByDay.get(dayISO) ?? [];
       list.push({
@@ -381,6 +390,7 @@ export default async function PlanSection() {
     <RhythmWizard
       eyebrow="Monday · Aim"
       title="Plan"
+      notice={<CalendarSyncBanner />}
       subtitle={
         <>
           <span>Week of {formatWeekHeader(mondayISO)}</span>

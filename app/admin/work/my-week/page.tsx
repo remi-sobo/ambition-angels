@@ -5,6 +5,7 @@ import { rhythmModeForToday } from "@/lib/admin/ops/rhythmMode";
 import { buildMondayStatus, buildFridayStatus, type WeekStatus } from "@/lib/admin/ops/statusLine";
 import { formatWeekHeader, formatDayLabel, todayInTZ } from "@/lib/admin/ops/week";
 import WeekStatusLine from "@/app/admin/ops/_components/WeekStatusLine";
+import CalendarSyncBanner from "@/app/admin/ops/_components/CalendarSyncBanner";
 import PageHeader from "@/app/admin/_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -56,6 +57,7 @@ export default async function MyWeekPage({
       />
 
       {/* ── WeekStatus + the one ritual door ───────────────────────────── */}
+      <CalendarSyncBanner className="mt-6" />
       <section className="mt-6 rounded-panel border-hairline bg-surface p-6">
         {status ? (
           <WeekStatusLine status={status} />

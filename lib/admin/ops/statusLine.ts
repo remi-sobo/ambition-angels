@@ -1,4 +1,5 @@
 import type { OrgContext } from "@/lib/admin/auth";
+import { formatHours } from "@/lib/agenda/week-summary";
 
 /**
  * Deterministic, role-weighted status lines for the weekly rhythm (Operating
@@ -20,6 +21,9 @@ import type { OrgContext } from "@/lib/admin/auth";
 
 type Role = OrgContext["role"];
 
+/** Under five open working hours in the week flares the open-time segment. */
+const TIGHT_OPEN_MIN = 5 * 60;
+
 export type MondayCounts = {
   /** Open (not-done) tasks that are mine this snapshot. */
   open: number;
@@ -27,10 +31,10 @@ export type MondayCounts = {
   areas: number;
   /** Tasks planned for an earlier week and still open — the rollover deck. */
   carriedOver: number;
-  /** Events on the calendar this week (the meetings booked against my time). */
-  meetings: number;
-  /** Approximate open hours left in the working week (precise open-blocks land in P5). */
-  openHours: number;
+  /** Minutes in my own meetings this week (same figure as the week grid). */
+  meetingMin: number;
+  /** Working-hours minutes not covered by a meeting or a work block. */
+  openMin: number;
 };
 
 export type FridayCounts = {
@@ -78,7 +82,7 @@ function assemble(prefix: string, segs: StatusSegment[]): WeekStatus {
 
 /** Monday "Plan" (Aim): where is my time going, and is it going to what matters. */
 export function buildMondayStatus(role: Role, c: MondayCounts): WeekStatus {
-  if (c.open === 0 && c.carriedOver === 0 && c.meetings === 0) {
+  if (c.open === 0 && c.carriedOver === 0 && c.meetingMin === 0) {
     return {
       lead: "a clear deck",
       sentence: "This week: a clear deck. Nothing planned or booked yet.",
@@ -94,12 +98,8 @@ export function buildMondayStatus(role: Role, c: MondayCounts): WeekStatus {
       text: `${c.open} open across ${c.areas} ${plural(c.areas, "area", "areas")}`,
       flare: false,
     },
-    {
-      key: "meetings",
-      text: `${c.meetings} ${plural(c.meetings, "meeting", "meetings")} booked`,
-      flare: false,
-    },
-    { key: "hours", text: `~${c.openHours}h open`, flare: c.openHours < 5 },
+    { key: "meetings", text: `${formatHours(c.meetingMin)} in meetings`, flare: false },
+    { key: "hours", text: `${formatHours(c.openMin)} open`, flare: c.openMin < TIGHT_OPEN_MIN },
   ];
 
   const order =

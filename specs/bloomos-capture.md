@@ -171,6 +171,7 @@ Commit: `capture: fix after confirm`
 
 - Remi records a 30-second note on his phone after a real meeting and clears the cards in under a minute.
 - On a test set of 20 real-style notes (Phase 0 builds it from AA's actual constituent names), the matcher picks the right record or correctly holds for a pick on at least 18, and files to a wrong record on zero.
+  - *As built (2026-10-18):* scored by `scripts/capture-dod.ts` (rules in `lib/capture/evalScore.ts`, unit-tested on fictional data). The 20-note answer key and read-aloud sheet name real donors and live only in `tests/fixtures/capture/private/` (gitignored). Notes are recorded for real in production, exported read-only, paired to the key by transcript overlap, and scored on what the matcher proposed (discarding the test cards does not change the score). The set covers clean names, near-duplicate spellings, exact duplicate records and a bare first name (must hold), a staff first name that is also a donor (must not file), a student name, a context note with no name, and an organization not in BloomOS next to similar ones (must file nothing).
 - Nothing writes to `interactions`, `partner_interactions`, `ops_tasks`, or `reed_drafts` without a confirm click. Verified by a test that runs the parse route and asserts those tables are untouched.
 - A user in org B can't see, match against, or apply into org A. Verified in `rls-leak-test.sql`.
 - No student row is ever read by the capture pipeline. Verified by a test.
@@ -851,4 +852,131 @@ context. Transcripts don't outlive 90 days.
 
 PR body: the migration SQL under "SQL for Remi to review", and anything that
 didn't match. Merge order: apply capture_obligations, then merge. Stop there.
+```
+
+## C5 as built (merged 2026-10-13)
+
+PR #552 (squash ce59c5d). Migration `capture_obligations` applied as ledger 20261013213501: the `capture` obligations arm, `resolve_obligation` / `snooze_obligation` capture branches, `captures.snoozed_until`, and the 90-day transcript purge scheduled with pg_cron (`capture-transcript-purge`, daily 10:17 UTC, revoked from anon and authenticated by name). Record buttons are on the donor, partner, and ask pages.
+
+Follow-up PR #556 (squash b091ede), migration `capture_drafts_permission` applied as ledger 20261020023231: three restrictive policies on `reed_drafts`, so inserting, updating, or deleting a `capture_message` draft needs `ops.write` in the database. Other draft kinds are unchanged. The same PR added the matcher scorer (`scripts/capture-dod.ts`, see Definition of done).
+
+Still owed for V1 done: the iPhone recording test and the 20-note matcher run, both Remi's.
+
+## C6 spec: fix after confirm
+
+### Problem
+
+A confirmed card is a real row on a donor or partner record. Today the only way back is Undo, and only for 10 minutes. After that, a note filed to the wrong Kendra, or with a wrong date, stays wrong: there is no edit or delete route for `interactions` or `partner_interactions` anywhere in the app (the donor page's `PATCH /api/admin/fundraising/interactions/[id]` only toggles `is_private`). The spec promised this stage as the backstop for the worst failure mode, a confident wrong match.
+
+### What exists (recon, 2026-10-22)
+
+- **Provenance is already on the filed row.** Both tables have `external_source = 'capture'` and `external_id = <card id>`, with unique indexes over (source, id, entity). So a history row knows its card without a join, and the card knows its row (`applied_table`, `applied_id`, `payload.applied_snapshot`).
+- **Undo** (`lib/capture/confirm.ts`) deletes the row only when it still matches the snapshot, within `UNDO_WINDOW_MINUTES = 10`, and puts the card back to `proposed`.
+- **RLS on the destinations:** `interactions` write needs `fundraising.write`, `partner_interactions` write needs `program.write` (permissive ALL policies). Capture cards and captures are creator-only.
+- **No edited stamp anywhere.** Neither table has `updated_at`, `edited_at`, or `edited_by`.
+- **History UIs:** the donor activity stream (`DonorProfile.tsx`) and the partner page list interactions, but don't select `external_source` and show nothing about where a row came from.
+- **The picker exists:** `GET /api/admin/capture/candidates?q=&kind=` wraps the matcher RPC and never offers prospects or students.
+- **Tasks and drafts** already have their own edit surfaces (Ops, Reed). C6 leaves them alone.
+
+### Proposed rulings (Remi to accept or change)
+
+1. **Scope: interactions and partner interactions only.** Tasks and drafts are edited where they already live. A thought or task filed from a voice note is fixed in Ops like any other task.
+2. **Creator fixes, through the card.** The person who recorded the note gets Fix on the rows it filed (their cards are the ones RLS shows them), and needs the destination's write permission too. Others see the stamp but no Fix. This keeps the transcript private to its creator (open decision 2) and keeps card and row in step. If Shannon should fix Remi's rows later, that's a separate ruling with a non-card route.
+3. **Three actions.**
+   - **Edit:** kind, date, notes. Same validation as the appliers.
+   - **Move:** to another record of the same type (person to person, partner to partner), picked with the existing candidates typeahead. Moving between a person and a partner is Remove, then log it again; it changes tables and loses nothing worth the complexity.
+   - **Remove:** deletes the row and marks the card `discarded` with `payload.removed = {at, by}`. The audit row keeps the before image. No soft delete; neither table has an archive column and undo already hard-deletes.
+4. **The stamp lives on the row.** A small migration adds `edited_at timestamptz` and `edited_by text` (a handle, like `logged_by`) to both tables, nullable, guarded. Edit and Move set them. Anyone who can read the row sees "Edited Oct 22", not just the creator. The columns are general, so a later manual-edit feature can reuse them.
+5. **Card stays the source of truth for provenance.** Move updates the row's entity column and the card's `entity_type`/`entity_id`, so the applier's provenance lookup (which keys on card id and entity) still finds the row. Edit and Move refresh `payload.applied_snapshot`, so Undo inside its 10 minutes still works after a fix.
+6. **History rows say where they came from.** A capture-filed row shows "From a voice note" (and "Edited <date>" when stamped). For the creator, Fix opens a sheet with the source sentence, a "See the full note" link to `/admin/capture/<capture id>`, and Edit / Move / Remove. After the 90-day purge the sheet says the transcript was cleared and the actions still work.
+
+### Failure modes
+
+- **Moving to the wrong record again.** The picker shows the same disambiguating meta line as the confirm card, and Move asks for one confirm tap naming both records.
+- **Row edited elsewhere first.** There is no other editor for these rows today, so last write wins. Remove checks the row still exists and returns 404 if not.
+- **Fix on a row that isn't capture-filed.** The route only acts on a confirmed card with `applied_id`; the destination update is fenced by `external_source = 'capture'` and `external_id = card id`, like undo.
+- **Permission lost after filing.** RLS refuses the update or delete; the route returns 403 with the applier's denial text.
+- **Student data.** No change: Move uses the candidates route, which never reads students.
+
+### Build (one PR)
+
+Migration `capture_fix_stamps.sql`, appliers gain `revise` / `move` / `remove` (each still writes only its own table, per the fence), `lib/capture/fix.ts` orchestrates on the card, three new actions on `POST /api/admin/capture/cards/[id]`, the provenance line and Fix sheet on the donor and partner pages, tests, leak-test block.
+Commit: `capture: fix after confirm`
+
+## C6 kickoff prompt (paste into Claude Code)
+
+```
+Build stage C6 of specs/bloomos-capture.md: fix after confirm. Read "C6 spec:
+fix after confirm" and its rulings first, then "C5 as built". Branch from main
+(b091ede or later). One PR. Do not apply the migration; I apply it through
+the connector after review.
+
+GOAL: whoever recorded a note can fix what it filed to a donor or partner
+record (edit it, move it to the right person, or remove it), any time after
+the 10-minute undo, and everyone can see that a history row came from a voice
+note and whether it was edited.
+
+0. Migration supabase/migrations/capture_fix_stamps.sql (guarded form):
+   edited_at timestamptz and edited_by text on public.interactions and
+   public.partner_interactions, nullable, add column if not exists. No
+   policy changes (fundraising.write / program.write already cover update
+   and delete). Register it in scripts/test-rls.sh; add a migration shape
+   test.
+
+1. Appliers (lib/capture/apply/interactions.ts, partnerInteraction.ts) gain
+   revise(patch), move(newEntityId), remove(). Each is fenced like undo:
+   .eq("id", applied_id).eq("external_source", "capture").eq("external_id",
+   card.id). revise and move set edited_at = now(), edited_by = ctx.handle and
+   return a fresh snapshot. Same validation as apply (kind list, date via
+   noonUtc, notes cap 4000). Partner move also bumps the new partner's
+   last_touch_at. Audit each: capture.<dest>.revise / .move / .remove with
+   before and after. The fence test's per-file allowlist must still pass
+   unchanged.
+
+2. lib/capture/fix.ts (add to ORCHESTRATION in tests/capture-fence.test.ts):
+   reviseFiled, moveFiled, removeFiled. Load the card through RLS (404 when
+   hidden: that is the creator-only rule), require status confirmed with
+   applied_id and applied_table in (interactions, partner_interactions),
+   pre-check the destination permission, then call the applier. Move: the
+   target must be the same kind as the card's entity_type and come from the
+   org (look it up through the session client; 404 otherwise); update the
+   card's entity_id and payload.entity_name. Revise and move refresh
+   payload.applied_snapshot. Remove sets the card discarded with
+   payload.removed = {at, by}. Removing a row that's already gone returns 404
+   and leaves the card alone.
+
+3. Route: POST /api/admin/capture/cards/[id] accepts action revise
+   (patch: kind?, occurred_at?, notes?), move (entity_id), remove. Same
+   entitlement gate and error shapes as the existing actions.
+
+4. UI, BloomOS V2 system, TYPE scale, no em dashes in strings:
+   - Donor activity stream and partner page select external_source,
+     external_id, edited_at. A capture row shows "From a voice note" and,
+     when stamped, "Edited Oct 22".
+   - The page reads the viewer's own cards for those external_ids through the
+     session client (RLS returns only theirs). Those rows get a Fix button.
+   - Fix sheet: the source sentence (or "The note's transcript was cleared
+     after 90 days."), "See the full note" to /admin/capture/<capture_id>,
+     and Edit / Move / Remove. Move uses /api/admin/capture/candidates with
+     the card's kind and a confirm step that names both records. Remove asks
+     once. 390px first, 52px targets, Escape closes.
+
+5. Also: guard main() in scripts/capture-dod.ts so importing exportSql from
+   the test no longer runs the CLI (Cursor's note on #556).
+
+6. Tests: applier revise/move/remove (happy, fenced to capture rows,
+   permission denied, row missing); fix.ts state rules (not confirmed 409,
+   wrong table 409, other-kind move 400, hidden card 404); route actions;
+   page wiring (provenance line, Fix only on own cards). RLS leak block:
+   the creator can revise and move their filed interaction and it stamps
+   edited_at; AA staff who didn't record it get not found on the card;
+   a board_viewer can't update or delete the interaction; tenant two sees
+   nothing.
+
+7. npm run lint, typecheck, npm test, the RLS harness. Nothing against
+   production.
+
+PR body: the migration SQL under "SQL for Remi to review", screenshots of the
+Fix sheet at 390px, and anything that didn't match the spec. Merge order:
+apply capture_fix_stamps, then merge. Stop there.
 ```

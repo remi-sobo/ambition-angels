@@ -236,6 +236,8 @@ ordered=(
   capture_match_rpc.sql
   capture_rpc_grants.sql
   capture_obligations.sql
+  capture_drafts_permission.sql
+  capture_fix_stamps.sql
   add_estimated_minutes_to_ops_tasks.sql
 )
 for f in "${ordered[@]}"; do

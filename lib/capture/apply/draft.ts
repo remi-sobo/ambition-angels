@@ -5,10 +5,10 @@
  * (capture_id, capture_card_id, entity, channel, subject); the lookup is by
  * context_ref->>capture_card_id.
  *
- * reed_drafts RLS is membership-only, weaker than the has_permission floor
- * (spec, "flag for the security backlog"). The confirm pre-check therefore
- * asks for ops.write, the same permission that lets a user own a capture at
- * all, so the app never files a draft on membership alone.
+ * The confirm pre-check asks for ops.write, the same permission that lets a
+ * user own a capture at all. Since capture_drafts_permission.sql the database
+ * enforces it too: capture_message rows need ops.write to insert, update, or
+ * delete (restrictive policies; other reed_drafts kinds are unchanged).
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";

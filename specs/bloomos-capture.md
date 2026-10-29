@@ -980,3 +980,27 @@ PR body: the migration SQL under "SQL for Remi to review", screenshots of the
 Fix sheet at 390px, and anything that didn't match the spec. Merge order:
 apply capture_fix_stamps, then merge. Stop there.
 ```
+
+## C6 as built (merged 2026-10-27)
+
+PR #563, squash `4aebee5`. Migration `capture_fix_stamps` applied as ledger 20261028020537: nullable `edited_at` / `edited_by` on `interactions` and `partner_interactions`, no policy changes. All six proposed rulings shipped as written.
+
+- **Appliers** (`lib/capture/apply/interactions.ts`, `partnerInteraction.ts`) gained `revise` / `move` / `remove` (the `FixOps` contract in `apply/shared.ts`). Every read and write is fenced by row id and capture provenance (`external_source = 'capture'`, `external_id` = card id), so a fix never reaches a manual or Gmail-synced row. Revise and move stamp the row; each action is audited (`capture.interaction.revise|move|remove`, same for `partner_interaction`). A partner move bumps the new partner's `last_touch_at` forward; nothing is rolled back.
+- **`lib/capture/fix.ts`** orchestrates on the card: creator-only (capture cards are personal, so anyone else gets 404), destination permission pre-checked, same-type moves re-verified against the org with `verifyEntity`. The card's entity follows a move and `applied_snapshot` is refreshed, so undo inside its window still works after a fix. Remove discards the card with `payload.removed = {at, by}`.
+- **Route:** `POST /api/admin/capture/cards/[id]` takes `revise` (patch: kind, occurred_at, notes), `move` (entity), `remove`.
+- **UI:** `FiledNoteLine` + `FixSheet` on the donor activity stream and the partner page. Capture rows say "From a voice note" and "Edited <date>". Fix appears only on the viewer's own cards, found by `app/admin/capture/_lib/fixTargets.ts` through the session client (the partner page otherwise uses the admin client; this helper never does).
+- **Tests:** 39 new (appliers and fix rules, route actions, page wiring, migration shape) plus a C6 block in `rls-leak-test.sql`: the creator can revise, move, and remove; AA staff can't see the card; a board_viewer can't change or delete the row; tenant two sees neither.
+
+Where C6 differs from its kickoff, accepted at merge:
+
+- **The fix-only column list is typed as a plain `string`.** As a literal it made Supabase's type-level select parser run tsc out of its default heap.
+- **The Fix sheet moves focus into each pane** (Edit, Move, Remove). Without it, switching panes dropped focus out of the dialog and Escape stopped closing it; the 390px walkthrough caught this.
+- **Revise doesn't bump a partner's touch date** when the date changes; only apply and move do.
+- **Cursor Bugbot didn't review #563** (usage limit reached on that account).
+
+As of 2026-10-28, still owed for V1 done: the iPhone recording test and the 20-note matcher run, both Remi's. Production has 1 Ambition Angels capture (Oct 13); the other 6 rows are seeded data in the `northbridge-demo` org.
+
+Backlog after V1:
+
+- **The other draft kinds.** `reed_drafts` grant narratives, board updates, and report narratives are still membership-only (any member, board_viewer included, can write them). Needs a per-kind permission map.
+- **Fixing someone else's note.** C6 is creator-only by ruling. Letting Shannon fix Remi's voice-note rows is a separate ruling and a non-card route.

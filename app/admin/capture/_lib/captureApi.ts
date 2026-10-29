@@ -52,6 +52,19 @@ export function cardAction(id: string, action: "confirm" | "discard" | "undo" | 
   });
 }
 
+/** Fix after confirm (C6): revise, move, or remove what a filed card put on a record. */
+export type FixRequest =
+  | { action: "revise"; patch: { kind?: string; occurred_at?: string; notes?: string | null } }
+  | { action: "move"; entity: { type: "constituent" | "partner"; id: string } }
+  | { action: "remove" };
+
+export function fixFiled(id: string, req: FixRequest) {
+  return call<{ card: CardView; removed?: boolean }>(`/api/admin/capture/cards/${id}`, {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
 export function confirmAllCards(captureId: string) {
   return call<ConfirmAllResult & { capture_status: string | null }>(`/api/admin/capture/${captureId}/confirm-all`, {
     method: "POST",

@@ -10,6 +10,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   ApplyError,
+  FILED_ROW_GONE,
+  INTERACTION_KINDS,
   changedField,
   isUniqueViolation,
   noonUtc,
@@ -23,9 +25,11 @@ import {
   type CardRow,
 } from "./shared";
 
-const KINDS = ["call", "meeting", "note", "event"] as const;
+const KINDS = INTERACTION_KINDS;
 const SNAPSHOT_KEYS = ["constituent_id", "kind", "occurred_at", "notes"] as const;
 const COLUMNS = "id, constituent_id, kind, occurred_at, notes, external_source, external_id";
+// Widened to string: a literal column list this long makes the select parser types blow up tsc.
+const FIXED_COLUMNS: string = `${COLUMNS}, edited_at, edited_by`;
 const DENIED = "You can't file to donor records in this org.";
 
 async function lookup(supabase: SupabaseClient, cardId: string, constituentId: string) {
@@ -93,10 +97,71 @@ async function undo(supabase: SupabaseClient, ctx: ApplyCtx, card: CardRow) {
   return { kind: "deleted" as const };
 }
 
+// ── Fix after confirm (C6) ──────────────────────────────────────────────────
+// Every read and write below is fenced to the card's own row: its id AND its
+// capture provenance, so a fix can never reach a manual or synced interaction.
+
+async function filedRow(supabase: SupabaseClient, card: CardRow): Promise<Record<string, unknown>> {
+  if (!card.applied_id) throw new ApplyError(409, "This card was not filed anywhere.");
+  const { data } = await supabase
+    .from("interactions")
+    .select(FIXED_COLUMNS)
+    .eq("id", card.applied_id)
+    .eq("external_source", "capture")
+    .eq("external_id", card.id)
+    .maybeSingle();
+  if (!data) throw new ApplyError(404, FILED_ROW_GONE);
+  return data as unknown as Record<string, unknown>;
+}
+
+async function stampedUpdate(
+  supabase: SupabaseClient,
+  ctx: ApplyCtx,
+  card: CardRow,
+  fields: Record<string, unknown>,
+  action: "revise" | "move",
+): Promise<Record<string, unknown>> {
+  const before = await filedRow(supabase, card);
+  const { data, error } = await supabase
+    .from("interactions")
+    .update(fields)
+    .eq("id", card.applied_id as string)
+    .eq("external_source", "capture")
+    .eq("external_id", card.id)
+    .select(FIXED_COLUMNS);
+  if (error) throw writeError(error, DENIED, "fix the interaction");
+  const rows = (data ?? []) as unknown as Record<string, unknown>[];
+  if (rows.length === 0) throw new ApplyError(403, DENIED);
+  await ctx.audit({ action: `capture.interaction.${action}`, entityType: "interactions", entityId: card.applied_id, before, after: fields });
+  return pick(rows[0], SNAPSHOT_KEYS);
+}
+
+async function remove(supabase: SupabaseClient, ctx: ApplyCtx, card: CardRow): Promise<void> {
+  const before = await filedRow(supabase, card);
+  const { data: gone, error } = await supabase
+    .from("interactions")
+    .delete()
+    .eq("id", card.applied_id as string)
+    .eq("external_source", "capture")
+    .eq("external_id", card.id)
+    .select("id");
+  if (error) throw writeError(error, DENIED, "remove the interaction");
+  if (!gone || (gone as unknown[]).length === 0) throw new ApplyError(403, DENIED);
+  await ctx.audit({ action: "capture.interaction.remove", entityType: "interactions", entityId: card.applied_id, before });
+}
+
 export const interactionApplier: Applier = {
   table: "interactions",
   permission: "fundraising.write",
   denied: DENIED,
   apply: (supabase, ctx, card) => apply(supabase, ctx, card),
   undo,
+  fix: {
+    entityType: "constituent",
+    revise: (supabase, ctx, card, update, at) =>
+      stampedUpdate(supabase, ctx, card, { ...update, edited_at: at, edited_by: ctx.handle }, "revise"),
+    move: (supabase, ctx, card, entityId, at) =>
+      stampedUpdate(supabase, ctx, card, { constituent_id: entityId, edited_at: at, edited_by: ctx.handle }, "move"),
+    remove,
+  },
 };

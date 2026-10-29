@@ -19,6 +19,8 @@ import { todayISO } from "../../../ops/_types/ops";
 import { GiftEntryForm, GiftRowActions } from "../_components/GiftControls";
 import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentControls";
 import RecordButton from "@/app/admin/capture/_components/RecordButton";
+import FiledNoteLine from "@/app/admin/capture/_components/FiledNoteLine";
+import { loadFixTargets } from "@/app/admin/capture/_lib/fixTargets";
 import LogThankYou from "../_components/LogThankYou";
 import AckChannelPref from "../_components/AckChannelPref";
 import { type AckChannel } from "@/lib/fundraising/ack-channels";
@@ -95,7 +97,7 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
       .limit(5000),
     supabase
       .from("interactions")
-      .select("id, kind, occurred_at, notes, logged_by, direction, subject, thread_id, body_preview, is_private")
+      .select("id, kind, occurred_at, notes, logged_by, direction, subject, thread_id, body_preview, is_private, external_source, external_id, edited_at")
       .eq("constituent_id", id)
       .order("occurred_at", { ascending: false })
       .limit(100),
@@ -156,7 +158,10 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
     id: string; kind: string; occurred_at: string; notes: string | null; logged_by: string | null;
     direction: string | null; subject: string | null; thread_id: string | null;
     body_preview: string | null; is_private: boolean | null;
+    external_source: string | null; external_id: string | null; edited_at: string | null;
   }>;
+  // Capture C6: the viewer's own capture-filed rows get Fix (session client, creator-only cards).
+  const fixTargets = captureEnabled ? await loadFixTargets(interactions) : {};
   const opps = (oppsRes.data ?? []) as Array<{
     id: string; name: string | null; stage: string; next_step: string | null;
     next_step_due: string | null; ask_amount: number | null; expected_close: string | null;
@@ -872,6 +877,13 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
                             <>
                               {i.logged_by && <div className="text-xs text-ink-3">{i.logged_by}</div>}
                               {i.notes && <p className={`${TYPE.body} mt-0.5`}>{i.notes}</p>}
+                              {i.external_source === "capture" && (
+                                <FiledNoteLine
+                                  editedAt={i.edited_at}
+                                  target={(i.external_id && fixTargets[i.external_id]) || null}
+                                  note={{ kind: i.kind, occurredAt: i.occurred_at, notes: i.notes, entityType: "constituent", entityName: name }}
+                                />
+                              )}
                             </>
                           )}
                         </div>

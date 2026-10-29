@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
 import RecordButton from "@/app/admin/capture/_components/RecordButton";
+import FiledNoteLine from "@/app/admin/capture/_components/FiledNoteLine";
+import { loadFixTargets } from "@/app/admin/capture/_lib/fixTargets";
 import StatCard from "../../_components/StatCard";
 import { KIND_LABELS, type Partner } from "../_lib/partners";
 import { STATUS_LABELS, STATUS_STYLE, NEXT_STATUS, STATUS_SHORT, type PartnerStatus } from "../_lib/status";
@@ -55,7 +57,7 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
       .order("created_at", { ascending: true }),
     supabase
       .from("partner_interactions")
-      .select("id, kind, occurred_at, notes, logged_by, contact_id")
+      .select("id, kind, occurred_at, notes, logged_by, contact_id, external_source, external_id, edited_at")
       .eq("org_id", orgId)
       .eq("partner_id", params.id)
       .order("occurred_at", { ascending: false })
@@ -70,7 +72,11 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
   const interactions = (intsRes.data ?? []) as Array<{
     id: string; kind: string; occurred_at: string; notes: string | null;
     logged_by: string | null; contact_id: string | null;
+    external_source: string | null; external_id: string | null; edited_at: string | null;
   }>;
+  // Capture C6: the viewer's own capture-filed touches get Fix. loadFixTargets
+  // reads capture_cards through the SESSION client, never this page's admin client.
+  const fixTargets = captureEnabled ? await loadFixTargets(interactions) : {};
   const candidates = (candRes.data ?? []) as Array<{
     id: string; name: string; kind: string; city: string | null; status: string;
   }>;
@@ -220,6 +226,13 @@ export default async function PartnerProfilePage({ params }: { params: { id: str
                         )}
                         {i.notes && <p className={`${TYPE.body} mt-0.5 whitespace-pre-wrap`}>{i.notes}</p>}
                         {i.logged_by && <div className="text-xs text-ink-3 mt-0.5">logged by {i.logged_by}</div>}
+                        {i.external_source === "capture" && (
+                          <FiledNoteLine
+                            editedAt={i.edited_at}
+                            target={(i.external_id && fixTargets[i.external_id]) || null}
+                            note={{ kind: i.kind, occurredAt: i.occurred_at, notes: i.notes, entityType: "partner", entityName: p.name }}
+                          />
+                        )}
                       </div>
                     </li>
                   ))}

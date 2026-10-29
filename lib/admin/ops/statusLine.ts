@@ -48,6 +48,13 @@ export type FridayCounts = {
   followUpsNeeded: number;
   /** Hours blocked on the week grid this week (work_blocks). 0 = none drawn. */
   blockedHours?: number;
+  /**
+   * Weekly Plan v2 (PR 4): tasks committed on Monday and how many are done.
+   * Present only when a Monday commit exists; the line then counts against
+   * the commit instead of whatever is planned now.
+   */
+  committed?: number;
+  committedDone?: number;
   /** Tasks placed on this week's blocks, and how many closed (time accounting). */
   blockTasksTotal?: number;
   blockTasksDone?: number;
@@ -117,6 +124,20 @@ export function buildFridayStatus(role: Role, c: FridayCounts): WeekStatus {
     { key: "done", text: `${c.done} done`, flare: false },
     { key: "planned", text: `${c.planned} planned`, flare: false },
   ];
+
+  // Against the Monday commit: "N of M committed done" replaces the
+  // done/planned tally, and "still open" counts committed work only.
+  if ((c.committed ?? 0) > 0) {
+    const committed = c.committed as number;
+    const committedDone = c.committedDone ?? 0;
+    const open = committed - committedDone;
+    segments.splice(
+      1,
+      3,
+      { key: "open", text: `${open} still open`, flare: open > 0 },
+      { key: "done", text: `${committedDone} of ${committed} committed done`, flare: false }
+    );
+  }
 
   // Time accounting (Calendar & Time Blocking, Phase 6): did the blocked hours
   // produce the work. Only present when blocks were actually drawn, so a

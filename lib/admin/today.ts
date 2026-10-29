@@ -5,6 +5,18 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { rankObligations, whyFallback, type ObligationRow } from "@/lib/admin/todayRank";
 import { SOURCE_FALLBACK_HREF } from "@/lib/admin/actionQueue";
+import { calendarDayFilter, todayInTZ } from "@/lib/admin/ops/week";
+import { loadStewardshipRules } from "@/lib/fundraising/stewardship";
+import { recordHref } from "@/lib/admin/needsYou";
+import {
+  ackTitle,
+  buildAckFacts,
+  foldAckTasks,
+  orderAckSlots,
+  type AckFacts,
+  type AckGift,
+  type LinkedTask,
+} from "@/lib/admin/todayAck";
 
 /**
  * Spec Home, stage H1 — Today's data spine. Every panel binds to something
@@ -13,7 +25,9 @@ import { SOURCE_FALLBACK_HREF } from "@/lib/admin/actionQueue";
  * Reads:
  *  - Needs you: public.v_obligations through the SESSION client — the
  *    Contract 3 read, security_invoker, so RLS scopes it per caller and this
- *    loader can never see another org's obligations.
+ *    loader can never see another org's obligations. Acknowledgment rows are
+ *    then named from their gift + donor (session client, org-fenced) and
+ *    re-dated from the stewardship matrix (lib/admin/todayAck.ts).
  *  - Orientation: today's CACHED briefing narrative row (service-role, org
  *    fence). A cache miss composes a deterministic line from the obligation
  *    data instead of paying an LLM call on page load — the cron pre-warms
@@ -33,12 +47,23 @@ export type TodayObligation = ObligationRow & {
   why: string;
   /** True when `why` is the real recorded sentence, not the fallback. */
   whyRecorded: boolean;
-  /** Deep link to the obligation's source screen (the B2-piped map). */
+  /** Deep link to the obligation's record when it has one (the popout's
+   *  "Open full record"), else its source screen (the B2-piped map). */
   href: string;
+  /** What the row points at (view columns), for the popout's panels. */
+  related_entity_type: string | null;
+  related_entity_id: string | null;
   /** Snoozable/resolvable per the A3 dispatch rules. */
   snoozable: boolean;
   resolvable: boolean;
+  /** Acknowledgment rows only: the gift + donor behind the thank-you. */
+  gift?: AckFacts;
+  amount?: number;
+  /** Acknowledgment rows only: the gift's own tasks, folded into this row. */
+  linkedTasks?: LinkedTask[];
 };
+
+type ViewRow = ObligationRow & { related_entity_type: string | null; related_entity_id: string | null };
 
 // capture (C5) snoozes from Today but is never "Done" here: resolving a
 // capture discards the cards still waiting, which belongs on its own page
@@ -62,21 +87,23 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
   if (!ctx) return null;
   const supabase = createServerSupabase();
   const admin = getSupabaseAdmin();
-  const todayISO = new Date().toISOString().slice(0, 10);
-  const dayStart = `${todayISO}T00:00:00`;
-  const dayEnd = `${todayISO}T23:59:59`;
+  // The org's calendar day, not UTC's: after 5pm Pacific a UTC "today" is
+  // already tomorrow, which flipped due-today rows to overdue a day early.
+  const todayISO = todayInTZ();
+  // The briefing cron keys its narrative by UTC date (lib/admin/briefing/narrate.ts).
+  const briefDate = new Date().toISOString().slice(0, 10);
 
   const [obRes, narrativeRes, eventsRes, draftsRes] = await Promise.all([
     supabase
       .from("v_obligations")
-      .select("id, type, title, why_it_matters, due_date, state, module")
+      .select("id, type, title, why_it_matters, due_date, state, module, related_entity_type, related_entity_id")
       .eq("org_id", ctx.orgId)
       .limit(500),
     admin
       .from("bloomos_briefing_narrative")
       .select("headline")
       .eq("org_id", ctx.orgId)
-      .eq("brief_date", todayISO)
+      .eq("brief_date", briefDate)
       .maybeSingle(),
     // Org + owner fence: service-role read, scoped like the agenda reads.
     admin
@@ -85,8 +112,7 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
       .eq("org_id", ctx.orgId)
       .eq("owner_user_id", ctx.userId)
       .neq("status", "cancelled")
-      .gte("start_time", dayStart)
-      .lte("start_time", dayEnd)
+      .or(calendarDayFilter(todayISO))
       .order("start_time", { ascending: true })
       .limit(8),
     supabase
@@ -96,8 +122,24 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
       .eq("status", "drafted"),
   ]);
 
-  const rows = (obRes.data ?? []) as (ObligationRow & { id: string })[];
-  const ranked = rankObligations(rows, todayISO).map((r): TodayObligation => {
+  const allRows = (obRes.data ?? []) as ViewRow[];
+  const [ackFacts, ackTasks] = await Promise.all([
+    loadAckFacts(
+      supabase,
+      ctx.orgId,
+      allRows.filter((r) => r.type === "acknowledgment" && r.related_entity_id).map((r) => r.related_entity_id!),
+    ),
+    loadTaskLabels(supabase, ctx.orgId, allRows.filter((r) => r.type === "ops_task").map((r) => r.id.slice("ops_task:".length))),
+  ]);
+  const { rows: viewRows, linked } = foldAckTasks(allRows, ackTasks);
+  const rows = viewRows.map((r): ViewRow & { gift?: AckFacts; amount?: number; linkedTasks?: LinkedTask[] } => {
+    const gift = r.type === "acknowledgment" && r.related_entity_id ? ackFacts.get(r.related_entity_id) : undefined;
+    const linkedTasks = r.related_entity_id ? linked.get(r.related_entity_id) : undefined;
+    return gift
+      ? { ...r, title: ackTitle(gift, todayISO), due_date: gift.dueDate, gift, amount: gift.amount, linkedTasks }
+      : r;
+  });
+  const ranked = orderAckSlots(rankObligations(rows, todayISO), todayISO).map((r): TodayObligation => {
     const sourceId = r.id.slice(r.id.indexOf(":") + 1);
     const why = r.why_it_matters?.trim() || whyFallback(r, todayISO);
     return {
@@ -106,9 +148,9 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
       why,
       whyRecorded: Boolean(r.why_it_matters?.trim()),
       href:
-        r.type === "capture"
-          ? `/admin/capture/${sourceId}`
-          : SOURCE_FALLBACK_HREF[r.type as keyof typeof SOURCE_FALLBACK_HREF] ?? "/admin",
+        recordHref({ ...r, source_id: sourceId, constituent_id: r.gift?.constituentId }) ??
+        SOURCE_FALLBACK_HREF[r.type as keyof typeof SOURCE_FALLBACK_HREF] ??
+        "/admin",
       snoozable: SNOOZABLE.has(r.type),
       resolvable: RESOLVABLE.has(r.type),
     };
@@ -139,3 +181,64 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
     },
   };
 });
+
+/**
+ * The gift + donor facts behind each pending acknowledgment. Session client
+ * (RLS) AND an explicit org fence: RLS is permission-scoped, so a member of
+ * several orgs could otherwise read another of their orgs' gifts here. A
+ * failed read degrades to the view's plain "Thank-you due" rows.
+ */
+async function loadAckFacts(
+  supabase: ReturnType<typeof createServerSupabase>,
+  orgId: string,
+  giftIds: string[],
+): Promise<Map<string, AckFacts>> {
+  if (giftIds.length === 0) return new Map();
+  const { data: giftData, error } = await supabase
+    .from("gifts")
+    .select(
+      "id, amount, gift_date, method, external_source, recurring_plan_id, constituent_id, constituent:constituents(type, first_name, last_name, org_name, emails)",
+    )
+    .eq("org_id", orgId)
+    .in("id", giftIds);
+  if (error) {
+    console.error("[today] acknowledgment gifts read failed:", error.message);
+    return new Map();
+  }
+  const gifts = ((giftData ?? []) as unknown as AckGift[]).map((g) => ({ ...g, amount: Number(g.amount) }));
+  const donorIds = Array.from(new Set(gifts.map((g) => g.constituent_id).filter((id): id is string => Boolean(id))));
+  const [historyRes, rules] = await Promise.all([
+    donorIds.length
+      ? supabase
+          .from("gifts")
+          .select("id, constituent_id, gift_date")
+          .eq("org_id", orgId)
+          .in("constituent_id", donorIds)
+      : Promise.resolve({ data: [], error: null }),
+    loadStewardshipRules(supabase, orgId),
+  ]);
+  if (historyRes.error) console.error("[today] gift history read failed:", historyRes.error.message);
+  const history = (historyRes.data ?? []) as { id: string; constituent_id: string | null; gift_date: string }[];
+  return buildAckFacts(gifts, history, rules);
+}
+
+/** Labels for the ops_task rows on the list, so a thank-you's own tasks can
+ *  fold into it (foldAckTasks). Org-fenced like every read here; a failed
+ *  read just leaves the tasks as their own rows. */
+async function loadTaskLabels(
+  supabase: ReturnType<typeof createServerSupabase>,
+  orgId: string,
+  taskIds: string[],
+): Promise<{ id: string; title: string; due_date: string | null; labels: string[] | null }[]> {
+  if (taskIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from("ops_tasks")
+    .select("id, title, due_date, labels")
+    .eq("org_id", orgId)
+    .in("id", taskIds);
+  if (error) {
+    console.error("[today] task labels read failed:", error.message);
+    return [];
+  }
+  return (data ?? []) as { id: string; title: string; due_date: string | null; labels: string[] | null }[];
+}

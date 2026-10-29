@@ -80,6 +80,21 @@ export type UndoOutcome =
   /** Someone touched the row since it was filed; leave it alone. */
   | { kind: "changed"; field: string };
 
+/**
+ * Fix after confirm (C6). Only the two interaction appliers have one: tasks
+ * and drafts are edited where they live (Ops, Reed). Every write is fenced
+ * to the card's own row by id AND provenance, like undo, and stamps
+ * edited_at / edited_by. Each returns the row's fresh snapshot.
+ */
+export type FixOps = {
+  /** The entity type a move must stay within. */
+  entityType: "constituent" | "partner";
+  /** `update` comes from reviseUpdate(), already checked. */
+  revise(supabase: SupabaseClient, ctx: ApplyCtx, card: CardRow, update: Record<string, unknown>, at: string): Promise<Record<string, unknown>>;
+  move(supabase: SupabaseClient, ctx: ApplyCtx, card: CardRow, entityId: string, at: string): Promise<Record<string, unknown>>;
+  remove(supabase: SupabaseClient, ctx: ApplyCtx, card: CardRow): Promise<void>;
+};
+
 export type Applier = {
   table: AppliedTable;
   /** The permission the pre-check asks for before a card is claimed. */
@@ -88,6 +103,7 @@ export type Applier = {
   denied: string;
   apply(supabase: SupabaseClient, ctx: ApplyCtx, card: CardRow, capture: CaptureRow): Promise<ApplyResult>;
   undo(supabase: SupabaseClient, ctx: ApplyCtx, card: CardRow): Promise<UndoOutcome>;
+  fix?: FixOps;
 };
 
 /** A failure with an HTTP status the route returns verbatim. */
@@ -166,4 +182,49 @@ export function noonUtc(day: unknown): string {
 
 export function str(v: unknown): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
+}
+
+/** Interaction kinds a voice note can file (never email: Gmail sync owns it). */
+export const INTERACTION_KINDS = ["call", "meeting", "note", "event"] as const;
+
+/** The 404 when a fix finds the filed row already gone. */
+export const FILED_ROW_GONE = "This note isn't on the record any more.";
+
+const REVISE_KEYS = new Set(["kind", "occurred_at", "notes"]);
+
+/**
+ * Check a revise patch for a filed interaction. Same rules as apply: the kind
+ * list, a YYYY-MM-DD day (anchored at noon UTC, at most a day ahead), notes
+ * capped at 4000. Returns the column update, or throws a 400 / 422.
+ */
+export function reviseUpdate(raw: unknown, now: Date): Record<string, unknown> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new ApplyError(400, "patch must be an object");
+  const patch = raw as Record<string, unknown>;
+  const keys = Object.keys(patch);
+  if (keys.length === 0) throw new ApplyError(400, "Nothing to change.");
+  const unknownKey = keys.find((k) => !REVISE_KEYS.has(k));
+  if (unknownKey) throw new ApplyError(400, `unknown field: ${unknownKey}`);
+
+  const out: Record<string, unknown> = {};
+  if ("kind" in patch) {
+    if (typeof patch.kind !== "string" || !(INTERACTION_KINDS as readonly string[]).includes(patch.kind)) {
+      throw new ApplyError(422, "kind must be call/meeting/note/event");
+    }
+    out.kind = patch.kind;
+  }
+  if ("occurred_at" in patch) {
+    const day = patch.occurred_at;
+    if (typeof day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(Date.parse(`${day}T12:00:00Z`))) {
+      throw new ApplyError(422, "occurred_at must be a date (YYYY-MM-DD)");
+    }
+    if (Date.parse(`${day}T12:00:00Z`) > now.getTime() + 36 * 3600_000) {
+      throw new ApplyError(422, "The date can't be in the future.");
+    }
+    out.occurred_at = noonUtc(day);
+  }
+  if ("notes" in patch) {
+    if (patch.notes !== null && typeof patch.notes !== "string") throw new ApplyError(422, "notes must be text");
+    out.notes = (str(patch.notes) ?? "").slice(0, 4000) || null;
+  }
+  return out;
 }

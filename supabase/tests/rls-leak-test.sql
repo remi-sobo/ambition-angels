@@ -1997,11 +1997,9 @@ reset request.jwt.claim.sub;
 --     and the provenance unique keys turn a second apply into 23505;
 --   * an AA board_viewer is refused at the RLS layer on interactions,
 --     partner_interactions, and ops_tasks (the app's 403s).
--- reed_drafts is membership-only RLS (create_reed_drafts.sql, pre-existing,
--- flagged in the spec's security backlog), so a board_viewer insert there is
--- NOT refused by the database; the app pre-checks ops.write before filing a
--- draft. That gap is asserted below as the current behavior, so tightening
--- the policy later shows up here as a deliberate test change.
+-- reed_drafts was membership-only RLS (create_reed_drafts.sql). Since
+-- capture_drafts_permission.sql, capture_message rows need ops.write in the
+-- database too; the block after the board_viewer probes asserts it.
 reset role;
 reset request.jwt.claim.sub;
 set role authenticated;
@@ -2148,19 +2146,60 @@ begin
   end;
 end $$;
 
--- reed_drafts: membership-only today (pre-existing). Pinned as current
--- behavior; the app's ops.write pre-check is the gate until the policy moves.
+-- reed_drafts: capture_message rows need ops.write (capture_drafts_permission.sql).
+-- Restrictive policies scoped to that one kind: a board_viewer can no longer
+-- insert, update, or delete a Capture draft, while every other draft kind
+-- keeps its membership-only behavior (pinned so a change there is deliberate).
+reset role;
+reset request.jwt.claim.sub;
 do $$
-declare aa uuid; row_id uuid;
+declare aa uuid; d uuid;
 begin
   select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into public.reed_drafts (org_id, kind, title, body, status, created_by)
+    values (aa, 'capture_message', 'leak-test capture draft', 'x', 'drafted', 'remi')
+    returning id into d;
+  perform set_config('leak.capture_draft_id', d::text, false);
+end $$;
+
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$
+declare aa uuid; d uuid := current_setting('leak.capture_draft_id')::uuid; row_id uuid; n int;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  begin
+    insert into reed_drafts (org_id, kind, title, body, status, created_by)
+      values (aa, 'capture_message', 'bv draft', 'bv', 'drafted', 'bv');
+    raise exception 'LEAK: board_viewer inserted a capture_message draft';
+  exception when insufficient_privilege then null; -- expected
+  end;
+  update reed_drafts set body = 'tampered' where id = d;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: board_viewer edited a capture_message draft'; end if;
+  delete from reed_drafts where id = d;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: board_viewer deleted a capture_message draft'; end if;
+  -- Other kinds are untouched by this migration (membership-only, as before).
   insert into reed_drafts (org_id, kind, title, body, status, created_by)
-    values (aa, 'capture_message', 'bv draft', 'bv', 'drafted', 'bv')
+    values (aa, 'board_update', 'bv board draft', 'bv', 'drafted', 'bv')
     returning id into row_id;
   delete from reed_drafts where id = row_id;
-exception when insufficient_privilege then
-  raise notice 'reed_drafts now refuses board_viewer: tighten this block and the C3 note';
 end $$;
+
+-- AA staff hold ops.write: they may edit the org's capture draft.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$
+declare d uuid := current_setting('leak.capture_draft_id')::uuid; n int;
+begin
+  update reed_drafts set body = 'edited by staff' where id = d;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'AA staff (ops.write) cannot edit a capture_message draft'; end if;
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+delete from public.reed_drafts where id = current_setting('leak.capture_draft_id')::uuid;
 
 -- Anon: the match RPC stays closed after capture_rpc_grants.sql.
 reset role;
@@ -2320,5 +2359,123 @@ end $$;
 
 reset role;
 reset request.jwt.claim.sub;
+
+-- ════ Capture C6: fix after confirm, and the edited stamp ═════════════════
+-- A capture-filed interaction carries edited_at / edited_by (capture_fix_stamps
+-- .sql). The creator fixes it through their own card: the card is invisible to
+-- everyone else (capture_cards are personal), a board_viewer can't change or
+-- delete the row, and tenant two sees neither.
+reset role;
+reset request.jwt.claim.sub;
+do $$
+declare aa uuid; a uuid; b uuid; cap uuid; k uuid; row_id uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into public.constituents (org_id, type, first_name, last_name, source)
+    values (aa, 'person', 'C6', 'Wrongmatch', 'manual') returning id into a;
+  insert into public.constituents (org_id, type, first_name, last_name, source)
+    values (aa, 'person', 'C6', 'Rightmatch', 'manual') returning id into b;
+  insert into public.captures (org_id, created_by, source_surface, transcript, status)
+    values (aa, '00000000-0000-0000-0000-000000000001', 'mobile_plus', 'leak-test C6 capture', 'done')
+    returning id into cap;
+  insert into public.capture_cards (org_id, capture_id, created_by, position, dest, status, entity_type, entity_id, payload)
+    values (aa, cap, '00000000-0000-0000-0000-000000000001', 1, 'interaction', 'confirmed', 'constituent', a,
+            '{"kind":"note","notes":"leak-test C6"}'::jsonb)
+    returning id into k;
+  insert into public.interactions (org_id, constituent_id, kind, occurred_at, notes, logged_by, external_source, external_id)
+    values (aa, a, 'note', now(), 'leak-test C6', 'remi', 'capture', k::text)
+    returning id into row_id;
+  update public.capture_cards set applied_table = 'interactions', applied_id = row_id where id = k;
+  perform set_config('leak.c6_card', k::text, false);
+  perform set_config('leak.c6_row', row_id::text, false);
+  perform set_config('leak.c6_a', a::text, false);
+  perform set_config('leak.c6_b', b::text, false);
+end $$;
+
+-- The creator: sees the card, revises and moves the row, and the stamp sticks.
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare k uuid := current_setting('leak.c6_card')::uuid; r uuid := current_setting('leak.c6_row')::uuid;
+        b uuid := current_setting('leak.c6_b')::uuid; n int;
+begin
+  if (select count(*) from public.capture_cards where id = k) <> 1 then raise exception 'C6: the creator cannot see their filed card'; end if;
+  update public.interactions set notes = 'fixed', edited_at = now(), edited_by = 'remi'
+    where id = r and external_source = 'capture' and external_id = k::text;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'C6: the creator cannot revise their filed interaction'; end if;
+  update public.interactions set constituent_id = b, edited_at = now(), edited_by = 'remi'
+    where id = r and external_source = 'capture' and external_id = k::text;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'C6: the creator cannot move their filed interaction'; end if;
+  update public.capture_cards set entity_id = b where id = k;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'C6: the creator cannot point their card at the new record'; end if;
+  if (select edited_by from public.interactions where id = r) is distinct from 'remi'
+     or (select edited_at from public.interactions where id = r) is null then
+    raise exception 'C6: the edited stamp did not stick';
+  end if;
+end $$;
+
+-- AA staff (same org): the card is not theirs to see, so no Fix.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$
+begin
+  if (select count(*) from public.capture_cards where id = current_setting('leak.c6_card')::uuid) <> 0 then
+    raise exception 'LEAK: AA staff can see the owner''s filed capture card';
+  end if;
+end $$;
+
+-- AA board_viewer: can't change or delete the filed row.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$
+declare r uuid := current_setting('leak.c6_row')::uuid; n int;
+begin
+  begin
+    update public.interactions set notes = 'bv', edited_by = 'bv' where id = r;
+    get diagnostics n = row_count;
+    if n <> 0 then raise exception 'LEAK: board_viewer edited a capture-filed interaction'; end if;
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    delete from public.interactions where id = r;
+    get diagnostics n = row_count;
+    if n <> 0 then raise exception 'LEAK: board_viewer deleted a capture-filed interaction'; end if;
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+
+-- Tenant two: sees neither the row nor the card, and can't touch the row.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare r uuid := current_setting('leak.c6_row')::uuid; n int;
+begin
+  if (select count(*) from public.interactions where id = r) <> 0 then raise exception 'LEAK: tenant-two sees an AA capture-filed interaction'; end if;
+  if (select count(*) from public.capture_cards where id = current_setting('leak.c6_card')::uuid) <> 0 then
+    raise exception 'LEAK: tenant-two sees an AA capture card';
+  end if;
+  update public.interactions set notes = 't2' where id = r;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: tenant-two edited an AA interaction'; end if;
+end $$;
+
+-- The creator removes it: the row goes, the card is discarded.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare k uuid := current_setting('leak.c6_card')::uuid; r uuid := current_setting('leak.c6_row')::uuid; n int;
+begin
+  delete from public.interactions where id = r and external_source = 'capture' and external_id = k::text;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'C6: the creator cannot remove their filed interaction'; end if;
+  update public.capture_cards set status = 'discarded' where id = k and status = 'confirmed';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'C6: the creator cannot discard their removed card'; end if;
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+delete from public.capture_cards where id = current_setting('leak.c6_card')::uuid;
+delete from public.captures where transcript = 'leak-test C6 capture';
+delete from public.constituents where id in (current_setting('leak.c6_a')::uuid, current_setting('leak.c6_b')::uuid);
 
 select 'RLS leak test: ALL CHECKS PASSED' as result;

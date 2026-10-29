@@ -57,6 +57,7 @@ const PARSE_PATH = [
   "lib/capture/staff.ts",
   "lib/capture/constants.ts",
   "lib/capture/types.ts",
+  "lib/capture/evalScore.ts",
   "app/api/admin/capture/route.ts",
   "app/api/admin/capture/[id]/route.ts",
 ];
@@ -65,6 +66,7 @@ const ORCHESTRATION = [
   "lib/capture/confirm.ts",
   "lib/capture/edit.ts",
   "lib/capture/deps.ts",
+  "lib/capture/fix.ts",
   "app/api/admin/capture/cards/[id]/route.ts",
   "app/api/admin/capture/[id]/confirm-all/route.ts",
   "app/api/admin/capture/candidates/route.ts",

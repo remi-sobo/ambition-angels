@@ -10,6 +10,7 @@ import { getSessionPrograms } from "@/lib/admin/program/programs";
 import { getProgramTerms } from "@/lib/admin/terminology";
 import { getOrgContext } from "@/lib/admin/auth";
 import { TYPE } from "@/lib/admin/typeScale";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 
 // Cohorts & attendance (Ring 3, modules/02-program.md "Cohorts"):
 // program × term × site groupings with capacity, sessions, and dosage
@@ -56,7 +57,9 @@ export default async function CohortsPage() {
         .order("start_date", { ascending: false, nullsFirst: false }),
       supabase.from("cohort_members").select("cohort_id, student_id, status").eq("org_id", orgId),
       supabase.from("cohort_sessions").select("id, cohort_id, session_date, status").eq("org_id", orgId),
-      supabase.from("attendance").select("session_id, status").eq("org_id", orgId),
+      fetchAll((from, to) =>
+        supabase.from("attendance").select("session_id, status").eq("org_id", orgId).order("id").range(from, to),
+      ),
       getSessionPrograms(),
       getProgramTerms(),
     ]);

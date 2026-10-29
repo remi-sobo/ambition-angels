@@ -22,6 +22,7 @@ import {
 import { useIsOwner } from "./AdminUserContext";
 import { useAssignees, withSelected } from "../_lib/useAssignees";
 import { TYPE } from "@/lib/admin/typeScale";
+import { ESTIMATE_CHIPS, formatEstimate } from "@/lib/admin/ops/estimates";
 
 /** Pull any report screenshot URLs out of a task description for inline preview. */
 function extractImageUrls(text: string | null): string[] {
@@ -71,6 +72,7 @@ export default function TaskEditModal({
   const [projectId, setProjectId] = useState(task.project_id ?? "");
   const [pinToday, setPinToday] = useState(task.pinned_for_today);
   const [pinWeek, setPinWeek] = useState(task.pinned_for_this_week);
+  const [estimate, setEstimate] = useState<number | null>(task.estimated_minutes ?? null);
 
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [saving, setSaving] = useState(false);
@@ -269,6 +271,7 @@ export default function TaskEditModal({
           project_id: projectId || null,
           pinned_for_today: pinToday,
           pinned_for_this_week: pinWeek,
+          estimated_minutes: estimate,
         }),
       });
       if (!r.ok) {
@@ -531,6 +534,39 @@ export default function TaskEditModal({
               ))}
             </select>
           </Field>
+
+          {/* A div, not Field: Field is a <label>, which would forward clicks
+              to the first chip. */}
+          <div role="group" aria-labelledby="task-estimate-label">
+            <div id="task-estimate-label" className="text-xs uppercase tracking-wider text-ink-2 mb-1">
+              Estimate
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {ESTIMATE_CHIPS.map((m) => {
+                const on = estimate === m;
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setEstimate(on ? null : m)}
+                    aria-pressed={on}
+                    className={`text-sm px-2.5 py-1 rounded-control border tabular-nums transition-colors ${
+                      on
+                        ? "bg-orange text-white border-orange"
+                        : "bg-tile border-hairline text-ink-1 hover:border-orange/50"
+                    }`}
+                  >
+                    {formatEstimate(m)}
+                  </button>
+                );
+              })}
+              {estimate != null && !(ESTIMATE_CHIPS as readonly number[]).includes(estimate) && (
+                <span className="text-sm px-2.5 py-1 rounded-control border border-orange bg-orange-light text-orange-dark tabular-nums">
+                  {formatEstimate(estimate)}
+                </span>
+              )}
+            </div>
+          </div>
 
           <div className="flex items-center gap-5 text-sm text-ink-1 pt-1">
             <label className="flex items-center gap-2 cursor-pointer">

@@ -101,6 +101,12 @@ export type OpsTask = {
    */
   roll_count: number;
   /**
+   * Weekly Plan v2: expected effort in minutes (1 to 960). Null = not
+   * estimated; the Plan capacity meter counts the user's default block length
+   * for it and flags it.
+   */
+  estimated_minutes: number | null;
+  /**
    * The calendar_events block BloomOS wrote when this task was scheduled into a
    * time slot (Phase 4). Null = planned but not on the calendar. Set/cleared by
    * the task→calendar write engine, never by hand.

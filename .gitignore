@@ -6,9 +6,8 @@ out/
 node_modules/
 
 # env files -- never commit these
-.env
-.env.local
-.env.*.local
+.env*
+!.env.example
 
 # misc
 .DS_Store

@@ -239,6 +239,7 @@ ordered=(
   capture_drafts_permission.sql
   capture_fix_stamps.sql
   add_estimated_minutes_to_ops_tasks.sql
+  create_week_commitments.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

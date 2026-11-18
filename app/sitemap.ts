@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/impact", priority: 0.8 },
     { path: "/schools", priority: 0.9 },
     { path: "/donate", priority: 0.9 },
+    { path: "/coach", priority: 0.6 },
     { path: "/founder", priority: 0.5 },
     { path: "/meet", priority: 0.5 },
     { path: "/teens", priority: 0.7 },

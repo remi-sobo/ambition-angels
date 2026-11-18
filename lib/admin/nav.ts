@@ -116,6 +116,7 @@ export const V2_DESTINATIONS: V2Destination[] = [
       { key: "attendance", label: "Attendance", href: "/admin/programs/attendance", feature: "modules.program" },
       { key: "partners", label: "Partners", href: "/admin/programs/partners", feature: "modules.partners", term: "partner" },
       { key: "content", label: "Content", href: "/admin/programs/content", feature: "modules.content" },
+      { key: "coach", label: "Coach", href: "/admin/programs/coach", feature: "aa.coach" },
     ],
   },
   {

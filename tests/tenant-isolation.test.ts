@@ -33,7 +33,7 @@ const TENANT_TABLES = new Set([
   "board_meetings", "board_members",
   "bookings", "briefings", "calendar_events", "calendar_sync_jobs", "campaigns",
   "cohort_members", "cohort_sessions", "cohorts", "compliance_items", "connection_candidates",
-  "connections", "constituents", "custom_field_defs", "demoday_notes", "demoday_signups",
+  "coach_matches", "coach_people", "coach_sessions", "connections", "constituents", "custom_field_defs", "demoday_notes", "demoday_signups",
   "document_links", "documents", "email_campaigns", "email_sends", "email_suppressions",
   "entity_comments", "external_refs", "fin_budget", "fin_categories", "fin_category_rules",
   "fin_config", "fin_imports", "fin_reconciliation_items", "fin_revenue_commitments",

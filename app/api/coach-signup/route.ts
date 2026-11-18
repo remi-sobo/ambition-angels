@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getResidentOrgId } from "@/lib/admin/orgs";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
-// Ambition Coach volunteer sign-up (/coach). Writes onto the BloomOS
-// constituent spine rather than a new table: an existing person gets the
-// coach tag and their answers merged into custom_fields.coach; a new person
-// is created with source "coach_signup". No migration needed.
-
-const COACH_TAG = "ambition_coach_interest";
+// Ambition Coach sign-up (/coach). One form, two kinds: a professional
+// volunteering to coach, or a young adult asking for a coach. Rows land in
+// coach_signups for the resident org and are worked in BloomOS at
+// /admin/programs/coach (fenced by aa.coach). Whitelisted fields only;
+// status is set by staff, never by the client.
 
 const clean = (v: unknown, max = 500): string =>
   typeof v === "string" ? v.trim().slice(0, max) : "";
@@ -17,95 +17,95 @@ const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(`coach-signup:${getClientIp(req)}`, { limit: 8, windowMs: 60 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many sign-ups from this connection. Please try again later." }, { status: 429 });
+  }
+
   const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
 
   // Honeypot: real people never fill this hidden field.
   if (clean(body.website)) return NextResponse.json({ success: true });
+
+  const kind = body.kind === "student" ? "student" : body.kind === "coach" ? "coach" : null;
+  if (!kind) return NextResponse.json({ error: "Choose coach or student." }, { status: 400 });
 
   const first_name = clean(body.first_name, 80);
   const last_name = clean(body.last_name, 80);
   const email = clean(body.email, 200).toLowerCase();
   const phone = clean(body.phone, 40);
-  const company = clean(body.company, 120);
+  const field = clean(body.field, 120);
   const role = clean(body.role, 160);
-  const field = clean(body.field, 80);
+  const company = clean(body.company, 120);
   const linkedin = clean(body.linkedin, 300);
+  const school = clean(body.school, 160);
+  const program = clean(body.program, 160);
+  const ageRaw = clean(body.age, 3);
   const timing = clean(body.timing, 80);
   const referral = clean(body.referral, 200);
   const note = clean(body.note, 1500);
 
-  if (!first_name || !last_name || !email || !role || !field) {
-    return NextResponse.json({ error: "Please fill in your name, email, role and field." }, { status: 400 });
+  if (!first_name || !last_name || !email || !field) {
+    return NextResponse.json({ error: "Please add your name, email and field." }, { status: 400 });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: "That email address doesn't look right." }, { status: 400 });
   }
-
-  const coach = {
-    signed_up_at: new Date().toISOString(),
-    company,
-    role,
-    field,
-    linkedin,
-    timing,
-    referral,
-    note,
-    status: "new",
-  };
+  if (kind === "coach" && !role) {
+    return NextResponse.json({ error: "Please add your role." }, { status: 400 });
+  }
+  let age: number | null = null;
+  if (kind === "student") {
+    age = /^\d{1,2}$/.test(ageRaw) ? Number(ageRaw) : null;
+    if (age === null || age < 16 || age > 30) {
+      return NextResponse.json({ error: "Please add your age. Ambition Coach is for ages 18 to 24." }, { status: 400 });
+    }
+    if (age < 18) {
+      return NextResponse.json(
+        { error: "Ambition Coach is for ages 18 to 24 right now. Ask your teacher or program about introships on Ambition." },
+        { status: 400 },
+      );
+    }
+  }
 
   try {
-    const supabase = getSupabaseAdmin();
-    const org_id = await getResidentOrgId();
-
-    const { data: existing } = await supabase
-      .from("constituents")
-      .select("id, tags, phones, custom_fields")
-      .eq("org_id", org_id)
-      .contains("emails", [email])
-      .is("archived_at", null)
-      .limit(1)
-      .maybeSingle();
-
-    if (existing) {
-      const tags: string[] = Array.from(new Set([...(existing.tags ?? []), COACH_TAG]));
-      const phones: string[] =
-        phone && !(existing.phones ?? []).includes(phone) ? [...(existing.phones ?? []), phone] : existing.phones ?? [];
-      const custom_fields = { ...(existing.custom_fields ?? {}), coach };
-      const { error } = await supabase
-        .from("constituents")
-        .update({ tags, phones, custom_fields, updated_at: new Date().toISOString() })
-        .eq("id", existing.id);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase.from("constituents").insert({
-        org_id,
-        type: "person",
+    const { error } = await getSupabaseAdmin()
+      .from("coach_signups")
+      .insert({
+        org_id: await getResidentOrgId(),
+        kind,
         first_name,
         last_name,
-        org_name: company || null,
-        emails: [email],
-        phones: phone ? [phone] : [],
-        tags: [COACH_TAG],
-        source: "coach_signup",
-        custom_fields: { coach },
+        email,
+        phone: phone || null,
+        field,
+        role: kind === "coach" ? role : null,
+        company: kind === "coach" ? company || null : null,
+        linkedin: linkedin || null,
+        age,
+        school: kind === "student" ? school || null : null,
+        program: kind === "student" ? program || null : null,
+        timing: timing || null,
+        referral: referral || null,
+        note: note || null,
       });
-      if (error) throw error;
-    }
+    if (error) throw error;
   } catch (err) {
     console.error("coach-signup save failed:", err);
-    return NextResponse.json({ error: "We couldn't save that. Please try again, or email hello@ambitionangels.org." }, { status: 500 });
+    return NextResponse.json(
+      { error: "We couldn't save that. Please try again, or email hello@ambitionangels.org." },
+      { status: 500 },
+    );
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);
 
-  resend.emails
-    .send({
-      from: "Remi Sobomehin <careers@mail.ambitionangels.org>",
-      replyTo: "remi@ambitionangels.org",
-      to: email,
-      subject: "Thanks for raising your hand",
-      text: `Hi ${first_name},
+  const confirmation =
+    kind === "coach"
+      ? `Hi ${first_name},
 
 Thank you for signing up to be an Ambition Coach. It means a lot.
 
@@ -115,27 +115,49 @@ If you want to talk sooner, just reply to this email.
 
 With gratitude,
 Remi
-Ambition Angels`,
+Ambition Angels`
+      : `Hi ${first_name},
+
+Thanks for signing up for an Ambition Coach. We got your info.
+
+Here's what happens next. I'll look for a professional who works in ${field} and reach out when I have a match. When you get the intro email, it's on you to reply and get your first session on the calendar.
+
+If you have questions, just reply to this email.
+
+Rooting for you,
+Remi
+Ambition Angels`;
+
+  resend.emails
+    .send({
+      from: "Remi Sobomehin <careers@mail.ambitionangels.org>",
+      replyTo: "remi@ambitionangels.org",
+      to: email,
+      subject: kind === "coach" ? "Thanks for raising your hand" : "We got your Ambition Coach sign-up",
+      text: confirmation,
     })
     .catch((err) => console.error("coach-signup confirmation error:", err));
+
+  const lines =
+    kind === "coach"
+      ? `Role: ${esc(role)}${company ? ` at ${esc(company)}` : ""}<br>LinkedIn: ${esc(linkedin) || "not given"}<br>`
+      : `Age: ${age}<br>School: ${esc(school) || "not given"}<br>Program: ${esc(program) || "not given"}<br>`;
 
   resend.emails
     .send({
       from: "Ambition Angels <careers@mail.ambitionangels.org>",
       to: "remi@ambitionangels.org",
-      subject: `New Ambition Coach: ${first_name} ${last_name} (${field})`,
+      subject: `New Ambition Coach ${kind}: ${first_name} ${last_name} (${field})`,
       html: `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.7">
-<strong>New Ambition Coach sign-up</strong><br><br>
+<strong>New Ambition Coach ${kind} sign-up</strong><br><br>
 Name: ${esc(first_name)} ${esc(last_name)}<br>
 Email: ${esc(email)}<br>
 Phone: ${esc(phone) || "not given"}<br>
-Role: ${esc(role)}${company ? ` at ${esc(company)}` : ""}<br>
 Field: ${esc(field)}<br>
-LinkedIn: ${esc(linkedin) || "not given"}<br>
-Timing: ${esc(timing) || "not given"}<br>
+${lines}Timing: ${esc(timing) || "not given"}<br>
 Heard from: ${esc(referral) || "not given"}<br>
 Note: ${esc(note) || "none"}<br><br>
-Saved to BloomOS constituents, tag ${COACH_TAG}.
+See all sign-ups in BloomOS: https://www.ambitionangels.org/admin/programs/coach
 </div>`,
     })
     .catch((err) => console.error("coach-signup notification error:", err));

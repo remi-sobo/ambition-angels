@@ -316,6 +316,7 @@ const TARGET_GATES: Record<string, string> = {
   "/admin/programs/overview": "modules.program",
   "/admin/programs/partners": "modules.partners",
   "/admin/programs/content": "modules.content",
+  "/admin/programs/coach": "aa.coach",
   "/admin/organization/board": "modules.board",
   "/admin/organization/compliance": "modules.compliance",
 };
@@ -343,6 +344,7 @@ describe("per-org host behavior (gate keys mirror the V1 sections)", () => {
       "/admin/impact/analytics",       // aa.site_analytics (AA-only)
       "/admin/organization/strategy",  // modules.strategy
       "/admin/organization/team",      // modules.staff
+      "/admin/programs/coach",         // aa.coach (AA-only)
       "/admin/programs/content",       // modules.content (AA-only)
       "/admin/work/meetings",          // modules.meetings
       "/admin/work/my-week",           // modules.meetings since W2 (V1 calendar had no gate; the model's deliberate shape)

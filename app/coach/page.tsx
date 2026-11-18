@@ -50,6 +50,10 @@ const hours = [
 
 const faqs = [
   {
+    q: "I'm a student. How do I get a coach?",
+    a: "Sign up below and pick \"I want a coach.\" If you're 18 to 24 and know the field you're aiming at, Remi will find someone who does that work and introduce you. It's free.",
+  },
+  {
     q: "Do I need to be senior?",
     a: "No. Someone a few years into the work is often the best coach, because the path is still fresh. What matters is that you do the job they're trying to get.",
   },
@@ -102,10 +106,10 @@ export default function CoachPage() {
                 Sign up to coach
               </a>
               <a
-                href="#how"
+                href="#student"
                 className="bg-cream/5 hover:bg-cream/10 text-cream border border-cream/20 font-heading font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center justify-center"
               >
-                See how it works
+                I want a coach
               </a>
             </div>
           </div>
@@ -201,16 +205,21 @@ export default function CoachPage() {
       </section>
 
       {/* SIGNUP */}
-      <section id="signup" className="bg-ink section-pad scroll-mt-20" style={dotTexture}>
+      <section id="signup" className="bg-ink section-pad scroll-mt-20 relative" style={dotTexture}>
+        <span id="student" className="absolute top-0 scroll-mt-20" aria-hidden="true" />
         <div className="container-site grid grid-cols-1 lg:grid-cols-[1fr_1.3fr] gap-12 lg:gap-16 items-start">
           <div>
             <div className="text-xs font-heading font-semibold text-orange uppercase tracking-widest mb-4">Sign up</div>
             <h2 className="font-display font-black text-4xl lg:text-5xl text-cream uppercase leading-[0.95] mb-6">
               Raise your hand.
             </h2>
+            <p className="text-gray-mid text-lg leading-relaxed mb-4">
+              <span className="text-cream font-semibold">Coaches:</span> tell us what you do. When a student is heading
+              into your field, Remi will reach out with their profile. You decide from there.
+            </p>
             <p className="text-gray-mid text-lg leading-relaxed mb-6">
-              Tell us what you do. When a student is heading into your field, Remi will reach out with their profile. You
-              decide from there.
+              <span className="text-cream font-semibold">Students:</span> tell us the field you want. We&apos;ll find
+              someone who does that work and set up the intro. Everything for the program lives on your own page.
             </p>
             <p className="text-gray-mid text-sm leading-relaxed">
               Questions first? Email{" "}

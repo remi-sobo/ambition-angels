@@ -50,6 +50,10 @@ const hours = [
 
 const faqs = [
   {
+    q: "I'm a student. How do I get a coach?",
+    a: "Sign up below and pick \"I want a coach.\" If you're 18 to 24 and know the field you want, Remi will find someone who does that work and introduce you. It's free.",
+  },
+  {
     q: "Do I need to be senior?",
     a: "No. If you're a few years into the job, you may be the best coach, because you still remember how you got in. What matters is that you do the work they want to do.",
   },
@@ -105,10 +109,10 @@ export default function CoachPage() {
                 Sign up to coach
               </a>
               <a
-                href="#how"
+                href="#student"
                 className="bg-cream/5 hover:bg-cream/10 text-cream border border-cream/20 font-heading font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center justify-center"
               >
-                How it works
+                I want a coach
               </a>
             </div>
           </div>
@@ -190,7 +194,7 @@ export default function CoachPage() {
       {/* FAQ */}
       <section className="bg-cream section-pad">
         <div className="container-site">
-          <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink leading-tight mb-10">Questions coaches ask</h2>
+          <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink leading-tight mb-10">Common questions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
             {faqs.map((f) => (
               <div key={f.q}>
@@ -203,16 +207,22 @@ export default function CoachPage() {
       </section>
 
       {/* SIGNUP */}
-      <section id="signup" className="bg-ink section-pad scroll-mt-20" style={dotTexture}>
+      <section id="signup" className="bg-ink section-pad scroll-mt-20 relative" style={dotTexture}>
+        <span id="student" className="absolute top-0 scroll-mt-20" aria-hidden="true" />
         <div className="container-site grid grid-cols-1 lg:grid-cols-[1fr_1.3fr] gap-12 lg:gap-16 items-start">
           <div>
             <div className="text-xs font-heading font-semibold text-orange uppercase tracking-widest mb-4">Sign up</div>
             <h2 className="font-display font-black text-4xl lg:text-5xl text-cream uppercase leading-[0.95] mb-6">
               Raise your hand.
             </h2>
+            <p className="text-gray-mid text-lg leading-relaxed mb-4">
+              <span className="text-cream font-semibold">Coaches:</span> tell us what you do. Signing up is not a
+              commitment. When a student wants to get into your field, Remi reaches out first and shares their profile.
+              You decide from there.
+            </p>
             <p className="text-gray-mid text-lg leading-relaxed mb-6">
-              Tell us what you do. Signing up is not a commitment. When a student wants to get into your field, Remi
-              reaches out first and shares their profile. You decide from there.
+              <span className="text-cream font-semibold">Students:</span> tell us the field you want. We&apos;ll find
+              someone who does that work and set up the intro. Everything for the program lives on your own page.
             </p>
             <p className="text-gray-mid text-sm leading-relaxed">
               Questions first? Email{" "}

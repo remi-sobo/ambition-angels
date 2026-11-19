@@ -105,10 +105,10 @@ export default function CoachSignupForm() {
   if (submitted) {
     return (
       <div className="bg-cream/10 border border-cream/20 rounded-card-lg px-8 py-10 text-center" role="status">
-        <p className="font-heading font-bold text-cream text-2xl mb-3">Thank you, {form.first_name}.</p>
+        <p className="font-heading font-bold text-cream text-2xl mb-3">Thanks, {form.first_name}.</p>
         <p className="text-gray-mid text-base leading-relaxed max-w-md mx-auto">
           {kind === "coach"
-            ? "Remi will reach out personally for a short call. Nothing is set until you see a student's profile and say yes."
+            ? "Remi will reach out for a short call. Nothing is set until you see a student's profile and say yes."
             : "Remi will reach out when he has a coach in your field. When the intro comes, it's on you to reply and book session 1."}{" "}
           Check your inbox for a link to your own Ambition Coach page.
         </p>
@@ -286,12 +286,12 @@ export default function CoachSignupForm() {
         disabled={submitting}
         className="w-full bg-orange hover:bg-orange-dark text-white font-heading font-semibold text-base px-8 py-5 rounded-full transition-colors min-h-[60px] disabled:opacity-60"
       >
-        {submitting ? "Sending…" : kind === "coach" ? "I'm in. Count me as a coach." : "Match me with a coach"}
+        {submitting ? "Sending…" : kind === "coach" ? "Sign up to coach" : "Match me with a coach"}
       </button>
 
       <p className="text-center text-xs text-gray-mid leading-relaxed">
         {kind === "coach"
-          ? "Signing up is not a commitment. Remi will call you first, and you'll see a student's profile before anything is set."
+          ? "Signing up is not a commitment. Remi reaches out first, and you see a student's profile before anything is set."
           : "It's free. We'll only use your info to find you a coach."}
       </p>
     </form>

@@ -5,11 +5,11 @@ import PageVisitedEvent from "@/components/PageVisitedEvent";
 export const metadata: Metadata = {
   title: "Become an Ambition Coach",
   description:
-    "Four conversations, about five hours, with a young person trying to get into your field. They leave with a written plan and a first move.",
+    "Meet four times with a student who wants to get into your field. Tell them what the work is really like. They leave with three next steps.",
   openGraph: {
     title: "Become an Ambition Coach",
     description:
-      "Four conversations, about five hours, with a young person trying to get into your field. They leave with a written plan and a first move.",
+      "Meet four times with a student who wants to get into your field. Tell them what the work is really like. They leave with three next steps.",
   },
 };
 
@@ -21,61 +21,65 @@ const dotTexture = {
 const sessions = [
   {
     n: "1",
-    name: "The reality check",
-    body: "You share your path, the real version. They tell you why they want this field. Together you get clear on what the job is and what it isn't.",
+    name: "How you got here",
+    body: "Tell them how you got into the field, including what didn't go to plan. They tell you why they want this work. By the end, they should know what the job looks like on a normal day.",
   },
   {
     n: "2",
-    name: "The map",
-    body: "What actually gets someone in. The credential that matters, the cheapest real route, the entry roles nobody talks about, and what you'd do if you were starting at their age.",
+    name: "How people get in",
+    body: "The training or degree that actually matters, the cheapest route that works, and the entry-level jobs most people don't know about. What would you do if you were starting at their age?",
   },
   {
     n: "3",
-    name: "The work",
-    body: "Skills, resume, and how your field is changing. What you did three years ago that you don't do now, and what new hires need that you didn't.",
+    name: "What the work takes",
+    body: "The skills you use every week and what hiring managers look for. How your field has changed in the last few years, and what new hires need now that you didn't.",
   },
   {
     n: "4",
-    name: "The move",
-    body: "They read their plan back to you. Three dated actions for the next 90 days. If you can, one introduction to a person or opportunity. One is enough.",
+    name: "Next steps",
+    body: "They read you their three next steps, each with a date in the next 90 days. You help make them specific. If you can make one introduction, great. It's not required.",
   },
 ];
 
 const hours = [
-  { label: "Orientation call", time: "20 min" },
+  { label: "Call with Remi", time: "20 min" },
   { label: "Four sessions", time: "45 min each" },
-  { label: "Prep per session", time: "about 15 min" },
+  { label: "Prep before each", time: "about 15 min" },
   { label: "Total", time: "about 5 hours" },
 ];
 
 const faqs = [
   {
     q: "I'm a student. How do I get a coach?",
-    a: "Sign up below and pick \"I want a coach.\" If you're 18 to 24 and know the field you're aiming at, Remi will find someone who does that work and introduce you. It's free.",
+    a: "Sign up below and pick \"I want a coach.\" If you're 18 to 24 and know the field you want, Remi will find someone who does that work and introduce you. It's free.",
   },
   {
     q: "Do I need to be senior?",
-    a: "No. Someone a few years into the work is often the best coach, because the path is still fresh. What matters is that you do the job they're trying to get.",
+    a: "No. If you're a few years into the job, you may be the best coach, because you still remember how you got in. What matters is that you do the work they want to do.",
   },
   {
     q: "Who are the students?",
-    a: "Young adults, 18 to 24, reached through programs we partner with, like EOYDC in East Oakland. Most are in college or just out, and the first in their family to aim at the field they've picked.",
+    a: "Young adults, 18 to 24, in programs we partner with, like EOYDC in East Oakland. Most are in college or just out. Many are the first in their family to go after the field they picked.",
   },
   {
     q: "Is it in person?",
-    a: "Virtual by default. If you and your student are both local and want to meet for coffee, great.",
+    a: "Usually on video. If you live near each other and want to meet in person, that's fine too.",
   },
   {
     q: "What if they decide the field isn't for them?",
-    a: "That counts as a win. Better to learn it in four conversations than after years and tuition. Your job is to be honest, not to recruit.",
+    a: "That's a good outcome. Better to find out in four conversations than after a year of school. Be honest about the work. You're not recruiting.",
   },
   {
     q: "What do I have to prepare?",
-    a: "Almost nothing. Before each session we send a one-page card with what to cover and what your student has been working on. You show up as yourself.",
+    a: "Very little. Before each session we send you a one-page guide with what to cover and what the student has been working on.",
   },
   {
     q: "What do I sign?",
-    a: "A short volunteer agreement and a 20-minute orientation call with Remi. The student schedules every session and writes the plan.",
+    a: "A short volunteer agreement. The student schedules every session and writes their own plan.",
+  },
+  {
+    q: "Is signing up a commitment?",
+    a: "No. It tells us you're open to it. Remi reaches out for a short call first, and you see a student's profile before anything is set.",
   },
 ];
 
@@ -92,11 +96,10 @@ export default function CoachPage() {
               Ambition Coach
             </div>
             <h1 className="font-display font-black text-5xl sm:text-6xl lg:text-7xl text-cream mb-6 leading-[0.95] tracking-tight uppercase">
-              Four conversations. One young person. A real plan.
+              Help one student understand your field.
             </h1>
             <p className="text-gray-mid text-lg leading-relaxed mb-10 max-w-2xl">
-              A young person has picked your field and has nobody in it to ask. You meet four times. They leave with a
-              written Ambition Plan and a first move. It takes about five hours of your time.
+              Meet four times. Tell them what the work is really like. Help them leave with three next steps.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <a
@@ -120,21 +123,20 @@ export default function CoachPage() {
       <section className="bg-cream section-pad">
         <div className="container-site grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 items-center">
           <div>
-            <div className="text-xs font-heading font-semibold text-orange uppercase tracking-widest mb-4">Why it works</div>
+            <div className="text-xs font-heading font-semibold text-orange uppercase tracking-widest mb-4">Why it matters</div>
             <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink leading-tight mb-5">
-              The right person, four times, changes the direction.
+              Most students have never talked to anyone who does the job they picked.
             </h2>
             <p className="text-charcoal text-lg leading-relaxed">
-              Most young people can&apos;t name anyone who does the job they want. They make big decisions about school and
-              money without ever asking someone who knows. One honest conversation fixes a lot. Four, with a plan at the
-              end, gets them moving.
+              So they choose a major or a training program without asking someone who does the work. Four honest
+              conversations with you can save them a lot of time and money.
             </p>
           </div>
           <figure className="bg-white border border-gray-light rounded-card-lg p-8 lg:p-10">
             <div className="text-xs font-heading font-semibold text-gray-warm uppercase tracking-widest mb-4">Our first coach</div>
             <blockquote className="font-heading font-semibold text-ink text-xl lg:text-2xl leading-snug mb-5">
-              A student who wanted to get into marketing was matched with a director of marketing at NVIDIA. They met four
-              times. He took the coaching seriously and went on to land a marketing job with a local company.
+              A student who wanted to work in marketing met four times with a director of marketing at NVIDIA. He did the
+              work between sessions and went on to land a marketing job at a local company.
             </blockquote>
             <figcaption className="text-charcoal text-sm">
               In the student&apos;s words after session two: &ldquo;I got a lot of clarity on my plan forward.&rdquo;
@@ -149,7 +151,7 @@ export default function CoachPage() {
           <div className="max-w-2xl mb-12">
             <div className="text-xs font-heading font-semibold text-orange uppercase tracking-widest mb-4">How it works</div>
             <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink leading-tight">
-              Four sessions, in order. We hand you the agenda.
+              Four sessions, about 45 minutes each. We send you the agenda.
             </h2>
           </div>
           <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -167,11 +169,11 @@ export default function CoachPage() {
               <div className="text-xs font-heading font-semibold text-gray-warm uppercase tracking-widest mb-3">
                 What they leave with
               </div>
-              <h3 className="font-heading font-bold text-ink text-2xl mb-3">The Ambition Plan</h3>
+              <h3 className="font-heading font-bold text-ink text-2xl mb-3">Three next steps, in writing</h3>
               <p className="text-charcoal leading-relaxed">
-                A written plan in their own words: the career they&apos;re pursuing, what they learned about the work, the
-                skills and experience they still need, how the field is changing, and their next three moves with dates.
-                The student writes it. You react to it.
+                The student writes a short plan: the career they&apos;re going after, what they learned from you, what they
+                still need, and three things they&apos;ll do in the next 90 days, each with a date. You give feedback. You
+                don&apos;t write it.
               </p>
             </div>
             <div className="bg-ink text-cream rounded-card p-6 lg:p-8" style={dotTexture}>
@@ -192,7 +194,7 @@ export default function CoachPage() {
       {/* FAQ */}
       <section className="bg-cream section-pad">
         <div className="container-site">
-          <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink leading-tight mb-10">Good questions</h2>
+          <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink leading-tight mb-10">Common questions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
             {faqs.map((f) => (
               <div key={f.q}>
@@ -214,8 +216,9 @@ export default function CoachPage() {
               Raise your hand.
             </h2>
             <p className="text-gray-mid text-lg leading-relaxed mb-4">
-              <span className="text-cream font-semibold">Coaches:</span> tell us what you do. When a student is heading
-              into your field, Remi will reach out with their profile. You decide from there.
+              <span className="text-cream font-semibold">Coaches:</span> tell us what you do. Signing up is not a
+              commitment. When a student wants to get into your field, Remi reaches out first and shares their profile.
+              You decide from there.
             </p>
             <p className="text-gray-mid text-lg leading-relaxed mb-6">
               <span className="text-cream font-semibold">Students:</span> tell us the field you want. We&apos;ll find

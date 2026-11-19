@@ -55,8 +55,8 @@ export type SessionGuide = {
 export const SESSIONS: SessionGuide[] = [
   {
     n: 1,
-    name: "The reality check",
-    goal: "Get clear on what the job really is, and what it isn't.",
+    name: "How you got here",
+    goal: "What the job looks like on a normal day, and how your coach got into it.",
     studentPrep: [
       "Write two or three sentences on why you want this field. Put them in the first part of your plan below.",
       "Bring three questions about what the job is like day to day.",
@@ -70,8 +70,8 @@ export const SESSIONS: SessionGuide[] = [
   },
   {
     n: 2,
-    name: "The map",
-    goal: "What actually gets someone in, and the cheapest real route.",
+    name: "How people get in",
+    goal: "The training that matters, the cheapest route that works, and entry-level jobs most people miss.",
     studentPrep: [
       "Find two entry-level job postings in this field and bring the links.",
       "Write down what they ask for that you don't have yet.",
@@ -85,8 +85,8 @@ export const SESSIONS: SessionGuide[] = [
   },
   {
     n: 3,
-    name: "The work",
-    goal: "Skills, resume, and how the field is changing.",
+    name: "What the work takes",
+    goal: "The skills used every week, what hiring managers look for, and how the field has changed.",
     studentPrep: [
       "Bring your resume, or a list of what you've done if you don't have one yet.",
       "Fill in the skills and experience you still need in your plan.",
@@ -99,8 +99,8 @@ export const SESSIONS: SessionGuide[] = [
   },
   {
     n: 4,
-    name: "The move",
-    goal: "They read their plan back to you and leave with three dated moves.",
+    name: "Next steps",
+    goal: "Read back three next steps, each with a date in the next 90 days.",
     studentPrep: [
       "Finish your Ambition Plan, including three moves with dates.",
       "Mark it ready so your coach can read it before you meet.",

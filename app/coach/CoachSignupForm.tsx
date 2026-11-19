@@ -1,30 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { trackEvent } from "@/lib/analytics";
-
-const fields = [
-  "Software engineering",
-  "Hardware and computer engineering",
-  "Cybersecurity",
-  "Data and AI",
-  "Product and project management",
-  "Finance and banking",
-  "Investing and wealth management",
-  "Accounting",
-  "Marketing and social media",
-  "Sales and business development",
-  "Entrepreneurship",
-  "Design (UX, graphic, product)",
-  "Healthcare and nursing",
-  "Law",
-  "Education",
-  "Media and entertainment",
-  "Trades and construction",
-  "Other",
-];
+import { COACH_FIELDS } from "@/lib/coach/program";
 
 const timings = ["Ready now", "Starting in January", "Later in 2027", "Just exploring"];
+
+type Kind = "coach" | "student";
 
 type Form = {
   first_name: string;
@@ -35,6 +17,10 @@ type Form = {
   role: string;
   field: string;
   linkedin: string;
+  age: string;
+  school: string;
+  program: string;
+  goal: string;
   timing: string;
   referral: string;
   note: string;
@@ -50,6 +36,10 @@ const empty: Form = {
   role: "",
   field: "",
   linkedin: "",
+  age: "",
+  school: "",
+  program: "",
+  goal: "",
   timing: "",
   referral: "",
   note: "",
@@ -57,10 +47,22 @@ const empty: Form = {
 };
 
 export default function CoachSignupForm() {
+  const [kind, setKind] = useState<Kind>("coach");
   const [form, setForm] = useState<Form>(empty);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState("");
+
+  // /coach?as=student#signup opens on the student side (links from partners).
+  useEffect(() => {
+    const pick = () => {
+      const as = new URLSearchParams(window.location.search).get("as");
+      if (as === "student" || window.location.hash === "#student") setKind("student");
+    };
+    pick();
+    window.addEventListener("hashchange", pick);
+    return () => window.removeEventListener("hashchange", pick);
+  }, []);
 
   const set = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
@@ -68,8 +70,16 @@ export default function CoachSignupForm() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
-    if (!form.first_name || !form.last_name || !form.email || !form.role || !form.field) {
-      setFormError("Please add your name, email, role and field.");
+    if (!form.first_name || !form.last_name || !form.email || !form.field) {
+      setFormError("Please add your name, email and field.");
+      return;
+    }
+    if (kind === "coach" && !form.role) {
+      setFormError("Please add your role.");
+      return;
+    }
+    if (kind === "student" && !form.age) {
+      setFormError("Please add your age.");
       return;
     }
     setSubmitting(true);
@@ -77,13 +87,13 @@ export default function CoachSignupForm() {
       const res = await fetch("/api/coach-signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, kind }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error ?? "Something went wrong. Please try again.");
       }
-      trackEvent("coach_signup_submitted", { field: form.field });
+      trackEvent("coach_signup_submitted", { field: form.field, kind });
       setSubmitted(true);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
@@ -97,8 +107,10 @@ export default function CoachSignupForm() {
       <div className="bg-cream/10 border border-cream/20 rounded-card-lg px-8 py-10 text-center" role="status">
         <p className="font-heading font-bold text-cream text-2xl mb-3">Thanks, {form.first_name}.</p>
         <p className="text-gray-mid text-base leading-relaxed max-w-md mx-auto">
-          Remi will reach out for a short call. Nothing is set until you see a student&apos;s profile and say yes.
-          Check your inbox for a confirmation.
+          {kind === "coach"
+            ? "Remi will reach out for a short call. Nothing is set until you see a student's profile and say yes."
+            : "Remi will reach out when he has a coach in your field. When the intro comes, it's on you to reply and book session 1."}{" "}
+          Check your inbox for a link to your own Ambition Coach page.
         </p>
       </div>
     );
@@ -116,9 +128,37 @@ export default function CoachSignupForm() {
       </svg>
     </div>
   );
+  const tab = (k: Kind, text: string) => (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={kind === k}
+      onClick={() => {
+        setKind(k);
+        setFormError("");
+      }}
+      className={`flex-1 rounded-full px-4 py-3 text-sm font-heading font-semibold transition-colors min-h-[48px] ${
+        kind === k ? "bg-orange text-white" : "text-gray-mid hover:text-cream"
+      }`}
+    >
+      {text}
+    </button>
+  );
 
   return (
     <form onSubmit={submit} className="space-y-5" noValidate>
+      <div role="tablist" aria-label="I'm signing up as" className="flex gap-1 p-1 rounded-full bg-white/5 border border-white/10">
+        {tab("coach", "I want to coach")}
+        {tab("student", "I want a coach")}
+      </div>
+
+      {kind === "student" && (
+        <p className="text-gray-mid text-sm leading-relaxed">
+          For ages 18 to 24 who know the field they want and don&apos;t have anyone in it to ask. You&apos;ll meet a
+          professional four times and leave with a written plan.
+        </p>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
           <label htmlFor="c-first" className={label}>First name {req}</label>
@@ -141,29 +181,57 @@ export default function CoachSignupForm() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div>
-          <label htmlFor="c-role" className={label}>Your role {req}</label>
-          <input id="c-role" name="role" value={form.role} onChange={set} placeholder="e.g. Security analyst" autoComplete="organization-title" className={input} />
+      {kind === "coach" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label htmlFor="c-role" className={label}>Your role {req}</label>
+            <input id="c-role" name="role" value={form.role} onChange={set} placeholder="e.g. Security analyst" autoComplete="organization-title" className={input} />
+          </div>
+          <div>
+            <label htmlFor="c-company" className={label}>Company {opt}</label>
+            <input id="c-company" name="company" value={form.company} onChange={set} autoComplete="organization" className={input} />
+          </div>
         </div>
-        <div>
-          <label htmlFor="c-company" className={label}>Company {opt}</label>
-          <input id="c-company" name="company" value={form.company} onChange={set} autoComplete="organization" className={input} />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-[110px_1fr] gap-5">
+          <div>
+            <label htmlFor="c-age" className={label}>Age {req}</label>
+            <input id="c-age" name="age" inputMode="numeric" maxLength={2} value={form.age} onChange={set} className={input} />
+          </div>
+          <div>
+            <label htmlFor="c-school" className={label}>School {opt}</label>
+            <input id="c-school" name="school" value={form.school} onChange={set} placeholder="e.g. Cal State East Bay" className={input} />
+          </div>
         </div>
-      </div>
+      )}
 
       <div>
-        <label htmlFor="c-field" className={label}>The field you&apos;d coach in {req}</label>
+        <label htmlFor="c-field" className={label}>
+          {kind === "coach" ? <>The field you&apos;d coach in {req}</> : <>The field you want to get into {req}</>}
+        </label>
         <div className="relative">
           <select id="c-field" name="field" value={form.field} onChange={set} className={input + " appearance-none"}>
             <option value="">Pick the closest one</option>
-            {fields.map((f) => (
+            {COACH_FIELDS.map((f) => (
               <option key={f} value={f}>{f}</option>
             ))}
           </select>
           {chevron}
         </div>
       </div>
+
+      {kind === "student" && (
+        <>
+          <div>
+            <label htmlFor="c-goal" className={label}>What do you want to do in that field? {opt}</label>
+            <textarea id="c-goal" name="goal" value={form.goal} onChange={set} rows={2} placeholder="A job title, a company, or just what draws you to it" className={input + " min-h-[72px]"} />
+          </div>
+          <div>
+            <label htmlFor="c-program" className={label}>Program or group you&apos;re part of {opt}</label>
+            <input id="c-program" name="program" value={form.program} onChange={set} placeholder="e.g. EOYDC" className={input} />
+          </div>
+        </>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
@@ -186,7 +254,14 @@ export default function CoachSignupForm() {
 
       <div>
         <label htmlFor="c-ref" className={label}>How did you hear about this? {opt}</label>
-        <input id="c-ref" name="referral" value={form.referral} onChange={set} placeholder="Remi's email, a friend, LinkedIn…" className={input} />
+        <input
+          id="c-ref"
+          name="referral"
+          value={form.referral}
+          onChange={set}
+          placeholder={kind === "coach" ? "Remi's email, a friend, LinkedIn…" : "A program, a teacher, a friend…"}
+          className={input}
+        />
       </div>
 
       <div>
@@ -211,12 +286,13 @@ export default function CoachSignupForm() {
         disabled={submitting}
         className="w-full bg-orange hover:bg-orange-dark text-white font-heading font-semibold text-base px-8 py-5 rounded-full transition-colors min-h-[60px] disabled:opacity-60"
       >
-        {submitting ? "Sending…" : "Sign up to coach"}
+        {submitting ? "Sending…" : kind === "coach" ? "Sign up to coach" : "Match me with a coach"}
       </button>
 
       <p className="text-center text-xs text-gray-mid leading-relaxed">
-        Signing up is not a commitment. Remi reaches out first, and you see a student&apos;s profile before anything
-        is set.
+        {kind === "coach"
+          ? "Signing up is not a commitment. Remi reaches out first, and you see a student's profile before anything is set."
+          : "It's free. We'll only use your info to find you a coach."}
       </p>
     </form>
   );

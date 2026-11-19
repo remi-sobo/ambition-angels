@@ -273,6 +273,7 @@ export const KEPT_IN_PLACE: readonly string[] = [
   "/admin/programs/attendance", // Spec Programs P1: the cross-cohort session surface
   "/admin/impact/outcomes",     // Spec Impact I1: the provenance-first outcomes surface
   "/admin/impact/reports",      // Spec Impact I2: the gated report builder (Contract 7's third exit)
+  "/admin/programs/coach",      // Ambition Coach sign-ups, matches and plans (aa.coach, AA-only)
 ];
 
 /** The live screen for a canonical V2 path today, or null when none exists

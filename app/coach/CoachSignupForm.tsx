@@ -95,10 +95,10 @@ export default function CoachSignupForm() {
   if (submitted) {
     return (
       <div className="bg-cream/10 border border-cream/20 rounded-card-lg px-8 py-10 text-center" role="status">
-        <p className="font-heading font-bold text-cream text-2xl mb-3">Thank you, {form.first_name}.</p>
+        <p className="font-heading font-bold text-cream text-2xl mb-3">Thanks, {form.first_name}.</p>
         <p className="text-gray-mid text-base leading-relaxed max-w-md mx-auto">
-          Remi will reach out personally for a short call. Nothing is set until you see a student&apos;s profile and say
-          yes. A confirmation is on its way to your inbox.
+          Remi will reach out for a short call. Nothing is set until you see a student&apos;s profile and say yes.
+          Check your inbox for a confirmation.
         </p>
       </div>
     );
@@ -211,12 +211,12 @@ export default function CoachSignupForm() {
         disabled={submitting}
         className="w-full bg-orange hover:bg-orange-dark text-white font-heading font-semibold text-base px-8 py-5 rounded-full transition-colors min-h-[60px] disabled:opacity-60"
       >
-        {submitting ? "Sending…" : "I'm in. Count me as a coach."}
+        {submitting ? "Sending…" : "Sign up to coach"}
       </button>
 
       <p className="text-center text-xs text-gray-mid leading-relaxed">
-        Signing up is not a commitment. Remi will call you first, and you&apos;ll see a student&apos;s profile before
-        anything is set.
+        Signing up is not a commitment. Remi reaches out first, and you see a student&apos;s profile before anything
+        is set.
       </p>
     </form>
   );

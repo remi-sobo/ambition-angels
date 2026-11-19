@@ -152,9 +152,14 @@ Ambition Angels`;
       subject: kind === "coach" ? "Thanks for raising your hand" : "We got your Ambition Coach sign-up",
       text: confirmation,
     })
-    .then(() =>
-      getSupabaseAdmin().from("coach_people").update({ link_sent_at: new Date().toISOString() }).eq("id", personId),
-    )
+    .then(async ({ error }) => {
+      // Resend reports failures in the result, not by throwing.
+      if (error) {
+        console.error("coach-signup confirmation not sent:", JSON.stringify(error));
+        return;
+      }
+      await getSupabaseAdmin().from("coach_people").update({ link_sent_at: new Date().toISOString() }).eq("id", personId);
+    })
     .catch((err) => console.error("coach-signup confirmation error:", err));
 
   const lines =
@@ -178,6 +183,9 @@ Heard from: ${esc(referral) || "not given"}<br>
 Note: ${esc(note) || "none"}<br><br>
 See all sign-ups in BloomOS: https://www.ambitionangels.org/admin/programs/coach
 </div>`,
+    })
+    .then(({ error }) => {
+      if (error) console.error("coach-signup alert not sent:", JSON.stringify(error));
     })
     .catch((err) => console.error("coach-signup notification error:", err));
 

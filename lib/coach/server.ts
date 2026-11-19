@@ -205,7 +205,8 @@ Remi`;
  *  send isn't cut off when the serverless function returns. */
 export async function notify(subject: string, text: string, to: string | string[] = REMI): Promise<void> {
   try {
-    await resend().emails.send({ from: "Ambition Angels <careers@mail.ambitionangels.org>", replyTo: REMI, to, subject, text });
+    const { error } = await resend().emails.send({ from: "Ambition Angels <careers@mail.ambitionangels.org>", replyTo: REMI, to, subject, text });
+    if (error) console.error("coach notify not sent:", JSON.stringify(error));
   } catch (err) {
     console.error("coach notify error:", err);
   }

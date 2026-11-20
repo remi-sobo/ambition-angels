@@ -3,6 +3,8 @@ import { personalize, buildCampaignEmail } from "@/lib/fundraising/comms-email";
 import { loadOrgCommsSettings, sendBlocker, type OrgCommsSettings } from "./settings";
 import { transportFor, TransportError, type Transport } from "./transport";
 import { outcomeFor, PACE, WORKER_BUDGET_MS } from "./queue-plan";
+import { newTrackingToken } from "./links";
+import { raiseAlarms, sendLeadershipCopies } from "./safety";
 
 /**
  * The send worker (specs/comms-v2-gmail-amendment.md G2), run every minute by
@@ -26,6 +28,7 @@ type ClaimedRow = {
   constituent_id: string | null;
   email: string;
   first_name: string | null;
+  tracking_token: string | null;
 };
 
 type CampaignContent = { subject: string; body: string };
@@ -40,6 +43,8 @@ export type DrainResult = {
   /** Orgs that couldn't send this tick, with the reason. */
   blocked: Array<{ orgId: string; reason: string }>;
   finished: number;
+  alarms: number;
+  copies: number;
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -47,7 +52,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export async function drainQueue(now: () => number = Date.now): Promise<DrainResult> {
   const started = now();
   const admin = getSupabaseAdmin();
-  const result: DrainResult = { orgs: 0, sent: 0, failed: 0, unknown: 0, suppressed: 0, requeued: 0, blocked: [], finished: 0 };
+  const result: DrainResult = { orgs: 0, sent: 0, failed: 0, unknown: 0, suppressed: 0, requeued: 0, blocked: [], finished: 0, alarms: 0, copies: 0 };
 
   const { data: orgRows, error: tickErr } = await admin.rpc("comms_queue_tick");
   if (tickErr) throw new Error(`comms_queue_tick failed: ${tickErr.message}`);
@@ -74,6 +79,18 @@ export async function drainQueue(now: () => number = Date.now): Promise<DrainRes
   const { data: finished, error: finErr } = await admin.rpc("finish_email_campaigns");
   if (finErr) console.error("[comms-queue] finish_email_campaigns failed:", finErr.message);
   result.finished = typeof finished === "number" ? finished : 0;
+
+  // G4 safety nets. Isolated: a failure here never fails the tick's sends.
+  try {
+    result.copies = await sendLeadershipCopies();
+  } catch (err) {
+    console.error("[comms-queue] leadership copies failed:", err instanceof Error ? err.message : err);
+  }
+  try {
+    result.alarms = await raiseAlarms(result.blocked);
+  } catch (err) {
+    console.error("[comms-queue] alarms failed:", err instanceof Error ? err.message : err);
+  }
   return result;
 }
 
@@ -148,6 +165,13 @@ async function sendOne(
     return { counter: "failed", stopOrg: false };
   }
 
+  // Rows queued before G3 have no token; give them one so they track too.
+  let trackingToken = row.tracking_token;
+  if (!trackingToken) {
+    trackingToken = newTrackingToken();
+    await admin.from("email_sends").update({ tracking_token: trackingToken }).eq("org_id", row.org_id).eq("id", row.id);
+  }
+
   try {
     const email = buildCampaignEmail({
       settings,
@@ -156,6 +180,7 @@ async function sendOne(
       bodyText: personalize(content.body, row.first_name ?? ""),
       constituentId: row.constituent_id,
       campaignId: row.campaign_id,
+      trackingToken,
     });
     const { providerMessageId } = await transport.send(email);
     await finish({ status: "sent", sent_at: new Date().toISOString(), provider_message_id: providerMessageId, error: null });

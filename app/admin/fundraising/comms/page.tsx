@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import EmptyState from "../../_components/EmptyState";
 import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
@@ -91,7 +92,7 @@ export default async function CommsPage({
     supabase.from("segments").select("id, name").eq("org_id", ctx.orgId).order("created_at", { ascending: false }).limit(100),
     supabase
       .from("org_comms_settings")
-      .select("from_name, from_email, reply_to, mailing_address, footer_text, daily_send_cap, transport")
+      .select("from_name, from_email, reply_to, mailing_address, footer_text, daily_send_cap, transport, leadership_copy_emails")
       .eq("org_id", ctx.orgId)
       .limit(1)
       .maybeSingle(),
@@ -162,7 +163,13 @@ export default async function CommsPage({
               {campaigns.map((c) => (
                 <li key={c.id} className="px-5 py-3 flex items-center gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-ink-1 truncate">{c.name}</div>
+                    {c.status === "draft" ? (
+                      <div className="text-sm font-medium text-ink-1 truncate">{c.name}</div>
+                    ) : (
+                      <Link href={`/admin/fundraising/comms/${c.id}`} className="block text-sm font-medium text-ink-1 truncate hover:text-orange transition-colors">
+                        {c.name}
+                      </Link>
+                    )}
                     <div className="text-xs text-ink-3 truncate">
                       {c.subject}
                       {c.segment?.name ? ` · ${c.segment.name}` : " · no segment"}

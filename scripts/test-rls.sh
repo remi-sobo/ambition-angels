@@ -152,6 +152,8 @@ ordered=(
   comms_v2_phase1_default_drops.sql
   comms_gmail_g1.sql
   comms_gmail_g2.sql
+  comms_gmail_g3.sql
+  comms_gmail_g4.sql
   enforce_grant_funder.sql
   create_asks_log.sql
   spine_entity_registry.sql
@@ -215,6 +217,7 @@ ordered=(
   create_plan_archives.sql
   fundraising_plan.sql
   create_work_blocks_and_calendar_prefs.sql
+  create_week_commitments.sql
   create_program_partners.sql
   fr_prospect_family_fks_and_org_not_null.sql
   fr_sync_resolve_companies_via_external_refs.sql

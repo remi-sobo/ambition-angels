@@ -75,7 +75,7 @@ The goal is two separate products with a clean line between them, plus a deliber
 **New Ambition Angels database** (website and games only):
 `ms_occupations`, `ms_cards`, `ms_catalog` (view), `ms_sessions`, `ms_rooms`, `ms_deliveries`, `ms_explored`, `game_pool`, `game_daily`, `cut_rooms`, `cut_players`, `cut_votes`, `page_views`, `click_events`, plus a new `intake_outbox` (see 6a).
 
-These tables barely touch BloomOS. Their only links are to each other. Two policies (`game_pool`, `create_ms_career_library.sql`) call `has_permission()`. The new baseline swaps that for a studio-admin check.
+These tables barely touch BloomOS. Their only links are to each other. Two policies (`game_pool`, `create_ms_career_library.sql`) call `has_permission()`. The new baseline swaps that for a website-admin check.
 
 **Stays in BloomOS as Ambition Angels tenant data**, written through the intake API:
 `applications`, `partners`, `coach_people`, `coach_matches`, `coach_sessions`, `ygb_registrations`, `ygb_attendance`, `demoday_signups`, `demoday_notes`, `quiz_submissions`, `partner_waitlist`, `donations`, `recurring_plans`. `bv_*` stays where it is, dormant.

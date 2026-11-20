@@ -1,0 +1,12 @@
+# V4 audit harness: BloomOS on a mock Supabase with made-up data
+
+1. Write `.env.local` (delete it after): `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:55321` plus JWT-shaped strings for `NEXT_PUBLIC_SUPABASE_ANON_KEY` (payload `role: "anon"`) and `SUPABASE_SERVICE_ROLE_KEY`. Leave every other service key unset.
+2. Start the mock: `node e2e/v4/mock-supabase.mjs` (env `V4_PROFILE=populated|empty`, `V4_ROLE=owner|admin|staff|finance|board_viewer`, `V4_PERSIST=1` to keep writes, `V4_DELAY_MS`). Switch live with `POST /__mock/config {profile, role, delayMs, delayPattern, failRead, failWrite}`.
+3. Start the app: `npm run dev` (port 3000).
+4. Capture: `node e2e/v4/capture.mjs --run <name> --set all|nav|details|orphans --viewports desktop,phone [--role staff] [--profile empty] [--only <substr>] --out <dir>`. Writes JPEGs plus `manifest.json` (status, final URL, redirects, console/page errors, failed requests, error boundary, 404, module gate, h1, load time).
+5. Special states (sheets, search, Reed, task modal, loading, failed saves, 500 reads): `node e2e/v4/special-states.mjs --run special --out <dir>`. All standard runs: `V4_SHOTS=<dir> bash e2e/v4/run-all.sh`.
+6. Review fast: `node e2e/v4/contact-sheet.mjs <dir>/<run> [--viewport phone]` tiles shots into `sheets/`.
+7. Coverage: the mock writes `e2e/v4/.logs/no-fixture-<profile>.json` (tables/RPCs requested with no rows), `coverage-<profile>.json` (selects seen, filters ignored) and `writes.jsonl` (every write body).
+8. Fixtures: `fixtures/index.mjs` generates one invented org, "Ambition Angels (demo)" (deterministic, dates relative to now). Column sets, FKs and enums come from `fixtures/schema.json` etc., rebuilt from the migrations by `bash e2e/v4/dump-schema.sh` (throwaway local Postgres on /tmp/v4pg, never production).
+9. SQL views (`v_obligations`, `v_action_items`, `v_revenue_schedule`, `v_fr_rollups`, ...) are computed by loading the fixtures into that Postgres: `node e2e/v4/fixtures/compute-views.mjs` writes `fixtures/views.json`. Re-run it on the day you capture.
+10. Limits: no RLS, no triggers, no realtime, no storage; every role sees every row. Treat role "leaks" as app-layer checks only. Stop the mock and dev server and delete `.env.local` when done.

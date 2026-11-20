@@ -60,7 +60,7 @@ const STATES = [
       // wait for the toast (role=status) to carry text, up to 12s
       const t0 = Date.now();
       while (Date.now() - t0 < 12000) {
-        const txt = await p.locator('[role="status"]').allInnerTexts().then((a) => a.join(" | ").trim()).catch(() => "");
+        const txt = await p.locator('[role="status"]').allInnerTexts().then((a) => a.map((x) => x.trim()).filter(Boolean).join(" | ")).catch(() => "");
         if (txt) { p.__toast = txt; break; }
         await p.waitForTimeout(250);
       }
@@ -76,7 +76,7 @@ const STATES = [
       await p.getByRole("button", { name: "Save changes" }).first().click();
       const t0 = Date.now();
       while (Date.now() - t0 < 12000) {
-        const txt = await p.locator('[role="status"], [role="alert"]').allInnerTexts().then((a) => a.join(" | ").trim()).catch(() => "");
+        const txt = await p.locator('[role="status"], [role="alert"]').allInnerTexts().then((a) => a.map((x) => x.trim()).filter(Boolean).join(" | ")).catch(() => "");
         if (txt) { await p.evaluate((t) => (document.body.dataset.v4Toast = t), txt); return; }
         await p.waitForTimeout(250);
       }
@@ -97,7 +97,8 @@ async function main() {
   const ctx = { desktop: await newContext(browser, "desktop"), phone: await newContext(browser, "phone") };
   const manifest = { run: RUN, startedAt: new Date().toISOString(), mock: await mockConfig(), shots: [] };
   let i = 0;
-  for (const s of STATES) {
+  const only = arg("only", null);
+  for (const s of STATES.filter((x) => !only || x.name.includes(only))) {
     const route = { label: s.name, group: "special", path: s.path || `/admin/fundraising/donors-funders/${ids[s.detail]}` };
     await mockConfig({ ...RESET, ...(s.mock || {}) });
     let rec;

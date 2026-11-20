@@ -553,6 +553,8 @@ const server = http.createServer(async (req, res) => {
       if (matchesFail(config.failWrite, table)) return send(res, 500, { code: "XX000", message: `v4 mock: forced write failure on ${table}`, details: null, hint: null });
       let body = null;
       try { body = raw ? JSON.parse(raw) : null; } catch {}
+      // every write is logged (body + filters) so a capture can assert what the app sent
+      fs.appendFileSync(path.join(LOG_DIR, "writes.jsonl"), JSON.stringify({ at: new Date().toISOString(), method: req.method, table, query: url.search, body }) + "\n");
       const wantRep = prefer.includes("return=representation");
       let out = [];
       if (req.method === "POST" || req.method === "PUT") {

@@ -11,9 +11,10 @@ const INTERESTS = [
   "Not sure yet",
 ];
 
-/** Company inquiry. Posts to the same intake as before (/api/partner-waitlist,
- *  role "Corporate Partner"), so it lands in the partner waitlist and emails
- *  the team. Never shows success unless the request succeeded. */
+/** Company inquiry. Posts to /api/partner-waitlist with role "Corporate
+ *  Partner": the row saves the company, the person's role and the interest,
+ *  the team gets a notification, and the sender gets a short confirmation.
+ *  Never shows success unless the request succeeded. */
 export default function CompaniesContactForm() {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", company: "", role: "", interest: INTERESTS[0] });
   const [submitting, setSubmitting] = useState(false);
@@ -43,6 +44,7 @@ export default function CompaniesContactForm() {
           teen_count: "",
           company: form.company.trim(),
           role_category: form.role.trim(),
+          interest: form.interest,
           problem_to_solve: `Interested in: ${form.interest}`,
         }),
       });
@@ -104,7 +106,7 @@ export default function CompaniesContactForm() {
         <button type="submit" disabled={submitting} className="aa-pill aa-pill--primary aa-pill--lg" style={{ width: "100%", opacity: submitting ? 0.6 : 1 }}>
           {submitting ? "Sending…" : "Start the conversation"}
         </button>
-        <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, textAlign: "center" }}>We&apos;ll reach out personally, usually the same day.</p>
+        <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, textAlign: "center" }}>Remi will reply personally within a few days.</p>
       </div>
     </form>
   );

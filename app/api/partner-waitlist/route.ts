@@ -88,6 +88,28 @@ function buildConfirmationHTML(firstName: string, role: string): string {
 </html>`;
 }
 
+/** Plain-text confirmation for a company inquiry from /companies. Short on
+ *  purpose: we got the note, and Remi replies personally. */
+function buildCompanyConfirmationText(firstName: string, company: string): string {
+  const about = company ? ` about ${company} and Ambition Angels` : "";
+  return `Hi ${firstName},
+
+Thank you for reaching out${about}. We got your note.
+
+I'll reply personally within a few days. If you want to talk sooner, just reply to this email.
+
+With gratitude,
+Remi
+Ambition Angels`;
+}
+
+/** Optional free-text field from a public form: trimmed, capped, or null. */
+function optionalText(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const t = v.trim().slice(0, 300);
+  return t || null;
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) {
@@ -103,6 +125,7 @@ export async function POST(req: NextRequest) {
     company,
     role_category,
     problem_to_solve,
+    interest,
   } = body;
 
   // The /mesa/students page reuses this submission path for a lightweight
@@ -110,6 +133,9 @@ export async function POST(req: NextRequest) {
   // Students have no last name field and must not receive the Guide-branded
   // confirmation email below.
   const isStudent = role === "MESA Student";
+  // /companies posts here with role "Corporate Partner". A company lead gets
+  // its own short confirmation, never the Guide waitlist email.
+  const isCorporate = role === "Corporate Partner";
 
   if (!first_name || !email || !role || (!isStudent && !last_name)) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -123,6 +149,9 @@ export async function POST(req: NextRequest) {
     email,
     role,
     teen_count: teen_count || null,
+    company: optionalText(company),
+    role_category: optionalText(role_category),
+    interest: optionalText(interest),
   });
 
   if (dbError) {
@@ -130,9 +159,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
   }
 
-  // Send the Guide confirmation email (non-blocking). Skipped for MESA
-  // students: that email describes Guide access and would confuse a student.
-  if (!isStudent) {
+  // Confirmation to the person who wrote in (non-blocking). Companies get a
+  // short personal note. Guides get the Guide waitlist email. MESA students
+  // get neither: the Guide email describes Guide access and would confuse them.
+  if (isCorporate) {
+    try {
+      await getResend().emails.send({
+        from: "Remi Sobomehin <careers@mail.ambitionangels.org>",
+        replyTo: "remi@ambitionangels.org",
+        to: email,
+        subject: "We got your note",
+        text: buildCompanyConfirmationText(String(first_name).trim(), optionalText(company) ?? ""),
+      });
+    } catch (emailErr) {
+      console.error("Resend error:", emailErr);
+      // Don't fail. The DB write succeeded.
+    }
+  } else if (!isStudent) {
     try {
       await getResend().emails.send({
         from: "Ambition Angels <careers@mail.ambitionangels.org>",
@@ -142,13 +185,12 @@ export async function POST(req: NextRequest) {
       });
     } catch (emailErr) {
       console.error("Resend error:", emailErr);
-      // Don't fail — DB write succeeded
+      // Don't fail. The DB write succeeded.
     }
   }
 
   // Notification to Remi (non-blocking)
   try {
-    const isCorporate = role === "Corporate Partner";
     const subjectPrefix = isCorporate
       ? "New company inquiry"
       : isStudent

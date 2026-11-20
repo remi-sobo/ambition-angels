@@ -129,6 +129,10 @@ export const V2_DESTINATIONS: V2Destination[] = [
       { key: "pipeline", label: "Pipeline", href: "/admin/fundraising/pipeline", feature: "modules.fundraising" },
       { key: "grants", label: "Grants", href: "/admin/fundraising/grants", feature: "modules.fundraising" },
       { key: "campaigns", label: "Campaigns", href: "/admin/fundraising/campaigns", feature: "modules.fundraising" },
+      // Comms (email campaigns from the org's Gmail, specs/comms-v2-gmail-amendment.md).
+      // Gated on modules.comms, so orgs without it see one tab fewer; Remi
+      // ruled the seat on 2026-11-20 knowing the row width then varies.
+      { key: "comms", label: "Comms", href: "/admin/fundraising/comms", feature: "modules.comms" },
       // Prospect research (ai.prospect_research) is deliberately NOT a sixth
       // tab: only AA and YGB hold the key, and a tab present for two of four
       // orgs makes the row a different width per tenant. It is a full-height

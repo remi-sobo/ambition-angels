@@ -92,7 +92,7 @@ export default async function CommsPage({
     supabase.from("segments").select("id, name").eq("org_id", ctx.orgId).order("created_at", { ascending: false }).limit(100),
     supabase
       .from("org_comms_settings")
-      .select("from_name, from_email, reply_to, mailing_address, footer_text, daily_send_cap, transport")
+      .select("from_name, from_email, reply_to, mailing_address, footer_text, daily_send_cap, transport, leadership_copy_emails")
       .eq("org_id", ctx.orgId)
       .limit(1)
       .maybeSingle(),

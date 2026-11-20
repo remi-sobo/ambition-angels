@@ -7,6 +7,8 @@ import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import GiftReportFilters from "./_components/GiftReportFilters";
 import { TYPE } from "@/lib/admin/typeScale";
+import Alert from "@/app/admin/_components/ui/Alert";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 
 // Epic E — reporting. A Gifts report (filter by date range / campaign / fund /
 // method, with KPIs, a group-by-campaign breakdown, and CSV export), plus the
@@ -48,22 +50,25 @@ export default async function ReportsPage({
     );
   }
   const supabase = createServerSupabase();
-  let giftQuery = supabase
-    .from("gifts")
-    .select(
-      "amount, gift_date, method, campaign_id, constituent:constituents ( type, first_name, last_name, org_name )"
-    )
-    .eq("org_id", ctx.orgId)
-    .order("gift_date", { ascending: false })
-    .limit(10000);
-  if (from) giftQuery = giftQuery.gte("gift_date", from);
-  if (to) giftQuery = giftQuery.lte("gift_date", to);
-  if (campaignId) giftQuery = giftQuery.eq("campaign_id", campaignId);
-  if (fundId) giftQuery = giftQuery.eq("fund_id", fundId);
-  if (method) giftQuery = giftQuery.eq("method", method);
+  // Paged past PostgREST's 1,000-row cap (the old .limit(10000) was still
+  // capped at 1,000): every total and breakdown in the report sums these.
+  const giftQuery = () => {
+    let q = supabase
+      .from("gifts")
+      .select(
+        "amount, gift_date, method, campaign_id, constituent:constituents ( type, first_name, last_name, org_name )"
+      )
+      .eq("org_id", ctx.orgId);
+    if (from) q = q.gte("gift_date", from);
+    if (to) q = q.lte("gift_date", to);
+    if (campaignId) q = q.eq("campaign_id", campaignId);
+    if (fundId) q = q.eq("fund_id", fundId);
+    if (method) q = q.eq("method", method);
+    return q;
+  };
 
   const [giftsRes, campaignsRes, fundsRes, segmentsRes] = await Promise.all([
-    giftQuery,
+    fetchAll(giftQuery, { order: [{ column: "gift_date", ascending: false }, { column: "id", ascending: false }] }),
     supabase.from("campaigns").select("id, name").eq("org_id", ctx.orgId).order("name"),
     supabase.from("funds").select("id, name").eq("org_id", ctx.orgId).order("name"),
     supabase.from("segments").select("id, name, definition").eq("org_id", ctx.orgId).order("created_at", { ascending: false }).limit(100),
@@ -131,6 +136,13 @@ export default async function ReportsPage({
           campaigns={campaigns}
           funds={funds}
         />
+
+        {giftsRes.truncated && (
+          <Alert tone="warning" title="Partial data">
+            More gifts match these filters than one page load reads, so the totals below are incomplete. Narrow the
+            date range for an exact figure.
+          </Alert>
+        )}
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard label="Total Raised" value={money(total)} sub={`${count} gift${count === 1 ? "" : "s"} in range`} />

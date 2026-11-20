@@ -1,6 +1,8 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../_components/PageHeader";
+import { fetchAll } from "@/lib/supabase/fetchAll";
+import Alert from "@/app/admin/_components/ui/Alert";
 import StatCard from "../../_components/StatCard";
 import { NewJourneyForm, JourneyActions } from "./_components/JourneyControls";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -30,8 +32,12 @@ export default async function JourneysPage() {
   const supabase = createServerSupabase();
   const [journeysRes, stepsRes, enrollRes] = await Promise.all([
     supabase.from("journeys").select("id, name, trigger, status, created_at").eq("org_id", ctx.orgId).order("created_at", { ascending: false }).limit(200),
-    supabase.from("journey_steps").select("journey_id").eq("org_id", ctx.orgId).limit(5000),
-    supabase.from("journey_enrollments").select("journey_id, status").eq("org_id", ctx.orgId).limit(20000),
+    // Paged: a `.limit` above 1,000 is still capped by PostgREST, so the step
+    // and enrollment counts below undercounted.
+    fetchAll(() => supabase.from("journey_steps").select("journey_id").eq("org_id", ctx.orgId), { order: ["id"] }),
+    fetchAll(() => supabase.from("journey_enrollments").select("journey_id, status").eq("org_id", ctx.orgId), {
+      order: ["id"],
+    }),
   ]);
 
   if (journeysRes.error) {
@@ -65,6 +71,11 @@ export default async function JourneysPage() {
     <div className="min-h-screen bg-ink">
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <PageHeader title="Journeys" subtitle="Automated, triggered email sequences" />
+        {(stepsRes.truncated || enrollRes.truncated) && (
+          <Alert tone="warning" title="Partial data" className="my-4">
+            This org has more enrollments than one page load reads, so the counts below are incomplete.
+          </Alert>
+        )}
 
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 flex-1 min-w-[18rem]">

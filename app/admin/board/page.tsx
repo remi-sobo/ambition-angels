@@ -3,6 +3,7 @@ import EmptyState from "../_components/EmptyState";
 import { getOrgContext } from "@/lib/admin/auth";
 import SectionHeading from "../_components/SectionHeading";
 import PageHeader from "../_components/PageHeader";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import { EntityDocuments } from "../_components/EntityDocuments";
 import StatCard from "../_components/StatCard";
 import {
@@ -58,13 +59,18 @@ export default async function BoardPage() {
   const linked = active.filter((m) => m.constituent_id).map((m) => m.constituent_id as string);
   const gaveSet = new Set<string>();
   if (linked.length > 0) {
-    const { data: gifts } = await supabase
-      .from("gifts")
-      .select("constituent_id")
-      .eq("org_id", orgId)
-      .in("constituent_id", linked)
-      .gte("gift_date", `${year}-01-01`)
-      .limit(2000);
+    // Paged: `.limit(2000)` is still capped at PostgREST's 1,000 rows, and a
+    // member whose gifts fell past the cap would read as not having given.
+    const { data: gifts } = await fetchAll<{ constituent_id: string | null }>(
+      () =>
+        supabase
+          .from("gifts")
+          .select("constituent_id")
+          .eq("org_id", orgId)
+          .in("constituent_id", linked)
+          .gte("gift_date", `${year}-01-01`),
+      { order: ["id"] }
+    );
     for (const g of gifts ?? []) if (g.constituent_id) gaveSet.add(g.constituent_id);
   }
   const gaveCount = active.filter(

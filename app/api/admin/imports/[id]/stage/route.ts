@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getFieldDefs } from "@/lib/admin/customFields";
@@ -82,22 +83,22 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   }
   const emailIndex = new Map<string, string>();
   if (entity === "student") {
-    const { data } = await supabase
-      .from("students")
-      .select("id, email, custom_fields")
-      .eq("org_id", ctx.orgId)
-      .limit(5000);
+    // Paged: a `.limit` above 1,000 is still capped by PostgREST, which hid
+    // existing rows from dedupe. Null data (error) leaves the index empty, as before.
+    const { data } = await fetchAll<{ id: string; email: string | null; custom_fields: Record<string, unknown> | null }>(
+      () => supabase.from("students").select("id, email, custom_fields").eq("org_id", ctx.orgId),
+      { order: ["id"], hardCap: 200_000 }
+    );
     for (const s of data ?? []) {
       if (typeof s.email === "string" && s.email) emailIndex.set(s.email.toLowerCase(), s.id);
       const g = (s.custom_fields as Record<string, unknown> | null)?.guardian_email;
       if (typeof g === "string" && g) emailIndex.set(g.toLowerCase(), s.id);
     }
   } else {
-    const { data } = await supabase
-      .from("constituents")
-      .select("id, emails")
-      .eq("org_id", ctx.orgId)
-      .limit(20000);
+    const { data } = await fetchAll<{ id: string; emails: string[] | null }>(
+      () => supabase.from("constituents").select("id, emails").eq("org_id", ctx.orgId),
+      { order: ["id"], hardCap: 200_000 }
+    );
     for (const c of data ?? []) {
       for (const e of (c.emails as string[] | null) ?? []) {
         if (typeof e === "string" && e) emailIndex.set(e.toLowerCase(), c.id);

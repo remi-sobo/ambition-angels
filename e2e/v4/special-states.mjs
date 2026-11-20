@@ -45,11 +45,11 @@ const STATES = [
     before: async (p) => p.getByText("Upload signed MOUs", { exact: false }).first().click(),
   },
   {
-    name: "loading-skeleton-donors", vp: "desktop", path: "/admin/fundraising/donors-funders", viewportOnly: true, loading: true,
+    name: "loading-skeleton-fundraising", vp: "desktop", path: "/admin/fundraising/today", viewportOnly: true, loading: true,
     mock: { delayMs: 12000, delayPattern: `(?!(${AUTH_TABLES})$).*` },
   },
   {
-    name: "loading-skeleton-programs-phone", vp: "phone", path: "/admin/programs/people", viewportOnly: true, loading: true,
+    name: "loading-skeleton-today-phone", vp: "phone", path: "/admin/today", viewportOnly: true, loading: true,
     mock: { delayMs: 12000, delayPattern: `(?!(${AUTH_TABLES})$).*` },
   },
   {
@@ -77,14 +77,23 @@ async function main() {
     let rec;
     try {
       if (s.loading) {
+        // Load a fast page first, then client-navigate so the route's
+        // loading.tsx skeleton shows while the (delayed) RSC payload streams.
         const page = await ctx[s.vp].newPage();
+        await mockConfig(RESET);
+        await page.goto(`http://localhost:3000/admin/settings`, { waitUntil: "load", timeout: 120000 });
+        await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
+        await mockConfig({ ...RESET, ...s.mock });
         const t0 = Date.now();
-        page.goto(`http://localhost:3000${route.path}`, { timeout: 60000 }).catch(() => {});
-        await page.waitForTimeout(3500);
+        const link = page.locator(`a[href="${route.path}"]:visible`).first();
+        await link.click({ timeout: 10000 });
+        await page.waitForTimeout(2500);
         const file = `${String(i).padStart(3, "0")}_${s.name}_${s.vp}.jpg`;
-        await page.screenshot({ path: path.join(OUT, file), type: "jpeg", quality: 70 });
-        const txt = await page.evaluate(() => document.body?.innerText?.slice(0, 300) || "").catch(() => "");
-        rec = { label: s.name, group: "special", route: route.path, viewport: s.vp, file, loadMs: Date.now() - t0, note: "captured 3.5s into a 12s mock delay", textSample: txt, verdict: "ok", consoleErrors: [], pageErrors: [], failedRequests: [] };
+        await page.screenshot({ path: path.join(OUT, file), type: "jpeg", quality: 70, timeout: 20000 });
+        const txt = await page.evaluate(() => document.querySelector("main")?.innerText?.slice(0, 300) || "").catch(() => "");
+        rec = { label: s.name, group: "special", route: route.path, viewport: s.vp, file, loadMs: Date.now() - t0, note: "client navigation from /admin/settings, captured 2.5s into a 12s mock delay on data tables", textSample: txt, verdict: "ok", consoleErrors: [], pageErrors: [], failedRequests: [] };
+        await mockConfig(RESET);
+        await page.waitForTimeout(10000);
         await page.close();
       } else {
         rec = await shoot(ctx[s.vp], route, s.vp, { index: i, name: s.name, before: s.before, viewportOnly: s.viewportOnly, settleMs: s.settleMs });

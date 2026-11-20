@@ -17,6 +17,16 @@ const ways = [
   { n: "04", t: "Coach a young person.", b: "Your people spend about five hours, virtually, helping one young person get into the field they work in." },
 ].map((w, i) => ({ ...w, cta: i === 3 ? "Become a coach" : "Talk to us", href: i === 3 ? "#coach" : "#start", bg: i === 3 ? "var(--ink)" : "var(--paper)", border: i === 3 ? "var(--ink)" : "var(--rule)", head: i === 3 ? "var(--cream)" : "var(--ink)", body: i === 3 ? "var(--gray-mid)" : "var(--charcoal)" }));
 
+const founding = { eyebrow: "Founding partner", name: "Twilio", body: "Five Twilio employees told us the ins and outs of their careers. We turned that into introships that thousands of young people will come into contact with." };
+
+const takes = { eyebrow: "What it takes", h2: "One session. About 90 minutes.", body: "Your people join a video call and talk about the work they do. No prep and no travel. It fits inside a volunteer week or a team meeting. We handle the rest." };
+
+const back = [
+  { n: "01", t: "Your team's name on the careers they built.", b: "Every introship built from your people's stories is credited to your team." },
+  { n: "02", t: "A volunteer event people can do from anywhere.", b: "One video session your employees can join from any office or from home." },
+  { n: "03", t: "A year-end report.", b: "How many students explored the careers your team built." },
+];
+
 const coach = [
   { n: "1", t: "A 20-minute call with Remi.", b: "We learn about your work and match you with a young person who wants to do it." },
   { n: "2", t: "Four 45-minute conversations.", b: "Over six to eight weeks, on video. We send you a short card before each session." },
@@ -91,6 +101,24 @@ export default function CompaniesPage() {  return (
             </figure>
           </div>
         </section>
+        <section aria-label="Founding partner" style={{ background: "var(--paper)", borderBottom: "1px solid var(--rule)", padding: "clamp(28px,3.5vw,40px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px clamp(32px,5vw,64px)" }}>
+            <div style={{ flexShrink: "0" }}>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 6px" }}>{founding.eyebrow}</p>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "28px", letterSpacing: "-0.01em", lineHeight: "1.1", color: "var(--ink)", margin: "0" }}>{founding.name}</p>
+            </div>
+            <p style={{ flex: "1 1 320px", maxWidth: "640px", fontSize: "16px", lineHeight: "1.6", color: "var(--charcoal)", margin: "0", textWrap: "pretty" }}>{founding.body}</p>
+          </div>
+        </section>
+        <section style={{ background: "var(--cream)", padding: "clamp(64px,7vw,96px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,400px),1fr))", gap: "clamp(24px,5vw,80px)", alignItems: "start" }}>
+            <div>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 16px" }}>{takes.eyebrow}</p>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(34px,4.2vw,48px)", letterSpacing: "-0.02em", lineHeight: "1.12", color: "var(--ink)", margin: "0" }}>{takes.h2}</h2>
+            </div>
+            <p style={{ fontSize: "18px", lineHeight: "1.65", color: "var(--charcoal)", margin: "0", textWrap: "pretty" }}>{takes.body}</p>
+          </div>
+        </section>
         <section style={{ background: "var(--surface-tint)", backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)", backgroundSize: "22px 22px", padding: "clamp(80px,9vw,112px) 0" }}>
           <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)" }}>
             <div style={{ maxWidth: "700px", marginBottom: "48px" }}>
@@ -107,6 +135,24 @@ export default function CompaniesPage() {  return (
                 </article>
               ))}
             </div>
+          </div>
+        </section>
+        <section style={{ background: "var(--paper)", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)" }}>
+            <div style={{ maxWidth: "700px", marginBottom: "48px" }}>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 16px" }}>What you get back</p>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(34px,4.2vw,48px)", letterSpacing: "-0.02em", lineHeight: "1.12", color: "var(--ink)", margin: "0" }}>What your company gets back.</h2>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,280px),1fr))", gap: "clamp(28px,4vw,48px)", marginBottom: "48px" }}>
+              {back.map((g, i) => (
+                <div key={i} style={{ borderTop: "1px solid var(--rule)", paddingTop: "24px" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: "900", fontSize: "clamp(56px,5vw,72px)", lineHeight: "0.85", color: "var(--orange)", marginBottom: "18px" }}>{g.n}</div>
+                  <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(20px,1.9vw,24px)", lineHeight: "1.25", letterSpacing: "-0.01em", color: "var(--ink)", margin: "0 0 10px" }}>{g.t}</h3>
+                  <p style={{ fontSize: "16px", lineHeight: "1.6", color: "var(--charcoal)", margin: "0" }}>{g.b}</p>
+                </div>
+              ))}
+            </div>
+            <PillCTA size="lg" href="#start">Talk to us</PillCTA>
           </div>
         </section>
         <section id="coach" style={{ background: "var(--ink)", backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)", backgroundSize: "22px 22px", padding: "clamp(80px,9vw,112px) 0" }}>

@@ -19,6 +19,8 @@ export type OrgCommsSettings = {
   footer_text: string | null;
   daily_send_cap: number;
   transport: CommsTransportKind;
+  /** G4: addresses that get a copy of every finished campaign. */
+  leadership_copy_emails?: string[];
 };
 
 export type CommsTransportKind = "gmail" | "resend";
@@ -30,7 +32,7 @@ export const GMAIL_DEFAULT_DAILY_CAP = 400;
 export const GMAIL_MAX_DAILY_CAP = 1800;
 
 export const SETTINGS_COLUMNS =
-  "org_id, from_name, from_email, reply_to, mailing_address, footer_text, daily_send_cap, transport";
+  "org_id, from_name, from_email, reply_to, mailing_address, footer_text, daily_send_cap, transport, leadership_copy_emails";
 
 export async function loadOrgCommsSettings(
   supabase: SupabaseClient,

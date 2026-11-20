@@ -21,7 +21,13 @@ import { appOrigin } from "@/lib/origins";
 // because that's the case where the user has deliberately left the app and
 // won't see an in-app badge. Everything else is in-app only until a
 // per-type preferences UI exists.
-export const EMAIL_TYPES = new Set<string>(["research.completed", "research.failed"]);
+export const EMAIL_TYPES = new Set<string>([
+  "research.completed",
+  "research.failed",
+  // Comms G4: campaign email stuck or blocked. An alarm the admin has to see
+  // even when they're not in the app.
+  "comms.stuck",
+]);
 
 export type NotifyInput = {
   orgId: string;

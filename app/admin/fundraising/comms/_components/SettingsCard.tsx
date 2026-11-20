@@ -17,6 +17,7 @@ export type CommsSettings = {
   footer_text: string | null;
   daily_send_cap: number;
   transport: "gmail" | "resend";
+  leadership_copy_emails: string[];
 };
 
 const inputCls =
@@ -44,6 +45,7 @@ export function SettingsCard({
     mailing_address: settings?.mailing_address ?? "",
     footer_text: settings?.footer_text ?? "",
     daily_send_cap: settings?.daily_send_cap ?? 2000,
+    leadership_copy_emails: (settings?.leadership_copy_emails ?? []).join(", "),
   });
 
   const incomplete =
@@ -114,6 +116,12 @@ export function SettingsCard({
             <dt className="text-xs uppercase tracking-wider text-ink-3">Daily cap</dt>
             <dd className="text-ink-1 [font-variant-numeric:tabular-nums]">{settings?.daily_send_cap ?? "—"}</dd>
           </div>
+          <div className="col-span-2 lg:col-span-4">
+            <dt className="text-xs uppercase tracking-wider text-ink-3">Copy every campaign to</dt>
+            <dd className="text-ink-1 truncate">
+              {settings?.leadership_copy_emails?.length ? settings.leadership_copy_emails.join(", ") : "No one"}
+            </dd>
+          </div>
         </dl>
       ) : (
         <form onSubmit={save} className="space-y-3">
@@ -139,6 +147,10 @@ export function SettingsCard({
             <label className={labelCls}>
               Footer text
               <input value={form.footer_text} onChange={(e) => setForm({ ...form, footer_text: e.target.value })} placeholder="EIN, tagline…" className={inputCls} />
+            </label>
+            <label className={labelCls + " lg:col-span-2"}>
+              Copy every campaign to (up to 10, comma separated)
+              <input value={form.leadership_copy_emails} onChange={(e) => setForm({ ...form, leadership_copy_emails: e.target.value })} placeholder="ed@yourorg.org, board.chair@yourorg.org" className={inputCls} />
             </label>
             <label className={labelCls}>
               Daily send cap

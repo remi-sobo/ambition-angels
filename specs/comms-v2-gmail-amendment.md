@@ -1,6 +1,6 @@
 # Spec amendment: Comms v2, v1.2 (send from each org's Gmail)
 
-**Status:** Approved 2026-11-20. G1 in review, G2 in review. Amends `specs/comms-v2-mail-merge.md` v1.1.
+**Status:** Approved 2026-11-20. G1 to G3 live; G4 in review. Amends `specs/comms-v2-mail-merge.md` v1.1.
 **Repo location:** `specs/comms-v2-gmail-amendment.md`
 **Author:** Claude (architect), for Remi
 **Source of patterns:** the Team Esface email engine (`remi-sobo/team-esface-`, `src/lib/email/**`). Remi confirmed on 2026-11-20 that Team Esface has agreed to BloomOS using and adapting that code.
@@ -191,6 +191,15 @@ None of these tables gets a default `org_id`. The ratchet test covers each new t
 - One-click unsubscribe already existed (`/api/unsubscribe` accepts the RFC 8058 POST). Fixed: the unsubscribe page was hardcoded to Ambition Angels and remi@; it now names the sending org and its reply-to or Gmail account.
 - `v_campaign_stats` was dropped in favor of counting on the results page, since campaigns are capped at 2,000 recipients.
 - Tests: `tests/comms-tracking.test.ts`.
+
+## G4 as built (2026-11-20)
+
+- Migration `supabase/migrations/comms_gmail_g4.sql`: `stuck_alerted_at` and `leadership_copied_at` on `email_campaigns`; `leadership_copy_emails` and `blocked_alerted_at` on `org_comms_settings`. Campaigns already finished are marked copied, so nothing is copied retroactively.
+- `lib/comms/safety.ts`, run at the end of every worker tick and isolated so a failure never affects sends:
+  - Stuck-send alarm: a campaign still sending 24 hours after it started, or an org whose sender is broken while emails wait, notifies each member whose role holds `org.manage`, in BloomOS and by email (`comms.stuck` joins the emailing notification types). Each alarm fires at most once a day.
+  - Copy to leadership: once a campaign finishes, each address on the org's list (up to 10) gets one copy, `[Copy] subject`, with a line saying how many people it went to and when. Copies go through the org's own sender, aren't tracked, and wait for a later tick if the sender is broken.
+- Sending identity card: a "Copy every campaign to" field; the settings API validates the list.
+- Tests: `tests/comms-safety.test.ts`.
 
 ## Effort
 

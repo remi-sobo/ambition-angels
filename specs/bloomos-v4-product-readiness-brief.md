@@ -100,6 +100,7 @@ The acceptance standard: **if a user learns how to operate one part of BloomOS, 
 Build the unified design system around:
 
 - A persistent dark navigation shell with a bright, spacious working surface. (BloomOS already has this. Keep the existing tokens.)
+- The sidebar is a rounded panel set in from the window edge, not a full-height bar flush to the edge. (Remi, 2026-11-20, after seeing the list and board prototype, which he approved as the direction: https://claude.ai/artifact/KVnhtyF2KqCJKkAYG3eYMb)
 - Clear visual hierarchy, disciplined alignment and consistent spacing.
 - Neutral surfaces, subtle borders, restrained shadows, and accent color used on purpose.
 - Shared components for page headers, breadcrumbs, tabs, filters, tables, cards, buttons, drawers, forms and modals.

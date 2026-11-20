@@ -41,7 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (c.segment_id) {
     const { data: seg } = await supabase.from("segments").select("definition").eq("id", c.segment_id).maybeSingle();
     if (seg) {
-      const { recipients } = await resolveRecipients(supabase, (seg.definition ?? {}) as Record<string, string>);
+      const { recipients } = await resolveRecipients(supabase, (seg.definition ?? {}) as Record<string, string>, ctx.orgId);
       if (recipients[0]) sampleFirstName = recipients[0].firstName;
     }
   }

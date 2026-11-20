@@ -36,6 +36,12 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   if (!isUuid(params.id)) return NextResponse.json({ error: "Bad id" }, { status: 400 });
 
   const supabase = createServerSupabase();
+  // A queued campaign can't be deleted out from under the worker (its
+  // pending rows would vanish with the cascade). Cancel it first.
+  const { data: c } = await supabase.from("email_campaigns").select("status").eq("id", params.id).maybeSingle();
+  if (c && (c.status === "scheduled" || c.status === "sending")) {
+    return NextResponse.json({ error: "Cancel this campaign before deleting it." }, { status: 409 });
+  }
   const { error } = await supabase.from("email_campaigns").delete().eq("id", params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   await audit(req, { action: "fundraising.campaign_email.delete", entityType: "email_campaigns", entityId: params.id });

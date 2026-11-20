@@ -22,12 +22,17 @@ type SupabaseLike = ReturnType<typeof createServerSupabase>;
 
 export async function resolveRecipients(
   supabase: SupabaseLike,
-  def: Record<string, string>
+  def: Record<string, string>,
+  /** Pin every read to one org. RLS alone returns rows from every org the
+   *  user belongs to, so a member of two orgs would otherwise email the other
+   *  org's constituents under this org's identity. */
+  orgId?: string
 ): Promise<ResolvedRecipients> {
   let query = supabase
     .from("constituents")
     .select("id, type, first_name, last_name, org_name, emails, source, tags, do_not_contact")
     .limit(CEILING);
+  if (orgId) query = query.eq("org_id", orgId);
 
   if (def.type === "person" || def.type === "organization") query = query.eq("type", def.type);
   if (def.source) query = query.eq("source", def.source);
@@ -43,7 +48,9 @@ export async function resolveRecipients(
 
   // RLS scopes the suppression list to the caller's org. citext in the DB;
   // lowercase for the in-memory comparison.
-  const { data: sup } = await supabase.from("email_suppressions").select("email").limit(CEILING);
+  let supQuery = supabase.from("email_suppressions").select("email").limit(CEILING);
+  if (orgId) supQuery = supQuery.eq("org_id", orgId);
+  const { data: sup } = await supQuery;
   const suppressed = new Set(
     ((sup ?? []) as Array<{ email: string }>).map((s) => s.email.toLowerCase())
   );
@@ -55,11 +62,13 @@ export async function resolveRecipients(
   let agg: Map<string, { total: number; last: string }> | null = null;
   if (minTotal > 0 || since) {
     agg = new Map();
-    const { data: gifts } = await supabase
+    let giftQuery = supabase
       .from("gifts")
       .select("constituent_id, amount, gift_date")
       .not("constituent_id", "is", null)
       .limit(CEILING);
+    if (orgId) giftQuery = giftQuery.eq("org_id", orgId);
+    const { data: gifts } = await giftQuery;
     for (const g of gifts ?? []) {
       const id = g.constituent_id as string;
       const cur = agg.get(id) ?? { total: 0, last: "" };

@@ -7,6 +7,8 @@ import { CashFlowChart, Donut, money, type DonutSeg } from "../_components/chart
 import PrintButton from "./_components/PrintButton";
 import { TYPE } from "@/lib/admin/typeScale";
 import { CHART } from "@/lib/admin/chartTokens";
+import Alert from "@/app/admin/_components/ui/Alert";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 
 // Board financial report — a print/PDF-ready one-pager pulling the
 // board-meeting essentials from the same canonical sources as the dashboard, so
@@ -38,7 +40,12 @@ export default async function BoardReport() {
 
   const [catsRes, txnsRes, budgetRes, scheduleRows, receivedYTD] = await Promise.all([
     supabase.from("fin_categories").select("id, group_name, display_name, kind, functional_class, sort_order, enabled").eq("org_id", orgId).eq("enabled", true).order("sort_order"),
-    supabase.from("fin_transactions").select("amount, category_id").eq("org_id", orgId).gte("txn_date", fy.start).lte("txn_date", fy.end),
+    // Paged past PostgREST's 1,000-row cap: functional split and budget vs
+    // actual are sums over every FY transaction.
+    fetchAll<{ amount: number; category_id: string | null }>(
+      () => supabase.from("fin_transactions").select("amount, category_id").eq("org_id", orgId).gte("txn_date", fy.start).lte("txn_date", fy.end),
+      { order: ["id"] }
+    ),
     supabase.from("fin_budget").select("category_id, base_amount, activated_contingency").eq("org_id", orgId).eq("year", cfg.year),
     loadRevenueSchedule(supabase, orgId),
     loadReceivedTotal(supabase, orgId, fy.start, fy.end),
@@ -71,7 +78,8 @@ export default async function BoardReport() {
   // Received = real money landed (gifts this fiscal year). Secured = committed
   // schedule; projected = weighted pipeline. No hs_deals.
   const totals = scheduleTotals(scheduleRows);
-  const received = receivedYTD;
+  const received = receivedYTD.total;
+  const partial = snap.partial || txnsRes.truncated || receivedYTD.truncated;
   const secured = totals.committed;
   const projectedWeighted = totals.projectedWeighted;
   const raisedHard = received + secured;
@@ -132,6 +140,13 @@ export default async function BoardReport() {
           <h1 className={`${TYPE.pageTitle} mt-1`}>Fiscal Year {cfg.year}</h1>
           <div className="text-xs text-ink-2 mt-1">As of {asOf} · {reconciledTxt}</div>
         </header>
+
+        {partial && (
+          <Alert tone="warning" title="Partial ledger">
+            More transactions or gifts exist than this report reads, so cash, year-to-date and budget figures below
+            are incomplete. Do not present them as final.
+          </Alert>
+        )}
 
         {/* Headline */}
         <p className="text-sm text-ink-1 leading-relaxed">{headline}</p>

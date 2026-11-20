@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../../_components/PageHeader";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import StagesEditor from "./_components/StagesEditor";
 import { loadPipelineConfig } from "@/lib/fundraising/stages";
 
@@ -22,7 +23,9 @@ export default async function PipelineStagesSettingsPage() {
   // belong to, so each query pins org_id rather than trusting RLS.
   const [config, oppsRes] = await Promise.all([
     loadPipelineConfig(supabase, ctx.orgId),
-    supabase.from("opportunities").select("pipeline, stage").eq("org_id", ctx.orgId).limit(10000),
+    // Paged: these counts guard stage deletion ("move cards first"), and a
+    // `.limit(10000)` is still capped at PostgREST's 1,000 rows.
+    fetchAll(() => supabase.from("opportunities").select("pipeline, stage").eq("org_id", ctx.orgId), { order: ["id"] }),
   ]);
 
   // How many asks sit in each (pipeline, stage) — powers the "move cards

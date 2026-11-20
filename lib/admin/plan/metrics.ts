@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import { FINANCE } from "@/lib/admin/thresholds";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import {
@@ -67,23 +68,21 @@ export const PLAN_METRICS: Record<string, PlanMetricFn> = {
   // org-type constituent. (Honest best-effort; revisit if AA wants a dedicated
   // corporate flag.)
   corporate_dollars_ytd: async (s, org) => {
-    const { data: orgConstituents } = await s
-      .from("constituents")
-      .select("id")
-      .eq("org_id", org)
-      .eq("type", "organization")
-      .limit(5000);
-    const ids = (orgConstituents ?? []).map((c) => (c as { id: string }).id);
-    if (ids.length === 0) return 0;
-    const { data } = await s
-      .from("opportunities")
-      .select("ask_amount")
-      .eq("org_id", org)
-      .in("stage", WON_STAGE_LIST)
-      .in("constituent_id", ids)
-      .gte("updated_at", yearStartTs)
-      .or(EXCLUDE_PARTNERSHIP_OPPS)
-      .limit(2000);
+    // Joined to the constituent's type in SQL and paged: the old id list
+    // (`.limit(5000)`) was silently capped at PostgREST's 1,000 rows, so won
+    // asks from org donors past the first 1,000 dropped out of the sum.
+    const { data } = await fetchAll(
+      () =>
+        s
+          .from("opportunities")
+          .select("ask_amount, constituent:constituents!inner(type)")
+          .eq("org_id", org)
+          .eq("constituent.type", "organization")
+          .in("stage", WON_STAGE_LIST)
+          .gte("updated_at", yearStartTs)
+          .or(EXCLUDE_PARTNERSHIP_OPPS),
+      { order: ["id"] }
+    );
     return sumField(data as { ask_amount: number | null }[] | null, "ask_amount");
   },
 

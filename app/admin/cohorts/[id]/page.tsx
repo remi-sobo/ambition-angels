@@ -24,6 +24,8 @@ import { EntityDocuments } from "../../_components/EntityDocuments";
 import { getProgramTerms } from "@/lib/admin/terminology";
 import { getOrgContext } from "@/lib/admin/auth";
 import { TYPE } from "@/lib/admin/typeScale";
+import Alert from "@/app/admin/_components/ui/Alert";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 
 // Cohort dashboard: enrollment vs capacity, sessions, per-member dosage
 // (modules/02-program.md "Cohorts" + "Attendance & dosage").
@@ -69,13 +71,19 @@ export default async function CohortPage({ params }: { params: { id: string } })
   const sessions = (sessionsData ?? []) as (SessionLite & SessionView)[];
   const sessionIds = sessions.map((s) => s.id);
 
-  const { data: marksData } = sessionIds.length
-    ? await supabase
-        .from("attendance")
-        .select("session_id, student_id, status")
-        .eq("org_id", orgId)
-        .in("session_id", sessionIds)
-    : { data: [] };
+  // Paged past PostgREST's 1,000-row cap: a long cohort passes 1,000 marks,
+  // and every dosage and rate on this page is rolled up from them.
+  const { data: marksData, truncated: marksCapped } = sessionIds.length
+    ? await fetchAll<MarkLite>(
+        () =>
+          supabase
+            .from("attendance")
+            .select("session_id, student_id, status")
+            .eq("org_id", orgId)
+            .in("session_id", sessionIds),
+        { order: ["id"] },
+      )
+    : { data: [], truncated: false };
   const marks = (marksData ?? []) as MarkLite[];
 
   const memberViews: MemberView[] = members
@@ -149,6 +157,11 @@ export default async function CohortPage({ params }: { params: { id: string } })
           acceptingApplications={Boolean(cohort.accepting_applications)}
         />
       </div>
+      {marksCapped && (
+        <Alert tone="warning" title="Partial data" className="my-3">
+          This group has more attendance marks than one page load reads, so dosage and rates below are incomplete.
+        </Alert>
+      )}
       <p className={`${TYPE.bodyMuted} mb-6`}>
         {[cohort.program, cohort.term, cohort.location].filter(Boolean).join(" · ") || "—"}
         {cohort.start_date && (

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { resolveRecipients } from "@/lib/fundraising/segments";
 import { personalize, buildCampaignEmail } from "@/lib/fundraising/comms-email";
 import { loadOrgCommsSettings, sendBlocker } from "@/lib/comms/settings";
+import { transportFor } from "@/lib/comms/transport";
 
 const isUuid = (v: string) => /^[0-9a-f-]{36}$/i.test(v);
 
@@ -20,7 +20,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const to = typeof body?.email === "string" ? body.email.trim() : "";
   if (!to) return NextResponse.json({ error: "email is required" }, { status: 400 });
-  if (!process.env.RESEND_API_KEY) return NextResponse.json({ error: "Email is not configured" }, { status: 500 });
 
   const supabase = createServerSupabase();
   const { data: c } = await supabase
@@ -33,6 +32,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const settings = await loadOrgCommsSettings(supabase, ctx.orgId);
   const blocked = sendBlocker(settings);
   if (blocked || !settings) return NextResponse.json({ error: blocked }, { status: 409 });
+  const resolved = await transportFor(settings);
+  if ("blocked" in resolved) return NextResponse.json({ error: resolved.blocked }, { status: 409 });
 
   // Sample recipient: first resolved recipient of the attached segment,
   // falling back to a generic greeting when there's no segment (or no match).
@@ -56,12 +57,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     campaignId: params.id,
   });
   try {
-    const { error } = await new Resend(process.env.RESEND_API_KEY).emails.send(payload);
-    if (error) throw new Error(error.message);
+    await resolved.transport.send(payload);
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return NextResponse.json({ error: (e as Error).message }, { status: 502 });
   }
 
-  await audit(req, { action: "fundraising.campaign_email.test", entityType: "email_campaigns", entityId: params.id, after: { to } });
+  await audit(req, {
+    action: "fundraising.campaign_email.test",
+    entityType: "email_campaigns",
+    entityId: params.id,
+    after: { to, transport: resolved.transport.kind, from: resolved.transport.fromAddress },
+  });
   return NextResponse.json({ ok: true });
 }

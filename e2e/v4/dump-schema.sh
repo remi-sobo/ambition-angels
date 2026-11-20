@@ -5,7 +5,9 @@
 #   bash e2e/v4/dump-schema.sh            # needs postgres 16 binaries + a postgres OS user
 #
 # It applies every migration the same way CI's RLS test does
-# (scripts/test-rls.sh), plus the staff-review migrations that script skips,
+# (scripts/test-rls.sh), plus the four staff migrations that script skips
+# (their AA-keyed seed inserts fail on the FK and are dropped; schema and
+# role_permissions apply),
 # then dumps column sets, foreign keys and check-constraint enums. Reference
 # rows that migrations seed (role_permissions, entity_types, the chart of
 # accounts, pipeline stages, metric definitions) are dumped too; tenant rows
@@ -28,7 +30,9 @@ $P -c 'drop database if exists v4schema' -q
 $P -c 'create database v4schema' -q
 export DATABASE_URL="postgresql://postgres@/v4schema?host=$pgdir&port=$port"
 bash "$root/scripts/test-rls.sh" >"$pgdir/rls.log" 2>&1 || { echo "migrations failed; see $pgdir/rls.log"; exit 1; }
-for f in bloomos_staff_phase2 bloomos_staff_phase3 bloomos_staff_phase4; do
+# the RLS test stubs a minimal public.staff; replace it with the real one
+$P v4schema -q -c "drop table if exists public.staff cascade" >/dev/null 2>&1
+for f in bloomos_staff_phase1 bloomos_staff_phase2 bloomos_staff_phase3 bloomos_staff_phase4; do
   $P v4schema -q -f "$root/supabase/migrations/$f.sql" >/dev/null 2>&1 || true
 done
 Q="$P v4schema -At -c"

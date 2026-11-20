@@ -170,7 +170,7 @@ function complete(table, row, T) {
 }
 
 // ── builder ─────────────────────────────────────────────────────────────────
-export function buildFixtures({ profile = "populated", role = "owner" } = {}) {
+export function buildFixtures({ profile = "populated", role = "owner", skipViews = false } = {}) {
   const T = makeTools(4242);
   const tables = {};
   const add = (table, rows) => {
@@ -208,8 +208,16 @@ export function buildFixtures({ profile = "populated", role = "owner" } = {}) {
 
   if (profile !== "empty") populate(T, add, tables, team);
 
+  // SQL views computed over these fixtures by compute-views.mjs (real view
+  // definitions, run in a throwaway Postgres). Absent file = views stay empty.
+  const viewsFile = path.join(here, "views.json");
+  if (profile !== "empty" && !skipViews && fs.existsSync(viewsFile)) {
+    const views = JSON.parse(fs.readFileSync(viewsFile, "utf8"));
+    for (const [v, rows] of Object.entries(views)) if (Array.isArray(rows)) tables[v] = rows.filter((r) => !("org_id" in r) || r.org_id === ORG_ID);
+  }
+
   // complete every row against the schema
-  for (const t of Object.keys(tables)) tables[t] = tables[t].map((r) => complete(t, r, T));
+  for (const t of Object.keys(tables)) if (!t.startsWith("v_") && t !== "ms_catalog") tables[t] = tables[t].map((r) => complete(t, r, T));
   return { tables, rpcs };
 }
 
@@ -219,7 +227,7 @@ function populate(T, add, tables, team) {
   const now = NOW;
 
   // staff
-  const staffRows = add("staff", team.filter((p) => p.role !== "board_viewer").map((p, i) => ({ id: T.id(1), org_id: ORG_ID, user_id: p.id, full_name: p.displayName, reports_to: null, status: "active" })));
+  const staffRows = add("staff", team.filter((p) => p.role !== "board_viewer").map((p, i) => ({ id: T.id(1), org_id: ORG_ID, user_id: p.id, full_name: p.displayName, title: p.title, department: ["Leadership", "Development", "Programs", "Operations"][i], employment_type: "staff", start_date: ["2024-08-01", "2025-01-13", "2025-03-03", "2025-06-16"][i], reports_to: null, status: "active", sort_order: i })));
   for (const s of staffRows.slice(1)) s.reports_to = staffRows[0].id;
 
   // reference rows remapped to the demo org
@@ -355,8 +363,8 @@ function populate(T, add, tables, team) {
     };
   }));
   add("grant_requirements", grants.filter((g) => ["awarded", "active"].includes(g.stage)).flatMap((g, i) => [
-    { id: T.id(8), org_id: ORG_ID, grant_id: g.id, kind: "report", label: "Interim narrative report", due_date: ymd(daysFromNow(10 + i * 9)), status: "pending", created_at: iso(daysAgo(60)) },
-    { id: T.id(8), org_id: ORG_ID, grant_id: g.id, kind: "report", label: "Final financial report", due_date: ymd(daysFromNow(120 + i * 9)), status: "pending", created_at: iso(daysAgo(60)) },
+    { id: T.id(8), org_id: ORG_ID, grant_id: g.id, kind: "interim_report", label: "Interim narrative report", due_date: ymd(daysFromNow(10 + i * 9)), status: "upcoming", created_at: iso(daysAgo(60)) },
+    { id: T.id(8), org_id: ORG_ID, grant_id: g.id, kind: "financial_report", label: "Final financial report", due_date: ymd(daysFromNow(120 + i * 9)), status: "upcoming", created_at: iso(daysAgo(60)) },
   ]));
   add("grant_contacts", grants.slice(0, 8).map((g, i) => ({ id: T.id(8), org_id: ORG_ID, grant_id: g.id, constituent_id: people[90 + i].id, role: "program_officer", created_at: iso(daysAgo(90)) })));
 
@@ -488,10 +496,10 @@ function populate(T, add, tables, team) {
     }
   }
   add("attendance", att);
-  add("applications", Array.from({ length: 26 }, (_, i) => ({ id: T.id(27), org_id: ORG_ID, cohort_id: cohorts[5].id, first_name: STUDENT_FIRST[(i * 3 + 11) % STUDENT_FIRST.length], last_name: STUDENT_LAST[(i * 7 + 1) % STUDENT_LAST.length], grade: String(T.int(8, 11)), school: schoolPartners[4].name, guardian_name: "Parent/guardian on file", motivation: "I want to learn what jobs exist in healthcare.", status: T.pick(enums.applications.status), priority: T.int(0, 3), external_source: "web", created_at: iso(daysAgo(T.int(0, 30))) })));
+  add("applications", Array.from({ length: 26 }, (_, i) => ({ id: T.id(27), org_id: ORG_ID, cohort_id: cohorts[5].id, first_name: STUDENT_FIRST[(i * 3 + 11) % STUDENT_FIRST.length], last_name: STUDENT_LAST[(i * 7 + 1) % STUDENT_LAST.length], grade: String(T.int(8, 11)), school: schoolPartners[4].name, guardian_name: "Parent/guardian on file", motivation: "I want to learn what jobs exist in healthcare.", status: T.pick(enums.applications.status), priority: T.int(1, 3), external_source: "web", created_at: iso(daysAgo(T.int(0, 30))) })));
 
   // coach
-  const coachPeople = add("coach_people", Array.from({ length: 14 }, (_, i) => ({ id: T.id(28), org_id: ORG_ID, kind: i < 7 ? "coach" : "student", status: T.pick(enums.coach_people.status), first_name: i < 7 ? FIRST[(i * 9 + 4) % FIRST.length] : STUDENT_FIRST[i], last_name: i < 7 ? LAST[(i * 5 + 9) % LAST.length] : STUDENT_LAST[i], field: i < 7 ? T.pick(["Healthcare", "Software", "Finance", "Design"]) : null, company: i < 7 ? T.pick(COMPANIES) : null, school: i >= 7 ? T.pick(SCHOOLS) : null, email: `coach${i}@example.com`, created_at: iso(daysAgo(T.int(1, 90))) })));
+  const coachPeople = add("coach_people", Array.from({ length: 14 }, (_, i) => ({ id: T.id(28), org_id: ORG_ID, kind: i < 7 ? "coach" : "student", status: T.pick(enums.coach_people.status), first_name: i < 7 ? FIRST[(i * 9 + 4) % FIRST.length] : STUDENT_FIRST[i], last_name: i < 7 ? LAST[(i * 5 + 9) % LAST.length] : STUDENT_LAST[i], company: i < 7 ? T.pick(COMPANIES) : null, school: i >= 7 ? T.pick(SCHOOLS) : null, field: T.pick(["Healthcare", "Software", "Finance", "Design", "Trades"]), email: `coach${i}@example.com`, created_at: iso(daysAgo(T.int(1, 90))) })));
   add("coach_matches", [0, 1, 2].map((k) => ({ id: T.id(28), org_id: ORG_ID, coach_id: coachPeople[k].id, student_id: coachPeople[7 + k].id, status: ["active", "intro_sent", "proposed"][k], created_at: iso(daysAgo(10 + k)) })));
 
   // ── work: projects, tasks, meetings, calendar, documents ──────────────────
@@ -504,7 +512,7 @@ function populate(T, add, tables, team) {
   const goals = add("plan_goals", objectives.flatMap((o, i) => [0, 1, 2].map((k) => ({ id: T.id(31), org_id: ORG_ID, objective_id: o.id, title: [["Launch Career Labs at 4 new schools", "Run two summer internship cohorts", "Pilot the app with 500 teens"], ["Grow individual giving 25%", "Secure 3 new corporate partners", "Close two multi-year foundation grants"], ["Sign MOUs with 2 districts", "Train 12 school-site leads", "Publish a partner playbook"], ["Hire a program coordinator", "Adopt monthly close", "Board recruits 2 new members"]][i][k], description: null, target_date: ymd(daysFromNow(30 + k * 60)), status: T.pick(enums.plan_goals.status), sort_order: k, owner: o.owner, created_at: iso(daysAgo(280)), updated_at: iso(daysAgo(T.int(1, 30))) }))));
   const kpis = add("plan_kpis", goals.slice(0, 12).map((g, i) => ({ id: T.id(32), org_id: ORG_ID, goal_id: g.id, objective_id: g.objective_id, title: ["Teens reached (YTD)", "Internship placements", "App weekly actives", "Individual giving ($)", "Corporate partners", "Foundation dollars ($)", "District MOUs", "Site leads trained", "Playbook chapters", "Open roles filled", "Days to close books", "Board seats filled"][i], unit: [null, null, null, "usd", null, "usd", null, null, null, null, "days", null][i], target: [5000, 60, 500, 400000, 8, 600000, 2, 12, 6, 2, 10, 11][i], current: [3620, 41, 310, 287000, 5, 350000, 1, 7, 2, 1, 18, 9][i], owner: g.owner, cadence: "monthly", source: "manual", status: g.status, last_updated_at: iso(daysAgo(T.int(1, 40))), baseline: 0, baseline_date: ymd(daysAgo(300)), created_at: iso(daysAgo(280)), updated_at: iso(daysAgo(5)) })));
   add("plan_kpi_snapshots", kpis.flatMap((k) => Array.from({ length: 6 }, (_, m) => ({ org_id: ORG_ID, kpi_id: k.id, value: Math.round(k.current * (0.5 + m * 0.1)), captured_on: ymd(daysAgo((5 - m) * 30)), created_at: iso(daysAgo((5 - m) * 30)) }))));
-  const initiatives = add("plan_initiatives", goals.slice(0, 8).map((g, i) => ({ id: T.id(33), org_id: ORG_ID, goal_id: g.id, title: ["Recruit spring schools", "Internship host outreach", "App onboarding sprint", "Monthly Angels campaign", "Corporate deck refresh", "Grant calendar", "District pitch", "Site lead curriculum"][i], owner: g.owner, status: "active", sort_order: i, created_at: iso(daysAgo(200)) })));
+  const initiatives = add("plan_initiatives", goals.slice(0, 8).map((g, i) => ({ id: T.id(33), org_id: ORG_ID, goal_id: g.id, title: ["Recruit spring schools", "Internship host outreach", "App onboarding sprint", "Monthly Angels campaign", "Corporate deck refresh", "Grant calendar", "District pitch", "Site lead curriculum"][i], owner: g.owner, status: i % 3 === 0 ? "done" : "in_progress", sort_order: i, created_at: iso(daysAgo(200)) })));
   add("plan_foundation", [{ org_id: ORG_ID, mission: "Help teens from under-resourced communities discover careers they did not know existed.", vision: "Every teen can name three careers they are excited about.", values: ["Curiosity", "Belonging", "Follow-through"], created_at: iso(daysAgo(300)) }]);
   add("plan_reviews", [{ id: T.id(33), org_id: ORG_ID, conducted_at: iso(daysAgo(25)), conducted_by: "dana", notes: "Program goals on track; revenue behind plan by 12%.", next_review_at: iso(daysFromNow(5)), created_at: iso(daysAgo(25)) }]);
   add("metric_snapshots", metricDefs.flatMap((m) => Array.from({ length: 8 }, (_, k) => ({ id: T.id(34), org_id: ORG_ID, metric_id: m.id, captured_on: ymd(daysAgo((7 - k) * 30)), value: m.unit === "pct" ? 60 + k * 2 + T.int(0, 4) : m.unit === "usd" ? 520 - k * 10 : Math.round((m.target || 300) * (0.45 + k * 0.06)), captured_by: team[2].id, created_at: iso(daysAgo((7 - k) * 30)) }))));
@@ -531,7 +539,7 @@ function populate(T, add, tables, team) {
       estimated_minutes: T.pick([15, 30, 60, 90]),
     };
   }));
-  add("plan_objective_tasks", tasks.slice(20, 28).map((t, i) => ({ id: T.id(41), org_id: ORG_ID, objective_id: objectives[i % 4].id, title: t.title, assignee: t.assigned_to, status: t.status === "done" ? "done" : "open", due_date: t.due_date, sort_order: i, created_at: iso(daysAgo(10)) })));
+  add("plan_objective_tasks", tasks.slice(20, 28).map((t, i) => ({ id: T.id(41), org_id: ORG_ID, objective_id: objectives[i % 4].id, title: t.title, assignee: t.assigned_to, status: t.status === "done" ? "done" : "todo", due_date: t.due_date, sort_order: i, created_at: iso(daysAgo(10)) })));
 
   const events = [];
   for (let d = 0; d < 10; d++) {
@@ -545,8 +553,8 @@ function populate(T, add, tables, team) {
   add("calendar_events", events);
   const meetingRecords = add("meeting_records", Array.from({ length: 16 }, (_, i) => ({ id: T.id(43), org_id: ORG_ID, owner_user_id: team[i % 3].id, title: T.pick(["Program officer check-in", "Donor coffee", "District pitch rehearsal", "Board finance committee", "Partner kickoff", "Mentor orientation"]), occurred_at: iso(daysAgo(i * 3 + 1)), source: T.pick(["calendar", "manual"]), summary: "Discussed spring timeline, two follow-ups agreed: send the one-pager and confirm dates.", store_transcript: false, follow_up_status: T.pick(enums.meeting_records.follow_up_status), created_at: iso(daysAgo(i * 3 + 1)) })));
   add("meeting_suggested_tasks", meetingRecords.slice(0, 4).map((m) => ({ id: T.id(43), org_id: ORG_ID, meeting_record_id: m.id, suggested_title: "Send the impact one-pager", suggested_category: "fundraising", status: "pending", created_at: m.created_at })));
-  add("meeting_types", [{ id: T.id(44), org_id: ORG_ID, slug: "intro", name: "Intro call", duration_minutes: 30, is_active: true, description: "A short intro call." }]);
-  add("bookings", Array.from({ length: 5 }, (_, i) => ({ id: T.id(44), org_id: ORG_ID, meeting_type_id: null, attendee_name: `${FIRST[i + 20]} ${LAST[i + 20]}`, attendee_email: `booker${i}@example.com`, attendee_timezone: "America/Los_Angeles", start_time: iso(at(daysFromNow(i + 1), 10 + i)), end_time: iso(at(daysFromNow(i + 1), 10 + i, 30)), status: "confirmed", created_at: iso(daysAgo(2)) })));
+  const meetingTypes = add("meeting_types", [{ id: T.id(44), org_id: ORG_ID, slug: "intro", name: "Intro call", duration_minutes: 30, is_active: true, description: "A short intro call." }]);
+  add("bookings", Array.from({ length: 5 }, (_, i) => ({ id: T.id(44), org_id: ORG_ID, meeting_type_id: meetingTypes[0].id, location_type: "video", attendee_name: `${FIRST[i + 20]} ${LAST[i + 20]}`, attendee_email: `booker${i}@example.com`, attendee_timezone: "America/Los_Angeles", start_time: iso(at(daysFromNow(i + 1), 10 + i)), end_time: iso(at(daysFromNow(i + 1), 10 + i, 30)), status: "confirmed", created_at: iso(daysAgo(2)) })));
 
   add("documents", Array.from({ length: 22 }, (_, i) => {
     const docs = [["Board-approved FY26 budget.pdf", "budget"], ["IRS determination letter.pdf", "determination_letter"], ["Certificate of insurance 2026.pdf", "insurance"], ["Westbrook MOU signed.pdf", "mou"], ["Harborview grant agreement.pdf", "grant_agreement"], ["Employee handbook v3.pdf", "policy"], ["Whistleblower policy.pdf", "policy"], ["Form 990 FY25.pdf", "form_990"], ["Audit FY25.pdf", "audit"], ["Career Lab facilitator guide.pdf", "program"], ["Data sharing agreement Eastlake.pdf", "mou"]];
@@ -556,7 +564,7 @@ function populate(T, add, tables, team) {
 
   // ── finance ───────────────────────────────────────────────────────────────
   const year = now.getFullYear();
-  add("fin_config", [{ id: 1, org_id: ORG_ID, fiscal_year_start_month: 1, current_year: year, fundraising_goal: 900000, contingency_unlock_threshold: 650000, cash_starting_balance: 412000, cash_starting_date: `${year - 1}-12-31`, updated_at: iso(daysAgo(2)), cash_reconciled_at: iso(daysAgo(2)), last_reconciled_at: iso(daysAgo(2)), monthly_burn_baseline: 68000, forward_horizon_months: 12, runway_target_months: 6 }]);
+  add("fin_config", [{ id: 1, org_id: ORG_ID, fiscal_year_start_month: 1, current_year: year, fundraising_goal: 900000, contingency_unlock_threshold: 0.75, cash_starting_balance: 412000, cash_starting_date: `${year - 1}-12-31`, updated_at: iso(daysAgo(2)), cash_reconciled_at: iso(daysAgo(2)), last_reconciled_at: iso(daysAgo(2)), monthly_burn_baseline: 68000, forward_horizon_months: 12, runway_target_months: 6 }]);
   const cats = (reference.fin_categories || []).filter((c) => c.enabled !== false);
   const expCats = ["payroll.salaries-wages", "payroll.taxes", "payroll.benefits", "occupancy.rent", "admin.insurance-general", "prof.accounting", "fundraising.donor-platform", "marketing.website-sub", "program.course-equipment", "program.engagement", "travel.meals", "admin.bank-fees"].filter((id) => cats.some((c) => c.id === id));
   const budgets = { "payroll.salaries-wages": 520000, "payroll.taxes": 42000, "payroll.benefits": 60000, "occupancy.rent": 36000, "admin.insurance-general": 9000, "prof.accounting": 18000, "fundraising.donor-platform": 6000, "marketing.website-sub": 4000, "program.course-equipment": 30000, "program.engagement": 45000, "travel.meals": 8000, "admin.bank-fees": 2400, "revenue.foundations": 420000, "revenue.individuals": 300000, "revenue.corporate": 150000, "revenue.gov-grants": 50000 };
@@ -585,9 +593,9 @@ function populate(T, add, tables, team) {
   // a few uncategorized recent ones (reconcile queue)
   for (let k = 0; k < 6; k++) txns.push({ id: T.id(50), org_id: ORG_ID, txn_date: ymd(daysAgo(k + 1)), description: ["AMZN Mktp order", "SQ *Corner Cafe", "Zoom subscription", "Lyft ride", "Office Depot", "Check deposit #1042"][k], amount: k === 5 ? 1500 : -money(T.int(12, 400)), category_id: null, restricted: false, source_file: "bank-export.csv", dedup_hash: `u${k}`, uploaded_at: iso(daysAgo(1)), uploaded_by: "lena", updated_at: iso(daysAgo(1)), exclude_from_runway: false });
   add("fin_transactions", txns);
-  add("fin_revenue_commitments", pledges.slice(0, 6).map((p, i) => ({ id: T.id(51), org_id: ORG_ID, year: NOW.getFullYear(), source_type: "pledge", source_name: `Pledge installment ${i + 1}`, amount: money(p.total_amount / p.installment_count), expected_date: ymd(daysFromNow(20 + i * 30)), probability: 90, status: "expected", created_at: iso(daysAgo(30)) })));
+  add("fin_revenue_commitments", pledges.slice(0, 6).map((p, i) => ({ id: T.id(51), org_id: ORG_ID, year: NOW.getFullYear(), source_type: i < 4 ? "foundation" : "corporate", source_name: `Multi-year commitment ${i + 1}`, amount: money(p.total_amount / p.installment_count), expected_date: ymd(daysFromNow(20 + i * 30)), probability: 0.9, status: i < 2 ? "secured" : "projected", created_at: iso(daysAgo(30)) })));
   add("fin_category_rules", [{ id: T.id(51), org_id: ORG_ID, pattern: "Gusto", pattern_type: "contains", category_id: "payroll.salaries-wages", hit_count: 34, enabled: true, priority: 10, created_at: iso(daysAgo(200)) }, { id: T.id(51), org_id: ORG_ID, pattern: "Stripe payout", pattern_type: "contains", category_id: "revenue.individuals", hit_count: 70, enabled: true, priority: 10, created_at: iso(daysAgo(200)) }]);
-  add("fin_reconciliation_items", gifts.slice(0, 3).map((g, i) => ({ id: T.id(51), org_id: ORG_ID, kind: "proposal", status: "pending", title: `Possible unrecorded gift ${i + 1}`, amount: g.amount, created_at: iso(daysAgo(i + 1)) })));
+  add("fin_reconciliation_items", gifts.slice(0, 3).map((g, i) => ({ id: T.id(51), org_id: ORG_ID, kind: "commitment", source: ["gmail", "hubspot", "stripe"][i], status: "pending", confidence: ["high", "medium", "low"][i], title: `Possible unrecorded gift ${i + 1}`, detail: "Email thread mentions a pledged amount not yet in the ledger.", amount: g.amount, payload: {}, created_by: "finance-reconcile", created_at: iso(daysAgo(i + 1)) })));
 
   // ── organization: board, compliance ──────────────────────────────────────
   const boardNames = ["Theo Brandt", "Rosalind Achebe", "Kenji Morales", "Harriet Lindgren", "Samuel Oduya", "Beatrix Castellanos", "Gareth Pennington", "Imogen Nakagawa", "Dana Whitfield"];
@@ -606,9 +614,9 @@ function populate(T, add, tables, team) {
   add("compliance_filings", [{ id: T.id(62), org_id: ORG_ID, item_id: tables.compliance_items[9].id, filed_date: ymd(daysAgo(300)), filed_by: "lena", created_at: iso(daysAgo(300)) }]);
 
   // staff goals / kpis / reviews
-  add("staff_goals", staffRows.map((s, i) => ({ id: T.id(63), org_id: ORG_ID, staff_id: s.id, title: ["Close 3 multi-year grants", "Raise $400k individual giving", "Launch 4 new Career Labs", "Monthly close in 10 days"][i], status: "on_track", created_at: iso(daysAgo(100)) })));
-  add("staff_kpis", staffRows.map((s, i) => ({ id: T.id(63), org_id: ORG_ID, staff_id: s.id, title: ["Grant dollars", "Donor retention", "Teens served", "Close days"][i], target: [600000, 70, 1200, 10][i], current: [350000, 61, 890, 18][i], created_at: iso(daysAgo(100)) })));
-  add("review_cycles", [{ id: T.id(63), org_id: ORG_ID, name: "Fall 2026 reviews", status: "open", opens_on: ymd(daysAgo(10)), closes_on: ymd(daysFromNow(20)), created_at: iso(daysAgo(12)) }]);
+  add("staff_goals", staffRows.map((s, i) => ({ id: T.id(63), org_id: ORG_ID, staff_id: s.id, title: ["Close 3 multi-year grants", "Raise $400k individual giving", "Launch 4 new Career Labs", "Monthly close in 10 days"][i], metric_type: "numeric", target_value: [3, 400000, 4, 10][i], current_value: [1, 287000, 3, 18][i], period: "FY2026", status: ["on_track", "at_risk", "on_track", "behind"][i], approval_status: "approved", sort_order: 0, created_at: iso(daysAgo(100)) })));
+  add("staff_kpis", staffRows.map((s, i) => ({ id: T.id(63), org_id: ORG_ID, staff_id: s.id, title: ["Grant dollars", "Donor retention", "Teens served", "Close days"][i], target: [600000, 70, 1200, 10][i], current: [350000, 61, 890, 18][i], unit: ["usd", "pct", null, "days"][i], cadence: "monthly", source: "manual", status: "on_track", sort_order: 0, created_at: iso(daysAgo(100)) })));
+  add("review_cycles", [{ id: T.id(63), org_id: ORG_ID, name: "Fall 2026 reviews", status: "collecting", anonymity_mode: "confidential", opens_on: ymd(daysAgo(10)), closes_on: ymd(daysFromNow(20)), created_at: iso(daysAgo(12)) }]);
 
   // ── inbox: notifications + messages ──────────────────────────────────────
   add("notifications", Array.from({ length: 24 }, (_, i) => {
@@ -633,7 +641,7 @@ function populate(T, add, tables, team) {
 
   // content: a few career cards
   add("ms_occupations", Array.from({ length: 8 }, (_, i) => ({ soc_code: `29-${1000 + i}.00`, title: ["Respiratory Therapist", "Wind Turbine Technician", "UX Researcher", "Dental Hygienist", "Civil Drafter", "Sound Engineering Tech", "Actuary", "Urban Planner"][i], riasec: { R: 4, I: 5, A: 2, S: 3, E: 2, C: 3 }, job_zone: 3, pay_median: 70000 + i * 5000, education_typical: "Associate degree", imported_at: iso(daysAgo(100)) })));
-  add("ms_cards", tables.ms_occupations.map((o, i) => ({ soc_code: o.soc_code, field: ["health","trades","tech","health","trades","creative","business","public"][i], day_vignette: "You start the day checking equipment, then meet your first patient.", clue_1: "You work with your hands and your head.", status: ["approved", "approved", "draft", "draft", "approved", "draft", "approved", "retired"][i], generated_by: "claude", generated_at: iso(daysAgo(50)), created_at: iso(daysAgo(50)) })));
+  add("ms_cards", tables.ms_occupations.map((o, i) => ({ soc_code: o.soc_code, field: ["health","trades","tech","health","trades","creative","business","public"][i], day_vignette: "You start the day checking equipment, then meet your first patient.", clue_1: "You work with your hands and your head.", status: ["approved", "approved", "draft", "draft", "approved", "draft", "approved", "retired"][i], generated_by: "claude", generated_at: iso(daysAgo(50)), reviewed_by: "priya", reviewed_at: iso(daysAgo(40)), created_at: iso(daysAgo(50)) })));
 
   // ygb registrations (aa.ygb) left empty on purpose; captures empty.
 }

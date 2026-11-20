@@ -1200,6 +1200,18 @@
    "ended"
   ]
  },
+ "staff": {
+  "employment_type": [
+   "staff",
+   "contractor",
+   "volunteer",
+   "board"
+  ],
+  "status": [
+   "active",
+   "inactive"
+  ]
+ },
  "staff_goals": {
   "metric_type": [
    "numeric",

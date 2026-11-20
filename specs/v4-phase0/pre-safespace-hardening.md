@@ -26,6 +26,7 @@ Pulled out of V4 on 2026-11-20 with Remi's approval. These are the audit finding
 | 8 | Finance categories per org. | Needs a database change. Remi approves before it is applied. |
 | A | Test safety nets: the test database copies Supabase's default grants, so a repeat of #1 fails CI. The tenant scanner stops skipping database functions. | Small. |
 | B | The phone app stops keeping donor and student pages on the device after logout. | Small. |
+| F | The constituent import reads existing donors and imported gifts with no org filter, so a user in two orgs could be matched to the other org's donor. Found while fixing #11. | Small. |
 | C | About 36 save actions that never check whether the save worked. | Can move to V4 Stage A if time is short. |
 
 ## Needs Remi, not code

@@ -8,6 +8,8 @@ import { cf, fullName, type Student } from "@/app/admin/students/_lib/studentFie
 import PageHeader from "@/app/admin/_components/PageHeader";
 import EmptyState from "@/app/admin/_components/EmptyState";
 import { TYPE } from "@/lib/admin/typeScale";
+import Alert from "@/app/admin/_components/ui/Alert";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 
 // Spec Programs P2 — Overview, the destination's landing. Until P2 this host
 // re-exported /admin/program, a nine-line placeholder — the only V2 landing
@@ -50,9 +52,9 @@ export default async function ProgramsOverviewPage() {
   const [
     { data: cohortsData },
     { data: sessionsData },
-    { data: membersData },
-    { data: marksData },
-    { data: studentsData },
+    { data: membersData, truncated: membersCapped },
+    { data: marksData, truncated: marksCapped },
+    { data: studentsData, truncated: studentsCapped },
     { data: appsData },
     terms,
   ] = await Promise.all([
@@ -62,20 +64,25 @@ export default async function ProgramsOverviewPage() {
       .select("id, cohort_id, session_date, title, status")
       .eq("org_id", orgId)
       .order("session_date", { ascending: true }),
-    supabase.from("cohort_members").select("cohort_id, student_id, status").eq("org_id", orgId),
-    supabase
-      .from("attendance")
-      .select("student_id, session_id, status, recorded_at")
-      .eq("org_id", orgId)
-      .order("recorded_at", { ascending: true }),
-    supabase.from("students").select("*").eq("org_id", orgId),
+    // Paged past PostgREST's 1,000-row cap: these feed the headline counts,
+    // the attendance rate and the drop list, so a capped read is a wrong number.
+    fetchAll<{ cohort_id: string; student_id: string; status: string }>(
+      () => supabase.from("cohort_members").select("cohort_id, student_id, status").eq("org_id", orgId),
+      { order: ["id"] },
+    ),
+    fetchAll<{ student_id: string; session_id: string; status: string; recorded_at: string }>(
+      () => supabase.from("attendance").select("student_id, session_id, status, recorded_at").eq("org_id", orgId),
+      { order: ["recorded_at", "id"] },
+    ),
+    fetchAll<Student>(() => supabase.from("students").select("*").eq("org_id", orgId), { order: ["id"] }),
     supabase.from("applications").select("id, status").eq("org_id", orgId),
     getProgramTerms(),
   ]);
 
   const cohorts = cohortsData ?? [];
   const cohortName = new Map(cohorts.map((c) => [c.id, c.name as string]));
-  const students = (studentsData ?? []) as Student[];
+  const students = studentsData ?? [];
+  const capped = membersCapped || marksCapped || studentsCapped;
   const studentById = new Map(students.map((s) => [s.id, s]));
 
   // ── The headline band (the Groups page's own rollup language) ─────────────
@@ -138,6 +145,13 @@ export default async function ProgramsOverviewPage() {
         title="Overview"
         subtitle={`${terms.programs}, ${terms.students.toLowerCase()}, outcomes. The near-term schedule and what needs a human.`}
       />
+
+      {capped && (
+        <Alert tone="warning" title="Partial data">
+          This org has more records than one page load reads, so the counts and attendance rate below cover only part
+          of them.
+        </Alert>
+      )}
 
       {/* ── Headline band ─────────────────────────────────────────────── */}
       <section className="grid grid-cols-2 sm:grid-cols-3 gap-3">

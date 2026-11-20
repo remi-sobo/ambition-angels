@@ -7,6 +7,8 @@ import { todayInTZ } from "@/lib/admin/ops/week";
 import { pct } from "@/app/admin/cohorts/_lib/rollups";
 import PageHeader from "@/app/admin/_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
+import Alert from "@/app/admin/_components/ui/Alert";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 
 // Spec Programs P1 — Attendance, the model's one seatless screen (recon §G:
 // cohort_sessions + attendance, "bindable"). One surface across every
@@ -53,16 +55,29 @@ export default async function AttendancePage() {
 
   // Org fence: the service-role client bypasses RLS, so every read below is
   // scoped to the active org (the house trap).
-  const [{ data: cohortsData }, { data: sessionsData }, { data: membersData }, { data: marksData }, terms] =
-    await Promise.all([
+  const [
+    { data: cohortsData },
+    { data: sessionsData },
+    { data: membersData, truncated: membersCapped },
+    { data: marksData, truncated: marksCapped },
+    terms,
+  ] = await Promise.all([
       supabase.from("cohorts").select("id, name, status").eq("org_id", orgId).neq("status", "archived"),
       supabase
         .from("cohort_sessions")
         .select("id, cohort_id, session_date, title, status")
         .eq("org_id", orgId)
         .order("session_date", { ascending: true }),
-      supabase.from("cohort_members").select("cohort_id, status").eq("org_id", orgId),
-      supabase.from("attendance").select("session_id, status").eq("org_id", orgId),
+      // Paged past PostgREST's 1,000-row cap: per-session rates and expected
+      // counts are rolled up from these, so a capped read is a wrong number.
+      fetchAll<{ cohort_id: string; status: string }>(
+        () => supabase.from("cohort_members").select("cohort_id, status").eq("org_id", orgId),
+        { order: ["id"] },
+      ),
+      fetchAll<{ session_id: string; status: string }>(
+        () => supabase.from("attendance").select("session_id, status").eq("org_id", orgId),
+        { order: ["id"] },
+      ),
       getProgramTerms(),
     ]);
 
@@ -169,6 +184,12 @@ export default async function AttendancePage() {
         title="Attendance"
         subtitle={`Every ${terms.cohort.toLowerCase()}'s ${sessionsWord} on one surface. Open a ${terms.session.toLowerCase()} to take roll on its check-in sheet.`}
       />
+      {(membersCapped || marksCapped) && (
+        <Alert tone="warning" title="Partial data">
+          This org has more attendance records than one page load reads, so some marked counts and rates below are
+          incomplete.
+        </Alert>
+      )}
       <Section
         label="Today"
         rows={today}

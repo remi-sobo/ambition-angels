@@ -22,7 +22,7 @@ function escapeHTML(s: string): string {
 
 /** Map the public form's setting label onto the partners.kind check constraint. */
 function kindForSetting(setting: string): "school" | "nonprofit" | "other" {
-  if (setting.startsWith("High school") || setting.startsWith("Community college")) {
+  if (/^(High school|Middle school|Charter school|CTE or AVID|Community college)/.test(setting)) {
     return "school";
   }
   if (setting === "Other" || setting === "Individual mentor or parent") return "other";

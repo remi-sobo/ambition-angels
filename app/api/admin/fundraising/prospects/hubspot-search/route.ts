@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { requireEnvIntegrationOwner } from "@/lib/integrations/env-owner";
 
 // GET /api/admin/fundraising/prospects/hubspot-search?q=&lifecycle=&offset=
 // HubSpot mirror contacts NOT already on the bench, for the import picker.
 // Backed by the hubspot_bench_candidates SQL functions (anti-join on fr_prospects).
+// Those functions take no org argument and read the whole hs_* mirror, which
+// is the env HubSpot owner's data, so only that org may search it.
 export const dynamic = "force-dynamic";
 const PAGE = 50;
 
 export async function GET(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const gate = await requireEnvIntegrationOwner("hubspot");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();

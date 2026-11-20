@@ -9,6 +9,7 @@ import { todayISO } from "../../ops/_types/ops";
 import GmailSyncButton from "../_components/GmailSyncButton";
 import SuggestedMoves from "../_components/SuggestedMoves";
 import { hasEntitlement } from "@/lib/admin/entitlements";
+import { isEnvIntegrationOwner } from "@/lib/integrations/env-owner";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { TYPE } from "@/lib/admin/typeScale";
 import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
@@ -97,6 +98,8 @@ export default async function TodaysMovesPage() {
   // Reed's NBA cards are a Grow-tier feature; the POST route 402s without
   // ai.reed, so don't render the launcher at all on base Bloom.
   const reedEnabled = await hasEntitlement("ai.reed");
+  // The synced mailbox belongs to one org; hide the button everywhere else.
+  const gmailSyncAvailable = await isEnvIntegrationOwner("gmail_sync", ctx.orgId);
   const today = todayISO();
   const soon = addDays(today, 30);
   const recentSince = addDays(today, -14);
@@ -203,7 +206,7 @@ export default async function TodaysMovesPage() {
         subtitle="Who needs you today. Across asks, acknowledgments, and recent gifts"
         actions={
           <div className="flex items-center gap-3">
-            <GmailSyncButton />
+            {gmailSyncAvailable && <GmailSyncButton />}
             <Link
               href="/admin/fundraising"
               className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"

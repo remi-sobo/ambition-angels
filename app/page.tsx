@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
+import HeroCarousel from "@/components/site/HeroCarousel";
 import PillCTA from "@/components/site/PillCTA";
 import ScreenGuideDashboard from "@/components/site/screens/ScreenGuideDashboard";
 import ScreenIntroship from "@/components/site/screens/ScreenIntroship";
@@ -46,9 +47,7 @@ export default function Home() {  return (
                 <Link className="hv-189c7d" href="/curriculum" style={{ display: "inline-flex", alignItems: "center", minHeight: "52px", padding: "0 28px", borderRadius: "999px", border: "1.5px solid var(--ink)", color: "var(--ink)", fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "16px" }}>Explore careers</Link>
               </div>
             </div>
-            <div style={{ width: "100%", aspectRatio: "var(--hero-art-ratio)", borderRadius: "var(--radius-card-lg)", overflow: "hidden", background: "rgb(253 245 234)" }}>
-              <img src="/images/site/illus/software-engineer-scene.webp" alt="A student imagining herself writing code at a studio desk" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-            </div>
+            <HeroCarousel />
           </div>
         </section>
         <section style={{ background: "var(--paper)", padding: "clamp(64px,8vw,104px) 0" }}>

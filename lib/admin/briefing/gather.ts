@@ -5,6 +5,7 @@
  */
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { getDataAge } from "../dataAge";
 import { getFinanceSnapshot } from "../finance";
@@ -91,7 +92,11 @@ export async function gatherInputs(): Promise<{
         .eq("acknowledgment_status", "pending")
         .limit(300),
       sb.from("cohort_sessions").select("id, session_date").eq("org_id", orgId).limit(300),
-      sb.from("attendance").select("session_id").eq("org_id", orgId).limit(2000),
+      // Paged: a session missing from a capped read would be flagged as
+      // "attendance not taken" when it was (PostgREST caps at 1,000 rows).
+      fetchAll<{ session_id: string }>(() => sb.from("attendance").select("session_id").eq("org_id", orgId), {
+        order: ["id"],
+      }),
       // Resilient: if the state table isn't migrated yet, data is null → no
       // hidden items, and the feed still works. Keyed by (org_id, item_id).
       sb.from("bloomos_briefing_state").select("item_id, decision, hidden_until").eq("org_id", orgId),

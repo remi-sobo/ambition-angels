@@ -8,6 +8,8 @@ import { constituentName } from "@/lib/fundraising/display";
 import { todayISO } from "../../ops/_types/ops";
 import { NewPledgeForm, ConvertOpportunityForm, type WonOpportunity } from "./_components/PledgeControls";
 import { TYPE } from "@/lib/admin/typeScale";
+import Alert from "@/app/admin/_components/ui/Alert";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import { WON_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 
 // Epic F — pledges list: outstanding balances, overdue installments, status.
@@ -47,7 +49,12 @@ export default async function PledgesSection({ embedded = false }: { embedded?: 
       .eq("org_id", ctx.orgId)
       .order("created_at", { ascending: false })
       .limit(500),
-    supabase.from("pledge_payments").select("pledge_id, expected_amount, status, due_date").eq("org_id", ctx.orgId).limit(10000),
+    // Paged past PostgREST's 1,000-row cap (a .limit above it is still capped):
+    // outstanding balances and due totals are sums over every installment.
+    fetchAll<DbPayment>(
+      () => supabase.from("pledge_payments").select("pledge_id, expected_amount, status, due_date").eq("org_id", ctx.orgId),
+      { order: ["id"] },
+    ),
     supabase.from("campaigns").select("id, name").eq("org_id", ctx.orgId).order("name"),
     supabase.from("funds").select("id, name").eq("org_id", ctx.orgId).order("name"),
     // Won or pledged asks with a real amount + donor — convertible into a
@@ -144,6 +151,13 @@ export default async function PledgesSection({ embedded = false }: { embedded?: 
             title="Pledges"
             subtitle={`${activeRows.length} active · ${pledges.length} total`}
           />
+        )}
+
+        {paymentsRes.truncated && (
+          <Alert tone="warning" title="Partial data">
+            This org has more pledge installments than one page load reads, so outstanding and due totals below are
+            incomplete.
+          </Alert>
         )}
 
         <div className="flex items-start justify-between gap-4 flex-wrap">

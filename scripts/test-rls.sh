@@ -247,6 +247,7 @@ ordered=(
   create_coach_program.sql
   add_company_fields_to_partner_waitlist.sql
   add_company_stage_to_constituents.sql
+  revoke_anon_obligation_rpcs.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

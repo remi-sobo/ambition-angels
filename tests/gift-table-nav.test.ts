@@ -46,7 +46,7 @@ describe("the gift table detail route sits inside Campaigns", () => {
     expect(active.map((t) => t.key)).toEqual(["campaigns"]);
   });
 
-  test("no sixth fundraising tab was added", () => {
+  test("the gift table added no fundraising tab (Comms is the only sixth, seated 2026-11-20)", () => {
     const fundraising = V2_DESTINATIONS.find((d) => d.key === "fundraising");
     expect(fundraising!.tabs.map((t) => t.key)).toEqual([
       "today",
@@ -54,6 +54,7 @@ describe("the gift table detail route sits inside Campaigns", () => {
       "pipeline",
       "grants",
       "campaigns",
+      "comms",
     ]);
   });
 

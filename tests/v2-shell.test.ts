@@ -263,13 +263,14 @@ describe("B3 shell invariants", () => {
     }
   });
 
-  test("Fundraising lands on Today's Moves with the five-tab V2 row for every org (F6)", () => {
+  test("Fundraising lands on Today's Moves; Comms is a sixth tab only with modules.comms (F6, comms seat 2026-11-20)", () => {
+    const FIVE = ["today", "donors-funders", "pipeline", "grants", "campaigns"];
     for (const features of [AA, YGB, NINE_KEY]) {
       const fr = resolveShellNav(features).destinations.find((d) => d.key === "fundraising")!;
       expect(fr.href).toBe("/admin/fundraising/today");
-      expect(fr.tabs.map((t) => t.key)).toEqual([
-        "today", "donors-funders", "pipeline", "grants", "campaigns",
-      ]);
+      expect(fr.tabs.map((t) => t.key)).toEqual(
+        features.includes("modules.comms") ? [...FIVE, "comms"] : FIVE
+      );
     }
   });
 

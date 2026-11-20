@@ -1,14 +1,16 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { hubspotPost, hubspotPatch } from "./client";
-import { hubspotWriteEnabled, hubspotGiftDealsEnabled } from "./connection";
+import { hubspotWriteOrg, hubspotGiftDealsOrg } from "./connection";
 
 /**
  * Outbound sync: BloomOS → HubSpot (slice 1 — Contacts & Companies).
  *
  * Best-effort and fail-soft: every entry point is gated by
- * hubspotWriteEnabled() (standalone orgs no-op), and all network errors are
+ * hubspotWriteOrg() (standalone orgs no-op), and all network errors are
  * caught and logged rather than thrown, so a HubSpot hiccup never breaks the
- * local write that triggered the push. Field mappings mirror the read sync
+ * local write that triggered the push. Every record read here is filtered by
+ * the org that owns the env HubSpot token, so a row from any other org is a
+ * no-op and never reaches HubSpot. Field mappings mirror the read sync
  * in lib/hubspot/upserts.ts so a round-trip is stable.
  *
  * Linkage: a person stores its HubSpot contact id in
@@ -33,13 +35,15 @@ type ConstituentRow = {
 };
 
 export async function pushConstituentToHubSpot(constituentId: string): Promise<void> {
-  if (!(await hubspotWriteEnabled())) return; // standalone → no-op
+  const orgId = await hubspotWriteOrg();
+  if (!orgId) return; // standalone, or not the owner org → no-op
 
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from("constituents")
     .select("id, type, first_name, last_name, org_name, emails, phones, external_ids")
     .eq("id", constituentId)
+    .eq("org_id", orgId)
     .maybeSingle();
   if (error || !data) return;
   const c = data as ConstituentRow;
@@ -58,7 +62,8 @@ export async function pushConstituentToHubSpot(constituentId: string): Promise<v
         await admin
           .from("constituents")
           .update({ external_ids: { ...extIds, hubspot_company: created.id } })
-          .eq("id", c.id);
+          .eq("id", c.id)
+          .eq("org_id", orgId);
       }
       return;
     }
@@ -78,7 +83,8 @@ export async function pushConstituentToHubSpot(constituentId: string): Promise<v
       await admin
         .from("constituents")
         .update({ external_ids: { ...extIds, hubspot: created.id } })
-        .eq("id", c.id);
+        .eq("id", c.id)
+        .eq("org_id", orgId);
     }
   } catch (e) {
     console.error("[hubspot] outbound push failed:", (e as Error).message);
@@ -150,13 +156,15 @@ type InteractionRow = {
  * to; if it still can't be resolved, we skip.
  */
 export async function pushInteractionToHubSpot(interactionId: string): Promise<void> {
-  if (!(await hubspotWriteEnabled())) return; // standalone → no-op
+  const orgId = await hubspotWriteOrg();
+  if (!orgId) return; // standalone, or not the owner org → no-op
 
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from("interactions")
     .select("id, constituent_id, kind, occurred_at, notes")
     .eq("id", interactionId)
+    .eq("org_id", orgId)
     .maybeSingle();
   if (error || !data) return;
   const i = data as InteractionRow;
@@ -168,6 +176,7 @@ export async function pushInteractionToHubSpot(interactionId: string): Promise<v
         .from("constituents")
         .select("external_ids")
         .eq("id", i.constituent_id)
+        .eq("org_id", orgId)
         .maybeSingle();
       const ext = (c?.external_ids ?? {}) as Record<string, unknown>;
       return typeof ext.hubspot === "string" ? ext.hubspot : null;
@@ -247,6 +256,7 @@ async function dealstageFor(
 // doesn't exist yet so the deal has something to associate to.
 async function ensureContactId(
   admin: ReturnType<typeof getSupabaseAdmin>,
+  orgId: string,
   constituentId: string
 ): Promise<string | null> {
   const read = async (): Promise<string | null> => {
@@ -254,6 +264,7 @@ async function ensureContactId(
       .from("constituents")
       .select("external_ids")
       .eq("id", constituentId)
+      .eq("org_id", orgId)
       .maybeSingle();
     const ext = (data?.external_ids ?? {}) as Record<string, unknown>;
     return typeof ext.hubspot === "string" ? ext.hubspot : null;
@@ -267,24 +278,26 @@ async function ensureContactId(
 }
 
 /**
- * A recorded gift → a closed-won Deal. Opt-in (hubspotGiftDealsEnabled).
+ * A recorded gift → a closed-won Deal. Opt-in (hubspotGiftDealsOrg).
  * Push-on-create only (gifts aren't re-pushed), so no deal id is stored back.
  * Anonymous gifts have no contact and are skipped.
  */
 export async function pushGiftToHubSpot(giftId: string): Promise<void> {
-  if (!(await hubspotGiftDealsEnabled())) return;
+  const orgId = await hubspotGiftDealsOrg();
+  if (!orgId) return;
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from("gifts")
     .select("id, constituent_id, amount, gift_date")
     .eq("id", giftId)
+    .eq("org_id", orgId)
     .maybeSingle();
   if (error || !data) return;
   const g = data as { id: string; constituent_id: string | null; amount: number; gift_date: string };
   if (!g.constituent_id) return;
 
   try {
-    const contactId = await ensureContactId(admin, g.constituent_id);
+    const contactId = await ensureContactId(admin, orgId, g.constituent_id);
     if (!contactId) return;
     await hubspotPost("/crm/v3/objects/deals", {
       properties: {
@@ -304,7 +317,7 @@ export async function pushGiftToHubSpot(giftId: string): Promise<void> {
 }
 
 /**
- * An opportunity → a Deal. Gated by hubspotWriteEnabled (connections.meta
+ * An opportunity → a Deal. Gated by hubspotWriteOrg (connections.meta
  * sync_out). Two shapes:
  *
  *   * HUBSPOT-LINKED deal (external_source='hubspot', external_id set — it
@@ -320,7 +333,8 @@ export async function pushGiftToHubSpot(giftId: string): Promise<void> {
  *     flow, now with the dealstage looked up from config first.
  */
 export async function pushOpportunityToHubSpot(opportunityId: string): Promise<void> {
-  if (!(await hubspotWriteEnabled())) return;
+  const orgId = await hubspotWriteOrg();
+  if (!orgId) return;
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from("opportunities")
@@ -328,6 +342,7 @@ export async function pushOpportunityToHubSpot(opportunityId: string): Promise<v
       "id, org_id, constituent_id, name, stage, pipeline, ask_amount, expected_close, external_source, external_id, external_ids"
     )
     .eq("id", opportunityId)
+    .eq("org_id", orgId)
     .maybeSingle();
   if (error || !data) return;
   const o = data as {
@@ -366,7 +381,7 @@ export async function pushOpportunityToHubSpot(opportunityId: string): Promise<v
       return;
     }
 
-    const contactId = o.constituent_id ? await ensureContactId(admin, o.constituent_id) : null;
+    const contactId = o.constituent_id ? await ensureContactId(admin, orgId, o.constituent_id) : null;
     const created = await hubspotPost<{ id: string }>("/crm/v3/objects/deals", {
       properties,
       associations: contactId
@@ -376,7 +391,8 @@ export async function pushOpportunityToHubSpot(opportunityId: string): Promise<v
     await admin
       .from("opportunities")
       .update({ external_ids: { ...ext, hubspot_deal: created.id } })
-      .eq("id", o.id);
+      .eq("id", o.id)
+      .eq("org_id", orgId);
   } catch (e) {
     console.error("[hubspot] opportunity→deal push failed:", (e as Error).message);
   }

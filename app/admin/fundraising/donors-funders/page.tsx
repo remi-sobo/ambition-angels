@@ -89,7 +89,14 @@ export default async function DonorsFundersPage({
             data.total === 1 ? "" : "s"
           } · one list, every relationship`}
           actions={
-            researchEnabled ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link
+                href={`${BASE}/companies`}
+                className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
+              >
+                Companies →
+              </Link>
+              {researchEnabled ? (
               <Link
                 href={`${BASE}?${new URLSearchParams({
                   ...extra,
@@ -100,7 +107,8 @@ export default async function DonorsFundersPage({
               >
                 Prospect research →
               </Link>
-            ) : undefined
+              ) : null}
+            </div>
           }
         />
 

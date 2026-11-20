@@ -50,6 +50,7 @@ import { isOpenStage } from "@/lib/fundraising/stage-sets";
 // connected). Recomposition, not a fork: 1,000 lines of working profile
 // exist once.
 import Donor360Extras from "../../donors-funders/_components/Donor360Extras";
+import CompanyPanel from "../../donors-funders/_components/CompanyPanel";
 
 const fmtDate = (iso: string) =>
   new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -559,6 +560,20 @@ export default async function DonorProfile({ id, v2 = false }: { id: string; v2?
         {/* 360-only panels (Spec Fundraising F2): why-they-matter narrative,
             giving by year, reporting owed, connected. Never rendered on the
             V1 route, so its output stays byte-identical (DoD 7). */}
+        {/* Company view (specs/bloomos-companies.md): organizations only,
+            Donor 360 only. A tracked company gets its stage, next step,
+            domains, pledges and open asks; an untracked one gets the
+            one-line offer to track it. */}
+        {v2 && c.type === "organization" && (
+          <CompanyPanel
+            constituentId={c.id}
+            orgId={ctx.orgId}
+            companyStage={(c.company_stage as string | null) ?? null}
+            domains={(c.domains as string[] | null) ?? []}
+            hubspotCompanyId={typeof extIds["hubspot_company"] === "string" ? (extIds["hubspot_company"] as string) : null}
+          />
+        )}
+
         {v2 && (
           <Donor360Extras
             constituentId={c.id}

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { mockSupabase } from "./support/supabaseMock";
 import { CAPTURE_RATE_LIMIT_PER_HOUR } from "@/lib/capture/constants";
 
@@ -58,7 +58,14 @@ const post = (body: unknown) =>
 
 const maria = { ref: "c1", kind: "constituent", id: "m1", name: "Maria Chen", orgName: null, meta: "person", sim: 1, spans: ["Maria Chen"], context: false };
 
+// The route reads the real clock for "today", and validDate drops dates more
+// than DATE_PAST_DAYS behind it. Pin the clock (Date only, so awaits still
+// run) to the Friday the fixtures were written against: 2026-10-09 Pacific.
+const NOW = new Date("2026-10-09T17:00:00Z");
+
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(NOW);
   entitled = { ok: true, ctx: CTX };
   capOver = false;
   modelThrows = null;
@@ -71,6 +78,10 @@ beforeEach(() => {
     youth_skipped: 1,
   };
   vi.mocked(logAICall).mockClear();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("POST /api/admin/capture", () => {

@@ -182,6 +182,16 @@ None of these tables gets a default `org_id`. The ratchet test covers each new t
 - Comms page: Schedule and Cancel, and a status line per campaign ("Sending: 120 of 412", "Scheduled for Nov 22, 9:00 AM").
 - Tests: `tests/comms-queue.test.ts`.
 
+## G3 as built (2026-11-20)
+
+- Migration `supabase/migrations/comms_gmail_g3.sql`: `tracking_token` (unique), `open_count`, `first_opened_at`, `click_count` and `first_clicked_at` on `email_sends`; `email_link_clicks` (read through `fundraising.read`, written only by service role); `record_email_open(token)` and `record_email_click(token, n, url)`.
+- `lib/comms/links.ts`: one link extractor shared by the renderer and the click route, so link n in the email is link n in the redirect. The redirect target always comes from the stored campaign body, never the request, so the route can't be used as an open redirect.
+- Renderer: links in the body are now clickable. With a tracking token they go through `/api/t/c/[token]/[n]`, and an open pixel (`/api/t/o/[token]`) is added. Test sends carry no token. Routes live under `/api/` because the app host's router 404s other paths. No reader data (address, IP, agent) is stored.
+- Results page `/admin/fundraising/comms/[id]`: sent, opened (labeled "about"), clicked, unsubscribed, what happened by status, who was left out and why, links clicked, CSV export (formula cells defused), and a "Needs a decision" list for unclear and failed sends with It arrived / Send again / Bounced.
+- One-click unsubscribe already existed (`/api/unsubscribe` accepts the RFC 8058 POST). Fixed: the unsubscribe page was hardcoded to Ambition Angels and remi@; it now names the sending org and its reply-to or Gmail account.
+- `v_campaign_stats` was dropped in favor of counting on the results page, since campaigns are capped at 2,000 recipients.
+- Tests: `tests/comms-tracking.test.ts`.
+
 ## Effort
 
 G1 is a couple of evenings, mostly because of the OAuth plumbing that already exists for calendars. G2 is the careful phase and the biggest port, about 1,200 lines from Team Esface's `send.ts` and the claim function, plus tests. G3 is about two evenings. G4 is one. Google verification has to start in G1 because it takes the longest.

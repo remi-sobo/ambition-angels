@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import EmptyState from "../../_components/EmptyState";
 import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
@@ -162,7 +163,13 @@ export default async function CommsPage({
               {campaigns.map((c) => (
                 <li key={c.id} className="px-5 py-3 flex items-center gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-ink-1 truncate">{c.name}</div>
+                    {c.status === "draft" ? (
+                      <div className="text-sm font-medium text-ink-1 truncate">{c.name}</div>
+                    ) : (
+                      <Link href={`/admin/fundraising/comms/${c.id}`} className="block text-sm font-medium text-ink-1 truncate hover:text-orange transition-colors">
+                        {c.name}
+                      </Link>
+                    )}
                     <div className="text-xs text-ink-3 truncate">
                       {c.subject}
                       {c.segment?.name ? ` · ${c.segment.name}` : " · no segment"}

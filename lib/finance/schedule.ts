@@ -14,6 +14,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RunwayPledge } from "@/lib/finance/runway";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 
 export type RevenueConfidence = "committed" | "projected";
 export type RevenueSourceType = "pledge" | "grant" | "pipeline" | "commitment" | "manual";
@@ -144,18 +145,17 @@ export async function loadReceivedTotal(
   orgId: string,
   startISO: string,
   endISO: string
-): Promise<number> {
-  const { data, error } = await client
-    .from("gifts")
-    .select("amount")
-    .eq("org_id", orgId)
-    .gte("gift_date", startISO)
-    .lte("gift_date", endISO);
+): Promise<{ total: number; truncated: boolean }> {
+  // Paged past PostgREST's 1,000-row cap; `truncated` means the sum is a floor.
+  const { data, error, truncated } = await fetchAll<{ amount: number | null }>(
+    () => client.from("gifts").select("amount").eq("org_id", orgId).gte("gift_date", startISO).lte("gift_date", endISO),
+    { order: ["id"] }
+  );
   if (error) {
     console.error("[finance] received-gifts load failed:", error.message);
-    return 0;
+    return { total: 0, truncated: false };
   }
-  return (data ?? []).reduce((s, g) => s + Number(g.amount ?? 0), 0);
+  return { total: data.reduce((s, g) => s + Number(g.amount ?? 0), 0), truncated };
 }
 
 /** One pass producing the headline rollups the finance surfaces show. */

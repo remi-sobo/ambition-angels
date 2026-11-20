@@ -3,6 +3,8 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../../finance/_components/charts";
 import PageHeader from "../../../_components/PageHeader";
+import { fetchAll } from "@/lib/supabase/fetchAll";
+import Alert from "@/app/admin/_components/ui/Alert";
 import StatCard from "../../../_components/StatCard";
 import TrustBadge from "../../_components/TrustBadge";
 import { TYPE } from "@/lib/admin/typeScale";
@@ -118,16 +120,22 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
   const unassignedCampaigns = (unassignedCampaignsRes.data ?? []) as { id: string; name: string }[];
 
   let campaignGifts: { amount: number; gift_date: string }[] = [];
+  let giftsCapped = false;
   if (linkedCampaigns.length > 0) {
-    const { data } = await supabase
-      .from("gifts")
-      .select("amount, gift_date")
-      .eq("org_id", ctx.orgId)
-      .in("campaign_id", linkedCampaigns.map((c) => c.id))
-      .gte("gift_date", `${year}-01-01`)
-      .lte("gift_date", `${year}-12-31`)
-      .limit(10000);
-    campaignGifts = (data ?? []) as typeof campaignGifts;
+    // Paged: `.limit(10000)` is still capped at PostgREST's 1,000 rows.
+    const { data, truncated } = await fetchAll<(typeof campaignGifts)[number]>(
+      () =>
+        supabase
+          .from("gifts")
+          .select("amount, gift_date")
+          .eq("org_id", ctx.orgId)
+          .in("campaign_id", linkedCampaigns.map((c) => c.id))
+          .gte("gift_date", `${year}-01-01`)
+          .lte("gift_date", `${year}-12-31`),
+      { order: ["id"] }
+    );
+    campaignGifts = data ?? [];
+    giftsCapped = truncated;
   }
 
   const rollup = rollupStrategy({ goal, planYear: year, opps: linkedOpps, grants: linkedGrants, campaignGifts });
@@ -155,6 +163,11 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
           />
         }
       />
+      {giftsCapped && (
+        <Alert tone="warning" title="Partial data" className="my-4">
+          This strategy has more campaign gifts than one page load reads, so its verified total is incomplete.
+        </Alert>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <StatCard label="Goal" value={money(goal)} sub="the strategy's target" muted={goal === 0} />

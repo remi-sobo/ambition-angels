@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import { PLAN_METRICS, type PlanMetricFn } from "@/lib/admin/plan/metrics";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
 
@@ -86,11 +87,11 @@ export const METRIC_RESOLVERS: Record<string, MetricResolver> = {
       .in("cohort_id", cohortIds);
     const sessionIds = (sessions ?? []).map((x) => x.id as string);
     if (sessionIds.length === 0) return null;
-    const { data: marks } = await s
-      .from("attendance")
-      .select("status")
-      .eq("org_id", orgId)
-      .in("session_id", sessionIds);
+    // Paged past PostgREST's 1,000-row cap: the rate is a count over marks.
+    const { data: marks } = await fetchAll<{ status: string }>(
+      () => s.from("attendance").select("status").eq("org_id", orgId).in("session_id", sessionIds),
+      { order: ["id"] }
+    );
     let attended = 0;
     let absent = 0;
     for (const m of marks ?? []) {

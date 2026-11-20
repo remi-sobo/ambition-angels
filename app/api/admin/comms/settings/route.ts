@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { GMAIL_MAX_DAILY_CAP, SETTINGS_COLUMNS } from "@/lib/comms/settings";
+import { parseEmailList } from "@/lib/comms/safety";
 
 // Org sending identity (org_comms_settings). Reads need fundraising.read;
 // writes are gated by the org.manage RLS policy — a non-manager's PATCH
@@ -66,6 +67,11 @@ export async function PATCH(req: NextRequest) {
         { status: 400 }
       );
     }
+  }
+  if (typeof body.leadership_copy_emails === "string") {
+    const parsed = parseEmailList(body.leadership_copy_emails);
+    if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    update.leadership_copy_emails = parsed.emails;
   }
   if (Object.keys(update).length === 0) return NextResponse.json({ error: "No valid fields" }, { status: 400 });
 

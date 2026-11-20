@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { requireAaOnly } from "@/lib/admin/aaOnly";
 
 // Empty payload returned when the schema isn't in place yet (table or
 // column missing). Lets the admin UI render an empty state instead of a
@@ -18,9 +18,8 @@ const SCHEMA_MISSING_CODES = new Set([
 ]);
 
 export async function GET() {
-  if (!await isAuthed()) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAaOnly("aa.quiz");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase

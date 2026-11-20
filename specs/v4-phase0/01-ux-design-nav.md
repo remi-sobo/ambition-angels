@@ -120,7 +120,7 @@ Recommendation: add **Wizard/flow** (plan-close, imports, setup) and **Calendar*
 | same §5 | Command Center widget grid on react-grid-layout | Not in `package.json`. CommandCenter is dead | V |
 | same §1 | support `support@bloomos.co` (placeholder) | Settings mails `remi@ambitionangels.org` (`settings/page.tsx:228`) | V |
 | `specs/bloomos-typography.md` line 3 | "approved spec, not yet built" | Built: `TYPE` roles exist and `tests/type-drift.test.ts` enforces phase 4.2 | V |
-| `specs/bloomos-v2-spec-quality-floor.md` | "zero loading/error/not-found", "141 alert()", "44 re-exports" | `loading.tsx` ×4, `error.tsx`, `not-found.tsx` exist. 0 alert. 31 re-export hosts. DoD 6 (every panel empty state has an action) is not met (about 12 of 46) | V |
+| `specs/bloomos-v2-spec-quality-floor.md` | "zero loading/error/not-found", "141 alert()", "44 re-exports" | `loading.tsx` ×4, `error.tsx`, `not-found.tsx` exist. 0 alert. 28 re-export hosts. DoD 6 (every panel empty state has an action) is not met (about 12 of 46) | V |
 | `specs/bloomos-v2-spec-b-shell.md` §Mobile | bottom bar "Today, Work, +, Programs, More". "(v2) route group and flag" | Fundraising replaced Programs (`v2shellNav.ts:120`). The flag page was deleted but its footer link remains | V |
 | `CLAUDE.md` brand section | `navy #10214B` admin chrome, Poppins/DM Sans | Admin uses espresso `#1C1814` and Instrument Sans inside `.admin-shell` | V |
 
@@ -158,7 +158,7 @@ Gate: inherited layout feature key. `—` = none (auth only).
 | /admin/organization-health | org health rows | R | N Home>Org Health | — | keep. Consider folding into Today or Impact (P3) |
 | /admin/inbox | notifications | R | N Inbox | — | keep |
 | /admin/inbox/messages | team chat | H→messages | N Inbox>Messages | modules.messages | keep. Rename "Team messages" if Comms ships |
-| /admin/messages | chat source | S | Q? no, P (5 V1 links) | modules.messages | fold into host (P3) |
+| /admin/messages | chat source | S | P (5 V1 links) | modules.messages | fold into host (P3) |
 | /admin/settings | account settings | R | F, mobile More, Q | — | keep. Grow into the real Settings (P1) |
 | /admin/howto | help page | R | F, Q | — | rewrite for V2, filter by entitlement (P1) |
 | /admin/reset-password | password reset | R | auth email | — | keep |
@@ -169,7 +169,7 @@ Gate: inherited layout feature key. `—` = none (auth only).
 | /admin/ygb | YGB camp registrations | R (.jsx, inline styles) | Q, Hw | aa.ygb | candidate to remove (demo tenant) (P3) |
 | /admin/demoday | Demo Day tracker | R | Q, Hw | aa.demoday | needs a home (cohorts group view undesigned) (P3) |
 | /admin/meet | redirect to booking-page | Stub (in-page redirect) | none | — | remove after Settings seat |
-| /admin/queue | old action queue | D | Q? no, P (2 V1) | — | remove (308 to Today) |
+| /admin/queue | old action queue | D | P (2 V1) | — | remove (308 to Today) |
 | /admin/briefing | old briefing | D | Q, Hw, P (8) | modules.ops | remove page. Fix links |
 | /admin/briefing/weekly | weekly briefing | R | none (only from dead briefing) | modules.ops | needs a home: Plan & Close Friday (P2) |
 | /admin/calendar | old calendar | Stub (WeekSection reused) | P (4) | — | remove page |
@@ -302,4 +302,4 @@ Gate: inherited layout feature key. `—` = none (auth only).
 | /admin/organization/compliance/[id] | item detail | H | P | modules.compliance | keep |
 | /admin/compliance/[id] | source | S | P | modules.compliance | fold (P3) |
 
-Totals: 149 page files. 31 one-line re-export hosts (plus 4 thin wrapper hosts). 36 S sources reached through hosts. 22 Stub/D files at 308'd URLs. 5 live screens with no live link (`finance/rules`, `fundraising/settings`, `fundraising/plan/[id]`, `briefing/weekly`, `fundraising/reports`), plus `legacy`. 1 dead chrome link (`/admin/v2`).
+Totals: 149 page files. 28 one-line re-export hosts plus 2 thin wrapper hosts (work/meetings, impact/kpis). About 35 S sources reached only through hosts. 27 Stub/D files at 308'd URLs, plus the `/admin/meet` redirect. 5 live screens with no live link (`finance/rules`, `fundraising/settings`, `fundraising/plan/[id]`, `briefing/weekly`, `fundraising/reports`), plus `legacy`. 1 dead chrome link (`/admin/v2`).

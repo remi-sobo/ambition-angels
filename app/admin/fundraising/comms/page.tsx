@@ -21,13 +21,41 @@ type Campaign = {
   recipient_count: number;
   sent_count: number;
   failed_count: number;
+  unknown_count: number;
   sent_at: string | null;
+  scheduled_at: string | null;
   segment_id: string | null;
   segment: { name: string } | null;
 };
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
+// One line per campaign: where it is in the queue, in plain numbers.
+// Counts are refreshed by the worker every minute while it sends.
+function CampaignStatus({ c }: { c: Campaign }) {
+  const extras = [
+    c.failed_count ? `${c.failed_count} not sent` : "",
+    c.unknown_count ? `${c.unknown_count} unclear` : "",
+  ].filter(Boolean);
+  const tail = extras.length ? ` · ${extras.join(" · ")}` : "";
+  const cls = "text-xs text-ink-2 [font-variant-numeric:tabular-nums] w-56 text-right";
+  if (c.status === "sent") {
+    return <span className={cls}>{c.sent_count} sent{tail}{c.sent_at ? ` · ${fmtDate(c.sent_at)}` : ""}</span>;
+  }
+  if (c.status === "sending") {
+    return <span className={cls}>Sending: {c.sent_count} of {c.recipient_count}{tail}</span>;
+  }
+  if (c.status === "scheduled" && c.scheduled_at) {
+    return <span className={cls}>Scheduled for {fmtDateTime(c.scheduled_at)} · {c.recipient_count} people</span>;
+  }
+  if (c.status === "canceled") {
+    return <span className={cls}>Canceled · {c.sent_count} sent before{tail}</span>;
+  }
+  return <span className="text-xs uppercase tracking-wider text-orange w-56 text-right">{c.status}</span>;
+}
 
 function gmailNotice(params: Record<string, string | string[] | undefined>): GmailNotice {
   const kind = params.gmail;
@@ -56,7 +84,7 @@ export default async function CommsPage({
   const [campaignsRes, segmentsRes, settingsRes, gmailStatus, canManage] = await Promise.all([
     supabase
       .from("email_campaigns")
-      .select("id, name, subject, status, recipient_count, sent_count, failed_count, sent_at, segment_id, segment:segments ( name )")
+      .select("id, name, subject, status, recipient_count, sent_count, failed_count, unknown_count, sent_at, scheduled_at, segment_id, segment:segments ( name )")
       .eq("org_id", ctx.orgId)
       .order("created_at", { ascending: false })
       .limit(200),
@@ -140,14 +168,7 @@ export default async function CommsPage({
                       {c.segment?.name ? ` · ${c.segment.name}` : " · no segment"}
                     </div>
                   </div>
-                  {c.status === "sent" ? (
-                    <span className="text-xs text-ink-2 [font-variant-numeric:tabular-nums] w-40 text-right">
-                      {c.sent_count} sent{c.failed_count ? ` · ${c.failed_count} failed` : ""}
-                      {c.sent_at ? ` · ${fmtDate(c.sent_at)}` : ""}
-                    </span>
-                  ) : (
-                    <span className="text-xs uppercase tracking-wider text-orange w-40 text-right">{c.status}</span>
-                  )}
+                  <CampaignStatus c={c} />
                   <CampaignActions id={c.id} status={c.status} hasSegment={!!c.segment_id} />
                 </li>
               ))}

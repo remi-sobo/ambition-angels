@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { requireAaOnly } from "@/lib/admin/aaOnly";
 
 // Curation step of the card pipeline (ms-career-library-v2.md step 2):
 // Remi picks an imported occupation for the catalog. A queued occupation is
@@ -8,9 +8,8 @@ import { isAuthed } from "@/lib/admin/auth";
 // dedup check, so "do we already have this one" is answered here, exactly
 // once, before any generation spend.
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAaOnly("aa.career_library", { write: true });
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   const { soc_code } = await req.json().catch(() => ({}));
   if (typeof soc_code !== "string" || !/^\d{2}-\d{4}$/.test(soc_code)) {
     return NextResponse.json({ error: "Invalid soc_code" }, { status: 400 });

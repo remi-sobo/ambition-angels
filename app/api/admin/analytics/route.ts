@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { requireAaOnly } from "@/lib/admin/aaOnly";
 
 // We pull a generous slice of recent rows and let the client filter by
 // the selected period (Last 7d / 30d / 90d / All). Cap at 20k rows per
@@ -29,9 +29,8 @@ type ClickEvent = {
 };
 
 export async function GET() {
-  if (!await isAuthed()) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAaOnly("aa.site_analytics");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const supabase = getSupabaseAdmin();
 

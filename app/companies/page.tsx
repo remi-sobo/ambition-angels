@@ -1,653 +1,172 @@
+/* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
-import IPhoneMockup from "@/components/IPhoneMockup";
-import CompaniesContactForm from "./ContactForm";
 import PageVisitedEvent from "@/components/PageVisitedEvent";
+import PillCTA from "@/components/site/PillCTA";
+import CompaniesContactForm from "./ContactForm";
 
 export const metadata: Metadata = {
-  title: "Corporate Partnership",
+  title: "For Companies",
   description:
-    "Give the next generation a clear view of where work is going. Branded career paths, employee engagement, and measurable CSR impact.",
-  robots: "noindex, nofollow",
+    "Put your people's careers in front of the next generation: introships built from their stories, sponsored schools and seasons, and coaching for young people who want to do what they do.",
 };
 
-const dotTexture = {
-  backgroundImage:
-    "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-  backgroundSize: "22px 22px",
-};
+const ways = [
+  { n: "01", t: "Turn your careers into introships.", b: "Your employees share how they got where they are. We build introships from it, credited to your team, and put them in classrooms." },
+  { n: "02", t: "Sponsor a season.", b: "Be the title sponsor of an Ambition season. A Student of the Season cohort, sponsored by your company, gets recognized and gets swag." },
+  { n: "03", t: "Sponsor a school or program.", b: "Pick a place your company cares about. Every student there gets Ambition, and every adult who works with them gets the tools." },
+  { n: "04", t: "Coach a young person.", b: "Your people spend about five hours, virtually, helping one young person get into the field they work in." },
+].map((w, i) => ({ ...w, cta: i === 3 ? "Become a coach" : "Talk to us", href: i === 3 ? "#coach" : "#start", bg: i === 3 ? "var(--ink)" : "var(--paper)", border: i === 3 ? "var(--ink)" : "var(--rule)", head: i === 3 ? "var(--cream)" : "var(--ink)", body: i === 3 ? "var(--gray-mid)" : "var(--charcoal)" }));
 
-const heroStats = [
-  { label: "3,500+", sub: "Teens reached" },
-  { label: "87%", sub: "From Title I schools" },
-  { label: "14%", sub: "Increase in future orientation" },
-  { label: "1,100+", sub: "Hours of career exploration delivered" },
+const coach = [
+  { n: "1", t: "A 20-minute call with Remi.", b: "We learn about your work and match you with a young person who wants to do it." },
+  { n: "2", t: "Four 45-minute conversations.", b: "Over six to eight weeks, on video. We send you a short card before each session." },
+  { n: "3", t: "They write an Ambition Plan.", b: "The young person leaves with a written plan and concrete next steps. You don't write it." },
+  { n: "4", t: "One introduction, if you can.", b: "At the end, connect them to one person who can help. That's the whole ask." },
 ];
 
-const tickerItems = [
-  "Employee Engagement",
-  "CSR Impact",
-  "Brand with the Next Generation",
-  "Tax Deductible",
-  "Measurable Outcomes",
-  "Workforce Pipeline",
-  "Category Exclusivity",
-];
+const time = [["Call with Remi", "20 min"], ["Four sessions", "45 min each"], ["Prep before each", "about 15 min"], ["Total", "about 5 hours"]].map(([k, v], i) => ({ k, v, color: i === 3 ? "var(--cream)" : "var(--gray-mid)", weight: i === 3 ? 700 : 500 }));
+const path = [["At 16, pictured", "Something else entirely"], ["First job", "Wherever they started"], ["Now", "The job they do today"]].map(([k, v], i) => ({ k, v, dot: i === 2 ? "var(--orange)" : "transparent", line: i === 2 ? "transparent" : "rgb(250 250 248 / 0.2)" }));
+const parts = ["What the job is", "How they got here", "What it pays"];
 
-const opportunityCards = [
-  {
-    title: "Employee Engagement That Lasts",
-    body: "Your team doesn't show up to volunteer. They show up to author. We run a session with the employees you choose, capture what they know about careers in your world, and build a 30-day simulated internship from it. Your people leave with real ownership of something thousands of teens will see. They'll talk about it for months.",
-  },
-  {
-    title: "CSR You Can Actually Report",
-    body: "Pre and post data. Future orientation scores. Completion rates. Demographic reach. Biannual impact reports. Numbers your ESG team can put on a slide and a board can act on.",
-  },
-  {
-    title: "Brand Before They Choose",
-    body: "A teen who completes a 30-day career internship in your industry, with your brand throughout, doesn't forget that. Not because of your logo. Because you gave them a real look at what a career in your world actually feels like.",
-  },
-  {
-    title: "Talent Before the Bidding Starts",
-    body: "The teens exploring your industry today are in your candidate pool in five years, whether you built the relationship or not. The work your industry hires for is changing fast, and the teens with the earliest exposure are the ones who can adapt.",
-  },
-];
-
-const careerTracks = [
-  "Wealth Management",
-  "Tech Entrepreneurship",
-  "Game Design",
-  "Mental Health Therapy",
-  "Marketing",
-  "Sales",
-  "Dental Hygiene",
-  "Nursing",
-  "Project Management",
-  "Real Estate",
-  "Culinary Arts",
-  "Engineering",
-];
-
-const compareRows: { label: string; volunteer: string; grant: string; ambition: string }[] = [
-  {
-    label: "Engagement",
-    volunteer: "One-time event",
-    grant: "None for employees",
-    ambition: "Employees author the curriculum",
-  },
-  {
-    label: "Visibility",
-    volunteer: "Internal photos",
-    grant: "Logo placement",
-    ambition: "Brand inside a 30-day teen experience",
-  },
-  {
-    label: "Outcomes",
-    volunteer: "Hours logged",
-    grant: "Dollars donated",
-    ambition: "Pre/post data on thousands of teens",
-  },
-  {
-    label: "Teen relationship",
-    volunteer: "None",
-    grant: "None",
-    ambition: "Direct, sustained, at scale",
-  },
-  {
-    label: "Talent pipeline",
-    volunteer: "None",
-    grant: "None",
-    ambition: "Direct exposure to next-gen workforce",
-  },
-  {
-    label: "Reporting depth",
-    volunteer: "Activity counts",
-    grant: "Donation receipt",
-    ambition: "Future orientation, completion, demographic breakdown",
-  },
-];
-
-const tiers = [
-  {
-    amount: "$25K",
-    period: "/year",
-    name: "Community Partner",
-    highlight: false,
-    perks: [
-      "Logo on ambitionangels.org and printed materials",
-      "Listed as a Community Partner publicly",
-      "Annual impact report with program data",
-      "A vignette day for your team, woven into the app (micro-volunteering)",
-      "Invitation to sponsor an existing internship track",
-    ],
-  },
-  {
-    amount: "$50K",
-    period: "/year",
-    name: "Career Builder",
-    highlight: false,
-    perks: [
-      "Everything in Community Partner",
-      "1 career learning session, produced into a sponsored 30-day internship",
-      "Company profile featured inside the app",
-      "Vignettes from across your team throughout the year",
-      "Biannual impact reports with completion data",
-      "Co-branded social content package",
-    ],
-  },
-  {
-    amount: "$100K",
-    period: "/year",
-    name: "Premier Partner",
-    highlight: true,
-    perks: [
-      "Everything in Career Builder",
-      "Up to 3 career learning sessions, each produced into a sponsored internship",
-      "Premier Partner badge across the platform",
-      "Multiple vignette days across the year",
-      "Co-branded marketing and press release",
-      "Named in Ambition Angels annual report",
-    ],
-  },
-  {
-    amount: "$150K+",
-    period: "/year",
-    name: "Founding Partner",
-    highlight: false,
-    perks: [
-      "Everything in Premier Partner",
-      "An Ambition Coaches cohort for employees who want to go deeper",
-      "In-app popup feature for your brand",
-      "Naming opportunity on a program or cohort",
-      "Category exclusivity: one company per industry",
-      "Executive briefings with Remi biannually",
-    ],
-  },
-];
-
-const whyCards = [
-  {
-    title: "Fully Tax-Deductible",
-    body: "Ambition Angels is a registered 501(c)(3). EIN 87-2513010. Every dollar is a deductible charitable contribution.",
-  },
-  {
-    title: "Employee Engagement That Holds",
-    body: "Your people want work that matters. This is specific, real, and they'll talk about it for months. Your team shows up, contributes real knowledge, and walks away with authorship of something thousands of teens will see.",
-  },
-  {
-    title: "Reportable CSR Impact",
-    body: "Pre and post data. Future orientation scores. Completion rates. Demographic reach. What your ESG team needs to report, and what your CEO needs to see.",
-  },
-  {
-    title: "A Pipeline for a Workforce That Won't Sit Still",
-    body: "The work your industry hires for is changing fast. The teens with the earliest career exposure are the ones who'll adapt. Your future workforce is forming right now.",
-  },
-  {
-    title: "Brand Before They Choose",
-    body: "Reach teens before they've formed brand loyalty. A career track builds real, earned connection. They'll remember you for the right reason.",
-  },
-  {
-    title: "Category Exclusivity",
-    body: "Premier and Founding Partners get exclusive category rights. One company per industry. Own the space before someone else does.",
-  },
-];
-
-function CheckIcon({ light = false }: { light?: boolean }) {
-  return (
-    <svg
-      className={`w-3 h-3 flex-shrink-0 mt-0.5 ${light ? "text-white" : "text-orange"}`}
-      fill="none"
-      viewBox="0 0 12 12"
-      stroke="currentColor"
-      strokeWidth={2.5}
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
-    </svg>
-  );
-}
-
-export default function CompaniesPage() {
-  return (
+export default function CompaniesPage() {  return (
     <>
       <PageVisitedEvent name="companies_page_visited" />
-      {/* ── HERO ─────────────────────────────────────────────────────── */}
-      <section className="bg-ink section-pad relative overflow-hidden" style={dotTexture}>
-        <div className="container-site relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-
-            {/* Left — copy */}
-            <div className="pt-4 lg:pt-8">
-              <div className="inline-block text-xs font-bold text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6">
-                Corporate Partnership
-              </div>
-              <h1 className="font-display font-black text-5xl lg:text-6xl xl:text-7xl text-cream mb-6 leading-none tracking-tight uppercase">
-                Show the next generation where work is going.
+      <div className="aa-page" style={{ fontFamily: "var(--font-body)", color: "var(--ink)", background: "var(--paper)", overflowX: "clip" }}>
+        <section style={{ position: "relative", background: "var(--ink)", backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)", backgroundSize: "22px 22px", overflow: "hidden" }}>
+          <img src="/images/site/doodles/doodle-70.png" alt="" aria-hidden="true" style={{ position: "absolute", top: "48px", right: "6%", width: "150px", opacity: "0.2", pointerEvents: "none" }} />
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "clamp(72px,9vw,128px) clamp(20px,4vw,32px) clamp(72px,8vw,104px)", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,440px),1fr))", gap: "clamp(48px,6vw,80px)", alignItems: "center" }}>
+            <div style={{ position: "relative", zIndex: "2" }}>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 20px" }}>For Companies</p>
+              <h1 style={{ fontFamily: "var(--font-display)", fontWeight: "900", textTransform: "uppercase", fontSize: "clamp(52px,6.4vw,88px)", lineHeight: "0.95", letterSpacing: "-0.01em", color: "var(--cream)", margin: "0 0 24px", maxWidth: "980px" }}>
+                {"Your people's careers, "}
+                <span style={{ color: "var(--orange)" }}>in front of the next generation.</span>
               </h1>
-              <p className="text-gray-mid text-lg leading-relaxed mb-10 max-w-lg">
-                The workforce is changing fast, and the teens furthest from opportunity are usually the last to find out. We close that gap with 30-day simulated career internships, in the classroom on the web and in their pocket on the phone. The research is clear: a teen with real career exposure is far more likely to be employed as an adult. Be part of making sure the next generation has what they need.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <a
-                  href="#contact"
-                  className="bg-orange hover:bg-orange-dark text-white font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center justify-center"
-                >
-                  Become a Partner
-                </a>
-                <a
-                  href="#tiers"
-                  className="bg-cream/5 hover:bg-cream/10 text-cream border border-cream/20 font-semibold px-8 py-4 rounded-full transition-colors text-base min-h-[52px] inline-flex items-center justify-center"
-                >
-                  See the tiers
-                </a>
+              <p style={{ fontSize: "clamp(17px,1.6vw,20px)", lineHeight: "1.6", color: "var(--gray-mid)", maxWidth: "620px", margin: "0 0 36px", textWrap: "pretty" }}>Most young people meet a handful of careers before they have to choose one. Your employees can change that, through introships built from their stories and conversations with students who want to do what they do.</p>
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                <PillCTA size="lg" href="#start">Talk to us</PillCTA>
+                <PillCTA size="lg" variant="ghostDark" href="#coach">Become a coach</PillCTA>
               </div>
             </div>
-
-            {/* Right — phone + stats */}
-            <div className="flex flex-col gap-5">
-              <div className="flex justify-center">
-                <IPhoneMockup />
-              </div>
-
-              {/* 2×2 stat grid */}
-              <div className="grid grid-cols-2 gap-3">
-                {heroStats.map((s) => (
-                  <div
-                    key={s.sub}
-                    className="bg-cream/5 border border-cream/10 rounded-card px-4 py-3"
-                  >
-                    <div className="font-display font-black text-2xl text-orange tracking-tight leading-none mb-1">
-                      {s.label}
+            <figure role="img" aria-label="Sample: one employee's career path, turned into an introship card" style={{ margin: "0", position: "relative", display: "flex", flexDirection: "column" }}>
+              <div style={{ width: "min(100%,400px)", background: "rgb(250 250 248 / 0.06)", border: "1px solid rgb(250 250 248 / 0.16)", borderRadius: "var(--radius-card-lg)", padding: "24px 26px 30px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "18px" }}>
+                  <span aria-hidden="true" style={{ width: "40px", height: "40px", borderRadius: "50%", border: "1.5px dashed rgb(250 250 248 / 0.35)", flexShrink: "0" }} />
+                  <div>
+                    <div style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "16px", color: "var(--cream)" }}>One of your people</div>
+                    <div style={{ fontSize: "13px", color: "var(--gray-mid)" }}>Their real career path</div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  {path.map((p, i) => (
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "20px 1fr", gap: "12px" }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                        <span style={{ width: "12px", height: "12px", borderRadius: "50%", marginTop: "4px", background: p.dot, border: "2px solid var(--orange)" }} />
+                        <span style={{ flex: "1", width: "2px", background: p.line, minHeight: "18px" }} />
+                      </div>
+                      <div style={{ paddingBottom: "14px" }}>
+                        <div style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--gray-mid)" }}>{p.k}</div>
+                        <div style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "15px", color: "var(--cream)" }}>{p.v}</div>
+                      </div>
                     </div>
-                    <div className="text-gray-mid text-xs leading-snug">{s.sub}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── TICKER ───────────────────────────────────────────────────── */}
-      <div className="bg-orange py-4 overflow-hidden" aria-hidden="true">
-        <div className="ticker-track">
-          {[...tickerItems, ...tickerItems].map((item, i) => (
-            <span
-              key={i}
-              className="flex items-center gap-5 px-7 text-white font-heading font-semibold text-sm uppercase tracking-widest whitespace-nowrap"
-            >
-              {item}
-              <span className="w-1.5 h-1.5 rounded-full bg-white/40 flex-shrink-0" />
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* ── WHY NOW ──────────────────────────────────────────────────── */}
-      <section className="section-pad bg-[#F5F4F0]">
-        <div className="container-site">
-          <div className="max-w-3xl">
-            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
-              Why Now
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-6">
-              Most teens are figuring out their careers from the sidelines.
-            </h2>
-            <p className="text-gray-warm text-lg leading-relaxed mb-5">
-              The work your industry does is changing fast. New roles, new tools, new ways of working, most of it lives inside companies and never reaches the teens deciding what to study or who to become. The teens furthest from opportunity feel that gap the most. They&apos;re the last to find out where the workforce is going, and by the time they do, the paths are already crowded.
-            </p>
-            <p className="text-gray-warm text-lg leading-relaxed">
-              Career exposure closes the gap. The research is clear: teens with structured career exposure see better adult employment outcomes and 5 to 10% higher wages, decades later (OECD Career Readiness Research). We deliver that exposure at scale, in classrooms and programs on the web and on the phone everywhere else, in the industries your company actually operates in. You can be part of making sure the next generation has what they need.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── OPPORTUNITY ──────────────────────────────────────────────── */}
-      <section className="section-pad bg-ink relative overflow-hidden" style={dotTexture}>
-        <div className="container-site relative z-10">
-          <div className="max-w-3xl mb-12">
-            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
-              The Opportunity
-            </p>
-            <h2 className="font-display font-black text-5xl lg:text-6xl text-cream uppercase tracking-tight leading-none mb-6">
-              Most CSR spend disappears.<br className="hidden lg:block" /> This doesn&apos;t.
-            </h2>
-            <p className="text-gray-mid text-lg leading-relaxed">
-              Most CSR investment is hard to measure and harder to talk about. Ambition Angels gives you something different: direct contact with the teens who will define the next workforce, employees who walk away with real ownership of something they helped build, and outcomes you can put in front of your board.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {opportunityCards.map((card) => (
-              <div
-                key={card.title}
-                className="bg-cream/5 border border-cream/10 border-t-[3px] border-t-orange rounded-card-lg p-7 hover:bg-cream/10 transition-colors"
-              >
-                <h3 className="font-heading font-bold text-cream text-lg mb-3">
-                  {card.title}
-                </h3>
-                <p className="text-gray-mid text-sm leading-relaxed">{card.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── HOW YOUR PEOPLE SHOW UP ──────────────────────────────────── */}
-      <section className="section-pad bg-[#F5F4F0] relative overflow-hidden">
-        <div className="container-site">
-          <div className="max-w-2xl mb-12">
-            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
-              How Your People Show Up
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-4">
-              The best way in is the easiest one.
-            </h2>
-            <p className="text-gray-warm text-lg leading-relaxed">
-              Your team doesn&apos;t need to clear a day or build a deck. The two ways that work best are small: a one-hour career session, or a ten-minute vignette. We call it micro-volunteering. Your people share what they know, we produce it into a 30-day internship on the app, and your brand carries it to thousands of teens.
-            </p>
-          </div>
-
-          {/* Two prominent ways in */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Career learning session — featured dark card */}
-            <div className="bg-ink rounded-card-lg p-8 relative overflow-hidden" style={dotTexture}>
-              <div className="relative z-10">
-                <div className="inline-block text-xs font-bold text-orange bg-orange/15 border border-orange/30 px-3 py-1 rounded-full uppercase tracking-widest mb-5">
-                  Best for groups
+                  ))}
                 </div>
-                <h3 className="font-heading font-bold text-2xl text-cream mb-4">
-                  Career learning sessions
-                </h3>
-                <p className="text-gray-mid text-sm leading-relaxed mb-6">
-                  About 20 of your employees get on a guided, one-hour session and talk through one career. The technical skills, the day to day, the honest parts. We record it and produce it into a 30-day internship on the app, sponsored by your company. Run it as one room or split into breakouts so everyone contributes.
+              </div>
+              <div style={{ alignSelf: "flex-end", width: "min(100%,380px)", marginTop: "-36px", position: "relative", background: "var(--cream)", borderRadius: "var(--radius-card-lg)", padding: "24px", boxShadow: "0 40px 80px rgba(0,0,0,0.5)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "14px" }}>
+                  <span style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", padding: "4px 10px", borderRadius: "999px", background: "var(--orange-light)", color: "var(--orange-dark)" }}>Introship · 8 to 10 min</span>
+                  <span style={{ fontFamily: "var(--font-heading)", fontWeight: "500", fontSize: "12px", color: "var(--muted)" }}>Built with your team</span>
+                </div>
+                <div style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "24px", letterSpacing: "-0.01em", lineHeight: "1.15", color: "var(--ink)", marginBottom: "4px" }}>Marketing Director</div>
+                <div style={{ fontSize: "14px", color: "var(--charcoal)", marginBottom: "16px" }}>Told by someone on your team who does it every day.</div>
+                <div style={{ display: "flex", flexDirection: "column", marginBottom: "18px" }}>
+                  {parts.map((pt, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: "12px", padding: "10px 0", borderTop: "1px solid var(--rule)", fontFamily: "var(--font-heading)", fontWeight: "500", fontSize: "14px", color: "var(--ink)" }}>
+                      <span>{pt}</span>
+                      <span aria-hidden="true" style={{ color: "var(--orange)" }}>→</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ height: "44px", borderRadius: "999px", background: "var(--orange)", color: "#fff", fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "15px", display: "flex", alignItems: "center", justifyContent: "center" }}>Start</div>
+              </div>
+            </figure>
+          </div>
+        </section>
+        <section style={{ background: "var(--surface-tint)", backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)", backgroundSize: "22px 22px", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)" }}>
+            <div style={{ maxWidth: "700px", marginBottom: "48px" }}>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 16px" }}>Ways to partner</p>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(34px,4.2vw,48px)", letterSpacing: "-0.02em", lineHeight: "1.12", margin: "0", color: "var(--ink)" }}>Pick the one that fits your team.</h2>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,460px),1fr))", gap: "20px" }}>
+              {ways.map((w, i) => (
+                <article key={i} style={{ background: w.bg, border: `1px solid ${w.border}`, borderRadius: "var(--radius-card-lg)", padding: "clamp(24px,3vw,36px)", display: "grid", gridTemplateColumns: "auto 1fr", columnGap: "20px", rowGap: "10px", alignContent: "start" }}>
+                  <div style={{ gridRow: "1 / span 3", fontFamily: "var(--font-display)", fontWeight: "900", fontSize: "clamp(56px,5vw,72px)", lineHeight: "0.85", color: "var(--orange)" }}>{w.n}</div>
+                  <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(20px,1.9vw,24px)", lineHeight: "1.25", letterSpacing: "-0.01em", color: w.head, margin: "0" }}>{w.t}</h3>
+                  <p style={{ fontSize: "16px", lineHeight: "1.6", color: w.body, margin: "0" }}>{w.b}</p>
+                  <a href={w.href} style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "15px", color: "var(--orange)", display: "inline-flex", alignItems: "center", minHeight: "44px", justifySelf: "start" }}>{w.cta}{" →"}</a>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section id="coach" style={{ background: "var(--ink)", backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)", backgroundSize: "22px 22px", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,400px),1fr))", gap: "clamp(40px,6vw,80px)", alignItems: "start" }}>
+            <div>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 16px" }}>Ambition Coach</p>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: "900", textTransform: "uppercase", letterSpacing: "-0.01em", fontSize: "clamp(48px,5.6vw,80px)", lineHeight: "0.92", margin: "0 0 28px", color: "var(--cream)" }}>
+                {"Five hours. One young person. "}
+                <span style={{ color: "var(--orange)" }}>A real next step.</span>
+              </h2>
+              <div style={{ background: "var(--cream)", borderRadius: "var(--radius-card-lg)", padding: "clamp(24px,3vw,32px)", margin: "0 0 20px" }}>
+                <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange-dark)", margin: "0 0 12px" }}>Our first coach</p>
+                <p style={{ fontSize: "17px", lineHeight: "1.6", color: "var(--ink)", margin: "0 0 14px" }}>Our first coached student wanted to get into marketing. We paired him with a marketing director at NVIDIA for four conversations, and he went on to land a marketing job.</p>
+                <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "16px", lineHeight: "1.5", color: "var(--ink)", margin: "0", paddingTop: "14px", borderTop: "1px solid var(--rule)" }}>
+                  {"“I got a lot of clarity on my plan forward.” "}
+                  <span style={{ fontWeight: "500", color: "var(--muted)" }}>The student, after session two</span>
                 </p>
-                <ul className="space-y-3">
-                  {[
-                    "About one hour, on Zoom so we can record and produce it",
-                    "Becomes a full internship in a real career, carrying your name",
-                    "Works for any team size; we use breakouts for larger groups",
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-3 text-gray-mid text-sm leading-relaxed">
-                      <span className="w-4 h-4 rounded-full bg-orange/20 border border-orange/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <CheckIcon light />
-                      </span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
               </div>
+              <p style={{ fontSize: "17px", lineHeight: "1.65", color: "var(--gray-mid)", margin: "0 0 32px" }}>Next up is a pilot with EOYDC in East Oakland, pairing young adults with professionals in engineering, cybersecurity, and finance.</p>
+              <PillCTA size="lg" href="/coach">Sign up to coach</PillCTA>
             </div>
-
-            {/* Vignettes — light card */}
-            <div className="bg-white border border-gray-light rounded-card-lg p-8">
-              <div className="inline-block text-xs font-bold text-orange bg-orange-light border border-orange/20 px-3 py-1 rounded-full uppercase tracking-widest mb-5">
-                Best for busy schedules
-              </div>
-              <h3 className="font-heading font-bold text-2xl text-ink mb-4">
-                Vignettes
-              </h3>
-              <p className="text-gray-warm text-sm leading-relaxed mb-6">
-                Individual employees record a short clip. One question, one honest answer about their work. We weave these through the internships so teens see real faces in the field. Ten minutes per person, on their own time.
-              </p>
-              <ul className="space-y-3">
-                {[
-                  "About ten minutes per person, recorded whenever it fits",
-                  "Real people in the field, not stock footage",
-                  "True micro-volunteering; it slots into any calendar",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-gray-warm text-sm leading-relaxed">
-                    <span className="w-4 h-4 rounded-full bg-orange-light border border-orange/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <CheckIcon />
-                    </span>
-                    {item}
-                  </li>
+            <div>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--gray-mid)", margin: "0 0 8px" }}>How it works</p>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {coach.map((c, i) => (
+                  <div key={i} style={{ display: "grid", gridTemplateColumns: "56px 1fr", gap: "16px", alignItems: "start", padding: "22px 0", borderTop: "1px solid rgb(250 250 248 / 0.12)" }}>
+                    <span style={{ width: "44px", height: "44px", borderRadius: "50%", background: "var(--orange)", color: "var(--ink)", fontFamily: "var(--font-display)", fontWeight: "900", fontSize: "26px", lineHeight: "1", display: "flex", alignItems: "center", justifyContent: "center" }}>{c.n}</span>
+                    <div>
+                      <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "19px", color: "var(--cream)", margin: "0 0 6px" }}>{c.t}</h3>
+                      <p style={{ fontSize: "15px", lineHeight: "1.6", color: "var(--gray-mid)", margin: "0" }}>{c.b}</p>
+                    </div>
+                  </div>
                 ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Ambition Coaches — slim secondary strip */}
-          <div className="mt-6 bg-white border border-gray-light rounded-card-lg p-6 lg:p-7 flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex-1">
-              <p className="text-[11px] font-heading font-bold text-orange uppercase tracking-widest mb-1.5">
-                Want to go deeper?
-              </p>
-              <h3 className="font-heading font-bold text-ink text-lg mb-2">
-                Ambition Coaches
-              </h3>
-              <p className="text-gray-warm text-sm leading-relaxed">
-                For the few who want more than a session or a clip. Four meetings over four weeks with one teen, helping them turn exposure into a plan. It&apos;s an opportunity, not the way in. Most partners start with sessions and vignettes, then grow into this.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── CAREER PATHS YOU COULD SPONSOR ──────────────────────────── */}
-      <section className="section-pad bg-ink relative overflow-hidden border-t border-cream/5" style={dotTexture}>
-        <div className="container-site relative z-10">
-          <div className="max-w-3xl mb-10">
-            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
-              What You&apos;d Sponsor
-            </p>
-            <h2 className="font-display font-black text-5xl lg:text-6xl text-cream uppercase tracking-tight leading-none mb-6">
-              Career tracks built one at a time.
-            </h2>
-            <p className="text-gray-mid text-lg leading-relaxed">
-              Each Ambition internship is a 30-day immersion in one career path: 20 videos, 10 quizzes, 10 hands-on activities, designed for 15 minutes a day. Sponsor an existing track or co-create a new one from your team&apos;s session.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {careerTracks.map((track) => (
-              <div
-                key={track}
-                className="bg-cream/5 border border-cream/10 rounded-card px-5 py-4 flex items-center gap-3 hover:bg-cream/10 transition-colors"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-orange flex-shrink-0" />
-                <span className="font-heading font-semibold text-cream text-sm">{track}</span>
               </div>
-            ))}
-          </div>
-
-          <p className="text-gray-mid text-sm leading-relaxed mt-8 max-w-2xl">
-            Don&apos;t see your industry? That&apos;s a co-creation opportunity. Premier and Founding Partners build new tracks from their team&apos;s career learning session.
-          </p>
-        </div>
-      </section>
-
-      {/* ── HOW THIS COMPARES ────────────────────────────────────────── */}
-      <section className="section-pad bg-[#F5F4F0] border-t border-gray-light">
-        <div className="container-site">
-          <div className="max-w-2xl mb-10">
-            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
-              How This Compares
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-4">
-              Not your typical volunteer day.
-            </h2>
-          </div>
-
-          {/* Desktop table */}
-          <div className="hidden lg:block bg-white border border-gray-light rounded-card-lg overflow-hidden shadow-sm">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[#F5F4F0]">
-                  <th className="text-left font-heading font-bold text-gray-warm text-xs uppercase tracking-widest px-6 py-4 w-1/4">&nbsp;</th>
-                  <th className="text-left font-heading font-bold text-gray-warm text-xs uppercase tracking-widest px-6 py-4 w-1/4">Traditional Volunteer Day</th>
-                  <th className="text-left font-heading font-bold text-gray-warm text-xs uppercase tracking-widest px-6 py-4 w-1/4">Traditional CSR Grant</th>
-                  <th className="text-left font-heading font-bold text-orange text-xs uppercase tracking-widest px-6 py-4 w-1/4 bg-orange-light">Ambition Angels</th>
-                </tr>
-              </thead>
-              <tbody>
-                {compareRows.map((row, i) => (
-                  <tr key={row.label} className={i % 2 === 0 ? "bg-white" : "bg-[#FAFAF8]"}>
-                    <td className="px-6 py-4 font-heading font-semibold text-ink">{row.label}</td>
-                    <td className="px-6 py-4 text-gray-warm">{row.volunteer}</td>
-                    <td className="px-6 py-4 text-gray-warm">{row.grant}</td>
-                    <td className="px-6 py-4 text-ink font-medium bg-orange-light/40">{row.ambition}</td>
-                  </tr>
+              <div style={{ marginTop: "12px", border: "1px solid rgb(250 250 248 / 0.16)", borderRadius: "var(--radius-card)", overflow: "hidden" }}>
+                <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0", padding: "14px 20px", borderBottom: "1px solid rgb(250 250 248 / 0.12)" }}>Your time</p>
+                {time.map((tm, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: "16px", padding: "12px 20px", borderBottom: "1px solid rgb(250 250 248 / 0.08)", fontFamily: "var(--font-heading)", fontSize: "15px", color: tm.color, fontWeight: tm.weight }}>
+                    <span>{tm.k}</span>
+                    <span>{tm.v}</span>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile stacked cards */}
-          <div className="lg:hidden space-y-4">
-            {compareRows.map((row) => (
-              <div key={row.label} className="bg-white border border-gray-light rounded-card-lg p-5 shadow-sm">
-                <div className="font-heading font-bold text-ink text-base mb-3">{row.label}</div>
-                <dl className="space-y-2.5 text-sm">
-                  <div className="flex flex-col">
-                    <dt className="text-xs font-heading font-bold text-gray-warm uppercase tracking-widest mb-1">Volunteer Day</dt>
-                    <dd className="text-gray-warm">{row.volunteer}</dd>
-                  </div>
-                  <div className="flex flex-col">
-                    <dt className="text-xs font-heading font-bold text-gray-warm uppercase tracking-widest mb-1">CSR Grant</dt>
-                    <dd className="text-gray-warm">{row.grant}</dd>
-                  </div>
-                  <div className="flex flex-col bg-orange-light/40 -mx-2 px-2 py-2 rounded">
-                    <dt className="text-xs font-heading font-bold text-orange uppercase tracking-widest mb-1">Ambition Angels</dt>
-                    <dd className="text-ink font-medium">{row.ambition}</dd>
-                  </div>
-                </dl>
               </div>
-            ))}
+            </div>
           </div>
-
-          <p className="text-gray-warm text-base leading-relaxed mt-8 max-w-2xl">
-            Most CSR programs offer one of these benefits. We offer all of them in one program.
-          </p>
-        </div>
-      </section>
-
-      {/* ── PARTNERSHIP TIERS ────────────────────────────────────────── */}
-      <section
-        id="tiers"
-        className="section-pad bg-ink relative overflow-hidden"
-        style={dotTexture}
-      >
-        <div className="container-site relative z-10">
-          <div className="max-w-2xl mb-12">
-            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
-              Partnership Tiers
-            </p>
-            <h2 className="font-display font-black text-5xl lg:text-6xl text-cream uppercase tracking-tight leading-none mb-4">
-              Find your level.
-            </h2>
-            <p className="text-gray-mid text-lg leading-relaxed">
-              Every tier is fully tax-deductible, and every tier bundles in the ways your people show up: career learning sessions and vignettes across the year. Pick what fits and we&apos;ll make it count.
-            </p>
+        </section>
+        <section id="start" style={{ background: "var(--cream)", borderTop: "1px solid var(--rule)", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,400px),1fr))", gap: "clamp(40px,6vw,80px)", alignItems: "start" }}>
+            <div>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 16px" }}>Open a door</p>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(34px,4.2vw,48px)", letterSpacing: "-0.02em", lineHeight: "1.12", margin: "0 0 20px", color: "var(--ink)" }}>{"Let's talk about your team."}</h2>
+              <p style={{ fontSize: "18px", lineHeight: "1.65", color: "var(--charcoal)", margin: "0" }}>{"Tell us a little about your company and what your people do. We'll come back with a plan that fits."}</p>
+            </div>
+            <div style={{ background: "var(--paper)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card-lg)", padding: "clamp(28px,4vw,40px)" }}>
+              <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "24px", letterSpacing: "-0.01em", color: "var(--ink)", margin: "0 0 24px" }}>Start the conversation.</h3>
+              <CompaniesContactForm />
+            </div>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-            {tiers.map((tier) => (
-              <div
-                key={tier.name}
-                className={`rounded-card-lg p-7 flex flex-col ${
-                  tier.highlight
-                    ? "bg-orange shadow-xl shadow-orange/20"
-                    : "bg-cream/5 border border-cream/10 hover:bg-cream/10 transition-colors"
-                }`}
-              >
-                {tier.highlight && (
-                  <div className="inline-block text-xs font-bold text-white bg-white/25 px-3 py-1 rounded-full uppercase tracking-widest mb-4 self-start">
-                    Most Popular
-                  </div>
-                )}
-                <div className={`font-display font-black tracking-tight leading-none mb-0.5 ${tier.highlight ? "text-white" : "text-orange"}`}>
-                  <span className="text-3xl">{tier.amount}</span>
-                  <span className={`text-base font-heading font-semibold ${tier.highlight ? "text-white/70" : "text-gray-mid"}`}>
-                    {tier.period}
-                  </span>
-                </div>
-                <div className={`font-heading font-bold text-base mb-5 ${tier.highlight ? "text-white/90" : "text-cream"}`}>
-                  {tier.name}
-                </div>
-                <ul className="space-y-2.5 flex-1 mb-7">
-                  {tier.perks.map((perk) => (
-                    <li
-                      key={perk}
-                      className={`flex items-start gap-2.5 text-sm leading-snug ${
-                        tier.highlight ? "text-white/80" : "text-gray-mid"
-                      }`}
-                    >
-                      <CheckIcon light={tier.highlight} />
-                      {perk}
-                    </li>
-                  ))}
-                </ul>
-                <a
-                  href="#contact"
-                  className={`inline-flex items-center justify-center font-semibold text-sm px-6 py-3 rounded-full transition-colors min-h-[44px] ${
-                    tier.highlight
-                      ? "bg-white text-orange hover:bg-orange-light"
-                      : "bg-orange hover:bg-orange-dark text-white"
-                  }`}
-                >
-                  Get Started
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHY COMPANIES SAY YES ────────────────────────────────────── */}
-      <section className="section-pad bg-[#F5F4F0]">
-        <div className="container-site">
-          <div className="max-w-2xl mb-12">
-            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
-              Why Companies Say Yes
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-4">
-              Six reasons this makes sense right now.
-            </h2>
-            <p className="text-gray-warm text-lg leading-relaxed">
-              We&apos;re not going to tell you this is the most important thing you&apos;ll do this year. We&apos;ll tell you what it actually is.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {whyCards.map((card) => (
-              <div
-                key={card.title}
-                className="bg-white border border-gray-light border-t-[3px] border-t-orange rounded-card-lg p-7 shadow-sm"
-              >
-                <h3 className="font-heading font-bold text-ink text-base mb-3">
-                  {card.title}
-                </h3>
-                <p className="text-gray-warm text-sm leading-relaxed">{card.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CONTACT / CTA ────────────────────────────────────────────── */}
-      <section
-        id="contact"
-        className="section-pad bg-ink relative overflow-hidden"
-        style={dotTexture}
-      >
-        <div className="container-site relative z-10 max-w-2xl text-center">
-          <h2 className="font-display font-black text-5xl lg:text-6xl text-cream uppercase tracking-tight leading-none mb-5">
-            Let&apos;s talk.
-          </h2>
-          <p className="text-gray-mid text-lg leading-relaxed mb-10">
-            Drop your details and Remi will reach out directly for a real conversation. No sales team, no pitch deck by default. Tell us what you&apos;re trying to solve and we&apos;ll start there.
-          </p>
-          <CompaniesContactForm />
-          <p className="mt-6 text-gray-mid text-sm">
-            Or email directly:{" "}
-            <a
-              href="mailto:hello@ambitionangels.org"
-              className="text-cream underline underline-offset-2 hover:text-gray-mid transition-colors"
-            >
-              hello@ambitionangels.org
-            </a>
-          </p>
-        </div>
-      </section>
+        </section>
+      </div>
     </>
   );
 }

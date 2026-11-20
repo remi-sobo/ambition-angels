@@ -327,3 +327,110 @@
   color: var(--charcoal);
   margin-bottom: 8px;
 }
+
+/* ── Home hero carousel (components/site/HeroCarousel.tsx) ────────────── */
+.aa-hero-carousel {
+  width: 100%;
+  min-width: 0;
+}
+.aa-hero-carousel__frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--hero-art-ratio);
+  border-radius: var(--radius-card-lg);
+  overflow: hidden;
+  background: rgb(253 245 234);
+}
+.aa-hero-carousel__track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.aa-hero-carousel__track::-webkit-scrollbar {
+  display: none;
+}
+.aa-hero-carousel__slide {
+  flex: 0 0 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.aa-hero-carousel__slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+}
+.aa-hero-carousel__caption {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--cream);
+  font-family: var(--font-heading), sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+}
+.aa-hero-carousel__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(255 255 255 / 0.92);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  box-shadow: 0 6px 16px rgb(14 14 14 / 0.12);
+  transition: background-color 0.2s, color 0.2s;
+}
+.aa-hero-carousel__arrow:hover {
+  background: var(--orange);
+  color: #fff;
+}
+.aa-hero-carousel__arrow--prev {
+  left: 12px;
+}
+.aa-hero-carousel__arrow--next {
+  right: 12px;
+}
+.aa-hero-carousel__dots {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+.aa-hero-carousel__dots button {
+  width: 22px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.aa-hero-carousel__dots button::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgb(14 14 14 / 0.25);
+  transition: background-color 0.2s, width 0.2s;
+}
+.aa-hero-carousel__dots button[aria-current="true"]::before {
+  width: 18px;
+  background: var(--orange);
+}
+/* On touch screens the swipe and the dots do the job; arrows would cover faces. */
+@media (hover: none), (max-width: 639px) {
+  .aa-hero-carousel__arrow {
+    display: none;
+  }
+}

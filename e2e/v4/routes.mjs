@@ -75,7 +75,7 @@ export function buildRoutes() {
     staff: first("staff")?.id,
     opp: first("opportunities")?.id,
     pledge: first("pledges")?.id,
-    campaign: first("campaigns")?.id,
+    campaign: first("fr_plan_strategies")?.id,
     comms: first("email_campaigns", (c) => c.status === "sent")?.id,
     commsDraft: first("email_campaigns", (c) => c.status === "draft")?.id,
     event: first("calendar_events", (e) => /^Donor/.test(e.title || "") && new Date(e.start_time) > new Date())?.id || first("calendar_events")?.id,
@@ -128,7 +128,6 @@ export function buildRoutes() {
     D("Strategy objective detail", `/admin/organization/strategy/objective/${ids.objective}`),
     D("Team member detail", `/admin/organization/team/${ids.staff}`),
     D("Staff review cycle", `/admin/staff/reviews/${ids.reviewCycle}`),
-    D("Task deep link (?task=)", `/admin/work/tasks?task=${fx.ops_tasks?.[25]?.id}`),
     D("Donors volunteers view", `/admin/fundraising/donors-funders?view=volunteers`),
     D("Plan & Close (Friday)", `/admin/work/plan-close?ritual=close`),
   ];

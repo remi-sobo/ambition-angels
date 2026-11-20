@@ -643,5 +643,21 @@ function populate(T, add, tables, team) {
   add("ms_occupations", Array.from({ length: 8 }, (_, i) => ({ soc_code: `29-${1000 + i}.00`, title: ["Respiratory Therapist", "Wind Turbine Technician", "UX Researcher", "Dental Hygienist", "Civil Drafter", "Sound Engineering Tech", "Actuary", "Urban Planner"][i], riasec: { R: 4, I: 5, A: 2, S: 3, E: 2, C: 3 }, job_zone: 3, pay_median: 70000 + i * 5000, education_typical: "Associate degree", imported_at: iso(daysAgo(100)) })));
   add("ms_cards", tables.ms_occupations.map((o, i) => ({ soc_code: o.soc_code, field: ["health","trades","tech","health","trades","creative","business","public"][i], day_vignette: "You start the day checking equipment, then meet your first patient.", clue_1: "You work with your hands and your head.", status: ["approved", "approved", "draft", "draft", "approved", "draft", "approved", "retired"][i], generated_by: "claude", generated_at: iso(daysAgo(50)), reviewed_by: "priya", reviewed_at: iso(daysAgo(40)), created_at: iso(daysAgo(50)) })));
 
+  // campaign plan strategies (Campaigns → plan detail)
+  const strategies = add("fr_plan_strategies", [
+    ["Grow monthly giving", 60000, "marcus"], ["Corporate partner sponsorships", 200000, "marcus"], ["Multi-year foundation grants", 420000, "dana"],
+  ].map(([name, goal, owner], i) => ({ id: T.id(81), org_id: ORG_ID, plan_year: NOW.getFullYear(), name, goal, owner, notes: "Reviewed monthly with the ED.", sort: i, created_at: iso(daysAgo(200)) })));
+  campaigns[4].plan_strategy_id = strategies[0].id;
+  campaigns[2].plan_strategy_id = strategies[1].id;
+  grants.slice(0, 6).forEach((g) => (g.plan_strategy_id = strategies[2].id));
+
+  // website analytics (aa.site_analytics)
+  const pages = ["/", "/how-it-works", "/curriculum", "/schools", "/companies", "/donate", "/teens", "/teens/higher-wage", "/about", "/impact"];
+  add("page_views", Array.from({ length: 900 }, (_, i) => ({ id: i + 1, org_id: ORG_ID, created_at: iso(new Date(NOW.getTime() - Math.floor(Math.pow(T.r(), 1.2) * 30 * DAY))), page: T.weighted(pages.map((p, k) => [p, 10 - k])), referrer: T.pick(["google.com", "", "instagram.com", "linkedin.com", "newsletter"]), device: T.weighted([["mobile", 6], ["desktop", 4], ["tablet", 0.5]]), browser: T.pick(["Safari", "Chrome", "Chrome", "Edge"]), session_id: `s${Math.floor(i / 3)}`, duration_seconds: T.int(5, 240) })));
+  add("click_events", Array.from({ length: 160 }, (_, i) => ({ id: i + 1, org_id: ORG_ID, created_at: iso(daysAgo(T.int(0, 29))), event_name: T.pick(["donate_click", "schools_inquiry", "app_download", "play_game"]), page: T.pick(pages), session_id: `s${i * 2}`, metadata: {} })));
+
+  // a Gmail-connected-ish backlog for Meetings → connection candidates
+  add("connection_candidates", people.slice(40, 44).map((p, i) => ({ id: T.id(83), org_id: ORG_ID, thread_id: `thr${i}`, constituent_id: p.id, subject: ["Coffee next week?", "Re: internship hosting", "Intro from a friend", "Spring panel"][i], status: "pending", created_at: iso(daysAgo(i + 1)) })));
+
   // ygb registrations (aa.ygb) left empty on purpose; captures empty.
 }

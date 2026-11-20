@@ -91,6 +91,42 @@ Standardize:
 
 Extend the existing component kit rather than creating a competing system. Use consistent page archetypes: dashboard, list, detail, board, form, and settings. Components should share behavioral conventions, not just colors and padding.
 
+#### The visual standard: structured calm
+
+Added 2026-11-20 at Remi's direction. BloomOS should have the visual discipline, clarity and polish of a mature SaaS product such as HubSpot, without copying HubSpot's branding or its complexity. It should feel like one coherent operating system, not a collection of independently generated pages.
+
+The acceptance standard: **if a user learns how to operate one part of BloomOS, the rest of the product feels immediately familiar.**
+
+Build the unified design system around:
+
+- A persistent dark navigation shell with a bright, spacious working surface. (BloomOS already has this. Keep the existing tokens.)
+- Clear visual hierarchy, disciplined alignment and consistent spacing.
+- Neutral surfaces, subtle borders, restrained shadows, and accent color used on purpose.
+- Shared components for page headers, breadcrumbs, tabs, filters, tables, cards, buttons, drawers, forms and modals.
+- The same interaction patterns in every module.
+- Thoughtful density: easy to scan, efficient for daily use.
+- Progressive disclosure, so advanced features do not crowd everyday tasks.
+- A contextual primary action and an obvious next step on every screen.
+- Good empty, loading, error, success, hover, focus and selected states.
+- Responsive layouts that stay clear and usable on a phone.
+
+Do not simply round everything, add whitespace, or wrap everything in cards. Keep purposeful density, and let each screen type look like the job it does.
+
+**Reference anatomy for list and board screens** (from a HubSpot Deals board Remi shared; take the structure, not the look):
+
+1. **Page header:** the object's name as the title, one primary action at top right in the accent color, and everything else behind an overflow menu.
+2. **Saved views as tabs,** with "mine" first ("My deals", "All deals", then add a view). The default view answers "what is mine."
+3. **One filter row:** search with a keyboard shortcut, a Filter button that shows how many filters are on, Sort, three or four one-click filters for the fields people use most, Clear all, and "Advanced filters" as the escape hatch.
+4. **View controls on the right:** which pipeline, board or table, and display settings. Always in the same place.
+5. **A summary strip** of three or four numbers that reflect the current filters, each with an explanation on hover, and collapsible. One row, not a grid of cards.
+6. **The board:** each column shows its stage name and count, with totals at the foot. Each card shows a title that links to the record, two or three key fields, one urgency signal, and who it belongs to.
+7. **A footer** with the record count and the bulk actions (refresh, export).
+8. **Color discipline:** the accent appears only on the primary action; a second color marks links and active filters; everything else is neutral with thin borders and almost no shadow.
+
+**What not to copy:** ten or more top-level nav items, upsell cards in the sidebar, sales jargon such as weighted pipeline, an AI assistant in the top bar, and control clusters that only power users can read.
+
+This anatomy matches the audit's main design finding: make the Donors & Funders list the standard for every list (filters in the URL, saved views on the server, server-side paging, a phone card layout).
+
 ### B. Navigation and information architecture
 
 Audit every route and destination. Identify orphaned pages, duplicate destinations, confusing labels, unnecessary tabs, and screens that don't fit the user's mental model.

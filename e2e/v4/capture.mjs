@@ -89,6 +89,7 @@ async function inspect(page) {
       nextErrorOverlay: !!document.querySelector("nextjs-portal") && /Unhandled Runtime Error|Server Error|Failed to compile/.test(document.querySelector("nextjs-portal")?.shadowRoot?.textContent || ""),
       overlayText: (document.querySelector("nextjs-portal")?.shadowRoot?.textContent || "").slice(0, 400),
       bodyChars: txt.length,
+      toast: document.body?.dataset.v4Toast || [...document.querySelectorAll('[role="status"]')].map((n) => n.innerText.trim()).filter(Boolean).join(" | ") || null,
       emptyHints: (txt.match(/(No [a-z ]+ yet|Nothing (here|to show)[^\n]*|no data)/gi) || []).slice(0, 5),
     };
   });

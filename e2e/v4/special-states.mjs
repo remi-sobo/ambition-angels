@@ -49,13 +49,39 @@ const STATES = [
     mock: { delayMs: 12000, delayPattern: `(?!(${AUTH_TABLES})$).*` },
   },
   {
-    name: "loading-skeleton-today-phone", vp: "phone", path: "/admin/today", viewportOnly: true, loading: true,
+    name: "loading-skeleton-programs", vp: "desktop", path: "/admin/programs/overview", viewportOnly: true, loading: true,
     mock: { delayMs: 12000, delayPattern: `(?!(${AUTH_TABLES})$).*` },
   },
   {
-    name: "failed-save-toast", vp: "desktop", path: "/admin/work/tasks", viewportOnly: true, settleMs: 2500,
+    name: "failed-save-task-complete", vp: "desktop", path: "/admin/work/tasks", viewportOnly: true, settleMs: 0,
     mock: { failWrite: "ops_tasks|ops_task_events|audit_log" },
-    before: async (p) => p.getByRole("button", { name: "Mark as done" }).first().click(),
+    before: async (p) => {
+      await p.getByRole("button", { name: "Mark as done" }).first().click();
+      // wait for the toast (role=status) to carry text, up to 12s
+      const t0 = Date.now();
+      while (Date.now() - t0 < 12000) {
+        const txt = await p.locator('[role="status"]').allInnerTexts().then((a) => a.join(" | ").trim()).catch(() => "");
+        if (txt) { p.__toast = txt; break; }
+        await p.waitForTimeout(250);
+      }
+      if (!p.__toast) throw new Error("no toast text within 12s of the failed save (PATCH returned 500)");
+      await p.evaluate((t) => (document.body.dataset.v4Toast = t), p.__toast);
+    },
+  },
+  {
+    name: "failed-save-toast-task-edit", vp: "desktop", path: "/admin/work/tasks", viewportOnly: true, settleMs: 0,
+    mock: { failWrite: "ops_tasks|ops_task_events|audit_log" },
+    before: async (p) => {
+      await p.getByText("Upload signed MOUs", { exact: false }).first().click();
+      await p.getByRole("button", { name: "Save changes" }).first().click();
+      const t0 = Date.now();
+      while (Date.now() - t0 < 12000) {
+        const txt = await p.locator('[role="status"], [role="alert"]').allInnerTexts().then((a) => a.join(" | ").trim()).catch(() => "");
+        if (txt) { await p.evaluate((t) => (document.body.dataset.v4Toast = t), txt); return; }
+        await p.waitForTimeout(250);
+      }
+      throw new Error("no toast/alert text within 12s of the failed save (PATCH returned 500)");
+    },
   },
   { name: "reads-500-fundraising-today", vp: "desktop", path: "/admin/fundraising/today", mock: { failRead: `(?!(${AUTH_TABLES})$).*` } },
   { name: "reads-500-today", vp: "desktop", path: "/admin/today", mock: { failRead: `(?!(${AUTH_TABLES})$).*` } },

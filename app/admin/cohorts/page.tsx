@@ -10,6 +10,8 @@ import { getSessionPrograms } from "@/lib/admin/program/programs";
 import { getProgramTerms } from "@/lib/admin/terminology";
 import { getOrgContext } from "@/lib/admin/auth";
 import { TYPE } from "@/lib/admin/typeScale";
+import Alert from "../_components/ui/Alert";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 
 // Cohorts & attendance (Ring 3, modules/02-program.md "Cohorts"):
 // program × term × site groupings with capacity, sessions, and dosage
@@ -49,14 +51,31 @@ export default async function CohortsPage() {
     );
   }
   const orgId = ctx.orgId;
-  const [{ data: cohortsData }, { data: membersData }, { data: sessionsData }, { data: marksData }, programs, terms] =
-    await Promise.all([
+  const [
+    { data: cohortsData },
+    { data: membersData, truncated: membersCapped },
+    { data: sessionsData, truncated: sessionsCapped },
+    { data: marksData, truncated: marksCapped },
+    programs,
+    terms,
+  ] = await Promise.all([
       supabase.from("cohorts").select("*")
         .eq("org_id", orgId)
         .order("start_date", { ascending: false, nullsFirst: false }),
-      supabase.from("cohort_members").select("cohort_id, student_id, status").eq("org_id", orgId),
-      supabase.from("cohort_sessions").select("id, cohort_id, session_date, status").eq("org_id", orgId),
-      supabase.from("attendance").select("session_id, status").eq("org_id", orgId),
+      // Paged past PostgREST's 1,000-row cap: every stat card and per-group
+      // rate below is rolled up from these rows.
+      fetchAll<{ cohort_id: string; student_id: string; status: string }>(
+        () => supabase.from("cohort_members").select("cohort_id, student_id, status").eq("org_id", orgId),
+        { order: ["id"] },
+      ),
+      fetchAll<{ id: string; cohort_id: string; session_date: string; status: string }>(
+        () => supabase.from("cohort_sessions").select("id, cohort_id, session_date, status").eq("org_id", orgId),
+        { order: ["id"] },
+      ),
+      fetchAll<{ session_id: string; status: string }>(
+        () => supabase.from("attendance").select("session_id, status").eq("org_id", orgId),
+        { order: ["id"] },
+      ),
       getSessionPrograms(),
       getProgramTerms(),
     ]);
@@ -118,6 +137,13 @@ export default async function CohortsPage() {
       </div>
 
       <SectionSummary section="cohorts" />
+
+      {(membersCapped || sessionsCapped || marksCapped) && (
+        <Alert tone="warning" title="Partial data" className="mb-6">
+          This org has more records than one page load reads, so the counts and attendance rates below cover only part
+          of them.
+        </Alert>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard label={`Active ${terms.cohorts.toLowerCase()}`} value={active.length} sub={`${cohorts.length} total`} />

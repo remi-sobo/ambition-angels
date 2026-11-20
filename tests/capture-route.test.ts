@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { mockSupabase } from "./support/supabaseMock";
 import { CAPTURE_RATE_LIMIT_PER_HOUR } from "@/lib/capture/constants";
 
@@ -58,7 +58,17 @@ const post = (body: unknown) =>
 
 const maria = { ref: "c1", kind: "constituent", id: "m1", name: "Maria Chen", orgName: null, meta: "person", sim: 1, spans: ["Maria Chen"], context: false };
 
+// The route reads "today" from the clock and drops due dates too far in the
+// past (validDate). The fixtures use fixed October 2026 dates, so the clock is
+// pinned to the week they were written for. Only Date is faked: timers and
+// promises run for real.
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-13T17:00:00Z"));
   entitled = { ok: true, ctx: CTX };
   capOver = false;
   modelThrows = null;

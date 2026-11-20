@@ -21,6 +21,7 @@
 import { cache } from "react";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import { deriveHealth, isOffTrack } from "@/lib/admin/plan/health";
 import { constituentName } from "@/lib/fundraising/display";
@@ -369,7 +370,11 @@ export const getForecast = cache(async (): Promise<ForecastData> => {
   const fy = fiscalYearBounds(fin.cfg.year, fin.cfg.startMonth);
 
   const [giftsRes, oppsRes] = await Promise.all([
-    sb.from("gifts").select("amount").eq("org_id", ctx.orgId).gte("gift_date", fy.start).lte("gift_date", fy.end),
+    // Paged past PostgREST's 1,000-row cap: `raised` is a sum over FY gifts.
+    fetchAll<{ amount: number }>(
+      () => sb.from("gifts").select("amount").eq("org_id", ctx.orgId).gte("gift_date", fy.start).lte("gift_date", fy.end),
+      { order: ["id"] }
+    ),
     sb
       .from("opportunities")
       .select("stage, ask_amount, probability")

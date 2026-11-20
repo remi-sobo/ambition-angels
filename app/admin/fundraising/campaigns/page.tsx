@@ -4,6 +4,8 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
 import PageHeader from "../../_components/PageHeader";
+import Alert from "@/app/admin/_components/ui/Alert";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import {
   NewCampaignForm,
   NewAppealForm,
@@ -48,7 +50,12 @@ export default async function CampaignsPage({
       .order("created_at", { ascending: false })
       .limit(100),
     supabase.from("appeals").select("id, name, source_code, campaign_id").eq("org_id", ctx.orgId).limit(500),
-    supabase.from("gifts").select("campaign_id, appeal_id, amount").eq("org_id", ctx.orgId).limit(10000),
+    // Paged past PostgREST's 1,000-row cap (a .limit above it is still capped):
+    // every campaign and appeal total below is a sum over these gifts.
+    fetchAll<{ campaign_id: string | null; appeal_id: string | null; amount: number }>(
+      () => supabase.from("gifts").select("campaign_id, appeal_id, amount").eq("org_id", ctx.orgId),
+      { order: ["id"] },
+    ),
     supabase
       .from("gifts")
       .select("id", { count: "exact", head: true })
@@ -114,6 +121,12 @@ export default async function CampaignsPage({
         subtitle="Campaign → appeal attribution · every gift should carry a campaign"
         actions={<NewCampaignForm />}
       />
+
+      {giftsRes.truncated && (
+        <Alert tone="warning" title="Partial data" className="mb-6">
+          This org has more gifts than one page load reads, so campaign and appeal totals below are incomplete.
+        </Alert>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         <StatCard label="Campaigns" value={campaigns.length} />

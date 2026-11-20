@@ -3,6 +3,8 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import PageHeader from "../../_components/PageHeader";
+import { fetchAll } from "@/lib/supabase/fetchAll";
+import Alert from "@/app/admin/_components/ui/Alert";
 import StatCard from "../../_components/StatCard";
 import TrustBadge from "../_components/TrustBadge";
 import { todayISO } from "../../ops/_types/ops";
@@ -73,16 +75,15 @@ export default async function FundraisingPlanPage({
       .eq("plan_year", year)
       .order("sort", { ascending: true })
       .order("created_at", { ascending: true }),
-    supabase
-      .from("opportunities")
-      .select("id, stage, ask_amount, expected_close, plan_strategy_id")
-      .eq("org_id", ctx.orgId)
-      .limit(2000),
-    supabase
-      .from("grants")
-      .select("id, stage, amount_requested, amount_awarded, plan_strategy_id")
-      .eq("org_id", ctx.orgId)
-      .limit(1000),
+    // Paged past PostgREST's 1,000-row cap: every strategy rollup sums these.
+    fetchAll(
+      () => supabase.from("opportunities").select("id, stage, ask_amount, expected_close, plan_strategy_id").eq("org_id", ctx.orgId),
+      { order: ["id"] }
+    ),
+    fetchAll(
+      () => supabase.from("grants").select("id, stage, amount_requested, amount_awarded, plan_strategy_id").eq("org_id", ctx.orgId),
+      { order: ["id"] }
+    ),
     supabase
       .from("campaigns")
       .select("id, name, plan_strategy_id")
@@ -99,17 +100,23 @@ export default async function FundraisingPlanPage({
 
   // Gifts on linked campaigns, plan year only — the verified lane.
   let campaignGifts: { amount: number; gift_date: string; campaign_id: string }[] = [];
+  let giftsCapped = false;
   if (campaigns.length > 0) {
-    const { data } = await supabase
-      .from("gifts")
-      .select("amount, gift_date, campaign_id")
-      .eq("org_id", ctx.orgId)
-      .in("campaign_id", campaigns.map((c) => c.id))
-      .gte("gift_date", `${year}-01-01`)
-      .lte("gift_date", `${year}-12-31`)
-      .limit(10000);
-    campaignGifts = (data ?? []) as typeof campaignGifts;
+    const { data, truncated } = await fetchAll<(typeof campaignGifts)[number]>(
+      () =>
+        supabase
+          .from("gifts")
+          .select("amount, gift_date, campaign_id")
+          .eq("org_id", ctx.orgId)
+          .in("campaign_id", campaigns.map((c) => c.id))
+          .gte("gift_date", `${year}-01-01`)
+          .lte("gift_date", `${year}-12-31`),
+      { order: ["id"] }
+    );
+    campaignGifts = data ?? [];
+    giftsCapped = truncated;
   }
+  const capped = oppsRes.truncated || grantsRes.truncated || giftsCapped;
 
   const rollups = new Map<string, StrategyRollup>();
   for (const s of strategies) {
@@ -170,6 +177,11 @@ export default async function FundraisingPlanPage({
           </div>
         }
       />
+      {capped && (
+        <Alert tone="warning" title="Partial data" className="my-4">
+          This org has more records than one page load reads, so the strategy totals below are incomplete.
+        </Alert>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <StatCard

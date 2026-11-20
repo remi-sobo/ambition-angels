@@ -11,6 +11,7 @@
  * against realized gifts).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import { getFinanceSnapshot, fiscalYearBounds } from "@/lib/admin/finance";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { OPEN_STAGE_KEYS } from "@/lib/fundraising/stage-sets";
@@ -77,15 +78,21 @@ export async function computeWeightedPipeline(sb: SupabaseClient, orgId: string)
 /** Corporate raised: Σ gifts this fiscal year from organization-type donors. */
 export async function computeCorporateRaisedFy(sb: SupabaseClient, orgId: string): Promise<number> {
   const fy = await fyBounds(sb, orgId);
-  const [giftsRes, orgsRes] = await Promise.all([
-    sb.from("gifts").select("amount, constituent_id").eq("org_id", orgId).gte("gift_date", fy.start).lte("gift_date", fy.end),
-    sb.from("constituents").select("id").eq("org_id", orgId).eq("type", "organization").limit(20000),
-  ]);
-  const orgIds = new Set((orgsRes.data ?? []).map((c) => (c as { id: string }).id));
-  return (giftsRes.data ?? []).reduce((s, g) => {
-    const r = g as { amount: number | null; constituent_id: string | null };
-    return r.constituent_id && orgIds.has(r.constituent_id) ? s + Number(r.amount ?? 0) : s;
-  }, 0);
+  // One paged read, joined to the donor's type in SQL. The old pair (FY gifts
+  // + every org constituent id, `.limit(20000)`) was each silently capped at
+  // PostgREST's 1,000 rows, so the sum dropped gifts and org donors.
+  const { data } = await fetchAll(
+    () =>
+      sb
+        .from("gifts")
+        .select("amount, constituent:constituents!inner(type)")
+        .eq("org_id", orgId)
+        .eq("constituent.type", "organization")
+        .gte("gift_date", fy.start)
+        .lte("gift_date", fy.end),
+    { order: ["id"] }
+  );
+  return (data ?? []).reduce((s, g) => s + Number((g as { amount: number | null }).amount ?? 0), 0);
 }
 
 /** Cash runway in months, from the canonical finance snapshot (cash ÷ burn). */

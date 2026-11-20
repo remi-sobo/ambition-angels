@@ -152,6 +152,7 @@ ordered=(
   comms_v2_phase1_default_drops.sql
   comms_gmail_g1.sql
   comms_gmail_g2.sql
+  comms_gmail_g3.sql
   enforce_grant_funder.sql
   create_asks_log.sql
   spine_entity_registry.sql

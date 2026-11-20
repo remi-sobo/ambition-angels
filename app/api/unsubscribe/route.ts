@@ -14,13 +14,39 @@ export const dynamic = "force-dynamic";
 
 const isUuid = (v: string) => /^[0-9a-f-]{36}$/i.test(v);
 
-function page(message: string, status = 200): Response {
+// Whose page this is: the org that sent the email, never a hardcoded tenant
+// (G3 fix: every org's donors used to see the resident org's name and inbox).
+type Brand = { name: string; contact: string | null };
+const NO_BRAND: Brand = { name: "Unsubscribe", contact: null };
+
+const esc = (v: string) =>
+  v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+async function brandFor(orgId: string): Promise<Brand> {
+  const admin = getSupabaseAdmin();
+  const [{ data: org }, { data: settings }, { data: gmail }] = await Promise.all([
+    admin.from("orgs").select("name").eq("id", orgId).maybeSingle(),
+    admin.from("org_comms_settings").select("from_name, from_email, reply_to, transport").eq("org_id", orgId).maybeSingle(),
+    admin.from("connections").select("meta").eq("org_id", orgId).eq("provider", "google_gmail").maybeSingle(),
+  ]);
+  const gmailAccount = ((gmail?.meta as Record<string, unknown> | null)?.account_email as string | undefined) ?? null;
+  const contact =
+    (settings?.reply_to as string | null) ||
+    (settings?.transport === "gmail" ? gmailAccount : (settings?.from_email as string | null)) ||
+    null;
+  return { name: (settings?.from_name as string) || (org?.name as string) || NO_BRAND.name, contact };
+}
+
+const askLine = (brand: Brand) =>
+  brand.contact ? `Please email ${brand.contact} and we'll take care of it.` : "Please reply to the email you received and ask to be removed.";
+
+function page(message: string, status = 200, brand: Brand = NO_BRAND): Response {
   return new Response(
     `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Unsubscribe</title></head>
      <body style="font-family:sans-serif;background:#FAFAF8;color:#0E0E0E;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;">
        <div style="max-width:420px;text-align:center;padding:32px;">
-         <h1 style="font-size:20px;color:#E8500A;">Ambition Angels</h1>
-         <p style="color:#3D3D3D;font-size:15px;line-height:1.6;">${message}</p>
+         <h1 style="font-size:20px;color:#E8500A;">${esc(brand.name)}</h1>
+         <p style="color:#3D3D3D;font-size:15px;line-height:1.6;">${esc(message)}</p>
        </div>
      </body></html>`,
     { status, headers: { "content-type": "text/html; charset=utf-8" } }
@@ -37,14 +63,13 @@ async function unsubscribe(req: NextRequest): Promise<Response> {
     (v) => isUuid(v) && verifyUnsubscribe(v, token)
   );
   if (!cid) {
-    return page(
-      "This unsubscribe link is invalid or has expired. Email remi@ambitionangels.org and we'll take care of it.",
-      400
-    );
+    // No valid token means no org to name: a neutral page.
+    return page(`This unsubscribe link is invalid or has expired. ${askLine(NO_BRAND)}`, 400);
   }
   const campaignParam = params.get("c") ?? "";
   const campaignId = campaignParam !== cid && isUuid(campaignParam) ? campaignParam : null;
 
+  let brand: Brand = NO_BRAND;
   try {
     const admin = getSupabaseAdmin();
     const { data: c } = await admin
@@ -52,7 +77,8 @@ async function unsubscribe(req: NextRequest): Promise<Response> {
       .select("id, org_id, emails")
       .eq("id", cid)
       .maybeSingle();
-    if (!c) return page("Something went wrong. Please email remi@ambitionangels.org to unsubscribe.", 500);
+    if (!c) return page(`Something went wrong. ${askLine(NO_BRAND)}`, 500);
+    brand = await brandFor(c.org_id as string).catch(() => NO_BRAND);
 
     const emails = Array.from(
       new Set(((c.emails as string[] | null) ?? []).map((e) => e.trim()).filter(Boolean))
@@ -84,9 +110,13 @@ async function unsubscribe(req: NextRequest): Promise<Response> {
     }
   } catch (e) {
     console.error("[unsubscribe] failed:", (e as Error).message);
-    return page("Something went wrong. Please email remi@ambitionangels.org to unsubscribe.", 500);
+    return page(`Something went wrong. ${askLine(brand)}`, 500, brand);
   }
-  return page("You've been unsubscribed. You won't receive further emails from us. Changed your mind? Just reply to any past email.");
+  return page(
+    "You've been unsubscribed. You won't receive further emails from us. Changed your mind? Just reply to any past email.",
+    200,
+    brand
+  );
 }
 
 export async function GET(req: NextRequest) {

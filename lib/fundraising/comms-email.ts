@@ -1,5 +1,7 @@
 import { unsubscribeUrl } from "./unsubscribe";
 import type { OrgCommsSettings } from "@/lib/comms/settings";
+import { segmentLinks } from "@/lib/comms/links";
+import { appOrigin } from "@/lib/origins";
 
 // Shared rendering for campaign AND journey emails — changes here ship into
 // both paths. Plain-text body with {{first_name}} personalization, wrapped in
@@ -9,6 +11,10 @@ import type { OrgCommsSettings } from "@/lib/comms/settings";
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function escapeAttr(s: string): string {
+  return escapeHtml(s).replace(/"/g, "&quot;");
 }
 
 export function personalize(body: string, firstName: string): string {
@@ -24,6 +30,9 @@ export type CampaignEmailInput = {
   constituentId: string | null;
   /** Attributes an unsubscribe to the campaign that triggered it. */
   campaignId?: string | null;
+  /** Per-send token (G3). When set, links route through the click tracker
+   *  and an open pixel is added. Test sends leave it unset. */
+  trackingToken?: string | null;
 };
 
 export type CampaignEmailPayload = {
@@ -46,7 +55,7 @@ export function buildCampaignEmail(input: CampaignEmailInput): CampaignEmailPayl
     to: input.to,
     ...(settings.reply_to ? { replyTo: settings.reply_to } : {}),
     subject: input.subject,
-    html: campaignHtml(input.bodyText, settings, unsubUrl),
+    html: campaignHtml(input.bodyText, settings, unsubUrl, input.trackingToken ?? null),
     text: campaignText(input.bodyText, settings, unsubUrl),
     headers: listUnsubscribeHeaders(settings, unsubUrl),
   };
@@ -76,19 +85,40 @@ function footerLine(settings: OrgCommsSettings): string {
 export function campaignHtml(
   bodyText: string,
   settings: OrgCommsSettings,
-  unsubUrl: string | null
+  unsubUrl: string | null,
+  trackingToken: string | null = null
 ): string {
+  // Links become clickable; with a tracking token they go through the click
+  // tracker. Link numbering runs across paragraphs so link n here is link n
+  // in extractLinks(bodyText), which the click route relies on.
+  const base = trackingToken ? `${appOrigin()}/api/t` : null;
+  let next = 0;
   const paras = bodyText
     .split(/\n{2,}/)
-    .map((p) => `<p style="margin:0 0 14px;color:#3D3D3D;font-size:15px;line-height:1.6;">${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`)
+    .map((p) => {
+      const { segments, next: after } = segmentLinks(p, next);
+      next = after;
+      const inner = segments
+        .map((seg) => {
+          if (seg.kind === "text") return escapeHtml(seg.text).replace(/\n/g, "<br/>");
+          const href = base ? `${base}/c/${trackingToken}/${seg.index}` : seg.url;
+          return `<a href="${escapeAttr(href)}" style="color:#E8500A;">${escapeHtml(seg.url)}</a>`;
+        })
+        .join("");
+      return `<p style="margin:0 0 14px;color:#3D3D3D;font-size:15px;line-height:1.6;">${inner}</p>`;
+    })
     .join("");
   const unsub = unsubUrl
     ? `<a href="${unsubUrl}" style="color:#9CA3AF;">Unsubscribe</a>`
     : "Reply to unsubscribe";
+  const pixel = base
+    ? `<img src="${base}/o/${trackingToken}" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px;" />`
+    : "";
   return `<div style="font-family:'Helvetica Neue',sans-serif;max-width:560px;margin:0 auto;padding:28px;">
     ${paras}
     <hr style="border:none;border-top:1px solid #E5E7EB;margin:24px 0 12px;" />
     <p style="color:#9CA3AF;font-size:12px;margin:0;">${escapeHtml(footerLine(settings))} · ${unsub}</p>
+    ${pixel}
   </div>`;
 }
 

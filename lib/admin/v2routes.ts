@@ -189,7 +189,6 @@ const NO_HOME: V2RouteRow[] = [
   { v1: "/admin/briefing/weekly", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "nearest: Work → Plan & Close Friday" },
   { v1: "/admin/meet", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "public-scheduler admin; nearest: Settings" },
   { v1: "/admin/staff/reviews", v2: null, kind: "prefix", activation: "no-home", disposition: "NO V2 HOME", note: "modules.reviews" },
-  { v1: "/admin/fundraising/comms", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "modules.comms" },
   { v1: "/admin/fundraising/reports", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "nearest: Impact → Reports or Finance → Reports" },
   { v1: "/admin/fundraising/strategy", v2: null, kind: "prefix", activation: "no-home", disposition: "NO V2 HOME", note: "funder-angle briefs" },
   { v1: "/admin/careers/daily", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "proposal: Programs → Content section" },
@@ -199,7 +198,8 @@ const NO_HOME: V2RouteRow[] = [
 
 /** The whole F.1 delta, one list. Kept-in-place rows (/admin/inbox,
  *  /admin/settings, /admin/fundraising/today, /admin/fundraising/grants,
- *  /admin/fundraising/campaigns, /admin/finance/budget, /admin/reset-password)
+ *  /admin/fundraising/campaigns, /admin/fundraising/comms, /admin/finance/budget,
+ *  /admin/reset-password)
  *  need no row: V1 path IS the V2 path. */
 export const V2_ROUTE_MAP: V2RouteRow[] = [...ACTIVE, ...AT_CUTOVER, ...NO_HOME];
 
@@ -267,6 +267,8 @@ export const KEPT_IN_PLACE: readonly string[] = [
   "/admin/fundraising/today",
   "/admin/fundraising/grants",
   "/admin/fundraising/campaigns",
+  // Remi ruled the seat (2026-11-20): Comms is a Fundraising tab, kept in place.
+  "/admin/fundraising/comms",
   "/admin/finance/budget",
   // V2-only screens (no V1 source): their own path IS the seat (Spec Home H3).
   "/admin/organization-health",

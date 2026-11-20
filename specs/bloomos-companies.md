@@ -1,6 +1,6 @@
 # Spec: BloomOS company profiles
 
-**Status:** v1, design. Pending Remi's approval. No migration or UI code until approved.
+**Status:** v1.1, approved by Remi 2026-11-20 with the recommended answer to every open decision. Stage 1 in build.
 **Findings:** `specs/bloomos-companies-phase0-findings.md`
 **Brief:** handoff of 2026-11-20 (company intake and profiles)
 
@@ -188,7 +188,7 @@ way for spam to fill the donor list. Flagged as open decision 2.
 
 ## Screens
 
-### 1. Companies list: `/admin/fundraising/companies`
+### 1. Companies list: `/admin/fundraising/donors-funders/companies`
 
 A view over organization constituents where `company_stage is not null`, in the same list shell as
 Donors & Funders. Columns: company, stage, money to date, open asks, people, last activity, next step.
@@ -299,15 +299,18 @@ Stage 1 has no dependency on the others. Stages 2, 3 and 4 depend only on Stage 
 
 ---
 
-## Open decisions (with recommendations)
+## Decisions (approved 2026-11-20)
 
-1. **The stage name "Opportunity".** It sits on a page that also lists Opportunities.
-   Recommendation: keep the seven names as given for v1 and rename only if it confuses in use. An
-   alternative label is "In Conversation".
-2. **Auto-create on unmatched inquiry.** The brief says an unmatched submission creates a profile at
-   Identified. Recommendation: make it one click in the inbox instead (see Matching rule).
-3. **Route.** `/admin/fundraising/companies` as a new list route, or a saved view of Donors & Funders.
-   Recommendation: a route, because it has its own board and inbox, built on the same list shell.
-4. **Company partners in `partners`.** Leave the 23 rows and link by hand (recommended), or migrate them.
-5. **Sessions.** An `interactions` row with `kind = 'event'` (recommended for v1), or a sessions table
-   with attendees.
+Remi approved the recommendation on all five:
+
+1. **Stage name "Opportunity"** stays as given for v1. Rename only if it confuses in use.
+2. **Unmatched inquiries** do not create a profile automatically. Creating one is a single click in the inbox.
+3. **Route:** a Companies page of its own. Built at `/admin/fundraising/donors-funders/companies`, not
+   `/admin/fundraising/companies`: the fundraising tab row is fixed at five tabs by a signed ruling (and a test,
+   `tests/gift-table-nav.test.ts`), so Companies sits under the Donors & Funders tab, the same way gift tables sit
+   under Campaigns. Donors & Funders links to it.
+4. **Company partners in `partners`** stay where they are and are linked by hand.
+5. **Sessions** are an `interactions` row with `kind = 'event'` for v1.
+
+One addition from Stage 1: an edit that changes only `company_stage` or `domains` does not trigger the outbound
+HubSpot push, because HubSpot write-back is out of scope.

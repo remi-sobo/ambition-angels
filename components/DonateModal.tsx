@@ -523,7 +523,7 @@ export default function DonateModal({ onClose }: Props) {
               Give <span className="text-orange">today.</span>
             </h2>
             <p className="text-gray-warm text-sm leading-relaxed mt-2 max-w-xs">
-              Every dollar funds a teen&apos;s career internship. 100% free for every student who needs it.
+              Every dollar helps a young person explore careers before they have to choose one. 100% free for every student who needs it.
             </p>
           </div>
           <button

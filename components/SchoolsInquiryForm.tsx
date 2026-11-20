@@ -10,6 +10,9 @@ const labelClass =
 
 const SETTINGS = [
   "High school (advisory / homeroom)",
+  "Middle school",
+  "Charter school",
+  "CTE or AVID program",
   "Community college",
   "After-school program",
   "Mentoring program",

@@ -633,7 +633,7 @@ function populate(T, add, tables, team) {
 
   // content: a few career cards
   add("ms_occupations", Array.from({ length: 8 }, (_, i) => ({ soc_code: `29-${1000 + i}.00`, title: ["Respiratory Therapist", "Wind Turbine Technician", "UX Researcher", "Dental Hygienist", "Civil Drafter", "Sound Engineering Tech", "Actuary", "Urban Planner"][i], riasec: { R: 4, I: 5, A: 2, S: 3, E: 2, C: 3 }, job_zone: 3, pay_median: 70000 + i * 5000, education_typical: "Associate degree", imported_at: iso(daysAgo(100)) })));
-  add("ms_cards", tables.ms_occupations.map((o, i) => ({ id: T.id(80), soc_code: o.soc_code, field: "Healthcare", day_vignette: "You start the day checking equipment, then meet your first patient.", clue_1: "You work with your hands and your head.", status: ["approved", "approved", "draft", "in_review", "approved", "draft", "approved", "rejected"][i], generated_by: "claude", generated_at: iso(daysAgo(50)), created_at: iso(daysAgo(50)) })));
+  add("ms_cards", tables.ms_occupations.map((o, i) => ({ soc_code: o.soc_code, field: ["health","trades","tech","health","trades","creative","business","public"][i], day_vignette: "You start the day checking equipment, then meet your first patient.", clue_1: "You work with your hands and your head.", status: ["approved", "approved", "draft", "draft", "approved", "draft", "approved", "retired"][i], generated_by: "claude", generated_at: iso(daysAgo(50)), created_at: iso(daysAgo(50)) })));
 
   // ygb registrations (aa.ygb) left empty on purpose; captures empty.
 }

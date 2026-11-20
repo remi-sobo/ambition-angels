@@ -1,6 +1,6 @@
 # Spec amendment: Comms v2, v1.2 (send from each org's Gmail)
 
-**Status:** Approved 2026-11-20. G1 in progress. Amends `specs/comms-v2-mail-merge.md` v1.1.
+**Status:** Approved 2026-11-20. G1 in review, G2 in review. Amends `specs/comms-v2-mail-merge.md` v1.1.
 **Repo location:** `specs/comms-v2-gmail-amendment.md`
 **Author:** Claude (architect), for Remi
 **Source of patterns:** the Team Esface email engine (`remi-sobo/team-esface-`, `src/lib/email/**`). Remi confirmed on 2026-11-20 that Team Esface has agreed to BloomOS using and adapting that code.
@@ -171,6 +171,16 @@ None of these tables gets a default `org_id`. The ratchet test covers each new t
 - The journeys cron holds enrollments for Gmail orgs until Phase 6.
 - The Comms page has a "Send from Gmail" card. The sending identity card shows the connected account as the From address when the org is on Gmail.
 - Tests: `tests/comms-gmail.test.ts`.
+
+## G2 as built (2026-11-20)
+
+- Migration `supabase/migrations/comms_gmail_g2.sql`: scheduling columns and `left_out` on `email_campaigns`; `claimed_at`, `provider_message_id`, `attempt_count` and `first_name` (the merge data snapshot) on `email_sends`; both status checks rebuilt; the `comms.send` permission for owner, admin and staff; and three service-role functions: `comms_queue_tick()` (reap rows stuck over 15 minutes as unknown, open due scheduled campaigns, list orgs with work), `claim_email_sends(org, limit)` (skip locked, within the org's 24-hour cap) and `finish_email_campaigns()` (refresh counts, close finished campaigns).
+- `lib/comms/queue.ts`: `startCampaign` queues one pending row per recipient (send now or scheduled) and returns a carry-over note when the cap spreads it over days. `cancelCampaign` skips what's still waiting.
+- `lib/comms/worker.ts` + `/api/cron/comms-queue` (every minute, `CRON_SECRET`, 60 s): per org, resolve the transport, claim, check suppression and do-not-contact again, send at the transport's pace (Gmail 2 at a time with a 250 ms gap), write each outcome. A broken or rate-limited sender puts the message back and stops that org until the next tick. An unclear answer becomes `unknown` and is never retried.
+- Send route now only queues and needs `comms.send`. New cancel route. Delete refuses a queued campaign.
+- `resolveRecipients` takes the org id and pins constituents, suppressions and gifts to it. Before this, a member of two orgs could email the other org's constituents.
+- Comms page: Schedule and Cancel, and a status line per campaign ("Sending: 120 of 412", "Scheduled for Nov 22, 9:00 AM").
+- Tests: `tests/comms-queue.test.ts`.
 
 ## Effort
 

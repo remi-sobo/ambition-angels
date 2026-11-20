@@ -1,7 +1,7 @@
 "use client";
 
 // Client controls for donor comms (Epic I): compose a campaign, send a test,
-// send to the segment, delete. Sending real email is gated behind an explicit
+// send now or schedule (G2: both only queue; the worker sends), cancel, delete. Sending real email is gated behind an explicit
 // confirm with the resolved recipient context.
 
 import { useState } from "react";
@@ -102,6 +102,8 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
   // null = the test-email input is closed (the native prompt is banned; this inline
   // input is its replacement).
   const [testEmail, setTestEmail] = useState<string | null>(null);
+  // null = the schedule picker is closed; otherwise a datetime-local value.
+  const [scheduleAt, setScheduleAt] = useState<string | null>(null);
 
   const test = async () => {
     const email = testEmail?.trim();
@@ -121,19 +123,49 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
     } finally { setBusy(false); }
   };
 
-  const send = async () => {
+  const send = async (scheduledAt: string | null) => {
+    const when = scheduledAt ? new Date(scheduledAt) : null;
     const ok = await confirm({
-      title: "Send this campaign to everyone in the segment?",
-      body: "This emails real donors and can't be undone.",
-      confirmLabel: "Send to segment",
+      title: when
+        ? `Schedule this campaign for ${when.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}?`
+        : "Send this campaign to everyone in the segment?",
+      body: when
+        ? "It emails real donors at that time. You can cancel it until then."
+        : "It starts emailing real donors within a minute. You can cancel the part that hasn't gone yet.",
+      confirmLabel: when ? "Schedule" : "Send to segment",
       destructive: true,
     });
     if (!ok) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/admin/comms/${id}/send`, { method: "POST" });
+      const res = await fetch(`/api/admin/comms/${id}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(when ? { scheduled_at: when.toISOString() } : {}),
+      });
       const j = await res.json().catch(() => ({}));
-      if (res.ok) toast.success(`Sent to ${j.sent} of ${j.recipients} recipients${j.failed ? ` (${j.failed} failed)` : ""}.`);
+      if (res.ok) {
+        const head = when ? `Scheduled for ${j.queued} recipients.` : `Queued for ${j.queued} recipients. Sending starts within a minute.`;
+        toast.success(j.note ? `${head} ${j.note}` : head);
+        setScheduleAt(null);
+      } else toast.error(userMessage(res, j));
+      router.refresh();
+    } finally { setBusy(false); }
+  };
+
+  const cancel = async () => {
+    const ok = await confirm({
+      title: "Cancel this campaign?",
+      body: "Emails already sent stay sent. Everyone still waiting is skipped.",
+      confirmLabel: "Cancel campaign",
+      destructive: true,
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/comms/${id}/cancel`, { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok) toast.success(`Canceled. ${j.skipped} emails won't go out.`);
       else toast.error(userMessage(res, j));
       router.refresh();
     } finally { setBusy(false); }
@@ -171,6 +203,22 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
     );
   }
 
+  if (scheduleAt !== null) {
+    return (
+      <span className="flex items-center gap-2">
+        <input
+          autoFocus
+          type="datetime-local"
+          value={scheduleAt}
+          onChange={(e) => setScheduleAt(e.target.value)}
+          className="bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-xs focus:outline-none focus:border-orange/40"
+        />
+        <button disabled={busy || !scheduleAt} onClick={() => send(scheduleAt)} className="text-xs font-semibold text-orange hover:text-orange-dark transition-colors disabled:opacity-50">Schedule</button>
+        <button disabled={busy} onClick={() => setScheduleAt(null)} className="text-xs font-semibold text-ink-3 hover:text-ink-1 transition-colors disabled:opacity-50">Cancel</button>
+      </span>
+    );
+  }
+
   return (
     <span className="flex items-center gap-3">
       <button disabled={busy} onClick={() => setTestEmail("")} className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors disabled:opacity-50">Test</button>
@@ -178,13 +226,30 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
         <button
           disabled={busy || !hasSegment}
           title={hasSegment ? undefined : "Attach a segment first"}
-          onClick={send}
+          onClick={() => send(null)}
           className="text-xs font-semibold text-revenue hover:text-revenue transition-colors disabled:opacity-40"
         >
           Send
         </button>
       )}
+      {status === "draft" && (
+        <button
+          disabled={busy || !hasSegment}
+          title={hasSegment ? undefined : "Attach a segment first"}
+          onClick={() => setScheduleAt("")}
+          className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors disabled:opacity-40"
+        >
+          Schedule
+        </button>
+      )}
+      {(status === "scheduled" || status === "sending") && (
+        <button disabled={busy} onClick={cancel} className="text-xs font-semibold text-ink-2 hover:text-expense transition-colors disabled:opacity-50">
+          Cancel
+        </button>
+      )}
+      {status !== "scheduled" && status !== "sending" && (
       <button disabled={busy} onClick={del} className="text-xs font-semibold text-ink-3 hover:text-expense transition-colors disabled:opacity-50">Delete</button>
+      )}
     </span>
   );
 }

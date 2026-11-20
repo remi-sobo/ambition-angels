@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { marketingOrigin } from "@/lib/origins";
+import { appOrigin } from "@/lib/origins";
 
 // Signed unsubscribe tokens so the public /api/unsubscribe link can opt a
 // constituent out without exposing a guessable id-only URL.
@@ -34,10 +34,14 @@ export function verifyUnsubscribe(constituentId: string, token: string): boolean
   }
 }
 
+// The link is built on the app origin (APP_ORIGIN), the same neutral host
+// the click tracker uses, not the marketing site: /api/unsubscribe is served
+// on both hosts, so links already in inboxes keep working.
+//
 // campaignId (the optional c= param) attributes the unsubscribe to the
 // campaign that triggered it; it is not part of the signed token, so links
 // delivered before Phase 1 keep verifying.
 export function unsubscribeUrl(constituentId: string, campaignId?: string | null): string {
   const c = campaignId ? `&c=${campaignId}` : "";
-  return `${marketingOrigin()}/api/unsubscribe?c_id=${constituentId}&t=${unsubscribeToken(constituentId)}${c}`;
+  return `${appOrigin()}/api/unsubscribe?c_id=${constituentId}&t=${unsubscribeToken(constituentId)}${c}`;
 }

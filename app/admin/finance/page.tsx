@@ -26,6 +26,8 @@ import InfoTip from "./_components/InfoTip";
 import { constituentName } from "@/lib/fundraising/display";
 import { CHART, CHART_SERIES } from "@/lib/admin/chartTokens";
 import { TYPE } from "@/lib/admin/typeScale";
+import Alert from "../_components/ui/Alert";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 
 // Read live every request: the service-role client's reads go through the
 // global fetch Next caches by default, so without this a freshly-saved config
@@ -66,12 +68,18 @@ export default async function FinanceDashboardPage() {
       .eq("enabled", true)
       .order("sort_order"),
     // Fiscal-year transactions with category — for YTD-by-category, donuts, budget.
-    supabase
-      .from("fin_transactions")
-      .select("txn_date, amount, category_id, restricted")
-      .eq("org_id", orgId)
-      .gte("txn_date", fy.start)
-      .lte("txn_date", fy.end),
+    // Paged past PostgREST's 1,000-row cap: category totals, donuts and
+    // budget-vs-actual are sums over every FY transaction.
+    fetchAll<{ txn_date: string; amount: number; category_id: string | null; restricted: boolean }>(
+      () =>
+        supabase
+          .from("fin_transactions")
+          .select("txn_date, amount, category_id, restricted")
+          .eq("org_id", orgId)
+          .gte("txn_date", fy.start)
+          .lte("txn_date", fy.end),
+      { order: ["id"] }
+    ),
     supabase
       .from("fin_budget")
       .select("category_id, base_amount, contingency_t1, contingency_t2, activated_contingency")
@@ -208,7 +216,8 @@ export default async function FinanceDashboardPage() {
   // manual secured + committed AIG/Pledged deals, full value, restricted
   // included — restricted money still counts toward the goal). No hs_deals.
   const securedTotal = schedTotals.committed;
-  const receivedTotal = receivedYTD;
+  const receivedTotal = receivedYTD.total;
+  const partial = snap.partial || txnsRes.truncated || receivedYTD.truncated;
   // Projected pipeline is the schedule's probability-weighted open pipeline
   // (sourced from opportunities). This is the same number the runway tiers use,
   // so the headline pipeline figure and the runway can't disagree.
@@ -299,6 +308,13 @@ export default async function FinanceDashboardPage() {
         title="Dashboard"
         subtitle="Live picture of cash, burn, fundraising, and budget. Numbers update as transactions are imported, categorized, and pledges are received."
       />
+
+      {partial && (
+        <Alert tone="warning" title="Partial ledger">
+          This org has more transactions or gifts than one page load reads, so cash, year-to-date and category totals
+          below are computed from part of the ledger and are not complete.
+        </Alert>
+      )}
 
       {/* Cash anchor + reconcile — the trusted current-balance number, with a
           one-tap "set current balance" and a freshness indicator. */}

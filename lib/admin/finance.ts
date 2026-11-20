@@ -17,6 +17,7 @@
  */
 import { cache } from "react";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getResidentOrgId } from "@/lib/admin/orgs";
 import {
@@ -97,6 +98,12 @@ export type FinanceSnapshot = {
   monthBuckets: MonthBucket[];
   revenueYTD: number;
   expenseYTD: number;
+  /**
+   * True when a transaction read hit fetchAll's hard cap, so cash and the YTD
+   * figures are computed from part of the ledger. Surfaces showing them must
+   * say so rather than present the number as complete.
+   */
+  partial: boolean;
   netYTD: number;
 };
 
@@ -133,16 +140,26 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
 
   // Org fence: the service-role client bypasses RLS, so every read below is
   // constrained to `orgId` (the same org fin_config was read for).
+  const anchorDate = cfg.startDate;
   const [txnsRes, cashRes, scheduleRows] = await Promise.all([
-    sb
-      .from("fin_transactions")
-      .select("txn_date, amount, exclude_from_runway")
-      .eq("org_id", orgId)
-      .gte("txn_date", fy.start)
-      .lte("txn_date", fy.end),
-    cfg.startDate
-      ? sb.from("fin_transactions").select("amount").eq("org_id", orgId).gt("txn_date", cfg.startDate)
-      : Promise.resolve({ data: [] as Array<{ amount: number }>, error: null }),
+    // Paged past PostgREST's 1,000-row cap: every total below is a sum over
+    // these rows, so an unpaged read silently undercounts a busy ledger.
+    fetchAll<{ txn_date: string; amount: number; exclude_from_runway: boolean | null }>(
+      () =>
+        sb
+          .from("fin_transactions")
+          .select("txn_date, amount, exclude_from_runway")
+          .eq("org_id", orgId)
+          .gte("txn_date", fy.start)
+          .lte("txn_date", fy.end),
+      { order: ["id"] }
+    ),
+    anchorDate
+      ? fetchAll<{ amount: number }>(
+          () => sb.from("fin_transactions").select("amount").eq("org_id", orgId).gt("txn_date", anchorDate),
+          { order: ["id"] }
+        )
+      : Promise.resolve({ data: [] as Array<{ amount: number }>, error: null, truncated: false }),
     // The canonical revenue schedule feeds the due/projected tiers: dated
     // committed pledges/grants/manual at full value, open pipeline weighted by
     // probability, restricted carved out by summarizePledges. This replaces the
@@ -240,6 +257,7 @@ export const getFinanceSnapshot = cache(async (): Promise<FinanceSnapshot> => {
     revenueYTD,
     expenseYTD,
     netYTD: revenueYTD - expenseYTD,
+    partial: txnsRes.truncated || cashRes.truncated,
   };
 });
 

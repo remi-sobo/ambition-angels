@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { GMAIL_MAX_DAILY_CAP, SETTINGS_COLUMNS } from "@/lib/comms/settings";
 
 // Org sending identity (org_comms_settings). Reads need fundraising.read;
 // writes are gated by the org.manage RLS policy — a non-manager's PATCH
@@ -14,7 +15,7 @@ export async function GET() {
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { data, error } = await createServerSupabase()
     .from("org_comms_settings")
-    .select("org_id, from_name, from_email, reply_to, mailing_address, footer_text, daily_send_cap")
+    .select(SETTINGS_COLUMNS)
     .eq("org_id", ctx.orgId)
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -50,6 +51,21 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "daily_send_cap must be an integer between 1 and 100000" }, { status: 400 });
     }
     update.daily_send_cap = n;
+  }
+  // A Gmail sender can't go past Google's safe ceiling: going over Google's
+  // own daily limit locks the account out of all sending for up to a day.
+  if (typeof update.daily_send_cap === "number" && update.daily_send_cap > GMAIL_MAX_DAILY_CAP) {
+    const { data: current } = await createServerSupabase()
+      .from("org_comms_settings")
+      .select("transport")
+      .eq("org_id", ctx.orgId)
+      .maybeSingle();
+    if (current?.transport === "gmail") {
+      return NextResponse.json(
+        { error: `When sending from Gmail the daily cap can't go above ${GMAIL_MAX_DAILY_CAP}.` },
+        { status: 400 }
+      );
+    }
   }
   if (Object.keys(update).length === 0) return NextResponse.json({ error: "No valid fields" }, { status: 400 });
 

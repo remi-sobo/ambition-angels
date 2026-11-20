@@ -200,11 +200,19 @@ export async function GET(req: NextRequest) {
     }
 
     const settings = await settingsFor(eOrg);
-    if (sendBlocker(settings) || !settings) {
+    // Journeys still send through Resend from from_email; they move onto the
+    // transport seam (and so onto Gmail) in Phase 6. A Gmail org is held
+    // rather than sent through Resend from an address nobody verified there.
+    const journeyBlocker =
+      sendBlocker(settings) ??
+      (settings && settings.transport !== "resend"
+        ? "Journeys can't send from a Gmail-connected org until Phase 6."
+        : null);
+    if (journeyBlocker || !settings) {
       // No sending identity for this org — hold the enrollment and retry
       // tomorrow rather than sending from a constant or dropping the step.
       failed++;
-      console.error(`[cron/journeys] send blocked for org ${orgById.get(e.journey_id)}: ${sendBlocker(settings)}`);
+      console.error(`[cron/journeys] send blocked for org ${orgById.get(e.journey_id)}: ${journeyBlocker}`);
       await admin.from("journey_enrollments").update({ next_run_at: plusDaysIso(1) }).eq("org_id", eOrg).eq("id", e.id);
       continue;
     }

@@ -14,6 +14,7 @@ const SETTINGS: OrgCommsSettings = {
   mailing_address: "380 Portage Ave, Palo Alto, CA 94306",
   footer_text: "EIN 87-2513010",
   daily_send_cap: 2000,
+  transport: "resend",
 };
 
 const CID = "9f3a1c2e-0000-4000-8000-000000000001";

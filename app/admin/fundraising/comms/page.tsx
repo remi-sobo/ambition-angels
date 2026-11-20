@@ -1,6 +1,8 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import EmptyState from "../../_components/EmptyState";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
+import { getGmailConnectionStatus } from "@/lib/comms/gmail-connection";
+import { GmailCard, type GmailNotice } from "./_components/GmailCard";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { NewCampaignForm, CampaignActions } from "./_components/CommsControls";
@@ -27,7 +29,19 @@ type Campaign = {
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-export default async function CommsPage() {
+function gmailNotice(params: Record<string, string | string[] | undefined>): GmailNotice {
+  const kind = params.gmail;
+  const reason = typeof params.reason === "string" ? params.reason.slice(0, 300) : undefined;
+  if (kind === "connected" || kind === "cancelled") return { kind };
+  if (kind === "error") return { kind, reason };
+  return null;
+}
+
+export default async function CommsPage({
+  searchParams = {},
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
   // Every read is pinned to the ACTIVE org — RLS alone would merge rows from
   // every org the user belongs to.
   const ctx = await getOrgContext();
@@ -39,7 +53,7 @@ export default async function CommsPage() {
     );
   }
   const supabase = createServerSupabase();
-  const [campaignsRes, segmentsRes, settingsRes] = await Promise.all([
+  const [campaignsRes, segmentsRes, settingsRes, gmailStatus, canManage] = await Promise.all([
     supabase
       .from("email_campaigns")
       .select("id, name, subject, status, recipient_count, sent_count, failed_count, sent_at, segment_id, segment:segments ( name )")
@@ -49,10 +63,12 @@ export default async function CommsPage() {
     supabase.from("segments").select("id, name").eq("org_id", ctx.orgId).order("created_at", { ascending: false }).limit(100),
     supabase
       .from("org_comms_settings")
-      .select("from_name, from_email, reply_to, mailing_address, footer_text, daily_send_cap")
+      .select("from_name, from_email, reply_to, mailing_address, footer_text, daily_send_cap, transport")
       .eq("org_id", ctx.orgId)
       .limit(1)
       .maybeSingle(),
+    getGmailConnectionStatus(ctx.orgId),
+    ctxHasPermission(ctx, "org.manage"),
   ]);
 
   if (campaignsRes.error) {
@@ -87,7 +103,17 @@ export default async function CommsPage() {
           <NewCampaignForm segments={segments} />
         </div>
 
-        <SettingsCard settings={settings} />
+        <GmailCard
+          status={gmailStatus}
+          transport={settings?.transport ?? null}
+          canManage={canManage}
+          notice={gmailNotice(searchParams)}
+        />
+
+        <SettingsCard
+          settings={settings}
+          gmailAccount={settings?.transport === "gmail" && gmailStatus.state !== "none" ? gmailStatus.accountEmail : null}
+        />
 
         {segments.length === 0 && (
           <div className="bg-status-watch-bg text-status-watch-text rounded-panel px-5 py-3 text-sm">

@@ -16,13 +16,23 @@ export type CommsSettings = {
   mailing_address: string;
   footer_text: string | null;
   daily_send_cap: number;
+  transport: "gmail" | "resend";
 };
 
 const inputCls =
   "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 const labelCls = "flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold";
 
-export function SettingsCard({ settings }: { settings: CommsSettings | null }) {
+export function SettingsCard({
+  settings,
+  gmailAccount,
+}: {
+  settings: CommsSettings | null;
+  /** The connected Gmail account when the org sends through Gmail. It is the
+   *  real From address, so the from_email field is hidden in that case. */
+  gmailAccount: string | null;
+}) {
+  const onGmail = settings?.transport === "gmail";
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -36,7 +46,8 @@ export function SettingsCard({ settings }: { settings: CommsSettings | null }) {
     daily_send_cap: settings?.daily_send_cap ?? 2000,
   });
 
-  const incomplete = !settings || !settings.from_email.trim() || !settings.mailing_address.trim();
+  const incomplete =
+    !settings || (!onGmail && !settings.from_email.trim()) || !settings.mailing_address.trim();
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +83,7 @@ export function SettingsCard({ settings }: { settings: CommsSettings | null }) {
 
       {incomplete && !editing && (
         <div className="bg-status-watch-bg text-status-watch-text rounded-panel px-4 py-2.5 text-sm">
-          Sending is disabled until a from address and mailing address are configured
+          Sending is disabled until {onGmail ? "a mailing address is" : "a from address and mailing address are"} configured
           {settings ? "" : " (not set up for this org yet)"}.
         </div>
       )}
@@ -82,7 +93,13 @@ export function SettingsCard({ settings }: { settings: CommsSettings | null }) {
           <div>
             <dt className="text-xs uppercase tracking-wider text-ink-3">From</dt>
             <dd className="text-ink-1 truncate">
-              {settings?.from_email ? `${settings.from_name} <${settings.from_email}>` : "—"}
+              {onGmail
+                ? gmailAccount
+                  ? `${settings?.from_name ?? ""} <${gmailAccount}>`
+                  : "Connect Gmail above"
+                : settings?.from_email
+                  ? `${settings.from_name} <${settings.from_email}>`
+                  : "—"}
             </dd>
           </div>
           <div>
@@ -105,10 +122,12 @@ export function SettingsCard({ settings }: { settings: CommsSettings | null }) {
               From name
               <input value={form.from_name} onChange={(e) => setForm({ ...form, from_name: e.target.value })} className={inputCls} />
             </label>
+            {!onGmail && (
             <label className={labelCls}>
               From email
               <input type="email" value={form.from_email} onChange={(e) => setForm({ ...form, from_email: e.target.value })} placeholder="you@mail.yourdomain.org" className={inputCls} />
             </label>
+            )}
             <label className={labelCls}>
               Reply-to
               <input type="email" value={form.reply_to} onChange={(e) => setForm({ ...form, reply_to: e.target.value })} placeholder="optional" className={inputCls} />
@@ -123,7 +142,7 @@ export function SettingsCard({ settings }: { settings: CommsSettings | null }) {
             </label>
             <label className={labelCls}>
               Daily send cap
-              <input type="number" min={1} max={100000} value={form.daily_send_cap} onChange={(e) => setForm({ ...form, daily_send_cap: Number(e.target.value) })} className={inputCls} />
+              <input type="number" min={1} max={onGmail ? 1800 : 100000} value={form.daily_send_cap} onChange={(e) => setForm({ ...form, daily_send_cap: Number(e.target.value) })} className={inputCls} />
             </label>
           </div>
           <div className="flex items-center gap-2">

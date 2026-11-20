@@ -48,6 +48,17 @@ export function oauthRedirectUri(requestOrigin: string): string {
   return `${base}/api/admin/agenda/connect-google/callback`;
 }
 
+/** An OAuth2 client for any BloomOS Google connect flow (calendar, Gmail),
+ *  built from the trimmed env credentials. */
+export function googleOAuthClientFor(redirectUri?: string) {
+  return new google.auth.OAuth2(clientId(), clientSecret(), redirectUri);
+}
+
+/** The admin app origin for OAuth redirect URIs (see oauthRedirectUri). */
+export function adminOrigin(requestOrigin: string): string {
+  return (process.env.APP_ORIGIN || requestOrigin).replace(/\/+$/, "");
+}
+
 export function oauthClient(requestOrigin: string) {
   return new google.auth.OAuth2(
     clientId(),

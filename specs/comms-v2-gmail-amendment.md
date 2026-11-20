@@ -1,6 +1,6 @@
 # Spec amendment: Comms v2, v1.2 (send from each org's Gmail)
 
-**Status:** Draft for Remi's review, 2026-11-20. Amends `specs/comms-v2-mail-merge.md` v1.1.
+**Status:** Approved 2026-11-20. G1 in progress. Amends `specs/comms-v2-mail-merge.md` v1.1.
 **Repo location:** `specs/comms-v2-gmail-amendment.md`
 **Author:** Claude (architect), for Remi
 **Source of patterns:** the Team Esface email engine (`remi-sobo/team-esface-`, `src/lib/email/**`). Remi confirmed on 2026-11-20 that Team Esface has agreed to BloomOS using and adapting that code.
@@ -153,13 +153,24 @@ None of these tables gets a default `org_id`. The ratchet test covers each new t
 5. **Bringing over Team Esface assumptions.** Ported code still mentions families, athletes or "Team Esface". A G1 to G3 review step greps for those words and for `teamesface`.
 6. **The unknown pile.** If Gmail is slow, `unknown` rows build up. The results page lists them with "Mark as sent" and "Send again" so a person decides.
 
-## Open decisions
+## Decisions (Remi, 2026-11-20: "go with your recommendations")
 
-- **A. Ambition Angels' own sender.** Switch AA from Resend (`careers@mail.ambitionangels.org`) to Gmail as remi@ or a shared inbox? Recommendation: a shared inbox such as hello@ambitionangels.org, connected through the new flow. Then retire `GOOGLE_REFRESH_TOKEN` for sending.
-- **B. Default daily cap.** 400 (Team Esface's number) or 1,000? Recommendation: 400, which an admin can raise to 1,800.
-- **C. Cron frequency.** Every minute matches Team Esface and needs Vercel Pro (which the app already uses for its 15-minute crons). Confirm.
-- **D. Who can send.** v1.1 uses `fundraising.write`. Should sending need its own permission (`comms.send`) so a volunteer can draft but not send? Recommendation: yes, added in G2.
-- **E. Gating.** Turn this on per org with the existing `modules.comms` entitlement. Confirm both client orgs get it.
+- **A. Ambition Angels' own sender.** A shared inbox (hello@ambitionangels.org), connected through the new flow. Until it's connected, AA stays on its current Resend identity: the G1 migration keeps AA's row on `transport = 'resend'`, and connecting Gmail switches it. `GOOGLE_REFRESH_TOKEN` is retired for sending once AA is on Gmail.
+- **B. Default daily cap.** 400, which an admin can raise to 1,800. Connecting Gmail sets a new org to 400 and brings any cap above 1,800 down to 400. The settings API refuses anything above 1,800 while the org sends through Gmail.
+- **C. Cron frequency.** Every minute (G2).
+- **D. Who can send.** A separate `comms.send` permission, added in G2. In G1, connecting and disconnecting Gmail need `org.manage`.
+- **E. Gating.** `modules.comms` stays the per-org switch. Both client orgs get it (an entitlement row, not code).
+
+## G1 as built (2026-11-20)
+
+- Migration `supabase/migrations/comms_gmail_g1.sql`: adds `org_comms_settings.transport` (default 'gmail', with a check constraint) and keeps existing configured rows on 'resend'.
+- `lib/comms/gmail-oauth.ts`, `lib/comms/gmail-connection.ts`: the consent URL (gmail.send, openid, email only), the scope check, and encrypted storage in `connections` (provider `google_gmail`, one row per org).
+- Routes `app/api/admin/comms/connect-gmail/{start,callback}` and `DELETE /api/admin/comms/connect-gmail`, all requiring `org.manage`. The callback reads the account from the verified id_token, refuses a grant without gmail.send, creates the org's settings row when it's missing, and switches the org to Gmail.
+- The transport seam `lib/comms/transport/` holds `gmail.ts`, `resend.ts` (the old path, unchanged) and `mime.ts` (ported from Team Esface).
+- Test send and campaign send go through the seam. The send route paces Gmail at 2 at a time with a 250 ms gap, refuses a campaign that doesn't fit what's left of the daily cap, and stops the run (marking the rest skipped) if the sender breaks or Google limits it.
+- The journeys cron holds enrollments for Gmail orgs until Phase 6.
+- The Comms page has a "Send from Gmail" card. The sending identity card shows the connected account as the From address when the org is on Gmail.
+- Tests: `tests/comms-gmail.test.ts`.
 
 ## Effort
 

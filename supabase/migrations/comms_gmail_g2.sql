@@ -81,7 +81,10 @@ end;
 $$;
 
 revoke execute on function public.comms_queue_tick() from public, anon, authenticated;
-grant execute on function public.comms_queue_tick() to service_role;
+-- service_role only exists on the Supabase platform, not the scratch runner.
+do $$ begin
+  grant execute on function public.comms_queue_tick() to service_role;
+exception when undefined_object then null; end $$;
 
 -- Claim up to p_limit pending rows for one org, within what is left of its
 -- daily cap (everything it sent, is sending, or may have sent in the last 24
@@ -131,7 +134,10 @@ end;
 $$;
 
 revoke execute on function public.claim_email_sends(uuid, int) from public, anon, authenticated;
-grant execute on function public.claim_email_sends(uuid, int) to service_role;
+-- service_role only exists on the Supabase platform, not the scratch runner.
+do $$ begin
+  grant execute on function public.claim_email_sends(uuid, int) to service_role;
+exception when undefined_object then null; end $$;
 
 -- Refresh the counts on every sending campaign, then close the ones with
 -- nothing left pending or in a worker's hands.
@@ -169,4 +175,7 @@ end;
 $$;
 
 revoke execute on function public.finish_email_campaigns() from public, anon, authenticated;
-grant execute on function public.finish_email_campaigns() to service_role;
+-- service_role only exists on the Supabase platform, not the scratch runner.
+do $$ begin
+  grant execute on function public.finish_email_campaigns() to service_role;
+exception when undefined_object then null; end $$;

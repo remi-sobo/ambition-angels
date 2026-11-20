@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
@@ -52,8 +53,24 @@ export async function POST(req: NextRequest) {
 
   // One pass to build an email → constituent-id map for dedupe (case-insensitive).
   const emailToId = new Map<string, string>();
-  const { data: existing } = await supabase.from("constituents").select("id, emails").limit(50000);
-  for (const c of (existing ?? []) as Array<{ id: string; emails: string[] | null }>) {
+  // Paged: `.limit(50000)` was still capped at PostgREST's 1,000 rows, so
+  // every constituent past the first 1,000 was invisible to dedupe and got
+  // re-created. A dedupe set that hit the hard cap aborts rather than guess.
+  const existingRes = await fetchAll<{ id: string; emails: string[] | null }>(
+    () => supabase.from("constituents").select("id, emails"),
+    { order: ["id"], hardCap: 200_000 }
+  );
+  const priorRes = await fetchAll<{ constituent_id: string | null; gift_date: string; amount: number }>(
+    () => supabase.from("gifts").select("constituent_id, gift_date, amount").eq("external_source", "import"),
+    { order: ["id"], hardCap: 200_000 }
+  );
+  if (existingRes.error || priorRes.error || existingRes.truncated || priorRes.truncated) {
+    return NextResponse.json(
+      { error: "Could not load existing records to check for duplicates. Nothing was imported." },
+      { status: 500 }
+    );
+  }
+  for (const c of existingRes.data) {
     for (const e of c.emails ?? []) {
       const k = e.trim().toLowerCase();
       if (k && !emailToId.has(k)) emailToId.set(k, c.id);
@@ -64,12 +81,7 @@ export async function POST(req: NextRequest) {
   // idempotency ledger. Grown in-loop so a duplicate within the same file is
   // caught too.
   const seenGifts = new Set<string>();
-  const { data: priorGifts } = await supabase
-    .from("gifts")
-    .select("constituent_id, gift_date, amount")
-    .eq("external_source", "import")
-    .limit(50000);
-  for (const g of (priorGifts ?? []) as Array<{ constituent_id: string | null; gift_date: string; amount: number }>) {
+  for (const g of priorRes.data) {
     if (g.constituent_id) seenGifts.add(giftDedupeKey(g.constituent_id, g.gift_date, Number(g.amount)));
   }
 

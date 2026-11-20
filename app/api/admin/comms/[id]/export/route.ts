@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fetchAll } from "@/lib/supabase/fetchAll";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
@@ -21,18 +22,25 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .maybeSingle();
   if (!campaign) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { data, error } = await supabase
-    .from("email_sends")
-    .select("id, email, first_name, status, error, sent_at, open_count, click_count")
-    .eq("org_id", ctx.orgId)
-    .eq("campaign_id", params.id)
-    .order("created_at", { ascending: true })
-    .limit(5000);
+  // Paged: `.limit(5000)` was still capped at PostgREST's 1,000 rows, so the
+  // CSV silently dropped every recipient past the first 1,000.
+  const { data, error, truncated } = await fetchAll<SendRow>(
+    () =>
+      supabase
+        .from("email_sends")
+        .select("id, email, first_name, status, error, sent_at, open_count, click_count")
+        .eq("org_id", ctx.orgId)
+        .eq("campaign_id", params.id),
+    { order: ["created_at", "id"] }
+  );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (truncated) {
+    return NextResponse.json({ error: "Too many recipients to export in one file." }, { status: 413 });
+  }
 
   await audit(req, { action: "fundraising.campaign_email.export", entityType: "email_campaigns", entityId: params.id });
   const slug = String(campaign.name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "campaign";
-  return new Response(sendsCsv((data ?? []) as SendRow[]), {
+  return new Response(sendsCsv(data), {
     headers: {
       "content-type": "text/csv; charset=utf-8",
       "content-disposition": `attachment; filename="${slug}-results.csv"`,

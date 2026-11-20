@@ -2,6 +2,8 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import PageHeader from "../../_components/PageHeader";
+import { fetchAll } from "@/lib/supabase/fetchAll";
+import Alert from "@/app/admin/_components/ui/Alert";
 import StatCard from "../../_components/StatCard";
 import { constituentName } from "@/lib/fundraising/display";
 import MergeControls, { type DupMember } from "./_components/MergeControls";
@@ -30,8 +32,16 @@ export default async function DuplicatesPage() {
   }
   const supabase = createServerSupabase();
   const [cRes, giftsRes] = await Promise.all([
-    supabase.from("constituents").select("id, type, first_name, last_name, org_name, emails").eq("org_id", ctx.orgId).limit(20000),
-    supabase.from("gifts").select("constituent_id, amount").eq("org_id", ctx.orgId).not("constituent_id", "is", null).limit(20000),
+    // Paged: `.limit(20000)` is still capped at PostgREST's 1,000 rows, which
+    // hid every duplicate past the first 1,000 constituents.
+    fetchAll(
+      () => supabase.from("constituents").select("id, type, first_name, last_name, org_name, emails").eq("org_id", ctx.orgId),
+      { order: ["id"] }
+    ),
+    fetchAll(
+      () => supabase.from("gifts").select("constituent_id, amount").eq("org_id", ctx.orgId).not("constituent_id", "is", null),
+      { order: ["id"] }
+    ),
   ]);
 
   if (cRes.error) {
@@ -89,6 +99,11 @@ export default async function DuplicatesPage() {
     <div className="min-h-screen bg-ink">
       <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <PageHeader title="Duplicates" subtitle="Constituents sharing an email. Review and merge" />
+        {(cRes.truncated || giftsRes.truncated) && (
+          <Alert tone="warning" title="Partial data" className="my-4">
+            This org has more constituents or gifts than one page load reads, so some duplicates and giving totals may be missing.
+          </Alert>
+        )}
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard label="Duplicate groups" value={groups.length} sub={groups.length > 0 ? "review below" : "none found"} muted={groups.length === 0} />

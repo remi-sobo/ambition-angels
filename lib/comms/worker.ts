@@ -3,6 +3,7 @@ import { personalize, buildCampaignEmail } from "@/lib/fundraising/comms-email";
 import { loadOrgCommsSettings, sendBlocker, type OrgCommsSettings } from "./settings";
 import { transportFor, TransportError, type Transport } from "./transport";
 import { outcomeFor, PACE, WORKER_BUDGET_MS } from "./queue-plan";
+import { newTrackingToken } from "./links";
 
 /**
  * The send worker (specs/comms-v2-gmail-amendment.md G2), run every minute by
@@ -26,6 +27,7 @@ type ClaimedRow = {
   constituent_id: string | null;
   email: string;
   first_name: string | null;
+  tracking_token: string | null;
 };
 
 type CampaignContent = { subject: string; body: string };
@@ -148,6 +150,13 @@ async function sendOne(
     return { counter: "failed", stopOrg: false };
   }
 
+  // Rows queued before G3 have no token; give them one so they track too.
+  let trackingToken = row.tracking_token;
+  if (!trackingToken) {
+    trackingToken = newTrackingToken();
+    await admin.from("email_sends").update({ tracking_token: trackingToken }).eq("org_id", row.org_id).eq("id", row.id);
+  }
+
   try {
     const email = buildCampaignEmail({
       settings,
@@ -156,6 +165,7 @@ async function sendOne(
       bodyText: personalize(content.body, row.first_name ?? ""),
       constituentId: row.constituent_id,
       campaignId: row.campaign_id,
+      trackingToken,
     });
     const { providerMessageId } = await transport.send(email);
     await finish({ status: "sent", sent_at: new Date().toISOString(), provider_message_id: providerMessageId, error: null });

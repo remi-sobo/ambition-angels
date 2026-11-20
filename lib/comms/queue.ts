@@ -3,6 +3,7 @@ import { resolveRecipients } from "@/lib/fundraising/segments";
 import { loadOrgCommsSettings, sendBlocker } from "./settings";
 import { transportFor } from "./transport";
 import { MAX_RECIPIENTS, spreadMessage } from "./queue-plan";
+import { newTrackingToken } from "./links";
 
 /**
  * Enqueue and cancel (specs/comms-v2-gmail-amendment.md G2), on the caller's
@@ -88,6 +89,7 @@ export async function startCampaign(
     email: r.email,
     first_name: r.firstName || null,
     status: "pending",
+    tracking_token: newTrackingToken(),
   }));
   for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
     const { error } = await supabase

@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushConstituentToHubSpot } from "@/lib/hubspot/sync-out";
+import { isCompanyStage, normalizeDomains } from "@/lib/fundraising/company-stages";
 
 const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
@@ -52,11 +53,41 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (isUuid(body.household_id)) update.household_id = body.household_id;
   else if (body.household_id === null) update.household_id = null;
 
+  // Company stage (specs/bloomos-companies.md): a stage key marks an
+  // organization as a company, explicit null stops tracking it. Organizations
+  // only; the database enforces the same rule.
+  if (body.company_stage === null) update.company_stage = null;
+  else if (body.company_stage !== undefined) {
+    if (!isCompanyStage(body.company_stage)) {
+      return NextResponse.json({ error: "Unknown company stage" }, { status: 400 });
+    }
+    update.company_stage = body.company_stage;
+  }
+  // Email domains for intake matching. The list replaces; every entry must
+  // read as a domain, so a typo fails loudly instead of matching nothing.
+  if (body.domains !== undefined) {
+    if (!Array.isArray(body.domains)) {
+      return NextResponse.json({ error: "domains must be a list" }, { status: 400 });
+    }
+    const { domains, invalid } = normalizeDomains(body.domains.filter((d): d is string => typeof d === "string"));
+    if (invalid.length > 0) {
+      return NextResponse.json({ error: `Not a domain: ${invalid.join(", ")}` }, { status: 400 });
+    }
+    update.domains = domains;
+  }
+
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }
 
   const supabase = createServerSupabase();
+  if (typeof update.company_stage === "string") {
+    const { data: row } = await supabase.from("constituents").select("type").eq("id", params.id).maybeSingle();
+    if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (row.type !== "organization" && update.type !== "organization") {
+      return NextResponse.json({ error: "Only an organization can have a company stage" }, { status: 400 });
+    }
+  }
   const { error } = await supabase.from("constituents").update(update).eq("id", params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -67,8 +98,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     after: update,
   });
 
-  // Outbound sync to a connected HubSpot (no-op when standalone).
-  await pushConstituentToHubSpot(params.id);
+  // Outbound sync to a connected HubSpot (no-op when standalone). Company
+  // stage and domains are BloomOS-only (no HubSpot write-back, spec scope),
+  // so an edit that touches only those skips the push.
+  const companyOnly = Object.keys(update).every((k) => k === "company_stage" || k === "domains");
+  if (!companyOnly) await pushConstituentToHubSpot(params.id);
 
   return NextResponse.json({ ok: true });
 }

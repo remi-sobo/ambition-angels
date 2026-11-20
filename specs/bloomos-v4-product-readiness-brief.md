@@ -2,6 +2,10 @@
 
 > **Status: parked.** This is the brief for a future session. Do not start until Remi says go. When work starts, begin from `main` after the in-flight work lands, and record the starting commit SHA.
 
+## How to start this
+
+Open a new Claude Code session on `ambition-angels` and say: **"Run the V4 brief, Phase 0."** In the same message, list what merged since 2026-11-20 (for example Comms G3, G4, the story bank), so the audit starts from the right picture. The session pulls `main`, records the SHA, reads this file, runs Phase 0, and stops.
+
 We are upgrading BloomOS (`/admin`) inside the `ambition-angels` repository.
 
 This is not a redesign for the sake of redesigning. The mission is to turn BloomOS into one cohesive, intuitive, reliable product that nonprofit organizations can confidently run their operations on.
@@ -480,3 +484,26 @@ Lead every report with the recommendation or finding. Be straightforward, specif
 The goal isn't to make BloomOS look like the latest SaaS dashboard. The goal is to make BloomOS the software nonprofit leaders actually want to open and trust to help them run their organizations.
 
 Start with Phase 0. Report your findings and stop.
+
+## Appendix: Gmail verification checklist (do this before V4, not during it)
+
+SafeSpace goes live in about two weeks and Comms sends through each org's Gmail, so this runs now, separately from V4. Background is in `specs/comms-v2-gmail-amendment.md`, Risks 1.
+
+**Where things stand.** BloomOS asks for `gmail.send` (`lib/comms/gmail-oauth.ts`) and `calendar` (`lib/google/oauth.ts`). Both are sensitive scopes, not restricted ones, so one Google review covers both and no paid security assessment is needed. Until the review passes, only listed test users can connect (up to 100), and they see an "unverified app" warning.
+
+**Day one for SafeSpace (no review needed):**
+
+1. In Google Cloud Console, add SafeSpace's sending account as a test user on the OAuth consent screen.
+2. Confirm the consent screen's publishing status. In "Testing" status, Google expires refresh tokens after 7 days, which would silently break scheduled sends. Set it to "In production" (unverified is fine for test users) so tokens last.
+3. Have SafeSpace connect a shared inbox (such as hello@) rather than a personal account, and send a test campaign to themselves.
+
+**Starting the review (takes days to a few weeks):**
+
+1. A public home page and privacy policy on the app's domain. The policy names the Google data used and why, and states that Gmail data is used only to send mail the org asked to send.
+2. Verify the domain in Google Search Console under the same Google account that owns the Cloud project.
+3. Fill in the consent screen: app name, logo, support email, authorized domains, and both scopes with a plain justification for each.
+4. Record a short demo video: an org connects Gmail, sees the consent screen, and sends a campaign.
+5. Submit, then answer Google's follow-up emails quickly. Most of the delay is back and forth.
+
+**Not now:** reading replies inside BloomOS would need a restricted Gmail scope and a yearly paid security assessment. Keep replies in the connected inbox until a pilot shows it's worth it.
+

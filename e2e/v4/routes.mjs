@@ -78,7 +78,8 @@ export function buildRoutes() {
     campaign: first("campaigns")?.id,
     comms: first("email_campaigns", (c) => c.status === "sent")?.id,
     commsDraft: first("email_campaigns", (c) => c.status === "draft")?.id,
-    event: first("calendar_events")?.google_event_id,
+    event: first("calendar_events", (e) => /^Donor/.test(e.title || "") && new Date(e.start_time) > new Date())?.id || first("calendar_events")?.id,
+    ask: first("asks")?.id,
     reviewCycle: first("review_cycles")?.id,
   };
   const session = first("cohort_sessions", (s) => s.cohort_id === ids.cohort && s.status === "held")?.id;
@@ -109,7 +110,7 @@ export function buildRoutes() {
     D("Donor 360 (person)", `/admin/fundraising/donors-funders/${ids.constituent}`),
     D("Funder 360 (foundation)", `/admin/fundraising/donors-funders/${ids.funder}`),
     D("Companies view", `/admin/fundraising/donors-funders/companies`),
-    D("Pipeline detail", `/admin/fundraising/pipeline/${ids.opp}`),
+    D("Pipeline (ask) detail", `/admin/fundraising/pipeline/${ids.ask}`),
     D("Grant detail", `/admin/fundraising/grants/${ids.grant}`),
     D("Campaign plan detail", `/admin/fundraising/plan/${ids.campaign}`),
     D("Pledge detail", `/admin/fundraising/pledges/${ids.pledge}`),
@@ -122,7 +123,7 @@ export function buildRoutes() {
     D("Project detail", `/admin/work/projects/${ids.project}`),
     D("Meeting detail", `/admin/work/meetings/${ids.meeting}`),
     D("Upcoming meeting prep", `/admin/work/meetings/upcoming/${ids.event}`),
-    D("Board meeting detail", `/admin/organization/board/${ids.board}`),
+    D("Board member detail", `/admin/organization/board/${ids.boardMember}`),
     D("Compliance item detail", `/admin/organization/compliance/${ids.compliance}`),
     D("Strategy objective detail", `/admin/organization/strategy/objective/${ids.objective}`),
     D("Team member detail", `/admin/organization/team/${ids.staff}`),

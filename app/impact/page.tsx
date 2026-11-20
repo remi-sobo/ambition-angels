@@ -1,373 +1,160 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { STATS } from "@/lib/stats";
 
 export const metadata: Metadata = {
   title: "Our Impact",
   description:
-    "Career exposure is what breaks the cycle of poverty. Here is the data behind the Ambition Angels model.",
+    "Career exposure is one of the few things that reliably moves a teen's economic trajectory. Here is what our data shows, and the research behind it.",
 };
 
-// Exposure numbers only — the one future-orientation stat on this page is
-// the big 14% card below, so it lands once, with its full story.
+/** Split "3,500+" into the numeral and its trailing mark so the mark can sit smaller. */
+const split = (value: string) => {
+  const m = value.match(/^(.*?)([+%]?)$/);
+  return { num: m?.[1] ?? value, sup: m?.[2] ?? "" };
+};
+
 const stats = [
-  { num: "3,500", sup: "+", label: "Teens reached" },
-  { num: "36", sup: "", label: "School and nonprofit partners" },
-  { num: "74", sup: "%", label: "Start a second internship" },
-  { num: "1,100", sup: "+", label: "Hours of career exploration delivered" },
+  { ...split(STATS.teensReached.value), label: STATS.teensReached.label },
+  { ...split("36"), label: STATS.partners.label },
+  { ...split(STATS.secondInternship.value), label: "Come back to explore a second career" },
+  { ...split(STATS.hoursDelivered.value), label: STATS.hoursDelivered.label },
 ];
 
 const gapFacts = [
-  {
-    num: "By 15",
-    title: "The career conversation is the central lever.",
-    body: "Career conversations with a trusted adult by age 15 are one of the strongest independent predictors of adult employment outcomes. Everything we build exists to make that conversation happen, and happen well.",
-    source: "OECD Career Readiness Research · 2021",
-  },
-  {
-    num: "By 16",
-    title: "Career uncertainty by 16 predicts disconnection.",
-    body: "Teens who can't picture a career by 16 are far more likely to be unemployed or disconnected from school and work by their mid-20s.",
-    source: "OECD Career Readiness Research · 2021",
-  },
-  {
-    num: "< 5",
-    title: "Most teens have seen fewer than five careers.",
-    body: "Usually whatever their parents do. The world has thousands of paths, and the teens with the least access to networks see the fewest of them.",
-    source: "",
-  },
+  { num: "By 15", title: "The career conversation is the central lever.", body: "Career conversations with a trusted adult by age 15 are one of the strongest independent predictors of adult employment outcomes. Everything we build exists to make that conversation happen, and happen well.", source: "OECD Career Readiness Research · 2021" },
+  { num: "By 16", title: "Career uncertainty by 16 predicts disconnection.", body: "Teens who can't picture a career by 16 are far more likely to be unemployed or disconnected from school and work by their mid-20s.", source: "OECD Career Readiness Research · 2021" },
+  { num: "< 5", title: "Most teens have seen fewer than five careers.", body: "Usually whatever their parents do. The world has thousands of paths, and the teens with the least access to networks see the fewest of them.", source: "" },
 ];
 
-const howWeRespond = [
-  {
-    num: "01",
-    title: "Real career exposure",
-    body: "30-day simulated internships in real careers. 15 minutes a day. Students pick their path, build real skills, and see what a career actually feels like before they have to choose one.",
-  },
-  {
-    num: "02",
-    title: "In the classroom and in their pocket",
-    body: "On the web during class or program time, with every student in the room on the computers they already use. On the phone everywhere else. Same internship either way, so exposure doesn't stop at the bell.",
-  },
-  {
-    num: "03",
-    title: "A trusted adult in the room",
-    body: "The teens who shift their career thinking are almost always connected to an adult who knows they are doing it. We equip teachers, counselors, mentors, and parents to be that person, even if nobody ever did it for them.",
-  },
+const respond = [
+  { num: "01", title: "Real career exposure", body: "Introships built with real professionals. Students explore many careers, seeing what each job is and what it pays, before they ever have to choose. Students who want more go further with an internship or a coach." },
+  { num: "02", title: "In schools and programs", body: "On the web during class or program time, with every student in the room on the computers they already use. On the phone everywhere else. Same account either way, so exposure doesn't stop at the bell." },
+  { num: "03", title: "A trusted adult in the room", body: "The teens who shift their career thinking are almost always connected to an adult who knows they are doing it. We equip teachers, counselors, mentors, and parents to be that person, even if nobody ever did it for them." },
 ];
 
-const quotes = [
-  {
-    initials: "DM",
-    quote:
-      "I never knew what I wanted to do. After the entrepreneurship internship, I started selling custom bracelets at school. I make $200 a month now.",
-    name: "Destiny M.",
-    grade: "10th Grade · Oakland, CA",
-  },
-  {
-    initials: "MT",
-    quote:
-      "The wealth management track changed how I think about money. I taught my mom what I learned and I'm starting to think I might have a future here.",
-    name: "Marcus T.",
-    grade: "11th Grade · East Palo Alto, CA",
-  },
-  {
-    initials: "AR",
-    quote:
-      "I did the nursing internship and it clicked. I know exactly what I'm doing after high school. No one in my family has ever worked in healthcare.",
-    name: "Aaliyah R.",
-    grade: "12th Grade · Richmond, CA",
-  },
-];
-
-// Ordered deliberately: the OECD trusted-adult-by-15 finding is the central
-// claim of the model and leads the list.
 const research = [
-  {
-    stat: "By 15",
-    finding:
-      "Career conversations with a trusted adult by age 15 are one of the strongest independent predictors of adult employment outcomes. We are making it possible for any parent, teacher, or mentor to have that conversation well.",
-    source: "OECD Career Readiness Research · 2021",
-  },
-  {
-    stat: "40/47",
-    finding:
-      "Longitudinal studies found teens with early career exposure had better adult employment outcomes, with wage gains of 5 to 10% not uncommon, even after controlling for academic achievement and social background.",
-    source: "OECD Career Readiness Review · 2021",
-  },
-  {
-    stat: "5–10%",
-    finding:
-      "Wage boost in adulthood tied specifically to early career exposure. Even career conversations, job shadowing, and simulated experience showed measurable long-term impact on earnings.",
-    source: "OECD, From Classroom to Career · 2025",
-  },
+  { stat: "By 15", finding: "Career conversations with a trusted adult by age 15 are one of the strongest independent predictors of adult employment outcomes. We are making it possible for any parent, teacher, or mentor to have that conversation well.", source: "OECD Career Readiness Research · 2021" },
+  { stat: "40/47", finding: "Longitudinal studies found teens with early career exposure had better adult employment outcomes, with wage gains of 5 to 10% not uncommon, even after controlling for academic achievement and social background.", source: "OECD Career Readiness Review · 2021" },
+  { stat: "5 to 10%", finding: "Wage boost in adulthood tied specifically to early career exposure. Even career conversations, job shadowing, and simulated experience showed measurable long-term impact on earnings.", source: "OECD, From Classroom to Career · 2025" },
 ];
 
-// Exposure measures lead; future orientation gets one card, matching the
-// one FO stat the page carries.
 const measures = [
-  {
-    tag: "Career Exposure",
-    title: "Exploration Breadth",
-    body: "How many fields and roles has a teen meaningfully engaged with? Broader exploration earlier leads to better decisions later.",
-  },
-  {
-    tag: "Career Exposure",
-    title: "Career Conversation Quality",
-    body: "Are teens talking to adults about their futures? Mentorship and career conversations are independently proven to improve labor market outcomes.",
-  },
-  {
-    tag: "The Outcome",
-    title: "Future Orientation",
-    body: "Can a teen envision a future for themselves, and are they taking concrete steps toward it? That action piece is our strongest result: the 14% gain measured across 1,000+ teens.",
-  },
+  { tag: "Career Exposure", title: "Exploration Breadth", body: "How many fields and roles has a teen meaningfully engaged with? Broader exploration earlier leads to better decisions later." },
+  { tag: "Career Exposure", title: "Career Conversation Quality", body: "Are teens talking to adults about their futures? Mentorship and career conversations are independently proven to improve labor market outcomes." },
+  { tag: "The Outcome", title: "Future Orientation", body: "Can a teen envision a future for themselves, and are they taking concrete steps toward it? That action piece is our strongest result: the 14% gain measured across 1,000+ teens." },
 ];
-
 
 export default function ImpactPage() {
   return (
     <>
-      {/* PAGE HEADER */}
-      <section
-        className="relative pt-32 pb-24 lg:pt-44 lg:pb-32 bg-ink overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        {/* Background photo */}
-        <Image
-          src="/images/elizeu-dias-2EGNqazbAMk-unsplash.jpg"
-          alt=""
-          fill
-          priority
-          className="object-cover object-center"
-          aria-hidden="true"
-        />
-        {/* Dark overlay at 60% */}
-        <div className="absolute inset-0 bg-ink/60" />
-        <div className="container-site relative z-10">
-          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-5 fade-up">
-            Our Impact
-          </p>
-          <h1 className="font-display font-black text-6xl lg:text-8xl text-cream leading-none tracking-tight uppercase mb-6 max-w-2xl fade-up stagger-1">
-            Career exposure<br />
-            <span className="text-orange">works.</span>
-          </h1>
-          <p className="text-gray-mid text-lg lg:text-xl max-w-2xl leading-relaxed fade-up stagger-2">
-            Career exposure is one of the few things that reliably moves a teen&apos;s economic trajectory. We have the data. Here is what it shows.
-          </p>
-        </div>
-      </section>
-
-      {/* STAT BAR */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-gray-light border-b border-gray-light">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-cream px-8 py-8 lg:py-10">
-            <div className="font-display font-black text-4xl lg:text-5xl text-ink tracking-tight leading-none mb-2">
-              {s.num}<span className="text-orange">{s.sup}</span>
-            </div>
-            <div className="text-gray-warm text-sm leading-snug max-w-[180px]">{s.label}</div>
+      <div className="aa-page" style={{ fontFamily: "var(--font-body)", color: "var(--ink)", background: "var(--paper)", overflowX: "clip" }}>
+        <section style={{ position: "relative", background: "var(--ink)", overflow: "hidden" }}>
+          <Image src="/images/elizeu-dias-2EGNqazbAMk-unsplash.jpg" width={2400} height={1600} sizes="100vw" alt="" aria-hidden="true" style={{ position: "absolute", inset: "0", width: "100%", height: "100%", objectFit: "cover" }} />
+          <div style={{ position: "absolute", inset: "0", background: "rgb(14 14 14 / 0.6)" }} />
+          <div style={{ position: "relative", maxWidth: "1200px", margin: "0 auto", padding: "clamp(96px,12vw,160px) clamp(20px,4vw,32px) clamp(88px,10vw,128px)" }}>
+            <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 20px" }}>Our Impact</p>
+            <h1 style={{ fontFamily: "var(--font-display)", fontWeight: "900", textTransform: "uppercase", fontSize: "clamp(56px,8vw,96px)", lineHeight: "0.95", letterSpacing: "-0.01em", color: "var(--cream)", margin: "0 0 24px", maxWidth: "720px" }}>
+              {"Career exposure "}
+              <span style={{ color: "var(--orange)" }}>works.</span>
+            </h1>
+            <p style={{ fontSize: "clamp(17px,1.6vw,20px)", lineHeight: "1.6", color: "var(--gray-mid)", maxWidth: "640px", margin: "0" }}>{"Career exposure is one of the few things that reliably moves a teen's economic trajectory. We have the data. Here is what it shows."}</p>
           </div>
-        ))}
-      </div>
-
-      {/* THE GAP */}
-      <section className="section-pad bg-gray-light">
-        <div className="container-site">
-          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">
-            The Problem
-          </p>
-          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-4 fade-up">
-            The gap is not ambition. It is access.
-          </h2>
-          <p className="text-gray-warm text-base leading-relaxed max-w-2xl mb-12">
-            Teens from low-income communities graduate knowing academic subjects, not how to make their way in a workforce that is changing faster than any curriculum can keep up with. Career exposure is a proven pathway to economic mobility. Right now it goes to the teens who need it least.
-          </p>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20">
-            {/* Facts */}
-            <div className="flex flex-col gap-4 fade-up stagger-1">
-              {gapFacts.map((f) => (
-                <div
-                  key={f.title}
-                  className="bg-cream border border-gray-light rounded-card p-5 flex items-start gap-5 shadow-sm"
-                >
-                  <div className="font-display font-black text-3xl text-orange tracking-tight leading-none flex-shrink-0 min-w-[72px]">
-                    {f.num}
-                  </div>
-                  <div className="pt-0.5">
-                    <p className="font-heading font-semibold text-ink text-sm mb-1">{f.title}</p>
-                    <p className="text-gray-warm text-sm leading-relaxed mb-2">{f.body}</p>
-                    {"source" in f && f.source && (
-                      <p className="text-xs font-semibold text-gray-mid/60 uppercase tracking-widest">{f.source}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
+        </section>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,240px),1fr))", borderBottom: "1px solid var(--gray-light)" }}>
+          {stats.map((s, i) => (
+            <div key={i} style={{ background: "var(--cream)", padding: "clamp(28px,3vw,40px) 32px", borderRight: "1px solid var(--gray-light)" }}>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: "900", fontSize: "clamp(40px,4vw,52px)", lineHeight: "1", color: "var(--ink)", marginBottom: "8px" }}>
+                {s.num}
+                <span style={{ color: "var(--orange)" }}>{s.sup}</span>
+              </div>
+              <div style={{ fontSize: "14px", lineHeight: "1.4", color: "var(--muted)", maxWidth: "200px" }}>{s.label}</div>
             </div>
-
-            {/* How We Respond */}
-            <div>
-              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-5">
-                How We Respond
-              </p>
-              <div className="flex flex-col gap-4 fade-up stagger-2">
-                {howWeRespond.map((item) => (
-                  <div
-                    key={item.num}
-                    className="bg-cream border border-gray-light rounded-card p-5 shadow-sm"
-                  >
-                    <p className="text-xs font-bold text-orange tracking-widest uppercase mb-2">{item.num}</p>
-                    <h3 className="font-heading font-semibold text-ink text-base mb-1">{item.title}</h3>
-                    <p className="text-gray-warm text-sm leading-relaxed">{item.body}</p>
+          ))}
+        </div>
+        <section style={{ background: "var(--gray-light)", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)" }}>
+            <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 12px" }}>The Problem</p>
+            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(34px,4.2vw,48px)", letterSpacing: "-0.02em", lineHeight: "1.12", margin: "0 0 16px", color: "var(--ink)" }}>The gap is not ambition. It is access.</h2>
+            <p style={{ fontSize: "17px", lineHeight: "1.65", color: "var(--muted)", maxWidth: "680px", margin: "0 0 48px" }}>Teens from low-income communities graduate knowing academic subjects, not how to make their way in a workforce that is changing faster than any curriculum can keep up with. Career exposure is a proven pathway to economic mobility. Right now it goes to the teens who need it least.</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: "clamp(40px,6vw,80px)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {gapFacts.map((f, i) => (
+                  <div key={i} style={{ background: "var(--cream)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "22px", display: "flex", alignItems: "flex-start", gap: "20px" }}>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: "900", fontSize: "32px", lineHeight: "1", color: "var(--orange)", flexShrink: "0", minWidth: "76px" }}>{f.num}</div>
+                    <div>
+                      <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "15px", color: "var(--ink)", margin: "0 0 4px" }}>{f.title}</p>
+                      <p style={{ fontSize: "14px", lineHeight: "1.6", color: "var(--muted)", margin: "0 0 8px" }}>{f.body}</p>
+                      <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "11px", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", margin: "0" }}>{f.source}</p>
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* HEADLINE OUTCOME — 14% big card */}
-      <section className="section-pad">
-        <div className="container-site">
-          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">
-            Our Results
-          </p>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-
-            {/* Orange big number card */}
-            <div
-              className="relative bg-orange rounded-card-lg p-14 text-center overflow-hidden fade-up"
-              style={{
-                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)",
-                backgroundSize: "20px 20px",
-              }}
-            >
-              <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/[0.07]" />
-              <span className="font-display font-black text-[7rem] lg:text-[9rem] text-white leading-none tracking-tight block">
-                14%
-              </span>
-              <p className="text-white/80 text-base leading-relaxed mt-4">
-                <strong className="text-white font-bold block mb-1">Increase in Action Orientation, the highest-gain dimension within our Future Orientation Score (FOS).</strong>
-              </p>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-white/70">
-                Pre and post · 1,000+ teens · Measured across our school and nonprofit program partners
-              </p>
-            </div>
-
-            {/* Copy */}
-            <div>
-              <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-5">
-                Teens do not just feel better about the future. They act on it.
-              </h2>
-              <div className="space-y-4 text-gray-warm leading-relaxed">
-                <p>
-                  The Future Orientation Score (FOS) tracks how teens think about and move toward their futures across multiple dimensions. We measure before and after every program cycle.
-                </p>
-                <p>
-                  Action Orientation, one element within the FOS, measures whether a teen is taking real steps toward a career, not just imagining one. Across 1,000+ teens, it showed the biggest improvement of any dimension we track.
-                </p>
-                <p className="font-semibold text-ink">
-                  Career exposure alone doesn&apos;t break the cycle of poverty. But a teen who can see a path and starts walking it has a real shot that a teen who can&apos;t see one doesn&apos;t.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* STUDENT VOICES */}
-      <section className="section-pad bg-gray-light">
-        <div className="container-site">
-          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">
-            From the Students
-          </p>
-          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-10 fade-up">
-            What action looks like.
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 fade-up stagger-1">
-            {quotes.map((q) => (
-              <div key={q.name} className="bg-cream rounded-card-lg p-7 flex flex-col shadow-sm">
-                <div className="font-display font-black text-4xl text-orange leading-none mb-4">&ldquo;</div>
-                <blockquote className="text-charcoal text-sm leading-relaxed flex-1 mb-6">
-                  {q.quote}
-                </blockquote>
-                <div className="flex items-center gap-3 pt-4 border-t border-gray-light">
-                  <div className="w-9 h-9 rounded-full bg-orange-light border border-orange/20 flex items-center justify-center flex-shrink-0">
-                    <span className="font-heading font-bold text-orange text-xs">{q.initials}</span>
-                  </div>
-                  <div>
-                    <div className="font-heading font-semibold text-ink text-sm">{q.name}</div>
-                    <div className="text-gray-warm text-xs">{q.grade}</div>
-                  </div>
+              <div>
+                <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 20px" }}>How We Respond</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {respond.map((r, i) => (
+                    <div key={i} style={{ background: "var(--cream)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "22px" }}>
+                      <p style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "12px", letterSpacing: "0.16em", color: "var(--orange)", margin: "0 0 8px" }}>{r.num}</p>
+                      <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "17px", color: "var(--ink)", margin: "0 0 6px" }}>{r.title}</h3>
+                      <p style={{ fontSize: "14px", lineHeight: "1.6", color: "var(--muted)", margin: "0" }}>{r.body}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* RESEARCH — dark */}
-      <section
-        className="section-pad bg-ink relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">
-            The Evidence Base
-          </p>
-          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream tracking-tight leading-tight mb-10 max-w-3xl">
-            We did not invent the link between career exposure and economic mobility. We built a program to help deliver it at scale.
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/[0.08] rounded-card-lg overflow-hidden border border-white/[0.08] fade-up stagger-1">
-            {research.map((r) => (
-              <div key={r.stat} className="bg-ink-soft p-8">
-                <div className="font-display font-black text-4xl text-orange tracking-tight leading-none mb-5">
-                  {r.stat}
+        </section>
+        <section style={{ background: "var(--paper)", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)" }}>
+            <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 20px" }}>Our Results</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: "clamp(40px,5vw,64px)", alignItems: "center" }}>
+              <div style={{ position: "relative", background: "var(--orange)", borderRadius: "var(--radius-card-lg)", padding: "clamp(40px,5vw,56px)", textAlign: "center", overflow: "hidden", backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)", backgroundSize: "20px 20px" }}>
+                <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: "900", fontSize: "clamp(96px,11vw,144px)", lineHeight: "1", color: "#fff", letterSpacing: "-0.02em" }}>14%</span>
+                <p style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "16px", lineHeight: "1.5", color: "#fff", margin: "16px auto 0", maxWidth: "420px" }}>Increase in Action Orientation, the highest-gain dimension within our Future Orientation Score (FOS).</p>
+                <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "#fff", margin: "16px 0 0" }}>Pre and post · 1,000+ teens · Measured across our school and nonprofit program partners</p>
+              </div>
+              <div>
+                <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(34px,4.2vw,48px)", letterSpacing: "-0.02em", lineHeight: "1.12", margin: "0 0 20px", color: "var(--ink)" }}>Teens do not just feel better about the future. They act on it.</h2>
+                <p style={{ fontSize: "17px", lineHeight: "1.65", color: "var(--muted)", margin: "0 0 16px" }}>The Future Orientation Score (FOS) tracks how teens think about and move toward their futures across multiple dimensions. We measure before and after every program cycle.</p>
+                <p style={{ fontSize: "17px", lineHeight: "1.65", color: "var(--muted)", margin: "0 0 16px" }}>Action Orientation, one element within the FOS, measures whether a teen is taking real steps toward a career, not just imagining one. Across 1,000+ teens, it showed the biggest improvement of any dimension we track.</p>
+                <p style={{ fontSize: "17px", lineHeight: "1.65", fontWeight: "600", color: "var(--ink)", margin: "0" }}>{"Career exposure alone doesn't break the cycle of poverty. But a teen who can see a path and starts walking it has a real shot that a teen who can't see one doesn't."}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section style={{ background: "var(--ink)", backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)", backgroundSize: "22px 22px", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)" }}>
+            <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 12px" }}>The Evidence Base</p>
+            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(30px,3.8vw,44px)", letterSpacing: "-0.02em", lineHeight: "1.15", margin: "0 0 40px", color: "var(--cream)", maxWidth: "860px", textWrap: "balance" }}>We did not invent the link between career exposure and economic mobility. We built a program to help deliver it at scale.</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: "1px", background: "rgb(255 255 255 / 0.08)", border: "1px solid rgb(255 255 255 / 0.08)", borderRadius: "var(--radius-card-lg)", overflow: "hidden" }}>
+              {research.map((r, i) => (
+                <div key={i} style={{ background: "var(--ink-soft)", padding: "32px" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: "900", fontSize: "40px", lineHeight: "1", color: "var(--orange)", marginBottom: "20px" }}>{r.stat}</div>
+                  <p style={{ fontSize: "14px", lineHeight: "1.6", color: "var(--gray-mid)", margin: "0 0 20px" }}>{r.finding}</p>
+                  <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "11px", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgb(255 255 255 / 0.6)", margin: "0", paddingTop: "16px", borderTop: "1px solid rgb(255 255 255 / 0.07)" }}>{r.source}</p>
                 </div>
-                <p className="text-gray-mid text-sm leading-relaxed mb-5">{r.finding}</p>
-                <p className="text-xs font-semibold uppercase tracking-widest text-white/55 border-t border-white/[0.07] pt-4">
-                  {r.source}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* WHAT WE MEASURE */}
-      <section className="section-pad bg-gray-light">
-        <div className="container-site">
-          <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">
-            Our Evaluation Framework
-          </p>
-          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-3">
-            What we track.
-          </h2>
-          <p className="text-gray-warm text-base leading-relaxed max-w-xl mb-10">
-            Two areas. One question: does this program put teens on a different economic trajectory?
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 fade-up stagger-1">
-            {measures.map((m) => (
-              <div
-                key={m.title}
-                className="bg-cream border-t-[3px] border-orange border border-gray-light rounded-card p-7 shadow-sm"
-              >
-                <span className="inline-block text-xs font-bold uppercase tracking-widest text-orange bg-orange-light rounded px-2 py-0.5 mb-3">
-                  {m.tag}
-                </span>
-                <h3 className="font-heading font-semibold text-ink text-base mb-2">{m.title}</h3>
-                <p className="text-gray-warm text-sm leading-relaxed">{m.body}</p>
-              </div>
-            ))}
+        </section>
+        <section style={{ background: "var(--gray-light)", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)" }}>
+            <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 12px" }}>Our Evaluation Framework</p>
+            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(34px,4.2vw,48px)", letterSpacing: "-0.02em", lineHeight: "1.12", margin: "0 0 12px", color: "var(--ink)" }}>What we track.</h2>
+            <p style={{ fontSize: "17px", lineHeight: "1.65", color: "var(--muted)", maxWidth: "560px", margin: "0 0 40px" }}>Two areas. One question: does this program put teens on a different economic trajectory?</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: "20px" }}>
+              {measures.map((m, i) => (
+                <div key={i} style={{ background: "var(--cream)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "28px" }}>
+                  <span style={{ display: "inline-block", fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "11px", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--orange-dark)", background: "var(--orange-light)", borderRadius: "6px", padding: "3px 8px", marginBottom: "12px" }}>{m.tag}</span>
+                  <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "17px", color: "var(--ink)", margin: "0 0 8px" }}>{m.title}</h3>
+                  <p style={{ fontSize: "14px", lineHeight: "1.6", color: "var(--muted)", margin: "0" }}>{m.body}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
-
+        </section>
+      </div>
     </>
   );
 }

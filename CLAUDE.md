@@ -20,18 +20,21 @@ Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + auth), S
 
 ## Architecture
 
-**App Router** — all routes live under `app/`. The root layout (`app/layout.tsx`) wraps pages with `<Nav>` and `<Footer>` via `components/SiteChrome.tsx`, which skips that chrome for standalone routes (`/admin`, `/teens`, `/ygb`, `/shannon`, `/strategy`, `/update/koshland`).
+**App Router** — all routes live under `app/`. The root layout (`app/layout.tsx`) wraps pages with `<SiteHeader>` and `<SiteFooter>` (`components/site/`) via `components/SiteChrome.tsx`, which skips that chrome for standalone routes (`/admin`, `/teens/*` game screens, `/ygb`, `/shannon`, `/strategy`, `/update/koshland`).
 
-**Public pages:**
-- `/` — homepage (client component; `IntersectionObserver` drives `.fade-up` animations)
-- `/about` — story, board of directors, advisory board (static data inline)
-- `/the-app` — app showcase with interactive `AppDemo`
-- `/curriculum` — track grid (inline `tracks` array); detail pages at `/curriculum/[slug]` driven by `lib/internships.ts` (only tracks with a `slug` link through)
+**Public pages (site v2, specs/site-redesign-v2.md):** the ten redesigned pages were ported from a design canvas and keep its inline styles on top of the brand CSS variables. Shared pieces live in `components/site/` (`PillCTA`, `NumberedBlock`, `StatBar`, `Fit`, and the HTML product mockups in `screens/`); tokens, hover classes (`.hv-*`), breakpoints and the header/footer styles live in `app/site.css`. Each redesigned page wraps itself in `.aa-page`, which clears the fixed header.
+- `/` — homepage
+- `/how-it-works` — the platform (`/the-app` 308s here)
+- `/curriculum` — "Careers": 50 introships with a category filter (client component, data inline); the 19 with a `slug` link to `/curriculum/[slug]`, driven by `lib/internships.ts`. `/careers` 308s here.
+- `/schools` — schools and programs pitch; `#start` holds `SchoolsInquiryForm` (→ `/api/schools-inquiry`)
+- `/companies` — ways to partner; `#start` holds `app/companies/ContactForm.tsx` (→ `/api/partner-waitlist`)
+- `/guides` — for the adults (`/for-adults` 308s here); `/students` — app download pitch
 - `/impact` — impact metrics and evidence base
+- `/about` — story, board of directors, advisory board (static data inline, photos in `public/images`)
 - `/donate` — Stripe donation flow (`DonateButton` → `DonateModal`); GiveButter has been removed
-- `/for-adults` — Guide (parent/mentor) pitch + waitlist form
+- `/coach` — Ambition Coach volunteer sign-up
 - `/founder` — founder profile
-- `/companies`, `/program-partners` — outreach pages (noindex, not linked from nav)
+- `/program-partners` — outreach page (noindex, not linked from nav)
 - `/update` — investor update (not linked from nav)
 - `/meet` — meeting scheduler backed by Supabase (`meeting_types`, bookings)
 - `/teens` — the games hub (specs/c1d2c9e2-teengamesv1; indexable, standalone chrome). Lists "What Are You Built For" as the hero plus the teen games: Higher Wage is live at `/teens/higher-wage` (pair/guess APIs under `app/api/games/higher-wage/*`, gap rule + signed pair token in `lib/games/` — pay never reaches the client pre-tap, and a CI test asserts it); Never Heard of It is live at `/teens/never-heard-of-it` (daily APIs under `app/api/games/daily/*` — clue 1 + answer hashes only, title never pre-reveal; guesses hash-matched client-side via `lib/games/guess.ts`; `game_daily` calendar human-scheduled at `/admin/careers/daily` with a 3-of-7 job-zone≤3 rule, rolls midnight Pacific); The Cut is live at `/teens/the-cut` (rooms + phone voting + solo, `app/api/games/the-cut/*`, engine in `lib/games/the-cut.ts`, ephemeral `cut_*` tables; landing indexable, room/vote screens noindex). `/ms` and `/ms/*` 308-redirect here (`next.config.mjs`) — old flyer/email links never die.
@@ -78,7 +81,7 @@ style={{
 }}
 ```
 
-**Known duplication to be careful with:** the headline stats (3,500+ teens / 87% Title I / 14% future orientation / 1,100+ hours) are hardcoded in several pages (`/`, `/donate`, `/the-app`, `/companies`, `/update`, `/impact`) — update all of them together. The App Store / Google Play button markup is likewise copy-pasted across pages.
+**Headline stats** (3,500+ teens / 87% Title I / 14% / 1,100+ hours) come from `lib/stats.ts`. Import from there; legacy pages (`/update`, `/twilio`) may still hardcode them.
 
 ## Environment Variables
 

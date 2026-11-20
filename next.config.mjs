@@ -34,7 +34,11 @@ const nextConfig = {
       // /for-adults folded into /schools (website build plan v3 follow-up):
       // parent/mentor content is now a section there, so old Guide links
       // land on the page that replaced it.
-      { source: "/for-adults", destination: "/schools", permanent: true },
+      // Site v2 (specs/site-redesign-v2.md): old URLs keep working.
+      { source: "/for-adults", destination: "/guides", permanent: true },
+      { source: "/the-app", destination: "/how-it-works", permanent: true },
+      { source: "/careers", destination: "/curriculum", permanent: true },
+      { source: "/careers/:slug", destination: "/curriculum/:slug", permanent: true },
       // ── BloomOS V2 redirect map (Spec B, stage B2) ────────────────────
       // Permanent (308) V1 → V2 moves for the 1:1 rows of the Stage 0 map
       // (docs/v2-recon.md §F.1). Every destination is a live host page

@@ -1,303 +1,189 @@
+/* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import Image from "next/image";
-import DonateFaq from "@/components/DonateFaq";
 import DonateButton from "@/components/DonateButton";
+import { pillClass } from "@/components/site/PillCTA";
 import { HEADLINE_STATS } from "@/lib/stats";
 
 export const metadata: Metadata = {
   title: "Donate",
   description:
-    "Help teens reach their full potential. Your gift delivers real careers through 30-day simulated internships, in the classroom and in their pocket. Free for every student.",
+    "Help more students see what work can look like. Your gift brings introships, internships, and guidance from trusted adults to students who would not otherwise get them.",
 };
 
+// The Giving Tuesday band comes down by itself once the day has passed.
+export const revalidate = 3600;
+const GIVING_TUESDAY_ENDS = Date.parse("2026-12-02T08:00:00Z"); // midnight Pacific, end of Dec 1
+
+const stats = HEADLINE_STATS.map((s) => ({ v: s.value, l: s.label, note: s.note, hasNote: !!s.note }));
+
+const gets = [
+  "Introships for every student in the building, and an internship for anyone who wants to go deeper",
+  "A dashboard for every teacher, counselor, and mentor who works with them",
+  "Career conversation prompts tied to each student's introships",
+  "The school pays nothing in year one",
+].map((t, i) => ({ n: String(i + 1).padStart(2, "0"), t }));
+
+const uses = [
+  { n: "01", t: "The App", b: "Your gift puts introships in front of young people who have never seen the jobs up close. Free for every student, in a classroom or on their own." },
+  { n: "02", t: "The Content", b: "Donations power new careers, built with real professionals, and the Guide dashboard that puts every adult in a young person's corner. More careers to try on, and more adults ready to talk about them." },
+  { n: "03", t: "The Proof", b: "See the real difference your support makes through updates, data, and student stories. We report honestly on outcomes because you deserve to know your gift is working." },
+];
+
+const faq = [
+  { q: "How do I make a gift?", a: "You can give online, or email our philanthropy team at shannon@ambitionangels.org. Checks can be made payable to Ambition Angels and mailed to 380 Portage Ave., Palo Alto, CA 94306. For wire transfers, email us and we'll send the details." },
+  { q: "Can I choose what my donation supports?", a: "We can't always promise you can choose where your donation goes, but every $100K+ gift warrants a conversation with our philanthropy team about your giving opportunities and the impact they will have." },
+  { q: "Is Ambition Angels tax-exempt?", a: "Yes. Ambition Angels is a 501(c)(3) tax-exempt organization. Your gift is deductible to the extent allowed by law. Our tax ID number is 87-2513010." },
+  { q: "Who supports Ambition Angels?", a: "Ambition Angels partners with mission-minded individuals and foundations whose support funds our work. We are grateful for our partners and their commitment to supporting low-income, Black and brown teens." },
+];
+
 export default function DonatePage() {
+  const showBanner = Date.now() < GIVING_TUESDAY_ENDS;
   return (
     <>
-      {/* HERO — two column: copy left, widget right */}
-      <section className="relative pt-32 pb-16 lg:pt-44 lg:pb-24 bg-ink overflow-hidden">
-        {/* Background photo */}
-        <Image
-          src="/images/yingchou-han-IJrIeCs3D4g-unsplash.jpg"
-          alt=""
-          fill
-          priority
-          className="object-cover object-[center_top]"
-          aria-hidden="true"
-        />
-        {/* Dark overlay — lightened so teen's face reads through the photo */}
-        <div className="absolute inset-0 bg-ink/40" />
-        {/* Dot texture on top */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
-            backgroundSize: "22px 22px",
-          }}
-        />
-
-        <div className="container-site relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-
-            {/* LEFT — copy */}
-            <div>
-              <div className="inline-block text-xs font-medium text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6 fade-up">
-                Become an Angel Investor in a Teen&apos;s Future
+      <div className="aa-page" style={{ fontFamily: "var(--font-body)", color: "var(--ink)", background: "var(--paper)", overflowX: "clip" }}>
+        {showBanner && (
+          <>
+            <section aria-label="Giving Tuesday" style={{ background: "var(--orange)" }}>
+              <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "18px clamp(20px,4vw,32px)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px 32px" }}>
+                <p style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "4px 18px", margin: "0" }}>
+                  <span style={{ fontFamily: "var(--font-display)", fontWeight: "900", textTransform: "uppercase", letterSpacing: "-0.01em", fontSize: "clamp(28px,3vw,40px)", lineHeight: "0.95", color: "var(--ink)" }}>Giving Tuesday · Dec 1</span>
+                  <span style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "16px", lineHeight: "1.4", color: "var(--ink)" }}>Help a young person explore careers before they have to choose one.</span>
+                </p>
+                <a className="hv-7ccd06" href="#give" style={{ display: "inline-flex", alignItems: "center", minHeight: "48px", padding: "0 26px", borderRadius: "999px", background: "var(--ink)", color: "var(--cream)", fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "15px", flexShrink: "0" }}>Become an Angel →</a>
               </div>
-
-              <h1 className="font-display font-black text-5xl lg:text-6xl text-cream mb-7 leading-none tracking-tight uppercase fade-up stagger-1">
-                One gift.<br />
-                A teen&apos;s<br />
-                <span className="text-orange">whole</span><br />
-                future.
+            </section>
+          </>
+        )}
+        <section style={{ position: "relative", background: "var(--ink)", overflow: "hidden" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "clamp(72px,9vw,120px) clamp(20px,4vw,32px) clamp(64px,8vw,96px)", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,440px),1fr))", gap: "clamp(32px,5vw,72px)", alignItems: "end" }}>
+            <div>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 20px" }}>Donate</p>
+              <h1 style={{ fontFamily: "var(--font-display)", fontWeight: "900", textTransform: "uppercase", fontSize: "clamp(52px,6.6vw,100px)", lineHeight: "0.9", letterSpacing: "-0.015em", color: "var(--cream)", margin: "0" }}>
+                {"Help more students see "}
+                <span style={{ color: "var(--orange)" }}>what work can look like.</span>
               </h1>
-
-              <blockquote className="border-l-4 border-orange pl-5 mb-5 fade-up stagger-2">
-                <p className="text-gray-mid text-base lg:text-lg leading-relaxed italic mb-2">
-                  &ldquo;Every individual has massive potential. When teens are set on a pathway to an economically empowered future, we all benefit.&rdquo;
-                </p>
-                <cite className="not-italic text-gray-mid/60 text-sm">
-                  — Remi Sobomehin, Founder and CEO
-                </cite>
-              </blockquote>
-
-              <p className="text-gray-mid text-base leading-relaxed mb-8">
-                Angel investors put real money behind founders before they&apos;ve proven themselves, because they believe in the potential. That&apos;s exactly what an Ambition Angel does for a teen. You invest before they&apos;ve had a chance to show the world what they can do. That&apos;s the bet.
-              </p>
-
-              <div className="flex flex-wrap gap-3 fade-up stagger-3">
-                {HEADLINE_STATS.map((s) => (
-                  <div key={s.label} className="bg-cream/5 border border-cream/10 rounded-card px-4 py-3">
-                    <div className="font-display font-black text-xl text-orange tracking-tight">{s.value}</div>
-                    <div className="text-gray-mid text-xs">{s.label}</div>
-                    {s.note && <div className="text-gray-mid/60 text-xs mt-0.5 italic leading-snug">{s.note}</div>}
-                  </div>
-                ))}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "28px", maxWidth: "520px" }}>
+              <p style={{ fontSize: "clamp(17px,1.5vw,19px)", lineHeight: "1.65", color: "var(--gray-mid)", margin: "0" }}>{"Most students are asked to make big decisions before they've seen many real options. Your gift helps Ambition bring introships, internships for the students who want to go deeper, and guidance from trusted adults to students who would not otherwise get them."}</p>
+              <div>
+                <DonateButton className={pillClass("primary", "lg")}>Donate</DonateButton>
               </div>
             </div>
-
-            {/* RIGHT — Donate CTA */}
-            <div className="bg-cream rounded-card-lg shadow-2xl p-10 flex flex-col items-center justify-center text-center gap-6 min-h-[360px] fade-up stagger-2">
-              <div className="font-display font-black text-5xl text-ink tracking-tight leading-none uppercase">
-                Give <span className="text-orange">today.</span>
-              </div>
-              <p className="text-gray-warm text-base leading-relaxed max-w-xs">
-                Every dollar funds a teen&apos;s career internship. 100% free for every student who needs it.
-              </p>
-              <DonateButton className="bg-orange hover:bg-orange-dark text-white font-semibold text-lg px-10 py-5 rounded-full transition-colors shadow-lg shadow-orange/30 min-h-[56px] inline-flex items-center" >
-                Become an Angel
-              </DonateButton>
-              <p className="text-gray-mid text-xs">Secure · Tax-deductible · Takes 60 seconds</p>
-            </div>
-
           </div>
-        </div>
-      </section>
-
-      {/* SPONSOR A SCHOOL */}
-      <section
-        className="section-pad bg-[#F5F4F0] relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            <div>
-              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
-                Directed Giving
-              </p>
-              <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6 tracking-tight leading-tight">
-                Sponsor a school.
-              </h2>
-              <div className="space-y-4 text-gray-warm leading-relaxed">
-                <p>
-                  One school. One year. Every student in it gets real career exposure, and every adult who works with them gets the tools to talk about it.
-                </p>
-                <p>
-                  Some partners come to us with a school already in mind. A place they went, a place their company sits, a place their family cares about. Others ask us to bring them one. Both work.
-                </p>
+        </section>
+        <section style={{ background: "var(--cream)", borderBottom: "1px solid var(--rule)", padding: "clamp(48px,6vw,72px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,220px),1fr))", gap: "32px" }}>
+            {stats.map((s, i) => (
+              <div key={i}>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: "900", textTransform: "uppercase", fontSize: "clamp(52px,5vw,76px)", lineHeight: "0.9", color: "var(--orange)" }}>{s.v}</div>
+                <div style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "16px", color: "var(--ink)", marginTop: "8px" }}>{s.l}</div>
+                {s.hasNote && (
+                  <>
+                    <div style={{ fontSize: "13px", lineHeight: "1.45", color: "var(--muted)", marginTop: "4px", maxWidth: "240px" }}>{s.note}</div>
+                  </>
+                )}
               </div>
-              <a
-                href="/meet"
-                className="mt-8 inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px]"
-              >
-                Talk to us about sponsoring a school
-              </a>
-              <p className="mt-6 text-gray-warm/80 text-sm leading-relaxed">
-                Some partners also fund a reward for the classroom or program that commits the most. If that&apos;s interesting, we&apos;ll build it in.
-              </p>
+            ))}
+          </div>
+        </section>
+        <section id="give" style={{ background: "var(--paper)", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "720px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)", textAlign: "center" }}>
+            <h2 style={{ fontFamily: "var(--font-display)", fontWeight: "900", textTransform: "uppercase", fontSize: "clamp(52px,6.4vw,96px)", lineHeight: "0.9", letterSpacing: "-0.015em", color: "var(--ink)", margin: "0 0 20px" }}>Give today.</h2>
+            <p style={{ fontSize: "19px", lineHeight: "1.6", color: "var(--charcoal)", margin: "0 0 32px" }}>Every dollar helps a young person explore careers before they have to choose one. 100% free for every student who needs it.</p>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <DonateButton className={pillClass("primary", "lg")}>Become an Angel</DonateButton>
             </div>
-
-            <div
-              className="bg-ink rounded-card-lg p-8 lg:p-10 relative overflow-hidden"
-              style={{
-                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
-                backgroundSize: "22px 22px",
-              }}
-            >
-              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-6">
-                What one sponsored school gets
-              </p>
-              <ul className="space-y-5">
-                {[
-                  "30-day career internships for every student in the building",
-                  "A dashboard for every teacher, counselor, and mentor who works with them",
-                  "Career conversation prompts tied to each student's internship",
-                  "The school pays nothing in year one",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-gray-mid text-base leading-relaxed">
-                    <span className="w-6 h-6 rounded-full bg-orange/15 border border-orange/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-3 h-3 text-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
-                    {item}
+            <p style={{ fontFamily: "var(--font-heading)", fontWeight: "500", fontSize: "13px", color: "var(--muted)", margin: "16px 0 0" }}>Secure · Tax-deductible · Takes 60 seconds</p>
+          </div>
+        </section>
+        <section style={{ background: "var(--surface-tint)", backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)", backgroundSize: "22px 22px", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: "clamp(40px,6vw,80px)", alignItems: "start" }}>
+            <div>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 16px" }}>Directed giving</p>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(34px,4.2vw,48px)", letterSpacing: "-0.02em", lineHeight: "1.12", margin: "0 0 20px", color: "var(--ink)" }}>Sponsor a school.</h2>
+              <p style={{ fontSize: "18px", lineHeight: "1.65", color: "var(--charcoal)", margin: "0 0 14px" }}>One school. One year. Every student in it gets real career exposure, and every adult who works with them gets the tools to talk about it.</p>
+              <p style={{ fontSize: "18px", lineHeight: "1.65", color: "var(--charcoal)", margin: "0 0 14px" }}>Some partners come to us with a school already in mind. A place they went, a place their company sits, a place their family cares about. Others ask us to bring them one. Both work.</p>
+              <p style={{ fontSize: "16px", lineHeight: "1.6", color: "var(--muted)", margin: "0 0 24px" }}>{"Some partners also fund a reward for the classroom or program that commits the most. If that's interesting, we'll build it in."}</p>
+              <a href="mailto:hello@ambitionangels.org?subject=Sponsoring%20a%20school" style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "16px", display: "inline-flex", alignItems: "center", minHeight: "44px" }}>Talk to us about sponsoring a school →</a>
+            </div>
+            <div style={{ background: "var(--paper)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card-lg)", padding: "clamp(28px,4vw,40px)" }}>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange-dark)", margin: "0 0 20px" }}>What one sponsored school gets</p>
+              <ul style={{ listStyle: "none", margin: "0", padding: "0", display: "flex", flexDirection: "column" }}>
+                {gets.map((g, i) => (
+                  <li key={i} style={{ display: "grid", gridTemplateColumns: "44px 1fr", gap: "12px", alignItems: "baseline", padding: "16px 0", borderTop: "1px solid var(--rule)" }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontWeight: "900", fontSize: "30px", lineHeight: "1", color: "var(--orange)" }}>{g.n}</span>
+                    <span style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "17px", lineHeight: "1.45", color: "var(--ink)" }}>{g.t}</span>
                   </li>
                 ))}
               </ul>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* THE STORY */}
-      <section className="section-pad">
-        <div className="container-site">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-
-            {/* Text */}
+        </section>
+        <section style={{ background: "var(--paper)", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: "clamp(40px,6vw,80px)", alignItems: "center" }}>
             <div>
-              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
-                Why This Matters
-              </p>
-              <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6 leading-tight">
-                Most teens have seen fewer than five careers. Usually whatever their parents do.
-              </h2>
-              <div className="space-y-4 text-gray-warm leading-relaxed">
-                <p>
-                  Remi Sobomehin grew up in Portland, attended his father&apos;s community nonprofit as a kid, and made it to Stanford. Not luck. The right support showed up at the right time.
-                </p>
-                <p>
-                  After graduating, he went to East Palo Alto and got to work. He kept hitting the same wall: he could not get teens to show up. Meanwhile his co-founder Demetric was at Facebook watching teens spend 8 hours a day on their phones.
-                </p>
-                <div className="border-l-4 border-orange pl-6 py-2">
-                  <p className="font-bold text-ink text-lg leading-snug">
-                    That is not a crisis to solve. That is the most powerful channel in the history of youth development.
-                  </p>
-                </div>
-                <p>
-                  So they built for it. Ambition meets teens where they already are and gives them what no one else will: a real look at what a career feels like before they have to choose one.
-                </p>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 16px" }}>Why this matters</p>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(30px,3.6vw,42px)", letterSpacing: "-0.02em", lineHeight: "1.15", margin: "0 0 24px", color: "var(--ink)" }}>Most teens have seen fewer than five careers. Usually whatever their parents do.</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <p style={{ fontSize: "17px", lineHeight: "1.7", color: "var(--charcoal)", margin: "0" }}>{"Remi Sobomehin grew up in Portland, attended his father's community nonprofit as a kid, and made it to Stanford. Not luck. The right support showed up at the right time."}</p>
+                <p style={{ fontSize: "17px", lineHeight: "1.7", color: "var(--charcoal)", margin: "0" }}>After graduating, he went to East Palo Alto and got to work. He kept hitting the same wall: he could not get teens to show up. Meanwhile his co-founder Demetric was at Facebook watching teens spend 8 hours a day on their phones.</p>
+                <p style={{ fontSize: "17px", lineHeight: "1.7", color: "var(--charcoal)", margin: "0" }}>That is not a crisis to solve. That is the most powerful channel in the history of youth development.</p>
+                <p style={{ fontSize: "17px", lineHeight: "1.7", color: "var(--charcoal)", margin: "0" }}>So they built for it. Ambition meets young people where they already are and gives them what no one else will: a real look at what a career feels like before they have to choose one.</p>
               </div>
             </div>
-
-            {/* Founder photos stacked */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="relative rounded-card-lg overflow-hidden aspect-[3/4]">
-                <Image
-                  src="/images/Remi-Sobomehin_edited_edited.jpg"
-                  alt="Remi Sobomehin, CEO"
-                  fill
-                  className="object-cover object-top"
-                />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-ink/80 to-transparent p-4">
-                  <div className="font-heading font-semibold text-cream text-sm">Remi Sobomehin</div>
-                  <div className="text-gray-mid text-xs">Founder &amp; CEO</div>
-                </div>
-              </div>
-              <div className="relative rounded-card-lg overflow-hidden aspect-[3/4] mt-8">
-                <Image
-                  src="/images/deme_edited.jpg"
-                  alt="Demetric Sanders, Tech Partner"
-                  fill
-                  className="object-cover object-center"
-                />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-ink/80 to-transparent p-4">
-                  <div className="font-heading font-semibold text-cream text-sm">Demetric Sanders</div>
-                  <div className="text-gray-mid text-xs">Tech Partner</div>
-                </div>
-              </div>
+            <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: "16px" }}>
+              <img src="/images/site/doodles/doodle-62.png" alt="" aria-hidden="true" style={{ position: "absolute", right: "-12px", top: "-56px", width: "96px", opacity: "0.35", pointerEvents: "none" }} />
+              <figure style={{ margin: "0" }}>
+                <Image src="/images/Remi-Sobomehin_edited_edited.jpg" width={2002} height={1609} sizes="(max-width: 768px) 50vw, 300px" alt="Remi Sobomehin" style={{ width: "100%", aspectRatio: "4/5", objectFit: "cover", borderRadius: "var(--radius-card)", display: "block" }} />
+                <figcaption style={{ marginTop: "10px" }}>
+                  <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "15px", color: "var(--ink)" }}>Remi Sobomehin</span>
+                  <span style={{ fontSize: "13px", color: "var(--muted)" }}>Founder & CEO</span>
+                </figcaption>
+              </figure>
+              <figure style={{ margin: "48px 0 0" }}>
+                <Image src="/images/deme_edited.jpg" width={841} height={638} sizes="(max-width: 768px) 50vw, 300px" alt="Demetric Sanders" style={{ width: "100%", aspectRatio: "4/5", objectFit: "cover", borderRadius: "var(--radius-card)", display: "block" }} />
+                <figcaption style={{ marginTop: "10px" }}>
+                  <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "15px", color: "var(--ink)" }}>Demetric Sanders</span>
+                  <span style={{ fontSize: "13px", color: "var(--muted)" }}>Tech Partner</span>
+                </figcaption>
+              </figure>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* YOUR GIFT DOES THREE THINGS */}
-      <section
-        className="section-pad bg-ink relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <Image
-          src="/images/doodles/Doodle 54@3x.png"
-          alt=""
-          width={160}
-          height={50}
-          className="absolute bottom-10 right-10 opacity-15 pointer-events-none"
-          aria-hidden="true"
-        />
-        <div className="container-site relative z-10">
-          <div className="max-w-xl mb-12">
-            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
-              Every Dollar You Give Does Work
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream leading-tight">
-              Here&apos;s where your money goes.
-            </h2>
+        </section>
+        <section style={{ background: "var(--ink)", backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)", backgroundSize: "22px 22px", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)" }}>
+            <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 16px" }}>Every dollar you give does work</p>
+            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(34px,4.2vw,48px)", letterSpacing: "-0.02em", lineHeight: "1.12", margin: "0 0 48px", color: "var(--cream)" }}>{"Here's where your money goes."}</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: "20px" }}>
+              {uses.map((u, i) => (
+                <article key={i} style={{ background: "rgb(250 250 248 / 0.05)", border: "1px solid rgb(250 250 248 / 0.14)", borderRadius: "var(--radius-card-lg)", padding: "clamp(24px,3vw,32px)" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: "900", fontSize: "56px", lineHeight: "0.9", color: "var(--orange)", marginBottom: "16px" }}>{u.n}</div>
+                  <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "22px", color: "var(--cream)", margin: "0 0 10px" }}>{u.t}</h3>
+                  <p style={{ fontSize: "16px", lineHeight: "1.6", color: "var(--gray-mid)", margin: "0" }}>{u.b}</p>
+                </article>
+              ))}
+            </div>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-up stagger-1">
-            {[
-              {
-                num: "01",
-                label: "The App",
-                body: "Your gift puts career internships in front of teens who have never seen the jobs up close. Free for every student, in a classroom or on their own.",
-              },
-              {
-                num: "02",
-                label: "The Content",
-                body: "Donations power new internship tracks and the Guide dashboard that puts every adult in a teen's corner. More careers to try on, and more adults ready to talk about them.",
-              },
-              {
-                num: "03",
-                label: "The Proof",
-                body: "See the real difference your support makes through updates, data, and student stories. We report honestly on outcomes because you deserve to know your gift is working.",
-              },
-            ].map((col) => (
-              <div
-                key={col.label}
-                className="bg-cream/5 border border-cream/10 rounded-card-lg p-8 hover:bg-cream/10 hover:border-orange/30 transition-all duration-200 group"
-              >
-                <div className="font-display font-black text-7xl text-orange/20 leading-none mb-4 tracking-tight group-hover:text-orange/30 transition-colors">
-                  {col.num}
-                </div>
-                <h3 className="font-heading font-bold text-xl text-cream mb-3">
-                  {col.label}
-                </h3>
-                <p className="text-gray-mid text-sm leading-relaxed">{col.body}</p>
-              </div>
-            ))}
+        </section>
+        <section style={{ background: "var(--paper)", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "820px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)" }}>
+            <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 16px" }}>Questions about giving</p>
+            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(30px,3.6vw,40px)", letterSpacing: "-0.02em", lineHeight: "1.15", margin: "0 0 32px", color: "var(--ink)" }}>Everything you need to know.</h2>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {faq.map((q, i) => (
+                <details key={i} style={{ borderTop: "1px solid var(--rule)", padding: "4px 0" }}>
+                  <summary style={{ cursor: "pointer", minHeight: "56px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "18px", color: "var(--ink)" }}>
+                    {q.q}
+                    <span aria-hidden="true" style={{ color: "var(--orange)", fontSize: "24px", lineHeight: "1" }}>+</span>
+                  </summary>
+                  <p style={{ fontSize: "16px", lineHeight: "1.6", color: "var(--charcoal)", margin: "0 0 18px" }}>{q.a}</p>
+                </details>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="section-pad border-t border-gray-light">
-        <div className="container-site">
-          <div className="max-w-2xl mx-auto">
-            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
-              Questions About Giving
-            </p>
-            <h2 className="font-heading font-bold text-3xl lg:text-4xl text-ink mb-10">
-              Everything you need to know.
-            </h2>
-            <DonateFaq />
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </>
   );
 }

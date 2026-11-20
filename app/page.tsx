@@ -1,666 +1,166 @@
-"use client";
-import { useState } from "react";
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import Image from "next/image";
-import CareerQuizModal from "@/components/CareerQuizModal";
-import IPhoneMockup from "@/components/IPhoneMockup";
-import AnimatedCounter from "@/components/AnimatedCounter";
-import AppStoreButtons from "@/components/AppStoreButtons";
-import DashboardMockup from "@/components/DashboardMockup";
-import { trackEvent } from "@/lib/analytics";
-import { HEADLINE_STATS } from "@/lib/stats";
+import PillCTA from "@/components/site/PillCTA";
+import ScreenGuideDashboard from "@/components/site/screens/ScreenGuideDashboard";
+import ScreenIntroship from "@/components/site/screens/ScreenIntroship";
+import { STATS } from "@/lib/stats";
 
-const pillars = [
-  {
-    icon: "01",
-    title: "Pick a career.",
-    body: "Entrepreneurship, nursing, game design, wealth management, engineering, and more. Careers most of them have never seen up close.",
-  },
-  {
-    icon: "02",
-    title: "Show up to work.",
-    body: "Videos, quizzes, and hands-on activities. On a school Chromebook during advisory, or on their phone on the bus. Same internship either way.",
-  },
-  {
-    icon: "03",
-    title: "Leave with a direction.",
-    body: "By day 30 they know what the work feels like, what it pays, and what the path in looks like. Then they try another one.",
-  },
+const steps = [
+  { n: "01", t: "Pick a career.", b: "Students choose from 50 careers, from nursing and firefighting to game design and wealth management." },
+  { n: "02", t: "Complete an introship.", b: "8 to 10 minutes on what the job is, what people do all day, and what it pays." },
+  { n: "03", t: "Talk with a guide.", b: "Their teacher or mentor gets a question tied to that career, so the conversation starts with something real." },
 ];
 
-const guideSupports = [
-  {
-    title: "A live roster.",
-    body: "Every student, their current internship, progress, and last activity. On track, making progress, or needs a check-in.",
-  },
-  {
-    title: "Prompts tied to the work.",
-    body: "Not generic career questions. Questions about the internship they are in right now.",
-  },
-  {
-    title: "The quiet ones find you.",
-    body: "The students who went quiet show up at the top of your week, with a note you can send in one click.",
-  },
+const featured = [
+  { name: "Registered Nurse", img: "/images/site/illus/registered-nurse-future.webp", href: "/curriculum/nursing" },
+  { name: "Software Engineer", img: "/images/site/illus/software-engineer-future.webp", href: "/curriculum/software-engineering" },
+  { name: "Chef", img: "/images/site/illus/chef-future.webp", href: "/curriculum/culinary-arts" },
+].map((c) => ({ ...c, alt: "A student as a future " + c.name.toLowerCase() }));
+
+const adults = [
+  { t: "A live dashboard.", b: "Every student, the career they're exploring, and who needs a check-in." },
+  { t: "Progress at a glance.", b: "Participation across a class, a cohort, or a whole site." },
+  { t: "Conversation prompts.", b: "A question tied to the exact introship each student just finished." },
 ];
 
-const whereItRuns = [
-  {
-    title: "In school.",
-    body: "Advisory, homeroom, or a career-connected learning block. Every student in the room, on the computers they already use, with the teacher watching progress.",
-  },
-  {
-    title: "In programs.",
-    body: "After-school, mentoring, juvenile justice, faith communities. 15 minutes twice a week, built into time you already run.",
-  },
-  {
-    title: "In community college.",
-    body: "Cohort programs where the whole measure of success is helping students land somewhere.",
-  },
-  {
-    title: "On their own.",
-    body: "A teen who isn't in any of those can download the app and start today. Any adult in their corner signs up as a Guide and sees what they're working on.",
-  },
+const stats = [
+  { v: STATS.teensReached.value, l: "young people reached" },
+  { v: STATS.titleI.value, l: "come from Title I schools" },
+  { v: STATS.futureOrientation.value, l: "more students taking real steps toward a career" },
 ];
 
-const team = [
-  {
-    name: "Remi Sobomehin",
-    title: "CEO",
-    quote:
-      "My parents ran youth nonprofits throughout my childhood and instilled in me a dedication to serve communities that have been left behind. All of our youth deserve the highest quality investments, and when that reality comes to fruition, we all benefit.",
-    initials: "RS",
-    photo: "/images/Remi-Sobomehin_edited_edited.jpg",
-  },
-  {
-    name: "Demetric Sanders",
-    title: "Tech Partner",
-    quote:
-      "I overcame childhood adversity to become a first-generation college graduate. At Facebook I worked on the teens team and saw how effectively phones reach young people. I asked why we weren't using that for something that actually helps them. Now we are.",
-    initials: "DS",
-    photo: "/images/deme_edited.jpg",
-  },
-];
-
-export default function Home() {
-  const [quizOpen, setQuizOpen] = useState(false);
-
-  return (
+export default function Home() {  return (
     <>
-      <CareerQuizModal isOpen={quizOpen} onClose={() => setQuizOpen(false)} />
-
-      {/* HERO -- split screen */}
-      <section className="relative min-h-[92vh] flex overflow-hidden">
-
-        {/* LEFT -- photo fills this column */}
-        <div className="relative w-full lg:w-[58%] min-h-[40vh] lg:min-h-0 overflow-hidden">
-          <div className="absolute inset-0" data-parallax="0.12">
-            <div className="absolute inset-0 scale-110">
-              <Image
-                src="/images/hero-image.jpg"
-                alt="Teen with phone, looking forward"
-                fill
-                priority
-                className="object-cover object-center"
-              />
-            </div>
-          </div>
-          {/* Subtle bottom fade on mobile only */}
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-ink to-transparent lg:hidden" />
-        </div>
-
-        {/* RIGHT -- ink panel with dot texture */}
-        <div
-          className="relative flex-1 lg:w-[42%] bg-ink flex items-center"
-          style={{
-            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
-            backgroundSize: "22px 22px",
-          }}
-        >
-          {/* Doodle 62 -- staircase upward arrow -- top-left of this panel */}
-          <Image
-            src="/images/doodles/Doodle 62@3x.png"
-            alt=""
-            width={120}
-            height={120}
-            className="absolute top-8 left-6 opacity-25 -rotate-12"
-            aria-hidden="true"
-          />
-
-          <div className="px-8 lg:px-12 py-20 pt-32 lg:pt-20 max-w-xl w-full">
-            <div className="inline-block text-xs font-medium text-orange bg-orange/10 border border-orange/30 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6 fade-up">
-              Freshman Year to Career
-            </div>
-
-            <h1 className="font-display font-black text-5xl lg:text-6xl text-cream mb-5 leading-none tracking-tight uppercase fade-up stagger-1">
-              Career exposure.<br />
-              <span className="text-orange">In their pocket.</span><br />
-              <span className="text-orange">In their classroom.</span>
-            </h1>
-
-            <p className="font-body text-gray-mid text-base lg:text-lg mb-8 leading-relaxed max-w-sm fade-up stagger-2">
-              Ambition delivers real careers through 30-day simulated internships. On the web during class or program time, and on the phone everywhere else. Free for every student.
-            </p>
-
-            {/* Primary CTAs — the school ask leads */}
-            <div className="flex flex-wrap gap-3 fade-up stagger-3">
-              <Link
-                href="/schools"
-                onClick={() => trackEvent("schools_cta_clicked", { source: "home_hero" })}
-                className="bg-orange hover:bg-orange-dark text-white font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 shadow-lg shadow-orange/30 min-h-[52px] inline-flex items-center"
-              >
-                Bring Ambition to your students
-              </Link>
-              <a
-                href="#get-the-app"
-                className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold text-base px-8 py-4 rounded-full transition-colors duration-200 border border-cream/20 min-h-[52px] inline-flex items-center"
-              >
-                Get the app
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* THE AMBITION APPROACH */}
-      <section
-        className="section-pad bg-ink"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site">
-          <div className="max-w-2xl mb-14">
-            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
-              The Ambition Approach
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream mb-6 tracking-tight fade-up stagger-1">
-              30 days inside a real career. Then they pick another one.
-            </h2>
-            <p className="text-gray-mid text-lg leading-relaxed fade-up stagger-2">
-              Every internship has a fictional employer, real work, and something they actually build by the end. 15 minutes a day.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {pillars.map((p, i) => (
-              <div
-                key={p.icon}
-                className={`bg-cream/5 border border-cream/10 rounded-card p-7 hover:bg-cream/10 hover:shadow-xl hover:shadow-orange/10 hover:-translate-y-1 border-b-2 border-b-transparent hover:border-b-orange/40 transition-all duration-200 cursor-default fade-up stagger-${i + 1}`}
-              >
-                <div className="font-display font-black text-8xl lg:text-9xl text-orange/20 mb-5 leading-none tracking-tight">
-                  {p.icon}
-                </div>
-                <h3 className="font-heading font-semibold text-xl text-cream mb-3 tracking-tight">
-                  {p.title}
-                </h3>
-                <p className="text-gray-mid text-sm leading-relaxed">{p.body}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Link
-              href="/the-app"
-              className="bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm min-h-[44px] inline-flex items-center"
-            >
-              See the Platform
-            </Link>
-            <Link
-              href="/curriculum"
-              className="bg-cream/10 hover:bg-cream/20 text-cream font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm min-h-[44px] inline-flex items-center"
-            >
-              Explore Careers
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* STATS BAR — proof it works */}
-      <section
-        className="bg-ink py-12 lg:py-16 relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8" data-stagger="120">
-            {HEADLINE_STATS.map((stat) => (
-              <div key={stat.label} className="reveal text-center relative">
-                {stat.note && (
-                  <Image
-                    src="/images/doodles/Doodle 70@3x.png"
-                    alt=""
-                    width={220}
-                    height={160}
-                    className="opacity-20 absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/4 pointer-events-none"
-                    aria-hidden="true"
-                  />
-                )}
-                <div className="font-display font-black text-5xl lg:text-6xl text-orange mb-1 tracking-tight relative z-10">
-                  <AnimatedCounter value={stat.value} />
-                </div>
-                <div className="text-gray-mid text-sm relative z-10">{stat.label}</div>
-                {stat.note && (
-                  <div className="text-gray-mid/60 text-xs relative z-10 mt-1 leading-snug max-w-[160px] mx-auto">
-                    {stat.note}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* THE OUTCOME — future orientation */}
-      <section className="section-pad">
-        <div className="container-site">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div className="aa-page aa-home" style={{ fontFamily: "var(--font-body)", color: "var(--ink)", background: "var(--paper)", overflowX: "clip" }}>
+        <section style={{ background: "var(--cream)", overflow: "hidden" }}>
+          <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "var(--hero-pad)", display: "grid", gridTemplateColumns: "var(--hero-cols)", gap: "clamp(32px,4vw,64px)", alignItems: "center" }}>
             <div>
-              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
-                The Outcome
-              </p>
-              <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6 tracking-tight leading-tight fade-up stagger-1">
-                A teen who can picture their future starts working toward it.
-              </h2>
-              <div className="space-y-4 text-gray-warm leading-relaxed">
-                <p className="fade-up stagger-2">
-                  Future orientation is a teen&apos;s belief that their future is worth working toward right now. It is one of the strongest predictors of whether a young person stays connected to school and work into their twenties.
-                </p>
-                <p className="fade-up stagger-3">
-                  We track one thing most closely: whether a teen is taking real steps toward a career, not just imagining one. Across more than 1,000 teens, that went up 14%.
-                </p>
-                <p className="font-semibold text-ink fade-up stagger-3">
-                  They do the work. They leave on their way to a career that pays.
-                </p>
-              </div>
-              <Link
-                href="/impact"
-                className="mt-8 inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm min-h-[44px] fade-up stagger-4"
-              >
-                See the full results
-              </Link>
-            </div>
-
-            {/* Orange big number card */}
-            <div
-              className="relative bg-orange rounded-card-lg p-12 lg:p-14 text-center overflow-hidden fade-up"
-              style={{
-                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)",
-                backgroundSize: "20px 20px",
-              }}
-            >
-              <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/[0.07]" />
-              <span className="font-display font-black text-[6rem] lg:text-[8rem] text-white leading-none tracking-tight block">
-                14%
-              </span>
-              <p className="text-white/85 text-base leading-relaxed mt-4 max-w-sm mx-auto">
-                Increase in teens taking real steps toward a career, not just imagining one.
-              </p>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-white/70">
-                Pre and post · 1,000+ teens
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* THE GUIDE LAYER — for the adults in their corner */}
-      <section
-        className="section-pad bg-[#F5F4F0] relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <div className="max-w-2xl mb-12 fade-up">
-            <p className="text-xs font-bold text-orange uppercase tracking-widest mb-4">
-              For the Adults in Their Corner
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight leading-tight mb-5">
-              They do the internship. You see all of it.
-            </h2>
-            <p className="text-gray-warm text-lg leading-relaxed">
-              Every teacher, counselor, mentor, and parent gets a dashboard. You see who&apos;s moving and who stalled, what each teen is working on today, and a prompt tied to that exact internship. The career conversation is ready before you sit down.
-            </p>
-          </div>
-
-          {/* Dashboard laptop with the teen's phone tucked right beside it.
-              IPhoneMockup keeps its full 280×570 layout box when scaled, so
-              it sits in a wrapper sized to the scaled result, base lifted to
-              the laptop's base (above the caption line). */}
-          <div className="flex justify-center items-end gap-6 lg:gap-10 mb-12 fade-up">
-            <DashboardMockup className="w-full max-w-3xl min-w-0" />
-            <div className="hidden md:block relative flex-shrink-0" style={{ width: 168, height: 372 }}>
-              <div className="absolute bottom-[30px] left-0 origin-bottom-left scale-[0.6]">
-                <IPhoneMockup />
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 20px" }}>For schools and youth programs</p>
+              <h1 style={{ fontFamily: "var(--font-display)", fontWeight: "900", textTransform: "uppercase", letterSpacing: "-0.015em", fontSize: "clamp(52px,6.4vw,104px)", lineHeight: "0.88", color: "var(--ink)", margin: "0 0 24px" }}>
+                {"Career exposure students can "}
+                <span style={{ color: "var(--orange)" }}>actually use.</span>
+              </h1>
+              <p style={{ fontSize: "clamp(17px,1.4vw,19px)", lineHeight: "1.6", color: "var(--charcoal)", margin: "0 0 32px", maxWidth: "520px", textWrap: "pretty" }}>Students explore careers through introships, 8 to 10 minute looks inside real jobs built with the professionals who do them. Then their teachers, mentors, and program staff get a prompt to turn what they explored into a real conversation.</p>
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+                <PillCTA size="lg" href="/schools#start">Bring Ambition to your students</PillCTA>
+                <Link className="hv-189c7d" href="/curriculum" style={{ display: "inline-flex", alignItems: "center", minHeight: "52px", padding: "0 28px", borderRadius: "999px", border: "1.5px solid var(--ink)", color: "var(--ink)", fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "16px" }}>Explore careers</Link>
               </div>
             </div>
+            <div style={{ width: "100%", aspectRatio: "var(--hero-art-ratio)", borderRadius: "var(--radius-card-lg)", overflow: "hidden", background: "rgb(253 245 234)" }}>
+              <img src="/images/site/illus/software-engineer-scene.webp" alt="A student imagining herself writing code at a studio desk" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            </div>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {guideSupports.map((s, i) => (
-              <div
-                key={s.title}
-                className={`bg-white border border-gray-light rounded-card-lg p-7 shadow-sm fade-up stagger-${i + 1}`}
-              >
-                <h3 className="font-heading font-bold text-ink text-lg mb-2 tracking-tight">{s.title}</h3>
-                <p className="text-gray-warm text-sm leading-relaxed">{s.body}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10 flex flex-wrap gap-4 fade-up">
-            <Link
-              href="/the-app#dashboard"
-              className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px]"
-            >
-              See the dashboard
-            </Link>
-            <Link
-              href="/schools#guides"
-              className="inline-flex items-center bg-ink/[0.06] hover:bg-ink/[0.12] text-ink border border-ink/15 font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px]"
-            >
-              Sign up as a Guide
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* WHERE IT RUNS */}
-      <section
-        className="section-pad bg-ink relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <div className="max-w-2xl mb-12">
-            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
-              Where It Runs
+        </section>
+        <section style={{ background: "var(--paper)", padding: "clamp(64px,8vw,104px) 0" }}>
+          <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "0 clamp(20px,4vw,48px)" }}>
+            <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 14px" }}>How it works</p>
+            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(30px,3.6vw,44px)", letterSpacing: "-0.02em", lineHeight: "1.15", color: "var(--ink)", margin: "0 0 clamp(32px,4vw,48px)" }}>From a career to a conversation.</h2>
+            <ol style={{ listStyle: "none", margin: "0", padding: "0", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,280px),1fr))", gap: "clamp(16px,2vw,24px)" }}>
+              {steps.map((s, i) => (
+                <li key={i} style={{ background: "var(--cream)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "clamp(24px,3vw,32px)" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: "900", fontSize: "48px", lineHeight: "0.9", color: "var(--orange)", marginBottom: "14px" }}>{s.n}</div>
+                  <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "21px", color: "var(--ink)", margin: "0 0 8px" }}>{s.t}</h3>
+                  <p style={{ fontSize: "16px", lineHeight: "1.6", color: "var(--charcoal)", margin: "0" }}>{s.b}</p>
+                </li>
+              ))}
+            </ol>
+            <p style={{ fontFamily: "var(--font-heading)", fontWeight: "500", fontSize: "16px", lineHeight: "1.5", color: "var(--muted)", margin: "28px 0 0" }}>
+              {"When a career clicks, students can go deeper: a 30-day internship, Life Lessons on the skills every job needs, or an Ambition Coach who does the work. "}
+              <Link href="/how-it-works" style={{ fontWeight: "600", whiteSpace: "nowrap" }}>See how it works →</Link>
             </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-cream tracking-tight leading-tight fade-up stagger-1">
-              One platform. Four places it runs.
-            </h2>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {whereItRuns.map((card, i) => (
-              <div
-                key={card.title}
-                className={`bg-cream/5 border border-cream/10 rounded-card-lg p-7 hover:bg-cream/10 hover:border-orange/30 transition-all duration-200 fade-up stagger-${(i % 4) + 1}`}
-              >
-                <h3 className="font-heading font-bold text-cream text-xl mb-3 tracking-tight">{card.title}</h3>
-                <p className="text-gray-mid text-sm leading-relaxed">{card.body}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10">
-            <Link
-              href="/schools"
-              className="inline-flex items-center bg-orange hover:bg-orange-dark text-white font-semibold px-7 py-3.5 rounded-full transition-colors text-sm min-h-[44px]"
-            >
-              Bring Ambition to your students
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* THE PROBLEM */}
-      <section className="section-pad">
-        <div className="container-site">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+        </section>
+        <section style={{ background: "var(--ink)", padding: "clamp(64px,8vw,104px) 0" }}>
+          <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "0 clamp(20px,4vw,48px)", display: "grid", gridTemplateColumns: "var(--split-cols)", gap: "clamp(32px,5vw,72px)", alignItems: "center" }}>
             <div>
-              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
-                The Gap
-              </p>
-              <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-6 tracking-tight fade-up stagger-1">
-                Nobody hands them a map.
-              </h2>
-              <div className="space-y-4 text-gray-warm leading-relaxed">
-                <p className="fade-up stagger-2">
-                  Teens from low-income communities graduate knowing academic
-                  subjects but not how to make their way in a workforce that is changing
-                  faster than any curriculum can keep up with.
-                </p>
-                <p className="fade-up stagger-3">
-                  A young person who hasn&apos;t found a path by 25 is far more
-                  likely to end up unemployed, in poverty, or without stable
-                  housing. The programs built to prevent that have never reached
-                  enough of them.
-                </p>
-              </div>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 14px" }}>What students see</p>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(30px,3.6vw,44px)", letterSpacing: "-0.02em", lineHeight: "1.15", color: "var(--cream)", margin: "0 0 18px" }}>A real career in 8 to 10 minutes.</h2>
+              <p style={{ fontSize: "17px", lineHeight: "1.6", color: "var(--gray-mid)", margin: "0 0 28px", maxWidth: "460px" }}>What the job is, what a day looks like, and what it pays. On a school computer during class, or on their phone anywhere else.</p>
+              <Link href="/curriculum" style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "16px", display: "inline-flex", alignItems: "center", minHeight: "44px" }}>Explore all 50 careers →</Link>
             </div>
-            <div
-              className="bg-orange-light border border-orange/10 rounded-card-lg p-8 lg:p-10 fade-up relative overflow-hidden"
-              style={{
-                backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.15) 1px, transparent 1px)",
-                backgroundSize: "18px 18px",
-              }}
-            >
-              <div className="space-y-6">
-                {[
-                  { pct: "Under 5", label: "careers most teens have seen up close, usually whatever their parents do" },
-                  { pct: "1", label: "counselor for every 400+ students in most public high schools" },
-                  { pct: "8 hrs", label: "a day teens already spend on a screen" },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center gap-5">
-                    <div className="font-display font-black text-3xl lg:text-4xl text-orange flex-shrink-0 w-28 lg:w-32 tracking-tight">
-                      {item.pct}
-                    </div>
-                    <div className="text-charcoal text-sm leading-snug">
-                      {item.label}
-                    </div>
-                  </div>
+            <div style={{ minWidth: "0" }}>
+              <ScreenIntroship device="laptop" onDark={true} caption="" />
+            </div>
+          </div>
+          <div className="aa-hide-phone" style={{ maxWidth: "1240px", margin: "clamp(48px,6vw,72px) auto 0", padding: "0 clamp(20px,4vw,48px)" }}>
+            <ul aria-label="Featured careers" style={{ listStyle: "none", margin: "0", padding: "0", display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: "20px" }}>
+              {featured.map((c, i) => (
+                <li key={i} style={{ background: "rgb(250 250 248 / 0.05)", border: "1px solid rgb(250 250 248 / 0.12)", borderRadius: "var(--radius-card)", overflow: "hidden" }}>
+                  <Link className="hv-7ccd06" href={c.href} style={{ display: "block", color: "var(--cream)" }}>
+                    <img src={c.img} alt={c.alt} style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", display: "block", background: "rgb(253 245 234)" }} />
+                    <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", padding: "16px 18px" }}>
+                      <span style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "17px" }}>{c.name}</span>
+                      <span aria-hidden="true" style={{ color: "var(--orange)" }}>→</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+        <section style={{ background: "var(--cream)", padding: "clamp(64px,8vw,104px) 0" }}>
+          <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "0 clamp(20px,4vw,48px)" }}>
+            <div style={{ maxWidth: "640px", marginBottom: "clamp(32px,4vw,48px)" }}>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 14px" }}>What adults get</p>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(30px,3.6vw,44px)", letterSpacing: "-0.02em", lineHeight: "1.15", color: "var(--ink)", margin: "0 0 16px" }}>Something real to talk about.</h2>
+              <p style={{ fontSize: "17px", lineHeight: "1.6", color: "var(--charcoal)", margin: "0" }}>{"Any adult in a student's corner can be their guide. No curriculum to learn, and nobody from Ambition needs to be in the room."}</p>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "var(--adult-cols)", gap: "clamp(32px,4vw,56px)", alignItems: "center" }}>
+              <div className="aa-hide-phone" style={{ minWidth: "0" }}>
+                <ScreenGuideDashboard caption="" />
+              </div>
+              <ul style={{ listStyle: "none", margin: "0", padding: "0", display: "flex", flexDirection: "column" }}>
+                {adults.map((a, i) => (
+                  <li key={i} style={{ padding: "20px 0", borderTop: "1px solid var(--rule)" }}>
+                    <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "19px", color: "var(--ink)", margin: "0 0 6px" }}>{a.t}</h3>
+                    <p style={{ fontSize: "16px", lineHeight: "1.6", color: "var(--charcoal)", margin: "0" }}>{a.b}</p>
+                  </li>
                 ))}
-              </div>
-
-              {/* Capstone — the conclusion the three stats lead to */}
-              <div className="mt-8 pt-6 border-t border-orange/20">
-                <p className="font-display font-black text-3xl lg:text-5xl text-orange tracking-tight leading-[1.05] text-right">
-                  We work in all three.
-                </p>
-              </div>
+                <li style={{ paddingTop: "20px", borderTop: "1px solid var(--rule)" }}>
+                  <Link href="/schools" style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "16px", display: "inline-flex", alignItems: "center", minHeight: "44px" }}>For schools and programs →</Link>
+                </li>
+              </ul>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS — dark treatment */}
-      <section
-        className="py-16 lg:py-20 bg-ink relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site relative z-10">
-          <p className="text-xs font-semibold text-orange uppercase tracking-widest mb-10 text-center fade-up">
-            From the students
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                quote: "I never knew what I wanted to do. After the entrepreneurship internship, I started selling custom bracelets at school. I make $200 a month now.",
-                name: "Destiny M.",
-                grade: "10th Grade",
-                location: "Oakland, CA",
-                initials: "DM",
-              },
-              {
-                quote: "The wealth management track changed how I think about money. I taught my mom what I learned and I'm starting to think I might have a future here.",
-                name: "Marcus T.",
-                grade: "11th Grade",
-                location: "East Palo Alto, CA",
-                initials: "MT",
-              },
-              {
-                quote: "I did the nursing internship and it clicked. I know exactly what I'm doing after high school. No one in my family has ever worked in healthcare.",
-                name: "Aaliyah R.",
-                grade: "12th Grade",
-                location: "Richmond, CA",
-                initials: "AR",
-              },
-            ].map((t, i) => (
-              <div
-                key={t.name}
-                className={`bg-ink-soft border border-white/10 rounded-card-lg p-7 hover:border-white/20 hover:-translate-y-0.5 transition-all duration-200 fade-up stagger-${i + 1} flex flex-col`}
-              >
-                <div className="font-display font-black text-6xl text-orange leading-none mb-3 -mt-1" aria-hidden="true">
-                  &ldquo;
+        </section>
+        <section style={{ background: "var(--paper)", padding: "clamp(64px,8vw,104px) 0", borderTop: "1px solid var(--rule)" }}>
+          <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "0 clamp(20px,4vw,48px)" }}>
+            <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 14px" }}>Impact</p>
+            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(30px,3.6vw,44px)", letterSpacing: "-0.02em", lineHeight: "1.15", color: "var(--ink)", margin: "0 0 clamp(32px,4vw,48px)" }}>{"What we've seen so far."}</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,240px),1fr))", gap: "clamp(24px,3vw,40px)" }}>
+              {stats.map((s, i) => (
+                <div key={i} style={{ paddingTop: "20px", borderTop: "3px solid var(--orange)" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: "900", textTransform: "uppercase", fontSize: "clamp(64px,6vw,96px)", lineHeight: "0.9", color: "var(--ink)" }}>{s.v}</div>
+                  <p style={{ fontSize: "17px", lineHeight: "1.5", color: "var(--charcoal)", margin: "10px 0 0", maxWidth: "280px" }}>{s.l}</p>
                 </div>
-                <p className="text-white/75 text-sm leading-relaxed flex-1 mb-6">
-                  {t.quote}
-                </p>
-                <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-                  <div className="w-10 h-10 rounded-full bg-orange/10 border border-orange/30 flex items-center justify-center flex-shrink-0">
-                    <span className="font-heading font-bold text-orange text-xs">{t.initials}</span>
-                  </div>
-                  <div>
-                    <div className="font-heading font-semibold text-white text-sm">{t.name}</div>
-                    <div className="text-[#999] text-xs">{t.grade} &middot; {t.location}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* APP SHOWCASE — where "Get the app" lands */}
-      <section
-        id="get-the-app"
-        className="section-pad bg-[#F5F4F0] relative overflow-hidden scroll-mt-24"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-
-            {/* Text */}
-            <div className="reveal">
-              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-3">The App</p>
-              <h2 className="font-display font-black text-5xl lg:text-6xl text-[#0E0E0E] mb-6 leading-none tracking-tight uppercase">
-                Everywhere<br /><span className="text-orange">class<br />isn&apos;t.</span>
-              </h2>
-              <p className="text-charcoal text-lg leading-relaxed mb-8 max-w-lg">
-                The same 30-day internships, on their phone. A teen who isn&apos;t in a school or program can download Ambition and start today, and a teen who is can keep going on the bus, at practice, at home. Free for every student.
-              </p>
-              <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-start">
-                <AppStoreButtons variant="lockup" source="home_app_showcase" />
-              </div>
-              <div className="mt-6 flex flex-wrap gap-4 items-center">
-                <Link
-                  href="/the-app#demo"
-                  onClick={() => trackEvent("app_demo_teaser_clicked", { source: "home" })}
-                  className="group inline-flex items-center gap-3 bg-ink hover:bg-charcoal text-cream font-semibold pl-3 pr-6 py-2.5 rounded-full transition-all hover:-translate-y-0.5 shadow-lg text-sm min-h-[48px]"
-                >
-                  <span className="flex items-center justify-center w-9 h-9 rounded-full bg-orange text-white">
-                    <svg className="w-4 h-4 translate-x-px" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </span>
-                  Try the interactive demo
-                </Link>
-                <button
-                  onClick={() => {
-                    trackEvent("career_quiz_cta_clicked");
-                    setQuizOpen(true);
-                  }}
-                  className="text-orange font-semibold text-sm hover:text-orange-dark transition-colors min-h-[44px]"
-                >
-                  Or take the career quiz &rarr;
-                </button>
-              </div>
+              ))}
             </div>
-
-            {/* iPhone mockup — floats gently, links into the live demo */}
-            <div className="flex justify-center lg:justify-end reveal reveal-scale">
-              <Link
-                href="/the-app#demo"
-                aria-label="See the interactive app demo"
-                onClick={() => trackEvent("app_demo_teaser_clicked", { source: "home_mockup" })}
-                className="group relative animate-float"
-              >
-                <div
-                  className="absolute -inset-8 rounded-full bg-orange/20 blur-3xl animate-glow pointer-events-none"
-                  aria-hidden="true"
-                />
-                <div className="relative transition-transform duration-300 group-hover:scale-[1.03]">
-                  <IPhoneMockup />
-                </div>
+            <Link href="/impact" style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "16px", display: "inline-flex", alignItems: "center", minHeight: "44px", marginTop: "28px" }}>See the full results →</Link>
+          </div>
+        </section>
+        <section style={{ background: "var(--ink)", padding: "clamp(64px,8vw,104px) 0" }}>
+          <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "0 clamp(20px,4vw,48px)" }}>
+            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(30px,3.6vw,44px)", letterSpacing: "-0.02em", lineHeight: "1.15", color: "var(--cream)", margin: "0 0 clamp(28px,4vw,40px)" }}>Where do you fit?</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,280px),1fr))", gap: "16px" }}>
+              <Link className="hv-c0790c" href="/schools#start" style={{ background: "var(--orange)", color: "var(--ink)", borderRadius: "var(--radius-card-lg)", padding: "clamp(24px,3vw,36px)", display: "flex", flexDirection: "column", gap: "12px", minHeight: "200px" }}>
+                <span style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase" }}>Schools + programs</span>
+                <span style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "24px", lineHeight: "1.25" }}>Bring Ambition to your students.</span>
+                <span style={{ marginTop: "auto", fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "15px" }}>Talk to us →</span>
+              </Link>
+              <Link className="hv-2d679a" href="/students" style={{ background: "rgb(250 250 248 / 0.06)", border: "1px solid rgb(250 250 248 / 0.16)", color: "var(--cream)", borderRadius: "var(--radius-card-lg)", padding: "clamp(24px,3vw,36px)", display: "flex", flexDirection: "column", gap: "12px", minHeight: "200px" }}>
+                <span style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--gray-mid)" }}>Students</span>
+                <span style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "24px", lineHeight: "1.25" }}>{"Start exploring careers. It's free."}</span>
+                <span style={{ marginTop: "auto", fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "15px", color: "var(--orange)" }}>Get the app →</span>
+              </Link>
+              <Link className="hv-2d679a" href="/donate" style={{ background: "rgb(250 250 248 / 0.06)", border: "1px solid rgb(250 250 248 / 0.16)", color: "var(--cream)", borderRadius: "var(--radius-card-lg)", padding: "clamp(24px,3vw,36px)", display: "flex", flexDirection: "column", gap: "12px", minHeight: "200px" }}>
+                <span style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--gray-mid)" }}>Supporters</span>
+                <span style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "24px", lineHeight: "1.25" }}>{"Help more students see what's possible."}</span>
+                <span style={{ marginTop: "auto", fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "15px", color: "var(--orange)" }}>Donate →</span>
               </Link>
             </div>
-
           </div>
-        </div>
-      </section>
-
-      {/* TEAM */}
-      <section
-        className="section-pad bg-[#F5F4F0] relative overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <div className="container-site">
-          <div className="max-w-xl mb-12">
-            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4 fade-up">
-              The People Behind This
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink tracking-tight fade-up stagger-1">
-              Built by two kids who came up without a map.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {team.map((person, i) => (
-              <div
-                key={person.name}
-                className={`bg-white border border-gray-light rounded-card-lg p-8 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 fade-up stagger-${i + 1}`}
-              >
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-orange/30">
-                    <Image
-                      src={person.photo}
-                      alt={person.name}
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <div>
-                    <div className="font-heading font-semibold text-ink">
-                      {person.name}
-                    </div>
-                    <div className="text-gray-warm text-sm">{person.title}</div>
-                  </div>
-                </div>
-                <blockquote className="text-charcoal leading-relaxed text-sm border-l-4 border-orange pl-4">
-                  &ldquo;{person.quote}&rdquo;
-                </blockquote>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8">
-            <Link
-              href="/about"
-              className="text-orange font-medium text-sm hover:text-orange-dark transition-colors duration-200"
-            >
-              Learn about our full team and advisory board &rarr;
-            </Link>
-          </div>
-        </div>
-      </section>
-
+        </section>
+      </div>
     </>
   );
 }

@@ -11,6 +11,7 @@ import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { userMessage } from "@/lib/admin/errors";
 import Link from "next/link";
+import { TextField } from "@/app/admin/_components/ui/Field";
 
 const inputCls =
   "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -72,7 +73,7 @@ function MemberPicker({
 
   return (
     <div className="relative">
-      <input
+      <input aria-label={placeholder.replace(/…$/, "")}
         value={q}
         disabled={disabled}
         onChange={(e) => search(e.target.value)}
@@ -240,14 +241,8 @@ export function HouseholdControls({
             }}
             className="flex items-center gap-2 flex-wrap"
           >
-            <input
-              autoFocus required value={editName} onChange={(e) => setEditName(e.target.value)}
-              placeholder="Household name" className={inputCls + " text-xs w-44"}
-            />
-            <input
-              value={editSalutation} onChange={(e) => setEditSalutation(e.target.value)}
-              placeholder="Salutation (e.g. Matt & Lisa)" className={inputCls + " text-xs w-56"}
-            />
+            <TextField label="Household name" controlSize="md" className="w-44" autoFocus required value={editName} onChange={(e) => setEditName(e.target.value)} />
+            <TextField label="Salutation" placeholder="Matt & Lisa" controlSize="md" className="w-56" value={editSalutation} onChange={(e) => setEditSalutation(e.target.value)} />
             <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50">
               {busy ? "…" : "Save"}
             </button>
@@ -296,14 +291,8 @@ export function HouseholdControls({
       {creating ? (
         <form onSubmit={createHousehold} className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <input
-              autoFocus required value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="Household name" className={inputCls + " text-xs w-44"}
-            />
-            <input
-              value={salutation} onChange={(e) => setSalutation(e.target.value)}
-              placeholder="Salutation (optional)" className={inputCls + " text-xs w-52"}
-            />
+            <TextField label="Household name" controlSize="md" className="w-44" autoFocus required value={name} onChange={(e) => setName(e.target.value)} />
+            <TextField label="Salutation (optional)" controlSize="md" className="w-52" value={salutation} onChange={(e) => setSalutation(e.target.value)} />
             <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50">
               {busy ? "…" : "Create"}
             </button>
@@ -342,7 +331,7 @@ export function HouseholdControls({
             + Create household
           </button>
           {households.length > 0 && (
-            <select
+            <select aria-label="Add to an existing household"
               disabled={busy}
               defaultValue=""
               onChange={(e) => e.target.value && setHousehold(e.target.value)}

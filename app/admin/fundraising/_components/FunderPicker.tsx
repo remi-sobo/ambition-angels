@@ -24,12 +24,15 @@ export default function FunderPicker({
   placeholder = "Search funders…",
   className = "",
   autoFocus = false,
+  label = "Funder",
 }: {
   value: FunderChoice;
   onChange: (next: FunderChoice) => void;
   placeholder?: string;
   className?: string;
   autoFocus?: boolean;
+  /** Accessible name for the search box (the placeholder is not a label). */
+  label?: string;
 }) {
   const [results, setResults] = useState<Result[]>([]);
   const [open, setOpen] = useState(false);
@@ -87,6 +90,7 @@ export default function FunderPicker({
   return (
     <div ref={boxRef} className={`relative ${className}`}>
       <input
+        aria-label={label}
         value={query}
         autoFocus={autoFocus}
         onChange={(e) => {

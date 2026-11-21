@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { userMessage } from "@/lib/admin/errors";
 import { useMemo, useState } from "react";
 import { TYPE } from "@/lib/admin/typeScale";
+import { TextareaField } from "@/app/admin/_components/ui/Field";
 
 export type ProspectScore = {
   hubspot_contact_id: string;
@@ -218,13 +219,7 @@ export default function ScoreEditor({
         <label className="block text-xs uppercase tracking-wider text-ink-2 mb-1">
           Notes
         </label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={3}
-          placeholder="Why this score: context, sources, what you'd do next."
-          className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
-        />
+        <TextareaField label="Why this score" placeholder="Context, sources, what you'd do next." className="w-full" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
       </div>
 
       <div className="mt-5 pt-4 border-t border-hairline flex items-center justify-between gap-3 flex-wrap">

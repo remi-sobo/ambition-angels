@@ -64,7 +64,7 @@ Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + auth), S
 - `charcoal` `#3D3D3D`; `gray-warm` `#6B6960`; `gray-mid` `#C8C6BE`; `gray-light` `#F0EEE8`
 - `navy` `#10214B` (admin/BloomOS chrome only)
 
-**Fonts** (loaded in `app/layout.tsx` via `next/font/google`):
+**Fonts** (self-hosted via `next/font/local`, never fetched from Google at build time; woff2 files + OFL licenses in `app/fonts/<family>/`, shared definitions in `app/fonts/index.ts`, Lora defined in `app/shannon/page.tsx`):
 - `font-display` — Big Shoulders Display (large hero headlines; forced uppercase sitewide via globals.css)
 - `font-heading` — Poppins (section headings, UI labels)
 - `font-body` — DM Sans (body text)

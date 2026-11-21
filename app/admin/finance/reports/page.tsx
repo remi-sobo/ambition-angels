@@ -1,4 +1,3 @@
-import Link from "next/link";
 import EmptyState from "@/app/admin/_components/EmptyState";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
@@ -6,6 +5,9 @@ import { getMetricCatalog } from "@/lib/admin/metrics/catalog";
 import { checkExportGate } from "@/lib/admin/metrics/exportGate";
 import Metric from "../../_components/Metric";
 import PageHeader from "../../_components/PageHeader";
+import PageShell from "../../_components/ui/PageShell";
+import Button from "../../_components/ui/Button";
+import DataTable from "../../_components/ui/DataTable";
 import BoardReport from "../report/BoardReport";
 import ComposeForm from "./_components/ComposeForm";
 import ExportControls from "./_components/ExportControls";
@@ -52,9 +54,9 @@ export default async function FinanceReportsPage({
   const ctx = await getOrgContext();
   if (!ctx) {
     return (
-      <div className="px-4 lg:px-8 py-6 lg:py-8">
+      <PageShell width="reading">
         <PageHeader title="Reports" subtitle="Sign in to build reports." />
-      </div>
+      </PageShell>
     );
   }
   const supabase = createServerSupabase();
@@ -82,13 +84,9 @@ export default async function FinanceReportsPage({
     const narrative = (narrativeRow?.body as string | null) ?? null;
 
     return (
-      <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+      <PageShell width="reading" className="space-y-6">
         <PageHeader
-          eyebrow={
-            <Link href="/admin/finance/reports" className="hover:text-ink-1 transition-colors">
-              ← Reports
-            </Link>
-          }
+          breadcrumb={[{ label: "Reports", href: "/admin/finance/reports" }]}
           title={title}
           subtitle={`Draft · ${keys.length} metric${keys.length === 1 ? "" : "s"} · ${ctx.orgName}`}
         />
@@ -100,7 +98,7 @@ export default async function FinanceReportsPage({
           unconfirmed: gate.unconfirmed,
         }} />
 
-        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+        <section className="bg-surface border border-hairline rounded-panel overflow-hidden">
           <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>The numbers</h2>
           </div>
@@ -117,7 +115,7 @@ export default async function FinanceReportsPage({
           )}
         </section>
 
-        <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+        <section className="bg-surface border border-hairline rounded-panel overflow-hidden">
           <div className="px-5 py-4 border-b border-hairline">
             <h2 className={TYPE.cardTitle}>Narrative</h2>
           </div>
@@ -130,7 +128,7 @@ export default async function FinanceReportsPage({
             </p>
           )}
         </section>
-      </div>
+      </PageShell>
     );
   }
 
@@ -147,19 +145,15 @@ export default async function FinanceReportsPage({
     id: string; title: string | null; filename: string; created_at: string;
   }>;
 
+  // Form archetype at reading width (V4 Stage G2): one primary action (the
+  // board report), compose, recent exports on DataTable v2.
+  type Recent = (typeof recent)[number];
   return (
-    <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+    <PageShell width="reading" className="space-y-6">
       <PageHeader
         title="Reports"
-        subtitle="Draft always; flag unresolved figures inline; block only the exit (Contract 7)."
-        actions={
-          <Link
-            href="/admin/finance/reports?view=board"
-            className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
-          >
-            Board financial report →
-          </Link>
-        }
+        subtitle="Draft any time. Unresolved figures are flagged where they appear, and only the export is held back."
+        primaryAction={<Button href="/admin/finance/reports?view=board">Board financial report</Button>}
       />
 
       <ComposeForm
@@ -173,38 +167,41 @@ export default async function FinanceReportsPage({
           }))}
       />
 
-      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
-        <div className="px-5 py-4 border-b border-hairline">
-          <h2 className={TYPE.cardTitle}>
-            Recent exports <span className="text-ink-3 font-normal">· {recent.length}</span>
-          </h2>
-        </div>
-        {recent.length === 0 ? (
-          <div className="p-4">
-            <EmptyState
-              label="exports"
-              title="Nothing exported yet"
-              hint={`Compose a report above and export it; each export lands in the file cabinet (documents, type “fin_report”) with its waivers on the record.`}
-            />
-          </div>
-        ) : (
-          <ul className="divide-y divide-hairline">
-            {recent.map((d) => (
-              <li key={d.id} className="px-5 py-3 flex items-center gap-3">
-                <a
-                  href={`/api/admin/documents/${d.id}/url`}
-                  className="text-sm font-medium text-ink-1 hover:text-orange transition-colors truncate"
-                >
+      <section>
+        <h2 className={`${TYPE.cardTitle} mb-2`}>Recent exports</h2>
+        <DataTable<Recent>
+          label="Recent exports"
+          noun={{ one: "export", many: "exports" }}
+          columns={[
+            {
+              key: "title",
+              header: "Report",
+              card: "title",
+              render: (d) => (
+                <a href={`/api/admin/documents/${d.id}/url`} className="font-semibold text-ink-1 hover:underline underline-offset-2">
                   {d.title || d.filename}
                 </a>
-                <span className="ml-auto text-xs text-ink-3 [font-variant-numeric:tabular-nums]">
-                  {d.created_at.slice(0, 10)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+              ),
+            },
+            { key: "date", header: "Exported", className: "text-ink-2 tabular-nums", render: (d) => d.created_at.slice(0, 10) },
+          ]}
+          data={{ rows: recent, total: recent.length, page: 0, pageSize: 20 }}
+          getRowId={(d) => d.id}
+          getRowLabel={(d) => d.title || d.filename}
+          spec={{ sortable: [], defaultSort: null, pageSize: 20 }}
+          state={{ page: 0, sort: null }}
+          baseHref="/admin/finance/reports"
+          empty={
+            <div className="p-4">
+              <EmptyState
+                label="exports"
+                title="Nothing exported yet"
+                hint="Compose a report above and export it. Each export lands in Documents with its waivers on the record."
+              />
+            </div>
+          }
+        />
       </section>
-    </div>
+    </PageShell>
   );
 }

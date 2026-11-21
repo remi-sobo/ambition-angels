@@ -116,7 +116,9 @@ export type ButtonProps = AsButton | AsLink;
 
 export default function Button(props: ButtonProps) {
   const { variant = "primary", size = "md", className = "", loading = false, iconOnly = false, children } = props;
-  const cls = buttonClass({ variant, size, iconOnly, className });
+  // Loading is not "unavailable": keep full strength so the label stays
+  // readable, and show the wait cursor.
+  const cls = buttonClass({ variant, size, iconOnly, className: `${loading ? "!opacity-100 cursor-wait" : ""} ${className}` });
   const content = (
     <>
       {loading ? <Spinner /> : null}

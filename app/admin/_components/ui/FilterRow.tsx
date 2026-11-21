@@ -13,7 +13,9 @@ import { TYPE } from "@/lib/admin/typeScale";
  * Filters button when its count is above zero, and active quick filters.
  *
  * "/" focuses the search box from anywhere on the page, unless the person is
- * already typing in a field.
+ * already typing in a field. On a page with a FilterRow this takes "/" from
+ * the shell's global search (which keeps Ctrl/Cmd+K); on every other page
+ * "/" still opens global search.
  */
 export type QuickFilter = {
   key: string;
@@ -70,8 +72,11 @@ export default function FilterRow({
       e.preventDefault();
       inputRef.current?.focus();
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    // Capture phase, so this runs before the shell's global search listener
+    // (GlobalSearch also binds "/"). Focus lands in the list's own search,
+    // and GlobalSearch then sees a focused input and stays closed.
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
   }, [search, disabled]);
 
   const anyActive = (filters?.count ?? 0) > 0 || quickFilters.some((q) => q.active) || !!search?.value;

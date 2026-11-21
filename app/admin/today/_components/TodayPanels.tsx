@@ -89,6 +89,7 @@ export function MinePanel({
                 <div className="min-w-0 flex-1">
                   <p className={`${TYPE.body} font-semibold truncate`}>{i.title}</p>
                   <p className={`${TYPE.metadata} truncate`}>
+                    <span className={`sm:hidden ${TONE[d.tone]}`}>{d.text} · </span>
                     {i.kindLabel}
                     {i.context ? ` · ${i.context}` : ""}
                   </p>

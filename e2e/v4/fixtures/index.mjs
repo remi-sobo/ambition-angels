@@ -474,7 +474,7 @@ function populate(T, add, tables, team) {
     { name: "Summer 2026 Internships", status: "completed", start: -160, end: -110, p: 3 },
     { name: "Spring 2026 Career Lab: Westbrook", status: "completed", start: -260, end: -180, p: 3 },
     { name: "Winter 2027 Career Lab: Del Sol", status: "planning", start: 50, end: 140, p: 4 },
-  ].map((c, i) => ({ id: T.id(23), org_id: ORG_ID, name: c.name, program: i === 3 ? "Summer Internships" : "Career Labs", program_id: programs[i === 3 ? 1 : 0].id, term: c.name.split(" ").slice(0, 2).join(" "), location: schoolPartners[c.p].name, partner_id: schoolPartners[c.p].id, capacity: 20, start_date: ymd(daysFromNow(c.start)), end_date: ymd(daysFromNow(c.end)), status: c.status, accepting_applications: c.status === "planning", owner_id: i % 2 ? team[2].id : null, created_at: iso(daysAgo(200)) })));
+  ].map((c, i) => ({ id: T.id(23), org_id: ORG_ID, name: c.name, program: i === 3 ? "Summer Internships" : "Career Labs", program_id: programs[i === 3 ? 1 : 0].id, term: c.name.split(" ").slice(0, 2).join(" "), location: schoolPartners[c.p].name, partner_id: schoolPartners[c.p].id, capacity: 20, start_date: ymd(daysFromNow(c.start)), end_date: ymd(daysFromNow(c.end)), status: c.status, accepting_applications: c.status === "planning", owner_id: i % 2 ? team[2].id : i === 0 ? team[0].id : null, created_at: iso(daysAgo(200)) })));
   const members = [];
   cohorts.slice(0, 5).forEach((c, ci) => {
     for (let k = 0; k < 15; k++) {
@@ -662,5 +662,31 @@ function populate(T, add, tables, team) {
   // a Gmail-connected-ish backlog for Meetings → connection candidates
   add("connection_candidates", people.slice(40, 44).map((p, i) => ({ id: T.id(83), org_id: ORG_ID, thread_id: `thr${i}`, constituent_id: p.id, subject: ["Coffee next week?", "Re: internship hosting", "Intro from a friend", "Spring panel"][i], status: "pending", created_at: iso(daysAgo(i + 1)) })));
 
-  // ygb registrations (aa.ygb) left empty on purpose; captures empty.
+  // ygb registrations (aa.ygb) left empty on purpose.
+
+  // V4 Stage C: one Talk to log recording with the four card kinds, waiting
+  // to be confirmed (the parse needs a model, so the harness seeds its result).
+  const capId = "c4c4c4c4-0000-4000-8000-000000000001";
+  const donor = people[0];
+  const donorName = `${donor.first_name} ${donor.last_name}`;
+  const recordedAt = iso(new Date(now.getTime() - 40 * 60 * 1000));
+  add("captures", [{
+    id: capId, org_id: ORG_ID, created_by: team[0].id, source_surface: "mobile_plus", context_type: null, context_id: null,
+    transcript: `Had coffee with ${donor.first_name} this morning. She wants to see the spring cohort first. Put her down for fifteen thousand, probably December. I owe her the site-visit dates by Friday. And her tour guide Jaylen went on to start a robotics club.`,
+    duration_seconds: 40, status: "ready", parse_error: null, model_used: "fixture", ai_call_id: null, snoozed_until: null, created_at: recordedAt, updated_at: recordedAt,
+  }]);
+  const card = (n, dest, status, payload, entity) => ({
+    id: `c4c4c4c4-0000-4000-8000-00000000010${n}`, org_id: ORG_ID, capture_id: capId, created_by: team[0].id, position: n, dest, status,
+    entity_type: entity ? "constituent" : null, entity_id: entity ? donor.id : null, heard_name: entity ? donor.first_name : null,
+    match_confidence: entity ? 0.92 : null, match_candidates: entity ? [{ kind: "constituent", id: donor.id, name: donorName, org_name: null, meta: "person", sim: 0.95 }] : [],
+    payload: { ai_drafted: true, ...payload, ...(entity ? { entity_name: donorName } : {}) }, decided_by: null, decided_at: null, applied_table: null, applied_id: null,
+    created_at: recordedAt, updated_at: recordedAt,
+  });
+  add("capture_cards", [
+    card(1, "interaction", "proposed", { kind: "meeting", notes: "Coffee. Wants to see the spring cohort first.", occurred_at: ymd(now), uncertain: [], source_sentence: `Had coffee with ${donor.first_name} this morning.` }, true),
+    card(2, "task", "proposed", { title: `Send ${donor.first_name} the spring site-visit dates`, category: "fundraising", due_date: ymd(daysFromNow(3)), assignee: { handle: "dana", user_id: team[0].id, name: team[0].displayName }, notes: null, uncertain: [] }, true),
+    card(3, "thought", "held", { card_kind: "gift", gift_type: "pledge", amount: 15000, amount_heard: "fifteen thousand", expected: "December", gift_date: null, notes: null, uncertain: ["amount", "date"], source_sentence: "Put her down for fifteen thousand, probably December." }, true),
+    card(4, "thought", "held", { card_kind: "story", title: "The tour guide who started a club", text: "Her student tour guide went on to start a robotics club.", about: "Jaylen M.", identifiable: true, consent: "needed", uncertain: [] }, false),
+    card(5, "thought", "held", { card_kind: "gift", gift_type: "gift", amount: 500, amount_heard: "500", gift_date: ymd(now), notes: null, uncertain: [] }, true),
+  ]);
 }

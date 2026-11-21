@@ -121,7 +121,9 @@ export async function loadMine(
       id: `ask:${a.id}`, kind: "ask", title: a.title?.trim() || `Ask to ${nameOf(a.funder)}`,
       kindLabel: a.status === "draft" ? "Ask, draft" : "Ask, waiting",
       context: [nameOf(a.funder), usd(a.amount_requested)].filter(Boolean).join(" · "),
-      due: a.status === "draft" ? a.ask_date : null, href: `/admin/fundraising/asks/${a.id}`, action: "Open",
+      // ask_date is when the ask was (or is to be) made, not a deadline, so
+      // an open ask never reads as "late"; dated work outranks it.
+      due: null, href: `/admin/fundraising/asks/${a.id}`, action: "Open",
     });
   }
 

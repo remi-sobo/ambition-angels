@@ -12,6 +12,11 @@ import {
 // a message is logged only against constituents whose VERIFIED email is the
 // message's counterparty (no name matching). Idempotent on the Gmail message
 // id via interactions_external_idx, so re-listing a page is harmless.
+//
+// The mailbox is one env credential (GOOGLE_REFRESH_TOKEN), owned by one org
+// (lib/integrations/env-owner.ts). Callers resolve that org and pass it in;
+// every job read, match and write here is scoped to it, and a job without an
+// org does nothing.
 
 const PAGE = 40;
 
@@ -43,7 +48,7 @@ function normalizeCounts(c: Partial<Counts> | null | undefined, watermark: numbe
 
 export async function createGmailJob(
   supabase: SupabaseClient,
-  opts: { orgId: string | null; mode: "backfill" | "incremental"; watermark: number }
+  opts: { orgId: string; mode: "backfill" | "incremental"; watermark: number }
 ): Promise<GmailJob> {
   const { data, error } = await supabase
     .from("gmail_sync_jobs")
@@ -60,16 +65,22 @@ export async function createGmailJob(
   return rowToJob(data);
 }
 
-export async function loadGmailJob(supabase: SupabaseClient, id: string): Promise<GmailJob | null> {
-  const { data, error } = await supabase.from("gmail_sync_jobs").select("*").eq("id", id).maybeSingle();
+export async function loadGmailJob(supabase: SupabaseClient, orgId: string, id: string): Promise<GmailJob | null> {
+  const { data, error } = await supabase
+    .from("gmail_sync_jobs")
+    .select("*")
+    .eq("org_id", orgId)
+    .eq("id", id)
+    .maybeSingle();
   if (error) throw new Error(`load gmail job: ${error.message}`);
   return data ? rowToJob(data) : null;
 }
 
-export async function latestGmailJob(supabase: SupabaseClient): Promise<GmailJob | null> {
+export async function latestGmailJob(supabase: SupabaseClient, orgId: string): Promise<GmailJob | null> {
   const { data } = await supabase
     .from("gmail_sync_jobs")
     .select("*")
+    .eq("org_id", orgId)
     .order("started_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -95,6 +106,14 @@ function rowToJob(row: Record<string, unknown>): GmailJob {
 // Process exactly one page of messages, persist, and return the updated job.
 export async function advanceGmailJob(supabase: SupabaseClient, job: GmailJob): Promise<GmailJob> {
   if (job.status !== "running") return job;
+  const orgId = job.org_id;
+  if (!orgId) {
+    // Legacy job with no org: matching it would cross every tenant. Stop it.
+    return finalize(supabase, job, "failed", [
+      ...job.errors,
+      { message: "job has no org; refusing to match constituents across orgs", occurred_at: new Date().toISOString() },
+    ]);
+  }
 
   // The incremental query is derived from the watermark captured at job
   // creation and must stay stable across pages (Gmail page tokens are bound to
@@ -140,12 +159,11 @@ export async function advanceGmailJob(supabase: SupabaseClient, job: GmailJob): 
       continue;
     }
 
-    let constituentQuery = supabase
+    const { data: matches, error: matchErr } = await supabase
       .from("constituents")
       .select("id, org_id, emails")
+      .eq("org_id", orgId)
       .overlaps("emails", parties);
-    if (job.org_id) constituentQuery = constituentQuery.eq("org_id", job.org_id);
-    const { data: matches, error: matchErr } = await constituentQuery;
     if (matchErr) {
       errors.push({ message: `match: ${matchErr.message}`, message_id: id, occurred_at: new Date().toISOString() });
       counts.skipped += 1;
@@ -197,6 +215,7 @@ export async function advanceGmailJob(supabase: SupabaseClient, job: GmailJob): 
         const { data: inter } = await supabase
           .from("interactions")
           .select("id")
+          .eq("org_id", orgId)
           .eq("external_source", "gmail")
           .eq("external_id", parsed.messageId)
           .eq("constituent_id", primary.id)
@@ -230,6 +249,7 @@ export async function advanceGmailJob(supabase: SupabaseClient, job: GmailJob): 
       .from("gmail_sync_jobs")
       .update({ page_token: page.nextPageToken, counts, errors, updated_at: new Date().toISOString() })
       .eq("id", job.id)
+      .eq("org_id", orgId)
       .select("*")
       .single();
     if (error) throw new Error(`save gmail job: ${error.message}`);

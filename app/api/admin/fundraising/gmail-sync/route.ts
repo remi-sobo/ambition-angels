@@ -9,10 +9,13 @@
  *
  * Requires the gmail.readonly scope on GOOGLE_REFRESH_TOKEN; without it the
  * job completes having logged zero and records the 403 in errors.
+ *
+ * The mailbox belongs to one org (lib/integrations/env-owner.ts); every other
+ * org gets a 403, and every job read is scoped to the owner.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getOrgContext } from "@/lib/admin/auth";
+import { requireEnvIntegrationOwner } from "@/lib/integrations/env-owner";
 import {
   advanceGmailJob,
   createGmailJob,
@@ -25,23 +28,22 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireEnvIntegrationOwner("gmail_sync");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  const orgId = gate.ctx.orgId;
   const supabase = getSupabaseAdmin();
   const body = (await req.json().catch(() => ({}))) as { jobId?: unknown; mode?: unknown };
   const jobId = typeof body.jobId === "string" ? body.jobId : null;
 
   let job: GmailJob | null;
   if (jobId) {
-    job = await loadGmailJob(supabase, jobId);
+    job = await loadGmailJob(supabase, orgId, jobId);
     if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
   } else {
-    const ctx = await getOrgContext();
     const mode = body.mode === "incremental" ? "incremental" : "backfill";
-    const prior = await latestGmailJob(supabase);
+    const prior = await latestGmailJob(supabase, orgId);
     const watermark = mode === "incremental" ? prior?.last_internal_date ?? 0 : 0;
-    job = await createGmailJob(supabase, { orgId: ctx?.orgId ?? null, mode, watermark });
+    job = await createGmailJob(supabase, { orgId, mode, watermark });
   }
 
   if (job.status === "running") job = await advanceGmailJob(supabase, job);
@@ -49,9 +51,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireEnvIntegrationOwner("gmail_sync");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   const supabase = getSupabaseAdmin();
-  return NextResponse.json((await latestGmailJob(supabase)) ?? null);
+  return NextResponse.json((await latestGmailJob(supabase, gate.ctx.orgId)) ?? null);
 }

@@ -4,6 +4,7 @@ import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushGiftToHubSpot } from "@/lib/hubspot/sync-out";
 import { processGiftStewardship } from "@/lib/fundraising/stewardship";
+import { resolveConstituentStrict } from "@/lib/fundraising/constituent-resolve";
 
 // Epic A — manual / offline gift entry. The Stripe pipeline auto-ingests
 // online gifts via the donations trigger; this is the path for checks, cash,
@@ -47,54 +48,26 @@ export async function POST(req: NextRequest) {
   const supabase = createServerSupabase();
 
   // Resolve the donor: explicit id, free-text name (find-or-create), or anon.
+  // Matching is pinned to the active org and never guesses between several
+  // donors (lib/fundraising/constituent-resolve.ts).
   let constituentId: string | null = null;
   let warning: string | undefined;
-  if (isUuid(body.constituent_id)) {
-    constituentId = body.constituent_id;
-  } else if (body.anonymous === true) {
+  if (body.anonymous === true && !isUuid(body.constituent_id)) {
     constituentId = null;
   } else {
-    const name = typeof body.constituent_name === "string" ? body.constituent_name.trim() : "";
-    if (!name) {
+    const resolved = await resolveConstituentStrict(supabase, ctx.orgId, {
+      constituentId: body.constituent_id,
+      name: body.constituent_name,
+    });
+    if ("error" in resolved) {
+      const { status, ...rest } = resolved;
       return NextResponse.json(
-        { error: "constituent_id, constituent_name, or anonymous is required" },
-        { status: 400 }
+        status === 400 ? { error: "constituent_id, constituent_name, or anonymous is required" } : rest,
+        { status }
       );
     }
-    const parts = name.split(/\s+/);
-    const first = parts[0] ?? "";
-    const rest = parts.slice(1).join(" ");
-    const { data: matches } = await supabase
-      .from("constituents")
-      .select("id")
-      .or(
-        [
-          `org_name.ilike.${name}`,
-          rest ? `and(first_name.ilike.${first},last_name.ilike.${rest})` : `first_name.ilike.${name}`,
-          rest ? "" : `last_name.ilike.${name}`,
-        ]
-          .filter(Boolean)
-          .join(",")
-      )
-      .limit(2);
-    if (matches && matches.length >= 1) {
-      constituentId = matches[0].id;
-      if (matches.length > 1) {
-        warning = `Multiple constituents match "${name}" — linked the first; verify on the donor page.`;
-      }
-    } else {
-      const { data: created, error: cErr } = await supabase
-        .from("constituents")
-        .insert({ org_id: ctx.orgId, type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
-        .select("id")
-        .single();
-      if (cErr || !created) {
-        console.error("[gifts] create constituent failed:", cErr?.message);
-        return NextResponse.json({ error: "Could not create constituent" }, { status: 500 });
-      }
-      constituentId = created.id;
-      warning = `Created a new constituent for "${name}" — add contact details on the donor page.`;
-    }
+    constituentId = resolved.constituentId;
+    warning = resolved.warning;
   }
 
   const insert: Record<string, unknown> = {

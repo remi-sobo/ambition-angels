@@ -32,6 +32,8 @@ export default function Drawer({
   footer,
   children,
   width = 480,
+  side = "right",
+  bare = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -41,7 +43,14 @@ export default function Drawer({
   footer?: ReactNode;
   children: ReactNode;
   /** Desktop width in px. 480 is the standard; change it only with a reason. */
-  width?: 480 | 560;
+  width?: 480 | 560 | 760;
+  /** "left" is the phone navigation panel: full height from the left edge
+   *  at every width, never a bottom sheet. */
+  side?: "right" | "left";
+  /** No header or footer chrome: the children fill the panel and draw their
+   *  own (the navigation panel, which carries the sidebar's own surface).
+   *  The title stays as the accessible name, visually hidden. */
+  bare?: boolean;
 }) {
   const panelRef = useFocusTrap<HTMLDivElement>(open, onClose);
   const uid = useId();
@@ -50,8 +59,18 @@ export default function Drawer({
 
   if (!open) return null;
 
+  const widthClass = width === 760 ? "sm:w-[760px]" : width === 560 ? "sm:w-[560px]" : "sm:w-[480px]";
+  const frame =
+    side === "left"
+      ? "fixed inset-0 z-50 flex items-stretch justify-start"
+      : "fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end";
+  const panel =
+    side === "left"
+      ? "relative flex flex-col h-full w-72 max-w-[85vw] overflow-hidden focus:outline-none"
+      : `elevate-modal relative flex flex-col w-full max-h-[92vh] bg-surface border border-outline rounded-t-modal sm:rounded-modal sm:max-h-none sm:m-2.5 ${widthClass} focus:outline-none`;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end">
+    <div className={frame}>
       {/* The scrim: the sidebar espresso at 56%, as in GiftFlow.dc.html. */}
       <div aria-hidden onClick={onClose} className="absolute inset-0 bg-navy/[0.56]" />
       <div
@@ -61,10 +80,17 @@ export default function Drawer({
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
         tabIndex={-1}
-        className={`elevate-modal relative flex flex-col w-full max-h-[92vh] bg-surface border border-outline rounded-t-modal sm:rounded-modal sm:max-h-none sm:m-2.5 ${
-          width === 560 ? "sm:w-[560px]" : "sm:w-[480px]"
-        } focus:outline-none`}
+        className={panel}
       >
+        {bare ? (
+          <>
+            <h2 id={titleId} className="sr-only">
+              {title}
+            </h2>
+            {children}
+          </>
+        ) : (
+          <>
         <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-hairline">
           <div className="min-w-0">
             <h2 id={titleId} className={TYPE.sectionTitle}>
@@ -86,6 +112,8 @@ export default function Drawer({
             {footer}
           </div>
         ) : null}
+          </>
+        )}
       </div>
     </div>
   );

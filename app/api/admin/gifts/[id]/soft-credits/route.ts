@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext, isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { resolveConstituentStrict } from "@/lib/fundraising/constituent-resolve";
 
 // Epic D2 — soft credits: recognition for someone other than the hard-credit
 // donor on a gift (a solicitor, a DAF/match originator, a household member).
@@ -33,44 +34,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { data: gift, error: gErr } = await supabase
     .from("gifts")
     .select("id, amount")
+    .eq("org_id", ctx.orgId)
     .eq("id", params.id)
     .maybeSingle();
   if (gErr || !gift) return NextResponse.json({ error: "Gift not found" }, { status: 404 });
 
   // Resolve the credited constituent.
-  let constituentId: string | null = isUuid(body.constituent_id) ? body.constituent_id : null;
-  let warning: string | undefined;
-  if (!constituentId) {
-    const name = typeof body.constituent_name === "string" ? body.constituent_name.trim() : "";
-    if (!name) return NextResponse.json({ error: "constituent_id or constituent_name is required" }, { status: 400 });
-    const parts = name.split(/\s+/);
-    const first = parts[0] ?? "";
-    const rest = parts.slice(1).join(" ");
-    const { data: matches } = await supabase
-      .from("constituents")
-      .select("id")
-      .or(
-        [
-          `org_name.ilike.${name}`,
-          rest ? `and(first_name.ilike.${first},last_name.ilike.${rest})` : `first_name.ilike.${name}`,
-          rest ? "" : `last_name.ilike.${name}`,
-        ].filter(Boolean).join(",")
-      )
-      .limit(2);
-    if (matches && matches.length >= 1) {
-      constituentId = matches[0].id;
-      if (matches.length > 1) warning = `Multiple constituents match "${name}" — credited the first.`;
-    } else {
-      const { data: created, error: cErr } = await supabase
-        .from("constituents")
-        .insert({ org_id: ctx.orgId, type: "person", first_name: first || name, last_name: rest || null, source: "manual" })
-        .select("id")
-        .single();
-      if (cErr || !created) return NextResponse.json({ error: "Could not create constituent" }, { status: 500 });
-      constituentId = created.id;
-      warning = `Created a new constituent for "${name}".`;
-    }
+  // Resolve the donor inside the active org; several matches are never
+  // guessed (lib/fundraising/constituent-resolve.ts).
+  const resolved = await resolveConstituentStrict(supabase, ctx.orgId, {
+    constituentId: body.constituent_id,
+    name: body.constituent_name,
+  });
+  if ("error" in resolved) {
+    const { status, ...rest } = resolved;
+    return NextResponse.json(rest, { status });
   }
+  const constituentId = resolved.constituentId;
+  const warning = resolved.warning;
 
   const amount = money(body.amount) ?? Number(gift.amount);
   const insert = { org_id: ctx.orgId, gift_id: gift.id, constituent_id: constituentId, type: body.type, amount };

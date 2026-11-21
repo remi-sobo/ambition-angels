@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/admin/auth";
 import { requireEntitlement } from "@/lib/admin/entitlements";
+import { requireEnvIntegrationOwner } from "@/lib/integrations/env-owner";
 import {
   createJob,
   loadJob,
@@ -27,6 +28,10 @@ export async function POST(req: NextRequest) {
   if (!ent.ok) {
     return NextResponse.json({ error: ent.error }, { status: ent.status });
   }
+  // And the session org must be THE owner of the env token (exactly one).
+  const owner = await requireEnvIntegrationOwner("hubspot");
+  if (!owner.ok) return NextResponse.json({ error: owner.error }, { status: owner.status });
+  const orgId = owner.ctx.orgId;
 
   const body = await req.json().catch(() => ({}));
   const jobId =
@@ -34,7 +39,7 @@ export async function POST(req: NextRequest) {
       ? body.jobId
       : null;
 
-  let job = jobId ? await loadJob(jobId) : await createJob(await getAdminUser());
+  let job = jobId ? await loadJob(orgId, jobId) : await createJob(orgId, await getAdminUser());
   if (jobId && !job) {
     return NextResponse.json({ error: "Job not found" }, { status: 404 });
   }
@@ -55,11 +60,14 @@ export async function GET(req: NextRequest) {
   if (!ent.ok) {
     return NextResponse.json({ error: ent.error }, { status: ent.status });
   }
+  const owner = await requireEnvIntegrationOwner("hubspot");
+  if (!owner.ok) return NextResponse.json({ error: owner.error }, { status: owner.status });
+  const orgId = owner.ctx.orgId;
   const url = new URL(req.url);
   const jobId = url.searchParams.get("jobId");
 
   if (jobId) {
-    const job = await loadJob(jobId);
+    const job = await loadJob(orgId, jobId);
     if (!job) {
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
@@ -67,6 +75,6 @@ export async function GET(req: NextRequest) {
   }
 
   // No jobId → return the most recent job (handy for "last synced" display).
-  const job = await loadLatestJob();
+  const job = await loadLatestJob(orgId);
   return NextResponse.json(job ? jobToResponse(job) : { job: null });
 }

@@ -11,12 +11,8 @@ import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
-import {
-  KIND_LABELS,
-  RECUR_OPTIONS,
-  type ComplianceItem,
-  type ChecklistItem,
-} from "../../_components/ComplianceControls";
+import { type ComplianceItem, type ChecklistItem } from "../../_components/ComplianceControls";
+import { KIND_LABELS, RECUR_OPTIONS } from "../../_components/labels";
 import { normalizeAssignee } from "@/lib/admin/assignees";
 import { useAssignees, withSelected } from "@/app/admin/_lib/useAssignees";
 

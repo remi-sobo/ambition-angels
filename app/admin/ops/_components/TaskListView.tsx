@@ -7,6 +7,7 @@ import { userMessage } from "@/lib/admin/errors";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import type { AdminUser } from "@/lib/admin/auth";
 import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
+import { patchTask } from "./taskSave";
 import TaskRow, { PriorityFlag } from "./TaskRow";
 import {
   TASK_CATEGORIES,
@@ -50,7 +51,7 @@ export default function TaskListView({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const { isLeaving, complete } = useTaskComplete();
+  const { isLeaving, complete, cancel } = useTaskComplete();
   const [, startTransition] = useTransition();
 
   // Server is the source of truth; reset local order whenever a refresh
@@ -128,26 +129,22 @@ export default function TaskListView({
   }, [topLevel, activeTop, useDoneDrawer, groupBy, projectNames]);
 
   // ── Reorder (within a group only) ──────────────────────────────────────
-  async function persist(nextTop: OpsTask[]) {
+  async function persist(nextTop: OpsTask[], previous: OpsTask[]) {
     const updates = nextTop
       .map((t, i) => ({ id: t.id, order: i + 1, old: t.display_order }))
       .filter((u) => u.order !== u.old);
     setBusy(true);
     try {
-      await Promise.all(
-        updates.map((u) =>
-          fetch(`/api/admin/ops/tasks/${u.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ display_order: u.order }),
-          })
-        )
-      );
+      const errors = await Promise.all(updates.map((u) => patchTask(u.id, { display_order: u.order })));
+      const failed = errors.find((e) => e !== null);
+      if (failed) {
+        // Roll the optimistic order back; a partial save is re-read from
+        // the server on the refresh below.
+        console.error("Reorder failed:", failed);
+        setLocal(previous);
+        toast.error(failed);
+      }
       startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Reorder failed:", e);
-      toast.error("Couldn't save the new order. Reloading.");
-      router.refresh();
     } finally {
       setBusy(false);
     }
@@ -175,23 +172,24 @@ export default function TaskListView({
       rebuilt.push({ ...p, display_order: i + 1 });
       for (const c of childrenByParent.get(p.id) ?? []) rebuilt.push(c);
     });
+    const previous = local;
     setLocal(rebuilt);
-    persist(nextTop);
+    void persist(nextTop, previous);
   }
 
   // ── Complete (with the collapse animation, drawer mode) ─────────────────
   async function patchStatus(t: OpsTask, status: "todo" | "done") {
     setBusy(true);
     try {
-      await fetch(`/api/admin/ops/tasks/${t.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
+      const failed = await patchTask(t.id, { status });
+      if (failed) {
+        // Bring the row back from its collapse and say why.
+        console.error("Task status save failed:", failed);
+        cancel(t.id);
+        toast.error(failed);
+        return;
+      }
       startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Task complete failed:", e);
-      toast.error("Couldn't save the change.");
     } finally {
       setBusy(false);
     }

@@ -13,9 +13,9 @@ import {
   EditMemberProfile,
   MemberQuickActions,
   OnboardingChecklist,
-  ROLE_LABELS,
   type BoardMemberFull,
 } from "./_components/MemberProfileControls";
+import { ROLE_LABELS } from "./_components/labels";
 
 // Board member profile (governance profile views): the full record behind a
 // roster row — identity + terms + COI, attendance derived from meeting

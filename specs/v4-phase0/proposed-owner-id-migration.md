@@ -1,6 +1,6 @@
 # Proposed migration: owner on donors, asks, cohorts and programs
 
-Status: **waiting on Remi's yes.** Not applied. Not in `supabase/migrations/` yet, because the ledger check fails on any committed migration that production has not applied.
+Status: **approved by Remi and applied to production on 2026-11-21** as `add_owner_id_assignment` (PR #599). `opportunities` was left out, as proposed.
 
 ## Why
 

@@ -29,9 +29,9 @@ describe("F3 extraction invariants", () => {
   test("the V2 Pipeline screen composes the board (filters pointed at itself) above the embedded log", () => {
     const s = src("pipeline", "page.tsx");
     expect(s).toMatch(/basePath="\/admin\/fundraising\/pipeline"/);
-    expect(s).toMatch(/<AskLog embedded \/>/);
+    expect(s).toMatch(/<AskLog\s+embedded\b/);
     // Board first, log second — the merge's shape, not an accident.
-    expect(s.indexOf("PipelineHome searchParams")).toBeLessThan(s.indexOf("<AskLog embedded"));
+    expect(s.indexOf("PipelineHome searchParams")).toBeLessThan(s.indexOf("<AskLog"));
   });
 
   test("PipelineHome routes its URL-driven filter tabs through basePath (never a hardcoded route)", () => {

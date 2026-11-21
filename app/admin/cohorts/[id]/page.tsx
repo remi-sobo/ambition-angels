@@ -22,7 +22,9 @@ import {
 import { EntityTasks } from "../../_components/EntityTasks";
 import { EntityDocuments } from "../../_components/EntityDocuments";
 import { getProgramTerms } from "@/lib/admin/terminology";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
+import { getActiveOrgMembers } from "@/lib/admin/owners-server";
+import OwnerChip from "../../_components/OwnerChip";
 import { TYPE } from "@/lib/admin/typeScale";
 import Alert from "@/app/admin/_components/ui/Alert";
 import { fetchAll } from "@/lib/supabase/fetchAll";
@@ -44,6 +46,8 @@ export default async function CohortPage({ params }: { params: { id: string } })
   const ctx = await getOrgContext();
   if (!ctx) notFound();
   const orgId = ctx.orgId;
+  // V4 B2: the cohort's owner (members of the active org; program.write edits).
+  const [orgMembers, canAssign] = await Promise.all([getActiveOrgMembers(), ctxHasPermission(ctx, "program.write")]);
 
   const { data: cohort } = await supabase
     .from("cohorts").select("*").eq("org_id", orgId).eq("id", params.id).maybeSingle();
@@ -165,6 +169,16 @@ export default async function CohortPage({ params }: { params: { id: string } })
           This group has more attendance marks than one page load reads, so dosage and rates below are incomplete.
         </Alert>
       )}
+      <div className="mt-2 mb-2">
+        <OwnerChip
+          entity="cohorts"
+          id={cohort.id}
+          ownerId={(cohort.owner_id as string | null | undefined) ?? null}
+          members={orgMembers}
+          meId={ctx.userId}
+          canEdit={canAssign}
+        />
+      </div>
       <p className={`${TYPE.bodyMuted} mb-6`}>
         {[cohort.program, cohort.term, cohort.location].filter(Boolean).join(" · ") || "—"}
         {cohort.start_date && (

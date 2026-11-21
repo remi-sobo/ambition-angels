@@ -279,6 +279,9 @@ function populate(T, add, tables, team) {
     };
   });
   const constituents = add("constituents", [...people, ...orgRows]);
+  // V4 B2 assignment: a third owned by the signed-in owner (team[0]), a third
+  // by the development director, the rest unassigned.
+  constituents.forEach((c, i) => { c.owner_id = i % 3 === 0 ? team[0].id : i % 3 === 1 ? team[1].id : null; });
   const foundations = orgRows.filter((o) => o._kind === "foundation");
   const companies = orgRows.filter((o) => o._kind === "company");
   orgRows.forEach((o) => delete o._kind);
@@ -387,7 +390,7 @@ function populate(T, add, tables, team) {
     const f = i < 14 ? foundations[i % foundations.length] : companies[i % companies.length];
     const status = T.pick(enums.asks.status);
     const amt = T.pick([10000, 25000, 50000, 75000]);
-    return { id: T.id(11), org_id: ORG_ID, funder_id: f.id, form: i < 14 ? T.pick(["grant_proposal", "loi"]) : T.pick(["corporate_sponsorship", "major_gift", "event_sponsorship"]), title: `${f.org_name.split(" ")[0]} ${T.pick(["2027 renewal", "Career Labs expansion", "Summer cohort", "Operating support"])}`, amount_requested: amt, ask_date: ymd(daysAgo(T.int(0, 200))), status, amount_committed: ["awarded", "partial"].includes(status) ? amt * (status === "partial" ? 0.5 : 1) : null, decided_on: ["awarded", "partial", "declined"].includes(status) ? ymd(daysAgo(T.int(0, 60))) : null, owner: T.pick(["marcus", "dana"]), grant_id: i < 14 ? grants[i % grants.length].id : null, opportunity_id: i >= 14 ? opps[i % 10].id : null, created_by: "marcus", created_at: iso(daysAgo(T.int(0, 200))) };
+    return { id: T.id(11), org_id: ORG_ID, funder_id: f.id, form: i < 14 ? T.pick(["grant_proposal", "loi"]) : T.pick(["corporate_sponsorship", "major_gift", "event_sponsorship"]), title: `${f.org_name.split(" ")[0]} ${T.pick(["2027 renewal", "Career Labs expansion", "Summer cohort", "Operating support"])}`, amount_requested: amt, ask_date: ymd(daysAgo(T.int(0, 200))), status, amount_committed: ["awarded", "partial"].includes(status) ? amt * (status === "partial" ? 0.5 : 1) : null, decided_on: ["awarded", "partial", "declined"].includes(status) ? ymd(daysAgo(T.int(0, 60))) : null, owner: T.pick(["marcus", "dana"]), owner_id: i % 4 === 0 ? null : i % 4 === 1 ? team[1].id : team[0].id, grant_id: i < 14 ? grants[i % grants.length].id : null, opportunity_id: i >= 14 ? opps[i % 10].id : null, created_by: "marcus", created_at: iso(daysAgo(T.int(0, 200))) };
   }));
 
   // prospects
@@ -471,7 +474,7 @@ function populate(T, add, tables, team) {
     { name: "Summer 2026 Internships", status: "completed", start: -160, end: -110, p: 3 },
     { name: "Spring 2026 Career Lab: Westbrook", status: "completed", start: -260, end: -180, p: 3 },
     { name: "Winter 2027 Career Lab: Del Sol", status: "planning", start: 50, end: 140, p: 4 },
-  ].map((c, i) => ({ id: T.id(23), org_id: ORG_ID, name: c.name, program: i === 3 ? "Summer Internships" : "Career Labs", program_id: programs[i === 3 ? 1 : 0].id, term: c.name.split(" ").slice(0, 2).join(" "), location: schoolPartners[c.p].name, partner_id: schoolPartners[c.p].id, capacity: 20, start_date: ymd(daysFromNow(c.start)), end_date: ymd(daysFromNow(c.end)), status: c.status, accepting_applications: c.status === "planning", created_at: iso(daysAgo(200)) })));
+  ].map((c, i) => ({ id: T.id(23), org_id: ORG_ID, name: c.name, program: i === 3 ? "Summer Internships" : "Career Labs", program_id: programs[i === 3 ? 1 : 0].id, term: c.name.split(" ").slice(0, 2).join(" "), location: schoolPartners[c.p].name, partner_id: schoolPartners[c.p].id, capacity: 20, start_date: ymd(daysFromNow(c.start)), end_date: ymd(daysFromNow(c.end)), status: c.status, accepting_applications: c.status === "planning", owner_id: i % 2 ? team[2].id : null, created_at: iso(daysAgo(200)) })));
   const members = [];
   cohorts.slice(0, 5).forEach((c, ci) => {
     for (let k = 0; k < 15; k++) {

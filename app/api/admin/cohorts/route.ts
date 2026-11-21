@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { findOrCreateProgram } from "@/lib/admin/program/programs";
 import { audit } from "@/lib/audit";
 import { requirePermission } from "@/lib/admin/requirePermission";
+import { createOwnerFor } from "@/lib/admin/owners-server";
 
 const STATUSES = ["planning", "active", "completed", "archived"] as const;
 const isISODate = (v: unknown): v is string =>
@@ -17,7 +18,11 @@ export async function POST(req: NextRequest) {
   if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
 
   // org from session, never a column default (the program-domain defaults are gone).
-  const insert: Record<string, unknown> = { name, org_id: ctx.orgId };
+  // V4 B2: the creator owns a new cohort (and a program it creates) unless
+  // the request names an owner.
+  const owner = await createOwnerFor(body, ctx);
+  if (!owner.ok) return NextResponse.json({ error: owner.error }, { status: 400 });
+  const insert: Record<string, unknown> = { name, org_id: ctx.orgId, owner_id: owner.ownerId };
   if (STATUSES.includes(body?.status as (typeof STATUSES)[number])) insert.status = body!.status;
   for (const f of ["term", "location"] as const) {
     if (typeof body?.[f] === "string" && (body[f] as string).trim())
@@ -34,7 +39,7 @@ export async function POST(req: NextRequest) {
   // (find-or-create), and dual-write the free-text `program` = the program's
   // name so unmigrated readers (cohort lists, rollups) render unchanged.
   if (typeof body?.program === "string" && body.program.trim()) {
-    const program = await findOrCreateProgram(supabase, ctx.orgId, body.program);
+    const program = await findOrCreateProgram(supabase, ctx.orgId, body.program, { ownerId: owner.ownerId });
     if (program) {
       insert.program_id = program.id;
       insert.program = program.name;

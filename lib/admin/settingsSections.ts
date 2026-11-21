@@ -74,6 +74,12 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         blurb: "Set up or restart the plan behind Organization → Strategy.",
         features: ["modules.strategy"],
       },
+      {
+        label: "Career quiz submissions",
+        href: "/admin/legacy",
+        blurb: "Everyone who took the public career quiz, with their matches, plus website donations.",
+        features: ["aa.quiz"],
+      },
     ],
   },
   {

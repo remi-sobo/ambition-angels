@@ -200,12 +200,22 @@ describe("GET /api/admin/gifts/export: a two-org user", () => {
     expect(body).not.toContain("25.00");
   });
 
-  test("no org context is a 401; a role without fundraising.read is a 403", async () => {
+  test("no org context is a 401; a role with neither fundraising.read nor finance.read is a 403", async () => {
     ctx = null;
     expect((await exportGifts(giftsReq())).status).toBe(401);
     ctx = ctxFor(ORG_A);
-    perms = new Set(["finance.read"]);
+    perms = new Set(["program.read", "ops.read"]);
     expect((await exportGifts(giftsReq())).status).toBe(403);
+  });
+
+  test("finance.read alone opens the export, still pinned to the active org", async () => {
+    perms = new Set(["finance.read"]);
+    const res = await exportGifts(giftsReq());
+    expect(res.status).toBe(200);
+    const body = await res.text();
+    expect(body.split("\n")).toHaveLength(2);
+    expect(body).toContain("25.00");
+    expect(body).not.toMatch(/500\.00|900\.00/);
   });
 });
 

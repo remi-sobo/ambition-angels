@@ -367,10 +367,11 @@ describe("V4 A2: no dead links in the persistent chrome", () => {
     }
   });
 
-  test("RecentDonationsWidget points at the live gift home, not /admin/legacy", () => {
-    const src = read("admin", "_components", "overview", "RecentDonationsWidget.tsx");
-    expect(src).not.toMatch(/\/admin\/legacy/);
-    expect(src).toMatch(/href="\/admin\/fundraising\/donors-funders"/);
+  // V4 B2: the overview widgets (RecentDonationsWidget among them) were dead
+  // and are deleted. Quiz submissions (/admin/legacy) keep a live link from
+  // Settings → Organization instead (tests/settings-home.test.ts).
+  test("the deleted overview widgets stay deleted", () => {
+    expect(existsSync(join(__dirname, "..", "app", "admin", "_components", "overview"))).toBe(false);
   });
 
   test("Settings is a sidebar row (active under /admin/settings/*); Help is the footer link", () => {

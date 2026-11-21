@@ -4,11 +4,13 @@ import { getFieldDefs } from "@/lib/admin/customFields";
 import { parseCsvText, suggestMapping, SPINE_FIELDS } from "@/lib/admin/imports/engine";
 import { audit } from "@/lib/audit";
 import { requirePermission } from "@/lib/admin/requirePermission";
+import { ctxHasPermission } from "@/lib/admin/auth";
+import { auditDomain, importPerm, isImportEntity } from "@/lib/admin/imports/perm";
 
 /**
  * POST /api/admin/imports — start an import run (spec #5 E3).
  *
- * Body: { entity_type: 'student', filename?, csv_text }. Parses the file,
+ * Body: { entity_type: 'student' | 'constituent' | 'gift', filename?, csv_text }. Parses the file,
  * stores the raw rows in import_rows (status 'pending'), and returns the
  * header + an auto-suggested mapping for the wizard's mapping step. Nothing
  * touches a spine table until /commit.
@@ -28,8 +30,11 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const entityType = body.entity_type as keyof typeof SPINE_FIELDS;
-  if (entityType !== "student" && entityType !== "constituent") {
-    return NextResponse.json({ error: "entity_type must be 'student' or 'constituent'" }, { status: 400 });
+  if (!isImportEntity(entityType)) {
+    return NextResponse.json({ error: "entity_type must be 'student', 'constituent' or 'gift'" }, { status: 400 });
+  }
+  if (!(await ctxHasPermission(ctx, importPerm(entityType, "write")))) {
+    return NextResponse.json({ error: "You don't have permission to import that." }, { status: 403 });
   }
   const csvText = typeof body.csv_text === "string" ? body.csv_text : "";
   if (!csvText.trim()) return NextResponse.json({ error: "csv_text is required" }, { status: 400 });
@@ -53,7 +58,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const defs = await getFieldDefs(ctx.orgId, entityType);
+  // Gift rows map onto the donor and gift columns only (no custom fields).
+  const defs = entityType === "gift" ? [] : await getFieldDefs(ctx.orgId, entityType);
   const suggested = suggestMapping(header, entityType, defs);
 
   const supabase = getSupabaseAdmin();
@@ -92,7 +98,7 @@ export async function POST(req: NextRequest) {
   }
 
   await audit(req, {
-    action: `${entityType === "constituent" ? "fundraising" : "program"}.import.create`,
+    action: `${auditDomain(entityType)}.import.create`,
     entityType: "import",
     entityId: run.id,
     after: { filename, entity_type: entityType, rows: rows.length },

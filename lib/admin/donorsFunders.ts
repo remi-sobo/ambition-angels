@@ -6,6 +6,9 @@ import {
   type BuiltInView,
   type ViewDefinition,
 } from "@/lib/fundraising/views";
+import { applyTableSort, rowRange, type TableSort } from "@/lib/admin/dataTable";
+import { DF_TABLE, DF_SORT_COLUMNS, DF_PAGE_SIZE } from "@/lib/fundraising/dfTable";
+export { DF_TABLE, DF_PROSPECT_TABLE, DF_SORT_COLUMNS } from "@/lib/fundraising/dfTable";
 
 /**
  * Spec Fundraising, stage F1 — the Donors & Funders data spine.
@@ -21,7 +24,8 @@ import {
  * one-list rule's deliberate exception (lib/fundraising/views.ts).
  */
 
-export const PAGE_SIZE = 50;
+export const PAGE_SIZE = DF_PAGE_SIZE;
+
 
 export type DfRow = {
   id: string;
@@ -73,13 +77,13 @@ export async function getDonorsFunders(
   def: ViewDefinition,
   page: number,
   todayISO: string,
+  sort: TableSort | null = DF_TABLE.defaultSort,
 ): Promise<DonorsFundersData | null> {
   const ctx = await getOrgContext();
   if (!ctx) return null;
   const supabase = createServerSupabase();
   const view = def.view ?? "all";
-  const from = page * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  const { from, to } = rowRange(page, PAGE_SIZE);
 
   // Saved views are org-fenced here (pinned), not just by RLS.
   const savedViewsQ = supabase
@@ -180,11 +184,7 @@ export async function getDonorsFunders(
   q = applyRollupFilters(q, def, todayISO);
 
   const [{ data, count, error }, savedViewsRes] = await Promise.all([
-    q
-      .order("lifetime_total", { ascending: false })
-      .order("last_gift", { ascending: false, nullsFirst: false })
-      .order("id") // stable pagination under ties
-      .range(from, to),
+    orderRollups(q, sort).range(from, to),
     savedViewsQ,
   ]);
 
@@ -201,4 +201,21 @@ export async function getDonorsFunders(
     savedViews: (savedViewsRes.data ?? []) as SavedView[],
     error: error ? error.message : null,
   };
+}
+
+/** The default order is the F1 one (lifetime desc, then most recent gift);
+ *  any other sort is the chosen column with nulls last. Both end on id, so
+ *  paging stays stable under ties. */
+function orderRollups<Q extends { order(c: string, o?: { ascending?: boolean; nullsFirst?: boolean }): Q }>(
+  q: Q,
+  sort: TableSort | null,
+): Q {
+  const isDefault = !sort || (sort.key === "lifetime" && sort.dir === "desc");
+  if (isDefault) {
+    return q
+      .order("lifetime_total", { ascending: false })
+      .order("last_gift", { ascending: false, nullsFirst: false })
+      .order("id");
+  }
+  return applyTableSort(q, sort, DF_SORT_COLUMNS, "id");
 }

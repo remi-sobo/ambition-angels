@@ -369,7 +369,7 @@ export function StageSelect({
     return (
       <span className="flex items-center gap-2 flex-wrap">
         <span className="text-xs text-ink-2">Grant period end (plots the final report):</span>
-        <input
+        <input aria-label="Grant period end"
           type="date"
           value={awardPeriodEnd}
           onChange={(e) => setAwardPeriodEnd(e.target.value)}
@@ -400,7 +400,7 @@ export function StageSelect({
   }
 
   return (
-    <select
+    <select aria-label="Grant stage"
       value={stage}
       disabled={busy}
       onChange={(e) => {
@@ -493,13 +493,13 @@ export function RequirementRow({ requirement: r, today }: { requirement: Require
     return (
       <li className="px-5 py-3">
         <form onSubmit={save} className="flex flex-wrap items-center gap-2">
-          <select value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls + " text-xs"}>
+          <select aria-label="Deadline kind" value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls + " text-xs"}>
             {KINDS.map(([v, l]) => (
               <option key={v} value={v} className="bg-tile">{l}</option>
             ))}
           </select>
-          <input type="date" required value={due} onChange={(e) => setDue(e.target.value)} className={inputCls + " text-xs"} />
-          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (optional)" className={inputCls + " text-xs w-44"} />
+          <input aria-label="Due date" type="date" required value={due} onChange={(e) => setDue(e.target.value)} className={inputCls + " text-xs"} />
+          <input aria-label="Deadline label (optional)" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (optional)" className={inputCls + " text-xs w-44"} />
           <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-2.5 py-1 rounded-full transition-colors disabled:opacity-50">
             {busy ? "Saving…" : "Save"}
           </button>
@@ -612,13 +612,13 @@ export function AddRequirementForm({ grantId }: { grantId: string }) {
 
   return (
     <form onSubmit={submit} className="flex flex-wrap items-center gap-2 px-5 py-3 border-t border-hairline">
-      <select value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls + " text-xs"}>
+      <select aria-label="Deadline kind" value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls + " text-xs"}>
         {KINDS.map(([v, l]) => (
           <option key={v} value={v} className="bg-tile">{l}</option>
         ))}
       </select>
-      <input type="date" required value={due} onChange={(e) => setDue(e.target.value)} className={inputCls + " text-xs"} />
-      <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (optional)" className={inputCls + " text-xs w-44"} />
+      <input aria-label="Due date" type="date" required value={due} onChange={(e) => setDue(e.target.value)} className={inputCls + " text-xs"} />
+      <input aria-label="Deadline label (optional)" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (optional)" className={inputCls + " text-xs w-44"} />
       <button type="submit" disabled={busy} className="text-xs font-semibold text-orange bg-orange/10 border border-orange/30 px-3 py-2 rounded-control hover:bg-orange/20 transition-colors disabled:opacity-50">
         {busy ? "Adding…" : "+ Add deadline"}
       </button>

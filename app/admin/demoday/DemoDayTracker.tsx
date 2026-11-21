@@ -258,12 +258,13 @@ export default function DemoDayTracker() {
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="search"
+            aria-label="Search attendees"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, company, title…"
             className={`${selectCls} flex-1 min-w-[200px]`}
           />
-          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={selectCls}>
+          <select aria-label="Type" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={selectCls}>
             <option value="all">All types</option>
             {ATTENDEE_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -271,7 +272,7 @@ export default function DemoDayTracker() {
               </option>
             ))}
           </select>
-          <select value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} className={selectCls}>
+          <select aria-label="Tag" value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} className={selectCls}>
             <option value="all">All tags</option>
             {ATTENDEE_TAGS.map((t) => (
               <option key={t} value={t}>
@@ -279,7 +280,7 @@ export default function DemoDayTracker() {
               </option>
             ))}
           </select>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls}>
+          <select aria-label="Status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls}>
             <option value="all">Any status</option>
             <option value="tracked">Tracked</option>
             <option value="untracked">Untracked</option>
@@ -471,6 +472,7 @@ function AttendeeCard({
       {/* Note */}
       <div className="mt-3">
         <textarea
+          aria-label={`Note on ${a.name}`}
           value={state.note}
           onChange={(e) => onNoteChange(e.target.value)}
           onBlur={onNoteBlur}

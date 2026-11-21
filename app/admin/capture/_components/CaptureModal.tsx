@@ -8,7 +8,8 @@ import { SPEECH_CAP_SECONDS, formatElapsed } from "@/lib/hooks/continuousSpeech"
 import { useContinuousSpeech } from "@/lib/hooks/useContinuousSpeech";
 import { useConfirm } from "../../_components/feedback/ConfirmProvider";
 import { parseCapture, parseFailureMessage, type CaptureContext, type Surface } from "../_lib/captureApi";
-import { useFocusTrap } from "../_lib/useFocusTrap";
+import Modal from "../../_components/ui/Modal";
+import Button from "../../_components/ui/Button";
 import ConfirmStack from "./ConfirmStack";
 
 /**
@@ -51,8 +52,6 @@ export default function CaptureModal({
   const [failure, setFailure] = useState<{ message: string; words: string; viaSpeech: boolean; speech?: boolean } | null>(null);
   const [step, setStep] = useState(0);
   const [allDone, setAllDone] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useFocusTrap(ref, true);
 
   // Browsers without the speech API go straight to typing.
   const [checked, setChecked] = useState(false);
@@ -63,15 +62,6 @@ export default function CaptureModal({
   useEffect(() => {
     if (checked && !speech.supported && mode === "record") setMode("type");
   }, [checked, speech.supported, mode]);
-
-  // Lock the page behind the sheet (iOS rubber-banding).
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
 
   // Step labels advance while the parse runs.
   useEffect(() => {
@@ -146,17 +136,6 @@ export default function CaptureModal({
     onClose();
   }, [mode, speech, typed, confirm, captureId, router, onClose]);
 
-  // Escape closes (with the same guard). Inner sheets stop their own Escape.
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && mode !== "working") void close();
-    };
-    el.addEventListener("keydown", onKey);
-    return () => el.removeEventListener("keydown", onKey);
-  }, [close, mode]);
-
   const typeInstead = (words: string) => {
     if (speech.phase === "recording") speech.stop();
     sentRef.current = true; // typing takes over; don't auto-send the recording
@@ -172,28 +151,25 @@ export default function CaptureModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:px-4">
-      <div
-        ref={ref}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Record"
-        className="flex max-h-[94vh] w-full flex-col overflow-hidden rounded-t-2xl border-hairline bg-ink shadow-2xl sm:max-w-lg sm:rounded-panel"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-        <div className="flex items-center justify-between gap-3 border-b border-hairline px-5 py-3">
-          <span className={TYPE.sectionHeader}>Record</span>
-          <button
-            type="button"
-            onClick={() => void close()}
-            disabled={mode === "working"}
-            className={`${TYPE.button} min-h-[52px] px-2 text-ink-2 hover:text-ink-1 disabled:opacity-40`}
-          >
-            {mode === "cards" && allDone ? "Done" : mode === "cards" ? "Finish later" : "Cancel"}
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+    // The kit Modal (V4 P1): a bottom sheet on phones, the shared focus trap
+    // (an inner Edit or Fix sheet takes Escape first), scroll lock, and
+    // Escape or the close button run the same discard guard as Cancel.
+    <Modal
+      open
+      onClose={() => {
+        if (mode !== "working") void close();
+      }}
+      title="Record"
+      size="lg"
+      footer={
+        mode === "cards" ? (
+          <Button variant={allDone ? "primary" : "secondary"} onClick={() => void close()}>
+            {allDone ? "Done" : "Finish later"}
+          </Button>
+        ) : undefined
+      }
+    >
+        <div>
           {context && mode !== "cards" && mode !== "working" && (
             <p className={`${TYPE.metadata} mb-4 rounded-control border border-hairline bg-tile px-3 py-2`}>
               About <span className="font-semibold text-ink-1">{context.name}</span>. You don&apos;t have to say the name.
@@ -300,8 +276,7 @@ export default function CaptureModal({
             <ConfirmStack captureId={captureId} onAllDone={() => setAllDone(true)} />
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -397,12 +372,13 @@ function TypePane({
           : "Write it the way you'd say it. You'll check every card before anything is filed."}
       </p>
       <textarea
+        aria-label="Your note"
         data-autofocus
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={7}
         maxLength={MAX_TRANSCRIPT_CHARS}
-        placeholder="Had coffee with Maria Chen. She wants the impact numbers before November. Have Shannon send the one-pager by Friday."
+        placeholder="Had coffee with Maria Chen. She wants the impact numbers before November. Have Jordan send the one-pager by Friday."
         className="w-full rounded-control border-hairline bg-tile px-3 py-2.5 text-base text-ink-1 placeholder-ink-3 focus:border-orange/50 focus:outline-none sm:text-sm"
       />
       <button

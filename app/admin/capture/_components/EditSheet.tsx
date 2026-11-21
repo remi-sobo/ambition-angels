@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState } from "react";
 import { TYPE } from "@/lib/admin/typeScale";
 import { TASK_CATEGORIES, categoryLabel } from "@/app/admin/ops/_types/ops";
 import { useAssignees, withSelected } from "../../_lib/useAssignees";
 import { DEST_LABEL, cardText, type CardDest, type CardView } from "../_lib/cardView";
-import { useFocusTrap } from "../_lib/useFocusTrap";
+import Modal from "../../_components/ui/Modal";
+import Button from "../../_components/ui/Button";
+import { TextField, TextareaField, SelectField, DateField } from "../../_components/ui/Field";
 
 /**
  * Edit a proposed or held card (C3 edit route; fields match EditPatch in
@@ -17,9 +19,6 @@ const KINDS = ["call", "meeting", "note", "event"] as const;
 const DESTS: CardDest[] = ["interaction", "task", "thought", "message_draft"];
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
-
-const inputCls =
-  "w-full min-h-[52px] rounded-control border-hairline bg-tile px-3 text-base text-ink-1 placeholder-ink-3 focus:border-orange/50 focus:outline-none sm:text-sm";
 
 export default function EditSheet({
   card,
@@ -46,22 +45,6 @@ export default function EditSheet({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const people = withSelected(useAssignees(), who);
-  const ref = useRef<HTMLDivElement>(null);
-  useFocusTrap(ref);
-
-  // Escape is handled on the sheet itself and stopped there, so it closes
-  // this sheet without also closing the record modal underneath.
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.stopPropagation();
-      if (!saving) onClose();
-    };
-    el.addEventListener("keydown", onKey);
-    return () => el.removeEventListener("keydown", onKey);
-  }, [onClose, saving]);
 
   const save = async () => {
     const patch: Record<string, unknown> = {};
@@ -92,146 +75,99 @@ export default function EditSheet({
 
   const textLabel = dest === "interaction" ? "What happened" : dest === "task" ? "Task" : dest === "thought" ? "Thought" : "Message";
 
+  // The kit Modal (V4 P1): the shared trap makes this the innermost layer, so
+  // Escape closes this sheet without also closing the record modal under it.
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 sm:items-center sm:px-4"
-      onClick={() => !saving && onClose()}
+    <Modal
+      open
+      onClose={() => !saving && onClose()}
+      title="Edit card"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={() => void save()} disabled={saving || !text.trim()} loading={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        </>
+      }
     >
-      <div
-        ref={ref}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Edit card"
-        onClick={(e) => e.stopPropagation()}
-        className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border-hairline bg-ink p-5 shadow-2xl sm:max-w-md sm:rounded-panel"
-        style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
-      >
-        <h2 className={`${TYPE.modalTitle} mb-4`}>Edit card</h2>
-        <div className="space-y-4">
-          <Field label="Where it goes">
-            <select value={dest} onChange={(e) => setDest(e.target.value as CardDest)} className={inputCls}>
-              {DESTS.map((d) => (
-                <option key={d} value={d}>
-                  {DEST_LABEL[d]}
-                </option>
-              ))}
-            </select>
-          </Field>
+      <div className="space-y-4">
+        <SelectField
+          label="Where it goes"
+          value={dest}
+          onChange={(e) => setDest(e.target.value as CardDest)}
+          options={DESTS.map((d) => ({ value: d, label: DEST_LABEL[d] }))}
+        />
 
-          <Field label={textLabel}>
-            <textarea
-              data-autofocus
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={dest === "task" ? 2 : 4}
-              className={`${inputCls} py-2.5`}
+        <TextareaField
+          label={textLabel}
+          data-autofocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={dest === "task" ? 2 : 4}
+        />
+
+        {dest === "interaction" && (
+          <div className="grid grid-cols-2 gap-3">
+            <SelectField
+              label="Kind"
+              value={kind}
+              onChange={(e) => setKind(e.target.value)}
+              options={KINDS.map((k) => ({ value: k, label: k.charAt(0).toUpperCase() + k.slice(1) }))}
             />
-          </Field>
-
-          {dest === "interaction" && (
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Kind">
-                <select value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls}>
-                  {KINDS.map((k) => (
-                    <option key={k} value={k}>
-                      {k.charAt(0).toUpperCase() + k.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="When">
-                <input type="date" value={occurred} onChange={(e) => setOccurred(e.target.value)} className={inputCls} />
-              </Field>
-            </div>
-          )}
-
-          {dest === "task" && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Assigned to">
-                  <select value={who} onChange={(e) => setWho(e.target.value)} className={inputCls}>
-                    <option value="">Unassigned</option>
-                    {people.map((a) => (
-                      <option key={a.value} value={a.value}>
-                        {a.label}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Due">
-                  <input type="date" value={due} onChange={(e) => setDue(e.target.value)} className={inputCls} />
-                </Field>
-              </div>
-              <Field label="Category">
-                <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputCls}>
-                  {TASK_CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {categoryLabel(c)}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Notes">
-                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={`${inputCls} py-2.5`} />
-              </Field>
-            </>
-          )}
-
-          {dest === "message_draft" && (
-            <>
-              <Field label="Channel">
-                <select value={channel} onChange={(e) => setChannel(e.target.value)} className={inputCls}>
-                  <option value="email">Email</option>
-                  <option value="text">Text</option>
-                </select>
-              </Field>
-              {channel === "email" && (
-                <Field label="Subject">
-                  <input value={subject} onChange={(e) => setSubject(e.target.value)} className={inputCls} />
-                </Field>
-              )}
-            </>
-          )}
-
-          {dest === "interaction" && !card.entity_id && (
-            <p className={TYPE.metadata}>An interaction needs a person or partner. Pick one on the card after saving.</p>
-          )}
-
-          {error && (
-            <p role="alert" className="text-sm text-expense">
-              {error}
-            </p>
-          )}
-
-          <div className="flex items-center justify-end gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={saving}
-              className={`${TYPE.button} min-h-[52px] px-4 text-ink-2 hover:text-ink-1`}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => void save()}
-              disabled={saving || !text.trim()}
-              className={`${TYPE.button} min-h-[52px] rounded-control bg-orange px-5 text-white transition-colors hover:bg-orange-dark disabled:opacity-50`}
-            >
-              {saving ? "Saving…" : "Save"}
-            </button>
+            <DateField label="When" value={occurred} onChange={(e) => setOccurred(e.target.value)} />
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+        )}
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="block">
-      <span className={`${TYPE.fieldLabel} mb-1 block`}>{label}</span>
-      {children}
-    </label>
+        {dest === "task" && (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <SelectField
+                label="Assigned to"
+                value={who}
+                onChange={(e) => setWho(e.target.value)}
+                placeholder="Unassigned"
+                options={people.map((a) => ({ value: a.value, label: a.label }))}
+              />
+              <DateField label="Due" value={due} onChange={(e) => setDue(e.target.value)} />
+            </div>
+            <SelectField
+              label="Category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              options={TASK_CATEGORIES.map((c) => ({ value: c, label: categoryLabel(c) }))}
+            />
+            <TextareaField label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+          </>
+        )}
+
+        {dest === "message_draft" && (
+          <>
+            <SelectField
+              label="Channel"
+              value={channel}
+              onChange={(e) => setChannel(e.target.value)}
+              options={[
+                { value: "email", label: "Email" },
+                { value: "text", label: "Text" },
+              ]}
+            />
+            {channel === "email" && <TextField label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />}
+          </>
+        )}
+
+        {dest === "interaction" && !card.entity_id && (
+          <p className={TYPE.metadata}>An interaction needs a person or partner. Pick one on the card after saving.</p>
+        )}
+
+        {error && (
+          <p role="alert" className="text-sm text-expense">
+            {error}
+          </p>
+        )}
+      </div>
+    </Modal>
   );
 }

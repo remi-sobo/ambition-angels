@@ -204,7 +204,7 @@ export default function PartnersWorkspace({ partners }: { partners: Partner[] })
             Active partners only <span className="opacity-60">✕</span>
           </Chip>
         )}
-        <input
+        <input aria-label="Search partners"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search name, city, contact…"
@@ -382,7 +382,7 @@ function PartnerRow({ partner: p }: { partner: Partner }) {
       )}
 
       <div className="flex flex-wrap items-center gap-1 mt-2">
-        <select
+        <select aria-label="Status"
           value={p.status}
           disabled={busy}
           onChange={(e) => patch({ status: e.target.value })}

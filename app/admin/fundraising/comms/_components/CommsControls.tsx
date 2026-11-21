@@ -218,6 +218,7 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
         <input
           autoFocus
           type="email"
+          aria-label="Send a test to"
           value={testEmail}
           onChange={(e) => setTestEmail(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") void test(); if (e.key === "Escape") setTestEmail(null); }}
@@ -236,6 +237,7 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
         <input
           autoFocus
           type="datetime-local"
+          aria-label="Send at"
           value={scheduleAt}
           onChange={(e) => setScheduleAt(e.target.value)}
           className="bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-xs focus:outline-none focus:border-orange/40"

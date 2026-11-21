@@ -14,6 +14,7 @@ export function MentionTextarea({
   onChange,
   members,
   placeholder,
+  label,
   rows = 2,
   autoFocus,
   className = "",
@@ -25,6 +26,8 @@ export function MentionTextarea({
   rows?: number;
   autoFocus?: boolean;
   className?: string;
+  /** Accessible name; the placeholder alone is not a label (V4 §6). */
+  label?: string;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [open, setOpen] = useState(false);
@@ -69,6 +72,7 @@ export function MentionTextarea({
     <div className="relative">
       <textarea
         ref={ref}
+        aria-label={label ?? "Comment"}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);

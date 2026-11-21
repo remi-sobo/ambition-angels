@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { userMessage } from "@/lib/admin/errors";
 import { ACK_CHANNELS, CHANNEL_LABEL, type AckChannel } from "@/lib/fundraising/ack-channels";
 import { TYPE } from "@/lib/admin/typeScale";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import Button from "@/app/admin/_components/ui/Button";
 
 // Manually log a thank-you that has NO gift behind it — a proactive donor note,
 // a foundation/DAF grant acknowledgment, a volunteer or board thank-you, a
@@ -114,8 +116,10 @@ export default function LogAckButton() {
     }
   };
 
-  if (!open) {
-    return (
+  // The kit Drawer (V4 P1): focus trap, Escape and scrim close (held while
+  // logging), a phone sheet and a pinned footer.
+  return (
+    <>
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -123,26 +127,30 @@ export default function LogAckButton() {
       >
         Log a thank-you
       </button>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto">
-      <div className="w-full max-w-lg mt-16 bg-tile border-hairline rounded-panel-lg p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-heading font-bold text-ink-1 text-base">Log a thank-you</h2>
-          <button onClick={close} className={`text-ink-2 hover:${TYPE.body}`}>
-            Close
-          </button>
-        </div>
-        <p className="text-xs text-ink-2 leading-relaxed">
-          For a thank-you with no gift behind it. A proactive note, a grant acknowledgment, a
-          volunteer or board thank-you. Gift receipts stay in the queue above. No tax-deductible
-          language is ever attached here.
-        </p>
-
+      <Drawer
+        open={open}
+        onClose={() => !busy && close()}
+        title="Log a thank-you"
+        description="For a thank-you with no gift behind it. A proactive note, a grant acknowledgment, a volunteer or board thank-you. Gift receipts stay in the queue above. No tax-deductible language is ever attached here."
+        footer={
+          <>
+            {error && (
+              <span role="alert" className="text-status-critical-text text-xs mr-auto">
+                {error}
+              </span>
+            )}
+            <Button variant="secondary" onClick={close} disabled={busy}>
+              Cancel
+            </Button>
+            <Button onClick={submit} disabled={busy || !picked} loading={busy}>
+              {busy ? "Logging…" : "Log thank-you"}
+            </Button>
+          </>
+        }
+      >
+      <div className="space-y-4">
         {/* Subject type */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div role="group" aria-label="Who it's for" className="flex items-center gap-1.5 flex-wrap">
           {SUBJECT_OPTIONS.map((o) => (
             <button
               key={o.value}
@@ -176,6 +184,7 @@ export default function LogAckButton() {
         ) : (
           <div className="relative">
             <input
+              aria-label="Donor"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search a donor by name or org…"
@@ -206,7 +215,7 @@ export default function LogAckButton() {
         )}
 
         {/* Channel */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div role="group" aria-label="Channel" className="flex items-center gap-1.5 flex-wrap">
           {ACK_CHANNELS.map((ch) => (
             <button
               key={ch}
@@ -225,6 +234,7 @@ export default function LogAckButton() {
 
         {/* Note */}
         <textarea
+          aria-label="Note (optional)"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={3}
@@ -245,8 +255,9 @@ export default function LogAckButton() {
           </label>
           {createTask && (
             <div className="flex items-center gap-2 pl-6">
-              <span className="text-xs text-ink-2">Due</span>
+              <label htmlFor="log-ack-due" className="text-xs text-ink-2">Due</label>
               <input
+                id="log-ack-due"
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
@@ -257,24 +268,8 @@ export default function LogAckButton() {
           )}
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap pt-1">
-          <button
-            onClick={submit}
-            disabled={busy || !picked}
-            className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50"
-          >
-            {busy ? "Logging…" : "Log thank-you"}
-          </button>
-          <button
-            onClick={close}
-            disabled={busy}
-            className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
-          >
-            Cancel
-          </button>
-          {error && <span className="text-expense text-xs">{error}</span>}
-        </div>
       </div>
-    </div>
+      </Drawer>
+    </>
   );
 }

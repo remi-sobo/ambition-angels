@@ -139,6 +139,7 @@ export function EntityDocuments({
             <div className="flex flex-wrap gap-2">
               <input
                 type="text"
+                aria-label="Title (optional)"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Title (optional)"

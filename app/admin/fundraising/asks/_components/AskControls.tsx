@@ -181,6 +181,7 @@ export function AskStatusSelect({ askId, status }: { askId: string; status: stri
   const [busy, setBusy] = useState(false);
   return (
     <select
+      aria-label="Ask status"
       value={status}
       disabled={busy}
       onChange={async (e) => {
@@ -488,6 +489,7 @@ export function AskDocuments({ askId, documents }: { askId: string; documents: A
       )}
       <div className="flex flex-wrap items-center gap-2 px-5 py-3 border-t border-hairline">
         <input
+          aria-label="Document label (optional)"
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder="Label (optional)"
@@ -496,6 +498,7 @@ export function AskDocuments({ askId, documents }: { askId: string; documents: A
         <input
           ref={fileRef}
           type="file"
+          aria-label="Document to attach"
           accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,application/pdf"
           disabled={busy}
           onChange={(e) => {

@@ -6,7 +6,8 @@ import { TYPE } from "@/lib/admin/typeScale";
 import type { CandidateView } from "../_lib/cardView";
 import { fixFiled, searchCandidates, type FixRequest } from "../_lib/captureApi";
 import type { FixTarget } from "../_lib/fixTargets";
-import { useFocusTrap } from "../_lib/useFocusTrap";
+import Modal from "../../_components/ui/Modal";
+import { TextField, TextareaField, SelectField, DateField } from "../../_components/ui/Field";
 
 /**
  * Fix a note Capture filed (C6): edit it, move it to the right person or
@@ -16,8 +17,6 @@ import { useFocusTrap } from "../_lib/useFocusTrap";
 
 const KINDS = ["call", "meeting", "note", "event"] as const;
 
-const inputCls =
-  "w-full min-h-[52px] rounded-control border-hairline bg-tile px-3 text-base text-ink-1 placeholder-ink-3 focus:border-orange/50 focus:outline-none sm:text-sm";
 const primaryCls = `${TYPE.button} min-h-[52px] rounded-control bg-orange px-5 text-white transition-colors hover:bg-orange-dark disabled:opacity-50`;
 const quietCls = `${TYPE.button} min-h-[52px] px-4 text-ink-2 hover:text-ink-1 disabled:opacity-50`;
 
@@ -55,24 +54,11 @@ export default function FixSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
-  useFocusTrap(ref);
 
   const recordWord = note.entityType === "partner" ? "partner" : "person";
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.stopPropagation();
-      if (!busy) onClose();
-    };
-    el.addEventListener("keydown", onKey);
-    return () => el.removeEventListener("keydown", onKey);
-  }, [onClose, busy]);
-
   // Switching panes unmounts the focused button; put focus in the new pane so
-  // Tab stays trapped and Escape still reaches the sheet's handler.
+  // Tab stays in the sheet (the kit Modal's trap handles Escape).
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -133,22 +119,15 @@ export default function FixSheet({
   const title = mode === "edit" ? "Edit note" : mode === "move" ? `Move to another ${recordWord}` : mode === "remove" ? "Remove note" : "Fix this note";
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 sm:items-center sm:px-4" onClick={() => !busy && onClose()}>
-      <div
-        ref={ref}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-        className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border-hairline bg-ink p-5 shadow-2xl sm:max-w-md sm:rounded-panel"
-        style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
-      >
-        <h2 className={`${TYPE.modalTitle} mb-1`}>{title}</h2>
-        <p className={`${TYPE.metadata} mb-4`}>
-          From a voice note, filed to {note.entityName}.
-        </p>
-
+    // The kit Modal (V4 P1): the shared trap makes this the innermost layer,
+    // so Escape closes this sheet and nothing under it.
+    <Modal
+      open
+      onClose={() => !busy && onClose()}
+      title={title}
+      description={`From a voice note, filed to ${note.entityName}.`}
+    >
+      <div ref={ref} tabIndex={-1} className="focus:outline-none">
         {mode === "menu" && (
           <div className="space-y-4">
             <div className="rounded-control border border-hairline bg-surface p-3">
@@ -180,22 +159,15 @@ export default function FixSheet({
 
         {mode === "edit" && (
           <div className="space-y-4">
-            <Field label="What happened">
-              <textarea data-autofocus value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className={`${inputCls} py-2.5`} />
-            </Field>
+            <TextareaField label="What happened" data-autofocus value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} />
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Kind">
-                <select value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls}>
-                  {KINDS.map((k) => (
-                    <option key={k} value={k}>
-                      {k.charAt(0).toUpperCase() + k.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="When">
-                <input type="date" value={day} onChange={(e) => setDay(e.target.value)} className={inputCls} />
-              </Field>
+              <SelectField
+                label="Kind"
+                value={kind}
+                onChange={(e) => setKind(e.target.value)}
+                options={KINDS.map((k) => ({ value: k, label: k.charAt(0).toUpperCase() + k.slice(1) }))}
+              />
+              <DateField label="When" value={day} onChange={(e) => setDay(e.target.value)} />
             </div>
             <Footer error={error}>
               <button type="button" onClick={() => setMode("menu")} disabled={busy} className={quietCls}>
@@ -210,17 +182,14 @@ export default function FixSheet({
 
         {mode === "move" && !pick && (
           <div className="space-y-3">
-            <label className="block">
-              <span className={`${TYPE.fieldLabel} mb-1 block`}>Who should it be on?</span>
-              <input
-                data-autofocus
-                type="search"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Type a name"
-                className={inputCls}
-              />
-            </label>
+            <TextField
+              label="Who should it be on?"
+              data-autofocus
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Type a name"
+            />
             {searching && <p className={TYPE.metadata}>Searching…</p>}
             {results && results.length === 0 && !searching && !error && <p className={TYPE.metadata}>No one by that name on record.</p>}
             {results && results.length > 0 && (
@@ -295,7 +264,7 @@ export default function FixSheet({
           </div>
         )}
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -320,15 +289,6 @@ function MenuButton({
       <span className={TYPE.cardTitle}>{label}</span>
       <span className={TYPE.metadata}>{hint}</span>
     </button>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="block">
-      <span className={`${TYPE.fieldLabel} mb-1 block`}>{label}</span>
-      {children}
-    </label>
   );
 }
 

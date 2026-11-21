@@ -22,6 +22,9 @@ import {
 import { useIsOwner } from "./AdminUserContext";
 import { useAssignees, withSelected } from "../_lib/useAssignees";
 import { TYPE } from "@/lib/admin/typeScale";
+import Drawer from "./ui/Drawer";
+import Button from "./ui/Button";
+import { TextField, TextareaField, SelectField, DateField, CheckboxField } from "./ui/Field";
 import { ESTIMATE_CHIPS, formatEstimate } from "@/lib/admin/ops/estimates";
 
 /** Pull any report screenshot URLs out of a task description for inline preview. */
@@ -194,15 +197,6 @@ export default function TaskEditModal({
     }
   }
 
-  // Close on Escape.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !saving && !deleting) onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose, saving, deleting]);
-
   // Fetch the active project list (plus this task's current project even if
   // it's now paused/done/archived, so the dropdown can still show it).
   useEffect(() => {
@@ -318,19 +312,30 @@ export default function TaskEditModal({
   const busy = saving || deleting;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-      onClick={() => !busy && onClose()}
+    // The kit Drawer (V4 P1): focus trap, Escape and scrim close (held while
+    // a save or delete is in flight), a phone sheet, and a pinned footer.
+    <Drawer
+      open
+      onClose={() => !busy && onClose()}
+      title="Edit task"
+      width={560}
+      footer={
+        <div className="flex w-full items-center justify-between gap-3">
+          <Button variant="danger" size="sm" onClick={handleDelete} disabled={busy}>
+            {deleting ? "Deleting…" : "Delete task"}
+          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={onClose} disabled={busy}>
+              Cancel
+            </Button>
+            <Button type="submit" form="task-edit-form" disabled={busy} loading={saving}>
+              {saving ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
+        </div>
+      }
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-panel border-hairline bg-ink shadow-2xl max-h-[90vh] overflow-y-auto"
-      >
-        <form onSubmit={submit} className="p-6 space-y-4">
-          <h2 className={TYPE.modalTitle}>
-            Edit task
-          </h2>
-
+        <form id="task-edit-form" onSubmit={submit} className="space-y-4">
           {showStuckPrompt && (
             <div className="rounded-control border border-status-watch/30 bg-status-watch-bg px-3 py-2.5 space-y-2">
               <div className="flex items-start justify-between gap-2">
@@ -355,7 +360,7 @@ export default function TaskEditModal({
               ) : decomposing ? (
                 <div className="flex items-center gap-2">
                   <input
-                    autoFocus
+                    aria-label="First concrete step"
                     type="text"
                     value={subtaskTitle}
                     onChange={(e) => setSubtaskTitle(e.target.value)}
@@ -390,24 +395,22 @@ export default function TaskEditModal({
             </div>
           )}
 
-          <Field label="Title" required>
-            <input
-              autoFocus
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
-            />
-          </Field>
+          <TextField
+            label="Title"
+            required
+            data-autofocus
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            controlSize="md"
+          />
 
-          <Field label="Description">
-            <textarea
+          <div>
+            <TextareaField
+              label="Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={hasClaudePrompt ? 6 : 3}
               placeholder="Notes, context, links…"
-              className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
             />
             {hasClaudePrompt && (
               <button
@@ -432,108 +435,70 @@ export default function TaskEditModal({
                 ))}
               </div>
             )}
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Category" required>
-              <select
-                value={category}
-                onChange={(e) => {
-                  setCategory(e.target.value as TaskCategory);
-                  setAssigneeError(null);
-                }}
-                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
-              >
-                {TASK_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {categoryLabel(c)}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Status">
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
-              >
-                {TASK_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s.replace("_", " ")}
-                  </option>
-                ))}
-              </select>
-            </Field>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Priority">
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
-              >
-                {TASK_PRIORITIES.map((p) => (
-                  <option key={p} value={p}>
-                    {priorityLabel(p)}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Labels">
-              <input
-                type="text"
-                value={labels}
-                onChange={(e) => setLabels(e.target.value)}
-                placeholder="comma, separated"
-                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
-              />
-            </Field>
+            <SelectField
+              label="Category"
+              required
+              controlSize="md"
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value as TaskCategory);
+                setAssigneeError(null);
+              }}
+              options={TASK_CATEGORIES.map((c) => ({ value: c, label: categoryLabel(c) }))}
+            />
+            <SelectField
+              label="Status"
+              controlSize="md"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as TaskStatus)}
+              options={TASK_STATUSES.map((st) => ({ value: st, label: st.replace("_", " ") }))}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Assigned to">
-              <select
-                value={assignee}
-                onChange={(e) => {
-                  setAssignee(e.target.value);
-                  setAssigneeError(null);
-                }}
-                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
-              >
-                <option value="">Unassigned</option>
-                {assigneeOptions.map((a) => (
-                  <option key={a.value} value={a.value}>{a.label}</option>
-                ))}
-              </select>
-              {assigneeError && (
-                <p className="mt-1 text-expense text-xs">{assigneeError}</p>
-              )}
-            </Field>
-            <Field label="Due date">
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
-              />
-            </Field>
+            <SelectField
+              label="Priority"
+              controlSize="md"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as TaskPriority)}
+              options={TASK_PRIORITIES.map((p) => ({ value: p, label: priorityLabel(p) }))}
+            />
+            <TextField
+              label="Labels"
+              controlSize="md"
+              value={labels}
+              onChange={(e) => setLabels(e.target.value)}
+              placeholder="comma, separated"
+            />
           </div>
 
-          <Field label="Project">
-            <select
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
-            >
-              <option value="">None</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.title}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <SelectField
+              label="Assigned to"
+              controlSize="md"
+              value={assignee}
+              onChange={(e) => {
+                setAssignee(e.target.value);
+                setAssigneeError(null);
+              }}
+              error={assigneeError ?? undefined}
+              placeholder="Unassigned"
+              options={assigneeOptions.map((a) => ({ value: a.value, label: a.label }))}
+            />
+            <DateField label="Due date" controlSize="md" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          </div>
+
+          <SelectField
+            label="Project"
+            controlSize="md"
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+            placeholder="None"
+            options={projects.map((p) => ({ value: p.id, label: p.title }))}
+          />
 
           {/* A div, not Field: Field is a <label>, which would forward clicks
               to the first chip. */}
@@ -568,59 +533,18 @@ export default function TaskEditModal({
             </div>
           </div>
 
-          <div className="flex items-center gap-5 text-sm text-ink-1 pt-1">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={pinToday}
-                onChange={(e) => setPinToday(e.target.checked)}
-                className="accent-orange"
-              />
-              Pin for today
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={pinWeek}
-                onChange={(e) => setPinWeek(e.target.checked)}
-                className="accent-orange"
-              />
-              Pin for this week
-            </label>
+          <div className="flex flex-wrap items-center gap-5 pt-1">
+            <CheckboxField label="Pin for today" checked={pinToday} onChange={(e) => setPinToday(e.target.checked)} />
+            <CheckboxField label="Pin for this week" checked={pinWeek} onChange={(e) => setPinWeek(e.target.checked)} />
           </div>
 
-          {error && <p className="text-expense text-xs">{error}</p>}
-
-          <div className="flex items-center justify-between gap-3 pt-3 border-t border-hairline">
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={busy}
-              className="text-xs text-expense hover:text-expense border border-expense/30 hover:border-expense/30 bg-expense-bg px-3 py-2 rounded-control disabled:opacity-50"
-            >
-              {deleting ? "Deleting…" : "Delete task"}
-            </button>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={busy}
-                className="text-sm text-ink-2 hover:text-ink-1 px-4 py-2"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={busy}
-                className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-control transition-colors"
-              >
-                {saving ? "Saving…" : "Save changes"}
-              </button>
-            </div>
-          </div>
+          {error && (
+            <p role="alert" className="text-status-critical-text text-xs">
+              {error}
+            </p>
+          )}
         </form>
-      </div>
-    </div>
+    </Drawer>
   );
 }
 
@@ -648,24 +572,5 @@ function StuckAction({
     >
       {label}
     </button>
-  );
-}
-
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">
-        {label} {required && <span className="text-orange">*</span>}
-      </div>
-      {children}
-    </label>
   );
 }

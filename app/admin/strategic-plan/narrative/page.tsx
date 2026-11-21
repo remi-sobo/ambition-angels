@@ -7,6 +7,8 @@ import MovementRaise from "./_components/MovementRaise";
 import MovementHow from "./_components/MovementHow";
 import Presenter from "./_components/Presenter";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
+import PageHeader from "@/app/admin/_components/PageHeader";
+import { ButtonLink } from "@/app/admin/_components/ui/Button";
 
 /**
  * Strategy Narrative — the login-gated, presentation-grade view Remi pulls up
@@ -38,11 +40,6 @@ function MovementNav() {
           </a>
         </span>
       ))}
-      <span className="ml-auto flex items-center gap-3 normal-case tracking-normal">
-        <Link href="/admin/strategic-plan/narrative?present=1" className="font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full">
-          ▶ Present
-        </Link>
-      </span>
     </div>
   );
 }
@@ -89,13 +86,26 @@ export default async function StrategyNarrativePage({
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-10 max-w-[920px]">
+      {/* PageHeader v2 (V4 P1): breadcrumb to the plan, Present as the one
+          primary action, the plan's other views in More actions. */}
+      <PageHeader
+        breadcrumb={[{ label: "Strategic Plan", href: "/admin/organization/strategy" }]}
+        title="Strategy Narrative"
+        subtitle="The plan, what we need to raise, and how we raise it, read live from the plan and the money."
+        primaryAction={<ButtonLink href="/admin/strategic-plan/narrative?present=1">Present</ButtonLink>}
+        moreActions={[
+          { label: "Whole plan", href: "/admin/organization/strategy" },
+          { label: "People", href: "/admin/strategic-plan/people" },
+          { label: "KPI scorecard", href: "/admin/impact/kpis" },
+        ]}
+      />
       {readiness.blockerCount > 0 && (
         <div className="mb-6 rounded-panel border-expense/30 bg-expense-bg px-4 py-3 text-sm">
           <span className="font-semibold text-ink-1">
             {readiness.blockerCount} funder-readiness blocker{readiness.blockerCount === 1 ? "" : "s"} open.
           </span>{" "}
           <span className="text-ink-2">Clear these before presenting:</span>{" "}
-          <Link href="/admin/strategic-plan" className="font-semibold text-orange hover:underline">
+          <Link href="/admin/organization/strategy" className="font-semibold text-orange hover:underline">
             see the checklist
           </Link>
           .

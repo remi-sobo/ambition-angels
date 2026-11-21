@@ -75,20 +75,22 @@ export default async function StrategyPeoplePage() {
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
+      {/* PageHeader v2 (V4 P1). */}
       <PageHeader
+        breadcrumb={[{ label: "Strategic Plan", href: "/admin/organization/strategy" }]}
         title="People"
-        subtitle={
-          <>
-            Each person&apos;s slice of the plan. Their objectives, measures, and next moves · back to the{" "}
-            <Link href="/admin/strategic-plan" className="text-orange hover:underline">full plan</Link>
-          </>
-        }
+        subtitle="Each person's slice of the plan: their objectives, measures, and next moves."
+        moreActions={[
+          { label: "Whole plan", href: "/admin/organization/strategy" },
+          { label: "Narrative", href: "/admin/strategic-plan/narrative" },
+          { label: "KPI scorecard", href: "/admin/impact/kpis" },
+        ]}
       />
 
       {sorted.length === 0 ? (
         <p className="text-sm text-ink-2">
           No owners assigned yet. Set an owner on objectives, goals, measures, or initiatives and they&apos;ll
-          show up here. Start from the <Link href="/admin/strategic-plan" className="text-orange hover:underline">plan</Link>.
+          show up here. Start from the <Link href="/admin/organization/strategy" className="text-orange hover:underline">plan</Link>.
         </p>
       ) : (
         <div className="space-y-5">

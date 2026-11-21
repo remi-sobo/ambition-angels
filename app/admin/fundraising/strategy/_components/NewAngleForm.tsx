@@ -6,7 +6,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { TYPE } from "@/lib/admin/typeScale";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import Button from "@/app/admin/_components/ui/Button";
+import { TextField, SelectField, TextareaField } from "@/app/admin/_components/ui/Field";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { userMessage, networkMessage } from "@/lib/admin/errors";
 
@@ -21,9 +23,6 @@ const BADGES = [
   ["new", "New & timely"],
   ["emerging-stub", "Emerging stub"],
 ] as const;
-
-const input =
-  "w-full text-sm bg-cream border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50";
 
 export default function NewAngleForm() {
   const router = useRouter();
@@ -66,8 +65,9 @@ export default function NewAngleForm() {
     }
   };
 
-  if (!open) {
-    return (
+  // The kit Drawer (V4 P1) with labeled kit fields.
+  return (
+    <>
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -75,36 +75,37 @@ export default function NewAngleForm() {
       >
         + New angle
       </button>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 bg-ink/40 flex items-start justify-center p-4 overflow-y-auto" onClick={() => !busy && setOpen(false)}>
-      <div
-        className="bg-tile border-hairline rounded-panel-lg p-5 w-full max-w-lg mt-12 space-y-3"
-        onClick={(e) => e.stopPropagation()}
+      <Drawer
+        open={open}
+        onClose={() => !busy && setOpen(false)}
+        title="New funding angle"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setOpen(false)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button onClick={submit} loading={busy}>
+              {busy ? "Creating…" : "Create angle"}
+            </Button>
+          </>
+        }
       >
-        <h2 className={TYPE.cardTitle}>New funding angle</h2>
-        <input className={input} placeholder="Name *" value={f.name} onChange={set("name")} />
-        <select className={input} value={f.status_badge} onChange={set("status_badge")}>
-          {BADGES.map(([v, label]) => (
-            <option key={v} value={v}>{label}</option>
-          ))}
-        </select>
-        <input className={input} placeholder="Hook: the north-star one-liner" value={f.hook} onChange={set("hook")} />
-        <textarea className={input} rows={2} placeholder="Who funds this" value={f.funds} onChange={set("funds")} />
-        <textarea className={input} rows={2} placeholder="What they want" value={f.want} onChange={set("want")} />
-        <input className={input} placeholder="Ask range / model" value={f.ask} onChange={set("ask")} />
-        <textarea className={input} rows={2} placeholder="Approach: cold vs warm note (optional)" value={f.approach} onChange={set("approach")} />
-        <div className="flex items-center justify-end gap-2 pt-1">
-          <button type="button" onClick={() => setOpen(false)} disabled={busy} className="text-xs font-semibold text-ink-2 hover:text-ink-1 px-3 py-2 rounded-full disabled:opacity-60">
-            Cancel
-          </button>
-          <button type="button" onClick={submit} disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-60">
-            {busy ? "Creating…" : "Create angle"}
-          </button>
+        <div className="space-y-3">
+          <TextField label="Name" required data-autofocus controlSize="md" value={f.name} onChange={set("name")} />
+          <SelectField
+            label="Status badge"
+            controlSize="md"
+            value={f.status_badge}
+            onChange={set("status_badge")}
+            options={BADGES.map(([v, label]) => ({ value: v, label }))}
+          />
+          <TextField label="Hook" controlSize="md" placeholder="The north-star one-liner" value={f.hook} onChange={set("hook")} />
+          <TextareaField label="Who funds this" rows={2} value={f.funds} onChange={set("funds")} />
+          <TextareaField label="What they want" rows={2} value={f.want} onChange={set("want")} />
+          <TextField label="Ask range / model" controlSize="md" value={f.ask} onChange={set("ask")} />
+          <TextareaField label="Approach (optional)" rows={2} placeholder="Cold vs warm note" value={f.approach} onChange={set("approach")} />
         </div>
-      </div>
-    </div>
+      </Drawer>
+    </>
   );
 }

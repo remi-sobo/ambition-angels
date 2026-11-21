@@ -14,7 +14,7 @@ const barrel = readFileSync(join(UI, "index.ts"), "utf8");
 /** Every file the barrel re-exports from, resolved to a path. */
 function exportedFiles(): string[] {
   const out = new Set<string>();
-  for (const m of barrel.matchAll(/from\s+"(\.{1,2}\/[^"]+)"/g)) {
+  for (const m of Array.from(barrel.matchAll(/from\s+"(\.{1,2}\/[^"]+)"/g))) {
     const base = join(UI, m[1]);
     for (const ext of [".tsx", ".ts"]) {
       try {
@@ -66,15 +66,16 @@ describe("kit token discipline", () => {
     const hits: string[] = [];
     for (const f of files) {
       const src = stripComments(readFileSync(f, "utf8"));
-      for (const m of src.matchAll(HEX)) hits.push(`${f.slice(ROOT.length + 1)}: ${m[0]}`);
+      for (const m of Array.from(src.matchAll(HEX))) hits.push(`${f.slice(ROOT.length + 1)}: ${m[0]}`);
     }
     expect(hits, "Use a token (tailwind.config.ts / .admin-shell vars), not a hex.").toEqual([]);
   });
 
-  test("every ui/*.tsx file is exported from the barrel", () => {
+  test("every ui/*.tsx component file is exported from the barrel", () => {
+    // .ts hooks (useFocusTrap) stay out of the barrel on purpose: see index.ts.
     const exported = new Set(files.map((f) => f.slice(UI.length + 1)));
     const missing = readdirSync(UI)
-      .filter((n) => /\.(tsx|ts)$/.test(n) && n !== "index.ts")
+      .filter((n) => n.endsWith(".tsx"))
       .filter((n) => !exported.has(n));
     expect(missing).toEqual([]);
   });

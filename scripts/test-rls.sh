@@ -250,6 +250,8 @@ ordered=(
   revoke_anon_obligation_rpcs.sql
   seed_aa_only_gate_entitlements.sql
   fin_categories_org_scope.sql
+  add_owner_id_assignment.sql
+  entitlements_operator_only_writes.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

@@ -12,8 +12,12 @@
 //   V4_LOG_DIR   default e2e/v4/.logs
 //   V4_PERSIST   1 = apply writes to the in-memory store (default: discard)
 //   V4_DELAY_MS  delay every REST read by N ms (loading-state captures)
+//   V4_TWO_ORG   1 = two orgs in one store (the demo org + "Lanternfield Youth
+//                Alliance (demo)", fixtures/index.mjs buildTwoOrgFixtures), with
+//                RLS emulated for session-client reads (see rlsFilter below)
+//   V4_ORG       a (default) | b: which org's owner is signed in (two-org mode)
 // Runtime control (no restart): POST /__mock/config with JSON
-//   { delayMs, delayPattern, failWrite, failRead, role, profile }
+//   { delayMs, delayPattern, failWrite, failRead, role, profile, org, twoOrg }
 //   failWrite/failRead: a table name, an rpc name, or "*". GET /__mock/config reads it.
 //   GET /__mock/coverage returns the coverage log so far.
 
@@ -22,7 +26,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { buildFixtures, DEMO } from "./fixtures/index.mjs";
+import { buildFixtures, buildTwoOrgFixtures, DEMO } from "./fixtures/index.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.V4_PORT || 55321);
@@ -40,11 +44,38 @@ const config = {
   failWrite: null,
   failRead: null,
   persist: process.env.V4_PERSIST === "1",
+  twoOrg: process.env.V4_TWO_ORG === "1",
+  org: process.env.V4_ORG || "a",
 };
 
-let fx = buildFixtures({ profile: config.profile, role: config.role });
+// who is signed in: the demo org's first team member, or in two-org mode the
+// first team member of the org named by config.org
+let who = { user: DEMO.user, team: DEMO.team, orgId: DEMO.org.id };
+let fx;
 function rebuild() {
-  fx = buildFixtures({ profile: config.profile, role: config.role });
+  if (config.twoOrg) {
+    fx = buildTwoOrgFixtures({ profile: config.profile, role: config.role, org: config.org });
+    who = { user: fx.user, team: fx.team, orgId: fx.orgId };
+  } else {
+    fx = buildFixtures({ profile: config.profile, role: config.role });
+    who = { user: DEMO.user, team: DEMO.team, orgId: DEMO.org.id };
+  }
+}
+rebuild();
+
+// RLS, roughly, for two-org mode: a read made with a signed-in user's JWT (the
+// session client) only sees rows of orgs that user belongs to. Reads made with
+// the service-role key see everything, exactly like production, so a page
+// that reads with the service role and forgets its org filter shows the other
+// org's rows: that is the leak the two-org pass looks for.
+function bearerRole(req) {
+  const tok = (req.headers.authorization || "").replace(/^Bearer /i, "");
+  return decodeJwt(tok)?.role || null;
+}
+function rlsFilter(req, rows) {
+  if (!config.twoOrg || bearerRole(req) !== "authenticated") return rows;
+  const mine = new Set((fx.tables.memberships || []).filter((m) => m.user_id === who.user.id).map((m) => m.org_id));
+  return rows.filter((r) => !r || typeof r !== "object" || !("org_id" in r) || r.org_id == null || mine.has(r.org_id));
 }
 
 // ── coverage log ────────────────────────────────────────────────────────────
@@ -85,7 +116,7 @@ function decodeJwt(tok) {
   }
 }
 function authUser() {
-  const u = DEMO.user;
+  const u = who.user;
   return {
     id: u.id,
     aud: "authenticated",
@@ -105,7 +136,7 @@ function authUser() {
 function session() {
   const exp = Math.floor(Date.now() / 1000) + 3600 * 24 * 365;
   return {
-    access_token: fakeJwt({ sub: DEMO.user.id, role: "authenticated", aud: "authenticated", email: DEMO.user.email, exp }),
+    access_token: fakeJwt({ sub: who.user.id, role: "authenticated", aud: "authenticated", email: who.user.email, aal: "aal2", amr: [{ method: "password", timestamp: Math.floor(Date.now() / 1000) }, { method: "totp", timestamp: Math.floor(Date.now() / 1000) }], exp }),
     token_type: "bearer",
     expires_in: 3600 * 24 * 365,
     expires_at: exp,
@@ -421,7 +452,7 @@ function completeRow(table, row) {
   for (const c of schema[table] || []) {
     if (c.n in out) continue;
     if (c.n === "created_at" || c.n === "updated_at") out[c.n] = now;
-    else if (c.n === "org_id") out[c.n] = DEMO.org.id;
+    else if (c.n === "org_id") out[c.n] = who.orgId;
     else out[c.n] = null;
   }
   return out;
@@ -453,14 +484,15 @@ const server = http.createServer(async (req, res) => {
     if (p === "/__mock/config") {
       if (req.method === "POST") {
         const body = JSON.parse((await readBody(req)) || "{}");
-        const needRebuild = (body.role && body.role !== config.role) || (body.profile && body.profile !== config.profile);
+        const needRebuild = (body.role && body.role !== config.role) || (body.profile && body.profile !== config.profile) || (body.org && body.org !== config.org) || ("twoOrg" in body && body.twoOrg !== config.twoOrg) || body.reset;
+        delete body.reset;
         Object.assign(config, body);
         if (needRebuild) rebuild();
       }
       return send(res, 200, config);
     }
     if (p === "/__mock/coverage") return send(res, 200, coverage);
-    if (p === "/__mock/health") return send(res, 200, { ok: true, profile: config.profile, role: config.role });
+    if (p === "/__mock/health") return send(res, 200, { ok: true, profile: config.profile, role: config.role, org: config.org, twoOrg: config.twoOrg });
 
     // GoTrue
     if (p.startsWith("/auth/v1/")) {
@@ -473,15 +505,15 @@ const server = http.createServer(async (req, res) => {
       const teamUser = (p, i) => ({
         id: p.id, aud: "authenticated", role: "authenticated", email: p.email,
         created_at: "2024-08-01T17:00:00Z",
-        last_sign_in_at: i === DEMO.team.length - 1 ? null : new Date(Date.now() - i * 86400000).toISOString(),
+        last_sign_in_at: i === who.team.length - 1 ? null : new Date(Date.now() - i * 86400000).toISOString(),
         app_metadata: {}, user_metadata: {},
       });
       if (sub.startsWith("admin/users/")) {
         const id = sub.slice("admin/users/".length);
-        const i = DEMO.team.findIndex((p) => p.id === id);
-        return i < 0 ? send(res, 404, { code: 404, msg: "User not found" }) : send(res, 200, teamUser(DEMO.team[i], i));
+        const i = who.team.findIndex((p) => p.id === id);
+        return i < 0 ? send(res, 404, { code: 404, msg: "User not found" }) : send(res, 200, teamUser(who.team[i], i));
       }
-      if (sub === "admin/users") return send(res, 200, { users: DEMO.team.map(teamUser), aud: "authenticated" });
+      if (sub === "admin/users") return send(res, 200, { users: who.team.map(teamUser), aud: "authenticated" });
       if (sub === "invite") {
         const b = JSON.parse(authBody || "{}");
         return send(res, 200, { id: crypto.randomUUID(), aud: "authenticated", role: "authenticated", email: b.email, invited_at: new Date().toISOString(), last_sign_in_at: null, app_metadata: {}, user_metadata: {} });
@@ -537,7 +569,7 @@ const server = http.createServer(async (req, res) => {
       if (isRead) {
         if (matchesFail(config.failRead, table)) return send(res, 500, { code: "XX000", message: `v4 mock: forced read failure on ${table}`, details: null, hint: null });
         if (config.delayMs && (!config.delayPattern || new RegExp(config.delayPattern).test(table))) await sleep(config.delayMs);
-        const all = fx.tables[table] || [];
+        const all = rlsFilter(req, fx.tables[table] || []);
         let rows = applyFilters(all, params, ignored);
         // !inner embeds: drop parents whose embed resolves empty (best effort)
         rows = applyOrder(rows, url.searchParams.get("order"));

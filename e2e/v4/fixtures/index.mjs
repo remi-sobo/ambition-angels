@@ -207,6 +207,7 @@ export function buildFixtures({ profile = "populated", role = "owner", skipViews
       const q = String(args.q || args.query || args.p_query || "").toLowerCase();
       if (!q) return [];
       return (fx.tables.constituents || [])
+        .filter((c) => !args.org || c.org_id === args.org)
         .filter((c) => `${c.first_name || ""} ${c.last_name || ""} ${c.org_name || ""}`.toLowerCase().includes(q))
         .slice(0, 10)
         .map((c) => ({ id: c.id, kind: "constituent", label: c.org_name || `${c.first_name} ${c.last_name}`, sublabel: c.type, name: c.org_name || `${c.first_name} ${c.last_name}`, type: c.type }));
@@ -793,4 +794,79 @@ function populate(T, add, tables, team) {
     { ...card(6, "thought", "confirmed", { card_kind: "story", title: "Coach notes on a first paycheck", text: "Marisol K. brought her first pay stub to Career Lab and walked the group through it.", about: "Marisol K.", identifiable: true, consent: "needed", uncertain: [], filed: { table: "capture_cards", kept: true } }, false), decided_at: recordedAt },
     card(5, "thought", "held", { card_kind: "gift", gift_type: "gift", amount: 500, amount_heard: "500", gift_date: ymd(now), notes: null, uncertain: [] }, true),
   ]);
+}
+
+// ── V4 Stage P: a second org, for two-org checks ─────────────────────────────
+// "Lanternfield Youth Alliance (demo)" is a copy of the demo org with every id
+// moved to its own prefix and every surname, foundation, company, school and
+// team name swapped for a separate invented pool, so any string from one org
+// showing up while signed in to the other is a cross-org leak. It holds the
+// Pilot plan (no Ambition Angels-only modules), like a real second tenant.
+const ORG_B_ID = "b5b5b5b5-0000-4000-8000-000000000001";
+const B_LAST = ["Achterberg", "Blackwoodrhee", "Cinderford", "Dovecote", "Embervale", "Foxglove", "Gildersleeve", "Hollowell", "Ironmonger", "Juniperson", "Kittredge", "Lambrecht", "Moorcroft", "Nettleship", "Oakenshaw", "Pellingham", "Quarrington", "Rookwood", "Saltonstall", "Tillinghast", "Upthegrove", "Vexley", "Wintergreen", "Yellowhammer", "Zanderbeck", "Amberley", "Briarcliff", "Coldharbour", "Dewhurst", "Elderberry", "Fernsby", "Glenmorrow", "Heathcote", "Ivybridge", "Kestrelholm", "Lockerbie", "Marblehead", "Nightjar", "Orchardson", "Penhallow", "Ravensworth", "Silverthorn", "Thornbury", "Valemont", "Winterbourne"];
+const B_FOUNDATIONS = ["Gullwing Community Foundation", "Ostrander Family Fund", "Kelpie Youth Futures Trust", "Moonrake Foundation", "Quillon Opportunity Fund", "Tamarack Charitable Trust", "Brackenridge Foundation", "Starling Education Fund", "Fogbound Valley Giving Circle", "Pike & Hollis Family Foundation", "Saltmarsh Workforce Initiative", "Granitefall Foundation"];
+const B_COMPANIES = ["Vantor Robotics", "Corvid Analytics", "Mossgate Health", "Pelican Freight", "Emberline Energy", "Zenith Hollow Software", "Basalt Ridge Bank", "Wick & Wren Design", "Larchmont Builders", "Kiteworks Labs", "Spindle Biotech", "Driftline Mobility", "Lowtide Media", "Obsidian Chips", "Fernhill Credit Union", "Compass Rose Field Services"];
+const B_SCHOOLS = ["Northfield High School", "Creekside Middle School", "Mesa Verde Academy", "Eastbrook High School", "Del Mar Middle School", "Gull Point Charter", "Valley Ash High School", "Sunridge Middle School", "Seabright Unified School District", "Northgate Prep", "Lakeview Community School", "Birch Creek High School"];
+const B_PEOPLE = {
+  "Dana Whitfield": "Corinne Hazelwood", "Marcus Okafor": "Ellis Banerjee", "Priya Raman": "Joaquin Ferrante", "Lena Ortiz": "Mirela Sokolova", "Theo Brandt": "Augustin Delorme",
+  "Rosalind Achebe": "Philippa Mortlake", "Kenji Morales": "Benedikt Asante", "Harriet Lindgren": "Octavia Strand", "Samuel Oduya": "Leopold Iyer", "Beatrix Castellanos": "Clementine Roux", "Gareth Pennington": "Barnaby Quist", "Imogen Nakagawa": "Seraphina Oduro",
+  Whitfield: "Hazelwood", Okafor: "Banerjee", Raman: "Ferrante", Ortiz: "Sokolova", Brandt: "Delorme",
+};
+const B_ORG = { id: ORG_B_ID, name: "Lanternfield Youth Alliance (demo)", slug: "lanternfield-demo" };
+
+export const ORG_B = B_ORG;
+export const TEAM_B = TEAM.map((p) => ({ ...p, id: p.id.replace("a4a4a4a4-", "b5b5b5b5-"), displayName: B_PEOPLE[p.displayName], email: p.email.replace("demo-angels.example", "demo-lanternfield.example") }));
+
+// Strings that belong to one org only: seeing any of them while signed in to
+// the other org is a leak. Surnames and org-level names, never first names.
+export const CANARIES = {
+  a: [DEMO.org.name, ...LAST, ...FOUNDATIONS, ...COMPANIES, ...Object.keys(B_PEOPLE).filter((k) => k.includes(" "))],
+  b: [B_ORG.name, ...B_LAST, ...B_FOUNDATIONS, ...B_COMPANIES, ...Object.values(B_PEOPLE).filter((k) => k.includes(" "))],
+};
+
+const B_SWAPS = (() => {
+  const pairs = [
+    [DEMO.org.name, B_ORG.name], ["Ambition Angels", "Lanternfield Youth Alliance"], [DEMO.org.slug, B_ORG.slug], ["demo-angels.example", "demo-lanternfield.example"],
+    ...Object.entries(B_PEOPLE),
+    ...LAST.map((x, i) => [x, B_LAST[i]]), ...FOUNDATIONS.map((x, i) => [x, B_FOUNDATIONS[i]]), ...COMPANIES.map((x, i) => [x, B_COMPANIES[i]]), ...SCHOOLS.map((x, i) => [x, B_SCHOOLS[i]]),
+  ];
+  pairs.sort((x, y) => y[0].length - x[0].length);
+  const map = new Map(pairs);
+  const re = new RegExp(pairs.map(([k]) => k.replace(/[.*+?^${}()|[\]\\&]/g, "\\$&")).join("|"), "g");
+  return (s) => s.replace(/a4a4a4a4-/g, "b5b5b5b5-").replace(/c4c4c4c4-/g, "d5d5d5d5-").replace(re, (m) => map.get(m));
+})();
+function toB(v, key) {
+  if (typeof v === "string") return B_SWAPS(v);
+  if (typeof v === "number" && key === "id") return v + 1_000_000; // serial ids stay unique
+  if (Array.isArray(v)) return v.map((x) => toB(x));
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, toB(x, k)]));
+  return v;
+}
+const B_PILOT = ["modules.fundraising", "modules.finance", "modules.program", "modules.comms", "modules.ops", "modules.meetings", "modules.messages", "modules.documents", "ai.capture", "modules.strategy", "modules.board", "modules.compliance", "modules.staff", "modules.metrics"];
+
+/**
+ * Both orgs in one store (the mock's two-org mode). The signed-in user is the
+ * first team member of `org` ("a" = the demo org, "b" = Lanternfield), and
+ * holds `role` there; the other org's people keep their fixture roles. Rows
+ * that belong to an org (an org_id, or ids under the org's prefix) are copied;
+ * platform rows (role_permissions, reference data) are shared.
+ */
+export function buildTwoOrgFixtures({ profile = "populated", role = "owner", org = "a" } = {}) {
+  const a = buildFixtures({ profile, role: org === "a" ? role : "owner" });
+  const roleB = org === "b" ? role : "owner";
+  const tables = {};
+  for (const [t, rows] of Object.entries(a.tables)) {
+    const copies = [];
+    for (const r of rows) {
+      const owned = ("org_id" in r && r.org_id === ORG_ID) || (!("org_id" in r) && /"(a4a4a4a4|c4c4c4c4)-/.test(JSON.stringify(r)));
+      if (!owned) continue;
+      if (t === "org_entitlements") continue; // Lanternfield gets the Pilot plan below
+      const b = toB(r);
+      if (t === "memberships" && b.user_id === TEAM_B[0].id) b.role = roleB;
+      copies.push(b);
+    }
+    tables[t] = [...rows, ...copies];
+  }
+  tables.org_entitlements = [...(tables.org_entitlements || []), ...B_PILOT.map((k) => ({ org_id: ORG_B_ID, feature_key: k, enabled: true, source: "setup-org", updated_at: "2026-01-02T00:00:00Z" }))];
+  return { tables, rpcs: a.rpcs, user: org === "b" ? TEAM_B[0] : TEAM[0], team: org === "b" ? TEAM_B : TEAM, orgId: org === "b" ? ORG_B_ID : ORG_ID };
 }

@@ -355,9 +355,29 @@ export type SyncResult = { userId: string; orgId: string } & (
   | { ok: false; error: string }
 );
 
-/** Sync every active Google Calendar connection, logging a run per user. */
-export async function runCalendarSync(sb: SupabaseClient, now: Date): Promise<SyncResult[]> {
-  const conns = await listActiveCalendarConnections();
+/** Restricts a run to one user's connections in one org. */
+export type CalendarSyncScope = { userId: string; orgId: string };
+
+/**
+ * Sync active Google Calendar connections, logging a run per connection.
+ *
+ * `scope` omitted = every connection in every org. Only the cron
+ * (app/api/cron/calendar-sync, behind CRON_SECRET) may call it that way. A
+ * user-triggered sync (app/api/admin/agenda/sync) must pass the caller's own
+ * userId and active orgId, so one member's click never touches another
+ * user's or another org's calendar.
+ */
+export async function runCalendarSync(
+  sb: SupabaseClient,
+  now: Date,
+  scope?: CalendarSyncScope
+): Promise<SyncResult[]> {
+  const listed = await listActiveCalendarConnections(scope);
+  // Belt and braces: re-apply the scope in memory so a lister that ignores it
+  // can never widen a user-triggered run.
+  const conns = scope
+    ? listed.filter((c) => c.userId === scope.userId && c.orgId === scope.orgId)
+    : listed;
   const window = syncWindow(now);
   const results: SyncResult[] = [];
 

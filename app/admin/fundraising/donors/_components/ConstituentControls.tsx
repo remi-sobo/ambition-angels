@@ -264,8 +264,14 @@ export function LogInteractionForm({ constituentId }: { constituentId: string })
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors">
-        + Log
+      // V4 B1: a neutral control in the timeline composer (the record's one
+      // accent action is Record a gift).
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center h-9 px-3 rounded-control border border-outline bg-surface text-sm font-semibold text-ink-1 hover:bg-tile transition-colors"
+      >
+        Log a conversation
       </button>
     );
   }

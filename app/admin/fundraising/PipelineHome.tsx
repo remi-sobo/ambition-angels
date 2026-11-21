@@ -1,12 +1,9 @@
-import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
-import { money } from "../finance/_components/charts";
 import PageHeader from "../_components/PageHeader";
 import SectionSummary from "../_components/SectionSummary";
-import StatCard from "../_components/StatCard";
 import { NewOpportunityForm } from "./_components/PipelineBoard";
-import OpportunitiesBoard from "./_components/OpportunitiesBoard";
+import PipelineBoardV4 from "./_components/PipelineBoardV4";
 import { type OpportunityRow } from "./_components/pipeline-stages";
 import FilterTabs from "./_components/FilterTabs";
 import {
@@ -19,10 +16,9 @@ import {
 import {
   loadPipelineConfig,
   stagesForPipeline,
-  stageByKey,
-  stageKeysOfType,
 } from "@/lib/fundraising/stages";
 import { inYear, futureCloseYears } from "@/lib/fundraising/pipeline-year";
+import { todayInTZ } from "@/lib/admin/ops/week";
 
 // Major Gifts — the moves-management pipeline (modules/03-fundraising.md
 // "Major Gifts"). Extracted at Spec Fundraising F3 so one component serves
@@ -68,7 +64,7 @@ export default async function PipelineHome({
   searchParams,
   basePath = "/admin/fundraising",
 }: {
-  searchParams?: { pipeline?: string; year?: string };
+  searchParams?: { pipeline?: string; year?: string; view?: string };
   basePath?: string;
 }) {
   const ctx = await getOrgContext();
@@ -158,12 +154,9 @@ export default async function PipelineHome({
     { value: "all", label: "All time" },
   ];
 
-  // Stage columns + forecast buckets for the selected pipeline, from config:
-  // `open` carries weighted pipeline value, `won` is committed, `lost` and
-  // `on_hold` are excluded from both.
+  // Stage columns for the selected pipeline, from config (their stage types
+  // drive the board's open/won totals).
   const stages = stagesForPipeline(config, pipelineFilter);
-  const openKeys = stageKeysOfType(stages, "open");
-  const wonKeys = stageKeysOfType(stages, "won");
 
   // Everything on the board — open asks and won/lost outcomes alike — is
   // scoped to the selected year by expected close date, so a pledge dated to
@@ -171,29 +164,7 @@ export default async function PipelineHome({
   // year's filter is selected. Entries with no close date aren't dated to any
   // year, so they stay visible under every filter.
   const boardOpps = opps.filter((o) => inYear(o, year));
-  const open = boardOpps.filter((o) => openKeys.includes(o.stage));
-  const committed = boardOpps.filter((o) => wonKeys.includes(o.stage));
-  // Weighted value: per-ask probability, else the stage's config default.
-  const probabilityOf = (o: OpportunityRow) =>
-    o.probability ?? stageByKey(stages, o.stage)?.probabilityDefault ?? 50;
-  const pipelineValue = open.reduce((s, o) => s + (o.askAmount ?? 0), 0);
-  const weightedValue = open.reduce(
-    (s, o) => s + ((o.askAmount ?? 0) * probabilityOf(o)) / 100,
-    0
-  );
-  const committedValue = committed.reduce((s, o) => s + (o.askAmount ?? 0), 0);
-  const today = new Date().toISOString().slice(0, 10);
-  const overdueMoves = open.filter((o) => o.nextStepDue && o.nextStepDue < today).length;
-
-  // Forecast: open asks with a close date — `open` is already year-scoped,
-  // so this just drops the undated ones.
-  const closing = open.filter((o) => o.expectedClose);
-  const closingValue = closing.reduce((s, o) => s + (o.askAmount ?? 0), 0);
-  const closingWeighted = closing.reduce(
-    (s, o) => s + ((o.askAmount ?? 0) * probabilityOf(o)) / 100,
-    0
-  );
-  const closingLabel = year === "all" ? "Closing (all open)" : `Closing ${year}`;
+  const today = todayInTZ();
 
   // "Identified → Closed Won" (first stage → won stage) for the header.
   const funnelSpan =
@@ -203,33 +174,26 @@ export default async function PipelineHome({
         }`
       : "";
 
+  // V4 B1 (Pipeline.dc.html): the Board archetype. Header with one primary
+  // action and More actions; the pipeline and year tabs stay URL-driven
+  // (basePath); saved views, the filter row, the summary strip and the
+  // board itself are the client PipelineBoardV4.
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1400px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Pipeline"
-        subtitle={`Moves-management pipeline · ${funnelSpan}`}
-        actions={
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/settings/fundraising/stages"
-              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
-            >
-              Edit stages
-            </Link>
-            <Link
-              href="/admin/fundraising/prospects"
-              className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
-            >
-              Prospect research →
-            </Link>
-            <NewOpportunityForm />
-          </div>
-        }
+        subtitle={funnelSpan ? `Every ask from ${funnelSpan.replace(" → ", " to ")}` : undefined}
+        moreActions={[
+          { label: "Edit stages", href: "/admin/settings/fundraising/stages" },
+          { label: "Prospect research", href: "/admin/fundraising/prospects" },
+          { label: "Ask log", href: "#ask-log" },
+        ]}
+        primaryAction={<NewOpportunityForm />}
       />
 
       <SectionSummary section="major_gifts" />
 
-      <div className="flex flex-wrap items-center gap-3 mb-5">
+      <div className="flex flex-wrap items-center gap-3 mb-4">
         <FilterTabs
           options={pipelineOptions}
           current={pipelineFilter}
@@ -246,30 +210,7 @@ export default async function PipelineHome({
         />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        <StatCard
-          label="Open pipeline"
-          value={money(pipelineValue)}
-          sub={`${open.length} open ${open.length === 1 ? "ask" : "asks"}${
-            overdueMoves > 0 ? ` · ${overdueMoves} overdue` : ""
-          }`}
-        />
-        <StatCard label="Weighted" value={money(weightedValue)} sub="ask × probability" />
-        <StatCard
-          label={closingLabel}
-          value={money(closingValue)}
-          sub={`${closing.length} ${closing.length === 1 ? "ask" : "asks"} · ${money(
-            closingWeighted
-          )} weighted`}
-        />
-        <StatCard
-          label="Committed"
-          value={money(committedValue)}
-          sub={`${committed.length} closed won`}
-        />
-      </div>
-
-      <OpportunitiesBoard opps={boardOpps} stages={stages} />
+      <PipelineBoardV4 opps={boardOpps} stages={stages} today={today} initialView={searchParams?.view} />
     </div>
   );
 }

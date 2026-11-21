@@ -57,8 +57,9 @@ export default function LogThankYou({
   if (!open) {
     return (
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="text-xs font-semibold px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:text-ink-1 transition-colors"
+        className="inline-flex items-center h-9 px-3 rounded-control border border-outline bg-surface text-sm font-semibold text-ink-1 hover:bg-tile transition-colors"
       >
         Log thank-you
       </button>

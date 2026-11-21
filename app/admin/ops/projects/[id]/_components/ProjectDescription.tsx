@@ -1,7 +1,8 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
+import { Textarea } from "@/app/admin/_components/ui/Input";
 import { useRouter } from "next/navigation";
-import { userMessage } from "@/lib/admin/errors";
 import { Fragment, useState, useTransition, type ReactNode } from "react";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -152,20 +153,17 @@ export default function ProjectDescription({
   async function save() {
     setSaving(true);
     setError(null);
-    try {
-      const r = await fetch(`/api/admin/ops/projects/${projectId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: draft || null }),
-      });
-      if (!r.ok) throw new Error(userMessage(r));
-      setEditing(false);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed");
-    } finally {
-      setSaving(false);
+    const r = await saveAction({
+      request: { url: `/api/admin/ops/projects/${projectId}`, method: "PATCH", body: { description: draft || null } },
+      failure: false,
+    });
+    setSaving(false);
+    if (!r.ok) {
+      setError(r.message);
+      return;
     }
+    setEditing(false);
+    startTransition(() => router.refresh());
   }
 
   function cancel() {
@@ -208,14 +206,15 @@ export default function ProjectDescription({
 
       {editing ? (
         <>
-          <textarea
+          <Textarea
+            aria-label="Project description"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={12}
             placeholder="Project plan, in markdown. Headings with #, lists with -, **bold**, *italic*, `code`, [links](url)."
-            className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 placeholder-ink-3 font-mono focus:outline-none focus:border-orange/50"
+            className="font-mono"
           />
-          {error && <p className="text-expense text-xs mt-2">{error}</p>}
+          {error && <p role="alert" className="text-status-critical-text text-xs font-medium mt-2">{error}</p>}
           <div className="mt-4 pt-3 border-t border-hairline">
             <div className="text-xs uppercase tracking-wider text-ink-2 mb-2">
               Preview

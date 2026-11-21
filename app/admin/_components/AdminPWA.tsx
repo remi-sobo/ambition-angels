@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Alert from "./ui/Alert";
 
 /**
  * Registers the /admin service worker on mount so the admin app is
@@ -14,10 +15,26 @@ import { useEffect, useState } from "react";
  *
  * Scope is pinned to "/admin/" so the SW does not intercept marketing-site
  * fetches. Rendered once by app/admin/layout.tsx.
+ *
+ * Also shows a plain offline banner while navigator.onLine is false: the
+ * worker no longer serves cached pages (audit finding 8), so the person needs
+ * to know a tap or a save will not reach the server.
  */
 export default function AdminPWA() {
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   const [reloading, setReloading] = useState(false);
+  const [offline, setOffline] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setOffline(!navigator.onLine);
+    sync();
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    return () => {
+      window.removeEventListener("online", sync);
+      window.removeEventListener("offline", sync);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -106,9 +123,22 @@ export default function AdminPWA() {
     waiting.postMessage({ type: "SKIP_WAITING" });
   };
 
-  if (!waiting) return null;
+  const offlineBanner = offline ? (
+    <div
+      className="fixed inset-x-0 top-0 z-[46] flex justify-center px-4"
+      style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}
+    >
+      <Alert tone="warning" title="You are offline." className="w-full max-w-md shadow-2xl">
+        Changes you make now will not be saved. Reconnect to keep working.
+      </Alert>
+    </div>
+  ) : null;
+
+  if (!waiting) return offlineBanner;
 
   return (
+    <>
+    {offlineBanner}
     <div
       role="status"
       aria-live="polite"
@@ -129,5 +159,6 @@ export default function AdminPWA() {
         </button>
       </div>
     </div>
+    </>
   );
 }

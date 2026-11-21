@@ -108,7 +108,7 @@ export default async function OutcomesPage() {
                   compareTone={m.confirmed_state === "conflict" || m.confirmed_state === "stale" ? "danger" : "default"}
                   extra={
                     <p className="text-xs text-ink-2">
-                      {m.description ? `${m.description} ` : ""}
+                      {m.description ? `${m.description.replace(/[.\s]+$/, "")}. ` : ""}
                       {m.latest ? `Due again after ${staleAfter(m.cadence)} days.` : ""}
                       {m.target != null ? " Target set." : ""}
                     </p>

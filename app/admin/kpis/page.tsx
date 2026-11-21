@@ -167,6 +167,7 @@ export default async function KpisPage({
           )}
           value={dept}
           hrefFor={(d) => href(view, d)}
+          className="flex-wrap max-w-full"
         />
       </div>
 

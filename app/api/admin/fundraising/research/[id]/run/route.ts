@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 /**
  * GET /api/admin/fundraising/research/[prospect_id]/run
@@ -18,8 +18,9 @@ export const dynamic = "force-dynamic";
 const STALE_MS = 6 * 60 * 1000; // a touch beyond maxDuration (300s)
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("fundraising.read");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
     return NextResponse.json({ error: "bad id" }, { status: 400 });
   }

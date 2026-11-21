@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
@@ -17,9 +17,8 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string; docId: string } }
 ) {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("fundraising.read");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   if (!isUuid(params.id) || !isUuid(params.docId)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
@@ -48,9 +47,8 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string; docId: string } }
 ) {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("fundraising.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   if (!isUuid(params.id) || !isUuid(params.docId)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }

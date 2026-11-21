@@ -16,6 +16,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireEnvIntegrationOwner } from "@/lib/integrations/env-owner";
+import { requirePermission } from "@/lib/admin/requirePermission";
 import {
   advanceGmailJob,
   createGmailJob,
@@ -28,6 +29,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
+  const guard = await requirePermission("fundraising.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   const gate = await requireEnvIntegrationOwner("gmail_sync");
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   const orgId = gate.ctx.orgId;
@@ -51,6 +54,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  const guard = await requirePermission("fundraising.read");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   const gate = await requireEnvIntegrationOwner("gmail_sync");
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   const supabase = getSupabaseAdmin();

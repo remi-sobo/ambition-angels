@@ -25,7 +25,13 @@ const CHUNK = 25;
 type StagedRow = {
   id: string;
   row_num: number;
-  normalized: { fingerprint: string; spine: Record<string, unknown>; custom: Record<string, unknown> } | null;
+  normalized: {
+    fingerprint: string;
+    spine: Record<string, unknown>;
+    custom: Record<string, unknown>;
+    /** V4 Stage E: the cohort this row enrolls in (resolved at staging). */
+    cohort_id?: string | null;
+  } | null;
 };
 
 /**
@@ -96,7 +102,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .limit(BUDGET);
   const batch = (batchData ?? []) as StagedRow[];
 
-  let created = 0, newlySkipped = 0, failed = 0;
+  // V4 Stage E: enrollments ride the same run. Re-read the org's open
+  // cohorts so a cohort archived or moved since staging is never written to.
+  const openCohorts = new Set<string>();
+  if (run.entity_type === "student") {
+    const { data: cohortRows } = await supabase
+      .from("cohorts").select("id").eq("org_id", ctx.orgId).in("status", ["planning", "active"]);
+    for (const c of (cohortRows ?? []) as { id: string }[]) openCohorts.add(c.id);
+  }
+  const enroll = async (studentId: string, cohortId: string | null | undefined) => {
+    if (!cohortId || !openCohorts.has(cohortId)) return false;
+    const { error } = await supabase.from("cohort_members").upsert(
+      { org_id: ctx.orgId, cohort_id: cohortId, student_id: studentId, status: "enrolled" },
+      { onConflict: "cohort_id,student_id", ignoreDuplicates: true },
+    );
+    if (error) console.error("Import enroll failed:", error.message);
+    return !error;
+  };
+
+  let created = 0, newlySkipped = 0, failed = 0, enrolled = 0;
   for (let i = 0; i < batch.length; i += CHUNK) {
     const chunk = batch.slice(i, i + CHUNK);
 
@@ -156,6 +180,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           external_id: fingerprint,
         });
         if (refErr) console.error("external_refs insert failed:", refErr.message);
+        if (await enroll(entityRow.id as string, row.normalized.cohort_id)) enrolled++;
         await supabase.from("import_rows")
           .update({ status: "committed", created_entity_id: entityRow.id, error: null })
           .eq("org_id", ctx.orgId)
@@ -173,6 +198,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .eq("status", "valid");
 
   const done = (remaining ?? 0) === 0;
+  if (!done && enrolled > 0) {
+    // Keep the running enrollment count on the run between budgeted calls.
+    await supabase.from("imports")
+      .update({ counts: { ...(run.counts ?? {}), enrolled: ((run.counts as { enrolled?: number } | null)?.enrolled ?? 0) + enrolled } })
+      .eq("org_id", ctx.orgId)
+      .eq("id", params.id);
+  }
   if (done) {
     const tally = async (status: string) => {
       const { count } = await supabase
@@ -186,7 +218,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const [committed, skipped, invalid] = await Promise.all([
       tally("committed"), tally("skipped"), tally("invalid"),
     ]);
-    const counts = { ...(run.counts ?? {}), created: committed, skipped, invalid };
+    // A row skipped because it matched someone already on the roster (by
+    // email) still joins the cohort the file asked for.
+    if (run.entity_type === "student" && openCohorts.size > 0) {
+      const { data: matched } = await supabase
+        .from("import_rows")
+        .select("matched_entity_id, normalized")
+        .eq("org_id", ctx.orgId)
+        .eq("import_id", params.id)
+        .eq("status", "skipped")
+        .not("matched_entity_id", "is", null);
+      for (const m of (matched ?? []) as { matched_entity_id: string; normalized: StagedRow["normalized"] }[]) {
+        if (await enroll(m.matched_entity_id, m.normalized?.cohort_id)) enrolled++;
+      }
+    }
+    const counts = {
+      ...(run.counts ?? {}),
+      created: committed, skipped, invalid,
+      enrolled: ((run.counts as { enrolled?: number } | null)?.enrolled ?? 0) + enrolled,
+    };
     await supabase.from("imports")
       .update({ status: "done", counts, finished_at: new Date().toISOString() })
       .eq("org_id", ctx.orgId)
@@ -206,7 +256,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   return NextResponse.json({
     ok: true, done,
-    created, newly_skipped: newlySkipped, failed,
+    created, newly_skipped: newlySkipped, failed, enrolled,
     remaining: remaining ?? 0,
   });
 }

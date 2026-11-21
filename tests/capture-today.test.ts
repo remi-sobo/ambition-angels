@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { rankObligations, whyFallback, type ObligationRow } from "@/lib/admin/todayRank";
 
@@ -66,7 +66,8 @@ describe("Today wiring (structural)", () => {
   test("every source map knows capture", () => {
     expect(read("lib", "admin", "actionQueue.ts")).toMatch(/\| "capture";/);
     expect(read("lib", "admin", "actionQueue.ts")).toMatch(/capture: "\/admin\/today"/);
-    expect(read("app", "admin", "_components", "NeedsYouQueueClient.tsx")).toMatch(/capture: "Recording"/);
+    // NeedsYouQueueClient (the V1 queue, no importer) is deleted (V4 P1).
+    expect(existsSync(join(process.cwd(), "app", "admin", "_components", "NeedsYouQueueClient.tsx"))).toBe(false);
   });
 });
 

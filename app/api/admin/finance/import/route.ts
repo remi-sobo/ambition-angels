@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { parseCsv } from "@/lib/finance/parsers";
 import { batchDedupHashes, fileHash } from "@/lib/finance/dedup";
@@ -11,6 +11,7 @@ import type {
   ParsedTxn,
   StagedTxn,
 } from "@/lib/finance/types";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const ALLOWED_FORMATS: BankFormat[] = [
   "wells-fargo",
@@ -26,10 +27,9 @@ const ALLOWED_FORMATS: BankFormat[] = [
 // Preview is free; commit writes. The client always previews first, then
 // submits the same file with the user's confirmation.
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const user = await getAdminUser();
   if (!user) {
     return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });

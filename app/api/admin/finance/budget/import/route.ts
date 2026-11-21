@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { FIN_BUDGET_CONFLICT, NO_CATEGORIES_MESSAGE } from "@/lib/finance/categories";
 import { parseQbBudget, matchAccounts, type MatchInput } from "@/lib/finance/qb-budget";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // POST /api/admin/finance/budget/import
 //
@@ -22,10 +22,9 @@ import { parseQbBudget, matchAccounts, type MatchInput } from "@/lib/finance/qb-
 //   - Re-running for the same year overwrites base_amount for matched
 //     rows. That's intentional — the QB export IS the source of truth.
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const form = await req.formData().catch(() => null);
   if (!form) {

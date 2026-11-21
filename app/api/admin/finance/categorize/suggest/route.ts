@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { NO_CATEGORIES_MESSAGE } from "@/lib/finance/categories";
 import {
   suggestCategories,
@@ -8,6 +7,7 @@ import {
   type CategoryForAI,
   type TxnForAI,
 } from "@/lib/finance/ai-categorize";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 export const maxDuration = 120;
 
@@ -21,10 +21,9 @@ export async function POST() {
   // Org fence: the service-role client bypasses RLS. Without an org filter this
   // route reads every tenant's uncategorized transactions and ships them to the
   // AI — scope both reads to the caller's org.
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: "AI categorization isn't configured (ANTHROPIC_API_KEY)." }, { status: 503 });
   }

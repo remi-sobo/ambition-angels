@@ -31,9 +31,15 @@ const longDate = (iso: string) =>
     year: "numeric",
   });
 
-export const ORG_RECEIPT_FOOTER =
-  "Ambition Angels is a 501(c)(3) nonprofit organization. " +
-  "Please retain this letter as your receipt for tax purposes.";
+/** The sending org's identity as a receipt needs it. Comes from
+ *  resolveOrgEmailIdentity (lib/email/org-identity.ts); there is no default,
+ *  so one org's tax statement can never land on another org's receipt. */
+export type ReceiptIdentity = {
+  /** The IRS tax-status statement for the org that received the gift. */
+  taxStatement: string;
+  /** Plain-text footer line under the emailed receipt. */
+  footerLine: string;
+};
 
 /**
  * The contemporaneous-written-acknowledgment block. Two shapes:
@@ -42,7 +48,7 @@ export const ORG_RECEIPT_FOOTER =
  * - Quid pro quo (fair_market_value recorded on the gift): the >$75
  *   disclosure with the FMV / deductible split.
  */
-export function complianceBlock(gift: ReceiptGift): string {
+export function complianceBlock(gift: ReceiptGift, taxStatement: string): string {
   const lines = [
     `Gift amount: ${usd(gift.amount)}`,
     `Date received: ${longDate(gift.gift_date)}`,
@@ -62,7 +68,7 @@ export function complianceBlock(gift: ReceiptGift): string {
       "No goods or services were provided in exchange for this contribution."
     );
   }
-  lines.push(ORG_RECEIPT_FOOTER);
+  lines.push(taxStatement);
   return lines.join("\n");
 }
 
@@ -73,27 +79,27 @@ export function complianceBlock(gift: ReceiptGift): string {
  * tax-deductible statement can never land on the wrong record. DAF/grant thanks
  * therefore carry no tax-deductible language, by construction.
  */
-export function complianceFor(gift: ReceiptGift | null | undefined): string {
+export function complianceFor(gift: ReceiptGift | null | undefined, taxStatement: string): string {
   if (!gift) return "";
-  return complianceBlock(gift);
+  return complianceBlock(gift, taxStatement);
 }
 
 /** Full receipt email body: editable personal note above the immutable
  *  compliance block. */
-export function receiptEmailText(personalNote: string, gift: ReceiptGift): string {
+export function receiptEmailText(personalNote: string, gift: ReceiptGift, identity: ReceiptIdentity): string {
   const note = personalNote.trim();
-  return [note, "—".repeat(30), complianceBlock(gift)].filter(Boolean).join("\n\n");
+  return [note, "—".repeat(30), complianceBlock(gift, identity.taxStatement)].filter(Boolean).join("\n\n");
 }
 
-export function receiptEmailHtml(personalNote: string, gift: ReceiptGift): string {
+export function receiptEmailHtml(personalNote: string, gift: ReceiptGift, identity: ReceiptIdentity): string {
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const note = esc(personalNote.trim()).replace(/\n/g, "<br/>");
-  const block = esc(complianceBlock(gift)).replace(/\n/g, "<br/>");
+  const block = esc(complianceBlock(gift, identity.taxStatement)).replace(/\n/g, "<br/>");
   return `<!doctype html><html><body style="font-family:Georgia,serif;color:#222;max-width:560px;margin:0 auto;padding:24px;line-height:1.6">
   <p>${note}</p>
   <hr style="border:none;border-top:1px solid #ddd;margin:24px 0"/>
   <p style="font-size:13px;color:#444">${block}</p>
-  <p style="font-size:12px;color:#888;margin-top:32px">Ambition Angels · ambitionangels.org</p>
+  <p style="font-size:12px;color:#888;margin-top:32px">${esc(identity.footerLine)}</p>
 </body></html>`;
 }

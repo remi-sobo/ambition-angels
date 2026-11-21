@@ -1,0 +1,11 @@
+/* Fallback face for Big Shoulders Display while the web font loads.
+   Values are the ones next/font/google generated (Arial with Google's
+   precalculated metrics), kept so the swap looks the same as before. */
+@font-face {
+  font-family: "Big Shoulders Display Fallback";
+  src: local("Arial");
+  ascent-override: 146.71%;
+  descent-override: 31.76%;
+  line-gap-override: 0.00%;
+  size-adjust: 67.07%;
+}

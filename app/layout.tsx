@@ -1,44 +1,13 @@
 import type { Metadata } from "next";
-import { Big_Shoulders_Display, Poppins, DM_Sans, Instrument_Sans } from "next/font/google";
+import { bigShoulders, poppins, dmSans, instrumentSans } from "./fonts";
 import "./globals.css";
 import "./site.css";
+import "./fonts/fallbacks.css";
 import SiteHeader from "@/components/site/SiteHeader";
 import SiteFooter from "@/components/site/SiteFooter";
 import SiteChrome from "@/components/SiteChrome";
 import DonateModalProvider from "@/components/DonateModalProvider";
 import Analytics from "@/components/Analytics";
-
-const bigShoulders = Big_Shoulders_Display({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-heading",
-  display: "swap",
-});
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-body",
-  display: "swap",
-});
-
-// BloomOS (admin) interface face — Visual System V3 §2. ONE face for the whole
-// product UI: headings, body, navigation, buttons, labels. Scoped to
-// `.admin-shell` in globals.css so the public Ambition Angels site keeps Big
-// Shoulders / Poppins / DM Sans untouched. The BloomOS wordmark stays an image
-// asset and is deliberately NOT matched to this face.
-const instrumentSans = Instrument_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-instrument",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {

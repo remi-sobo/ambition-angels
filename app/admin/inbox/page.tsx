@@ -57,7 +57,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             <>
               Alerts, mentions, and updates for you from across BloomOS. New team
               messages ping here too. Open one to reply in{" "}
-              <Link href="/admin/messages" className="text-orange hover:underline">
+              <Link href="/admin/messages" className="text-orange underline underline-offset-2">
                 Messages
               </Link>
               .

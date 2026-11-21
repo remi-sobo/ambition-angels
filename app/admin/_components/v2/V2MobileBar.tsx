@@ -82,7 +82,7 @@ function BarSlot({
   return (
     <span
       className={`flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 ${
-        active ? "text-orange-mid" : "text-cream/55"
+        active ? "text-cream" : "text-cream/55"
       }`}
     >
       {children}

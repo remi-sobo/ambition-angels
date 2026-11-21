@@ -291,7 +291,7 @@ export default async function StrategicPlanPage({
         subtitle={
           <>
             Foundation, objectives, goals and measures, wired to the work. The framing deck lives in the{" "}
-            <Link href="/strategy" className="text-orange hover:underline">Strategy Room</Link>
+            <Link href="/strategy" className="text-orange underline underline-offset-2">Strategy Room</Link>
           </>
         }
         secondaryActions={isEmpty ? <ReedStartButton /> : <ReedReviewButton />}

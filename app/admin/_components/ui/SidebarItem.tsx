@@ -63,7 +63,7 @@ export default function SidebarItem({
       <span className="truncate">{label}</span>
       {badge != null && badge > 0 && (
         <span
-          className="ml-auto shrink-0 min-w-[20px] h-5 px-1.5 inline-flex items-center justify-center rounded-full bg-accent text-white text-xs font-semibold leading-none tabular-nums"
+          className="ml-auto shrink-0 min-w-[20px] h-5 px-1.5 inline-flex items-center justify-center rounded-full bg-accent-ink text-white text-xs font-semibold leading-none tabular-nums"
           aria-label={`${badge} unread`}
         >
           {badge > 9 ? "9+" : badge}

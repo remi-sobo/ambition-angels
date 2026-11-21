@@ -87,7 +87,7 @@ export default async function StrategyPage() {
         subtitle={
           <>
             {angles.length} framing angles · the editable source for the{" "}
-            <Link href="/strategy" className="text-orange hover:underline">Strategy Room</Link>
+            <Link href="/strategy" className="text-orange underline underline-offset-2">Strategy Room</Link>
           </>
         }
         actions={

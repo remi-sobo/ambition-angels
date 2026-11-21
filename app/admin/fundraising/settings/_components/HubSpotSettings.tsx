@@ -56,7 +56,9 @@ export default function HubSpotSettings({
         {warn && flags[flag] && <div className="text-xs text-status-watch-text mt-0.5">{warn}</div>}
       </div>
       <button
+        type="button"
         role="switch"
+        aria-label={label}
         aria-checked={flags[flag]}
         disabled={busy || !connected}
         onClick={() => call({ action: "set_flags", [flag]: !flags[flag] })}

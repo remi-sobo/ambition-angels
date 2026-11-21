@@ -2,7 +2,8 @@ import "server-only";
 import { cache } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
+import type { Permission } from "@/lib/admin/requirePermission";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
 import { getForecast } from "@/lib/admin/overview/sources";
@@ -57,7 +58,11 @@ export const getOrgHealth = cache(async (): Promise<HealthRow[] | null> => {
   const rows: HealthRow[] = [];
   const push = (key: string, label: string, v: HealthVerdict) => rows.push({ key, label, ...v });
 
-  if (hasFeature(ents, "modules.finance")) {
+  // Rows backed by service-role loaders also need the role permission the
+  // module's RLS would demand; a board_viewer never sees money or programs.
+  const can = async (perm: Permission) => ctxHasPermission(ctx, perm);
+
+  if (hasFeature(ents, "modules.finance") && (await can("finance.read"))) {
     const fin = await getFinanceSnapshot();
     const anchorDate = fin.cfg.reconciledAt?.slice(0, 10) ?? null;
     const anchorStale =
@@ -72,12 +77,12 @@ export const getOrgHealth = cache(async (): Promise<HealthRow[] | null> => {
     }));
   }
 
-  if (hasFeature(ents, "modules.fundraising")) {
+  if (hasFeature(ents, "modules.fundraising") && (await can("fundraising.read"))) {
     const f = await getForecast();
     push("fundraising", "Fundraising", composeFundraising(f));
   }
 
-  if (hasFeature(ents, "modules.program")) {
+  if (hasFeature(ents, "modules.program") && (await can("program.read"))) {
     // The A6 resolver IS the house attendance formula — org-fenced inside.
     const pct = await METRIC_RESOLVERS.attendance_rate(admin, ctx.orgId);
     push("programs", "Programs", composePrograms({ attendancePct: pct }));
@@ -106,7 +111,7 @@ export const getOrgHealth = cache(async (): Promise<HealthRow[] | null> => {
     }));
   }
 
-  if (hasFeature(ents, "modules.strategy")) {
+  if (hasFeature(ents, "modules.strategy") && (await can("reports.read"))) {
     const glance = await getStrategyGlance();
     const worstHealth = glance.objectives.reduce<string | null>(
       (worst, o) =>

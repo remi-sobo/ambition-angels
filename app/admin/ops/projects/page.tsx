@@ -17,6 +17,7 @@ import {
   type ProjectStatus,
 } from "../_types/ops";
 import PageHeader from "../../_components/PageHeader";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,8 @@ export default async function ProjectsListPage({
 }: {
   searchParams: SearchParams;
 }) {
+  const roleGate = await requirePagePermission("ops.read", "Operations");
+  if (!roleGate.ok) return roleGate.page;
   const { status, category, assignee, q, sort, dir, page, showGrants } =
     parseParams(searchParams);
   const me = await resolveUserHandle();

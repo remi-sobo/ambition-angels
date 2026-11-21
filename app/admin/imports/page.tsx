@@ -4,6 +4,7 @@ import ImportWizard from "./_components/ImportWizard";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getProgramTerms } from "@/lib/admin/terminology";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Staged CSV import (spec #5 E3): upload → map → preview → commit. One door
 // for getting existing data into BloomOS — participants now, constituents in
@@ -47,6 +48,8 @@ const STATUS_CHIP: Record<string, string> = {
 };
 
 export default async function ImportsPage() {
+  const roleGate = await requirePagePermission(["program.read", "fundraising.read"], "Imports");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   const terms = await getProgramTerms();
   const supabase = getSupabaseAdmin();

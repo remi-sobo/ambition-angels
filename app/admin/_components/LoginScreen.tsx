@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
 import { TYPE } from "@/lib/admin/typeScale";
+import { clearAdminCaches } from "@/lib/admin/swCache";
 
 // BloomOS sign-in, split-screen: brand panel on the left (the "are we
 // winning" pitch from bloomos.org, synthetic numbers only), the form on the
@@ -120,6 +121,7 @@ export default function LoginScreen({
     setLoggingIn(true);
     try {
       await fetch("/api/admin/logout", { method: "POST" });
+      await clearAdminCaches();
       router.refresh();
     } finally {
       setLoggingIn(false);

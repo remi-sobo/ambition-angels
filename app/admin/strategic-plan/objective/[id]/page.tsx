@@ -14,6 +14,7 @@ import {
   type InitiativeRollup,
 } from "../../_components/PlanControls";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Objective detail (drill-in from the Strategy Org grid): a full page for one
 // objective. The editable tree (objective status/owner, goals, measures, and
@@ -33,6 +34,8 @@ const TASK_LABEL: Record<string, string> = {
 };
 
 export default async function ObjectiveDetailPage({ params }: { params: { id: string } }) {
+  const roleGate = await requirePagePermission("reports.read", "Strategic plan");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;
   const orgId = ctx.orgId;

@@ -14,6 +14,7 @@ import {
   type BoardMember,
   type BoardMeeting,
 } from "./_components/BoardControls";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Board governance (Ring 4, modules/07-governance.md): the lifecycle pieces
 // affordable portals skip — terms with expiry alerts, annual COI status
@@ -22,6 +23,8 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function BoardPage() {
+  const roleGate = await requirePagePermission("board.read", "Board");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   // Org fence: the service-role client bypasses RLS, so every read is scoped to
   // the active org. No session → empty.

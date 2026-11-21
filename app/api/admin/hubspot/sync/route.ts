@@ -11,7 +11,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/admin/auth";
-import { requireEntitlement } from "@/lib/admin/entitlements";
 import { requireEnvIntegrationOwner } from "@/lib/integrations/env-owner";
 import {
   createJob,
@@ -20,11 +19,12 @@ import {
   runChunk,
   jobToResponse,
 } from "@/lib/hubspot/sync-engine";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 export async function POST(req: NextRequest) {
   // AA-site surface (core fence): the HubSpot pipeline belongs to the resident
   // org only — authentication alone must not open another tenant's sync.
-  const ent = await requireEntitlement("aa.hubspot_mirror");
+  const ent = await requirePermission("fundraising.write", { entitlement: "aa.hubspot_mirror" });
   if (!ent.ok) {
     return NextResponse.json({ error: ent.error }, { status: ent.status });
   }
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const ent = await requireEntitlement("aa.hubspot_mirror");
+  const ent = await requirePermission("fundraising.read", { entitlement: "aa.hubspot_mirror" });
   if (!ent.ok) {
     return NextResponse.json({ error: ent.error }, { status: ent.status });
   }

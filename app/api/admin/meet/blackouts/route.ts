@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const createSchema = z.object({
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -11,10 +11,9 @@ const createSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   let body: unknown;
   try {
     body = await req.json();

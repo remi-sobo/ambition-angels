@@ -25,6 +25,15 @@ const CONTROL_BASE = `w-full rounded-control bg-surface border border-hairline $
 
 const INVALID = "border-status-critical focus:border-status-critical focus:ring-status-critical/20";
 
+/** The aria-describedby value for a control inside <Field htmlFor={id}>. */
+export function fieldDescribedBy(
+  id: string,
+  { hint, error }: { hint?: ReactNode; error?: ReactNode },
+): string | undefined {
+  const ids = [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean);
+  return ids.length ? ids.join(" ") : undefined;
+}
+
 /** Label + control + help/error, laid out identically everywhere. */
 export function Field({
   label,
@@ -43,6 +52,11 @@ export function Field({
   children: ReactNode;
   className?: string;
 }) {
+  // Stable ids for the help and error lines, so a control can point at them
+  // with aria-describedby (see fieldDescribedBy and the *Field components in
+  // ./Field). Derived from htmlFor; without one the lines simply have no id.
+  const hintId = htmlFor ? `${htmlFor}-hint` : undefined;
+  const errorId = htmlFor ? `${htmlFor}-error` : undefined;
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
       <label htmlFor={htmlFor} className={TYPE.fieldLabel}>
@@ -55,24 +69,38 @@ export function Field({
       </label>
       {children}
       {/* §13: an error is a sentence, not just a red outline. */}
+      {/* The hint stays visible next to an error: the error says what is wrong,
+          the hint still says what belongs here. */}
+      {hint ? (
+        <p id={hintId} className={TYPE.metadata}>
+          {hint}
+        </p>
+      ) : null}
       {error ? (
-        <p className="text-xs font-medium text-status-critical-text">{error}</p>
-      ) : hint ? (
-        <p className={TYPE.metadata}>{hint}</p>
+        <p id={errorId} className="text-xs font-medium text-status-critical-text">
+          <span className="sr-only">Error: </span>
+          {error}
+        </p>
       ) : null}
     </div>
   );
 }
 
+/** Control height: `md` 36px (toolbars, dense forms), `lg` 44px (drawer and
+ *  page forms, touch). */
+export type ControlSize = "md" | "lg";
+const HEIGHT: Record<ControlSize, string> = { md: "h-9", lg: "h-11" };
+
 export default function Input({
   invalid,
+  controlSize = "md",
   className = "",
   ...rest
-}: { invalid?: boolean } & InputHTMLAttributes<HTMLInputElement>) {
+}: { invalid?: boolean; controlSize?: ControlSize } & InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       aria-invalid={invalid || undefined}
-      className={`${CONTROL_BASE} h-9 px-3 ${invalid ? INVALID : ""} ${className}`}
+      className={`${CONTROL_BASE} ${HEIGHT[controlSize]} px-3 ${invalid ? INVALID : ""} ${className}`}
       {...rest}
     />
   );
@@ -94,16 +122,17 @@ export function Textarea({
 
 export function Select({
   invalid,
+  controlSize = "md",
   className = "",
   children,
   ...rest
-}: { invalid?: boolean } & SelectHTMLAttributes<HTMLSelectElement>) {
+}: { invalid?: boolean; controlSize?: ControlSize } & SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
       aria-invalid={invalid || undefined}
       // appearance-none + an inline chevron keeps the control identical across
       // browsers; the right padding reserves room for it.
-      className={`${CONTROL_BASE} h-9 pl-3 pr-9 appearance-none bg-no-repeat ${
+      className={`${CONTROL_BASE} ${HEIGHT[controlSize]} pl-3 pr-9 appearance-none bg-no-repeat ${
         invalid ? INVALID : ""
       } ${className}`}
       style={{

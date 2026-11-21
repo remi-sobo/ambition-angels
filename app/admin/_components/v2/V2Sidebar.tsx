@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { OrgContext } from "@/lib/admin/auth";
+import { clearAdminCaches } from "@/lib/admin/swCache";
 import { activeShellKey, type ShellNav } from "@/lib/admin/v2shellNav";
 import { Icon } from "../Icon";
 import OrgSwitcher from "../OrgSwitcher";
@@ -66,6 +67,7 @@ export default function V2Sidebar({
   const handleLogout = async () => {
     setLoggingOut(true);
     try { await fetch("/api/admin/logout", { method: "POST" }); } catch {}
+    await clearAdminCaches();
     router.push("/admin");
     router.refresh();
   };

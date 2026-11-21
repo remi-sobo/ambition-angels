@@ -579,7 +579,24 @@ const server = http.createServer(async (req, res) => {
       if (req.method === "POST" || req.method === "PUT") {
         const list = Array.isArray(body) ? body : body ? [body] : [];
         out = list.map((r) => completeRow(table, r));
-        if (config.persist) (fx.tables[table] ||= []).push(...out);
+        // Upserts (Prefer: resolution=merge-duplicates / ignore-duplicates)
+        // merge on on_conflict keys instead of appending a second copy.
+        const conflict = (url.searchParams.get("on_conflict") || "").split(",").filter(Boolean);
+        const merging = prefer.includes("resolution=merge-duplicates");
+        const ignoring = prefer.includes("resolution=ignore-duplicates");
+        if (config.persist && conflict.length && (merging || ignoring)) {
+          const rows = (fx.tables[table] ||= []);
+          out = list.map((r) => {
+            const hit = rows.find((x) => conflict.every((k) => x[k] != null && x[k] === r[k]));
+            if (hit) {
+              if (merging) Object.assign(hit, r);
+              return hit;
+            }
+            const row = completeRow(table, r);
+            rows.push(row);
+            return row;
+          });
+        } else if (config.persist) (fx.tables[table] ||= []).push(...out);
       } else if (req.method === "PATCH") {
         const hits = applyFilters(fx.tables[table] || [], params, ignored);
         out = hits.map((r) => ({ ...r, ...body }));

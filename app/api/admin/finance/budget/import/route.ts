@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { FIN_BUDGET_CONFLICT, NO_CATEGORIES_MESSAGE } from "@/lib/finance/categories";
 import { parseQbBudget, matchAccounts, type MatchInput } from "@/lib/finance/qb-budget";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // POST /api/admin/finance/budget/import
 //
@@ -21,10 +22,9 @@ import { parseQbBudget, matchAccounts, type MatchInput } from "@/lib/finance/qb-
 //   - Re-running for the same year overwrites base_amount for matched
 //     rows. That's intentional — the QB export IS the source of truth.
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const form = await req.formData().catch(() => null);
   if (!form) {
@@ -75,7 +75,13 @@ export async function POST(req: NextRequest) {
       .eq("year", year),
   ]);
 
+  if (catsRes.error) {
+    return NextResponse.json({ error: catsRes.error.message }, { status: 500 });
+  }
   const categories = (catsRes.data ?? []) as MatchInput[];
+  if (categories.length === 0) {
+    return NextResponse.json({ error: NO_CATEGORIES_MESSAGE }, { status: 400 });
+  }
   const existingMap = new Map(
     ((existingBudgetRes.data ?? []) as Array<{ category_id: string; base_amount: number }>).map(
       (r) => [r.category_id, Number(r.base_amount)]
@@ -134,7 +140,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Upsert each (year, category_id) row. We could batch via .upsert(rows)
+  // Upsert each (org, year, category_id) row. Every category_id here came
+  // from this org's own category list above (matched or override-checked). We could batch via .upsert(rows)
   // but supabase-js handles the array case fine.
   const rows = Array.from(upserts.entries()).map(([category_id, base_amount]) => ({
     org_id: ctx.orgId,
@@ -144,7 +151,7 @@ export async function POST(req: NextRequest) {
   }));
   const { error: upErr, count } = await supabase
     .from("fin_budget")
-    .upsert(rows, { onConflict: "year,category_id", count: "exact" });
+    .upsert(rows, { onConflict: FIN_BUDGET_CONFLICT, count: "exact" });
   if (upErr) {
     console.error("[finance] QB budget import upsert failed:", upErr);
     return NextResponse.json({ error: upErr.message }, { status: 500 });

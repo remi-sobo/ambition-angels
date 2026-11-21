@@ -260,6 +260,22 @@ insert into fin_config (id, current_year, fundraising_goal, contingency_unlock_t
 --
 -- ON CONFLICT DO NOTHING so re-running this migration won't overwrite any
 -- in-place renames the team has done since.
+--
+-- Fresh databases only: once fin_categories carries org_id
+-- (add_org_id_to_tenant_tables.sql) categories are per-org
+-- (fin_categories_org_scope.sql), the (id) / (year, category_id) conflict
+-- targets below no longer exist, and a new org's chart is seeded by an
+-- operator with fin_seed_starter_categories(). So on re-apply this seed and
+-- the budget seed after it are skipped.
+do $seed$
+begin
+if exists (select 1 from information_schema.columns
+            where table_schema = 'public' and table_name = 'fin_categories'
+              and column_name = 'org_id') then
+  raise notice 'create_fin_schema: fin_categories is org-scoped; skipping the legacy seed';
+  return;
+end if;
+
 insert into fin_categories
   (id, group_name, display_name, kind, functional_class, sort_order)
 values
@@ -452,3 +468,5 @@ insert into fin_budget (year, category_id, base_amount, contingency_t1) values
   (2026, 'travel.vehicle-rental',       1000,  0),
   (2026, 'travel.fuel',                 300,   0)
 on conflict (year, category_id) do nothing;
+end
+$seed$;

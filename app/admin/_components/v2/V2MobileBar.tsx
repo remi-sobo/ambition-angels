@@ -20,7 +20,8 @@ import { useAdminBadges } from "../AdminBadges";
 
 /**
  * Spec B, stage B5 — the V2 mobile shell's bottom bar (`lg:hidden`):
- * Today · Work · [＋] · Programs · More, every target ≥52px (spec §Mobile).
+ * Today · Work · [Capture or ＋] · Fundraising · More, every target ≥52px
+ * (spec §Mobile). V4 A2: the centre is Capture when the org has ai.capture.
  *
  * The bar slots and the More sheet both derive from resolveShellNav, so
  * entitlement filtering is by construction: a destination the org lacks is
@@ -37,6 +38,12 @@ import { useAdminBadges } from "../AdminBadges";
  */
 
 const PLUS_ICON = <path d="M12 5v14M5 12h14" />;
+const MIC_ICON = (
+  <>
+    <rect x="9" y="3" width="6" height="11" rx="3" />
+    <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+  </>
+);
 const MORE_ICON = (
   <>
     <circle cx="5" cy="12" r="1.4" />
@@ -139,24 +146,42 @@ export default function V2MobileBar({
           </Link>
         ))}
 
-        {/* ＋ — the capture affordance, center of the bar. */}
-        <button
-          type="button"
-          onClick={() => setSheet(sheet === "actions" ? null : "actions")}
-          aria-label="Quick actions"
-          aria-haspopup="dialog"
-          aria-expanded={sheet === "actions"}
-          className="flex min-h-[52px] flex-1 items-center justify-center"
-        >
-          <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-orange text-white shadow-lg shadow-orange/40 transition-transform active:scale-95">
-            <Svg className="w-5 h-5">{PLUS_ICON}</Svg>
-            {reedEnabled && (
-              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-navy ring-2 ring-orange">
-                <ReedMark className="w-2.5 h-2.5 text-orange-mid" />
-              </span>
-            )}
-          </span>
-        </button>
+        {/* The centre of the bar. V4 §8 ("a front door, not a module"):
+            with ai.capture it is Capture, one tap straight into voice
+            capture (the existing Capture flow, app/admin/capture). Without
+            ai.capture it stays today's ＋, the quick-add action sheet. */}
+        {captureEnabled ? (
+          <button
+            type="button"
+            onClick={() => setModal("record")}
+            aria-label="Capture"
+            aria-haspopup="dialog"
+            className="flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5"
+          >
+            <span className="relative -mt-3 flex h-12 w-12 items-center justify-center rounded-full bg-orange text-white shadow-lg shadow-orange/40 ring-4 ring-navy transition-transform active:scale-95">
+              <Svg className="w-5 h-5">{MIC_ICON}</Svg>
+            </span>
+            <span className="text-xs font-heading font-semibold leading-none text-cream/80">Capture</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setSheet(sheet === "actions" ? null : "actions")}
+            aria-label="Quick actions"
+            aria-haspopup="dialog"
+            aria-expanded={sheet === "actions"}
+            className="flex min-h-[52px] flex-1 items-center justify-center"
+          >
+            <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-orange text-white shadow-lg shadow-orange/40 transition-transform active:scale-95">
+              <Svg className="w-5 h-5">{PLUS_ICON}</Svg>
+              {reedEnabled && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-navy ring-2 ring-orange">
+                  <ReedMark className="w-2.5 h-2.5 text-orange-mid" />
+                </span>
+              )}
+            </span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -226,22 +251,24 @@ export default function V2MobileBar({
                 </Svg>
                 <span className="font-heading font-semibold text-sm">Settings</span>
               </Link>
+              {/* With Capture in the centre the ＋ sheet is gone, so its
+                  Add task moves here (nothing becomes unreachable). */}
               {captureEnabled && (
                 <button
                   type="button"
                   onClick={() => {
                     setSheet(null);
-                    setModal("record");
+                    setModal("task");
                   }}
                   className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 text-left transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
                 >
                   <Svg className="w-5 h-5 shrink-0 opacity-80">
                     <>
-                      <rect x="9" y="3" width="6" height="11" rx="3" />
-                      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+                      <rect x="4.5" y="4.5" width="15" height="15" rx="2.5" />
+                      <path d="M8.5 12.5l2.5 2.5 4.5-5" />
                     </>
                   </Svg>
-                  <span className="font-heading font-semibold text-sm">Record</span>
+                  <span className="font-heading font-semibold text-sm">Add task</span>
                 </button>
               )}
               {/* Report an issue lives in the More sheet too (DoD 5: the
@@ -297,24 +324,8 @@ export default function V2MobileBar({
                   icon={<ReedMark className="w-5 h-5 text-orange-mid" />}
                 />
               )}
-              {captureEnabled && (
-                <ActionRow
-                  onClick={() => {
-                    setSheet(null);
-                    setModal("record");
-                  }}
-                  title="Record"
-                  blurb="Say it once, confirm the cards"
-                  icon={
-                  <Svg className="w-5 h-5 text-cream">
-                    <>
-                      <rect x="9" y="3" width="6" height="11" rx="3" />
-                      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-                    </>
-                  </Svg>
-                  }
-                />
-              )}
+              {/* No Record row: this sheet only opens for orgs WITHOUT
+                  ai.capture (with it, Capture is the centre button). */}
               <ActionRow
                 onClick={() => {
                   setSheet(null);
@@ -335,7 +346,7 @@ export default function V2MobileBar({
                 <ActionRow
                   onClick={() => {
                     setSheet(null);
-                    router.push("/admin/messages");
+                    router.push("/admin/inbox/messages");
                   }}
                   title="Message someone"
                   blurb="DM a teammate or group"

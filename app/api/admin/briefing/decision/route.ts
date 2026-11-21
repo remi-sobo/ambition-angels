@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrgContext } from "@/lib/admin/auth";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { SNOOZE } from "@/lib/admin/thresholds";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 /**
  * Briefing decision write-back (spec Phase 4). Every decision writes only to
@@ -19,10 +19,9 @@ type Body = {
 };
 
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   let body: Body;
   try {

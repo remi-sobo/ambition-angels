@@ -3,7 +3,9 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import type { FinCategory } from "@/lib/finance/types";
 import BudgetEditor, { type BudgetRow } from "./_components/BudgetEditor";
+import NoCategories from "../_components/NoCategories";
 import PageHeader from "../../_components/PageHeader";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 type SearchParams = { year?: string };
 
@@ -12,6 +14,8 @@ export default async function BudgetPage({
 }: {
   searchParams: SearchParams;
 }) {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
 
   // Year resolution: ?year=N overrides; otherwise the singleton fin_config
@@ -90,7 +94,7 @@ export default async function BudgetPage({
           actions={
             <div className="flex items-center gap-2 text-xs">
               <Link
-                href={`/admin/finance/budget/import?year=${year}`}
+                href={`/admin/settings/finance/budget-import?year=${year}`}
                 className="px-3 py-1 rounded-full border border-orange/40 bg-orange/15 text-orange hover:bg-orange/25"
               >
                 ⇪ Import from QuickBooks
@@ -114,7 +118,13 @@ export default async function BudgetPage({
         />
       </header>
 
-      <BudgetEditor year={year} categories={categories} initialBudget={initialBudget} />
+      {categories.length === 0 ? (
+        <div className="mt-6">
+          <NoCategories />
+        </div>
+      ) : (
+        <BudgetEditor year={year} categories={categories} initialBudget={initialBudget} />
+      )}
     </div>
   );
 }

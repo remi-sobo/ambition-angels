@@ -28,12 +28,14 @@ declare
   -- 2026-07: donations removed — default dropped by
   --          drop_donations_org_id_default.sql after the Stripe pipeline
   --          writers (save-donation, stripe-webhook) were made org-explicit.
+  -- 2026-11: fin_budget, fin_categories, fin_category_rules removed — defaults
+  --          dropped by fin_categories_org_scope.sql (categories are per-org).
   baseline text[] := array[
     'acknowledgments','appeals','blackouts','board_meetings',
     'board_members','bookings','briefings','bv_newsletter_subscribers','bv_showcase_submissions',
     'campaigns','click_events','compliance_items',
     'connection_candidates','connections','constituents','demoday_notes','demoday_signups',
-    'email_sends','fin_budget','fin_categories','fin_category_rules',
+    'email_sends',
     'fin_config','fin_imports','fin_revenue_commitments','fin_transactions','fr_agent_activity_log',
     'fr_email_drafts','fr_funding_opportunities','fr_prospect_briefs','fr_prospect_scores',
     'fr_touches','funder_angles','funds','gifts','grant_requirements','grants','hs_companies',

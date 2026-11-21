@@ -103,7 +103,8 @@ const ACTIVE: V2RouteRow[] = [
   { v1: "/admin/fundraising/prospects", v2: "/admin/fundraising/donors-funders", kind: "exact", activation: "now", disposition: "merged", note: "Prospects view + R1 drawer" },
   { v1: "/admin/fundraising/prospects", v2: "/admin/fundraising/donors-funders", kind: "uuid-child", activation: "now", disposition: "merged", note: "lands on the Donor 360's prospect variant (both id spaces)" },
   { v1: "/admin/fundraising/asks", v2: "/admin/fundraising/pipeline", kind: "prefix", activation: "now", disposition: "merged" },
-  { v1: "/admin/fundraising/acknowledgments", v2: "/admin/fundraising/today", kind: "exact", activation: "now", disposition: "merged", note: "narrowed from prefix at F6: letters/templates stay live pending their Settings seat" },
+  // /admin/fundraising/acknowledgments left this list at V4 Stage A2: it is
+  // the Fundraising → Thank-yous tab again (spec §4), kept in place below.
   { v1: "/admin/fundraising/recurring", v2: "/admin/fundraising/donors-funders", kind: "exact", activation: "now", disposition: "merged", note: "the Recurring view" },
   { v1: "/admin/fundraising/journeys", v2: "/admin/fundraising/donors-funders", kind: "exact", activation: "now", disposition: "merged", note: "journey surface seat stays reserved and empty (signed ruling)" },
   // ── Finance cutover (Spec Finance, N4). The two same-path rows
@@ -153,6 +154,27 @@ const ACTIVE: V2RouteRow[] = [
   // stored in production (/admin/messages, /admin/messages?t=<uuid>) now
   // translate to the X1 seat, ?t= riding the 308. ──
   { v1: "/admin/messages", v2: "/admin/inbox/messages", kind: "exact", activation: "now", disposition: "merged", note: "the last merge seat, built at X1; the stored ?t= shapes land in-thread" },
+  // ── V4 Stage A2 (specs/bloomos-v4-product-readiness.md §4). Comms leaves
+  // Fundraising for its own destination: the email campaigns page becomes
+  // Comms → Emails. Prefix, so a campaign detail (/[id]) lands on its host
+  // too, and the stored alert links (lib/comms/safety.ts) keep resolving. ──
+  { v1: "/admin/fundraising/comms", v2: "/admin/comms/emails", kind: "prefix", activation: "now", disposition: "re-homed", note: "V4 §4: Comms is the eighth destination; email campaigns are called Emails" },
+  // ── V4 Stage A2: the Settings home. The settings rows this map reserved
+  // since Stage 0 graduate onto their seats under /admin/settings. Each
+  // target is a host page rendering the same screen behind the same module
+  // gate its V1 section used. ──
+  { v1: "/admin/fundraising/settings", v2: "/admin/settings/fundraising/general", kind: "exact", activation: "now", disposition: "settings" },
+  { v1: "/admin/fundraising/settings/stages", v2: "/admin/settings/fundraising/stages", kind: "exact", activation: "now", disposition: "settings" },
+  { v1: "/admin/fundraising/duplicates", v2: "/admin/settings/fundraising/duplicates", kind: "exact", activation: "now", disposition: "settings" },
+  { v1: "/admin/fundraising/import", v2: "/admin/settings/imports/donors", kind: "exact", activation: "now", disposition: "settings", note: "merging into the one import wizard is Stage F" },
+  { v1: "/admin/finance/rules", v2: "/admin/settings/finance/rules", kind: "exact", activation: "now", disposition: "settings" },
+  { v1: "/admin/finance/config", v2: "/admin/settings/finance/config", kind: "exact", activation: "now", disposition: "settings" },
+  { v1: "/admin/finance/upload", v2: "/admin/settings/finance/upload", kind: "exact", activation: "now", disposition: "settings" },
+  { v1: "/admin/finance/budget/import", v2: "/admin/settings/finance/budget-import", kind: "exact", activation: "now", disposition: "settings" },
+  { v1: "/admin/imports", v2: "/admin/settings/imports/csv", kind: "exact", activation: "now", disposition: "settings" },
+  { v1: "/admin/meetings/booking-page", v2: "/admin/settings/organization/booking-page", kind: "exact", activation: "now", disposition: "settings", note: "narrowed from prefix: the page has no children" },
+  { v1: "/admin/strategic-plan/setup", v2: "/admin/settings/organization/strategy-setup", kind: "exact", activation: "now", disposition: "settings" },
+  { v1: "/admin/howto", v2: "/admin/settings/help", kind: "exact", activation: "now", disposition: "settings", note: "Help" },
 ];
 
 // ── AT CUTOVER: merges and settings moves, activated by destination specs ───
@@ -161,25 +183,17 @@ const AT_CUTOVER: V2RouteRow[] = [
   // messages graduated to ACTIVE at Spec Inbox X2 — no at-cutover merges remain.
   // objective and review graduated (re-targeted at O1) to ACTIVE at Spec Org O2.
   // scorecard graduated to ACTIVE at Spec Impact I4.
-  { v1: "/admin/strategic-plan/setup", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
   // Work's four moves (monday, friday, calendar, connections) graduated to
   // ACTIVE at Spec Work W4; booking-page stays the one true settings row.
-  { v1: "/admin/meetings/booking-page", v2: null, kind: "prefix", activation: "at-cutover", disposition: "settings" },
   // Fundraising's eight moves graduated at F6; pledges graduated at Spec
   // Finance N4 once Forecast absorbed its tier.
-  { v1: "/admin/fundraising/duplicates", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
-  { v1: "/admin/fundraising/import", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
-  { v1: "/admin/fundraising/settings", v2: null, kind: "prefix", activation: "at-cutover", disposition: "settings" },
   // Finance's six same-path/merge rows graduated to ACTIVE at Spec Finance N4.
-  { v1: "/admin/finance/rules", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
-  { v1: "/admin/finance/config", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
-  { v1: "/admin/finance/upload", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
-  { v1: "/admin/finance/budget/import", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
-  { v1: "/admin/imports", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings" },
   // volunteers graduated (re-aimed) to ACTIVE at Spec Programs P4.
   { v1: "/admin/demoday", v2: "/admin/programs/cohorts", kind: "exact", activation: "at-cutover", disposition: "merged", note: "pinned Group view (signed ruling R8) — mechanism undesigned, revisit October; deliberately NOT moved at the P4 cutover" },
   { v1: "/admin/reed", v2: null, kind: "exact", activation: "at-cutover", disposition: "merged (utility)", note: "becomes the contextual panel" },
-  { v1: "/admin/howto", v2: null, kind: "exact", activation: "at-cutover", disposition: "settings", note: "Help" },
+  // V4 Stage A2: every settings row (setup, booking-page, duplicates,
+  // import, fundraising/settings, finance rules/config/upload/budget import,
+  // imports, howto) graduated to ACTIVE onto its /admin/settings seat.
 ];
 
 // ── NO V2 HOME: live, unlinked, awaiting a ruling ───────────────────────────
@@ -187,7 +201,7 @@ const NO_HOME: V2RouteRow[] = [
   { v1: "/admin/strategic-plan/narrative", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "builder; nearest: Strategy detail" },
   { v1: "/admin/strategic-plan/people", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME" },
   { v1: "/admin/briefing/weekly", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "nearest: Work → Plan & Close Friday" },
-  { v1: "/admin/meet", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "public-scheduler admin; nearest: Settings" },
+  { v1: "/admin/meet", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "in-page forward to the booking page's Settings seat (V4 A2); not a config row" },
   { v1: "/admin/staff/reviews", v2: null, kind: "prefix", activation: "no-home", disposition: "NO V2 HOME", note: "modules.reviews" },
   { v1: "/admin/fundraising/reports", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "nearest: Impact → Reports or Finance → Reports" },
   { v1: "/admin/fundraising/strategy", v2: null, kind: "prefix", activation: "no-home", disposition: "NO V2 HOME", note: "funder-angle briefs" },
@@ -198,7 +212,7 @@ const NO_HOME: V2RouteRow[] = [
 
 /** The whole F.1 delta, one list. Kept-in-place rows (/admin/inbox,
  *  /admin/settings, /admin/fundraising/today, /admin/fundraising/grants,
- *  /admin/fundraising/campaigns, /admin/fundraising/comms, /admin/finance/budget,
+ *  /admin/fundraising/campaigns, /admin/fundraising/acknowledgments, /admin/finance/budget,
  *  /admin/reset-password)
  *  need no row: V1 path IS the V2 path. */
 export const V2_ROUTE_MAP: V2RouteRow[] = [...ACTIVE, ...AT_CUTOVER, ...NO_HOME];
@@ -267,8 +281,9 @@ export const KEPT_IN_PLACE: readonly string[] = [
   "/admin/fundraising/today",
   "/admin/fundraising/grants",
   "/admin/fundraising/campaigns",
-  // Remi ruled the seat (2026-11-20): Comms is a Fundraising tab, kept in place.
-  "/admin/fundraising/comms",
+  // V4 Stage A2: the thank-you queue is Fundraising → Thank-yous again (its
+  // F6 308 to Today was removed; Today still embeds the same AckQueue).
+  "/admin/fundraising/acknowledgments",
   "/admin/finance/budget",
   // V2-only screens (no V1 source): their own path IS the seat (Spec Home H3).
   "/admin/organization-health",

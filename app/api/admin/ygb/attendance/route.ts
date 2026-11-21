@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 // GET /api/admin/ygb/attendance?date=YYYY-MM-DD → rows for that day
 export async function GET(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("program.read");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const date = req.nextUrl.searchParams.get("date") ?? "";
   if (!isDate(date)) {
@@ -35,10 +34,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/ygb/attendance → upsert a check-in for (registration, date)
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("program.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const registration_id = typeof body?.registration_id === "string" ? body.registration_id : "";

@@ -12,6 +12,7 @@ import {
   type SearchGroup,
   type SearchHit,
   type SearchKind,
+  type PageEntry,
 } from "./types";
 
 const RECENTS_KEY = "bloomos:recent-search";
@@ -28,7 +29,7 @@ const RECENTS_KEY = "bloomos:recent-search";
  * with client-side page/action matches. Grouped for display; a flat index
  * drives ↑/↓ keyboard nav. ↵ navigates, ⌘↵ opens in a new tab.
  */
-export default function GlobalSearch() {
+export default function GlobalSearch({ pages = [] }: { pages?: PageEntry[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -204,7 +205,7 @@ export default function GlobalSearch() {
     if (term.length < 1) {
       return recents.length ? [{ group: "recent" as SearchGroup, items: recents }] : [];
     }
-    const all = [...dbHits, ...matchPages(term)];
+    const all = [...dbHits, ...matchPages(term, pages)];
     const byGroup = new Map<SearchGroup, SearchHit[]>();
     for (const hit of all) {
       const list = byGroup.get(hit.group) ?? [];
@@ -220,7 +221,7 @@ export default function GlobalSearch() {
     // Scope prefix narrows to a single group.
     if (scope) ordered = ordered.filter((g) => g.group === scope);
     return ordered;
-  }, [dbHits, term, scope, recents]);
+  }, [dbHits, term, scope, recents, pages]);
 
   // Flat list mirrors visual order — the index space for ↑/↓ and ↵.
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);

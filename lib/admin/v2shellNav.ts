@@ -6,6 +6,7 @@ import {
   type V2Destination,
 } from "./nav";
 import { canonicalSeat, liveSeatFor } from "./v2routes";
+import { tabPermission } from "./navPermissions";
 
 /**
  * Spec B, stage B3 — the V2 shell's navigation resolution. PURE (the layout
@@ -67,11 +68,17 @@ function toShell(
   dest: V2Destination,
   features?: string[] | null,
   terms?: Record<string, string> | null,
+  perms?: readonly string[] | null,
 ): ShellDestination | null {
   const resolved = resolveV2Destination(dest, features, terms);
   if (!resolved) return null;
   const tabs: ShellTab[] = [];
   for (const t of resolved.tabs) {
+    // V4 A2: a tab the ROLE cannot open (the #593 server guard would show
+    // the not-authorized panel) is hidden, the same way an unentitled tab
+    // is. `perms` null/undefined = no role filter (pre-auth, tests).
+    const need = tabPermission(t.feature);
+    if (perms && need && !perms.includes(need)) continue;
     const seat = liveSeatFor(t.href);
     if (!seat) continue; // no screen yet — hidden until its spec ships it
     tabs.push({ key: t.key, label: t.label, href: seat, canonical: t.href });
@@ -95,12 +102,14 @@ export type ShellNav = {
 export function resolveShellNav(
   features?: string[] | null,
   terms?: Record<string, string> | null,
+  /** The signed-in role's permissions (lib/admin/rolePermissions.ts). */
+  perms?: readonly string[] | null,
 ): ShellNav {
   return {
-    destinations: V2_DESTINATIONS.map((d) => toShell(d, features, terms)).filter(
+    destinations: V2_DESTINATIONS.map((d) => toShell(d, features, terms, perms)).filter(
       (d): d is ShellDestination => d !== null,
     ),
-    inbox: toShell(V2_INBOX, features, terms),
+    inbox: toShell(V2_INBOX, features, terms, perms),
   };
 }
 

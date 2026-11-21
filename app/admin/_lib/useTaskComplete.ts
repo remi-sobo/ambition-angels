@@ -25,5 +25,15 @@ export function useTaskComplete() {
     }, LEAVE_MS);
   }, []);
 
-  return { isLeaving, complete };
+  // Undo the collapse when the commit failed, so the row comes back.
+  const cancel = useCallback((id: string) => {
+    setLeaving((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
+  return { isLeaving, complete, cancel };
 }

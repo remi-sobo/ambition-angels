@@ -32,6 +32,7 @@ import CapacityMeter from "./CapacityMeter";
 import { computeWeekCapacity } from "@/lib/admin/ops/capacity";
 import { minutesInto } from "@/lib/agenda/own-events";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // The Monday plan ritual — orient, carryover, areas, days, commit — over
 // rhythm_sessions + ops_tasks, with the real agenda behind the day board.
@@ -52,6 +53,8 @@ function cap(s: string): string {
 }
 
 export default async function PlanSection() {
+  const roleGate = await requirePagePermission("ops.read", "Operations");
+  if (!roleGate.ok) return roleGate.page;
   const me = await resolveUserHandle();
   const currentUser = me?.handle ?? "";
   const orgId = me?.orgId ?? null;

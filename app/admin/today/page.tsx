@@ -7,7 +7,7 @@ import Card, { CardHeader, CardMetric, CardFooter } from "../_components/ui/Card
 import Badge from "../_components/ui/Badge";
 import NeedsYou from "./_components/NeedsYou";
 import { getTodayData } from "@/lib/admin/today";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
 import { getMetricCatalog } from "@/lib/admin/metrics/catalog";
@@ -90,7 +90,10 @@ export default async function TodayPage() {
 
   const [data, ents] = await Promise.all([getTodayData(), getEntitlements(ctx.orgId)]);
   if (!data) return null;
-  const showFinance = hasFeature(ents, "modules.finance");
+  // Money needs the module AND the role: board_viewer (and any role without
+  // finance.read) never sees cash, burn or runway — getFinanceSnapshot reads
+  // through the service role, so RLS can't hide it for us.
+  const showFinance = hasFeature(ents, "modules.finance") && (await ctxHasPermission(ctx, "finance.read"));
   const fin = showFinance ? await getFinanceSnapshot() : null;
   const fresh = fin ? freshness(fin.cfg.reconciledAt) : null;
 

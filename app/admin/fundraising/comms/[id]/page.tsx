@@ -37,8 +37,8 @@ export default async function CampaignResultsPage({ params }: { params: { id: st
   return (
     <div className="min-h-screen bg-ink">
       <div className="max-w-[1100px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-        <Link href="/admin/fundraising/comms" className="text-xs font-semibold text-ink-3 hover:text-ink-1 transition-colors">
-          ← All campaigns
+        <Link href="/admin/comms/emails" className="text-xs font-semibold text-ink-3 hover:text-ink-1 transition-colors">
+          ← All emails
         </Link>
         <PageHeader title={campaign.name} subtitle={campaign.subject} />
 

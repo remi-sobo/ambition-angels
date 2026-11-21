@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import {
   MAX_ASK_DOC_BYTES,
   ASK_DOC_EXT_BY_MIME,
   isAllowedAskDocMime,
 } from "@/lib/fundraising/asks";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
@@ -20,9 +21,8 @@ const BUCKET = "bloomos-asks";
 // (storage RLS otherwise blocks it, same as the Report route); the metadata row
 // carries only the path and is org-scoped from the ask it hangs off.
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("fundraising.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   if (!isUuid(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }

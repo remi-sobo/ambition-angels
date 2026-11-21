@@ -457,6 +457,20 @@
        sidebar can paint all the way to the top. */
     padding-top: calc(env(safe-area-inset-top) + 0.5rem);
   }
+
+  /* BloomOS V4 page frame (approved prototype, spec §5): the sidebar sits
+     flush on the espresso shell and the bright working surface is ONE panel
+     with modal-radius corners, inset 10px from the top, right and bottom.
+     The panel is its own scroll container (fixed height), so the corners
+     and the inset never scroll away; sticky rows stick to its top edge. */
+  .admin-panel {
+    margin: calc(10px + env(safe-area-inset-top)) 10px 10px 0;
+    height: calc(100dvh - 20px - env(safe-area-inset-top));
+    border-radius: var(--radius-modal);
+    background: var(--bg-app);
+    overflow-y: auto;
+    padding-top: 0.375rem;
+  }
 }
 
 /* Sticky page headers (Finance sub-nav, Dashboard top bar) sit just
@@ -468,8 +482,19 @@
 
 @media (min-width: 1024px) {
   .admin-sticky-top {
-    top: calc(env(safe-area-inset-top) + 0.5rem);
+    /* Inside the V4 panel (its own scroll container) a sticky row pins to
+       the panel's top edge; the safe area is already outside the panel. */
+    top: 0;
   }
+}
+
+/* V4 A2: the shell tab row scrolls sideways inside its own box on phones;
+   the trailing fade (V2TabZone) is the affordance, so the bar is hidden. */
+.v2-tab-scroll {
+  scrollbar-width: none;
+}
+.v2-tab-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 /* Bigger tap targets for primary admin controls on touch devices (V3 §13:

@@ -3,6 +3,7 @@ import PageHeader from "../../_components/PageHeader";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
 import ReconcileCard from "../_components/ReconcileCard";
 import UploadClient from "./_components/UploadClient";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // The Import hub — the one place to bring everything in: bank transactions,
 // the budget, and pledges — plus "set current balance" so the cash figure stays
@@ -10,6 +11,8 @@ import UploadClient from "./_components/UploadClient";
 export const dynamic = "force-dynamic";
 
 export default async function FinanceUploadPage() {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return roleGate.page;
   const snap = await getFinanceSnapshot();
 
   return (
@@ -26,7 +29,7 @@ export default async function FinanceUploadPage() {
       {/* Other import flows */}
       <section className="grid sm:grid-cols-2 gap-3">
         <HubLink
-          href="/admin/finance/budget/import"
+          href="/admin/settings/finance/budget-import"
           title="Import budget →"
           desc="Bring in your annual budget from a QuickBooks export."
         />

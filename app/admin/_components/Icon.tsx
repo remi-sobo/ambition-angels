@@ -213,6 +213,19 @@ export const ICON_NODES: Record<IconName, ReactNode> = {
       <path d="M9 4v14M15 6v14" />
     </>
   ),
+  // V4 Stage A2: the Comms destination (an envelope) and the Settings row.
+  comms: (
+    <>
+      <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+      <path d="M4 7l8 6 8-6" />
+    </>
+  ),
+  settings: (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M6 18l1.6-1.6M16.4 7.6 18 6" />
+    </>
+  ),
 };
 
 export function Icon({ name, className }: { name: IconName; className?: string }) {

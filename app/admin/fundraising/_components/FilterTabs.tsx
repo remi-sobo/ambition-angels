@@ -32,7 +32,9 @@ export default function FilterTabs({
   return (
     <div
       className={`items-center gap-1 bg-tile border-hairline p-1 ${
-        wrap ? "flex flex-wrap rounded-panel-lg" : "inline-flex rounded-full"
+        // V4 A2 (spec §10, phone 390): a non-wrapping strip scrolls inside
+        // its own box instead of widening the page.
+        wrap ? "flex flex-wrap rounded-panel-lg" : "inline-flex max-w-full overflow-x-auto v2-tab-scroll rounded-full"
       }`}
     >
       {options.map((o) => {
@@ -42,7 +44,7 @@ export default function FilterTabs({
           <Link
             key={o.value}
             href={`${basePath}?${params.toString()}`}
-            className={`font-semibold rounded-full transition-colors ${pad} ${
+            className={`shrink-0 whitespace-nowrap font-semibold rounded-full transition-colors ${pad} ${
               active ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1"
             }`}
           >

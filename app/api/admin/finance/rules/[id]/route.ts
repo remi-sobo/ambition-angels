@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { isOrgCategory } from "@/lib/finance/categories";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // PATCH /api/admin/finance/rules/:id — partial update for an existing rule.
 // Most commonly used to toggle enabled, bump priority, or rewrite pattern.
@@ -10,10 +11,9 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   // Org fence: service-role update by id must be constrained to the caller's org.
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
@@ -47,6 +47,10 @@ export async function PATCH(
   }
 
   const supabase = getSupabaseAdmin();
+  // Categories are per-org: a rule may only be re-pointed at this org's categories.
+  if (typeof update.category_id === "string" && !(await isOrgCategory(supabase, ctx.orgId, update.category_id))) {
+    return NextResponse.json({ error: "Unknown category" }, { status: 400 });
+  }
   const { data, error } = await supabase
     .from("fin_category_rules")
     .update(update)
@@ -75,10 +79,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   // Org fence: service-role delete by id must be constrained to the caller's org.
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }

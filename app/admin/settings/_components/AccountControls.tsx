@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { userMessage } from "@/lib/admin/errors";
+import { clearAdminCaches } from "@/lib/admin/swCache";
 import { useRouter } from "next/navigation";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import type { CalendarConnectionStatus } from "@/lib/google/connection";
@@ -501,6 +502,7 @@ export function SignOutAllButton() {
     setBusy(true);
     try {
       await fetch("/api/admin/account/signout-all", { method: "POST" });
+      await clearAdminCaches();
       router.push("/admin");
       router.refresh();
     } finally {

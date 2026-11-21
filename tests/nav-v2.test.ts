@@ -55,10 +55,31 @@ const tabKeys = (features: string[], key: string) =>
   resolveV2Destination(dest(key), features)?.tabs.map((t) => t.key) ?? null;
 
 describe("V2 nav: the locked map", () => {
-  test("seven destinations, declared once", () => {
+  test("eight destinations, declared once (V4 §4 added Comms after Fundraising)", () => {
     expect(V2_DESTINATIONS.map((d) => d.key)).toEqual([
-      "home", "work", "programs", "fundraising", "finance", "impact", "organization",
+      "home", "work", "programs", "fundraising", "comms", "finance", "impact", "organization",
     ]);
+  });
+
+  test("V4 §4: Comms carries the approved six tabs, every one gated on modules.comms", () => {
+    const comms = dest("comms");
+    expect(comms.tabs.map((t) => t.label)).toEqual([
+      "Home", "Stories", "Editions", "Emails", "Automations", "Settings",
+    ]);
+    for (const t of comms.tabs) expect(t.feature, t.key).toBe("modules.comms");
+    // Fundraising no longer carries Comms; Thank-yous is its sixth tab.
+    expect(tabKeys(AA, "fundraising")).toEqual([
+      "today", "donors-funders", "pipeline", "grants", "campaigns", "thank-yous",
+    ]);
+    expect(dest("fundraising").tabs.find((t) => t.key === "thank-yous")!.href).toBe(
+      "/admin/fundraising/acknowledgments",
+    );
+  });
+
+  test("V4 §4: Inbox's Messages tab reads Team chat (label only, the route stays)", () => {
+    const messages = V2_INBOX.tabs.find((t) => t.key === "messages")!;
+    expect(messages.label).toBe("Team chat");
+    expect(messages.href).toBe("/admin/inbox/messages");
   });
 
   test("no destination declares a constant landing — landing is always computed", () => {
@@ -125,10 +146,12 @@ describe("rule 2: a zero-tab destination is hidden", () => {
     expect(nav.destinations.map((d) => d.key)).toContain("home");
   });
 
-  test("all four live orgs still see all seven destinations", () => {
-    for (const features of [AA, YGB, NINE_KEY]) {
-      expect(resolveV2Nav(features).destinations).toHaveLength(7);
+  test("orgs with modules.comms see eight destinations; the 9-key orgs (no comms) still see seven", () => {
+    for (const features of [AA, YGB]) {
+      expect(resolveV2Nav(features).destinations).toHaveLength(8);
     }
+    expect(resolveV2Nav(NINE_KEY).destinations).toHaveLength(7);
+    expect(resolveV2Nav(NINE_KEY).destinations.map((d) => d.key)).not.toContain("comms");
   });
 
   test("an empty entitlement set leaves only the ungated surfaces", () => {
@@ -138,7 +161,7 @@ describe("rule 2: a zero-tab destination is hidden", () => {
   });
 
   test("null features (pre-auth shell) shows the full IA, per the V1 convention", () => {
-    expect(resolveV2Nav(null).destinations).toHaveLength(7);
+    expect(resolveV2Nav(null).destinations).toHaveLength(8);
   });
 });
 

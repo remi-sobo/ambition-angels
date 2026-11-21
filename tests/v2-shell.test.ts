@@ -44,9 +44,15 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
       }
     }
     expect(seatless.sort()).toEqual([
-      // EMPTY since Spec Impact I2: organization-health left at H3,
-      // programs/attendance at P1, impact/outcomes at I1, impact/reports at
-      // I2. Every canonical tab now resolves to a live screen.
+      // Empty from Spec Impact I2 until V4 A2, which declared the approved
+      // Comms tab row (spec §4). Only Emails has a screen; these five stay
+      // hidden until Stage D builds them, and each entry leaves this list
+      // as its screen ships.
+      "/admin/comms/automations",
+      "/admin/comms/editions",
+      "/admin/comms/home",
+      "/admin/comms/settings",
+      "/admin/comms/stories",
     ]);
   });
 
@@ -58,6 +64,8 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
     // path.
     for (const d of [...V2_DESTINATIONS, V2_INBOX]) {
       for (const t of d.tabs) {
+        // V4 A2: Comms' unbuilt tabs are seatless (pinned above), not merges.
+        if (liveSeatFor(t.href) === null) continue;
         expect(liveSeatFor(t.href), t.href).toBe(t.href);
       }
     }
@@ -81,6 +89,8 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
       "/admin/fundraising/donors-funders", // ACTIVE target since F6
       "/admin/fundraising/pipeline",       // ACTIVE target since F6
       "/admin/work/plan-close",            // ACTIVE target since W4
+      "/admin/comms/emails",               // ACTIVE target since V4 A2
+      "/admin/fundraising/acknowledgments", // kept in place again at V4 A2 (Thank-yous)
     ]) {
       expect(liveSeatFor(path), path).toBe(path);
     }
@@ -160,12 +170,18 @@ describe("activeShellKey: sidebar highlight + tab-slot routing", () => {
     expect(activeShellKey("/admin/organization/board", nav)).toBe("organization");
     expect(activeShellKey("/admin/messages", nav)).toBe("inbox");
     expect(activeShellKey("/admin/inbox", nav)).toBe("inbox");
+    // V4 A2: Comms owns its seat, its children and the old Fundraising path.
+    expect(activeShellKey("/admin/comms/emails", nav)).toBe("comms");
+    expect(activeShellKey(`/admin/comms/emails/${UUID}`, nav)).toBe("comms");
+    expect(activeShellKey("/admin/fundraising/comms", nav)).toBe("comms");
+    expect(activeShellKey("/admin/fundraising/acknowledgments", nav)).toBe("fundraising");
   });
 
   test("/admin matches Home EXACTLY — never as a prefix of everything", () => {
     expect(activeShellKey("/admin", nav)).toBe("home");
     expect(activeShellKey("/admin/settings", nav)).toBeNull();
     expect(activeShellKey("/admin/howto", nav)).toBeNull();
+    expect(activeShellKey("/admin/settings/finance/rules", nav)).toBeNull();
   });
 
   test("absorbed and at-cutover paths highlight their destination", () => {
@@ -263,15 +279,34 @@ describe("B3 shell invariants", () => {
     }
   });
 
-  test("Fundraising lands on Today's Moves; Comms is a sixth tab only with modules.comms (F6, comms seat 2026-11-20)", () => {
-    const FIVE = ["today", "donors-funders", "pipeline", "grants", "campaigns"];
+  test("Fundraising lands on Today's Moves with six tabs for every org; Thank-yous replaced Comms (V4 A2)", () => {
     for (const features of [AA, YGB, NINE_KEY]) {
       const fr = resolveShellNav(features).destinations.find((d) => d.key === "fundraising")!;
       expect(fr.href).toBe("/admin/fundraising/today");
-      expect(fr.tabs.map((t) => t.key)).toEqual(
-        features.includes("modules.comms") ? [...FIVE, "comms"] : FIVE
-      );
+      expect(fr.tabs.map((t) => t.key)).toEqual([
+        "today", "donors-funders", "pipeline", "grants", "campaigns", "thank-yous",
+      ]);
+      expect(fr.tabs.find((t) => t.key === "thank-yous")!.href).toBe("/admin/fundraising/acknowledgments");
     }
+  });
+
+  test("Comms (V4 §4): its own destination with modules.comms, landing on Emails, the only seated tab today", () => {
+    for (const features of [AA, YGB]) {
+      const nav = resolveShellNav(features);
+      expect(nav.destinations.map((d) => d.key)).toEqual([
+        "home", "work", "programs", "fundraising", "comms", "finance", "impact", "organization",
+      ]);
+      const comms = nav.destinations.find((d) => d.key === "comms")!;
+      expect(comms.href).toBe("/admin/comms/emails");
+      expect(comms.tabs.map((t) => t.label)).toEqual(["Emails"]);
+    }
+    // No modules.comms → no Comms destination at all (the 9-key orgs).
+    expect(resolveShellNav(NINE_KEY).destinations.map((d) => d.key)).not.toContain("comms");
+  });
+
+  test("Inbox's second tab reads Team chat in the shell too (V4 §4)", () => {
+    const inbox = resolveShellNav(AA).inbox!;
+    expect(inbox.tabs.map((t) => t.label)).toEqual(["Inbox", "Team chat"]);
   });
 
   test("DoD 7 structurally: the V2 tab row cannot wrap at any tenant's tab count", () => {
@@ -302,5 +337,69 @@ describe("B3 shell invariants", () => {
     );
     expect(src).toMatch(/if \(!reed\.enabled\) return null/);
     expect(src).toMatch(/hidden lg:flex/); // launcher hidden below 1024px
+  });
+});
+
+describe("V4 A2: no dead links in the persistent chrome", () => {
+  const app = join(__dirname, "..", "app");
+  const read = (...p: string[]) => readFileSync(join(app, ...p), "utf8");
+  // A literal /admin href resolves when a page.tsx exists for it, or when it
+  // is an active redirect source (one hop to a live host).
+  const pageExists = (href: string) => {
+    const path = href.split(/[?#]/)[0];
+    return existsSync(join(app, ...path.split("/").filter(Boolean), "page.tsx"));
+  };
+
+  test("the sidebar footer no longer links the deleted /admin/v2 page (audit finding 5)", () => {
+    const src = read("admin", "_components", "v2", "V2Sidebar.tsx");
+    expect(src).not.toMatch(/\/admin\/v2["'`]/);
+  });
+
+  test("every literal /admin href in the shell chrome opens a page that exists", () => {
+    for (const file of ["V2Sidebar.tsx", "V2MobileBar.tsx", "V2QuickAdd.tsx", "V2TabZone.tsx"]) {
+      const src = read("admin", "_components", "v2", file);
+      for (const m of Array.from(src.matchAll(/["'`](\/admin[^"'`$]*)["'`]/g))) {
+        const href = m[1];
+        if (href === "/admin") continue; // the auth-aware Home forward
+        if (/\.(png|svg|webp|ico)$/.test(href)) continue; // public assets, not pages
+        expect(pageExists(href), `${file} links ${href}`).toBe(true);
+      }
+    }
+  });
+
+  test("RecentDonationsWidget points at the live gift home, not /admin/legacy", () => {
+    const src = read("admin", "_components", "overview", "RecentDonationsWidget.tsx");
+    expect(src).not.toMatch(/\/admin\/legacy/);
+    expect(src).toMatch(/href="\/admin\/fundraising\/donors-funders"/);
+  });
+
+  test("Settings is a sidebar row (active under /admin/settings/*); Help is the footer link", () => {
+    const src = read("admin", "_components", "v2", "V2Sidebar.tsx");
+    expect(src).toMatch(/href="\/admin\/settings"/);
+    expect(src).toMatch(/pathname\.startsWith\("\/admin\/settings\/"\)/);
+    expect(src).toMatch(/href="\/admin\/settings\/help"/);
+  });
+});
+
+describe("V4 A2: the page frame", () => {
+  const app = join(__dirname, "..", "app");
+  test("desktop: espresso shell, flush sidebar, the working surface is one inset rounded panel", () => {
+    const layout = readFileSync(join(app, "admin", "layout.tsx"), "utf8");
+    expect(layout).toMatch(/lg:bg-navy/);
+    expect(layout).toMatch(/admin-main admin-panel/);
+    const css = readFileSync(join(app, "globals.css"), "utf8");
+    const panel = css.slice(css.indexOf(".admin-panel {"), css.indexOf("}", css.indexOf(".admin-panel {")));
+    expect(panel).toMatch(/margin: calc\(10px \+ env\(safe-area-inset-top\)\) 10px 10px 0/);
+    expect(panel).toMatch(/border-radius: var\(--radius-modal\)/); // 18px
+    expect(panel).toMatch(/overflow-y: auto/);
+    const sidebar = readFileSync(join(app, "admin", "_components", "v2", "V2Sidebar.tsx"), "utf8");
+    expect(sidebar).toMatch(/hidden lg:flex w-\[248px\] shrink-0 bg-navy/);
+  });
+
+  test("phone: the tab row scrolls inside its own clipped box with a trailing fade", () => {
+    const zone = readFileSync(join(app, "admin", "_components", "v2", "V2TabZone.tsx"), "utf8");
+    expect(zone).toMatch(/overflow-hidden/);
+    expect(zone).toMatch(/data-tab-fade/);
+    expect(zone).toMatch(/bg-gradient-to-l from-app/);
   });
 });

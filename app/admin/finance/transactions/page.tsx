@@ -1,5 +1,6 @@
 import Link from "next/link";
 import EmptyState from "../../_components/EmptyState";
+import NoCategories from "../_components/NoCategories";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import type { FinCategory } from "@/lib/finance/types";
@@ -12,6 +13,7 @@ import PageHeader from "../../_components/PageHeader";
 import ReconcileSection from "../reconcile/ReconcileSection";
 import CloseSection from "../close/CloseSection";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 type SearchParams = {
   q?: string;
@@ -60,6 +62,8 @@ export default async function TransactionsPage({
 }: {
   searchParams: SearchParams;
 }) {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return roleGate.page;
   const q = (searchParams.q ?? "").trim();
   const category = (searchParams.category ?? "").trim();
   const from = isISO(searchParams.from) ? searchParams.from : "";
@@ -166,7 +170,7 @@ export default async function TransactionsPage({
               ) : null}
               <AiCategorize uncategorizedCount={uncategorizedCount ?? 0} />
               <Link
-                href="/admin/finance/upload"
+                href="/admin/settings/finance/upload"
                 className="rounded-full bg-orange hover:bg-orange-dark text-white px-3 py-1"
               >
                 + Import CSV
@@ -175,6 +179,12 @@ export default async function TransactionsPage({
           }
         />
       </header>
+
+      {categories.length === 0 ? (
+        <div className="mb-4">
+          <NoCategories />
+        </div>
+      ) : null}
 
       <TransactionFilters categories={categories} />
 
@@ -199,7 +209,7 @@ export default async function TransactionsPage({
                         label="transactions"
                         hint="The ledger fills from your bank exports; every number upstream (runway, burn, budget vs. actual) starts here."
                         action={
-                          <a href="/admin/finance/upload" className="text-xs font-semibold text-orange hover:text-orange-dark">
+                          <a href="/admin/settings/finance/upload" className="text-xs font-semibold text-orange hover:text-orange-dark">
                             Import the first CSV →
                           </a>
                         }

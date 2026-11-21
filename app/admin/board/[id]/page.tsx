@@ -13,9 +13,10 @@ import {
   EditMemberProfile,
   MemberQuickActions,
   OnboardingChecklist,
-  ROLE_LABELS,
   type BoardMemberFull,
 } from "./_components/MemberProfileControls";
+import { ROLE_LABELS } from "./_components/labels";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Board member profile (governance profile views): the full record behind a
 // roster row — identity + terms + COI, attendance derived from meeting
@@ -31,6 +32,8 @@ const fmtUsd = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export default async function BoardMemberPage({ params }: { params: { id: string } }) {
+  const roleGate = await requirePagePermission("board.read", "Board");
+  if (!roleGate.ok) return roleGate.page;
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
   const supabase = getSupabaseAdmin();
   // Org fence: the service-role client bypasses RLS — scope every read to the

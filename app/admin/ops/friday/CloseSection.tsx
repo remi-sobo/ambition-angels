@@ -28,6 +28,7 @@ import MeetingRecap, {
 } from "../_components/MeetingRecap";
 import FridayNudges from "../_components/FridayNudges";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // The Friday close ritual — status, truth, recap, nudges, close — over
 // rhythm_sessions + ops_tasks + meeting_suggested_tasks.
@@ -56,6 +57,8 @@ function cap(s: string): string {
 }
 
 export default async function CloseSection() {
+  const roleGate = await requirePagePermission("ops.read", "Operations");
+  if (!roleGate.ok) return roleGate.page;
   const me = await resolveUserHandle();
   const supabase = getSupabaseAdmin();
 

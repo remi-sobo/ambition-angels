@@ -11,6 +11,7 @@ import { getParticipantStages } from "@/lib/admin/program/stages";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getFieldDefs } from "@/lib/admin/customFields";
 import { getProgramTerms, getTermLabel } from "@/lib/admin/terminology";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Participant roster (program spine, spec #4): one roster across programs,
 // organized by the org's journey stages. The stage vocabulary is per-org
@@ -19,6 +20,8 @@ import { getProgramTerms, getTermLabel } from "@/lib/admin/terminology";
 export const dynamic = "force-dynamic";
 
 export default async function StudentsPage() {
+  const roleGate = await requirePagePermission("program.read", "Students");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   const ctx = await getOrgContext();
   const [{ data }, stages, customFieldDefs, terms, volunteerTerm, { data: leaderRows }] =
@@ -89,7 +92,7 @@ export default async function StudentsPage() {
         subtitle={`One roster across ${terms.programs.toLowerCase()} · organized by ${terms.stage.toLowerCase()}`}
         actions={
           <>
-            <a href="/admin/imports"
+            <a href="/admin/settings/imports/csv"
               className="text-xs font-semibold text-ink-2 bg-tile hover:bg-tile px-4 py-2 rounded-full transition-colors">
               Import CSV
             </a>
@@ -156,7 +159,7 @@ export default async function StudentsPage() {
             label={terms.students.toLowerCase()}
             hint={`Add your first ${terms.student.toLowerCase()} with the button above, or bring a whole roster in at once.`}
             action={
-              <Link href="/admin/imports" className="text-xs font-semibold text-orange hover:text-orange-dark">
+              <Link href="/admin/settings/imports/csv" className="text-xs font-semibold text-orange hover:text-orange-dark">
                 Import a roster (CSV) →
               </Link>
             }

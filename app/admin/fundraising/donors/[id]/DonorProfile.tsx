@@ -48,6 +48,7 @@ import { asSentence, dueText, givingSummary, shortDay, usd as money, yearOverYea
 import { METHOD_LABEL, receiptWasSent } from "@/lib/fundraising/giftEdit";
 import { cardUrgency } from "@/lib/fundraising/pipelineBoard";
 import { isOpenStage } from "@/lib/fundraising/stage-sets";
+import { emailTimelineItems, type DonorSendRow } from "@/lib/comms/timeline";
 
 // Donor profile + giving timeline (Ring 2 Donors v1), extracted at Spec
 // Fundraising F2 so ONE component serves two routes: the V1 page at
@@ -639,6 +640,48 @@ export default async function DonorProfile({
         meta: e.preview ? <span className="line-clamp-2">{e.preview}</span> : undefined,
         date: e.at ? shortDay(dayOf(e.at), today) : "No date",
         dateTime: e.at ?? undefined,
+      },
+    });
+  }
+
+  // V4 Stage D: Comms sends and opens from the Gmail sender (email_sends),
+  // pinned to the active org. One entry per email that reached (or may have
+  // reached) this donor, linked to the email's results.
+  const { data: sendRows } = await supabase
+    .from("email_sends")
+    .select("id, status, sent_at, claimed_at, created_at, first_opened_at, open_count, first_clicked_at, click_count, campaign_id, campaign:email_campaigns ( name, subject )")
+    .eq("org_id", ctx.orgId)
+    .eq("constituent_id", id)
+    .in("status", ["sent", "unknown"])
+    .order("created_at", { ascending: false })
+    .limit(200);
+  for (const e of emailTimelineItems((sendRows ?? []) as unknown as DonorSendRow[])) {
+    sorted.push({
+      sort: ms(e.at),
+      entry: {
+        id: e.id,
+        kind: "emails",
+        icon: svg(ICON.email),
+        title: (
+          <Link href={`/admin/comms/emails/${e.campaignId}`} className="hover:text-orange">
+            {e.title}
+          </Link>
+        ),
+        chips: e.chips.length ? (
+          <>
+            <TimelineChip>Comms</TimelineChip>
+            {e.chips.map((c) => (
+              <TimelineChip key={c} tone={c.startsWith("Opened") || c.startsWith("Clicked") ? "success" : "neutral"}>
+                {c}
+              </TimelineChip>
+            ))}
+          </>
+        ) : (
+          <TimelineChip>Comms</TimelineChip>
+        ),
+        meta: e.meta,
+        date: shortDay(dayOf(e.at), today),
+        dateTime: e.at,
       },
     });
   }

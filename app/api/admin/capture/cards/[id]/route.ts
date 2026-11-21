@@ -8,6 +8,9 @@ import { cardKindOf } from "@/lib/capture/cardKind";
 import { CARD_COLUMNS, type CardRow } from "@/lib/capture/apply";
 import { editStory, keepStory, markPledgeAdded, recordGiftFiled } from "@/lib/capture/v4Cards";
 import { sendToTeammate } from "@/lib/capture/handoff";
+import { requirePermission } from "@/lib/admin/requirePermission";
+import { getAdminUser } from "@/lib/admin/auth";
+import { bankFiler } from "@/lib/admin/comms/capture-server";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +27,9 @@ export const dynamic = "force-dynamic";
  * V4 §8, gift and story cards (never filed by an applier):
  *   { action: 'record_gift', gift_id }  after the gift drawer saved the gift
  *   { action: 'pledge_added' }          the pledge was added on the donor record
- *   { action: 'keep' }                  keep a story as a held draft
+ *   { action: 'keep' }                  file a story into the Comms story bank
+ *                                       (V4 Stage D) when the caller has Comms,
+ *                                       else keep it as a held draft
  *   { action: 'edit', patch }           on a story: text, title, about, identifiable
  *
  * Voice for every role: a card the caller cannot file (filingPermission)
@@ -70,12 +75,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (action === "record_gift" || action === "pledge_added" || action === "keep") {
     if (hasPatch) return NextResponse.json({ error: `${action} takes no patch` }, { status: 400 });
     const deps = await actionDeps(req, ent.ctx);
+    // Keep: into the story bank when this caller may write it there.
+    let filer: ReturnType<typeof bankFiler> | undefined;
+    if (action === "keep") {
+      const comms = await requirePermission("comms.manage", { entitlement: "modules.comms" });
+      if (comms.ok && comms.ctx.orgId === ent.ctx.orgId) filer = bankFiler(comms.ctx.orgId, (await getAdminUser()) ?? null);
+    }
     const r =
       action === "record_gift"
         ? await recordGiftFiled(deps, params.id, body.gift_id)
         : action === "pledge_added"
           ? await markPledgeAdded(deps, params.id)
-          : await keepStory(deps, params.id);
+          : await keepStory(deps, params.id, filer);
     if (!r.ok) return NextResponse.json({ error: r.error, ...(r.card ? { card: r.card } : {}) }, { status: r.status });
     return NextResponse.json({ card: r.card });
   }

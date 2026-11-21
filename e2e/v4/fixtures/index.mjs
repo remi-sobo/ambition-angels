@@ -185,6 +185,11 @@ export function buildFixtures({ profile = "populated", role = "owner", skipViews
   add("profiles", team.map((p) => ({ user_id: p.id, display_name: p.displayName, created_at: "2024-08-01T17:00:00Z", updated_at: iso(daysAgo(10)), v2_shell: true })));
   add("org_entitlements", ALL_FEATURES.map((k) => ({ org_id: ORG_ID, feature_key: k, enabled: true, source: "seed", updated_at: "2026-01-02T00:00:00Z" })));
   add("role_permissions", reference.role_permissions || []);
+  // V4 Stage D: the story bank's two keys (comms_phase1_story_schema), until
+  // reference.json is regenerated from the migrations.
+  for (const [role, permission] of [["owner", "comms.manage"], ["admin", "comms.manage"], ["staff", "comms.manage"], ["owner", "comms.subjects.read"], ["admin", "comms.subjects.read"]]) {
+    if (!tables.role_permissions.some((r) => r.role === role && r.permission === permission)) add("role_permissions", [{ role, permission }]);
+  }
   add("entity_types", reference.entity_types || []);
   add("org_terminology", []); // AA keeps zero rows by design (lib/admin/terminology.ts)
 
@@ -446,6 +451,59 @@ function populate(T, add, tables, team) {
   add("email_sends", sends);
   add("email_suppressions", [{ id: T.id(18), org_id: ORG_ID, email: "bounced.address@example.com", reason: "hard_bounce", created_at: iso(daysAgo(40)) }]);
 
+  // ── V4 Stage D: story bank, consents, formats and editions ──────────────
+  // Invented people; first name and last initial only, as the bank stores.
+  const validSegs = add("segments", [
+    { id: T.id(16), org_id: ORG_ID, name: "Gave in 2025, not yet in 2026", definition: { view: "lapsed" }, created_by: "dana" },
+    { id: T.id(16), org_id: ORG_ID, name: "Donors of $250 or more", definition: { view: "donors", min_total: "250" }, created_by: "marcus" },
+  ]);
+  const st = (n, o) => ({ id: T.id(19), org_id: ORG_ID, tags: [], rank_order: null, strategic_goal_id: null, source: "manual", happened_on: ymd(daysAgo(n)), created_at: iso(daysAgo(n)), updated_at: iso(daysAgo(n)), outcome: null, ...o });
+  const stories = add("stories", [
+    st(4, { title: "Asked back for a summer job", body: "Jaylen practiced interviews with two Northgate staff. They asked him back for a summer job.", outcome: "He has a paid summer role lined up.", status: "approved", captured_by: "priya" }),
+    st(2, { title: "A question about pay, answered", body: "Sofia P. asked her coach how a paycheck works, and the group built a first budget together.", status: "approved", captured_by: "priya" }),
+    st(6, { title: "Showcase night, a full room", body: "Forty families came to the spring showcase and every table had a teen presenting.", outcome: "Twelve families signed up to host a site visit.", status: "approved", captured_by: "dana" }),
+    st(9, { title: "First robotics meet", body: "Ana R. led her team's first robotics meet and wrote the practice plan herself.", status: "approved", captured_by: "marcus" }),
+    st(1, { title: "Mentor match that clicked", body: "A volunteer engineer and Leo T. found they grew up two streets apart.", status: "raw", captured_by: "priya", source: "reed" }),
+  ]);
+  const [sJob, sPay, sShow, sRobot, sMentor] = stories;
+  const subj = add("story_subjects", [
+    { id: T.id(19), org_id: ORG_ID, story_id: sJob.id, subject_type: "participant", subject_id: null, display_label: "Jaylen M.", is_minor: true, created_at: sJob.created_at },
+    { id: T.id(19), org_id: ORG_ID, story_id: sPay.id, subject_type: "participant", subject_id: null, display_label: "Sofia P.", is_minor: true, created_at: sPay.created_at },
+    { id: T.id(19), org_id: ORG_ID, story_id: sShow.id, subject_type: "none", subject_id: null, display_label: "No one identifiable", is_minor: false, created_at: sShow.created_at },
+    { id: T.id(19), org_id: ORG_ID, story_id: sRobot.id, subject_type: "participant", subject_id: null, display_label: "Ana R.", is_minor: true, created_at: sRobot.created_at },
+    { id: T.id(19), org_id: ORG_ID, story_id: sMentor.id, subject_type: "participant", subject_id: null, display_label: "Leo T.", is_minor: true, created_at: sMentor.created_at },
+  ]);
+  add("story_consents", [
+    { id: T.id(19), org_id: ORG_ID, story_subject_id: subj[0].id, scope: ["first_name", "quote", "outcome_details"], requested_at: ymd(daysAgo(5)), granted_by: "Parent on file (example)", granted_at: ymd(daysAgo(3)), expires_at: ymd(daysFromNow(365)), revoked_at: null, evidence_document_id: null, notes: null, created_at: iso(daysAgo(3)) },
+    { id: T.id(19), org_id: ORG_ID, story_subject_id: subj[3].id, scope: ["first_name"], requested_at: ymd(daysAgo(2)), granted_by: null, granted_at: null, expires_at: null, revoked_at: null, evidence_document_id: null, notes: "Asked at pickup.", created_at: iso(daysAgo(2)) },
+  ]);
+  const quarterly = { id: T.id(19), org_id: ORG_ID, name: "Quarterly newsletter", cadence: "quarterly", is_archived: false, created_at: iso(daysAgo(30)), updated_at: iso(daysAgo(30)), slots: [
+    { key: "letter", label: "Letter from the leader", kind: "letter", required: true, hint: "One piece of your model, personal, signed." },
+    { key: "person", label: "Person spotlight", kind: "story", required: true, hint: "A named person doing something. Needs current consent." },
+    { key: "work", label: "The work", kind: "story", required: true, hint: "Something that happened since last time. Outcome, not output." },
+    { key: "ask", label: "Support the work", kind: "ask", required: true, hint: "Always present, never a hard ask." },
+  ] };
+  add("comms_formats", [quarterly, { id: T.id(19), org_id: ORG_ID, name: "News flash", cadence: "adhoc", is_archived: false, created_at: iso(daysAgo(30)), updated_at: iso(daysAgo(30)), slots: [{ key: "flash", label: "What happened", kind: "story", required: true }, { key: "ask", label: "Support the work", kind: "ask", required: false }] }]);
+  const yearEnd = ecs.find((c) => c.status === "draft");
+  const editions = add("comms_editions", [
+    { id: T.id(19), org_id: ORG_ID, format_id: quarterly.id, title: "Winter 2026 newsletter", subject: "What your gift did this fall", status: "drafting", target_date: ymd(daysFromNow(10)), email_campaign_id: null, sent_at: null, created_at: iso(daysAgo(8)), updated_at: iso(daysAgo(1)) },
+    { id: T.id(19), org_id: ORG_ID, format_id: quarterly.id, title: "Year-end appeal", subject: "Your gift, doubled until Dec 31", status: "compiled", target_date: ymd(daysFromNow(30)), email_campaign_id: yearEnd ? yearEnd.id : null, sent_at: null, created_at: iso(daysAgo(12)), updated_at: iso(daysAgo(2)) },
+  ]);
+  const slot = (ed, s, i, o = {}) => ({ id: T.id(19), org_id: ORG_ID, edition_id: ed.id, slot_key: s.key, slot_def: s, story_id: null, metric_ids: null, content: null, position: i, created_at: ed.created_at, updated_at: ed.updated_at, ...o });
+  add("comms_edition_slots", [
+    slot(editions[0], quarterly.slots[0], 0, { content: "This fall our teens walked into workplaces for the first time. Here is one of them." }),
+    slot(editions[0], quarterly.slots[1], 1, { story_id: sJob.id }),
+    slot(editions[0], quarterly.slots[2], 2),
+    slot(editions[0], quarterly.slots[3], 3, { content: "A gift of any size keeps a Career Lab open for one more teen." }),
+    slot(editions[1], quarterly.slots[0], 0, { content: "Every year-end gift is matched until December 31." }),
+    slot(editions[1], quarterly.slots[1], 1, { story_id: sJob.id }),
+    slot(editions[1], quarterly.slots[2], 2, { story_id: sShow.id }),
+    slot(editions[1], quarterly.slots[3], 3, { content: "Double your gift today." }),
+  ]);
+  void validSegs;
+  // The connected Gmail sender (G1). No token: the mock never sends.
+  add("connections", [{ id: T.id(19), org_id: ORG_ID, provider: "google_gmail", external_id: "sender", status: "active", meta: { account_email: "hello@demo-angels.example", connected_by_email: "dana@demo-angels.example", connected_at: iso(daysAgo(20)) }, created_at: iso(daysAgo(20)), updated_at: iso(daysAgo(20)) }]);
+
   // ── partners, students, cohorts ──────────────────────────────────────────
   const partners = add("partners", [...SCHOOLS, ...NONPROFITS.slice(0, 4), ...COMPANIES.slice(0, 6)].map((n, i) => {
     const kind = i < SCHOOLS.length ? (n.includes("District") ? "district" : "school") : i < SCHOOLS.length + 4 ? "nonprofit" : "company";
@@ -692,6 +750,8 @@ function populate(T, add, tables, team) {
     card(2, "task", "proposed", { title: `Send ${donor.first_name} the spring site-visit dates`, category: "fundraising", due_date: ymd(daysFromNow(3)), assignee: { handle: "dana", user_id: team[0].id, name: team[0].displayName }, notes: null, uncertain: [] }, true),
     card(3, "thought", "held", { card_kind: "gift", gift_type: "pledge", amount: 15000, amount_heard: "fifteen thousand", expected: "December", gift_date: null, notes: null, uncertain: ["amount", "date"], source_sentence: "Put her down for fifteen thousand, probably December." }, true),
     card(4, "thought", "held", { card_kind: "story", title: "The tour guide who started a club", text: "Her student tour guide went on to start a robotics club.", about: "Jaylen M.", identifiable: true, consent: "needed", uncertain: [] }, false),
+    // A Stage C draft that was KEPT before the story bank existed (Stage D moves it in).
+    { ...card(6, "thought", "confirmed", { card_kind: "story", title: "Coach notes on a first paycheck", text: "Marisol K. brought her first pay stub to Career Lab and walked the group through it.", about: "Marisol K.", identifiable: true, consent: "needed", uncertain: [], filed: { table: "capture_cards", kept: true } }, false), decided_at: recordedAt },
     card(5, "thought", "held", { card_kind: "gift", gift_type: "gift", amount: 500, amount_heard: "500", gift_date: ymd(now), notes: null, uncertain: [] }, true),
   ]);
 }

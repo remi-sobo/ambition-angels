@@ -17,6 +17,9 @@ const BASE_URL = process.env.QA_BASE_URL ?? "http://localhost:3000";
 
 export default defineConfig({
   testDir: "e2e",
+  // e2e/v4 has its own config (e2e/v4/smoke/playwright.config.ts) and runs
+  // against the mock Supabase, never a real session.
+  testIgnore: ["v4/**"],
   outputDir: "e2e/.output",
   fullyParallel: true,
   reporter: [["list"]],

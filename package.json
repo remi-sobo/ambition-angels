@@ -13,7 +13,11 @@
     "test": "vitest run",
     "qa:visual": "playwright test",
     "check:ledger": "node scripts/check-migration-ledger.ts",
-    "capture:eval": "tsx scripts/capture-eval.ts"
+    "capture:eval": "tsx scripts/capture-eval.ts",
+    "e2e:smoke": "bash e2e/v4/smoke.sh smoke",
+    "e2e:roles": "bash e2e/v4/smoke.sh roles",
+    "e2e:a11y": "bash e2e/v4/smoke.sh a11y",
+    "e2e:visual": "bash e2e/v4/smoke.sh visual"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.113.0",
@@ -40,6 +44,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.49.0",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",

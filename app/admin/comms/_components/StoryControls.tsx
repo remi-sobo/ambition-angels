@@ -253,3 +253,52 @@ export function AddSubjectButton({ storyId, canAddParticipant }: { storyId: stri
     </>
   );
 }
+
+/**
+ * "Stop using this story" for anyone who can manage Comms, staff included.
+ * Revokes every live participant consent on the story without showing who
+ * is in it. Two steps, so it is never one stray tap.
+ */
+export function StopUsingStoryButton({ storyId }: { storyId: string }) {
+  const save = useSaveAction();
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  if (!confirming) {
+    return (
+      <Button variant="quiet" onClick={() => setConfirming(true)}>
+        Stop using this story
+      </Button>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      <p className={TYPE.metadata}>
+        This revokes consent for everyone in this story. It is held everywhere at once, including emails already queued. Only an owner or admin can record consent again.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="danger"
+          loading={busy}
+          onClick={async () => {
+            setBusy(true);
+            const r = await save({
+              request: { url: `/api/admin/comms/stories/${storyId}/stop-using`, method: "POST", body: {} },
+              success: "Consent revoked. The story is held everywhere.",
+            });
+            setBusy(false);
+            if (r.ok) {
+              setConfirming(false);
+              router.refresh();
+            }
+          }}
+        >
+          Revoke consent
+        </Button>
+        <Button variant="quiet" onClick={() => setConfirming(false)}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}

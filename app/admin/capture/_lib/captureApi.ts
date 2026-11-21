@@ -5,6 +5,7 @@
  */
 
 import { userMessage } from "@/lib/admin/errors";
+import { supportHint } from "@/lib/admin/support";
 import type { CandidateView, CaptureView, CardView, ConfirmAllResult } from "./cardView";
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; error: string; body: Record<string, unknown> };
@@ -81,7 +82,7 @@ export function searchCandidates(q: string, kind?: "constituent" | "partner") {
 export function parseFailureMessage(status: number, body: Record<string, unknown>, fallback: string): string {
   if (status === 429 && body.rate_limited) return "That's a lot of recordings this hour. Try again in a bit, or type it into a task.";
   if (status === 429 && body.capped) return "This org has hit its AI budget for the month. Type it into a task for now.";
-  if (status === 503) return "Capture isn't set up on this server yet. Tell Remi.";
+  if (status === 503) return `Capture isn't set up on this server yet. To ask for it, ${supportHint()}.`;
   if (status === 402) return "Capture isn't turned on for this org.";
   if (status === 502) return "I couldn't sort that into cards. Your words are saved; try again.";
   return fallback;

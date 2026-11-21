@@ -32,8 +32,9 @@ export default function AckChannelPref({
 
   return (
     <div className="flex gap-3 text-xs items-center">
-      <span className="text-ink-3 w-16 flex-shrink-0 uppercase tracking-wider font-semibold">Thank via</span>
+      <label htmlFor="ack-channel-pref" className="text-ink-3 w-16 flex-shrink-0 uppercase tracking-wider font-semibold">Thank via</label>
       <select
+        id="ack-channel-pref"
         value={current ?? ""}
         disabled={busy}
         onChange={(e) => save(e.target.value)}

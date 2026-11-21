@@ -1,21 +1,20 @@
 "use client";
 
-// One modal to turn a list view into action: create a linked follow-up task
+// One drawer to turn a list view into action: create a linked follow-up task
 // for one donor/prospect (row action) or a batch of them (bulk action).
 // Tasks land in ops_tasks with an entity link, so they show up on the record's
 // profile, the Tasks column, Ops, Today, and Needs You — same spine as
 // EntityTasks, just launchable from the tables where segments live.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { TASK_PRIORITIES, type TaskPriority } from "../../ops/_types/ops";
 import { useAssignees, withSelected } from "../../_lib/useAssignees";
 import { useAdminUser } from "../../_components/AdminUserContext";
-import { TYPE } from "@/lib/admin/typeScale";
+import Drawer from "../../_components/ui/Drawer";
+import Button from "../../_components/ui/Button";
+import { TextField, SelectField, DateField } from "../../_components/ui/Field";
 
 export type TaskTarget = { id: string; name: string };
-
-const fieldCls =
-  "w-full bg-tile border-hairline rounded-control px-3 py-2.5 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 text-base sm:text-sm";
 
 export default function TaskComposer({
   targets,
@@ -43,12 +42,6 @@ export default function TaskComposer({
   const assigneeOptions = withSelected(useAssignees(), assignee);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !saving && onClose(0);
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose, saving]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -94,72 +87,60 @@ export default function TaskComposer({
     onClose(created);
   }
 
+  // The kit Drawer (V4 P1): focus trap, Escape and scrim cancel (held while
+  // creating), a phone sheet and a pinned footer.
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:px-4"
-      onClick={() => !saving && onClose(0)}
+    <Drawer
+      open
+      onClose={() => !saving && onClose(0)}
+      title={single ? `Task for ${targets[0].name}` : `Task for ${targets.length} ${entityType === "constituent" ? "donors" : "prospects"}`}
+      footer={
+        <>
+          <Button variant="secondary" onClick={() => onClose(0)} disabled={saving}>
+            Cancel
+          </Button>
+          <Button type="submit" form="task-composer-form" loading={saving}>
+            {saving ? "Creating…" : single ? "Add task" : `Add ${targets.length} tasks`}
+          </Button>
+        </>
+      }
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-panel border-hairline bg-ink shadow-2xl max-h-[92vh] overflow-y-auto"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-        <form onSubmit={submit} className="p-5 sm:p-6 space-y-4">
-          <h2 className={TYPE.modalTitle}>
-            {single ? `Task for ${targets[0].name}` : `Task for ${targets.length} ${entityType === "constituent" ? "donors" : "prospects"}`}
-          </h2>
+      <form id="task-composer-form" onSubmit={submit} className="space-y-4">
+        <TextField
+          label="Task"
+          required
+          data-autofocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          hint={
+            single
+              ? undefined
+              : `One task per person, name appended: “${title.trim() || "…"} · ${targets[0].name}”, …`
+          }
+        />
 
-          <label className="block">
-            <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">
-              Task <span className="text-orange">*</span>
-            </div>
-            <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} className={fieldCls} />
-            {!single && (
-              <p className="mt-1 text-xs text-ink-3">
-                One task per person, name appended: &ldquo;{title.trim() || "…"} · {targets[0].name}&rdquo;, …
-              </p>
-            )}
-          </label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <DateField label="Due" value={due} onChange={(e) => setDue(e.target.value)} />
+          <SelectField
+            label="Priority"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as TaskPriority)}
+            options={TASK_PRIORITIES.map((p) => ({ value: p, label: p.charAt(0).toUpperCase() + p.slice(1) }))}
+          />
+          <SelectField
+            label="Owner"
+            value={assignee}
+            onChange={(e) => setAssignee(e.target.value)}
+            options={assigneeOptions.map((a) => ({ value: a.value, label: a.label }))}
+          />
+        </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <label className="block">
-              <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Due</div>
-              <input type="date" value={due} onChange={(e) => setDue(e.target.value)} className={fieldCls} />
-            </label>
-            <label className="block">
-              <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Priority</div>
-              <select value={priority} onChange={(e) => setPriority(e.target.value as TaskPriority)} className={`${fieldCls} capitalize`}>
-                {TASK_PRIORITIES.map((p) => (
-                  <option key={p} value={p} className="bg-surface capitalize">{p}</option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Owner</div>
-              <select value={assignee} onChange={(e) => setAssignee(e.target.value)} className={fieldCls}>
-                {assigneeOptions.map((a) => (
-                  <option key={a.value} value={a.value} className="bg-surface">{a.label}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {error && <p className="text-expense text-xs">{error}</p>}
-
-          <div className="flex items-center justify-end gap-3 pt-1">
-            <button type="button" onClick={() => onClose(0)} disabled={saving} className="text-sm text-ink-2 hover:text-ink-1 px-4 py-2.5">
-              Cancel
-            </button>
-            <button type="submit" disabled={saving} className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-control transition-colors">
-              {saving
-                ? "Creating…"
-                : single
-                ? "Add task"
-                : `Add ${targets.length} tasks`}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {error && (
+          <p role="alert" className="text-status-critical-text text-xs">
+            {error}
+          </p>
+        )}
+      </form>
+    </Drawer>
   );
 }

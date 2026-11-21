@@ -70,8 +70,9 @@ describe("Q2 structural pins", () => {
     const s = src("admin", "_components", "feedback", "ConfirmProvider.tsx");
     expect(s).toMatch(/confirmLabel: string/); // required — never an implicit "OK"
     expect(s).toMatch(/Promise<boolean>/); // the mechanical Q3 shape
-    expect(s).toMatch(/aria-modal="true"/);
-    expect(s).toMatch(/Escape/); // escape and scrim both cancel
+    // The kit Modal (V4 P1): aria-modal, focus trap, Escape and scrim both cancel.
+    expect(s).toMatch(/<Modal\b/);
+    expect(s).toMatch(/onClose=\{\(\) => settle\(false\)\}/);
     expect(s).toMatch(/destructive\?/);
   });
 });

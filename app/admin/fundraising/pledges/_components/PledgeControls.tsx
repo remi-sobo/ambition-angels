@@ -260,7 +260,7 @@ export function PledgeStatusSelect({ pledgeId, status }: { pledgeId: string; sta
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   return (
-    <select
+    <select aria-label="Pledge status"
       value={status}
       disabled={busy}
       onChange={async (e) => {

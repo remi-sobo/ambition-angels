@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage, networkMessage } from "@/lib/admin/errors";
 import type { PipelineOption, StageType } from "@/lib/fundraising/stages";
-import { TYPE } from "@/lib/admin/typeScale";
+import { StaticTable } from "@/app/admin/_components/ui/DataTable";
+import Button from "@/app/admin/_components/ui/Button";
+import Input, { Select } from "@/app/admin/_components/ui/Input";
+import { TextField, SelectField } from "@/app/admin/_components/ui/Field";
 
 /**
  * The stage editor (Epic 1b). One pipeline at a time: rename labels inline,
@@ -26,9 +29,6 @@ export type EditorStage = {
   probabilityDefault: number | null;
   isActive: boolean;
 };
-
-const inputCls =
-  "bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const TYPE_LABEL: Record<StageType, string> = {
   open: "Open",
@@ -112,42 +112,114 @@ export default function StagesEditor({
 
       {error && <p className="text-expense text-sm">{error}</p>}
 
-      <div className="bg-surface border-hairline rounded-panel overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className={`text-left border-b border-hairline ${TYPE.cardLabel}`}>
-              <th className="px-3 py-2 w-8"></th>
-              <th className="px-2 py-2">Label</th>
-              <th className="px-2 py-2">Type</th>
-              <th className="px-2 py-2">Prob %</th>
-              <th className="px-2 py-2">HubSpot stage id</th>
-              <th className="px-2 py-2">Asks</th>
-              <th className="px-2 py-2 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className={busy ? "opacity-60" : ""}>
-            {rows.map((s, i) => (
-              <StageRow
-                key={s.id}
-                stage={s}
-                count={usage[`${pipeline}:${s.key}`] ?? 0}
-                first={i === 0}
-                last={i === rows.length - 1}
-                onMoveUp={() => move(i, -1)}
-                onMoveDown={() => move(i, 1)}
-                onPatch={(fields) => void patch(s.id, fields)}
-                onDelete={async () => {
-                  const ok = await confirm({
-                    title: `Delete the "${s.label}" stage?`,
-                    confirmLabel: "Delete",
-                    destructive: true,
-                  });
-                  if (ok) void call(`/api/admin/pipeline-stages/${s.id}`, "DELETE");
-                }}
-              />
-            ))}
-          </tbody>
-        </table>
+      {/* The kit table (V4 P1): every inline control carries its label;
+          cards under 640px. */}
+      <div className={busy ? "opacity-60" : ""}>
+        <StaticTable
+          label="Stages"
+          noun={{ one: "stage", many: "stages" }}
+          rows={rows}
+          getRowId={(s) => s.id}
+          getRowLabel={(s) => s.label}
+          minWidth={820}
+          columns={[
+            {
+              key: "label",
+              header: "Label",
+              card: "title",
+              render: (s) => (
+                <div className={s.isActive ? "" : "opacity-50"}>
+                  <LabelCell key={`${s.id}:${s.label}`} stage={s} onPatch={(f) => void patch(s.id, f)} />
+                </div>
+              ),
+            },
+            {
+              key: "order",
+              header: "Order",
+              render: (s) => {
+                const i = rows.indexOf(s);
+                return (
+                  <div className="flex items-center gap-1">
+                    <Button variant="quiet" size="sm" iconOnly onClick={() => move(i, -1)} disabled={i === 0} aria-label={`Move ${s.label} up`}>
+                      ▲
+                    </Button>
+                    <Button variant="quiet" size="sm" iconOnly onClick={() => move(i, 1)} disabled={i === rows.length - 1} aria-label={`Move ${s.label} down`}>
+                      ▼
+                    </Button>
+                  </div>
+                );
+              },
+            },
+            {
+              key: "type",
+              header: "Type",
+              render: (s) => (
+                <Select aria-label={`Type for ${s.label}`} value={s.stageType} onChange={(e) => void patch(s.id, { stage_type: e.target.value })}>
+                  {(Object.keys(TYPE_LABEL) as StageType[]).map((t) => (
+                    <option key={t} value={t}>
+                      {TYPE_LABEL[t]}
+                    </option>
+                  ))}
+                </Select>
+              ),
+            },
+            {
+              key: "prob",
+              header: "Prob %",
+              render: (s) => <ProbCell key={`${s.id}:${s.probabilityDefault}`} stage={s} onPatch={(f) => void patch(s.id, f)} />,
+            },
+            {
+              key: "external",
+              header: "HubSpot stage id",
+              render: (s) => <ExtIdCell key={`${s.id}:${s.externalStageId}`} stage={s} onPatch={(f) => void patch(s.id, f)} />,
+            },
+            { key: "asks", header: "Asks", align: "right", render: (s) => <span className="text-ink-2 tabular-nums">{usage[`${pipeline}:${s.key}`] ?? 0}</span> },
+            {
+              key: "actions",
+              header: "Actions",
+              align: "right",
+              render: (s) => {
+                const count = usage[`${pipeline}:${s.key}`] ?? 0;
+                const inUse = count > 0;
+                return (
+                  <div className="flex items-center gap-1 justify-end">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void patch(s.id, { is_active: !s.isActive })}
+                      disabled={inUse && s.isActive}
+                      title={
+                        inUse && s.isActive
+                          ? `Move the ${count} ask${count === 1 ? "" : "s"} in this stage first`
+                          : s.isActive
+                            ? "Hide this column"
+                            : "Show this column"
+                      }
+                    >
+                      {s.isActive ? "Deactivate" : "Activate"}
+                    </Button>
+                    <Button
+                      variant="quiet"
+                      size="sm"
+                      disabled={inUse}
+                      title={inUse ? `Move the ${count} ask${count === 1 ? "" : "s"} in this stage first` : "Delete stage"}
+                      onClick={async () => {
+                        const ok = await confirm({
+                          title: `Delete the "${s.label}" stage?`,
+                          confirmLabel: "Delete",
+                          destructive: true,
+                        });
+                        if (ok) void call(`/api/admin/pipeline-stages/${s.id}`, "DELETE");
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                );
+              },
+            },
+          ]}
+        />
       </div>
 
       <AddStageForm
@@ -167,131 +239,59 @@ export default function StagesEditor({
   );
 }
 
-function StageRow({
-  stage,
-  count,
-  first,
-  last,
-  onMoveUp,
-  onMoveDown,
-  onPatch,
-  onDelete,
-}: {
-  stage: EditorStage;
-  count: number;
-  first: boolean;
-  last: boolean;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onPatch: (fields: Record<string, unknown>) => void;
-  onDelete: () => void;
-}) {
+// Inline cells keep their own draft and save on blur. Each is keyed by the
+// saved value, so a refresh after a save resets the draft.
+function LabelCell({ stage, onPatch }: { stage: EditorStage; onPatch: (fields: Record<string, unknown>) => void }) {
   const [label, setLabel] = useState(stage.label);
-  const [prob, setProb] = useState(stage.probabilityDefault?.toString() ?? "");
-  const [extId, setExtId] = useState(stage.externalStageId ?? "");
-
-  const inUse = count > 0;
-
   return (
-    <tr className={`border-b border-hairline last:border-b-0 ${stage.isActive ? "" : "opacity-50"}`}>
-      <td className="px-3 py-1.5">
-        <div className="flex flex-col">
-          <button
-            onClick={onMoveUp}
-            disabled={first}
-            className="text-ink-3 hover:text-ink-1 disabled:opacity-30 text-xs leading-tight"
-            aria-label={`Move ${stage.label} up`}
-          >
-            ▲
-          </button>
-          <button
-            onClick={onMoveDown}
-            disabled={last}
-            className="text-ink-3 hover:text-ink-1 disabled:opacity-30 text-xs leading-tight"
-            aria-label={`Move ${stage.label} down`}
-          >
-            ▼
-          </button>
-        </div>
-      </td>
-      <td className="px-2 py-1.5">
-        <input
-          className={`${inputCls} w-full min-w-[140px]`}
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          onBlur={() => {
-            if (label.trim() && label.trim() !== stage.label) onPatch({ label: label.trim() });
-          }}
-        />
-        <span className="block text-xs text-ink-3 font-mono mt-0.5">{stage.key}</span>
-      </td>
-      <td className="px-2 py-1.5">
-        <select
-          className={`${inputCls}`}
-          value={stage.stageType}
-          onChange={(e) => onPatch({ stage_type: e.target.value })}
-        >
-          {(Object.keys(TYPE_LABEL) as StageType[]).map((t) => (
-            <option key={t} value={t}>
-              {TYPE_LABEL[t]}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="px-2 py-1.5">
-        <input
-          className={`${inputCls} w-16`}
-          type="number"
-          min="0"
-          max="100"
-          value={prob}
-          onChange={(e) => setProb(e.target.value)}
-          onBlur={() => {
-            const v = prob === "" ? null : Number(prob);
-            if (v !== stage.probabilityDefault) onPatch({ probability_default: v });
-          }}
-        />
-      </td>
-      <td className="px-2 py-1.5">
-        <input
-          className={`${inputCls} w-full min-w-[120px] font-mono text-xs`}
-          value={extId}
-          placeholder="—"
-          onChange={(e) => setExtId(e.target.value)}
-          onBlur={() => {
-            const v = extId.trim() === "" ? null : extId.trim();
-            if (v !== stage.externalStageId) onPatch({ external_stage_id: v });
-          }}
-        />
-      </td>
-      <td className="px-2 py-1.5 text-ink-2 tabular-nums">{count}</td>
-      <td className="px-2 py-1.5">
-        <div className="flex items-center gap-1 justify-end">
-          <button
-            onClick={() => onPatch({ is_active: !stage.isActive })}
-            disabled={inUse && stage.isActive}
-            title={
-              inUse && stage.isActive
-                ? `Move the ${count} ask${count === 1 ? "" : "s"} in this stage first`
-                : stage.isActive
-                ? "Hide this column"
-                : "Show this column"
-            }
-            className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2 disabled:opacity-40"
-          >
-            {stage.isActive ? "Deactivate" : "Activate"}
-          </button>
-          <button
-            onClick={onDelete}
-            disabled={inUse}
-            title={inUse ? `Move the ${count} ask${count === 1 ? "" : "s"} in this stage first` : "Delete stage"}
-            className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense disabled:opacity-40"
-          >
-            Delete
-          </button>
-        </div>
-      </td>
-    </tr>
+    <div>
+      <Input
+        aria-label={`Label for ${stage.label}`}
+        className="w-full min-w-[140px]"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        onBlur={() => {
+          if (label.trim() && label.trim() !== stage.label) onPatch({ label: label.trim() });
+        }}
+      />
+      <span className="block text-xs text-ink-3 font-mono mt-0.5">{stage.key}</span>
+    </div>
+  );
+}
+
+function ProbCell({ stage, onPatch }: { stage: EditorStage; onPatch: (fields: Record<string, unknown>) => void }) {
+  const [prob, setProb] = useState(stage.probabilityDefault?.toString() ?? "");
+  return (
+    <Input
+      aria-label={`Default probability for ${stage.label}`}
+      className="w-20"
+      type="number"
+      min="0"
+      max="100"
+      value={prob}
+      onChange={(e) => setProb(e.target.value)}
+      onBlur={() => {
+        const v = prob === "" ? null : Number(prob);
+        if (v !== stage.probabilityDefault) onPatch({ probability_default: v });
+      }}
+    />
+  );
+}
+
+function ExtIdCell({ stage, onPatch }: { stage: EditorStage; onPatch: (fields: Record<string, unknown>) => void }) {
+  const [extId, setExtId] = useState(stage.externalStageId ?? "");
+  return (
+    <Input
+      aria-label={`HubSpot stage id for ${stage.label}`}
+      className="w-full min-w-[120px] font-mono text-xs"
+      value={extId}
+      placeholder="—"
+      onChange={(e) => setExtId(e.target.value)}
+      onBlur={() => {
+        const v = extId.trim() === "" ? null : extId.trim();
+        if (v !== stage.externalStageId) onPatch({ external_stage_id: v });
+      }}
+    />
   );
 }
 
@@ -325,40 +325,22 @@ function AddStageForm({
       }}
       className="flex flex-wrap items-end gap-3 bg-surface border-hairline rounded-panel p-4"
     >
-      <label className="text-xs text-ink-2">
-        New stage
-        <input
-          className={`${inputCls} block w-56 mt-1`}
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder="Site Visit Scheduled"
-        />
-      </label>
-      <label className="text-xs text-ink-2">
-        Type
-        <select
-          className={`${inputCls} block mt-1`}
-          value={stageType}
-          onChange={(e) => setStageType(e.target.value as StageType)}
-        >
-          {(Object.keys(TYPE_LABEL) as StageType[]).map((t) => (
-            <option key={t} value={t}>
-              {TYPE_LABEL[t]}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="text-xs text-ink-2">
-        Prob %
-        <input
-          className={`${inputCls} block w-20 mt-1`}
-          type="number"
-          min="0"
-          max="100"
-          value={prob}
-          onChange={(e) => setProb(e.target.value)}
-        />
-      </label>
+      <TextField
+        label="New stage"
+        controlSize="md"
+        className="w-56"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        placeholder="Site Visit Scheduled"
+      />
+      <SelectField
+        label="Type"
+        controlSize="md"
+        value={stageType}
+        onChange={(e) => setStageType(e.target.value as StageType)}
+        options={(Object.keys(TYPE_LABEL) as StageType[]).map((t) => ({ value: t, label: TYPE_LABEL[t] }))}
+      />
+      <TextField label="Prob %" controlSize="md" className="w-24" type="number" min="0" max="100" value={prob} onChange={(e) => setProb(e.target.value)} />
       <button
         type="submit"
         disabled={busy || !label.trim()}

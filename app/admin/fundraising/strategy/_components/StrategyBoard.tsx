@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage, networkMessage } from "@/lib/admin/errors";
+import { TextField, TextareaField } from "@/app/admin/_components/ui/Field";
 
 export type FunderRow = {
   id: string;
@@ -134,13 +135,7 @@ function AddFunder({ angleId }: { angleId: string }) {
   return (
     <div className="bg-tile border-hairline rounded-panel-lg p-4">
       <div className="relative">
-        <input
-          value={q}
-          onChange={(e) => search(e.target.value)}
-          disabled={busy}
-          placeholder="Add a funder: search by name or organization…"
-          className="w-full text-sm bg-cream border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50 disabled:opacity-60"
-        />
+        <TextField label="Add a funder" placeholder="Search by name or organization" controlSize="md" className="w-full" value={q} onChange={(e) => search(e.target.value)} disabled={busy} />
         {(results.length > 0 || q.trim().length >= 2) && (
           <div className="absolute z-20 left-0 right-0 mt-1 bg-tile border-hairline rounded-control shadow-lg overflow-hidden">
             {results.map((res) => (
@@ -377,17 +372,9 @@ function FunderCard({ funder }: { funder: FunderRow }) {
         </div>
       )}
 
-      <textarea
-        value={notes}
-        disabled={busy}
-        onChange={(e) => setNotes(e.target.value)}
-        onBlur={() => {
+      <TextareaField label="Triage notes" placeholder="Reachable? Warm intro? Does the ask fit?" className="w-full" value={notes} disabled={busy} onChange={(e) => setNotes(e.target.value)} onBlur={() => {
           if ((funder.fitNotes ?? "") !== notes) void patch({ fit_notes: notes });
-        }}
-        rows={2}
-        placeholder="Triage notes: reachable? warm intro? does the ask fit?"
-        className="w-full text-xs bg-cream border-hairline rounded-control px-2.5 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50 resize-y"
-      />
+        }} rows={2} />
     </div>
   );
 }

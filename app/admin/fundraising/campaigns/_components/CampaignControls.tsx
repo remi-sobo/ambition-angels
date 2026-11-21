@@ -141,7 +141,7 @@ export function NewAppealForm({ campaignId }: { campaignId: string }) {
   }
   return (
     <span className="inline-flex items-center gap-1.5">
-      <input className={`${inputCls} !py-1 !text-xs w-44`} value={name} autoFocus
+      <input aria-label="Appeal name" className={`${inputCls} !py-1 !text-xs w-44`} value={name} autoFocus
         placeholder="Spring email #2" onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submit(); } }} />
       <button onClick={() => void submit()} disabled={busy}

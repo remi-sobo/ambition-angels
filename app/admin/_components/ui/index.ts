@@ -69,6 +69,10 @@ export { default as FilterRow } from "./FilterRow";
 export type { QuickFilter } from "./FilterRow";
 export { default as SavedViews, SaveViewButton } from "./SavedViews";
 export type { SavedView } from "./SavedViews";
+export { default as TableSavedViews } from "./TableSavedViews";
+export type { ServerSavedView } from "./TableSavedViews";
+export { default as DataTable, DataTableSkeleton } from "./DataTable";
+export type { DataTableColumn, DataTableBulkAction } from "./DataTable";
 
 // Navigation
 export { default as Tabs, TabLink } from "./Tabs";

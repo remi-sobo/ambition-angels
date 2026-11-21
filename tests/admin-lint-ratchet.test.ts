@@ -51,9 +51,9 @@ describe("admin kit lint ratchet", () => {
     };
     const [base, ...rest] = config.overrides;
     expect(base.files).toEqual(["app/admin/**/*.ts", "app/admin/**/*.tsx"]);
-    const restricted = base.rules["no-restricted-syntax"] as [string, ...{ message: string }[]];
-    expect(restricted[0]).toBe("error");
-    expect(restricted.slice(1).map((r) => r.message).sort()).toEqual(Object.values(RULES).map((r) => r.message).sort());
+    const [level, ...entries] = base.rules["no-restricted-syntax"] as [string, ...{ message: string }[]];
+    expect(level).toBe("error");
+    expect(entries.map((r) => r.message).sort()).toEqual(Object.values(RULES).map((r) => r.message).sort());
     const kitGlobs = Object.values(KIT_FILES).flat().map((f) => f.replace(/[[\]()*?{}!+@]/g, "\\$&"));
     for (const o of rest) expect(kitGlobs).toEqual(expect.arrayContaining(o.files));
   });

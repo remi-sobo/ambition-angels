@@ -21,6 +21,7 @@ import { EntityTasks } from "../../_components/EntityTasks";
 import { EntityDocuments } from "../../_components/EntityDocuments";
 import { RailEntity } from "../../_components/rail/RailEntityContext";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Partner org profile + contacts directory + activity timeline (Ring 3).
 export const dynamic = "force-dynamic";
@@ -35,6 +36,8 @@ const INT_LABEL: Record<string, string> = {
 };
 
 export default async function PartnerProfilePage({ params }: { params: { id: string } }) {
+  const roleGate = await requirePagePermission("program.read", "Partners");
+  if (!roleGate.ok) return roleGate.page;
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
   const supabase = getSupabaseAdmin();
   // Org fence: the service-role client bypasses RLS. Scope the partner read to

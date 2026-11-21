@@ -43,5 +43,8 @@ export async function POST(req: NextRequest) {
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
   });
-  return NextResponse.json({ ok: true });
+  const res = NextResponse.json({ ok: true });
+  // Nothing cached under the previous org survives the switch (finding 8).
+  res.headers.set("Clear-Site-Data", '"cache"');
+  return res;
 }

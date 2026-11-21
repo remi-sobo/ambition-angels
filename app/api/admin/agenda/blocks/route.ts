@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { dayStartInstant } from "@/lib/admin/ops/week";
 import {
   scheduleTaskBlock,
@@ -8,6 +7,7 @@ import {
   unscheduleTaskBlock,
   NoCalendarConnection,
 } from "@/lib/agenda/task-blocks";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // Task ↔ calendar block writes (Phase 4). A "block" is a time window on a day:
 // { day: YYYY-MM-DD, start_minute, duration_minute } in America/Los_Angeles,
@@ -38,8 +38,9 @@ function resolveWindow(
 
 // POST — schedule a task into a block.
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const taskId = typeof body?.task_id === "string" ? body.task_id : "";
   if (!taskId) return NextResponse.json({ error: "task_id is required" }, { status: 400 });
@@ -76,8 +77,9 @@ export async function POST(req: NextRequest) {
 
 // PATCH — move/resize an existing block.
 export async function PATCH(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const taskId = typeof body?.task_id === "string" ? body.task_id : "";
   if (!taskId) return NextResponse.json({ error: "task_id is required" }, { status: 400 });
@@ -98,8 +100,9 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE — unschedule (delete the block, keep the task).
 export async function DELETE(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const taskId = new URL(req.url).searchParams.get("task_id") ?? "";
   if (!taskId) return NextResponse.json({ error: "task_id is required" }, { status: 400 });
 

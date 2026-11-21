@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import AnalyticsView from "../AnalyticsView";
 import { TYPE } from "@/lib/admin/typeScale";
+import { clearAdminCaches } from "@/lib/admin/swCache";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -387,6 +388,7 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     await fetch("/api/admin/logout", { method: "POST" });
+    await clearAdminCaches();
     setAuthed(false);
     setSubmissions([]);
     setStats(null);

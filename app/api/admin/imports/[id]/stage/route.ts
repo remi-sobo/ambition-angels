@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchAll } from "@/lib/supabase/fetchAll";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { getFieldDefs } from "@/lib/admin/customFields";
 import { getParticipantStages } from "@/lib/admin/program/stages";
 import {
@@ -13,6 +12,7 @@ import {
   verdictFor,
   type Mapping,
 } from "@/lib/admin/imports/engine";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 /**
  * POST /api/admin/imports/[id]/stage — validate every pending row against the
@@ -29,8 +29,9 @@ const isUuid = (v: unknown): v is string =>
 const CHUNK = 500;
 
 export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission(["program.write", "fundraising.write"]);
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
   const supabase = getSupabaseAdmin();

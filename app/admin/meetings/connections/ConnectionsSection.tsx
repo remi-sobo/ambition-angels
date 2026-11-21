@@ -7,6 +7,7 @@ import CandidatesQueue, { type Candidate } from "./CandidatesQueue";
 import NewConnectionForm from "./NewConnectionForm";
 import ConnectionsBacklog from "./ConnectionsBacklog";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // The "get a meeting on the books" pipeline: email-detected intro candidates
 // (suggest-then-confirm), the manual "+ new connection" entry point, and the
@@ -77,6 +78,8 @@ async function fetchConnections(orgId: string) {
 }
 
 export default async function ConnectionsSection({ embedded = false }: { embedded?: boolean }) {
+  const roleGate = await requirePagePermission("ops.read", "Meetings");
+  if (!roleGate.ok) return embedded ? null : roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) return null;
   const { connections, candidates } = await fetchConnections(ctx.orgId);

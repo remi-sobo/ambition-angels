@@ -5,7 +5,11 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 // edit modal sends — notably issued_at, which the upload form could set but
 // nothing could later correct.
 
-vi.mock("@/lib/admin/auth", () => ({ getOrgContext: vi.fn(async () => ({ orgId: "org-1" })) }));
+// The role guard is covered in tests/require-permission.test.ts; this caller holds it.
+vi.mock("@/lib/admin/auth", () => ({
+  getOrgContext: vi.fn(async () => ({ orgId: "org-1" })),
+  ctxHasPermission: vi.fn(async () => true),
+}));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}) }));
 vi.mock("@/lib/supabase/admin", () => ({ getSupabaseAdmin: vi.fn() }));
 

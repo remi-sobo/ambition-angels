@@ -6,6 +6,7 @@ import WeekStatusLine from "../_components/WeekStatusLine";
 import CalendarSyncBanner from "../_components/CalendarSyncBanner";
 import PageHeader from "../../_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,8 @@ function Door({
 }
 
 export default async function MyWeekHubPage() {
+  const roleGate = await requirePagePermission("ops.read", "Operations");
+  if (!roleGate.ok) return roleGate.page;
   const mode = rhythmModeForToday();
   const snapshot = await loadRhythmSnapshot(mode);
 

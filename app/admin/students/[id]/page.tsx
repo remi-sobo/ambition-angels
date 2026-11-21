@@ -14,6 +14,7 @@ import { EntityHistory } from "../../_components/EntityHistory";
 import { TYPE } from "@/lib/admin/typeScale";
 import { fullName, cf, type Student } from "../_lib/studentFields";
 import { StageControls, EditStudentProfile } from "./_components/StudentProfileControls";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Student profile (governance-profile-views phase 2): the full record behind
 // a roster row — identity + registry custom fields, stage controls,
@@ -48,6 +49,8 @@ const ATT_STYLE: Record<string, string> = {
 };
 
 export default async function StudentProfilePage({ params }: { params: { id: string } }) {
+  const roleGate = await requirePagePermission("program.read", "Students");
+  if (!roleGate.ok) return roleGate.page;
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
   const supabase = getSupabaseAdmin();
   // Org fence: the service-role client bypasses RLS — scope every read to the

@@ -5,6 +5,7 @@ import type { FinCategory } from "@/lib/finance/types";
 import BudgetEditor, { type BudgetRow } from "./_components/BudgetEditor";
 import NoCategories from "../_components/NoCategories";
 import PageHeader from "../../_components/PageHeader";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 type SearchParams = { year?: string };
 
@@ -13,6 +14,8 @@ export default async function BudgetPage({
 }: {
   searchParams: SearchParams;
 }) {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
 
   // Year resolution: ?year=N overrides; otherwise the singleton fin_config

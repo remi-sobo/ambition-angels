@@ -10,7 +10,12 @@ import { join } from "node:path";
 
 const ORG = "org-b";
 
-vi.mock("@/lib/admin/auth", () => ({ getOrgContext: vi.fn(async () => ({ orgId: ORG })) }));
+// The role guard (requirePermission) is covered in tests/require-permission.test.ts;
+// here every caller holds the permission so the org fence is what is tested.
+vi.mock("@/lib/admin/auth", () => ({
+  getOrgContext: vi.fn(async () => ({ orgId: ORG })),
+  ctxHasPermission: vi.fn(async () => true),
+}));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}) }));
 
 // ── A recording fake of the supabase-js query builder ──────────────────────

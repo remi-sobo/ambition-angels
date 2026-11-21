@@ -3,6 +3,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import ReconcileInbox, { type ReconItem } from "./_components/ReconcileInbox";
 import PageHeader from "../../_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Reconcile — the Cowork reconciliation inbox. The weekly sweep (HubSpot +
 // Gmail) drops proposed ledger entries here; Shannon works the queue so the
@@ -15,6 +16,8 @@ import { TYPE } from "@/lib/admin/typeScale";
 // Transactions.
 
 export default async function ReconcileSection({ embedded = false }: { embedded?: boolean }) {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return embedded ? null : roleGate.page;
   const supabase = getSupabaseAdmin();
   // Org fence: the service-role client bypasses RLS, so both reads are scoped
   // to the active org. No session → empty inbox.

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { FIN_BUDGET_CONFLICT, isOrgCategory } from "@/lib/finance/categories";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // POST /api/admin/finance/budget
 //
@@ -16,10 +16,9 @@ import { FIN_BUDGET_CONFLICT, isOrgCategory } from "@/lib/finance/categories";
 // update). Idempotent for the same (org, year, category_id) — used by the
 // inline editor on /admin/finance/budget.
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 

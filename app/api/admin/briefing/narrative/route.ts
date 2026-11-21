@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { isAuthed } from "@/lib/admin/auth";
 import { gatherBriefingView } from "@/lib/admin/briefing/gather";
 import { generateNarrativeNow } from "@/lib/admin/briefing/narrate";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 /**
  * Force-regenerate today's morning narrative (the "Regenerate" control on the
@@ -11,9 +11,8 @@ import { generateNarrativeNow } from "@/lib/admin/briefing/narrate";
 export const dynamic = "force-dynamic";
 
 export async function POST() {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   const { briefing, pulse, followups } = await gatherBriefingView();
   const narrative = await generateNarrativeNow(briefing, pulse, followups);
   return NextResponse.json({ ok: true, narrative });

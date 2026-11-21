@@ -4,6 +4,7 @@ import { laDateString } from "@/lib/games/guess";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { DailyControls, type DailyCandidate, type DailyRow } from "./_components/DailyControls";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // The daily calendar (specs/teen-games-v1.md Phase 4): Never Heard of It
 // is pre-scheduled here, at least thirty days ahead, by a human. Nothing
@@ -15,6 +16,8 @@ export const dynamic = "force-dynamic";
 const HORIZON_DAYS = 45;
 
 export default async function DailyPage() {
+  const roleGate = await requirePagePermission("program.read", "Career library");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   const today = laDateString();
   const horizon = new Date(Date.parse(today) + HORIZON_DAYS * 86_400_000)

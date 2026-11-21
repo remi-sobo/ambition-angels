@@ -19,6 +19,7 @@ import {
   FilingsPanel,
   type ComplianceFiling,
 } from "./_components/ComplianceDetailControls";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Compliance item profile (governance profile views): one deadline's full
 // record — core fields, notes + checklist, the permanent filing history the
@@ -39,6 +40,8 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default async function ComplianceItemPage({ params }: { params: { id: string } }) {
+  const roleGate = await requirePagePermission("compliance.read", "Compliance");
+  if (!roleGate.ok) return roleGate.page;
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
   const supabase = getSupabaseAdmin();
   // Org fence: the service-role client bypasses RLS — scope every read to the

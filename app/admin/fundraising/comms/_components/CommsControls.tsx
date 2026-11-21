@@ -125,14 +125,41 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
 
   const send = async (scheduledAt: string | null) => {
     const when = scheduledAt ? new Date(scheduledAt) : null;
+    // Resolve the segment first, so the confirm names who it will email.
+    setBusy(true);
+    let preview: { recipients: number; excluded: { doNotContact: number; suppressed: number; noEmail: number }; maxRecipients: number };
+    try {
+      const res = await fetch(`/api/admin/comms/${id}/send`, { method: "GET" });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { toast.error(userMessage(res, j)); return; }
+      preview = j;
+    } catch {
+      toast.error(networkMessage());
+      return;
+    } finally { setBusy(false); }
+    if (preview.recipients === 0) {
+      toast.error("This segment has no one to email.");
+      return;
+    }
+    const people = `${preview.recipients.toLocaleString("en-US")} ${preview.recipients === 1 ? "person" : "people"}`;
+    const { doNotContact, suppressed, noEmail } = preview.excluded;
+    const leftOut = [
+      doNotContact ? `${doNotContact} do not contact` : "",
+      suppressed ? `${suppressed} unsubscribed or bounced` : "",
+      noEmail ? `${noEmail} with no email` : "",
+    ].filter(Boolean);
+    const leftOutLine = leftOut.length ? ` Left out: ${leftOut.join(", ")}.` : " No one in the segment is left out.";
+    const capLine = preview.recipients > preview.maxRecipients
+      ? ` That is over the ${preview.maxRecipients.toLocaleString("en-US")} limit, so it will be refused. Narrow the segment first.`
+      : "";
     const ok = await confirm({
       title: when
-        ? `Schedule this campaign for ${when.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}?`
-        : "Send this campaign to everyone in the segment?",
-      body: when
+        ? `Schedule this campaign to ${people} for ${when.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}?`
+        : `Send this campaign to ${people}?`,
+      body: (when
         ? "It emails real donors at that time. You can cancel it until then."
-        : "It starts emailing real donors within a minute. You can cancel the part that hasn't gone yet.",
-      confirmLabel: when ? "Schedule" : "Send to segment",
+        : "It starts emailing real donors within a minute. You can cancel the part that hasn't gone yet.") + leftOutLine + capLine,
+      confirmLabel: when ? `Schedule for ${people}` : `Send to ${people}`,
       destructive: true,
     });
     if (!ok) return;

@@ -28,7 +28,7 @@ const ctxFor = (orgId: string) => ({ userId: ME, email: "me@example.org", orgId,
 let db: FakeDb;
 let ctx: ReturnType<typeof ctxFor> | null = ctxFor(ORG_A);
 let perms = new Set<string>(["fundraising.write"]);
-const auditMock = vi.fn(async (..._args: unknown[]) => {});
+const auditMock = vi.fn(async (...args: unknown[]) => void args);
 
 vi.mock("react", async (importOriginal) => {
   const mod = await importOriginal<typeof import("react")>();

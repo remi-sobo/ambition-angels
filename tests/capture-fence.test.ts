@@ -87,10 +87,16 @@ const APPLY_ALLOWED: Record<string, string[]> = {
   "lib/capture/apply/index.ts": [],
 };
 
+// Voice for every role: "Send to a teammate" reads the org's owners and
+// writes only its own card. The team-inbox note goes through deps.notify,
+// built in deps.ts from lib/notifications/notify (the spine's single write
+// path); nothing under lib/capture holds a service-role client itself.
+const HANDOFF = "lib/capture/handoff.ts";
+
 describe("every capture file is covered by one fence", () => {
   test("no file under lib/capture or app/api/admin/capture escapes the lists", () => {
     const all = [...walk(join(root, "lib", "capture")), ...walk(join(root, "app", "api", "admin", "capture"))];
-    const covered = new Set([...PARSE_PATH, ...ORCHESTRATION, ...Object.keys(APPLY_ALLOWED)]);
+    const covered = new Set([...PARSE_PATH, ...ORCHESTRATION, ...Object.keys(APPLY_ALLOWED), HANDOFF]);
     expect(all.filter((f) => !covered.has(f))).toEqual([]);
   });
 });
@@ -154,5 +160,24 @@ describe("orchestration fence (C3): destinations only through the appliers", () 
       expect(src, rel).toMatch(/createServerSupabase\(\)|actionDeps\(/);
     }
     expect(read("lib/capture/deps.ts")).toMatch(/createServerSupabase\(\)/);
+  });
+});
+
+describe("handoff fence (voice for every role)", () => {
+  const src = read(HANDOFF);
+  commonFence(HANDOFF, src);
+  test("never a destination table; writes only capture_cards; reads owners", () => {
+    for (const t of DESTINATIONS) expect(src, `from("${t}")`).not.toMatch(fromCall(t));
+    expect(Array.from(tablesIn(src)).sort()).toEqual(["capture_cards", "memberships", "profiles"]);
+    const written = Array.from(src.matchAll(/from\(["']([a-z_]+)["']\)\s*\n?\s*\.(insert|update|delete|upsert)/g)).map((m) => m[1]);
+    expect(new Set(written)).toEqual(new Set(["capture_cards"]));
+  });
+  test("the only door past the session client is notify(), injected through deps.ts", () => {
+    expect(src).toMatch(/deps\.notify\(/);
+    expect(src).not.toMatch(/from "@\/lib\/notifications/);
+    const deps = read("lib/capture/deps.ts");
+    expect(deps).toMatch(/import \{ notify \} from "@\/lib\/notifications\/notify";/);
+    // org fence: a notice for any org but the caller's active one is dropped.
+    expect(deps).toMatch(/if \(n\.orgId !== ctx\.orgId\) return null;/);
   });
 });

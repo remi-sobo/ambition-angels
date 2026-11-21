@@ -1730,10 +1730,12 @@ end $$;
 -- AA board_viewer and AA finance (capture.use, no ops.write): each records
 -- her OWN capture and card, reads only those, never the owner's, and cannot
 -- write a row as someone else. Filing stays fenced by each destination's RLS.
+-- (example.org on purpose: an ambitionangels.org address would be
+-- auto-granted staff by the membership bootstrap's domain rule.)
 reset role;
 reset request.jwt.claim.sub;
 insert into auth.users (id, email) values
-  ('00000000-0000-0000-0000-000000000006','finance@ambitionangels.org')
+  ('00000000-0000-0000-0000-000000000006','fin@example.org')
 on conflict do nothing;
 insert into memberships (user_id, org_id, role)
 select '00000000-0000-0000-0000-000000000006', id, 'finance'

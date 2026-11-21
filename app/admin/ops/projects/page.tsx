@@ -78,7 +78,7 @@ export default async function ProjectsListPage({
     if (!filters.showGrants) q = q.is("grant_id", null);
     return q;
   };
-  const [{ data: rows, error, count }, { count: orgCount }, activeRes, lateRes, unassignedRes] = await Promise.all([
+  const [{ data: rows, error, count }, { count: orgProjectCount }, activeRes, lateRes, unassignedRes] = await Promise.all([
     query.range(from, to),
     // Any project at all: the first-run signal (the default view filters to
     // Active, which reads as zero on day one).
@@ -110,7 +110,7 @@ export default async function ProjectsListPage({
     pageSize: PROJECT_TABLE.pageSize,
     error: error ? "The projects could not be read." : null,
   };
-  const firstRun = (orgCount ?? 0) === 0 && !error;
+  const firstRun = (orgProjectCount ?? 0) === 0 && !error;
   const countOf = (r: { count: number | null; error: unknown }) => (r.error ? null : r.count ?? 0);
   const grantsNote = filters.showGrants ? "" : ", grant projects left out";
   const { views, activeKey } = projectViews(BASE, filters);

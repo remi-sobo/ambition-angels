@@ -1,4 +1,6 @@
 import PageHeader from "../_components/PageHeader";
+import Figure, { SummaryStrip } from "../_components/ui/Figure";
+import { ButtonLink } from "../_components/ui/Button";
 import EmptyState from "../_components/EmptyState";
 import StaffChart from "./_components/StaffChart";
 import StaffHeaderActions from "./_components/StaffHeaderActions";
@@ -18,7 +20,7 @@ export default async function StaffPage() {
 
   if (!tree) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
         <PageHeader title={label} subtitle="Org chart, profiles, goals, and reviews." />
         <EmptyState
           label="access"
@@ -29,17 +31,32 @@ export default async function StaffPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title={label}
-        subtitle="The team, who reports to whom, and each person's profile."
-        eyebrow={`${tree.count} ${tree.count === 1 ? "person" : "people"}`}
-        actions={<StaffHeaderActions canManage={tree.canWrite} currentLabel={label} />}
+        subtitle="The team, who reports to whom, and each person's profile"
+        primaryAction={
+          tree.canWrite ? (
+            <ButtonLink variant="primary" href="/admin/settings/people">
+              Invite a teammate
+            </ButtonLink>
+          ) : undefined
+        }
+        moreActions={<StaffHeaderActions canManage={tree.canWrite} currentLabel={label} />}
       />
+      <SummaryStrip label="Team summary">
+        <Figure label="People" value={tree.count} source="On the chart, from the staff directory" />
+        <Figure
+          label="Not on the chart"
+          value={tree.orphans.length}
+          source="No manager set; use Arrange to place them"
+        />
+        <Figure label="Pending invites" value={pendingInvites.length} source="Invited, not yet signed in" />
+      </SummaryStrip>
       {tree.count === 0 ? (
         <EmptyState
           label="staff"
-          hint="No one is on the chart yet. Add people to the staff table and they appear here."
+          hint="No one is on the chart yet. Invite a teammate from People and roles and they appear here."
         />
       ) : (
         <StaffChart

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import PageHeader from "../../_components/PageHeader";
 import EmptyState from "../../_components/EmptyState";
 import ReviewsAdminClient from "./_components/ReviewsAdminClient";
@@ -12,7 +11,7 @@ export default async function ReviewsPage() {
   const data = await getReviewsAdminData();
   if (!data) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-reading">
         <PageHeader title="Reviews" subtitle="360 review cycles." />
         <EmptyState label="access" hint="You don't have access to reviews, or you're not signed in." />
       </div>
@@ -20,16 +19,12 @@ export default async function ReviewsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-reading">
       <PageHeader
+        breadcrumb={[{ label: "Team", href: "/admin/organization/team" }]}
         title="Reviews"
-        subtitle="360 cycles: self, manager, upward, and peer feedback."
-        eyebrow="Staff"
-        actions={
-          <Link href="/admin/staff" className="text-xs font-semibold text-ink-2 hover:text-orange">
-            ← Org chart
-          </Link>
-        }
+        subtitle="360 cycles: self, manager, upward, and peer feedback"
+        moreActions={[{ label: "Org chart", href: "/admin/organization/team" }]}
       />
       <ReviewsAdminClient cycles={data.cycles} canManage={data.canManage} />
     </div>

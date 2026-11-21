@@ -20,6 +20,8 @@ export type OpportunityRow = {
   capacityRating: number | null;
   affinityRating: number | null;
   owner: string | null;
+  /** The member who owns the ask; `owner` (text) shows until it is set. */
+  ownerId: string | null;
   nextStep: string | null;
   nextStepDue: string | null;
   notes: string | null;

@@ -257,6 +257,9 @@ ordered=(
   comms_phase3_outputs.sql
   comms_phase4_editions.sql
   comms_phase6_loop.sql
+  add_owner_id_opportunities.sql
+  capture_use_permission.sql
+  seed_capture_safespace_ylepa.sql
   import_batch_undo.sql
 )
 for f in "${ordered[@]}"; do

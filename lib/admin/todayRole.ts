@@ -14,7 +14,8 @@ import { constituentName } from "@/lib/fundraising/display";
  * the page's own finance.read check for money.
  *
  * Assignment: `owner_id` (add_owner_id_assignment.sql: constituents, asks,
- * cohorts, programs; ops_tasks.assigned_to_id) wins; the older text owner
+ * cohorts, programs; add_owner_id_opportunities.sql: opportunities;
+ * ops_tasks.assigned_to_id) wins; the older text owner
  * (ops_tasks.assigned_to, opportunities.owner, asks.owner) is the fallback
  * for rows that have no owner_id yet (isMine). The generated types do not
  * carry owner_id on these joined selects, so rows are typed locally here;
@@ -60,7 +61,7 @@ export async function loadMine(
     can.fundraising
       ? supabase
           .from("opportunities")
-          .select("id, constituent_id, name, next_step, next_step_due, owner, ask_amount, stage, constituent:constituents(type, first_name, last_name, org_name, owner_id)")
+          .select("id, constituent_id, name, next_step, next_step_due, owner, owner_id, ask_amount, stage, constituent:constituents(type, first_name, last_name, org_name, owner_id)")
           .eq("org_id", orgId)
           .in("stage", OPEN_STAGES)
           .not("next_step", "is", null)
@@ -98,12 +99,16 @@ export async function loadMine(
 
   if (opps.error) failed.push("next moves");
   for (const o of (opps.data ?? []) as unknown as {
-    id: string; constituent_id: string; name: string | null; next_step: string | null; next_step_due: string | null; owner: string | null; ask_amount: number | null;
+    id: string; constituent_id: string; name: string | null; next_step: string | null; next_step_due: string | null; owner: string | null; owner_id: string | null; ask_amount: number | null;
     constituent: (NameBits & { owner_id: string | null }) | null;
   }[]) {
     if (!o.next_step?.trim()) continue;
-    // The ask's own text owner first; with none, the donor's owner_id.
-    const mine = o.owner?.trim() ? isMine({ owner_text: o.owner }, me) : isMine({ owner_id: o.constituent?.owner_id ?? null }, me);
+    // The ask's own owner (owner_id, else its text owner) first; with
+    // neither, the donor's owner_id.
+    const mine =
+      o.owner_id || o.owner?.trim()
+        ? isMine({ owner_id: o.owner_id, owner_text: o.owner }, me)
+        : isMine({ owner_id: o.constituent?.owner_id ?? null }, me);
     if (!mine) continue;
     items.push({
       id: `move:${o.id}`, kind: "next_move", title: `${o.next_step.trim()}, ${nameOf(o.constituent)}`,
@@ -158,7 +163,8 @@ export async function loadDonorsNeedMe(supabase: Sb, orgId: string, me: Me, toda
       .select("constituent_id, owner, constituent:constituents(id, type, first_name, last_name, org_name, owner_id)")
       .eq("org_id", orgId)
       .in("stage", OPEN_STAGES)
-      .ilike("owner", handle)
+      // The ask's owner_id wins; the text owner only where owner_id is null.
+      .or(`owner_id.eq.${me.userId},and(owner_id.is.null,owner.ilike.${handle})`)
       .limit(300),
   ]);
   if (ownedRes.error) return { items: [], owned: 0, failed: true };

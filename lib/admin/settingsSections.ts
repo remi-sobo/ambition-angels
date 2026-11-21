@@ -82,7 +82,6 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     href: "/admin/settings/people",
     blurb: "Who can sign in, and what each person can do.",
     roles: SETUP_ROLES,
-    comingNext: `Inviting a teammate, changing a role and removing access are coming in the next stage. ${ASK}`,
     links: [
       {
         label: "Team",

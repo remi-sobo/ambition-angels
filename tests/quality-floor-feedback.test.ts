@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { networkMessage, userMessage } from "@/lib/admin/errors";
+import { createRequire } from "node:module";
 
 // Quality Floor, stage Q2 — the feedback infrastructure (F2's fix, built
 // before any call site migrates). The contract under unit test: no raw HTTP
@@ -107,11 +108,12 @@ describe("Q3: no native dialog survives in app/admin (DoD 3)", () => {
   });
 
   test("the ESLint ban is in force: no-alert errors, scoped to app/admin", () => {
-    const rc = JSON.parse(readFileSync(join(__dirname, "..", ".eslintrc.json"), "utf8"));
+    // .eslintrc.js since V4 Stage A3 (it reads the kit lint allowlist).
+    const rc = createRequire(import.meta.url)(join(__dirname, "..", ".eslintrc.js"));
     const override = (rc.overrides ?? []).find(
       (o: { files?: string[] }) => (o.files ?? []).some((f: string) => f.includes("app/admin/**")),
     );
-    expect(override, "app/admin override missing from .eslintrc.json").toBeTruthy();
+    expect(override, "app/admin override missing from .eslintrc.js").toBeTruthy();
     expect(override.rules["no-alert"]).toBe("error");
   });
 });

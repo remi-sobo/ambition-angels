@@ -45,6 +45,7 @@ const SERVICE_ROLE_WRITE_LIBS = [
   "@/lib/admin/finance", // upsertFinConfig: the cash anchor
   "@/lib/hubspot/sync-engine",
   "@/lib/admin/briefing/gather",
+  "@/lib/admin/people-server", // Settings → People and roles: auth admin invite + memberships
 ];
 
 const usesServiceRole = (src: string) =>

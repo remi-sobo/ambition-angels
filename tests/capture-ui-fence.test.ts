@@ -94,13 +94,23 @@ describe("Record entry points", () => {
     expect(mobile).not.toMatch(/title="Record"/);
   });
 
-  test("desktop: Record chip in Quick Add, gated", () => {
-    expect(quick).toMatch(/captureEnabled && \(\s*<Chip label="Record"/);
-    expect(quick).toMatch(/<CaptureModal surface="quick_add"/);
+  test("desktop (V4 Stage C, spec §8): one Capture modal in the shell, opened from the sidebar and Quick Add", () => {
+    // The layout mounts exactly one launcher behind ai.capture; the sidebar's
+    // Talk to log button and the Quick Add chip both open it, so desktop has
+    // one Capture modal rather than one per entry point.
+    expect(layout).toMatch(/<CaptureLauncher enabled=\{captureEnabled\} \/>/);
+    expect(layout).toMatch(/<V2Sidebar[\s\S]*?captureEnabled=\{captureEnabled\}/);
+    const sidebar = read("app/admin/_components/v2/V2Sidebar.tsx");
+    expect(sidebar).toMatch(/captureEnabled && \(\s*<button[\s\S]*?openCapture\(\)[\s\S]*?Talk to log/);
+    expect(quick).toMatch(/captureEnabled && \(\s*<Chip label="Talk to log" onClick=\{act\(\(\) => openCapture\(\)\)\}/);
+    expect(quick).not.toMatch(/<CaptureModal/);
+    const launcher = read("app/admin/capture/_components/CaptureLauncher.tsx");
+    expect(launcher).toMatch(/if \(!enabled \|\| !open\) return null;/);
   });
 
   test("both default to hidden", () => {
     expect(mobile).toMatch(/captureEnabled = false/);
     expect(quick).toMatch(/captureEnabled = false/);
+    expect(read("app/admin/_components/v2/V2Sidebar.tsx")).toMatch(/captureEnabled = false/);
   });
 });

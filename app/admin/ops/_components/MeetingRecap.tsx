@@ -1,5 +1,6 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -60,16 +61,9 @@ function MeetingCard({ meeting }: { meeting: RecapMeeting }) {
 
   async function act(key: string, fn: () => Promise<Response>) {
     setBusyKey(key);
-    try {
-      const r = await fn();
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Recap action failed:", e);
-      toast.error("Couldn't save that. Try again.");
-    } finally {
-      setBusyKey(null);
-    }
+    const r = await saveAction({ request: fn, failure: "Couldn't save that. Try again.", toast });
+    setBusyKey(null);
+    if (r.ok) startTransition(() => router.refresh());
   }
 
   function suggestionAction(suggestionId: string, action: "accept" | "dismiss") {

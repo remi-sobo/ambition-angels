@@ -1,5 +1,7 @@
 "use client";
 
+import { TextareaField } from "@/app/admin/_components/ui/Field";
+import { saveAction } from "@/lib/admin/saveAction";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
@@ -40,21 +42,15 @@ export default function FridayClose({
 
   async function close() {
     setBusy(true);
-    try {
-      const r = await fetch("/api/admin/ops/rhythm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "friday_close", notes, checklist: checked }),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const { session } = await r.json();
-      setSavedAt(session?.completed_at ?? new Date().toISOString());
+    const r = await saveAction<{ session?: { completed_at?: string } }>({
+      request: { url: "/api/admin/ops/rhythm", method: "POST", body: { kind: "friday_close", notes, checklist: checked } },
+      failure: "Couldn't close the week. Try again.",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) {
+      setSavedAt(r.data.session?.completed_at ?? new Date().toISOString());
       startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Close failed:", e);
-      toast.error("Couldn't close the week. Try again.");
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -100,15 +96,12 @@ export default function FridayClose({
       </div>
 
       <div>
-        <label className="text-xs uppercase tracking-wider text-ink-2 block mb-1">
-          Note to next week
-        </label>
-        <textarea
+        <TextareaField
+          label="Note to next week"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
-          placeholder="What next-you should know walking into Monday…"
-          className="w-full rounded-control border-hairline bg-surface p-3 text-sm text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/60"
+          placeholder="What next-you should know walking into Monday"
         />
       </div>
 

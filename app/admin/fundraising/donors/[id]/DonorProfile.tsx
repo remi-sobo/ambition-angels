@@ -27,7 +27,9 @@ import EmailActions from "../_components/EmailActions";
 import { EnrollInJourney, CancelEnrollment } from "../_components/JourneyControls";
 import NextMovePanel from "../../_components/NextMovePanel";
 import { hasEntitlement } from "@/lib/admin/entitlements";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
+import { getActiveOrgMembers } from "@/lib/admin/owners-server";
+import OwnerChip from "../../../_components/OwnerChip";
 import { EntityTasks } from "../../../_components/EntityTasks";
 import { EntityDocuments } from "../../../_components/EntityDocuments";
 import { CommentThread } from "../../../_components/CommentThread";
@@ -93,6 +95,8 @@ export default async function DonorProfile({
   const ctx = await getOrgContext();
   if (!ctx) notFound();
   const supabase = createServerSupabase();
+  // V4 B2: the owner chip's names and who may change it.
+  const [members, canAssign] = await Promise.all([getActiveOrgMembers(), ctxHasPermission(ctx, "fundraising.write")]);
   const [cRes, giftsRes, plansRes, allDatesRes, interactionsRes, campaignsRes, fundsRes, appealsRes, scReceivedRes, oppsRes, enrollRes, activeJourneysRes] = await Promise.all([
     supabase.from("constituents").select("*").eq("id", id).maybeSingle(),
     supabase
@@ -524,7 +528,7 @@ export default async function DonorProfile({
         actions: (
           <>
             <EditGiftButton giftId={g.id} amountLabel={money(g.amount)} />
-            <GiftRowActions id={g.id} />
+            <GiftRowActions id={g.id} amountLabel={money(g.amount)} externalSource={g.external_source} />
           </>
         ),
         date: shortDay(g.gift_date, today),
@@ -700,6 +704,14 @@ export default async function DonorProfile({
             </IdentityChip>
             {sinceYear ? <IdentityChip>Donor since {sinceYear}</IdentityChip> : null}
             {activePlan ? <IdentityChip>Monthly {money(Number(activePlan.amount))}</IdentityChip> : null}
+            <OwnerChip
+              entity="constituents"
+              id={c.id}
+              ownerId={(c.owner_id as string | null | undefined) ?? null}
+              members={members}
+              meId={ctx.userId}
+              canEdit={canAssign}
+            />
             {c.do_not_contact ? (
               <span className="inline-flex items-center h-7 px-2.5 rounded-full bg-expense-bg text-expense text-[13px] font-semibold">Do not contact</span>
             ) : null}

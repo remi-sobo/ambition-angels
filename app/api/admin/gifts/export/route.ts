@@ -12,8 +12,12 @@ import { constituentName } from "@/lib/fundraising/display";
 //
 // Tenancy: RLS answers "is the caller a member of this row's org", not "is
 // this the ACTIVE org", so a user in two orgs would export both ledgers. The
-// org comes from requirePermission (fundraising.read) and every table read is
-// pinned to it (tests/import-export-org-scope.test.ts guards this).
+// org comes from requirePermission and every table read is pinned to it
+// (tests/import-export-org-scope.test.ts guards this).
+//
+// Access: fundraising.read OR finance.read. Finance reconciles gifts against
+// deposits, so the finance role gets the ledger export without the rest of
+// Fundraising.
 
 const CEILING = 10000;
 const isUuid = (v: string) => /^[0-9a-f-]{36}$/i.test(v);
@@ -25,7 +29,7 @@ function csvCell(v: unknown): string {
 }
 
 export async function GET(req: NextRequest) {
-  const gate = await requirePermission("fundraising.read");
+  const gate = await requirePermission(["fundraising.read", "finance.read"]);
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   const ctx = gate.ctx;
   const p = req.nextUrl.searchParams;

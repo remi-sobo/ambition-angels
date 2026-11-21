@@ -36,9 +36,9 @@ describe("the volunteers view (P3)", () => {
     expect(page).toMatch(/v\.value === "volunteers" \? volunteersLabel/);
   });
 
-  test("the V1 volunteers list is untouched until its P4 308", () => {
-    const v1 = src("app", "admin", "fundraising", "volunteers", "page.tsx");
-    expect(v1).toMatch(/eq\("is_volunteer", true\)/); // same flag, same people
-    expect(v1).toMatch(/getTermLabel\("volunteer", "Volunteer"\)/);
+  // V4 B2: the dead V1 volunteers page is deleted; its 308 to this view stays.
+  test("/admin/fundraising/volunteers still 308s to the volunteers view", () => {
+    const config = src("next.config.mjs");
+    expect(config).toMatch(/source: "\/admin\/fundraising\/volunteers", destination: "\/admin\/fundraising\/donors-funders\?view=volunteers", permanent: true/);
   });
 });

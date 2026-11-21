@@ -187,6 +187,9 @@ export default async function PipelineHome({
           { label: "Edit stages", href: "/admin/settings/fundraising/stages" },
           { label: "Prospect research", href: "/admin/fundraising/prospects" },
           { label: "Ask log", href: "#ask-log" },
+          ...(basePath === "/admin/fundraising/pipeline"
+            ? [{ label: "My asks", href: "/admin/fundraising/pipeline?asks=mine#ask-log" }]
+            : []),
         ]}
         primaryAction={<NewOpportunityForm />}
       />

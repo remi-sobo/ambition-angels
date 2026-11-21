@@ -75,7 +75,7 @@ function volunteerIdsQuery(supabase: SupabaseLike, orgId: string) {
 /** Everything a saved definition may carry (app/api/admin/segments FILTER_KEYS). */
 const KNOWN_KEYS = new Set(["view", "q", "type", "source", "tag", "min_total", "since"]);
 const EMAILABLE_VIEWS = new Set<string>(
-  BUILT_IN_VIEWS.map((v) => v.value).filter((v) => v !== "prospects")
+  BUILT_IN_VIEWS.map((v) => v.value).filter((v) => v !== "prospects" && v !== "mine")
 );
 
 export type ParsedSegment = ViewDefinition & { source?: string; tag?: string; since?: string };
@@ -98,6 +98,7 @@ export function parseSegmentDefinition(
     switch (key) {
       case "view":
         if (v === "prospects") return { ok: false, error: "The Prospects view can't be emailed: prospects are not constituents yet." };
+        if (v === "mine") return { ok: false, error: "My donors depends on who is looking, so it can't be emailed. Save the view from All with the filters you want." };
         if (!EMAILABLE_VIEWS.has(v)) return { ok: false, error: `This segment uses a view Comms doesn't know ("${v}").` };
         if (v !== "all") def.view = v as BuiltInView;
         break;

@@ -35,6 +35,8 @@ export async function findOrCreateProgram(
   supabase: SupabaseClient,
   orgId: string,
   name: string,
+  /** V4 B2: the owner of a NEW program (the creator); never applied to an existing one. */
+  opts: { ownerId?: string | null } = {},
 ): Promise<{ id: string; name: string } | null> {
   const trimmed = name.trim().slice(0, 160);
   if (!trimmed) return null;
@@ -50,7 +52,7 @@ export async function findOrCreateProgram(
 
   const { data: created, error } = await supabase
     .from("programs")
-    .insert({ org_id: orgId, name: trimmed })
+    .insert({ org_id: orgId, name: trimmed, ...(opts.ownerId !== undefined ? { owner_id: opts.ownerId } : {}) })
     .select("id, name")
     .single();
   if (error || !created) {

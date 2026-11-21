@@ -4,6 +4,7 @@ import { RailEntityProvider } from "./_components/rail/RailEntityContext";
 import GlobalSearch from "./_components/search/GlobalSearch";
 import { ReedLauncherProvider } from "./_components/reed/ReedLauncherProvider";
 import AdminPWA from "./_components/AdminPWA";
+import AttendanceSync from "./_components/AttendanceSync";
 import { AdminUserProvider } from "./_components/AdminUserContext";
 import { AdminBadgesProvider } from "./_components/AdminBadges";
 import ToastProvider from "./_components/feedback/ToastProvider";
@@ -139,6 +140,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           is the inset rounded panel below. Phones keep the plain app bg. */}
       <div className="admin-shell min-h-screen lg:flex bg-ink lg:bg-navy text-ink-1">
         <AdminPWA />
+        {/* V4 Stage E: sends attendance marks a phone queued while offline. */}
+        {perms?.includes("program.write") ? <AttendanceSync /> : null}
         <V2Sidebar
           nav={nav}
           displayName={displayName}

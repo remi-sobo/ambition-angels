@@ -47,7 +47,11 @@ const STATUS_CHIP: Record<string, string> = {
   committing: "bg-orange/15 text-orange",
 };
 
-export default async function ImportsPage() {
+export default async function ImportsPage({
+  searchParams,
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
   const roleGate = await requirePagePermission(["program.read", "fundraising.read"], "Imports");
   if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
@@ -65,6 +69,17 @@ export default async function ImportsPage() {
   // Only file imports resume through the wizard — a connector run (E6) is
   // driven by its own sync engine.
   const resumable = runs.find((r) => r.status === "committing" && r.source === "csv");
+  // V4 Stage E: open cohorts for "put everyone in this cohort" (org-pinned).
+  const { data: cohortRows } = ctx
+    ? await supabase
+        .from("cohorts")
+        .select("id, name")
+        .eq("org_id", ctx.orgId)
+        .in("status", ["planning", "active"])
+        .order("name")
+    : { data: [] };
+  const cohortParam = searchParams?.cohort;
+  const initialCohortId = typeof cohortParam === "string" ? cohortParam : null;
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[860px]">
@@ -73,7 +88,11 @@ export default async function ImportsPage() {
         subtitle={`Bring existing ${terms.students.toLowerCase()} or donors in from a CSV. Map columns to your fields, preview, then commit`}
       />
 
-      <ImportWizard resumeId={resumable?.id ?? null} />
+      <ImportWizard
+        resumeId={resumable?.id ?? null}
+        cohorts={(cohortRows ?? []) as { id: string; name: string }[]}
+        initialCohortId={initialCohortId}
+      />
 
       {runs.length > 0 && (
         <section className="mt-8">

@@ -10,7 +10,7 @@ import { userMessage } from "@/lib/admin/errors";
 
 type FieldOption = { key: string; label: string; required?: boolean };
 type Fields = { spine: FieldOption[]; custom: FieldOption[] };
-type Counts = { total?: number; valid?: number; invalid?: number; skipped?: number; created?: number };
+type Counts = { total?: number; valid?: number; invalid?: number; skipped?: number; created?: number; enrolled?: number };
 type RowResult = { row_num: number; status: string; verdict: string | null; error: string | null };
 
 type Step = "upload" | "map" | "preview" | "commit" | "done";
@@ -27,7 +27,17 @@ const btnCls =
   "text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50";
 const quietBtnCls = "text-xs text-ink-2 hover:text-ink-1 px-2 py-2";
 
-export default function ImportWizard({ resumeId }: { resumeId?: string | null }) {
+export default function ImportWizard({
+  resumeId,
+  cohorts = [],
+  initialCohortId = null,
+}: {
+  resumeId?: string | null;
+  /** V4 Stage E: the org's open cohorts, for "put everyone in this cohort". */
+  cohorts?: { id: string; name: string }[];
+  /** Preselected from ?cohort= (the cohort page's "Import a roster file into this cohort"). */
+  initialCohortId?: string | null;
+}) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(resumeId ? "commit" : "upload");
   const [entity, setEntity] = useState<EntityType>("student");
@@ -40,6 +50,9 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
   const [counts, setCounts] = useState<Counts>({});
   const [problems, setProblems] = useState<RowResult[]>([]);
   const [progress, setProgress] = useState({ created: 0, remaining: 0 });
+  const [everyoneCohort, setEveryoneCohort] = useState<string>(
+    initialCohortId && cohorts.some((c) => c.id === initialCohortId) ? initialCohortId : "",
+  );
 
   const fail = async (res: Response) => {
     const j = await res.json().catch(() => ({}));
@@ -72,7 +85,7 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
       const patch = await fetch(`/api/admin/imports/${runId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ map: mapping }),
+        body: JSON.stringify(entity === "student" ? { map: mapping, cohort_id: everyoneCohort || null } : { map: mapping }),
       });
       if (!patch.ok) return void (await fail(patch));
       const res = await fetch(`/api/admin/imports/${runId}/stage`, { method: "POST" });
@@ -192,6 +205,27 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
               </div>
             ))}
           </div>
+          {entity === "student" && cohorts.length > 0 && (
+            <div className="mb-4 max-w-[560px]">
+              <label htmlFor="import-everyone-cohort" className="block text-xs font-semibold text-ink-1 mb-1">
+                Put everyone in a cohort
+              </label>
+              <select
+                id="import-everyone-cohort"
+                className={`${inputCls} w-full`}
+                value={everyoneCohort}
+                onChange={(e) => setEveryoneCohort(e.target.value)}
+              >
+                <option value="">No, leave them out of cohorts</option>
+                {cohorts.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-ink-2 mt-1">
+                A Cohort column in the file wins for its rows; this fills the rest. People already on the roster join too.
+              </p>
+            </div>
+          )}
           <div className="flex gap-2 justify-end">
             <button className={quietBtnCls} onClick={() => setStep("upload")}>Back</button>
             <button className={btnCls} disabled={busy} onClick={() => void stage()}>
@@ -254,9 +288,10 @@ export default function ImportWizard({ resumeId }: { resumeId?: string | null })
           <p className="text-sm text-ink-1 font-semibold mb-1">Import complete</p>
           <p className="text-xs text-ink-2">
             {counts.created ?? 0} created · {counts.skipped ?? 0} skipped · {counts.invalid ?? 0} invalid
+            {entity === "student" && (counts.enrolled ?? 0) > 0 ? ` · ${counts.enrolled} enrolled in a cohort` : ""}
           </p>
           <div className="flex gap-2 mt-3">
-            <a href={entity === "constituent" ? "/admin/fundraising/donors" : "/admin/students"} className={btnCls}>
+            <a href={entity === "constituent" ? "/admin/fundraising/donors-funders" : "/admin/programs/people"} className={btnCls}>
               {entity === "constituent" ? "View donors" : "View roster"}
             </a>
             <button className={quietBtnCls} onClick={() => {

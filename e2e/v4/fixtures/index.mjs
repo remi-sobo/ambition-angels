@@ -549,6 +549,9 @@ function populate(T, add, tables, team) {
       sessions.push({ id: T.id(25), org_id: ORG_ID, cohort_id: c.id, session_date: ymd(d), title: `Week ${w + 1}: ${["Kickoff", "Healthcare", "Engineering", "Design", "Finance", "Trades", "Media", "Public service", "Tech", "Showcase"][w]}`, starts_at: "15:30:00", ends_at: "17:00:00", location: c.location, status: d < now ? (w === 4 && c.status === "active" ? "canceled" : "held") : "scheduled", created_at: iso(daysAgo(150)) });
     }
   });
+  // V4 Stage E: a session today on the first cohort (owned by the signed-in
+  // user), so Today and Attendance can open a live phone roster.
+  sessions.push({ id: T.id(25), org_id: ORG_ID, cohort_id: cohorts[0].id, session_date: NOW.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }), title: "Week 11: Mock interviews", starts_at: "15:30:00", ends_at: "17:00:00", location: cohorts[0].location, status: "scheduled", created_at: iso(daysAgo(150)) });
   add("cohort_sessions", sessions);
   const att = [];
   for (const s of sessions.filter((x) => x.status === "held")) {
@@ -561,7 +564,9 @@ function populate(T, add, tables, team) {
 
   // coach
   const coachPeople = add("coach_people", Array.from({ length: 14 }, (_, i) => ({ id: T.id(28), org_id: ORG_ID, kind: i < 7 ? "coach" : "student", status: T.pick(enums.coach_people.status), first_name: i < 7 ? FIRST[(i * 9 + 4) % FIRST.length] : STUDENT_FIRST[i], last_name: i < 7 ? LAST[(i * 5 + 9) % LAST.length] : STUDENT_LAST[i], company: i < 7 ? T.pick(COMPANIES) : null, school: i >= 7 ? T.pick(SCHOOLS) : null, field: T.pick(["Healthcare", "Software", "Finance", "Design", "Trades"]), email: `coach${i}@example.com`, created_at: iso(daysAgo(T.int(1, 90))) })));
-  add("coach_matches", [0, 1, 2].map((k) => ({ id: T.id(28), org_id: ORG_ID, coach_id: coachPeople[k].id, student_id: coachPeople[7 + k].id, status: ["active", "intro_sent", "proposed"][k], created_at: iso(daysAgo(10 + k)) })));
+  const coachMatches = add("coach_matches", [0, 1, 2].map((k) => ({ id: T.id(28), org_id: ORG_ID, coach_id: coachPeople[k].id, student_id: coachPeople[7 + k].id, status: ["active", "intro_sent", "proposed"][k], intro_sent_at: k < 2 ? iso(daysAgo(30 + k)) : null, created_at: iso(daysAgo(10 + k)) })));
+  // V4 Stage E: the four sessions of each match (two met, one past its date, one ahead on the first).
+  add("coach_sessions", coachMatches.flatMap((m, k) => [1, 2, 3, 4].map((n) => ({ id: T.id(28), org_id: ORG_ID, match_id: m.id, n, scheduled_on: k === 0 ? ymd(daysFromNow([-21, -14, -3, 7][n - 1])) : null, done_at: k === 0 && n <= 2 ? iso(daysAgo([21, 14][n - 1])) : null, created_at: m.created_at }))));
 
   // ── work: projects, tasks, meetings, calendar, documents ──────────────────
   const objectives = add("plan_objectives", [

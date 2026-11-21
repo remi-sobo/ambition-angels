@@ -81,6 +81,9 @@ describe("the sections (spec §4 order)", () => {
     expect(hrefs("organization")).toEqual([
       "/admin/settings/organization/booking-page",
       "/admin/settings/organization/strategy-setup",
+      // V4 B2: quiz submissions lost their only link when the dead overview
+      // widgets were deleted; they live here now (aa.quiz orgs only).
+      "/admin/legacy",
     ]);
   });
 

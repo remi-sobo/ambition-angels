@@ -96,3 +96,28 @@ export type BookingInsert = Omit<
   cancel_token?: string;
   status?: BookingStatus;
 };
+
+// ── Assignment (V4 Stage B2) ────────────────────────────────────────────────
+// Mirrored from supabase/migrations/add_owner_id_assignment.sql. Narrow on
+// purpose like the rest of this file: only the owner columns the B2 code
+// reads and writes, not the whole row of each table.
+
+/** The four tables that carry a nullable owner (auth.users, on delete set null). */
+export type OwnedTable = "constituents" | "asks" | "cohorts" | "programs";
+
+/** The owner slice shared by constituents, asks, cohorts and programs. */
+export interface OwnerColumns {
+  id: string;
+  org_id: string;
+  /** auth.users id of the member who owns the record; null = unassigned. */
+  owner_id: string | null;
+}
+
+export type ConstituentOwnerColumns = OwnerColumns;
+export type CohortOwnerColumns = OwnerColumns;
+export type ProgramOwnerColumns = OwnerColumns;
+
+/** asks keeps its older free-text `owner`, shown until owner_id is set. */
+export interface AskOwnerColumns extends OwnerColumns {
+  owner: string | null;
+}

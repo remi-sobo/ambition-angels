@@ -31,7 +31,6 @@ const DISPLAY_BLACK_ALLOWLIST: { file: string; reason: string }[] = [
   { file: "app/admin/ops/projects/[id]/_components/ProjectHeader.tsx", reason: "editable in-place project title; the input twin must match the h1 exactly" },
   { file: "app/admin/ops/_components/CategoryCounts.tsx", reason: "display metric (category count)" },
   { file: "app/admin/ops/_components/MondayCommit.tsx", reason: "display metric (commit count)" },
-  { file: "app/admin/ops/my-week/page.tsx", reason: "the two door-tile titles, state-colored, smaller than pageTitle" },
   { file: "app/admin/work/my-week/page.tsx", reason: "the one ritual-door title (Spec Work W2) — same voice as the doors page it replaces" },
   { file: "app/admin/programs/overview/page.tsx", reason: "display metrics (headline band numerals, Spec Programs P2)" },
   { file: "app/admin/ops/friday/CloseSection.tsx", reason: "display metric (close count — the page body extracted at Spec Work W1, entry moved with it)" },
@@ -83,7 +82,6 @@ const FINGERPRINTS: { pattern: string; role: string; allow: { file: string; reas
     allow: [
       { file: "app/admin/strategic-plan/narrative/_components/MovementPlan.tsx", reason: "11px unweighted owner tag; cardLabel would add heading weight" },
       { file: "app/admin/_components/StageBoard.tsx", reason: "10px board column label; candidate future columnLabel role" },
-      { file: "app/admin/_components/Pipeline.tsx", reason: "10px pipeline stage label; candidate future columnLabel role" },
       { file: "app/admin/fundraising/grants/_components/GrantsBoard.tsx", reason: "10px board column label; candidate future columnLabel role" },
       { file: "app/admin/partners/_components/PartnersBoard.tsx", reason: "10px board column label; candidate future columnLabel role" },
       { file: "app/admin/meetings/_ui.tsx", reason: "meetings' 12px/ink-2 SectionLabel component; convergence deferred past v1" },

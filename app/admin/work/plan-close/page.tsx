@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PlanSection from "@/app/admin/ops/monday/PlanSection";
 import CloseSection from "@/app/admin/ops/friday/CloseSection";
 import { resolveRitual, ritualForToday } from "@/lib/admin/ops/planClose";
@@ -48,7 +49,7 @@ export default async function PlanClosePage({
   return (
     <div>
       {/* ── Level 2: the ritual switch ─────────────────────────────────── */}
-      <div className="max-w-workspace px-4 lg:px-8 pt-6 lg:pt-8">
+      <div className="max-w-workspace px-4 lg:px-8 pt-6 lg:pt-8 flex flex-wrap items-center justify-between gap-3">
         <SegmentedControl
           label="Ritual"
           value={ritual}
@@ -64,6 +65,11 @@ export default async function PlanClosePage({
               : seg,
           )}
         />
+        {/* The AI-narrated weekly briefing: same gate (modules.ops, ops.read),
+            and the week's read sits naturally beside planning and closing it. */}
+        <Link href="/admin/briefing/weekly" className="text-xs font-semibold text-orange hover:text-orange-dark">
+          Weekly briefing →
+        </Link>
       </div>
 
       {/* ── Level 3 + the ritual body, verbatim ────────────────────────── */}

@@ -14,6 +14,9 @@ import {
   type AskDocument,
 } from "../_components/AskControls";
 import { TYPE } from "@/lib/admin/typeScale";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
+import { getActiveOrgMembers } from "@/lib/admin/owners-server";
+import OwnerChip from "../../../_components/OwnerChip";
 
 // Ask detail: the facts, the status control, the linked grant/opportunity, and
 // the document store (proposal PDF, cover letter, budget).
@@ -33,6 +36,8 @@ type AskRow = {
   ask_date: string | null;
   decided_on: string | null;
   owner: string | null;
+  /** V4 B2: the member who owns the ask; `owner` (free text) shows until it is set. */
+  owner_id: string | null;
   notes: string | null;
   grant_id: string | null;
   opportunity_id: string | null;
@@ -86,6 +91,10 @@ export default async function AskDetail({ id, v2 = false }: { id: string; v2?: b
   // ask has one (the matcher resolves it to its constituent); otherwise the
   // funder is.
   const captureEnabled = await hasEntitlement("ai.capture");
+  const ctx = await getOrgContext();
+  const [members, canAssign] = ctx
+    ? await Promise.all([getActiveOrgMembers(), ctxHasPermission(ctx, "fundraising.write")])
+    : [[], false];
   const recordContext = opportunity?.id
     ? { type: "opportunity" as const, id: opportunity.id, name: funderName || opportunity.name || heading }
     : funder?.id
@@ -111,6 +120,17 @@ export default async function AskDetail({ id, v2 = false }: { id: string; v2?: b
                 {ASK_FORM_LABELS[ask.form] ?? ask.form}
               </span>
             </span>
+          }
+          chips={
+            <OwnerChip
+              entity="asks"
+              id={ask.id}
+              ownerId={ask.owner_id ?? null}
+              fallbackText={ask.owner}
+              members={members}
+              meId={ctx?.userId}
+              canEdit={canAssign}
+            />
           }
           actions={
             <span className="flex items-center gap-2">

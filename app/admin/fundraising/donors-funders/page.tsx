@@ -26,6 +26,10 @@ import { getTermLabel, pluralizeTerm } from "@/lib/admin/terminology";
 import ResearchDrawer from "./_components/ResearchDrawer";
 import { RecordGiftButton } from "../_components/gift/GiftButtons";
 import { todayISO } from "../../ops/_types/ops";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
+import { getActiveOrgMembers } from "@/lib/admin/owners-server";
+import { ownerLabel, ownerOptions, type OrgMember } from "@/lib/admin/owners";
+import type { DataTableBulkAction } from "@/lib/admin/dataTable";
 
 // Spec Fundraising, stage F1 — Donors & Funders: ONE people-list over
 // constituents (spec §The one-list rule). Prospects/Recurring/Lapsed are
@@ -68,7 +72,26 @@ export default async function DonorsFundersPage({
   const state = parseTableState(searchParams ?? {}, spec);
   const page = state.page;
   const today = todayISO();
-  const data = await getDonorsFunders(def, page, today, state.sort);
+  const [data, ctx, members] = await Promise.all([
+    getDonorsFunders(def, page, today, state.sort),
+    getOrgContext(),
+    getActiveOrgMembers(),
+  ]);
+  // V4 B2: "Assign to…" for people who may write fundraising records.
+  const canAssign = ctx ? await ctxHasPermission(ctx, "fundraising.write") : false;
+  const bulkActions: DataTableBulkAction[] = canAssign
+    ? [
+        {
+          kind: "choose",
+          key: "assign",
+          label: "Assign to…",
+          url: "/api/admin/assign/constituents",
+          field: "owner_id",
+          options: ownerOptions(members, ctx?.userId),
+          success: "Assigned to {label}",
+        },
+      ]
+    : [];
 
   if (!data) {
     return (
@@ -127,6 +150,12 @@ export default async function DonorsFundersPage({
           // V4 B1: the list's one primary action opens the gift drawer; the
           // donor is picked there (GiftFlow.dc.html).
           primaryAction={<RecordGiftButton />}
+          moreActions={[
+            // V4 B2: gift reports and segment exports were linked only from
+            // the old donors list (now a 308).
+            { label: "Gift reports and exports", href: "/admin/fundraising/reports" },
+            { label: "Import donors and gifts", href: "/admin/settings/imports/donors" },
+          ]}
         />
 
         {/* ── Views + filters (URL-driven, server-rendered) ── */}
@@ -177,6 +206,16 @@ export default async function DonorsFundersPage({
 
         {view === "prospects" ? (
           <ProspectsTable prospects={data.prospects} total={data.total} page={page} spec={spec} state={state} filters={filters} />
+        ) : view === "mine" && data.total === 0 && !data.error ? (
+          <EmptyState
+            label="donors assigned to you"
+            hint="Donors you own show up here. Open a donor and set yourself as owner, or select donors on All and use Assign to…"
+            action={
+              <Link href={BASE} className="text-xs font-semibold text-orange hover:text-orange-dark">
+                See all donors and funders →
+              </Link>
+            }
+          />
         ) : view === "all" && !def.q && !def.type && !def.min_total && data.total === 0 && !data.error ? (
           // The true first run — no rows in the org, not a filtered-to-zero
           // view (Q5: name the missing thing, offer the creating action).
@@ -199,6 +238,8 @@ export default async function DonorsFundersPage({
             spec={spec}
             state={state}
             filters={filters}
+            members={members}
+            bulkActions={bulkActions}
           />
         )}
 
@@ -237,7 +278,9 @@ function ConstituentsTable({
   spec,
   state,
   filters,
-}: TableProps & { rows: DfRow[]; today: string; error: string | null }) {
+  members,
+  bulkActions,
+}: TableProps & { rows: DfRow[]; today: string; error: string | null; members: OrgMember[]; bulkActions: DataTableBulkAction[] }) {
   const columns: DataTableColumn<DfRow>[] = [
     {
       key: "name",
@@ -281,6 +324,12 @@ function ConstituentsTable({
     },
     { key: "last_gift", header: "Last gift", className: `text-ink-2 ${num}`, render: (r) => fmtDate(r.last_gift) },
     { key: "last_touch", header: "Last touch", className: `text-ink-2 ${num}`, render: (r) => fmtDate(r.last_touch) },
+    {
+      key: "owner",
+      header: "Owner",
+      className: "text-ink-2",
+      render: (r) => ownerLabel(r.owner_id, members) ?? <span className="text-ink-3">Unassigned</span>,
+    },
   ];
 
   return (
@@ -316,6 +365,7 @@ function ConstituentsTable({
       state={state}
       baseHref={BASE}
       filters={filters}
+      bulkActions={bulkActions}
       emptyMessage="No constituents match this view."
     />
   );

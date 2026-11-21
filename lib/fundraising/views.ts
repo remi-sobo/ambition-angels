@@ -97,6 +97,42 @@ export function fiscalYearStart(todayISO: string): string {
   return `${todayISO.slice(0, 4)}-01-01`;
 }
 
+/** The PostgREST filter methods applyRollupFilters needs, structurally. */
+export interface RollupFilterable<Q> {
+  is(column: string, value: null): Q;
+  eq(column: string, value: unknown): Q;
+  gt(column: string, value: unknown): Q;
+  gte(column: string, value: unknown): Q;
+  lt(column: string, value: unknown): Q;
+  or(filters: string): Q;
+}
+
+/**
+ * The view semantics pushed into a v_fr_rollups query: archived hidden, the
+ * built-in view predicate, then type, min_total and q. ONE implementation,
+ * shared by the Donors & Funders list (lib/admin/donorsFunders.ts) and the
+ * Comms recipient resolver (lib/fundraising/segments.ts), so a saved view
+ * emails exactly the people the list shows. Must stay equivalent to
+ * matchesView(). Prospects, Promoted and Volunteers are id sets the caller
+ * resolves (see the matchesView note); `q` must already be sanitized.
+ */
+export function applyRollupFilters<Q extends RollupFilterable<Q>>(
+  query: Q,
+  def: ViewDefinition,
+  todayISO: string,
+): Q {
+  let q = query.is("archived_at", null); // archived hidden everywhere (matchesView)
+  const view = def.view ?? "all";
+  if (view === "donors") q = q.gt("gift_count", 0);
+  if (view === "recurring") q = q.eq("recurring_active", true);
+  if (view === "lapsed") q = q.gt("gift_count", 0).lt("last_gift", fiscalYearStart(todayISO));
+  if (def.type) q = q.eq("type", def.type);
+  if (def.min_total) q = q.gte("lifetime_total", Number(def.min_total));
+  if (def.q)
+    q = q.or(`first_name.ilike.%${def.q}%,last_name.ilike.%${def.q}%,org_name.ilike.%${def.q}%`);
+  return q;
+}
+
 // ── Saved views (R11) ──────────────────────────────────────────────────────
 // A saved view is a named filter definition in `segments.definition` —
 // the same jsonb vocabulary the V1 export panel already stores, extended

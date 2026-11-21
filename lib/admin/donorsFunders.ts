@@ -2,7 +2,7 @@ import "server-only";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import {
-  fiscalYearStart,
+  applyRollupFilters,
   type BuiltInView,
   type ViewDefinition,
 } from "@/lib/fundraising/views";
@@ -172,22 +172,12 @@ export async function getDonorsFunders(
       "id, type, first_name, last_name, org_name, emails, do_not_contact, lifetime_total, gift_count, first_gift, last_gift, last_touch, next_step, next_step_due, recurring_active",
       { count: "exact" },
     )
-    .eq("org_id", ctx.orgId)
-    .is("archived_at", null); // archived hidden everywhere (matchesView)
+    .eq("org_id", ctx.orgId);
   if (promotedIds) q = q.in("id", promotedIds);
   if (volunteerIds) q = q.in("id", volunteerIds);
-  // These filters must stay equivalent to matchesView() in
-  // lib/fundraising/views.ts — the tested contract for the view semantics.
-  if (view === "donors") q = q.gt("gift_count", 0);
-  if (view === "recurring") q = q.eq("recurring_active", true);
-  if (view === "lapsed")
-    q = q.gt("gift_count", 0).lt("last_gift", fiscalYearStart(todayISO));
-  if (def.type) q = q.eq("type", def.type);
-  if (def.min_total) q = q.gte("lifetime_total", Number(def.min_total));
-  if (def.q)
-    q = q.or(
-      `first_name.ilike.%${def.q}%,last_name.ilike.%${def.q}%,org_name.ilike.%${def.q}%`,
-    );
+  // Archived, view, type, min_total and q: the one shared implementation
+  // (also used by the Comms recipient resolver), equivalent to matchesView().
+  q = applyRollupFilters(q, def, todayISO);
 
   const [{ data, count, error }, savedViewsRes] = await Promise.all([
     q

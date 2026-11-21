@@ -20,8 +20,8 @@ Pulled out of V4 on 2026-11-20 with Remi's approval. These are the audit finding
 
 ## Status, 2026-11-21
 
-Merged: #582 (open hole), #583 (Comms saved views), #584 (AA-only data), #585 (thank-yous and receipts), #586 (1,000-row totals), #587 (HubSpot, Gmail sync, gift entry), #590 (finance categories per org; migration applied), #591 (fonts in repo), #592 (three crashing pages, silent task save), #588 (phone privacy), #589 (import and export).
-In progress: role guard (item 3). Follow-up: org-scope the gifts export and remove its test exception.
+Merged: #582 (open hole), #583 (Comms saved views), #584 (AA-only data), #585 (thank-yous and receipts), #586 (1,000-row totals), #587 (HubSpot, Gmail sync, gift entry), #590 (finance categories per org; migration applied), #591 (fonts in repo), #592 (three crashing pages, silent task save), #588 (phone privacy), #589 (import and export), #593 (role checked on the server for every admin write and page).
+Needs Remi: drop the RLS write policy on org_entitlements (a migration). Also found: agenda/sync runs for every user in every org. Follow-up: org-scope the gifts export and remove its test exception.
 
 ## Wave 2: after wave 1 merges (same files, so it waits)
 

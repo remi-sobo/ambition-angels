@@ -1,5 +1,6 @@
 import Link from "next/link";
 import EmptyState from "../../_components/EmptyState";
+import NoCategories from "../_components/NoCategories";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import type { FinCategory } from "@/lib/finance/types";
@@ -175,6 +176,12 @@ export default async function TransactionsPage({
           }
         />
       </header>
+
+      {categories.length === 0 ? (
+        <div className="mb-4">
+          <NoCategories />
+        </div>
+      ) : null}
 
       <TransactionFilters categories={categories} />
 

@@ -97,6 +97,7 @@ export function CohortHeaderControls({
         {acceptingApplications ? "Accepting applications" : "Applications closed"}
       </button>
       <select
+        aria-label="Cohort status"
         value={status}
         disabled={busy}
         onChange={(e) => call(`/api/admin/cohorts/${cohortId}`, "PATCH", { status: e.target.value })}
@@ -154,6 +155,7 @@ export function MemberRow({ cohortId, member }: { cohortId: string; member: Memb
         {m.rateText}{m.attended + m.absent > 0 ? ` · ${m.attended}/${m.attended + m.absent} sessions` : ""}
       </span>
       <select
+        aria-label={`Status for ${m.name}`}
         value={m.status}
         disabled={busy}
         onChange={(e) =>
@@ -201,6 +203,7 @@ export function AddMemberForm({
   return (
     <div className="flex items-center gap-2">
       <select
+        aria-label="Person to add"
         value={studentId}
         onChange={(e) => setStudentId(e.target.value)}
         className="text-xs bg-tile border-hairline rounded-control px-2 py-1.5 text-ink-1 max-w-[220px]"

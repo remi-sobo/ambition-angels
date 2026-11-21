@@ -307,10 +307,10 @@ export function buildRow(normalized: Record<string, string>, ctx: BuildContext):
 
   const merged = validateAndMerge(ctx.defs, {}, customRaw, { requireAll: false });
   if (!merged.ok) return { ok: false, error: merged.error };
-  if (ctx.entity === "student") {
-    return { ok: true, spine, custom: merged.value, cohortId: cohortId ?? ctx.defaultCohortId ?? null };
-  }
-  return { ok: true, spine, custom: merged.value };
+  // Only a row that joins a cohort carries cohortId (rows without one keep
+  // their old shape).
+  const joins = ctx.entity === "student" ? cohortId ?? ctx.defaultCohortId ?? null : null;
+  return joins ? { ok: true, spine, custom: merged.value, cohortId: joins } : { ok: true, spine, custom: merged.value };
 }
 
 // ── Fingerprint + dedupe verdict ────────────────────────────────────────────

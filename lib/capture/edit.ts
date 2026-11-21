@@ -20,6 +20,7 @@ import { CARD_COLUMNS, str, type ApplyCtx, type CardRow } from "./apply/shared";
 import { loadStaff } from "./staff";
 import { CAPTURE_DESTS, type CaptureDest, type StaffMember } from "./types";
 import { buildDestFields, type Raw } from "./validate";
+import { cardKindOf, isHeldKind } from "./cardKind";
 
 export type EditPatch = {
   dest?: unknown;
@@ -37,6 +38,9 @@ export type EditPatch = {
   assignee?: unknown;
   /** { type: 'constituent' | 'partner', id } to pick, or null to unpick. */
   entity?: unknown;
+  /** Story cards only (lib/capture/v4Cards.ts editStory). */
+  about?: unknown;
+  identifiable?: unknown;
 };
 
 const PATCH_KEYS = new Set([
@@ -53,6 +57,8 @@ const PATCH_KEYS = new Set([
   "occurred_at",
   "assignee",
   "entity",
+  "about",
+  "identifiable",
 ]);
 
 export type EditResult = { ok: true; card: CardRow } | { ok: false; status: 400 | 404 | 409; error: string };
@@ -106,6 +112,15 @@ export async function editCard(
   const card = loaded as CardRow;
   if (card.status !== "proposed" && card.status !== "held") {
     return { ok: false, status: 409, error: "Only cards that have not been filed or discarded can be edited." };
+  }
+  // V4 §8: a gift card changes in the gift drawer and a story card through
+  // editStory; neither may turn into a fileable task by an edit here.
+  if (isHeldKind(card)) {
+    return {
+      ok: false,
+      status: 409,
+      error: cardKindOf(card) === "gift" ? "Change the gift in the gift form." : "Edit the story on its card.",
+    };
   }
 
   const dest = (has("dest") ? patch.dest : card.dest) as CaptureDest;

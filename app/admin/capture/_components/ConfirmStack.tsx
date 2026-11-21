@@ -4,8 +4,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { TYPE } from "@/lib/admin/typeScale";
 import {
-  DEST_LABEL,
+  aiDrafted,
   canConfirm,
+  filesTo,
+  isUncertain,
+  kindLabel,
+  kindOf,
+  needsPick,
   cardText,
   confirmAllSummary,
   entityMeta,
@@ -24,6 +29,8 @@ import {
 import { cardAction, confirmAllCards, getCapture } from "../_lib/captureApi";
 import { formatElapsed } from "@/lib/hooks/continuousSpeech";
 import EditSheet from "./EditSheet";
+import GiftCardBody from "./GiftCard";
+import StoryCardBody from "./StoryCard";
 import PickMatch from "./PickMatch";
 
 /**
@@ -81,6 +88,7 @@ export default function ConfirmStack({
   }, [anyUndo]);
 
   const counts = useMemo(() => stackCounts(cards), [cards]);
+  const picks = useMemo(() => cards.filter(needsPick).length, [cards]);
   const ordered = useMemo(() => orderCards(cards), [cards]);
 
   useEffect(() => {
@@ -118,7 +126,8 @@ export default function ConfirmStack({
     const failed: Record<string, string> = {};
     for (const x of r.data.results) if (!x.ok && x.error) failed[x.id] = x.error;
     setErrors((e) => ({ ...e, ...failed }));
-    setSummary(confirmAllSummary(r.data));
+    // Gift and story cards are held by design, not waiting for a pick.
+    setSummary(confirmAllSummary({ ...r.data, held_skipped: cards.filter(needsPick).length }));
     await reload();
     setNow(Date.now());
   };
@@ -147,7 +156,7 @@ export default function ConfirmStack({
               ? "No cards came out of this one."
               : counts.pending === 0
                 ? "All sorted."
-                : `${counts.pending} to go${counts.held ? `, ${counts.held} ${counts.held === 1 ? "needs" : "need"} a pick` : ""}.`}
+                : `Nothing is saved until you confirm. ${counts.pending} to go${picks ? `, ${picks} ${picks === 1 ? "needs" : "need"} a pick` : ""}.`}
           </p>
         </div>
         {counts.proposed > 1 && (
@@ -187,6 +196,11 @@ export default function ConfirmStack({
               onUndo={() => void act(card, "undo")}
               onEdit={() => setEditing(card)}
               onPick={(patch) => act(card, "edit", patch)}
+              onReplace={(c) => {
+                replace(c);
+                setNow(Date.now());
+              }}
+              onError={(message) => setErrors((e) => ({ ...e, [card.id]: message }))}
             />
           </li>
         ))}
@@ -225,12 +239,28 @@ export default function ConfirmStack({
   );
 }
 
+/** The kind tag (V4 §8: donor conversation, to-do, gift or pledge, story)
+ *  and, until a person edits it, "Drafted by AI". */
 function DestTag({ card }: { card: CardView }) {
   return (
-    <span className={`${TYPE.badge} inline-flex items-center rounded-full border border-hairline bg-tile px-2 py-0.5 text-ink-2`}>
-      {DEST_LABEL[card.dest]}
-      {card.dest === "thought" ? " · parking lot" : ""}
-    </span>
+    <div className="flex flex-wrap items-center gap-2">
+      <span className={`${TYPE.badge} inline-flex items-center rounded-full border border-hairline bg-tile px-2 py-0.5 text-ink-2`}>
+        {kindLabel(card)}
+      </span>
+      {aiDrafted(card) && card.status !== "confirmed" && (
+        <span className={`${TYPE.badge} inline-flex items-center rounded-full bg-status-due-bg px-2 py-0.5 text-status-due-text`}>
+          Drafted by AI
+        </span>
+      )}
+    </div>
+  );
+}
+
+function FilesTo({ card }: { card: CardView }) {
+  return (
+    <p className={`${TYPE.metadata} mt-2`}>
+      Files to <span className="font-semibold text-ink-1">{filesTo(card)}</span>
+    </p>
   );
 }
 
@@ -244,6 +274,8 @@ function CardItem({
   onUndo,
   onEdit,
   onPick,
+  onReplace,
+  onError,
 }: {
   card: CardView;
   now: number;
@@ -254,6 +286,8 @@ function CardItem({
   onUndo: () => void;
   onEdit: () => void;
   onPick: (patch: Record<string, unknown>) => Promise<boolean>;
+  onReplace: (card: CardView) => void;
+  onError: (message: string) => void;
 }) {
   const [showSource, setShowSource] = useState(false);
   const name = entityName(card);
@@ -269,8 +303,52 @@ function CardItem({
   if (discarded) {
     return (
       <div className="rounded-panel border border-hairline px-4 py-3 opacity-60">
-        <p className={`${TYPE.metadata} line-through`}>{text || DEST_LABEL[card.dest]}</p>
+        <p className={`${TYPE.metadata} line-through`}>{text || kindLabel(card)}</p>
       </div>
+    );
+  }
+
+  // Gift and story cards have their own bodies and actions; Capture never
+  // files them through Confirm (lib/capture/cardKind.ts).
+  const kind = kindOf(card);
+  if (kind === "gift" || kind === "story") {
+    return (
+      <article className="rounded-panel border border-hairline bg-surface px-4 py-3" aria-busy={busy}>
+        <DestTag card={card} />
+        {kind === "gift" ? (
+          <GiftCardBody card={card} busy={busy} onReplace={onReplace} onError={onError} />
+        ) : (
+          <StoryCardBody card={card} busy={busy} onReplace={onReplace} onError={onError} />
+        )}
+        {error && (
+          <p role="alert" className="mt-2 text-sm text-expense">
+            {error}
+          </p>
+        )}
+        <FilesTo card={card} />
+        {filed ? (
+          <p className="mt-2 text-sm font-semibold text-revenue">
+            {href ? (
+              <Link href={href} className="underline-offset-2 hover:underline">
+                {filedLabel(card)}
+              </Link>
+            ) : (
+              filedLabel(card)
+            )}
+          </p>
+        ) : (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={onDiscard}
+              disabled={busy}
+              className={`${TYPE.button} min-h-[44px] rounded-control px-3 text-ink-2 hover:text-ink-1 disabled:opacity-50`}
+            >
+              Discard
+            </button>
+          </div>
+        )}
+      </article>
     );
   }
 
@@ -303,11 +381,17 @@ function CardItem({
         <p className={`${TYPE.metadata} mt-1.5 border-l-2 border-hairline pl-2 italic`}>You said: &ldquo;{source}&rdquo;</p>
       )}
 
+      {!held && isUncertain(card, "who") && (
+        <p className="mt-1 text-sm font-semibold text-status-watch-text">
+          Check who this is{card.heard_name ? ` · heard \u201c${card.heard_name}\u201d` : ""}
+        </p>
+      )}
       {held ? (
         <PickMatch card={card} disabled={busy} onPick={onPick} />
       ) : (
         !filed && <p className={`${TYPE.metadata} mt-2`}>{whatConfirmDoes(card)}</p>
       )}
+      {!filed && <FilesTo card={card} />}
 
       {error && (
         <p role="alert" className="mt-2 text-sm text-expense">

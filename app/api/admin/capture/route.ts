@@ -17,6 +17,7 @@ import {
 import { CONTEXT_TYPES, resolveContext, type ContextType } from "@/lib/capture/context";
 import { findCandidates } from "@/lib/capture/match";
 import { CAPTURE_TOOL, buildCapturePrompt, buildCaptureSystem } from "@/lib/capture/prompt";
+import { redactTranscript } from "@/lib/capture/redact";
 import { extractNameSpans } from "@/lib/capture/spans";
 import { loadStaff } from "@/lib/capture/staff";
 import { parseCaptureCards } from "@/lib/capture/validate";
@@ -170,12 +171,16 @@ export async function POST(req: NextRequest) {
     ]);
     const userName = staff.find((s) => s.userId === ctx.userId)?.name ?? handle ?? ctx.email;
 
-    const spans = extractNameSpans(transcript);
+    // The redaction boundary (V4 §8): contact details and identifying numbers
+    // are masked before the transcript is matched or sent to the model. The
+    // stored transcript (personal, RLS, purged at 90 days) is untouched.
+    const redacted = redactTranscript(transcript);
+    const spans = extractNameSpans(redacted.text);
     const { candidates } = await findCandidates(supabase, ctx.orgId, spans, context);
 
     const result = await generateStructured({
       system: buildCaptureSystem(),
-      prompt: buildCapturePrompt({ transcript, todayIso, tz, userName, staff, context, candidates }),
+      prompt: buildCapturePrompt({ transcript: redacted.text, todayIso, tz, userName, staff, context, candidates }),
       tier: "fast",
       maxTokens: CAPTURE_MAX_OUTPUT_TOKENS,
       tool: CAPTURE_TOOL,
@@ -219,6 +224,7 @@ export async function POST(req: NextRequest) {
         dropped: parsed.dropped,
         spans: spans.length,
         candidates: candidates.length,
+        redacted: redacted.counts,
       },
     });
 

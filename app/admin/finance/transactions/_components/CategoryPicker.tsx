@@ -1,89 +1,58 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { FinCategory } from "@/lib/finance/types";
+import { Select } from "@/app/admin/_components/ui/Input";
+import { useSaveAction } from "@/app/admin/_lib/useSaveAction";
+import CategoryOptions from "../../_components/CategoryOptions";
 
 type Props = {
   transactionId: string;
   initialCategoryId: string | null;
   categories: FinCategory[];
+  /** Spoken row name: "Category for Zoom subscription, Nov 18". */
+  label: string;
 };
 
-// Inline category picker. Native <select> with <optgroup> by group_name —
-// 75ish categories is small enough that a custom combobox would be a
-// downgrade, and native selects are accessible by default. Save is fire-
-// and-forget with optimistic local state and an inline status hint.
-export default function CategoryPicker({
-  transactionId,
-  initialCategoryId,
-  categories,
-}: Props) {
+// Inline category picker on a transaction row. A labeled kit Select with
+// <optgroup> by group_name. Saves through saveAction and is NOT optimistic
+// (the money rule): the select shows the saved value only once the server
+// says so, and a failure toasts and leaves the old value in place.
+export default function CategoryPicker({ transactionId, initialCategoryId, categories, label }: Props) {
+  const router = useRouter();
+  const save = useSaveAction();
   const [value, setValue] = useState<string>(initialCategoryId ?? "");
-  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [, startTransition] = useTransition();
+  const [saving, setSaving] = useState(false);
 
-  // Group categories by group_name in source order so optgroups follow the
-  // taxonomy order from fin_categories.sort_order.
-  const groups: Array<{ name: string; items: FinCategory[] }> = [];
-  for (const c of categories) {
-    let g = groups.find((x) => x.name === c.group_name);
-    if (!g) {
-      g = { name: c.group_name, items: [] };
-      groups.push(g);
-    }
-    g.items.push(c);
-  }
-
-  async function save(next: string) {
-    setValue(next);
-    setStatus("saving");
-    const r = await fetch(`/api/admin/finance/transactions/${transactionId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ category_id: next === "" ? null : next }),
+  async function onChange(next: string) {
+    setSaving(true);
+    const r = await save({
+      request: {
+        url: `/api/admin/finance/transactions/${transactionId}`,
+        method: "PATCH",
+        body: { category_id: next === "" ? null : next },
+      },
+      success: "Category saved",
     });
-    if (!r.ok) {
-      setStatus("error");
-      return;
+    setSaving(false);
+    if (r.ok) {
+      setValue(next);
+      router.refresh();
     }
-    setStatus("saved");
-    startTransition(() => {
-      // Brief "Saved" hint, then reset.
-      setTimeout(() => setStatus("idle"), 1200);
-    });
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <select
-        value={value}
-        onChange={(e) => save(e.target.value)}
-        className={`bg-ink border rounded px-2 py-1 text-xs text-ink-1 max-w-[14rem] ${
-          value === ""
-            ? "border-status-watch/40 text-status-watch-text"
-            : "border-hairline"
-        }`}
-      >
-        <option value="">(Uncategorized)</option>
-        {groups.map((g) => (
-          <optgroup key={g.name} label={g.name}>
-            {g.items.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.display_name}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-      {status === "saving" && (
-        <span className="text-xs text-ink-2">saving…</span>
-      )}
-      {status === "saved" && (
-        <span className="text-xs text-revenue">saved</span>
-      )}
-      {status === "error" && (
-        <span className="text-xs text-expense">error</span>
-      )}
-    </div>
+    <Select
+      aria-label={label}
+      value={value}
+      disabled={saving}
+      aria-busy={saving || undefined}
+      onChange={(e) => onChange(e.target.value)}
+      className={`w-full max-w-[15rem] text-[13px] ${value === "" ? "!border-status-watch/60 text-status-watch-text" : ""}`}
+    >
+      <option value="">Uncategorized</option>
+      <CategoryOptions categories={categories} />
+    </Select>
   );
 }

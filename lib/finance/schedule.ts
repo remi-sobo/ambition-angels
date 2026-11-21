@@ -145,15 +145,17 @@ export async function loadReceivedTotal(
   orgId: string,
   startISO: string,
   endISO: string
-): Promise<{ total: number; truncated: boolean }> {
+): Promise<{ total: number; truncated: boolean; error?: true }> {
   // Paged past PostgREST's 1,000-row cap; `truncated` means the sum is a floor.
+  // `error` marks a failed read: the 0 is not a real total, and a screen must
+  // show it as missing (V4 §2: missing is never shown as zero).
   const { data, error, truncated } = await fetchAll<{ amount: number | null }>(
     () => client.from("gifts").select("amount").eq("org_id", orgId).gte("gift_date", startISO).lte("gift_date", endISO),
     { order: ["id"] }
   );
   if (error) {
     console.error("[finance] received-gifts load failed:", error.message);
-    return { total: 0, truncated: false };
+    return { total: 0, truncated: false, error: true };
   }
   return { total: data.reduce((s, g) => s + Number(g.amount ?? 0), 0), truncated };
 }

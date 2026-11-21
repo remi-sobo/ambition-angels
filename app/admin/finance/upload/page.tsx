@@ -1,5 +1,7 @@
-import Link from "next/link";
 import PageHeader from "../../_components/PageHeader";
+import PageShell from "../../_components/ui/PageShell";
+import ListRow, { ListRows } from "../../_components/ui/ListRow";
+import Button from "../../_components/ui/Button";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
 import ReconcileCard from "../_components/ReconcileCard";
 import UploadClient from "./_components/UploadClient";
@@ -15,44 +17,43 @@ export default async function FinanceUploadPage() {
   if (!roleGate.ok) return roleGate.page;
   const snap = await getFinanceSnapshot();
 
+  // Settings archetype (V4 Stage G2): reading width, one section per job.
   return (
-    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+    <PageShell width="reading">
       <PageHeader
-        eyebrow="Import hub"
+        breadcrumb={[{ label: "Settings", href: "/admin/settings" }, { label: "Finance", href: "/admin/settings/finance" }]}
         title="Upload"
-        subtitle="Bring everything in here (bank transactions, budget, and pledges), then set your current balance so cash matches the bank."
+        subtitle="Bring in bank transactions, the budget and pledges, then set your current balance so cash matches the bank."
       />
 
-      {/* Set current balance / reconcile */}
-      <ReconcileCard computedCash={snap.cashOnHand} anchorDate={snap.cfg.startDate} reconciledAt={snap.cfg.reconciledAt} />
+      <div className="space-y-6">
+        <ReconcileCard computedCash={snap.cashOnHand} anchorDate={snap.cfg.startDate} reconciledAt={snap.cfg.reconciledAt} />
 
-      {/* Other import flows */}
-      <section className="grid sm:grid-cols-2 gap-3">
-        <HubLink
-          href="/admin/settings/finance/budget-import"
-          title="Import budget →"
-          desc="Bring in your annual budget from a QuickBooks export."
-        />
-        <HubLink
-          href="/admin/finance/revenue"
-          title="Pledges & grants →"
-          desc="Log committed, projected, and received revenue (or sync from HubSpot)."
-        />
-      </section>
+        <UploadClient />
 
-      <UploadClient />
-    </div>
-  );
-}
-
-function HubLink({ href, title, desc }: { href: string; title: string; desc: string }) {
-  return (
-    <Link
-      href={href}
-      className="block rounded-panel-lg border-hairline bg-surface p-4 hover:border-orange/40 transition-colors"
-    >
-      <div className="text-sm font-semibold text-ink-1">{title}</div>
-      <div className="text-xs text-ink-2 mt-0.5">{desc}</div>
-    </Link>
+        <section className="bg-surface border border-hairline rounded-panel px-5">
+          <ListRows>
+            <ListRow
+              title="Import a budget"
+              context="Bring in your annual budget from a QuickBooks export."
+              actions={
+                <Button variant="secondary" size="sm" href="/admin/settings/finance/budget-import">
+                  Import budget
+                </Button>
+              }
+            />
+            <ListRow
+              title="Pledges and grants"
+              context="Log committed, projected and received revenue, or sync from HubSpot."
+              actions={
+                <Button variant="secondary" size="sm" href="/admin/finance/forecast">
+                  Open pledges
+                </Button>
+              }
+            />
+          </ListRows>
+        </section>
+      </div>
+    </PageShell>
   );
 }

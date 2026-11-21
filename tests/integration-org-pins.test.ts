@@ -22,6 +22,8 @@ vi.mock("@/lib/admin/auth", () => ({
   getOrgContext: vi.fn(async () => ctx),
   getAdminUser: vi.fn(async () => "tester"),
   isAuthed: vi.fn(async () => !!ctx),
+  // Role guard covered in tests/require-permission.test.ts; these callers hold it.
+  ctxHasPermission: vi.fn(async () => true),
 }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}) }));
 vi.mock("@/lib/fundraising/stewardship", () => ({ processGiftStewardship: vi.fn(async () => {}) }));

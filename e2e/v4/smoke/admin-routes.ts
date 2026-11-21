@@ -25,7 +25,7 @@ export function resolveRoutes(org: Org) {
     session: mine("cohort_sessions", (s) => s.cohort_id === cohort?.id)?.id,
     edition: mine("comms_editions")?.id,
     email: mine("email_campaigns", (c) => c.status === "sent")?.id,
-    story: mine("comms_stories")?.id,
+    story: mine("stories")?.id,
     compliance: mine("compliance_items")?.id,
     ask: mine("asks")?.id,
     giftTable: mine("fr_gift_tables")?.id ?? mine("gift_range_tables")?.id,

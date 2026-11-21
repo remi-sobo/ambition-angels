@@ -26,6 +26,7 @@ if (kind === "roles") {
         const flags = [];
         if (r.leaks?.length) flags.push(`LEAK(${r.leaks.slice(0, 2).join(", ")})`);
         if (Array.isArray(r.writeControls) && r.writeControls.length && r.verdict === "ok") flags.push(`writes(${r.writeControls.slice(0, 3).join("; ")})`);
+        if (r.writeControlsAllowed && r.verdict === "ok") flags.push(`known(${r.writeControlsAllowed.names.length})`);
         by.get(key)[col] = `${r.verdict}${flags.length ? " " + flags.join(" ") : ""}`;
       }
     }

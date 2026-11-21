@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // Merge one partner org into another (dedupe the near-duplicates the import
 // left behind, e.g. "EOYDC" vs "East Oakland Youth Development Center").
@@ -15,10 +15,9 @@ const RANK: Record<string, number> = {
 };
 
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("program.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const keepId = typeof body?.keep_id === "string" ? body.keep_id : "";
   const mergeId = typeof body?.merge_id === "string" ? body.merge_id : "";

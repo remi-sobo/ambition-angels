@@ -5,6 +5,7 @@ import type { FinCategory } from "@/lib/finance/types";
 import RulesEditor from "./_components/RulesEditor";
 import NoCategories from "../_components/NoCategories";
 import PageHeader from "../../_components/PageHeader";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 type Rule = {
   id: string;
@@ -18,6 +19,8 @@ type Rule = {
 };
 
 export default async function RulesPage() {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
 
   // Org fence: the service-role client bypasses RLS, so every read below is

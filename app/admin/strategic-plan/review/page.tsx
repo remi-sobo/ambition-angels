@@ -16,6 +16,7 @@ import {
 } from "../_components/PlanControls";
 import ReviewComplete from "./_components/ReviewComplete";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Monthly OGSM review mode (BloomOS Strategy, Phase 4). Walk the four
 // objectives, refresh the auto numbers, update the manual KPIs and statuses
@@ -25,6 +26,8 @@ export const dynamic = "force-dynamic";
 type ReviewRow = { id: string; conducted_at: string; conducted_by: string | null; notes: string | null; next_review_at: string | null };
 
 export default async function StrategyReviewPage() {
+  const roleGate = await requirePagePermission("reports.read", "Strategic plan");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) {
     return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;

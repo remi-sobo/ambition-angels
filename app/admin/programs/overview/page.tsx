@@ -10,6 +10,7 @@ import EmptyState from "@/app/admin/_components/EmptyState";
 import { TYPE } from "@/lib/admin/typeScale";
 import Alert from "@/app/admin/_components/ui/Alert";
 import { fetchAll } from "@/lib/supabase/fetchAll";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Spec Programs P2 — Overview, the destination's landing. Until P2 this host
 // re-exported /admin/program, a nine-line placeholder — the only V2 landing
@@ -35,6 +36,8 @@ function fmtDate(iso: string): string {
 }
 
 export default async function ProgramsOverviewPage() {
+  const roleGate = await requirePagePermission("program.read", "Programs");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) {
     return (

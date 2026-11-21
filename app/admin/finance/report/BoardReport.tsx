@@ -9,6 +9,7 @@ import { TYPE } from "@/lib/admin/typeScale";
 import { CHART } from "@/lib/admin/chartTokens";
 import Alert from "@/app/admin/_components/ui/Alert";
 import { fetchAll } from "@/lib/supabase/fetchAll";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Board financial report — a print/PDF-ready one-pager pulling the
 // board-meeting essentials from the same canonical sources as the dashboard, so
@@ -29,6 +30,8 @@ function fiscalYearBounds(year: number, startMonth: number): { start: string; en
 }
 
 export default async function BoardReport() {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   const ctx = await getOrgContext();
   const orgName = ctx?.orgName ?? "our organization";

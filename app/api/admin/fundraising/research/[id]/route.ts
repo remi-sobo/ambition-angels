@@ -14,7 +14,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getAdminUser, type AdminUser } from "@/lib/admin/auth";
-import { requireEntitlement } from "@/lib/admin/entitlements";
 import { notify } from "@/lib/notifications/notify";
 import { runInBackground } from "@/lib/background";
 import { generateBriefForProspect } from "@/lib/agents/funder-research/generate-brief";
@@ -25,6 +24,7 @@ import {
 import { estimateCostUsd as estimateModelCostUsd } from "@/lib/ai/cost";
 import { logAICall } from "@/lib/ai/ledger";
 import { orgOverAICap } from "@/lib/ai/cap";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // ── Cost + rate limit constants ───────────────────────────────────────────
 const MONTHLY_BUDGET_HARD_USD = 20;
@@ -60,7 +60,7 @@ export async function POST(
 ) {
   // Grow-tier gate: prospect research is a paid AI capability. 401 unauthenticated,
   // 402 when the org lacks the entitlement — same seam as reed/ask.
-  const ent = await requireEntitlement("ai.prospect_research");
+  const ent = await requirePermission("fundraising.write", { entitlement: "ai.prospect_research" });
   if (!ent.ok) {
     return NextResponse.json({ error: ent.error }, { status: ent.status });
   }

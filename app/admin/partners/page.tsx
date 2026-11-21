@@ -4,6 +4,7 @@ import PageHeader from "../_components/PageHeader";
 import { NewPartnerForm } from "./_components/PartnerControls";
 import { type Partner } from "./_lib/partners";
 import PartnersWorkspace from "./_components/PartnersWorkspace";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Schools & nonprofit partners (Ring 3, modules/02-program.md "Schools"):
 // the partner CRM — a Prospect → Emerging → Pilot → Active → Anchor
@@ -13,6 +14,8 @@ import PartnersWorkspace from "./_components/PartnersWorkspace";
 export const dynamic = "force-dynamic";
 
 export default async function PartnersPage() {
+  const roleGate = await requirePagePermission("program.read", "Partners");
+  if (!roleGate.ok) return roleGate.page;
   const today = new Date().toISOString().slice(0, 10);
   const supabase = getSupabaseAdmin();
   // Org fence: the service-role client bypasses RLS, so every read is scoped to

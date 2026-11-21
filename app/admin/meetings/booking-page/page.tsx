@@ -5,6 +5,7 @@ import type { Blackout, MeetingType } from "@/lib/database.types";
 import PageHeader from "@/app/admin/_components/PageHeader";
 import BookingPageSettings from "./BookingPageSettings";
 import BookingHistory, { type BookingWithType } from "./BookingHistory";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,8 @@ async function fetchSetup(orgId: string) {
 }
 
 export default async function BookingPagePage() {
+  const roleGate = await requirePagePermission("ops.read", "Meetings");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) return null;
   const { types, blackouts, history, last30Count } = await fetchSetup(ctx.orgId);

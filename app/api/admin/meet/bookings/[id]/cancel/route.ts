@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { cancelEvent } from "@/lib/google/calendar";
 import { sendEmail } from "@/lib/google/gmail";
 import { buildCancellationEmail } from "@/lib/email/templates/cancellation";
 import { getBookingHost } from "@/lib/meet/host";
 import type { Booking, MeetingType } from "@/lib/database.types";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const schema = z.object({
   reason: z.string().max(2000).optional(),
@@ -23,8 +23,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const ctx = await getOrgContext();
-  if (!ctx) { return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); }
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   let body: unknown = {};
   try {
     if (req.headers.get("content-length") !== "0") body = await req.json();

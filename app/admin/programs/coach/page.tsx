@@ -7,6 +7,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { privateUrl, type CoachPerson, type CoachSession } from "@/lib/coach/server";
 import { fullName, planProgress, toPlan, type MatchStatus, type PersonStatus } from "@/lib/coach/program";
 import { MatchRow, NewMatchForm, PersonRow, type MatchView, type PersonView } from "./_components/CoachControls";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Ambition Coach (BloomOS → Programs → Coach). Everyone who signs up on
 // /coach, as a coach or a student, lands here. Staff match them, send the
@@ -30,6 +31,8 @@ type MatchRecord = {
 const OPEN_MATCH: MatchStatus[] = ["proposed", "intro_sent", "active"];
 
 export default async function CoachAdminPage() {
+  const roleGate = await requirePagePermission("program.read", "Programs");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) {
     return (

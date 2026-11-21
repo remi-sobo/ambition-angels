@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { clearAdminCaches } from "@/lib/admin/swCache";
 
 // Sidebar-footer org switcher (core fence spec §6c, C1). Rendered only when
 // the user holds 2+ memberships — the parent gates on orgs.length, and this
@@ -29,7 +30,11 @@ export default function OrgSwitcher({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ org_id: orgId }),
       });
-      if (res.ok) router.refresh();
+      if (res.ok) {
+        // Nothing cached under the old org may survive the switch.
+        await clearAdminCaches();
+        router.refresh();
+      }
     } finally {
       setBusy(false);
     }

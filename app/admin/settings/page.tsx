@@ -150,7 +150,7 @@ export default async function SettingsPage({
         <Card
           id="google-calendar"
           title="Google Calendar"
-          description="Connect your calendar so BloomOS can show your day. Read-only. BloomOS never changes your events."
+          description="Connect your calendar so BloomOS can show your week and put the work blocks you schedule on it. BloomOS only changes events it created. Disconnect any time."
         >
           {calendarStatus ? (
             <ConnectCalendarControls

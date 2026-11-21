@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
 import {
   BlockNotFound,
+  GoogleCalendarWriteFailed,
   deleteWorkBlock,
   moveWorkBlock,
   parseWindow,
@@ -65,6 +66,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   } catch (e) {
     if (e instanceof BlockNotFound) {
       return NextResponse.json({ error: "Block not found" }, { status: 404 });
+    }
+    if (e instanceof GoogleCalendarWriteFailed) {
+      return NextResponse.json({ error: e.message, code: "google_calendar_write_failed" }, { status: 409 });
     }
     console.error("[calendar/blocks DELETE] failed:", e);
     return NextResponse.json({ error: "Couldn't delete the block" }, { status: 502 });

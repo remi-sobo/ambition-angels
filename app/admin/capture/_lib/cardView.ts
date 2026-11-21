@@ -152,6 +152,7 @@ export function undoSecondsLeft(card: CardView, now: number): number {
 export function filedHref(card: CardView): string | null {
   const elsewhere = filedElsewhere(card.payload);
   if (elsewhere?.table === "notifications") return null;
+  if (elsewhere?.table === "stories") return `/admin/comms/stories/${elsewhere.id}`;
   if (elsewhere?.table === "gifts" || elsewhere?.table === "pledges") {
     return card.entity_id ? `/admin/fundraising/donors-funders/${card.entity_id}` : null;
   }
@@ -175,6 +176,9 @@ export function filedLabel(card: CardView): string {
   }
   if (elsewhere?.table === "gifts") return "Gift recorded";
   if (elsewhere?.table === "pledges") return "Pledge added on the record";
+  if (elsewhere?.table === "stories") {
+    return storyHold(card.payload) ? "In the story bank, waiting on consent" : "In the story bank";
+  }
   if (elsewhere?.table === "capture_cards") {
     return storyHold(card.payload) ? "Kept as a story draft, waiting on consent" : "Kept as a story draft";
   }
@@ -293,7 +297,7 @@ export function filesTo(card: CardView): string {
       if (p.gift_type === "pledge") return name ? `${name}'s pledges, added on the record` : "A donor's pledges, added on the record";
       return name ? `${name}'s gifts, through the gift form` : "Gifts, through the gift form";
     case "story":
-      return "Held story drafts (the Comms story bank is not set up yet)";
+      return "The Comms story bank, held until consent is on file";
   }
 }
 

@@ -143,11 +143,11 @@ export const V2_DESTINATIONS: V2Destination[] = [
   {
     // V4 §4 (approved spec, specs/bloomos-v4-product-readiness.md): Comms is
     // the eighth destination. Every tab rides modules.comms, so an org
-    // without it still sees seven. Only Emails has a screen today (the email
-    // campaigns page, moved from Fundraising → Comms); the other tabs have
-    // no live seat in lib/admin/v2routes.ts, so the shell hides them until
-    // Stage D builds them. Automations is where journeys land once they have
-    // a page (today /admin/fundraising/journeys is a dead 308 source).
+    // without it still sees seven. Stage D built Home, Stories, Editions and
+    // Settings (live seats in lib/admin/v2routes.ts KEPT_IN_PLACE), so Comms
+    // lands on Home. Automations has no seat yet and stays hidden: it is
+    // where journeys land once they have a page and a schedule (today
+    // /admin/fundraising/journeys is a dead 308 source).
     key: "comms",
     label: "Comms",
     icon: "comms",

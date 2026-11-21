@@ -291,6 +291,12 @@ export const KEPT_IN_PLACE: readonly string[] = [
   "/admin/impact/outcomes",     // Spec Impact I1: the provenance-first outcomes surface
   "/admin/impact/reports",      // Spec Impact I2: the gated report builder (Contract 7's third exit)
   "/admin/programs/coach",      // Ambition Coach sign-ups, matches and plans (aa.coach, AA-only)
+  // V4 Stage D: the Comms tabs that now have pages. Automations stays
+  // seatless (journeys are unscheduled), so the shell keeps it hidden.
+  "/admin/comms/home",
+  "/admin/comms/stories",
+  "/admin/comms/editions",
+  "/admin/comms/settings",
 ];
 
 /** The live screen for a canonical V2 path today, or null when none exists

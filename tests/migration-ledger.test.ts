@@ -124,6 +124,27 @@ describe("the committed baseline and aliases stay honest", () => {
     expect(missing).toEqual([]);
   });
 
+  test("no baselined ledger-only name has a file on disk (it would be stale)", () => {
+    const onDisk = new Set(readMigrationFiles(FOLDER));
+    const stale = BASELINE.ledgerOnly.filter((n) => onDisk.has(ALIASES[n] ?? n));
+    expect(stale).toEqual([]);
+  });
+
+  test("the comms story-bank migrations are committed, not baselined", () => {
+    const onDisk = new Set(readMigrationFiles(FOLDER));
+    for (const m of [
+      "comms_phase1_story_schema",
+      "comms_phase2_storage",
+      "comms_phase2_views",
+      "comms_phase3_outputs",
+      "comms_phase4_editions",
+      "comms_phase6_loop",
+    ]) {
+      expect(onDisk.has(m), m).toBe(true);
+      expect(BASELINE.ledgerOnly).not.toContain(m);
+    }
+  });
+
   test("no name is baselined in both directions at once", () => {
     const both = BASELINE.ledgerOnly.filter((n) => BASELINE.fileOnly.includes(n));
     expect(both).toEqual([]);

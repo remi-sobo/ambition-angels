@@ -7,8 +7,9 @@
  *                    money itself was written by /api/admin/gifts, never here.
  *   markPledgeAdded  the person added the pledge on the donor's record; the
  *                    card is marked done (Capture does not write pledges).
- *   keepStory        keep the story as a held draft: the card row IS the draft
- *                    until a story bank exists. Its consent hold stays on it.
+ *   keepStory        file the story into the Comms story bank (V4 Stage D)
+ *                    when the caller has Comms; otherwise keep the card as the
+ *                    held draft. Either way it stays held until consent.
  *   editStory        change the story's words, subject or identifiable flag.
  *                    The identifiable check fails closed (storyIdentifiable).
  *
@@ -73,15 +74,39 @@ export async function markPledgeAdded(deps: ActionDeps, cardId: string): Promise
   return markFiled(deps, card, { table: "pledges", manual: true });
 }
 
-export async function keepStory(deps: ActionDeps, cardId: string): Promise<ActionResult> {
+/** Files a kept story into the story bank (lib/admin/comms/capture-server.ts
+ *  bankFiler). Passed in by the route only when the caller holds
+ *  comms.manage and the org has modules.comms. */
+export type StoryBankFiler = (story: {
+  title: string | null;
+  text: string;
+  about: string | null;
+  identifiable: unknown;
+}) => Promise<{ ok: true; storyId: string } | { ok: false; error: string }>;
+
+export async function keepStory(deps: ActionDeps, cardId: string, fileToBank?: StoryBankFiler): Promise<ActionResult> {
   const card = await load(deps, cardId);
   if (!card) return fail(404, "Not found");
   if (cardKindOf(card) !== "story") return fail(409, "Only a story card can be kept.", card);
-  if (card.status === "confirmed" && filedElsewhere(card.payload)?.table === "capture_cards") return { ok: true, card };
+  const already = filedElsewhere(card.payload)?.table;
+  if (card.status === "confirmed" && (already === "capture_cards" || already === "stories")) return { ok: true, card };
   if (card.status !== "held") return fail(409, "This card was already handled.", card);
-  // Keeping a story needed ops.write under Stage C (the capture tables asked
-  // for it); with capture.use for every role it is asked here instead.
+  // Keeping a story (bank or held draft) needed ops.write under Stages C/D,
+  // when the capture tables asked for it; with capture.use for every role it
+  // is asked here instead. The bank path also needs comms.manage (the route).
   if (!(await deps.hasPermission(filingPermission(card)))) return fail(403, "You don't have permission to keep stories.", card);
+  if (fileToBank) {
+    const p = card.payload;
+    const filed = await fileToBank({
+      title: typeof p.title === "string" ? p.title : null,
+      text: typeof p.text === "string" ? p.text : "",
+      // Already first name and last initial (buildStoryFields / shortName).
+      about: typeof p.about === "string" ? p.about : null,
+      identifiable: p.identifiable,
+    });
+    if (!filed.ok) return fail(500, filed.error, card);
+    return markFiled(deps, card, { table: "stories", id: filed.storyId });
+  }
   // The hold travels with the draft: consent stays "needed" for an
   // identifiable story, and nothing can mark it otherwise from here.
   return markFiled(deps, card, { table: "capture_cards", kept: true });

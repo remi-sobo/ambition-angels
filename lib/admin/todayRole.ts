@@ -256,7 +256,15 @@ export async function loadFinanceQueue(supabase: Sb, orgId: string): Promise<Fin
   };
 }
 
-export type CohortRow = { id: string; name: string; status: string; unrecorded: number; next: string | null };
+export type CohortRow = {
+  id: string;
+  name: string;
+  status: string;
+  unrecorded: number;
+  next: string | null;
+  /** V4 Stage E: today's session, so "Take attendance" opens its roster in one tap. */
+  todaySessionId: string | null;
+};
 
 /** Staff: the cohorts assigned to me, with sessions waiting for attendance. Counts only. */
 export async function loadMyCohorts(supabase: Sb, orgId: string, me: Me, today: string): Promise<{ rows: CohortRow[]; failed: boolean }> {
@@ -272,12 +280,13 @@ export async function loadMyCohorts(supabase: Sb, orgId: string, me: Me, today: 
   if (cohorts.length === 0) return { rows: [], failed: false };
   const { data: sess } = await supabase
     .from("cohort_sessions")
-    .select("cohort_id, session_date, status")
+    .select("id, cohort_id, session_date, status")
     .eq("org_id", orgId)
     .in("cohort_id", cohorts.map((c) => c.id))
-    .eq("status", "scheduled")
+    .in("status", ["scheduled", "held"])
     .limit(1000);
-  const sessions = (sess ?? []) as { cohort_id: string; session_date: string }[];
+  const all = (sess ?? []) as { id: string; cohort_id: string; session_date: string; status: string }[];
+  const sessions = all.filter((s) => s.status === "scheduled");
   return {
     rows: cohorts.map((c) => {
       const mine = sessions.filter((s) => s.cohort_id === c.id);
@@ -285,6 +294,7 @@ export async function loadMyCohorts(supabase: Sb, orgId: string, me: Me, today: 
         id: c.id, name: c.name, status: c.status,
         unrecorded: mine.filter((s) => s.session_date < today).length,
         next: mine.filter((s) => s.session_date >= today).map((s) => s.session_date).sort()[0] ?? null,
+        todaySessionId: all.find((s) => s.cohort_id === c.id && s.session_date === today)?.id ?? null,
       };
     }),
     failed: false,

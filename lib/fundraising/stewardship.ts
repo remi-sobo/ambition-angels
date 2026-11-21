@@ -1,12 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
 import { todayInTZ } from "@/lib/admin/ops/week";
 import { personalize } from "@/lib/fundraising/comms-email";
+import { type ReceiptGift } from "@/lib/fundraising/receipt";
+import { TransportError } from "@/lib/comms/transport";
 import {
-  receiptEmailText,
-  receiptEmailHtml,
-  type ReceiptGift,
-} from "@/lib/fundraising/receipt";
+  buildReceiptEmail,
+  resolveOrgEmailIdentity,
+  transportForIdentity,
+} from "@/lib/email/org-identity";
 import { ensureAckTaskForGift, ensureEscalationTaskForGift, type AckQueueGift } from "@/lib/fundraising/ack-tasks";
 import { getDefaultSteward } from "@/lib/fundraising/steward";
 import { constituentName } from "@/lib/fundraising/display";
@@ -61,6 +62,9 @@ export type StewardshipDecision = {
   assignee: string | null;
   ruleId: string | null;
   ruleName: string;
+  /** Set when an auto_email was refused because the org can't send as
+   *  itself yet; the gift went to the human queue instead. */
+  blockedReason?: string;
 };
 
 const NONE: StewardshipDecision = {
@@ -73,7 +77,6 @@ const NONE: StewardshipDecision = {
   ruleName: "no match",
 };
 
-const ACK_FROM = "Ambition Angels <careers@mail.ambitionangels.org>";
 const DEFAULT_AUTO_NOTE =
   "Thank you so much for your generous gift. Your support directly funds the students and programs at the heart of our mission, and it means the world to us.";
 
@@ -177,14 +180,24 @@ async function setGiftStatus(
     .neq("acknowledgment_status", "sent");
 }
 
+type AutoSendResult = { sent: boolean } | { blocked: string };
+
 async function autoSendReceipt(
   supabase: SupabaseClient,
   orgId: string,
   gift: GiftRow,
   tpl: { subject: string | null; body: string } | null
-): Promise<boolean> {
+): Promise<AutoSendResult> {
   const toEmail = gift.constituent?.emails?.[0];
-  if (!toEmail || !process.env.RESEND_API_KEY) return false;
+  if (!toEmail) return { sent: false };
+
+  // Send as THIS org or not at all. An org that hasn't configured what a
+  // receipt needs is skipped (never sent as someone else); the caller routes
+  // the gift to a human and logs why.
+  const resolved = await resolveOrgEmailIdentity(supabase, orgId, "receipt");
+  if (!resolved.ok) return { blocked: resolved.reason };
+  const sender = await transportForIdentity(resolved.identity);
+  if ("blocked" in sender) return { blocked: sender.blocked };
 
   const firstName = gift.constituent?.first_name || gift.constituent?.org_name || "friend";
   const note = personalize(tpl?.body?.trim() ? tpl.body : DEFAULT_AUTO_NOTE, firstName);
@@ -197,8 +210,8 @@ async function autoSendReceipt(
     fair_market_value: gift.fair_market_value === null ? null : Number(gift.fair_market_value),
     deductible_amount: gift.deductible_amount === null ? null : Number(gift.deductible_amount),
   };
-  const text = receiptEmailText(note, receiptGift);
-  const html = receiptEmailHtml(note, receiptGift);
+  const email = buildReceiptEmail(resolved.identity, { to: toEmail, subject, personalNote: note, gift: receiptGift });
+  const text = email.text;
   const sentAt = new Date().toISOString();
 
   // Claim before sending — the same atomic double-send guard the manual path
@@ -209,22 +222,21 @@ async function autoSendReceipt(
     .eq("id", gift.id)
     .neq("acknowledgment_status", "sent")
     .select("id");
-  if (!claimed || claimed.length === 0) return true;
+  if (!claimed || claimed.length === 0) return { sent: true };
 
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const res = await resend.emails.send({ from: ACK_FROM, to: toEmail, subject, text, html });
-    if (res.error) {
+    await sender.transport.send(email);
+  } catch (e) {
+    if (e instanceof TransportError && e.failure !== "unknown") {
       await supabase
         .from("gifts")
         .update({ acknowledgment_status: "pending", acknowledged_at: null })
         .eq("id", gift.id);
-      return false;
+      return { sent: false };
     }
-  } catch (e) {
     // Unknown outcome: keep the claim so we never double-email a donor.
     console.error("[stewardship] auto-receipt send unknown:", e);
-    return true;
+    return { sent: true };
   }
 
   await supabase.from("acknowledgments").insert({
@@ -244,7 +256,7 @@ async function autoSendReceipt(
     sent_by: "system",
     sent_at: sentAt,
   });
-  return true;
+  return { sent: true };
 }
 
 /**
@@ -316,9 +328,19 @@ export async function processGiftStewardship(
           .maybeSingle();
         tpl = (data as { subject: string | null; body: string } | null) ?? null;
       }
-      const ok = await autoSendReceipt(supabase, opts.orgId, gift, tpl);
-      if (!ok) await setGiftStatus(supabase, opts.giftId, "not_required");
-    } else if (decision.action === "create_task" || decision.action === "create_task_and_draft") {
+      const result = await autoSendReceipt(supabase, opts.orgId, gift, tpl);
+      if ("blocked" in result) {
+        // Skipped, not sent as anyone else: record why and hand the gift to
+        // the human queue so the thank-you isn't dropped.
+        console.warn(`[stewardship] auto-receipt skipped for org ${opts.orgId}: ${result.blocked}`);
+        decision.action = "create_task";
+        decision.slaHours = decision.slaHours || 48;
+        decision.blockedReason = result.blocked;
+      } else if (!result.sent) {
+        await setGiftStatus(supabase, opts.giftId, "not_required");
+      }
+    }
+    if (decision.action === "create_task" || decision.action === "create_task_and_draft") {
       if (gift.constituent_id) {
         await ensureAckTaskForGift(supabase, {
           orgId: opts.orgId,
@@ -336,8 +358,7 @@ export async function processGiftStewardship(
         // No one to personally thank (anonymous) — don't strand it in the queue.
         await setGiftStatus(supabase, opts.giftId, "not_required");
       }
-    } else {
-      // action === 'none'
+    } else if (decision.action === "none") {
       await setGiftStatus(supabase, opts.giftId, "not_required");
     }
 

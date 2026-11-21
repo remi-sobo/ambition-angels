@@ -4,6 +4,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import { complianceBlock, requiresSubstantiation, type ReceiptGift } from "@/lib/fundraising/receipt";
+import { resolveOrgEmailIdentity } from "@/lib/email/org-identity";
 import PrintButton from "../_components/PrintButton";
 import { TYPE } from "@/lib/admin/typeScale";
 
@@ -44,9 +45,11 @@ export default async function BatchLettersPage() {
   const ctx = await getOrgContext();
   if (!ctx) notFound();
   // Org name from the orgs row, never hardcoded (shared-host rule). The
-  // letterhead address/EIN below are still resident-org literals — they move
-  // to org settings when a second tenant needs letters.
+  // letterhead and tax statement come from this org's identity; an org
+  // without a legal name and EIN on file gets no letters, only the reason.
   const orgName = ctx.orgName;
+  const identity = await resolveOrgEmailIdentity(supabase, ctx.orgId, "receipt");
+  const taxStatement = identity.ok ? identity.identity.taxStatement : null;
   const { data } = await supabase
     .from("gifts")
     .select(
@@ -75,7 +78,11 @@ export default async function BatchLettersPage() {
         </span>
       </div>
 
-      {letters.length === 0 ? (
+      {!identity.ok || !taxStatement ? (
+        <p className="max-w-[680px] mx-auto px-8 py-16 text-[#555] text-sm">
+          {identity.ok ? "This org has no tax statement on file, so receipt letters can't be printed." : identity.reason}
+        </p>
+      ) : letters.length === 0 ? (
         <p className="max-w-[680px] mx-auto px-8 py-16 text-[#555] text-sm">
           No receipt-required thank-yous are waiting. Letters appear here for pending gifts that need a written receipt.
         </p>
@@ -101,7 +108,7 @@ export default async function BatchLettersPage() {
               style={{ fontFamily: "Georgia, serif", lineHeight: 1.7 }}
             >
               <div className="font-bold text-lg">{orgName}</div>
-              <div className="text-xs text-[#666] mb-8">380 Portage Ave, Palo Alto, CA 94306 · EIN 87-2513010</div>
+              <div className="text-xs text-[#666] mb-8">{identity.identity.letterhead}</div>
               <div className="text-sm mb-6">{longDate(today)}</div>
               <div className="text-sm whitespace-pre-line mb-6">
                 {name}
@@ -112,7 +119,7 @@ export default async function BatchLettersPage() {
               <p className="text-sm mb-6">With gratitude,<br />The {orgName} team</p>
               <hr className="border-0 border-t border-[#ddd] my-6" />
               <pre className="text-xs text-[#444] whitespace-pre-wrap" style={{ fontFamily: "Georgia, serif" }}>
-                {complianceBlock(receiptGift)}
+                {complianceBlock(receiptGift, taxStatement)}
               </pre>
             </article>
           );

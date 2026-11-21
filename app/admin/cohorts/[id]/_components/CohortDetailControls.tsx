@@ -71,7 +71,7 @@ export function CohortHeaderControls({
     });
     if (!ok) return;
     const res = await fetch(`/api/admin/cohorts/${cohortId}`, { method: "DELETE" });
-    if (res.ok) router.push("/admin/cohorts");
+    if (res.ok) router.push("/admin/programs/cohorts");
     else {
       const j = await res.json().catch(() => ({}));
       toast.error(userMessage(res, j));
@@ -271,7 +271,7 @@ export function SessionRow({
       </span>
       {s.status !== "canceled" && (
         <Link
-          href={`/admin/cohorts/${cohortId}/sessions/${s.id}`}
+          href={`/admin/programs/cohorts/${cohortId}/sessions/${s.id}`}
           className="px-2.5 py-1 rounded-full text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25"
         >
           {s.marked > 0 ? "Attendance" : "Take attendance"}
@@ -369,5 +369,42 @@ export function NewSessionForm({ cohortId }: { cohortId: string }) {
         </button>
       </div>
     </form>
+  );
+}
+
+/** Cancel and Delete for one session, for the cohort page's sessions timeline (V4 Stage E). */
+export function SessionActions({ session }: { session: { id: string; session_date: string; status: string } }) {
+  const confirm = useConfirm();
+  const { busy, call } = useApi();
+  const s = session;
+  return (
+    <>
+      {s.status === "scheduled" && (
+        <button
+          type="button"
+          onClick={() => call(`/api/admin/sessions/${s.id}`, "PATCH", { status: "canceled" })}
+          disabled={busy}
+          className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-ink-1 hover:bg-tile"
+        >
+          Cancel
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={async () => {
+          const ok = await confirm({
+            title: `Delete session on ${s.session_date}?`,
+            body: "Its attendance goes with it.",
+            confirmLabel: "Delete session",
+            destructive: true,
+          });
+          if (ok) void call(`/api/admin/sessions/${s.id}`, "DELETE");
+        }}
+        disabled={busy}
+        className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense"
+      >
+        Delete
+      </button>
+    </>
   );
 }

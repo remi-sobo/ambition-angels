@@ -63,7 +63,9 @@ const TENANT_TABLES = new Set([
 
 // Public-funnel / global-analytics tables: written by unauthenticated public
 // forms or site tracking, read as global aggregates, not per-tenant working
-// data. Excluded from the org-scope requirement by design.
+// data. Excluded from the org-scope requirement by design — BUT the ones that
+// are Ambition Angels' own data are listed in AA_ONLY_TABLES below and must be
+// read only behind the AA-only guard (second describe block).
 const GLOBAL_ALLOW = new Set([
   "page_views", "click_events", "quiz_submissions", "donations", "partner_waitlist",
   "bv_newsletter_subscribers", "bv_showcase_submissions", "webhook_events", "role_permissions",
@@ -207,5 +209,100 @@ describe("tenant read-isolation (service-role org fence)", () => {
       );
     }
     expect(violations).toEqual([]);
+  });
+});
+
+// ── AA-only surfaces (pre-SafeSpace fence) ───────────────────────────────────
+// Tables (and RPCs) that hold Ambition Angels' data with no tenant fence in
+// the query: allow-listed above as "global", or tenant-less by design (the
+// career library and teen games). Exempt from the org_id rule, so they get a
+// stronger one: an admin file may read them ONLY behind the AA-only guard
+// (lib/admin/aaOnly.ts) — an API route must call requireAaOnly(), a page must
+// sit under a layout (or be a file) that renders <AaOnlyGate>.
+const AA_ONLY_TABLES = new Set([
+  "quiz_submissions", "partner_waitlist", "program_partners", "page_views", "click_events",
+]);
+// Career library + teen games: every ms_*, game_*, cut_* table is global.
+const AA_ONLY_PREFIX = /^(ms|game|cut)_/;
+const AA_ONLY_RPCS = new Set(["hubspot_bench_candidates", "hubspot_bench_candidates_count"]);
+
+function adminFiles(): string[] {
+  return [join(REPO, "app/admin"), join(REPO, "app/api/admin"), join(REPO, "lib/admin")]
+    .flatMap(walk)
+    .map((abs) => relative(REPO, abs))
+    .sort();
+}
+
+/** AA-only tables/RPCs a file touches (any client: ms_/game_ have no RLS
+ *  policies, and the funnel tables' org_id defaults to AA). */
+function aaOnlyTouches(src: string): string[] {
+  const hits = new Set<string>();
+  const re = /\.(from|rpc)\(\s*["'`]([a-z_][a-z0-9_]*)["'`]/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(src)) !== null) {
+    const [, kind, name] = m;
+    if (kind === "from" && (AA_ONLY_TABLES.has(name) || AA_ONLY_PREFIX.test(name))) hits.add(name);
+    if (kind === "rpc" && AA_ONLY_RPCS.has(name)) hits.add(`rpc:${name}`);
+  }
+  return Array.from(hits);
+}
+
+/** A page-side file is gated when it, or any layout.tsx between it and
+ *  app/admin, renders <AaOnlyGate>. */
+function pageGated(file: string): boolean {
+  if (readFileSync(join(REPO, file), "utf8").includes("<AaOnlyGate")) return true;
+  let dir = file.split("/").slice(0, -1);
+  while (dir.length >= 2) {
+    try {
+      if (readFileSync(join(REPO, ...dir, "layout.tsx"), "utf8").includes("<AaOnlyGate")) return true;
+    } catch {
+      /* no layout at this level */
+    }
+    dir = dir.slice(0, -1);
+  }
+  return false;
+}
+
+function aaGuarded(file: string): boolean {
+  if (file.startsWith("app/api/")) return readFileSync(join(REPO, file), "utf8").includes("requireAaOnly(");
+  if (file.startsWith("app/admin/")) return pageGated(file);
+  return false; // lib/: a shared helper must not read AA-only data at all
+}
+
+describe("AA-only data is read only behind the AA-only guard", () => {
+  test("every admin file touching an AA-only table/RPC calls requireAaOnly or sits under <AaOnlyGate>", () => {
+    const readers = adminFiles()
+      .map((file) => ({ file, hits: aaOnlyTouches(readFileSync(join(REPO, file), "utf8")) }))
+      .filter((r) => r.hits.length > 0);
+    // Not vacuous: the careers admin, quiz/partner/analytics feeds and the
+    // HubSpot import all live here today.
+    expect(readers.length).toBeGreaterThan(10);
+
+    const unguarded = readers.filter((r) => !aaGuarded(r.file));
+    // A page that re-exports a gated reader from another route group
+    // (e.g. the V2 /admin/programs/content host) renders it under ITS OWN
+    // layouts, so it must be gated too.
+    const readerModules = readers
+      .filter((r) => r.file.startsWith("app/admin/"))
+      .map((r) => `@/${r.file.replace(/\.tsx?$/, "")}`);
+    const hosts = adminFiles()
+      .filter((f) => f.startsWith("app/admin/"))
+      .filter((f) => {
+        const src = readFileSync(join(REPO, f), "utf8");
+        return readerModules.some((mod) => src.includes(`"${mod}"`));
+      })
+      .filter((f) => !aaGuarded(f))
+      .map((file) => ({ file, hits: ["re-exports an AA-only reader"] }));
+
+    const bad = [...unguarded, ...hosts];
+    if (bad.length > 0) {
+      throw new Error(
+        `AA-only data reachable without the AA-only guard:\n` +
+          bad.map((b) => `  ${b.file}  →  ${b.hits.join(", ")}`).join("\n") +
+          `\n\nAPI routes: call requireAaOnly(<aa.* key>) (with { write: true } for writes). ` +
+          `Pages: wrap the route group's layout in <AaOnlyGate>. See lib/admin/aaOnly.ts.`,
+      );
+    }
+    expect(bad).toEqual([]);
   });
 });

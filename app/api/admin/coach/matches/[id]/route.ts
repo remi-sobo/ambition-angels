@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireEntitlement } from "@/lib/admin/entitlements";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { MATCH_STATUSES } from "@/lib/coach/program";
 import { sendIntro, sendPrivateLink, type CoachPerson } from "@/lib/coach/server";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // Staff actions on one Ambition Coach match.
 //   status      set the match status
@@ -10,7 +10,7 @@ import { sendIntro, sendPrivateLink, type CoachPerson } from "@/lib/coach/server
 //               person's private link; match becomes visible on their pages
 //   delete      remove a match (sessions and plan go with it)
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const ent = await requireEntitlement("aa.coach");
+  const ent = await requirePermission("program.write", { entitlement: "aa.coach" });
   if (!ent.ok) return NextResponse.json({ error: ent.error }, { status: ent.status });
   const orgId = ent.ctx.orgId;
   const db = getSupabaseAdmin();

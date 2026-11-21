@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // Postgres error code for "relation does not exist" — surfaced when the
 // demoday_notes migration hasn't been applied yet. We treat it as "no notes
@@ -20,10 +21,9 @@ function isStatus(v: unknown): v is Status {
 // (lib/demoday/attendees.ts); this only carries the mutable note/star/status.
 
 export async function GET() {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("program.read");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const supabase = getSupabaseAdmin();
   // Org fence: service-role client bypasses RLS — scope to the caller's org.
@@ -54,10 +54,9 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   // Org fence: the note is keyed (org_id, attendee_key); getOrgContext gives us
   // the org to stamp + conflict on so one tenant can't clobber another's note.
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("program.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const updatedBy = await getAdminUser();
   if (!updatedBy) {
     return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });

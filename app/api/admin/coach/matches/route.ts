@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireEntitlement } from "@/lib/admin/entitlements";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // Create an Ambition Coach match: one coach + one student, plus its four
 // session rows. Starts "proposed" (invisible on the private pages) until
 // staff send the intro.
 export async function POST(req: NextRequest) {
-  const ent = await requireEntitlement("aa.coach");
+  const ent = await requirePermission("program.write", { entitlement: "aa.coach" });
   if (!ent.ok) return NextResponse.json({ error: ent.error }, { status: ent.status });
   const orgId = ent.ctx.orgId;
   const db = getSupabaseAdmin();

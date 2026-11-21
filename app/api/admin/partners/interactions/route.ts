@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const KINDS = ["call", "email", "meeting", "event", "note"] as const;
 
@@ -9,10 +10,9 @@ const KINDS = ["call", "email", "meeting", "event", "note"] as const;
 // org's last_touch_at so cadence health stays accurate — the same gesture
 // "Log touch" used to do, now with a typed, timelined record.
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("program.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const partnerId = typeof body?.partner_id === "string" ? body.partner_id : "";
   if (!/^[0-9a-f-]{36}$/i.test(partnerId)) {

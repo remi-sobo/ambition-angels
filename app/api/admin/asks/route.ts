@@ -4,6 +4,7 @@ import { isAuthed, getAdminUser, getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { findOrCreateFunder } from "@/lib/fundraising/grants";
 import { isAskForm, isAskStatus } from "@/lib/fundraising/asks";
+import { createOwnerFor } from "@/lib/admin/owners-server";
 
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -40,8 +41,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "A funder is required for every ask." }, { status: 400 });
   }
 
+  // V4 B2: the creator owns a new ask unless the request names an owner.
+  // The free-text `owner` stays as before; owner_id is what "mine" reads.
+  const owner = await createOwnerFor(body, ctx);
+  if (!owner.ok) return NextResponse.json({ error: owner.error }, { status: 400 });
+
   const insert: Record<string, unknown> = {
     org_id: ctx.orgId,
+    owner_id: owner.ownerId,
     funder_id: funderId,
     form: isAskForm(body.form) ? body.form : "grant_proposal",
     status: isAskStatus(body.status) ? body.status : "draft",

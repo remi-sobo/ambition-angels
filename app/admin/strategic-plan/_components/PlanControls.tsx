@@ -469,7 +469,7 @@ export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) 
   const [vision, setVision] = useState(foundation?.vision ?? "");
   const [values, setValues] = useState((foundation?.values ?? []).join(", "));
   const [behaviors, setBehaviors] = useState((foundation?.behaviors ?? []).join(", "));
-  // Proof points edit as one "value | label" per line (e.g. "3,500+ | teens reached").
+  // Proof points edit as one "value | label" per line (e.g. "240 | families served").
   const [proof, setProof] = useState((foundation?.proof_points ?? []).map((p) => `${p.value} | ${p.label}`).join("\n"));
 
   const save = async (e: React.FormEvent) => {
@@ -510,7 +510,7 @@ export function FoundationPanel({ foundation }: { foundation: PlanFoundation }) 
           <input className={`${inputCls} w-full mt-1`} value={behaviors} onChange={(e) => setBehaviors(e.target.value)} />
         </label>
         <label className="block text-xs text-ink-2">Proof points: one per line, <span className="text-ink-3">value | label</span> (shown in the funder Narrative)
-          <textarea className={`${inputCls} w-full mt-1 font-mono text-xs`} rows={4} placeholder={"3,500+ | teens reached\n87% | Title I schools"} value={proof} onChange={(e) => setProof(e.target.value)} />
+          <textarea className={`${inputCls} w-full mt-1 font-mono text-xs`} rows={4} placeholder={"240 | families served\n12 | partner sites"} value={proof} onChange={(e) => setProof(e.target.value)} />
         </label>
         <div className="flex gap-2">
           <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full disabled:opacity-50">

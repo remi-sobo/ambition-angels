@@ -5,8 +5,9 @@
  * resulting rows rather than a scripted call sequence.
  *
  * Supported: from().select(cols, { count, head }) / insert / update / delete,
- * filters eq (including `col->>key`), neq, in, is, contains, lt, lte, gt, gte,
- * or("a.is.null,a.lt.X"), order, limit, then single / maybeSingle / await;
+ * filters eq (including `col->>key`), neq, in, is, not(col, "is", v), contains, lt, lte, gt, gte,
+ * or("a.is.null,a.lt.X,a.ilike.%x%"), order, limit, range, then single /
+ * maybeSingle / await;
  * rpc(name, args) via a stub. Each statement runs atomically (no await inside),
  * so two concurrent conditional updates race exactly like two Postgres
  * statements would: one sees the row, the other doesn't.
@@ -37,6 +38,8 @@ export type FakeDbOptions = {
   touchUpdatedAt?: Set<string>;
   rpc?: (name: string, args: Record<string, unknown>) => Result | Promise<Result>;
   now?: () => Date;
+  /** PostgREST max-rows: a select never returns more than this many rows. */
+  maxRows?: number;
 };
 
 export type FakeDb = {
@@ -59,7 +62,10 @@ function getPath(row: Row, col: string): unknown {
   return row[col] ?? null;
 }
 
-const cmp = (a: unknown, b: unknown) => (String(a) < String(b) ? -1 : String(a) > String(b) ? 1 : 0);
+const cmp = (a: unknown, b: unknown) =>
+  typeof a === "number" && typeof b === "number"
+    ? a - b
+    : String(a) < String(b) ? -1 : String(a) > String(b) ? 1 : 0;
 
 type Filter = (row: Row) => boolean;
 
@@ -82,6 +88,13 @@ function parseOr(expr: string): Filter {
           return v !== null && cmp(v, val) > 0;
         case "gte":
           return v !== null && cmp(v, val) >= 0;
+        case "ilike": {
+          const re = new RegExp(
+            "^" + val.split("%").map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*") + "$",
+            "i"
+          );
+          return v !== null && re.test(String(v));
+        }
         default:
           throw new Error(`fakeDb: unsupported or op ${op}`);
       }
@@ -106,6 +119,7 @@ export function fakeDb(seed: Record<string, Row[]> = {}, opts: FakeDbOptions = {
     let countMode = false;
     let head = false;
     let limitN: number | null = null;
+    let offset = 0;
     let orderBy: { col: string; asc: boolean } | null = null;
     const filters: Filter[] = [];
 
@@ -134,7 +148,10 @@ export function fakeDb(seed: Record<string, Row[]> = {}, opts: FakeDbOptions = {
         const { col, asc } = orderBy;
         matched = [...matched].sort((a, b) => (asc ? 1 : -1) * cmp(getPath(a, col), getPath(b, col)));
       }
-      if (limitN !== null) matched = matched.slice(0, limitN);
+      if (op === "select") {
+        const cap = Math.min(limitN ?? Infinity, opts.maxRows ?? Infinity);
+        matched = matched.slice(offset, offset + cap);
+      } else if (limitN !== null) matched = matched.slice(0, limitN);
 
       if (op === "select") {
         if (head) return { data: null, error: null, count: matched.length };
@@ -207,6 +224,11 @@ export function fakeDb(seed: Record<string, Row[]> = {}, opts: FakeDbOptions = {
         filters.push((r) => (val === null ? getPath(r, col) === null : getPath(r, col) === val));
         return b;
       },
+      not(col: string, op: string, val: unknown) {
+        if (op !== "is") throw new Error(`fakeDb: unsupported not op ${op}`);
+        filters.push((r) => (val === null ? getPath(r, col) !== null : getPath(r, col) !== val));
+        return b;
+      },
       contains(col: string, vals: unknown[]) {
         filters.push((r) => {
           const arr = (getPath(r, col) as unknown[] | null) ?? [];
@@ -240,6 +262,11 @@ export function fakeDb(seed: Record<string, Row[]> = {}, opts: FakeDbOptions = {
       },
       limit(n: number) {
         limitN = n;
+        return b;
+      },
+      range(from: number, to: number) {
+        offset = from;
+        limitN = to - from + 1;
         return b;
       },
       single: () => Promise.resolve(single(false)),

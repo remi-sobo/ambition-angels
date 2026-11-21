@@ -2,7 +2,7 @@
 // V4 Stage P: the visual regression run. Screenshots every nav destination
 // (plus Settings and the 404) for four roles, empty and populated, at desktop
 // 1440 and phone 390, then compares each first screen against a small
-// committed baseline (e2e/v4/baseline/, 200px-wide PNG thumbnails, no data
+// committed baseline (e2e/v4/baseline/, 200px-wide JPEG thumbnails, no data
 // beyond what the fixtures invent).
 //
 //   node e2e/v4/visual.mjs [--out dir] [--roles owner,staff] [--profiles populated] [--viewports desktop,phone] [--only substr]
@@ -50,7 +50,7 @@ function routeList() {
   return list.filter((x) => !seen.has(x.path) && seen.add(x.path) && (!ONLY || x.path.includes(ONLY)));
 }
 
-// Scale a JPEG/PNG buffer to THUMB_W in the browser; returns { png, grey, w, h }.
+// Scale a JPEG/PNG buffer to THUMB_W in the browser; returns { jpg, grey, w, h }.
 async function thumb(page, buf, mime) {
   return page.evaluate(
     async ({ b64, mime, W }) => {
@@ -66,7 +66,7 @@ async function thumb(page, buf, mime) {
       const d = g.getImageData(0, 0, W, h).data;
       const grey = [];
       for (let i = 0; i < d.length; i += 4) grey.push(Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]));
-      return { png: c.toDataURL("image/png").split(",")[1], grey, w: W, h };
+      return { jpg: c.toDataURL("image/jpeg", 0.6).split(",")[1], grey, w: W, h };
     },
     { b64: buf.toString("base64"), mime, W: THUMB_W },
   );
@@ -108,14 +108,14 @@ async function main() {
             const buf = await page.screenshot({ type: "jpeg", quality: 70, fullPage: false });
             fs.writeFileSync(path.join(OUT, rec.file), buf);
             const t = await thumb(scratch, buf, "image/jpeg");
-            const basePng = path.join(BASELINE, run, `${name}.png`);
+            const basePng = path.join(BASELINE, run, `${name}.jpg`);
             if (UPDATE) {
-              fs.writeFileSync(basePng, Buffer.from(t.png, "base64"));
+              fs.writeFileSync(basePng, Buffer.from(t.jpg, "base64"));
               rec.status = "baseline-written";
             } else if (!fs.existsSync(basePng)) {
               rec.status = "no-baseline";
             } else {
-              const b = await thumb(scratch, fs.readFileSync(basePng), "image/png");
+              const b = await thumb(scratch, fs.readFileSync(basePng), "image/jpeg");
               const c = compare(t, b);
               rec.ratio = Number(c.ratio.toFixed(4));
               rec.status = c.reason ? "diff" : "same";

@@ -23,7 +23,7 @@ const ROLES: Role[] = (process.env.V4_ROLES?.split(",") as Role[]) ?? ["owner", 
 // Accessible names that change data. Shell controls every role has (search,
 // Talk to log, report a problem, log out) are not in this list on purpose.
 const WRITE = /^(\+\s*)?(New|Add|Create|Record|Edit|Delete|Remove|Save|Import|Upload|Invite|Mark|Enroll|Assign|Archive|Approve|Reject|Categorize|Reschedule|Change|Send|Schedule|Publish|Compile|Make the|Put it|Log a|Log gift|Connect|Disconnect|Sync|Run|Generate|Draft|Duplicate|Move|Promote|Dismiss|Snooze|Complete|Close the|Reopen|Restore|Undo|Upgrade)\b/i;
-const SHELL_OK = /^(Talk to log|Search BloomOS|Report a problem|Log out|Capture|Mark all read)$/i;
+const SHELL_OK = /^(Talk to log|Search… BloomOS|Search BloomOS|Report a problem|Log out|Capture|Mark all read)$/i;
 
 // Board-viewer write controls that are allowed, or known and listed in
 // specs/v4-pilot-scorecard.md for a screen migration (the server refuses

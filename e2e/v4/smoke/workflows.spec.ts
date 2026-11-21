@@ -129,7 +129,7 @@ for (const org of ORGS) {
           await c.on(row, "open result");
           await c.on(page.getByRole("link", { name: /^(Open the record to change it|Add one on the record)$/ }), "open record");
         } else {
-          await c.on(page.getByRole("button", { name: "Search BloomOS" }).first(), "open search");
+          await c.on(page.getByRole("button", { name: /Search.*BloomOS/ }).first(), "open search");
           const box = page.getByPlaceholder("Search people, deals, tasks, pages…");
           await box.fill(donor.name);
           const hit = page.getByRole("option", { name: new RegExp(donor.name.replace(/[.*+?^${}()|[\]\\&]/g, "\\$&")) }).first();

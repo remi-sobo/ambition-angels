@@ -17,7 +17,7 @@ import { TYPE } from "@/lib/admin/typeScale";
  * and a count of nobody.
  */
 
-export type SegmentOption = { id: string; name: string; definition: Record<string, string> | null };
+export type SegmentOption = { id: string; name: string; definition: Record<string, unknown> | null };
 
 type Count = {
   recipients: number;
@@ -43,9 +43,19 @@ const TYPE_OPTIONS = [
 
 type FilterKey = "view" | "type" | "min_total" | "since" | "tag" | "source" | "q";
 
-function clean(def: Record<string, string>): Record<string, string> {
+function clean(def: Record<string, unknown>): Record<string, string> {
+  // Strings are trimmed and empties dropped. Anything else (a V1 "rules"
+  // array, a number) is KEPT as it is, so the resolver sees it and refuses
+  // the audience with its reason: a builder must never quietly widen a
+  // saved definition by dropping what it can't edit.
   const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(def)) if (v && v.trim()) out[k] = v.trim();
+  for (const [k, v] of Object.entries(def ?? {})) {
+    if (typeof v === "string") {
+      if (v.trim()) out[k] = v.trim();
+    } else if (v !== null && v !== undefined) {
+      out[k] = v as unknown as string;
+    }
+  }
   return out;
 }
 
@@ -53,12 +63,15 @@ export default function AudienceBuilder({
   segments,
   value,
   onChange,
+  onCount,
 }: {
   segments: SegmentOption[];
   /** The attached saved segment id, if any. */
   value: string | null;
   /** Called with a saved segment id once one is chosen or saved. */
   onChange: (segmentId: string | null) => void;
+  /** Told whether the current audience can be sent to (a count, no error). */
+  onCount?: (sendable: boolean) => void;
 }) {
   const save = useSaveAction();
   const base = segments.find((s) => s.id === value) ?? null;
@@ -86,6 +99,7 @@ export default function AudienceBuilder({
           body: JSON.stringify({ definition: current }),
         });
         const j = (await res.json()) as Count & { error?: string };
+        if (n === seq.current) onCount?.(res.ok && !j.error && j.recipients > 0 && j.recipients <= j.max_recipients);
         if (n === seq.current) setCount(res.ok ? j : { recipients: 0, excluded: { doNotContact: 0, suppressed: 0, noEmail: 0 }, error: j.error ?? "Couldn't count this audience.", max_recipients: 0, sample: [], checked_at: new Date().toISOString() });
       } catch {
         if (n === seq.current) setCount(null);

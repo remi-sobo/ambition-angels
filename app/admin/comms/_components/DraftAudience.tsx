@@ -28,6 +28,7 @@ export default function DraftAudience({
   const [open, setOpen] = useState(autoOpen);
   const [picked, setPicked] = useState<string | null>(segmentId);
   const [busy, setBusy] = useState(false);
+  const [sendable, setSendable] = useState(false);
   return (
     <>
       <Button variant="quiet" size="sm" onClick={() => setOpen(true)}>{segmentId ? "Audience" : "Choose audience"}</Button>
@@ -41,7 +42,7 @@ export default function DraftAudience({
           <Button
             variant="primary"
             loading={busy}
-            disabled={!picked}
+            disabled={!picked || !sendable}
             onClick={async () => {
               setBusy(true);
               const r = await save({ request: { url: `/api/admin/comms/${campaignId}`, method: "PATCH", body: { segment_id: picked } }, success: "Audience attached. Send a test, then send." });
@@ -56,7 +57,7 @@ export default function DraftAudience({
           </Button>
         }
       >
-        <AudienceBuilder segments={segments} value={segmentId} onChange={setPicked} />
+        <AudienceBuilder segments={segments} value={segmentId} onChange={setPicked} onCount={setSendable} />
       </Drawer>
     </>
   );

@@ -11,7 +11,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { loadStory } from "@/lib/admin/comms/bank-server";
 import { TYPE } from "@/lib/admin/typeScale";
 import StoryChip from "../../_components/StoryChips";
-import { AddSubjectButton, EditStoryButton, StatusButton, SubjectConsent } from "../../_components/StoryControls";
+import { AddSubjectButton, EditStoryButton, StatusButton, StopUsingStoryButton, SubjectConsent } from "../../_components/StoryControls";
 
 /**
  * One story (V4 Stage D; Detail archetype). The next-step bar says what
@@ -117,6 +117,11 @@ export default async function StoryPage({ params }: { params: { id: string } }) 
             )}
             {hasRedacted && (
               <p className={`${TYPE.metadata} mt-2`}>Names of participants are shown only to owners and admins.</p>
+            )}
+            {people.some((p) => p.subject_type === "participant") && story.status !== "retired" && (
+              <div className="mt-3 border-t border-hairline pt-3">
+                <StopUsingStoryButton storyId={story.id} />
+              </div>
             )}
           </Card>
           <Card>

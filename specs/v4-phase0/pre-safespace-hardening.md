@@ -56,4 +56,5 @@ Phase 1 interview, Phase 2 spec, Stage A onward, as in `specs/bloomos-v4-product
 | Six unscheduled jobs | Decide per job: HubSpot sync, journeys, meeting reminders, daily reminders, weekly digest, stewardship milestones | Open |
 | Two-step login | Decide whether SafeSpace staff and board viewers must use it | Open |
 | Gmail verification for pilots | A privacy policy page, then Google's review (see the brief's appendix) | Open |
-| Dead screens to delete | Approve the list (sent after Stage A) | Not yet sent |
+| Dead screens to delete | Approve the list (sent 2026-11-21 with the Stage A report) | Waiting on Remi |
+| `org_entitlements` write policy | Approve a migration that drops the RLS write policy so admins cannot change plan features through the database API | Waiting on Remi |

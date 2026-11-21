@@ -46,3 +46,14 @@ Open: #588 (phone privacy), #589 (import and export). In progress: role guard (i
 ## Then V4 resumes
 
 Phase 1 interview, Phase 2 spec, Stage A onward, as in `specs/bloomos-v4-product-readiness-brief.md`.
+
+## Open items for Remi (kept current, repeated in every stage report)
+
+| Item | What is needed | Status |
+|---|---|---|
+| `UNSUBSCRIBE_SECRET` on the `ambition-angels` Vercel project | Copy the value from the `bloomos` project, or generate one and set it on both; redeploy | Open. That project's production deploys fail until it is set. |
+| Off-site backup | Add `SUPABASE_DB_URL` as a GitHub secret; then one restore gets tested | Open |
+| Six unscheduled jobs | Decide per job: HubSpot sync, journeys, meeting reminders, daily reminders, weekly digest, stewardship milestones | Open |
+| Two-step login | Decide whether SafeSpace staff and board viewers must use it | Open |
+| Gmail verification for pilots | A privacy policy page, then Google's review (see the brief's appendix) | Open |
+| Dead screens to delete | Approve the list (sent after Stage A) | Not yet sent |

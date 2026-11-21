@@ -11,6 +11,7 @@ import {
   LIFECYCLE_HELP,
 } from "@/lib/fundraising/lifecycle";
 import { todayISO } from "../../../ops/_types/ops";
+import { todayInTZ } from "@/lib/admin/ops/week";
 import { GiftRowActions } from "../_components/GiftControls";
 import { EditDonorButton, LogInteractionForm } from "../_components/ConstituentControls";
 import RecordButton from "@/app/admin/capture/_components/RecordButton";
@@ -444,7 +445,9 @@ export default async function DonorProfile({
     const t = Date.parse(s);
     return Number.isNaN(t) ? 0 : t;
   };
-  const today = todayISO();
+  // The org's calendar day (Pacific), the same "today" the Pipeline board
+  // and the gift drawer use, so "2 days late" reads the same everywhere.
+  const today = todayInTZ();
   const nameOf = (list: Array<{ id: string; name: string }>, id: string | null) =>
     id ? list.find((o) => o.id === id)?.name ?? null : null;
   const dayOf = (s: string) => (s.length === 10 ? s : s.slice(0, 10));

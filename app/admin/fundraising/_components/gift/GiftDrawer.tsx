@@ -150,7 +150,9 @@ export default function GiftDrawer({
           setAppealId(g.appeal_id ?? "");
           setFmv(g.fair_market_value ? String(g.fair_market_value) : "");
           setNotes(g.notes ?? "");
-          setMoreOpen(!!(g.fund_id || g.campaign_id || g.appeal_id || g.fair_market_value || g.notes));
+          // Collapsed even when filled: the summary line says what is set, and
+          // the thank-you section stays in view.
+          setMoreOpen(false);
         } else {
           const defs = giftDefaults({ today: d.today, lastMethod: d.donor?.lastMethod });
           setAmount("");
@@ -411,7 +413,19 @@ export default function GiftDrawer({
               className="flex w-full items-center justify-between min-h-[44px] text-left"
             >
               <span className={`${TYPE.body} font-semibold`}>Fund, campaign and notes</span>
-              <span className={TYPE.metadata}>{moreOpen ? "Hide" : "Optional"}</span>
+              <span className={`${TYPE.metadata} text-right truncate max-w-[60%]`}>
+                {moreOpen
+                  ? "Hide"
+                  : [
+                      data.options.funds.find((o) => o.id === fundId)?.name,
+                      data.options.campaigns.find((o) => o.id === campaignId)?.name,
+                      data.options.appeals.find((o) => o.id === appealId)?.name,
+                      fmv ? "Fair market value set" : null,
+                      notes ? "Has a note" : null,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "Optional"}
+              </span>
             </button>
             {moreOpen ? (
               <div className="grid gap-4 pt-2">

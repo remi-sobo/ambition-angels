@@ -2,16 +2,30 @@ import Link from "next/link";
 import EmptyState from "../../_components/EmptyState";
 import PageHeader from "../../_components/PageHeader";
 import FilterTabs from "../_components/FilterTabs";
-import SavedViews from "./_components/SavedViews";
+import DataTable, { type DataTableColumn } from "../../_components/ui/DataTable";
+import TableSavedViews from "../../_components/ui/TableSavedViews";
 import { money } from "../../finance/_components/charts";
-import { getDonorsFunders, type DfRow, type ProspectRow } from "@/lib/admin/donorsFunders";
+import {
+  getDonorsFunders,
+  DF_TABLE,
+  DF_PROSPECT_TABLE,
+  type DfRow,
+  type ProspectRow,
+} from "@/lib/admin/donorsFunders";
+import { parseTableState, tableHref, type TableSpec, type TableState } from "@/lib/admin/dataTable";
 import { constituentName } from "@/lib/fundraising/display";
-import { BUILT_IN_VIEWS, RESEARCH_VIEWS, isLapsed, toDefinition } from "@/lib/fundraising/views";
+import {
+  BUILT_IN_VIEWS,
+  RESEARCH_VIEWS,
+  definitionToParams,
+  isLapsed,
+  toDefinition,
+} from "@/lib/fundraising/views";
 import { hasEntitlement } from "@/lib/admin/entitlements";
 import { getTermLabel, pluralizeTerm } from "@/lib/admin/terminology";
 import ResearchDrawer from "./_components/ResearchDrawer";
+import { RecordGiftButton } from "../_components/gift/GiftButtons";
 import { todayISO } from "../../ops/_types/ops";
-import { TYPE } from "@/lib/admin/typeScale";
 
 // Spec Fundraising, stage F1 — Donors & Funders: ONE people-list over
 // constituents (spec §The one-list rule). Prospects/Recurring/Lapsed are
@@ -48,9 +62,13 @@ export default async function DonorsFundersPage({
   const volunteersLabel = pluralizeTerm(await getTermLabel("volunteer", "Volunteer"));
   if (def.view && RESEARCH_VIEWS.has(def.view) && !researchEnabled) delete def.view;
   const drawerOpen = researchEnabled && searchParams?.drawer === "research";
-  const page = Math.max(0, Number.parseInt(searchParams?.page ?? "0", 10) || 0);
+  // DataTable v2 (V4 Stage A): page and sort come from the URL through the
+  // table spec; the Prospects view has its own fixed order.
+  const spec: TableSpec = def.view === "prospects" ? DF_PROSPECT_TABLE : DF_TABLE;
+  const state = parseTableState(searchParams ?? {}, spec);
+  const page = state.page;
   const today = todayISO();
-  const data = await getDonorsFunders(def, page, today);
+  const data = await getDonorsFunders(def, page, today, state.sort);
 
   if (!data) {
     return (
@@ -66,13 +84,9 @@ export default async function DonorsFundersPage({
   if (def.type) extra.type = def.type;
   if (def.min_total) extra.min_total = def.min_total;
 
-  const pageCount = Math.max(1, Math.ceil(data.total / data.pageSize));
-  const pageHref = (p: number) => {
-    const params = new URLSearchParams({ ...extra, ...(view !== "all" ? { view } : {}) });
-    if (p > 0) params.set("page", String(p));
-    const s = params.toString();
-    return s ? `${BASE}?${s}` : BASE;
-  };
+  // Every filter param the list carries through its sort and page links.
+  const filters: Record<string, string> = { ...extra, ...(view !== "all" ? { view } : {}) };
+  const currentParams = definitionToParams(def);
 
   const typeOptions = [
     { value: "all", label: "Everyone" },
@@ -110,6 +124,9 @@ export default async function DonorsFundersPage({
               ) : null}
             </div>
           }
+          // V4 B1: the list's one primary action opens the gift drawer; the
+          // donor is picked there (GiftFlow.dc.html).
+          primaryAction={<RecordGiftButton />}
         />
 
         {/* ── Views + filters (URL-driven, server-rendered) ── */}
@@ -144,17 +161,23 @@ export default async function DonorsFundersPage({
           </form>
         </div>
 
-        <SavedViews savedViews={data.savedViews} current={def} />
-
-        {data.error && (
-          <div className="bg-expense-bg border border-expense/30 rounded-panel px-5 py-3 text-expense text-sm">
-            The list failed to load ({data.error}). Reload to retry.
-          </div>
-        )}
+        <TableSavedViews
+          endpoint="/api/admin/segments"
+          definition={def as Record<string, string>}
+          views={data.savedViews.map((sv) => {
+            const params = definitionToParams(toDefinition(sv.definition));
+            return {
+              id: sv.id,
+              name: sv.name,
+              href: params ? `${BASE}?${params}` : BASE,
+              active: params !== "" && params === currentParams,
+            };
+          })}
+        />
 
         {view === "prospects" ? (
-          <ProspectsTable prospects={data.prospects} />
-        ) : view === "all" && !def.q && !def.type && !def.min_total && data.total === 0 ? (
+          <ProspectsTable prospects={data.prospects} total={data.total} page={page} spec={spec} state={state} filters={filters} />
+        ) : view === "all" && !def.q && !def.type && !def.min_total && data.total === 0 && !data.error ? (
           // The true first run — no rows in the org, not a filtered-to-zero
           // view (Q5: name the missing thing, offer the creating action).
           <EmptyState
@@ -167,37 +190,23 @@ export default async function DonorsFundersPage({
             }
           />
         ) : (
-          <ConstituentsTable rows={data.rows} today={today} />
-        )}
-
-        {/* ── Pagination ── */}
-        {pageCount > 1 && (
-          <div className="flex items-center gap-3 text-xs text-ink-2">
-            {page > 0 ? (
-              <Link href={pageHref(page - 1)} className="font-semibold text-orange hover:text-orange-dark">
-                ← Newer
-              </Link>
-            ) : (
-              <span className="text-ink-3">← Newer</span>
-            )}
-            <span>
-              Page {page + 1} of {pageCount}
-            </span>
-            {page + 1 < pageCount ? (
-              <Link href={pageHref(page + 1)} className="font-semibold text-orange hover:text-orange-dark">
-                Older →
-              </Link>
-            ) : (
-              <span className="text-ink-3">Older →</span>
-            )}
-          </div>
+          <ConstituentsTable
+            rows={data.rows}
+            total={data.total}
+            page={page}
+            error={data.error}
+            today={today}
+            spec={spec}
+            state={state}
+            filters={filters}
+          />
         )}
 
         {/* The R1 drawer (F4): full-height, URL-driven, entitlement-gated. */}
         {drawerOpen && (
           <ResearchDrawer
             searchParams={{ show: searchParams?.show }}
-            closeHref={pageHref(page)}
+            closeHref={tableHref(BASE, filters, state, spec)}
           />
         )}
 
@@ -214,146 +223,145 @@ export default async function DonorsFundersPage({
   );
 }
 
-function ConstituentsTable({ rows, today }: { rows: DfRow[]; today: string }) {
-  if (rows.length === 0) {
-    return (
-      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
-        <p className={`p-8 ${TYPE.bodyMuted}`}>No constituents match this view.</p>
-      </section>
-    );
-  }
+type TableProps = { total: number; page: number; spec: TableSpec; state: TableState; filters: Record<string, string> };
+
+const badge = "text-xs font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wider";
+const num = "[font-variant-numeric:tabular-nums]";
+
+function ConstituentsTable({
+  rows,
+  today,
+  error,
+  total,
+  page,
+  spec,
+  state,
+  filters,
+}: TableProps & { rows: DfRow[]; today: string; error: string | null }) {
+  const columns: DataTableColumn<DfRow>[] = [
+    {
+      key: "name",
+      header: "Name",
+      card: "title",
+      render: (r) => {
+        const lapsed = isLapsed(r.last_gift, r.gift_count, today);
+        return (
+          <>
+            <Link
+              href={`/admin/fundraising/donors-funders/${r.id}`}
+              className="font-semibold text-ink-1 hover:text-orange transition-colors"
+            >
+              {constituentName(r)}
+            </Link>
+            <span className="ml-2 inline-flex flex-wrap gap-1 align-middle">
+              {r.type === "organization" && (
+                <span className={`${badge} bg-tile border border-hairline text-ink-3`}>Org</span>
+              )}
+              {r.recurring_active && <span className={`${badge} bg-revenue-bg text-revenue`}>Recurring</span>}
+              {lapsed && <span className={`${badge} bg-status-watch-bg text-status-watch-text`}>Lapsed</span>}
+              {r.do_not_contact && <span className={`${badge} bg-expense-bg text-expense`}>DNC</span>}
+            </span>
+          </>
+        );
+      },
+    },
+    {
+      key: "lifetime",
+      header: "Lifetime",
+      align: "right",
+      className: `font-semibold text-ink-1 ${num}`,
+      render: (r) => (r.gift_count > 0 ? money(r.lifetime_total) : "—"),
+    },
+    {
+      key: "gifts",
+      header: "Gifts",
+      align: "right",
+      className: `text-ink-2 ${num}`,
+      render: (r) => (r.gift_count > 0 ? r.gift_count : "—"),
+    },
+    { key: "last_gift", header: "Last gift", className: `text-ink-2 ${num}`, render: (r) => fmtDate(r.last_gift) },
+    { key: "last_touch", header: "Last touch", className: `text-ink-2 ${num}`, render: (r) => fmtDate(r.last_touch) },
+  ];
+
   return (
-    <section className="bg-tile border-hairline rounded-panel-lg overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs uppercase tracking-wider text-ink-3 border-b border-hairline">
-            <th className="px-4 py-3 font-semibold">Name</th>
-            <th className="px-4 py-3 font-semibold text-right">Lifetime</th>
-            <th className="px-4 py-3 font-semibold text-right">Gifts</th>
-            <th className="px-4 py-3 font-semibold">Last gift</th>
-            <th className="px-4 py-3 font-semibold">Last touch</th>
-            <th className="px-4 py-3 font-semibold">Next move</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-outline">
-          {rows.map((r) => {
-            const overdue = r.next_step_due !== null && r.next_step_due < today;
-            const lapsed = isLapsed(r.last_gift, r.gift_count, today);
-            return (
-              <tr key={r.id} className="hover:bg-orange/5 transition-colors">
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/admin/fundraising/donors-funders/${r.id}`}
-                    className="font-semibold text-ink-1 hover:text-orange transition-colors"
-                  >
-                    {constituentName(r)}
-                  </Link>
-                  <span className="ml-2 inline-flex flex-wrap gap-1 align-middle">
-                    {r.type === "organization" && (
-                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-tile border border-hairline text-ink-3 uppercase tracking-wider">
-                        Org
-                      </span>
-                    )}
-                    {r.recurring_active && (
-                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-revenue-bg text-revenue uppercase tracking-wider">
-                        Recurring
-                      </span>
-                    )}
-                    {lapsed && (
-                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-status-watch-bg text-status-watch-text uppercase tracking-wider">
-                        Lapsed
-                      </span>
-                    )}
-                    {r.do_not_contact && (
-                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-expense-bg text-expense uppercase tracking-wider">
-                        DNC
-                      </span>
-                    )}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right font-semibold text-ink-1 [font-variant-numeric:tabular-nums]">
-                  {r.gift_count > 0 ? money(r.lifetime_total) : "—"}
-                </td>
-                <td className="px-4 py-3 text-right text-ink-2 [font-variant-numeric:tabular-nums]">
-                  {r.gift_count > 0 ? r.gift_count : "—"}
-                </td>
-                <td className="px-4 py-3 text-ink-2 [font-variant-numeric:tabular-nums]">
-                  {fmtDate(r.last_gift)}
-                </td>
-                <td className="px-4 py-3 text-ink-2 [font-variant-numeric:tabular-nums]">
-                  {fmtDate(r.last_touch)}
-                </td>
-                <td className="px-4 py-3 text-ink-2 max-w-[280px]">
-                  {r.next_step ? (
-                    <>
-                      <span className="truncate block">{r.next_step}</span>
-                      {r.next_step_due && (
-                        <span
-                          className={`text-xs ${overdue ? "text-expense font-semibold" : "text-ink-3"} [font-variant-numeric:tabular-nums]`}
-                        >
-                          {overdue ? "overdue · " : "due "}
-                          {fmtDate(r.next_step_due)}
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-ink-3">—</span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </section>
+    <DataTable
+      label="Constituents"
+      noun={{ one: "constituent", many: "constituents" }}
+      columns={columns}
+      // The next-step slot carries the sortable "next" key: it orders by the
+      // nearest open ask's due date.
+      nextStep={{
+        header: "Next move",
+        sortKey: "next",
+        render: (r) => {
+          if (!r.next_step) return <span className="text-ink-3">—</span>;
+          const overdue = r.next_step_due !== null && r.next_step_due < today;
+          return (
+            <>
+              <span className="truncate block">{r.next_step}</span>
+              {r.next_step_due && (
+                <span className={`text-xs ${overdue ? "text-expense font-semibold" : "text-ink-3"} ${num}`}>
+                  {overdue ? "overdue · " : "due "}
+                  {fmtDate(r.next_step_due)}
+                </span>
+              )}
+            </>
+          );
+        },
+      }}
+      data={{ rows, total, page, pageSize: spec.pageSize, error }}
+      getRowId={(r) => r.id}
+      getRowLabel={(r) => constituentName(r)}
+      spec={spec}
+      state={state}
+      baseHref={BASE}
+      filters={filters}
+      emptyMessage="No constituents match this view."
+    />
   );
 }
 
-function ProspectsTable({ prospects }: { prospects: ProspectRow[] }) {
-  if (prospects.length === 0) {
-    return (
-      <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
-        <p className={`p-8 ${TYPE.bodyMuted}`}>
-          No active prospects. Promoted prospects live in the main list; disqualified
-          ones are archived with their reason.
-        </p>
-      </section>
-    );
-  }
+function ProspectsTable({ prospects, total, page, spec, state, filters }: TableProps & { prospects: ProspectRow[] }) {
+  const columns: DataTableColumn<ProspectRow>[] = [
+    {
+      key: "name",
+      header: "Prospect",
+      card: "title",
+      render: (p) => (
+        <>
+          <Link
+            href={`/admin/fundraising/donors-funders/${p.id}`}
+            className="font-semibold text-ink-1 hover:text-orange transition-colors"
+          >
+            {p.name}
+          </Link>
+          {p.org_name && <span className="ml-2 text-xs text-ink-3">{p.org_name}</span>}
+        </>
+      ),
+    },
+    { key: "type", header: "Type", className: "text-ink-2 capitalize", render: (p) => p.type },
+    { key: "email", header: "Email", className: "text-ink-2", render: (p) => p.email ?? "—" },
+    {
+      key: "note",
+      header: "Strategy note",
+      className: "text-ink-2 max-w-[320px]",
+      render: (p) => <span className="truncate block">{p.strategy_note ?? "—"}</span>,
+    },
+    { key: "source", header: "Source", className: "text-ink-3 capitalize", render: (p) => p.source },
+  ];
   return (
-    <section className="bg-tile border-hairline rounded-panel-lg overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs uppercase tracking-wider text-ink-3 border-b border-hairline">
-            <th className="px-4 py-3 font-semibold">Prospect</th>
-            <th className="px-4 py-3 font-semibold">Type</th>
-            <th className="px-4 py-3 font-semibold">Email</th>
-            <th className="px-4 py-3 font-semibold">Strategy note</th>
-            <th className="px-4 py-3 font-semibold">Source</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-outline">
-          {prospects.map((p) => (
-            <tr key={p.id} className="hover:bg-orange/5 transition-colors">
-              <td className="px-4 py-3">
-                <Link
-                  href={`/admin/fundraising/donors-funders/${p.id}`}
-                  className="font-semibold text-ink-1 hover:text-orange transition-colors"
-                >
-                  {p.name}
-                </Link>
-                {p.org_name && <span className="ml-2 text-xs text-ink-3">{p.org_name}</span>}
-              </td>
-              <td className="px-4 py-3 text-ink-2 capitalize">{p.type}</td>
-              <td className="px-4 py-3 text-ink-2">{p.email ?? "—"}</td>
-              <td className="px-4 py-3 text-ink-2 max-w-[320px]">
-                <span className="truncate block">{p.strategy_note ?? "—"}</span>
-              </td>
-              <td className="px-4 py-3 text-ink-3 capitalize">{p.source}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
+    <DataTable
+      label="Prospects"
+      noun={{ one: "prospect", many: "prospects" }}
+      columns={columns}
+      data={{ rows: prospects, total, page, pageSize: spec.pageSize }}
+      getRowId={(p) => p.id}
+      getRowLabel={(p) => p.name}
+      spec={spec}
+      state={state}
+      baseHref={BASE}
+      filters={filters}
+      emptyMessage="No active prospects. Promoted prospects live in the main list; disqualified ones are archived with their reason."
+    />
   );
 }

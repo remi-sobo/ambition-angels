@@ -19,6 +19,8 @@ const ctxFor = (orgId: string) => ({ userId: "u1", email: "ops@example.org", org
 
 let db: FakeDb;
 let ctx: ReturnType<typeof ctxFor> | null = ctxFor(ORG_A);
+// Permissions the caller's role holds (requirePermission → ctxHasPermission).
+let perms = new Set<string>(["fundraising.read"]);
 
 // customFields.ts calls React's RSC-only `cache` at module scope; identity shim.
 vi.mock("react", async (importOriginal) => {
@@ -28,7 +30,10 @@ vi.mock("react", async (importOriginal) => {
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createServerSupabase: () => db.client }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}) }));
-vi.mock("@/lib/admin/auth", () => ({ getOrgContext: vi.fn(async () => ctx) }));
+vi.mock("@/lib/admin/auth", () => ({
+  getOrgContext: vi.fn(async () => ctx),
+  ctxHasPermission: vi.fn(async (_c: unknown, p: string) => perms.has(p)),
+}));
 // The fake has no .range(); one awaited read stands in for the paged loop.
 vi.mock("@/lib/supabase/fetchAll", () => ({
   fetchAll: async (query: () => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>) => {
@@ -39,6 +44,7 @@ vi.mock("@/lib/supabase/fetchAll", () => ({
 
 import { POST as importConstituents } from "@/app/api/admin/import/constituents/route";
 import { GET as exportDonors } from "@/app/api/admin/donors/export/route";
+import { GET as exportGifts } from "@/app/api/admin/gifts/export/route";
 
 /** A member of both orgs: RLS shows rows from A and B alike. */
 const memberOfBoth = (row: Record<string, unknown>) => row.org_id === ORG_A || row.org_id === ORG_B;
@@ -54,10 +60,23 @@ function seed() {
       gifts: [
         { id: "ga", org_id: ORG_A, constituent_id: "a-shared", amount: 25, gift_date: "2025-02-01", external_source: "import" },
         { id: "gb1", org_id: ORG_B, constituent_id: "b-shared", amount: 500, gift_date: "2025-01-01", external_source: "import" },
-        { id: "gb2", org_id: ORG_B, constituent_id: "b-only", amount: 900, gift_date: "2025-01-01", external_source: "import" },
+        { id: "gb2", org_id: ORG_B, constituent_id: "b-only", amount: 900, gift_date: "2025-01-01", external_source: "import", campaign_id: "cb" },
+      ],
+      campaigns: [
+        { id: "ca", org_id: ORG_A, name: "Spring A" },
+        { id: "cb", org_id: ORG_B, name: "Gala B" },
       ],
     },
-    { visible: { constituents: memberOfBoth, gifts: memberOfBoth, stewardship_rules: memberOfBoth } },
+    {
+      visible: {
+        constituents: memberOfBoth,
+        gifts: memberOfBoth,
+        stewardship_rules: memberOfBoth,
+        campaigns: memberOfBoth,
+        funds: memberOfBoth,
+        appeals: memberOfBoth,
+      },
+    },
   );
 }
 
@@ -71,6 +90,7 @@ const importReq = (rows: unknown[]) =>
 beforeEach(() => {
   db = seed();
   ctx = ctxFor(ORG_A);
+  perms = new Set(["fundraising.read"]);
 });
 
 describe("POST /api/admin/import/constituents: a two-org user", () => {
@@ -149,6 +169,46 @@ describe("GET /api/admin/donors/export: a two-org user", () => {
   });
 });
 
+describe("GET /api/admin/gifts/export: a two-org user", () => {
+  const giftsReq = (qs = "") => new NextRequest(`http://localhost/api/admin/gifts/export${qs}`);
+
+  test("a user active in org A cannot export org B's gifts", async () => {
+    const res = await exportGifts(giftsReq());
+    expect(res.status).toBe(200);
+    const lines = (await res.text()).split("\n");
+    expect(lines).toHaveLength(2); // header + org A's one gift
+    expect(lines[1]).toContain("25.00");
+    expect(lines.join("\n")).not.toMatch(/500\.00|900\.00|Gala B/);
+  });
+
+  test("filtering by org B's campaign id still returns nothing from org B", async () => {
+    // A caller who knows another org's campaign uuid gets an empty file, and
+    // org B's campaign name never resolves.
+    db.tables.campaigns[1].id = "22222222-2222-2222-2222-222222222222";
+    db.tables.gifts[2].campaign_id = "22222222-2222-2222-2222-222222222222";
+    const res = await exportGifts(giftsReq("?campaign_id=22222222-2222-2222-2222-222222222222"));
+    expect(res.status).toBe(200);
+    expect((await res.text()).split("\n")).toEqual(["date,donor,amount,method,campaign,fund,appeal"]);
+  });
+
+  test("switching the active org to B exports only B's gifts", async () => {
+    ctx = ctxFor(ORG_B);
+    const body = await (await exportGifts(giftsReq())).text();
+    expect(body.split("\n")).toHaveLength(3);
+    expect(body).toContain("500.00");
+    expect(body).toContain("Gala B");
+    expect(body).not.toContain("25.00");
+  });
+
+  test("no org context is a 401; a role without fundraising.read is a 403", async () => {
+    ctx = null;
+    expect((await exportGifts(giftsReq())).status).toBe(401);
+    ctx = ctxFor(ORG_A);
+    perms = new Set(["finance.read"]);
+    expect((await exportGifts(giftsReq())).status).toBe(403);
+  });
+});
+
 // ── Source guard ────────────────────────────────────────────────────────────
 // Every import/export route must resolve the active org and pin each read,
 // update and delete of a table to org_id, on ANY client (session client too:
@@ -158,12 +218,7 @@ const REPO = join(__dirname, "..");
 const ROUTE_SEGMENT = /(^|\/)(imports?|export[^/]*)(\/|$)/;
 
 // `${relPath}` → reason. Remove the entry when the owning change lands.
-const EXCEPTIONS = new Map<string, string>([
-  [
-    "app/api/admin/gifts/export/route.ts",
-    "owned by the open gifts PR (app/api/admin/gifts/* is out of scope here); still unscoped on main",
-  ],
-]);
+const EXCEPTIONS = new Map<string, string>([]);
 
 function walk(dir: string): string[] {
   const out: string[] = [];
@@ -211,6 +266,7 @@ describe("import/export routes pin the active org (source guard)", () => {
       "app/api/admin/import/constituents/route.ts",
       "app/api/admin/imports/[id]/stage/route.ts",
       "app/api/admin/donors/export/route.ts",
+      "app/api/admin/gifts/export/route.ts",
       "app/api/admin/finance/import/route.ts",
       "app/api/admin/fundraising/prospects/import/route.ts",
     ]) {

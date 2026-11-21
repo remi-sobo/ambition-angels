@@ -465,8 +465,27 @@ const server = http.createServer(async (req, res) => {
     // GoTrue
     if (p.startsWith("/auth/v1/")) {
       const sub = p.slice("/auth/v1/".length);
-      await readBody(req);
+      const authBody = await readBody(req);
       if (sub === "token") return send(res, 200, session());
+      // Auth admin API (Settings → People and roles): team members as auth
+      // users; the last one has never signed in, so the screen shows an open
+      // invite. POST /invite returns a new invented user.
+      const teamUser = (p, i) => ({
+        id: p.id, aud: "authenticated", role: "authenticated", email: p.email,
+        created_at: "2024-08-01T17:00:00Z",
+        last_sign_in_at: i === DEMO.team.length - 1 ? null : new Date(Date.now() - i * 86400000).toISOString(),
+        app_metadata: {}, user_metadata: {},
+      });
+      if (sub.startsWith("admin/users/")) {
+        const id = sub.slice("admin/users/".length);
+        const i = DEMO.team.findIndex((p) => p.id === id);
+        return i < 0 ? send(res, 404, { code: 404, msg: "User not found" }) : send(res, 200, teamUser(DEMO.team[i], i));
+      }
+      if (sub === "admin/users") return send(res, 200, { users: DEMO.team.map(teamUser), aud: "authenticated" });
+      if (sub === "invite") {
+        const b = JSON.parse(authBody || "{}");
+        return send(res, 200, { id: crypto.randomUUID(), aud: "authenticated", role: "authenticated", email: b.email, invited_at: new Date().toISOString(), last_sign_in_at: null, app_metadata: {}, user_metadata: {} });
+      }
       if (sub === "user") {
         const tok = (req.headers.authorization || "").replace(/^Bearer /i, "");
         const claims = decodeJwt(tok);

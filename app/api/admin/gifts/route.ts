@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
+import { requirePermission } from "@/lib/admin/requirePermission";
 import { audit } from "@/lib/audit";
 import { pushGiftToHubSpot } from "@/lib/hubspot/sync-out";
 import { processGiftStewardship } from "@/lib/fundraising/stewardship";
@@ -30,10 +31,11 @@ const money = (v: unknown): number | null =>
  * revenue). Amount + gift_date are required.
  */
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Role guard (V4 B1): recording money needs fundraising.write, checked on
+  // the server as well as by RLS.
+  const gate = await requirePermission("fundraising.write");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  const ctx = gate.ctx;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 

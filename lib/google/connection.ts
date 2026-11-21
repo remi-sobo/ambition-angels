@@ -170,14 +170,20 @@ export async function deletePendingGoogleAccount(orgId: string, userId: string):
     .eq("status", "pending");
 }
 
-/** All active Google Calendar connections (one per connected user), decrypted. */
-export async function listActiveCalendarConnections(): Promise<GoogleCalendarConnection[]> {
+/** Active Google Calendar connections, decrypted. With no scope, every
+ *  connection in every org (the cron's sweep); with a scope, only that user's
+ *  connections in that org (a user-triggered sync). */
+export async function listActiveCalendarConnections(
+  scope?: { userId: string; orgId: string }
+): Promise<GoogleCalendarConnection[]> {
   const sb = getSupabaseAdmin();
-  const { data, error } = await sb
+  let query = sb
     .from("connections")
     .select("id, org_id, user_id, external_id, refresh_token_enc, status, meta")
     .eq("provider", PROVIDER)
     .eq("status", "active");
+  if (scope) query = query.eq("user_id", scope.userId).eq("org_id", scope.orgId);
+  const { data, error } = await query;
   if (error) throw new Error(`listing google_calendar connections failed: ${error.message}`);
 
   return (data ?? [])

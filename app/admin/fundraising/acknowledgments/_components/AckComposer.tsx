@@ -29,6 +29,8 @@ export default function AckComposer({
   templates,
   defaultChannel,
   orgName,
+  startOpen = false,
+  onDone,
 }: {
   giftId: string;
   donorName: string;
@@ -38,10 +40,14 @@ export default function AckComposer({
   defaultChannel?: AckChannel | null;
   /** From ctx.orgName — seeds the default subject; never hardcode a tenant. */
   orgName: string;
+  /** V4 B1: render the form straight away (inside the Thank-yous drawer). */
+  startOpen?: boolean;
+  /** Called after a send or log succeeds, and on Close, when startOpen. */
+  onDone?: () => void;
 }) {
   const router = useRouter();
   const confirm = useConfirm();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   // Honor the donor's preferred channel when they have one.
   const [channel, setChannel] = useState<AckChannel>(defaultChannel ?? "email");
   const [busy, setBusy] = useState<"" | "draft" | "send" | "log">("");
@@ -98,6 +104,7 @@ export default function AckComposer({
       }
       if (j.warning) setError(j.warning);
       router.refresh();
+      onDone?.();
     } catch {
       setError(networkMessage());
     } finally {
@@ -127,6 +134,7 @@ export default function AckComposer({
       }
       if (j.warning) setError(j.warning);
       router.refresh();
+      onDone?.();
     } catch {
       setError(networkMessage());
     } finally {
@@ -155,7 +163,7 @@ export default function AckComposer({
   const showCompliance = isEmail || isLetter;
 
   return (
-    <div className="w-full mt-3 bg-tile border-hairline rounded-panel p-4 space-y-3">
+    <div className={startOpen ? "w-full space-y-3" : "w-full mt-3 bg-tile border-hairline rounded-panel p-4 space-y-3"}>
       <div className="flex items-center gap-1.5 flex-wrap">
         {ACK_CHANNELS.map((ch) => (
           <button
@@ -175,6 +183,7 @@ export default function AckComposer({
 
       {channelTemplates.length > 0 && (
         <select
+          aria-label="Use a template"
           defaultValue=""
           onChange={(e) => {
             if (e.target.value) applyTemplate(e.target.value);
@@ -193,6 +202,7 @@ export default function AckComposer({
       {isEmail && (
         <div className="flex items-center gap-3 flex-wrap">
           <input
+            aria-label="Subject"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             className={`flex-1 min-w-[260px] bg-tile border-hairline rounded-control px-3 py-2 ${TYPE.body} focus:outline-none focus:border-orange/40`}
@@ -209,6 +219,7 @@ export default function AckComposer({
       )}
 
       <textarea
+        aria-label={isEmail || isLetter ? "Personal note" : "Note for the record"}
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={isEmail || isLetter ? 5 : 3}
@@ -248,7 +259,7 @@ export default function AckComposer({
           </button>
         )}
         <button
-          onClick={() => setOpen(false)}
+          onClick={() => (startOpen ? onDone?.() : setOpen(false))}
           disabled={busy !== ""}
           className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
         >

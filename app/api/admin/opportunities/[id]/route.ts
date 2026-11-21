@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed } from "@/lib/admin/auth";
+import { requirePermission } from "@/lib/admin/requirePermission";
 import { audit } from "@/lib/audit";
 import { pushOpportunityToHubSpot } from "@/lib/hubspot/sync-out";
 import { loadPipelineConfig, stagesForPipeline } from "@/lib/fundraising/stages";
@@ -11,9 +12,10 @@ const isISODate = (v: unknown): v is string =>
 // PATCH /api/admin/opportunities/:id — partial update; the most-used field
 // is `stage` (the pipeline move).
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Role guard (V4 B1): Pipeline moves and the donor record's next-step bar
+  // write here, so the server checks fundraising.write as well as RLS.
+  const gate = await requirePermission("fundraising.write");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }

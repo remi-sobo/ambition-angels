@@ -14,8 +14,9 @@ import { receiptEmailHtml, receiptEmailText, type ReceiptGift } from "@/lib/fund
  * Sources, all existing per-org data (no migration):
  * - org_comms_settings: from_name, from_email, reply_to, mailing_address,
  *   footer_text, transport (edited on the Comms settings page).
- * - orgs.settings jsonb: legal_name and ein, the legal identity a tax receipt
- *   needs (operator-set, the same place as email_domain).
+ * - orgs.settings jsonb: legal_name, ein and mailing_address, the legal
+ *   identity a tax receipt needs (edited in Settings → Organization, or set by
+ *   the operator setup script).
  * - orgs.name: the display name when from_name is blank.
  *
  * Fail closed: a missing piece is a refusal with a plain reason, never a
@@ -108,6 +109,10 @@ export function buildOrgEmailIdentity(
     };
   }
 
+  // A blank Comms mailing address takes the one from Settings → Organization
+  // (V4 Stage F), so an org that confirmed its address there can send.
+  const orgAddress = str(org.settings?.mailing_address);
+  if (comms && !comms.mailing_address.trim() && orgAddress) comms = { ...comms, mailing_address: orgAddress };
   const blocker = sendBlocker(comms);
   if (blocker || !comms) {
     return {
@@ -140,7 +145,7 @@ export function buildOrgEmailIdentity(
     return {
       ok: false,
       reason:
-        "Tax receipts need your organization's legal name and EIN on file, and they aren't set yet. Ask your BloomOS administrator to add them to your org profile, then send again. Nothing was sent.",
+        "Tax receipts need your organization's legal name and EIN on file, and they aren't set yet. An owner or admin can add them in Settings → Organization, then send again. Nothing was sent.",
     };
   }
 

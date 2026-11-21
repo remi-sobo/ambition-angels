@@ -53,14 +53,15 @@ describe("the sections (spec §4 order)", () => {
     ]);
   });
 
-  test("sections with no screen yet say so honestly and name who to ask (no fake forms)", () => {
-    for (const key of ["organization", "terms", "modules"]) {
-      const s = SETTINGS_SECTIONS.find((x) => x.key === key)!;
-      expect(s.comingNext, key).toMatch(/coming in the next stage/);
-      expect(s.comingNext, key).toMatch(/ask your BloomOS contact/);
+  test("only Modules still has no screen; it says so and points at support, never a person", () => {
+    const modules = SETTINGS_SECTIONS.find((x) => x.key === "modules")!;
+    expect(modules.comingNext).toMatch(/can't switch them yourself yet/);
+    expect(modules.comingNext).toMatch(/Report an issue|Write to/);
+    expect(modules.comingNext).not.toMatch(/Remi|BloomOS contact/);
+    // People and roles (A3), Organization and Terms (V4 Stage F) have screens now.
+    for (const key of ["people", "organization", "terms"]) {
+      expect(SETTINGS_SECTIONS.find((x) => x.key === key)!.comingNext, key).toBeUndefined();
     }
-    // People and roles has its screen now (V4 Stage A3).
-    expect(SETTINGS_SECTIONS.find((x) => x.key === "people")!.comingNext).toBeUndefined();
   });
 
   test("each section links the existing scattered setup screens (audit finding 3)", () => {

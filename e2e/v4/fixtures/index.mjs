@@ -9,7 +9,10 @@
 //
 // buildFixtures({ profile, role })
 //   profile: "populated" (default) | "empty" (auth, membership, entitlements
-//            and platform reference rows only)
+//            and platform reference rows only) | "fresh" (V4 Stage F: a new
+//            org as the setup script leaves it, one owner, Pilot plan, no
+//            data) | "halfdone" (fresh + identity confirmed, a teammate
+//            invited and a donor import finished: 3 of 5 setup steps)
 //   role:    membership role for the signed-in user (owner, admin, staff,
 //            finance, board_viewer)
 
@@ -212,12 +215,13 @@ export function buildFixtures({ profile = "populated", role = "owner", skipViews
     hubspot_bench_candidates: [],
   };
 
-  if (profile !== "empty") populate(T, add, tables, team);
+  if (profile === "fresh" || profile === "halfdone") freshOrg(T, tables, profile);
+  else if (profile !== "empty") populate(T, add, tables, team);
 
   // SQL views computed over these fixtures by compute-views.mjs (real view
   // definitions, run in a throwaway Postgres). Absent file = views stay empty.
   const viewsFile = path.join(here, "views.json");
-  if (profile !== "empty" && !skipViews && fs.existsSync(viewsFile)) {
+  if (profile === "populated" && !skipViews && fs.existsSync(viewsFile)) {
     const views = JSON.parse(fs.readFileSync(viewsFile, "utf8"));
     for (const [v, rows] of Object.entries(views)) if (Array.isArray(rows)) tables[v] = rows.filter((r) => !("org_id" in r) || r.org_id === ORG_ID);
   }
@@ -225,6 +229,37 @@ export function buildFixtures({ profile = "populated", role = "owner", skipViews
   // complete every row against the schema
   for (const t of Object.keys(tables)) if (!t.startsWith("v_") && t !== "ms_catalog") tables[t] = tables[t].map((r) => complete(t, r, T));
   return { tables, rpcs };
+}
+
+// V4 Stage F: a brand-new org as scripts/setup-org.ts leaves it (invented
+// "Harbor Youth Collective"), and the same org part way through setup.
+const PILOT = ["modules.fundraising", "modules.finance", "modules.comms", "modules.ops", "modules.meetings", "modules.messages", "modules.documents", "ai.capture", "modules.strategy", "modules.board", "modules.compliance", "modules.staff", "modules.metrics"];
+function freshOrg(T, tables, profile) {
+  const owner = tables.memberships[0];
+  tables.orgs = [{ id: ORG_ID, name: "Harbor Youth Collective", slug: "harbor-youth", settings: { email_domain: "harboryouth.example.org", timezone: "America/New_York" }, created_at: iso(daysAgo(1)), updated_at: iso(daysAgo(1)) }];
+  tables.memberships = [owner];
+  tables.profiles = tables.profiles.filter((p) => p.user_id === owner.user_id).map((p) => ({ ...p, display_name: "Maya Lindqvist" }));
+  tables.org_entitlements = PILOT.map((k) => ({ org_id: ORG_ID, feature_key: k, enabled: true, source: "setup-org", updated_at: iso(daysAgo(1)) }));
+  tables.org_terminology = [{ org_id: ORG_ID, term_key: "student", label: "Youth", updated_at: iso(daysAgo(1)) }];
+  tables.fin_config = [{ org_id: ORG_ID, fiscal_year_start_month: 7 }];
+  tables.pipelines = [{ id: T.id(70), org_id: ORG_ID, key: "default", label: "Donor pipeline", sort_order: 0, is_default: true }];
+  if (profile !== "halfdone") return;
+  tables.orgs[0].settings = {
+    ...tables.orgs[0].settings,
+    legal_name: "Harbor Youth Collective, Inc.",
+    ein: "12-3456789",
+    address: { street: "88 Wharf Street", city: "Portland", state: "ME", postal_code: "04101" },
+    mailing_address: "88 Wharf Street, Portland, ME 04101",
+  };
+  tables.memberships.push({ user_id: uid(106), org_id: ORG_ID, role: "staff", created_at: iso(daysAgo(0)) });
+  tables.profiles.push({ user_id: uid(106), display_name: "Jordan Ellis", created_at: iso(daysAgo(0)), updated_at: iso(daysAgo(0)), v2_shell: true });
+  const run = T.id(71);
+  tables.imports = [{ id: run, org_id: ORG_ID, entity_type: "gift", source: "csv", filename: "donors-2025.csv", status: "done", mapping: {}, counts: { total: 14, created: 12, skipped: 2, invalid: 0, donors_created: 9 }, created_at: iso(daysAgo(0)), finished_at: iso(daysAgo(0)) }];
+  tables.constituents = ["Dana Whitfield", "Priya Raman", "Marcus Oyelaran", "Elena Brandt", "Okafor Family", "Harlow Family Fund", "Northgate Credit Union", "Tidewater Community Trust", "Jon Castellano"].map((n, i) => {
+    const org = /Fund|Union|Trust|Family$/.test(n);
+    const [first, ...rest] = n.split(" ");
+    return { id: T.id(72), org_id: ORG_ID, type: org ? "organization" : "person", ...(org ? { org_name: n } : { first_name: first, last_name: rest.join(" ") }), emails: [`donor${i + 1}@example.org`], source: "import", import_id: run, created_at: iso(daysAgo(0)), updated_at: iso(daysAgo(0)) };
+  });
 }
 
 function populate(T, add, tables, team) {

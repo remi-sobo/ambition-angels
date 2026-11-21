@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { requirePermission } from "@/lib/admin/requirePermission";
+import { ctxHasPermission } from "@/lib/admin/auth";
+import { importPerm } from "@/lib/admin/imports/perm";
 
 /**
  * GET   /api/admin/imports/[id] — run status + per-row results (preview/resume).
@@ -11,6 +13,15 @@ import { requirePermission } from "@/lib/admin/requirePermission";
 
 const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
+
+function previewSummary(spine: Record<string, unknown> | null): string | null {
+  if (!spine) return null;
+  const person = [spine.first_name, spine.last_name].filter((v) => typeof v === "string" && v).join(" ");
+  const name = person || (typeof spine.org_name === "string" ? spine.org_name : "") || (typeof spine.email === "string" ? spine.email : "");
+  const amount = typeof spine.amount === "number" ? ` · $${spine.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "";
+  const date = typeof spine.gift_date === "string" && amount ? ` on ${spine.gift_date}` : "";
+  return `${name}${amount}${date}` || null;
+}
 
 async function loadRun(id: string, orgId: string) {
   const supabase = getSupabaseAdmin();
@@ -28,10 +39,13 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
   const run = await loadRun(params.id, ctx.orgId);
   if (!run) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!(await ctxHasPermission(ctx, importPerm(String(run.entity_type), "read")))) {
+    return NextResponse.json({ error: "You don't have permission to see that import." }, { status: 403 });
+  }
 
   const { data: rows } = await getSupabaseAdmin()
     .from("import_rows")
-    .select("row_num, status, verdict, error, matched_entity_id")
+    .select("row_num, status, verdict, error, matched_entity_id, normalized")
     .eq("org_id", ctx.orgId)
     .eq("import_id", params.id)
     .order("row_num");
@@ -42,7 +56,13 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     entity_type: run.entity_type,
     mapping: run.mapping ?? {},
     counts: run.counts ?? {},
-    rows: rows ?? [],
+    // The preview shows a short summary per row (name, and the gift for a
+    // gift import), never the raw file row.
+    rows: ((rows ?? []) as { normalized?: { spine?: Record<string, unknown>; donor?: string | null } | null }[]).map(({ normalized, ...r }) => ({
+      ...r,
+      summary: previewSummary(normalized?.spine ?? null),
+      donor: normalized?.donor ?? null,
+    })),
   });
 }
 
@@ -54,6 +74,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const run = await loadRun(params.id, ctx.orgId);
   if (!run) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!(await ctxHasPermission(ctx, importPerm(String(run.entity_type), "write")))) {
+    return NextResponse.json({ error: "You don't have permission to import that." }, { status: 403 });
+  }
   // Mapping is only editable before commit begins; staged runs may remap and
   // re-stage (the wizard's back button).
   if (run.status !== "mapping" && run.status !== "staged") {

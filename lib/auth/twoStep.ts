@@ -12,9 +12,14 @@
  * Supabase access token, validated by getUser()) and the user's factors:
  *
  *   no session                         → "anonymous" (existing sign-in flow)
- *   aal2                               → "ok"
- *   aal1, has a verified factor        → "verify"  (enter a 6-digit code)
- *   aal1, no verified factor           → "enroll"  (set up an authenticator)
+ *   no verified factor (any aal)       → "enroll"  (set up an authenticator)
+ *   verified factor, aal1              → "verify"  (enter a 6-digit code)
+ *   verified factor, aal2              → "ok"
+ *
+ * "No factor" wins even at aal2: when an owner resets someone's two-step
+ * login (Settings → People and roles deletes their factors), that person's
+ * open sessions stop working at once and they must enroll again. The factor
+ * list comes from getUser(), which reads the user fresh from Supabase Auth.
  *
  * Pages under /admin and /board redirect "enroll"/"verify" to the screens
  * below; /api/admin, /api/reed and /api/board answer 401 with a clear error
@@ -62,8 +67,8 @@ export function hasVerifiedFactor(user: UserLike): boolean {
 
 export function twoStepStatus(s: { hasUser: boolean; aal: Aal; verifiedFactor: boolean }): TwoStepStatus {
   if (!s.hasUser) return "anonymous";
-  if (s.aal === "aal2") return "ok";
-  return s.verifiedFactor ? "verify" : "enroll";
+  if (!s.verifiedFactor) return "enroll";
+  return s.aal === "aal2" ? "ok" : "verify";
 }
 
 /** Where a finished two-step sign-in may return to: a same-origin path under
@@ -139,4 +144,30 @@ export function twoStepApiRefusal(status: TwoStepStatus, pathname: string): TwoS
       url: status === "enroll" ? TWO_STEP_ENROLL_PATH : TWO_STEP_VERIFY_PATH,
     },
   };
+}
+
+export type FactorRuleResult = { ok: true } | { ok: false; status: 404 | 409; error: string };
+
+/**
+ * May a user remove one of their own factors? Never the last verified one:
+ * two-step login is required for everyone, so removing it would only send
+ * them straight back to the enroll screen. Unverified (abandoned) factors can
+ * always go. A factor id that isn't theirs is 404.
+ */
+export function checkFactorRemoval(
+  factors: readonly { id: string; status?: string | null }[],
+  factorId: string,
+): FactorRuleResult {
+  const target = factors.find((f) => f.id === factorId);
+  if (!target) return { ok: false, status: 404, error: "That authenticator isn't on your account." };
+  if (target.status !== "verified") return { ok: true };
+  const verified = factors.filter((f) => f.status === "verified").length;
+  if (verified <= 1) {
+    return {
+      ok: false,
+      status: 409,
+      error: "This is your only authenticator. Add another one before removing it.",
+    };
+  }
+  return { ok: true };
 }

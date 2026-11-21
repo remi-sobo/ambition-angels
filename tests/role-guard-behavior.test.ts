@@ -37,8 +37,8 @@ vi.mock("next/headers", () => ({
 function fakeClient() {
   return {
     auth: {
-        getUser: async () => ({ data: { user: state.user } }),
-        // An aal2 access token: these sessions have finished two-step login.
+        getUser: async () => ({ data: { user: state.user && { ...state.user, factors: [{ status: "verified" }] } } }),
+        // A verified factor and an aal2 token: these sessions finished two-step login.
         getSession: async () => ({ data: { session: { access_token: "x.eyJhYWwiOiJhYWwyIn0.s" } } }),
       },
     from(table: string) {

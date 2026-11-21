@@ -41,11 +41,13 @@ describe("the rule", () => {
     expect(hasVerifiedFactor(null)).toBe(false);
   });
 
-  test("aal1 without a factor → enroll, aal1 with one → verify, aal2 → ok, no user → anonymous", () => {
+  test("no factor → enroll, factor at aal1 → verify, factor at aal2 → ok, no user → anonymous", () => {
     expect(twoStepStatus({ hasUser: true, aal: "aal1", verifiedFactor: false })).toBe("enroll");
     expect(twoStepStatus({ hasUser: true, aal: "aal1", verifiedFactor: true })).toBe("verify");
     expect(twoStepStatus({ hasUser: true, aal: "aal2", verifiedFactor: true })).toBe("ok");
     expect(twoStepStatus({ hasUser: true, aal: null, verifiedFactor: false })).toBe("enroll");
+    // A reset (factors deleted) drops even an aal2 session back to enroll.
+    expect(twoStepStatus({ hasUser: true, aal: "aal2", verifiedFactor: false })).toBe("enroll");
     expect(twoStepStatus({ hasUser: false, aal: null, verifiedFactor: false })).toBe("anonymous");
   });
 

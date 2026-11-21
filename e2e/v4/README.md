@@ -1,7 +1,7 @@
 # V4 audit harness: BloomOS on a mock Supabase with made-up data
 
 1. Write `.env.local` (delete it after): `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:55321` plus JWT-shaped strings for `NEXT_PUBLIC_SUPABASE_ANON_KEY` (payload `role: "anon"`) and `SUPABASE_SERVICE_ROLE_KEY`. Leave every other service key unset.
-2. Start the mock: `node e2e/v4/mock-supabase.mjs` (env `V4_PROFILE=populated|empty`, `V4_ROLE=owner|admin|staff|finance|board_viewer`, `V4_PERSIST=1` to keep writes, `V4_DELAY_MS`). Switch live with `POST /__mock/config {profile, role, delayMs, delayPattern, failRead, failWrite}`.
+2. Start the mock: `node e2e/v4/mock-supabase.mjs` (env `V4_PROFILE=populated|empty`, `V4_ROLE=owner|admin|staff|finance|board_viewer`, `V4_PERSIST=1` to keep writes, `V4_DELAY_MS`, `V4_MFA=aal2|verify|enroll` for two-step login: the default aal2 signs straight in, the others land on the verify or enroll screen, where any 6-digit code but `000000` works). Switch live with `POST /__mock/config {profile, role, delayMs, delayPattern, failRead, failWrite, mfa}`.
 3. Start the app: `npm run dev` (port 3000).
 4. Capture: `node e2e/v4/capture.mjs --run <name> --set all|nav|details|orphans --viewports desktop,phone [--role staff] [--profile empty] [--only <substr>] --out <dir>`. Writes JPEGs plus `manifest.json` (status, final URL, redirects, console/page errors, failed requests, error boundary, 404, module gate, h1, load time).
 5. Special states (sheets, search, Reed, task modal, loading, failed saves, 500 reads): `node e2e/v4/special-states.mjs --run special --out <dir>`. All standard runs: `V4_SHOTS=<dir> bash e2e/v4/run-all.sh`.

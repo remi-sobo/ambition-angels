@@ -187,6 +187,7 @@ export function CommentThread({
                 value={replyBody}
                 onChange={setReplyBody}
                 members={members}
+                label={`Reply to ${c.authorName}`}
                 placeholder={`Reply to ${c.authorName}…  (@ to mention)`}
                 rows={2}
                 autoFocus
@@ -230,6 +231,7 @@ export function CommentThread({
             value={body}
             onChange={setBody}
             members={members}
+            label={`Note about ${entityLabel}`}
             placeholder={`Leave a note about ${entityLabel} for the team…  (@ to mention)`}
             rows={2}
             className={`w-full bg-tile border-hairline rounded-control px-3 py-2 ${TYPE.body} placeholder-ink-3 focus:outline-none focus:border-orange/40 resize-y`}

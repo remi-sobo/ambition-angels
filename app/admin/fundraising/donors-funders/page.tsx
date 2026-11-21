@@ -180,7 +180,7 @@ export default async function DonorsFundersPage({
           <form action={BASE} method="get" className="flex items-center gap-2">
             {view !== "all" && <input type="hidden" name="view" value={view} />}
             {def.type && <input type="hidden" name="type" value={def.type} />}
-            <input
+            <input aria-label="Search names"
               type="search"
               name="q"
               defaultValue={def.q ?? ""}

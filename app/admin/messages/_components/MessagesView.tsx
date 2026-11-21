@@ -733,7 +733,7 @@ function Bubble({
     return (
       <div className="flex justify-end mt-2">
         <div className="flex flex-col items-end w-full max-w-[80%]">
-          <textarea
+          <textarea aria-label="Edit message"
             value={editText}
             autoFocus
             onChange={(e) => setEditText(e.target.value)}
@@ -927,7 +927,7 @@ function Composer({
   return (
     <div className="border-t border-hairline px-3 lg:px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="flex items-end gap-2 bg-tile border border-hairline rounded-panel-lg px-3 py-2 focus-within:border-orange transition-colors">
-        <textarea
+        <textarea aria-label="Write a message"
           ref={taRef}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

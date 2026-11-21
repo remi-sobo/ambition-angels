@@ -95,13 +95,13 @@ function EditField({
       <p className="text-ink-3 uppercase tracking-wider font-semibold text-xs mb-0.5">{label}</p>
       {editing ? (
         multiline ? (
-          <textarea
+          <textarea aria-label={label}
             autoFocus rows={3} className={inputCls} value={draft}
             onChange={(e) => setDraft(e.target.value)} onBlur={commit}
             onKeyDown={(e) => { if (e.key === "Escape") cancel(); }}
           />
         ) : (
-          <input
+          <input aria-label={label}
             autoFocus className={inputCls} value={draft}
             onChange={(e) => setDraft(e.target.value)} onBlur={commit}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void commit(); } if (e.key === "Escape") cancel(); }}

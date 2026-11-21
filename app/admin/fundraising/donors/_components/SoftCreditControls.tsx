@@ -7,15 +7,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { userMessage } from "@/lib/admin/errors";
-
-const TYPES = [
-  ["solicitor", "Solicitor"],
-  ["household", "Household"],
-  ["daf_advisor", "DAF advisor"],
-  ["match_originator", "Match originator"],
-] as const;
-
-export const SC_TYPE_LABEL: Record<string, string> = Object.fromEntries(TYPES);
+import { SC_TYPES as TYPES } from "./softCreditTypes";
 
 const inputCls =
   "bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-xs placeholder-ink-3 focus:outline-none focus:border-orange/40";

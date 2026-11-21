@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { ACTIVE_ORG_COOKIE, sessionOrgHasEntitlement } from "@/lib/admin/activeOrg";
 
 /**
  * Host guard + server-side auth gates.
@@ -24,15 +25,20 @@ import { updateSession } from "@/lib/supabase/middleware";
  *
  *  2. /demoday — the static Fast Forward demo-day lookbook (rewritten to
  *     /demoday/index.html). Both entry points sit behind a shared password
- *     (DEMODAY_PASSWORD) so the file isn't world-readable. Logged-in admins
- *     pass through without re-entering it. Fails closed: if DEMODAY_PASSWORD
- *     is unset, only admins can view.
+ *     (DEMODAY_PASSWORD) so the file isn't world-readable. Signed-in users
+ *     skip the password ONLY when their active org holds aa.demoday (checked
+ *     here through their RLS session client: active-org membership +
+ *     entitlement). Fails closed: if DEMODAY_PASSWORD is unset, only those
+ *     users can view.
  *
  *  3. /strategy — the internal Strategy Room (funder/partner framing
  *     reference). Same shape as the demoday gate: a shared password
  *     (STRATEGY_ROOM_PASSWORD) sets the strategy_auth cookie via
- *     /api/strategy/login. Logged-in admins pass through. Fails closed: if
- *     STRATEGY_ROOM_PASSWORD is unset, only admins can view.
+ *     /api/strategy/login. Signed-in users skip the password only when their
+ *     active org holds aa.strategy_room (same check as demoday). Fails
+ *     closed: if STRATEGY_ROOM_PASSWORD is unset, only those users can view.
+ *     The page itself is reachable only past this gate, so the gate IS the
+ *     full check (funders arrive with the password and no session).
  */
 
 // Hosts that serve only the admin app. The PUBLIC_ADMIN_PATHS assets below
@@ -88,20 +94,26 @@ const PUBLIC_ADMIN_PATHS = new Set([
 // NOT gated so the gate page can display it.
 const DEMODAY_PATHS = new Set(["/demoday", "/demoday/index.html"]);
 
-function isDemodayAuthed(req: NextRequest, hasUser: boolean): boolean {
-  const expected = process.env.DEMODAY_PASSWORD;
-  const cookie = req.cookies.get("demoday_auth")?.value;
-  if (expected && cookie === expected) return true;
-  // Signed-in BloomOS users don't need the shared password.
-  return hasUser;
-}
+type Session = Awaited<ReturnType<typeof updateSession>>;
 
-function isStrategyAuthed(req: NextRequest, hasUser: boolean): boolean {
-  const expected = process.env.STRATEGY_ROOM_PASSWORD;
-  const cookie = req.cookies.get("strategy_auth")?.value;
-  if (expected && cookie === expected) return true;
-  // Signed-in BloomOS users don't need the shared password.
-  return hasUser;
+/** Shared-password OR an AA-entitled session. "Signed in" alone is not
+ *  enough: a member of any other org must not see AA's internal pages. */
+async function isAaPageAuthed(
+  req: NextRequest,
+  session: Session,
+  passwordEnv: string | undefined,
+  cookieName: string,
+  key: "aa.demoday" | "aa.strategy_room",
+): Promise<boolean> {
+  const cookie = req.cookies.get(cookieName)?.value;
+  if (passwordEnv && cookie === passwordEnv) return true;
+  if (!session.userId || !session.supabase) return false;
+  return sessionOrgHasEntitlement(
+    session.supabase,
+    session.userId,
+    req.cookies.get(ACTIVE_ORG_COOKIE)?.value ?? null,
+    key,
+  );
 }
 
 function strategyGateHtml(error: boolean): string {
@@ -245,11 +257,14 @@ export async function middleware(req: NextRequest) {
   // Refresh the Supabase session on every matched request and learn whether
   // a signed-in user is present. Coarse gate only — membership/permission
   // enforcement lives in route handlers + RLS.
-  const { response, hasUser } = await updateSession(req);
+  const session = await updateSession(req);
+  const { response, hasUser } = session;
 
   // ── Demo-day lookbook gate ────────────────────────────────────────────
   if (DEMODAY_PATHS.has(pathname)) {
-    if (isDemodayAuthed(req, hasUser)) return response;
+    if (await isAaPageAuthed(req, session, process.env.DEMODAY_PASSWORD, "demoday_auth", "aa.demoday")) {
+      return response;
+    }
     const error = req.nextUrl.searchParams.get("error") === "1";
     return new NextResponse(demodayGateHtml(error), {
       status: 200,
@@ -261,7 +276,11 @@ export async function middleware(req: NextRequest) {
   // The /strategy page renders its own React UI once authed; until then we
   // serve a branded password gate here so the page never reaches the client.
   if (pathname === "/strategy") {
-    if (isStrategyAuthed(req, hasUser)) return response;
+    if (
+      await isAaPageAuthed(req, session, process.env.STRATEGY_ROOM_PASSWORD, "strategy_auth", "aa.strategy_room")
+    ) {
+      return response;
+    }
     const error = req.nextUrl.searchParams.get("error") === "1";
     return new NextResponse(strategyGateHtml(error), {
       status: 200,

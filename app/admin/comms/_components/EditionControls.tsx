@@ -205,7 +205,7 @@ export function CompilePanel({
       <AudienceBuilder segments={segments} value={segment} onChange={setSegment} />
       {blocked.length > 0 && (
         <Notice tone="warning" inline title="Not ready to compile yet.">
-          <ul className="list-disc pl-4">{blocked.map((b) => <li key={b}>{b}</li>)}</ul>
+          {blocked.map((b) => <span key={b} className="block">{b}</span>)}
         </Notice>
       )}
       <div className="flex flex-col gap-1">

@@ -11,7 +11,7 @@ export default async function RecentDonationsWidget({ className }: { className?:
   const donations = await getRecentDonations();
 
   return (
-    <Widget title="Recent Donations" href="/admin/legacy" hrefLabel="Full history" className={className}>
+    <Widget title="Recent Donations" href="/admin/fundraising/donors-funders" hrefLabel="Full history" className={className}>
       {donations.length === 0 ? (
         <Empty>No donations recorded yet.</Empty>
       ) : (

@@ -5,7 +5,7 @@
  * resulting rows rather than a scripted call sequence.
  *
  * Supported: from().select(cols, { count, head }) / insert / update / delete,
- * filters eq (including `col->>key`), neq, in, is, contains, lt, lte, gt, gte,
+ * filters eq (including `col->>key`), neq, in, is, not(col, "is", v), contains, lt, lte, gt, gte,
  * or("a.is.null,a.lt.X"), order, limit, then single / maybeSingle / await;
  * rpc(name, args) via a stub. Each statement runs atomically (no await inside),
  * so two concurrent conditional updates race exactly like two Postgres
@@ -205,6 +205,11 @@ export function fakeDb(seed: Record<string, Row[]> = {}, opts: FakeDbOptions = {
       },
       is(col: string, val: null) {
         filters.push((r) => (val === null ? getPath(r, col) === null : getPath(r, col) === val));
+        return b;
+      },
+      not(col: string, op: string, val: unknown) {
+        if (op !== "is") throw new Error(`fakeDb: unsupported not op ${op}`);
+        filters.push((r) => (val === null ? getPath(r, col) !== null : getPath(r, col) !== val));
         return b;
       },
       contains(col: string, vals: unknown[]) {

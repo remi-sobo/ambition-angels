@@ -42,7 +42,7 @@ export function parseCapture(input: {
 }
 
 export function getCapture(id: string) {
-  return call<{ capture: CaptureView; cards: CardView[] }>(`/api/admin/capture/${id}`);
+  return call<{ capture: CaptureView; cards: CardView[]; filing_permissions?: string[] }>(`/api/admin/capture/${id}`);
 }
 
 export function cardAction(id: string, action: "confirm" | "discard" | "undo" | "edit", patch?: Record<string, unknown>) {
@@ -113,5 +113,14 @@ export function editStory(cardId: string, patch: { text?: string; title?: string
   return call<{ card: CardView }>(`/api/admin/capture/cards/${cardId}`, {
     method: "POST",
     body: JSON.stringify({ action: "edit", patch }),
+  });
+}
+
+/** Voice for every role: a card the person cannot file goes to the org's
+ *  owners as a note in their team inbox (lib/capture/handoff.ts). */
+export function sendToTeammate(cardId: string) {
+  return call<{ card: CardView }>(`/api/admin/capture/cards/${cardId}`, {
+    method: "POST",
+    body: JSON.stringify({ action: "send_to_teammate" }),
   });
 }

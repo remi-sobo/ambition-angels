@@ -5,7 +5,7 @@
  */
 
 import { UNDO_WINDOW_MINUTES } from "@/lib/capture/constants";
-import { KIND_LABEL, cardKindOf, filedElsewhere, isHeldKind, storyHold, type CardKind } from "@/lib/capture/cardKind";
+import { KIND_LABEL, canFileCard, cardKindOf, filedElsewhere, isHeldKind, storyHold, type CardKind } from "@/lib/capture/cardKind";
 
 export type CardDest = "interaction" | "task" | "thought" | "message_draft";
 export type CardStatus = "proposed" | "held" | "confirmed" | "discarded";
@@ -151,6 +151,7 @@ export function undoSecondsLeft(card: CardView, now: number): number {
 /** Where a filed card's row lives, for the "Filed" link. Drafts have no page yet. */
 export function filedHref(card: CardView): string | null {
   const elsewhere = filedElsewhere(card.payload);
+  if (elsewhere?.table === "notifications") return null;
   if (elsewhere?.table === "gifts" || elsewhere?.table === "pledges") {
     return card.entity_id ? `/admin/fundraising/donors-funders/${card.entity_id}` : null;
   }
@@ -168,6 +169,10 @@ export function filedHref(card: CardView): string | null {
 
 export function filedLabel(card: CardView): string {
   const elsewhere = filedElsewhere(card.payload);
+  if (elsewhere?.table === "notifications") {
+    const names = elsewhere.toNames.map(firstName);
+    return names.length ? `Sent to ${names.join(" and ")} to file` : "Sent to a teammate to file";
+  }
   if (elsewhere?.table === "gifts") return "Gift recorded";
   if (elsewhere?.table === "pledges") return "Pledge added on the record";
   if (elsewhere?.table === "capture_cards") {
@@ -290,4 +295,39 @@ export function filesTo(card: CardView): string {
     case "story":
       return "Held story drafts (the Comms story bank is not set up yet)";
   }
+}
+
+// -- Voice for every role: a card the person cannot file ---------------------
+
+/**
+ * Can this person file this card? `filingPermissions` is what the capture
+ * route reported (filing_permissions). Undefined means "not told", which
+ * keeps the Stage C behavior (the server still answers 403 if not).
+ */
+export function canFile(card: CardView, filingPermissions: readonly string[] | undefined): boolean {
+  if (!filingPermissions) return true;
+  return canFileCard(card, filingPermissions);
+}
+
+/** Plain words on a card the person cannot file, before "Send to a teammate". */
+export function cannotFileLine(card: CardView): string {
+  switch (cardKindOf(card)) {
+    case "conversation":
+      return card.entity_type === "partner"
+        ? "Your role can't log on partner records, so this won't be filed by you."
+        : "Your role can't log on donor records, so this won't be filed by you.";
+    case "gift":
+      return "Your role can't record gifts or pledges, so this won't be filed by you.";
+    case "story":
+      return "Your role can't keep stories, so this won't be filed by you.";
+    case "draft":
+      return "Your role can't save message drafts, so this won't be filed by you.";
+    default:
+      return "Your role can't create tasks, so this won't be filed by you.";
+  }
+}
+
+/** Proposed cards this person can file: what Confirm all would actually do. */
+export function fileableProposed(cards: CardView[], filingPermissions: readonly string[] | undefined): number {
+  return cards.filter((c) => c.status === "proposed" && canFile(c, filingPermissions)).length;
 }

@@ -23,11 +23,15 @@ export default function GiftCardBody({
   busy,
   onReplace,
   onError,
+  actions = true,
 }: {
   card: CardView;
   busy: boolean;
   onReplace: (card: CardView) => void;
   onError: (message: string) => void;
+  /** False when the person cannot file this card: words only, no actions
+   *  (the stack offers "Send to a teammate" instead). */
+  actions?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [linking, setLinking] = useState(false);
@@ -69,7 +73,7 @@ export default function GiftCardBody({
       )}
       {isUncertain(card, "date") && <p className="mt-1 text-sm font-semibold text-status-watch-text">Check the date</p>}
 
-      {held && (
+      {held && actions && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {pledge ? (
             <>

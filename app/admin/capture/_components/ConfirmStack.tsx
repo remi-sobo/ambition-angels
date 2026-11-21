@@ -6,6 +6,9 @@ import { TYPE } from "@/lib/admin/typeScale";
 import {
   aiDrafted,
   canConfirm,
+  canFile,
+  cannotFileLine,
+  fileableProposed,
   filesTo,
   isUncertain,
   kindLabel,
@@ -26,7 +29,7 @@ import {
   type CaptureView,
   type CardView,
 } from "../_lib/cardView";
-import { cardAction, confirmAllCards, getCapture } from "../_lib/captureApi";
+import { cardAction, confirmAllCards, getCapture, sendToTeammate } from "../_lib/captureApi";
 import { formatElapsed } from "@/lib/hooks/continuousSpeech";
 import EditSheet from "./EditSheet";
 import GiftCardBody from "./GiftCard";
@@ -47,12 +50,15 @@ export default function ConfirmStack({
   onAllDone,
 }: {
   captureId: string;
-  initial?: { capture: CaptureView; cards: CardView[] };
+  initial?: { capture: CaptureView; cards: CardView[]; filing_permissions?: string[] };
   /** Called when nothing is left proposed or held. */
   onAllDone?: () => void;
 }) {
   const [capture, setCapture] = useState<CaptureView | null>(initial?.capture ?? null);
   const [cards, setCards] = useState<CardView[]>(initial?.cards ?? []);
+  // Voice for every role: which destinations this person may file to. A card
+  // they cannot file says so and offers "Send to a teammate".
+  const [filingPerms, setFilingPerms] = useState<string[] | undefined>(initial?.filing_permissions);
   const [loading, setLoading] = useState(!initial);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
@@ -68,6 +74,7 @@ export default function ConfirmStack({
     if (r.ok) {
       setCapture(r.data.capture);
       setCards(r.data.cards);
+      if (r.data.filing_permissions) setFilingPerms(r.data.filing_permissions);
       setLoadError(null);
     } else {
       setLoadError(r.error);
@@ -88,7 +95,8 @@ export default function ConfirmStack({
   }, [anyUndo]);
 
   const counts = useMemo(() => stackCounts(cards), [cards]);
-  const picks = useMemo(() => cards.filter(needsPick).length, [cards]);
+  const picks = useMemo(() => cards.filter((c) => needsPick(c) && canFile(c, filingPerms)).length, [cards, filingPerms]);
+  const fileable = useMemo(() => fileableProposed(cards, filingPerms), [cards, filingPerms]);
   const ordered = useMemo(() => orderCards(cards), [cards]);
 
   useEffect(() => {
@@ -112,6 +120,20 @@ export default function ConfirmStack({
     if (r.status === 409) await reload();
     setErrors((e) => ({ ...e, [card.id]: r.error }));
     return false;
+  };
+
+  const send = async (card: CardView) => {
+    setBusy((b) => ({ ...b, [card.id]: true }));
+    setErrors((e) => ({ ...e, [card.id]: "" }));
+    setSummary(null);
+    const r = await sendToTeammate(card.id);
+    setBusy((b) => ({ ...b, [card.id]: false }));
+    if (r.ok) {
+      replace(r.data.card);
+      return;
+    }
+    if (r.status === 409) await reload();
+    setErrors((e) => ({ ...e, [card.id]: r.error }));
   };
 
   const confirmAll = async () => {
@@ -159,14 +181,14 @@ export default function ConfirmStack({
                 : `Nothing is saved until you confirm. ${counts.pending} to go${picks ? `, ${picks} ${picks === 1 ? "needs" : "need"} a pick` : ""}.`}
           </p>
         </div>
-        {counts.proposed > 1 && (
+        {fileable > 1 && (
           <button
             type="button"
             onClick={() => void confirmAll()}
             disabled={allBusy}
             className={`${TYPE.button} min-h-[52px] rounded-control bg-orange px-4 text-white transition-colors hover:bg-orange-dark disabled:opacity-50`}
           >
-            {allBusy ? "Filing…" : `Confirm all ${counts.proposed}`}
+            {allBusy ? "Filing…" : `Confirm all ${fileable}`}
           </button>
         )}
       </div>
@@ -195,6 +217,8 @@ export default function ConfirmStack({
               onDiscard={() => void act(card, "discard")}
               onUndo={() => void act(card, "undo")}
               onEdit={() => setEditing(card)}
+              canFile={canFile(card, filingPerms)}
+              onSend={() => void send(card)}
               onPick={(patch) => act(card, "edit", patch)}
               onReplace={(c) => {
                 replace(c);
@@ -264,6 +288,24 @@ function FilesTo({ card }: { card: CardView }) {
   );
 }
 
+/** A card this person's role cannot file: say so plainly, and send it on. */
+function CannotFile({ card, busy, onSend }: { card: CardView; busy: boolean; onSend: () => void }) {
+  return (
+    <div className="mt-3 rounded-control border border-hairline bg-tile px-3 py-2.5" data-testid="cannot-file">
+      <p className={TYPE.body}>{cannotFileLine(card)}</p>
+      <p className={`${TYPE.metadata} mt-1`}>Send it to your organization&apos;s owner as a note in their inbox, and they&apos;ll file it.</p>
+      <button
+        type="button"
+        onClick={onSend}
+        disabled={busy}
+        className={`${TYPE.button} mt-2 min-h-[44px] rounded-control bg-orange px-4 text-white transition-colors hover:bg-orange-dark disabled:opacity-50`}
+      >
+        {busy ? "Sending…" : "Send to a teammate"}
+      </button>
+    </div>
+  );
+}
+
 function CardItem({
   card,
   now,
@@ -276,6 +318,8 @@ function CardItem({
   onPick,
   onReplace,
   onError,
+  canFile: fileableHere,
+  onSend,
 }: {
   card: CardView;
   now: number;
@@ -288,6 +332,8 @@ function CardItem({
   onPick: (patch: Record<string, unknown>) => Promise<boolean>;
   onReplace: (card: CardView) => void;
   onError: (message: string) => void;
+  canFile: boolean;
+  onSend: () => void;
 }) {
   const [showSource, setShowSource] = useState(false);
   const name = entityName(card);
@@ -316,16 +362,17 @@ function CardItem({
       <article className="rounded-panel border border-hairline bg-surface px-4 py-3" aria-busy={busy}>
         <DestTag card={card} />
         {kind === "gift" ? (
-          <GiftCardBody card={card} busy={busy} onReplace={onReplace} onError={onError} />
+          <GiftCardBody card={card} busy={busy} onReplace={onReplace} onError={onError} actions={fileableHere} />
         ) : (
-          <StoryCardBody card={card} busy={busy} onReplace={onReplace} onError={onError} />
+          <StoryCardBody card={card} busy={busy} onReplace={onReplace} onError={onError} actions={fileableHere} />
         )}
+        {!filed && !fileableHere && <CannotFile card={card} busy={busy} onSend={onSend} />}
         {error && (
           <p role="alert" className="mt-2 text-sm text-expense">
             {error}
           </p>
         )}
-        <FilesTo card={card} />
+        {fileableHere && <FilesTo card={card} />}
         {filed ? (
           <p className="mt-2 text-sm font-semibold text-revenue">
             {href ? (
@@ -386,12 +433,14 @@ function CardItem({
           Check who this is{card.heard_name ? ` · heard \u201c${card.heard_name}\u201d` : ""}
         </p>
       )}
-      {held ? (
+      {!filed && !fileableHere ? (
+        <CannotFile card={card} busy={busy} onSend={onSend} />
+      ) : held ? (
         <PickMatch card={card} disabled={busy} onPick={onPick} />
       ) : (
         !filed && <p className={`${TYPE.metadata} mt-2`}>{whatConfirmDoes(card)}</p>
       )}
-      {!filed && <FilesTo card={card} />}
+      {!filed && fileableHere && <FilesTo card={card} />}
 
       {error && (
         <p role="alert" className="mt-2 text-sm text-expense">
@@ -423,7 +472,7 @@ function CardItem({
         </div>
       ) : (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {!held && (
+          {!held && fileableHere && (
             <button
               type="button"
               onClick={onConfirm}

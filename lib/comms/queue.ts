@@ -4,6 +4,7 @@ import { loadOrgCommsSettings, sendBlocker } from "./settings";
 import { transportFor } from "./transport";
 import { MAX_RECIPIENTS, spreadMessage } from "./queue-plan";
 import { newTrackingToken } from "./links";
+import { campaignStoryBlockForOrg } from "./story-gate-server";
 
 /**
  * Enqueue and cancel (specs/comms-v2-gmail-amendment.md G2), on the caller's
@@ -34,6 +35,12 @@ export async function startCampaign(
   if (!campaign) return { ok: false, status: 404, error: "Not found" };
   if (campaign.status !== "draft") return { ok: false, status: 409, error: "Only a draft can be sent or scheduled." };
   if (!campaign.segment_id) return { ok: false, status: 400, error: "Attach a segment first" };
+
+  // V4 Stage D: an edition's email carries story text frozen at compile. A
+  // consent revoked or expired since then stops it here (and again per copy
+  // in the worker).
+  const storyBlock = await campaignStoryBlockForOrg(orgId, campaignId);
+  if (storyBlock) return { ok: false, status: 409, error: storyBlock };
 
   const settings = await loadOrgCommsSettings(supabase, orgId);
   const blocked = sendBlocker(settings);
@@ -141,6 +148,8 @@ export async function previewCampaign(
     .maybeSingle();
   if (!campaign) return { ok: false, status: 404, error: "Not found" };
   if (!campaign.segment_id) return { ok: false, status: 400, error: "Attach a segment first" };
+  const storyBlock = await campaignStoryBlockForOrg(orgId, campaignId);
+  if (storyBlock) return { ok: false, status: 409, error: storyBlock };
   const seg = await resolveCampaignSegment(supabase, orgId, campaign.segment_id);
   if (!seg.ok) return seg;
   return { ok: true, recipients: seg.recipients.length, excluded: seg.excluded, maxRecipients: MAX_RECIPIENTS };

@@ -5,6 +5,7 @@ import { transportFor, TransportError, type Transport } from "./transport";
 import { outcomeFor, PACE, WORKER_BUDGET_MS } from "./queue-plan";
 import { newTrackingToken } from "./links";
 import { raiseAlarms, sendLeadershipCopies } from "./safety";
+import { campaignStoryBlock } from "./story-gate";
 
 /**
  * The send worker (specs/comms-v2-gmail-amendment.md G2), run every minute by
@@ -31,7 +32,10 @@ type ClaimedRow = {
   tracking_token: string | null;
 };
 
-type CampaignContent = { subject: string; body: string };
+/** `storyBlock` is set when the campaign carries a story that may no longer
+ *  go out (consent revoked or expired since compile). Every copy is then
+ *  skipped with that reason; nothing is retried on its own. */
+type CampaignContent = { subject: string; body: string; storyBlock: string | null };
 
 export type DrainResult = {
   orgs: number;
@@ -165,6 +169,13 @@ async function sendOne(
     return { counter: "failed", stopOrg: false };
   }
 
+  // V4 Stage D: consent is checked again at the moment of sending, once per
+  // campaign per tick (cached with the content).
+  if (content.storyBlock) {
+    await finish({ status: "skipped", error: content.storyBlock.slice(0, 500) });
+    return { counter: "suppressed", stopOrg: false };
+  }
+
   // Rows queued before G3 have no token; give them one so they track too.
   let trackingToken = row.tracking_token;
   if (!trackingToken) {
@@ -244,7 +255,13 @@ async function campaignContent(
     .eq("org_id", orgId)
     .eq("id", campaignId)
     .maybeSingle();
-  const content = data ? { subject: data.subject as string, body: data.body as string } : null;
+  const content = data
+    ? {
+        subject: data.subject as string,
+        body: data.body as string,
+        storyBlock: await campaignStoryBlock(admin, orgId, campaignId),
+      }
+    : null;
   cache.set(campaignId, content);
   return content;
 }

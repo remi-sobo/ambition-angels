@@ -44,7 +44,7 @@ function MeasureRow({ m }: { m: StrategyHeadlineKpi }) {
       <div className="w-10 h-1.5 rounded-full bg-tile overflow-hidden shrink-0">
         <div className={`h-full ${BAR[planHealthToStatus(m.status)]}`} style={{ width: `${m.pct}%` }} />
       </div>
-      <span className="text-xs text-ink-2 tabular-nums shrink-0 w-14 text-right">
+      <span className="text-xs text-ink-2 tabular-nums shrink-0 min-w-[3.5rem] whitespace-nowrap text-right">
         {fmt(m.current, m.unit)}
         <span className="text-ink-3">/{fmt(m.target, m.unit)}</span>
       </span>

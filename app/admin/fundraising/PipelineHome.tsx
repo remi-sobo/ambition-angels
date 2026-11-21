@@ -211,7 +211,7 @@ export default async function PipelineHome({
         actions={
           <div className="flex items-center gap-3">
             <Link
-              href="/admin/fundraising/settings/stages"
+              href="/admin/settings/fundraising/stages"
               className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
             >
               Edit stages

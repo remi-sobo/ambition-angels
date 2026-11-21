@@ -18,6 +18,9 @@ import { getMyDisplayName } from "@/lib/admin/profile";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
 import { getShellTermLabels } from "@/lib/admin/terminology";
 import { resolveShellNav } from "@/lib/admin/v2shellNav";
+import { visibleSettingsSections } from "@/lib/admin/settingsSections";
+import { navPageIndex } from "@/lib/admin/navIndex";
+import { getRolePermissions } from "@/lib/admin/rolePermissions";
 
 export const metadata: Metadata = {
   title: {
@@ -107,7 +110,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     // B4: the shell resolves its labels through the V2 term map (an org's
     // own renames win; V2 names like People/Team are never clobbered by
     // generic registry nouns).
-    const nav = resolveShellNav(features, await getShellTermLabels());
+    // V4 A2: the nav also hides what the ROLE cannot open (matching the
+    // #593 server guard), e.g. Finance for staff without finance.read.
+    const perms = ctx ? await getRolePermissions(ctx.role) : null;
+    const nav = resolveShellNav(features, await getShellTermLabels(), perms);
+    // V4 A2: global search's page list is generated from the same nav (and
+    // the Settings sections this person can see), never a hand-kept list.
+    const searchPages = navPageIndex(nav, visibleSettingsSections(ctx?.role ?? null, features));
     return (
       <AdminUserProvider value={{ user, isOwner: ctx?.role === "owner" }}>
       <AdminBadgesProvider orgId={orgId} enabled={authed}>
@@ -116,7 +125,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           dialogs (every call site migrated at Q3; lint bans them). */}
       <ToastProvider>
       <ConfirmProvider>
-      <div className="admin-shell min-h-screen lg:flex bg-ink text-ink-1">
+      {/* V4 frame: on desktop the shell itself is the espresso background
+          (bg-navy is --bg-sidebar inside .admin-shell); the working surface
+          is the inset rounded panel below. Phones keep the plain app bg. */}
+      <div className="admin-shell min-h-screen lg:flex bg-ink lg:bg-navy text-ink-1">
         <AdminPWA />
         <V2Sidebar
           nav={nav}
@@ -137,22 +149,28 @@ export default async function AdminLayout({ children }: { children: ReactNode })
                 below its padding, overlapping the page h1) and never
                 sticking at all, since main itself never scrolls. The
                 mobile clipping bug, 2026-09-09. */}
+            {/* admin-panel (globals.css, lg+ only): the V4 inset working
+                panel, 18px corners, 10px from the top/right/bottom edges. It
+                is the desktop scroll container, so the tab zone sticks to
+                its top edge. Below lg the window scrolls as before. */}
             <main
-              className={`admin-main flex-1 min-w-0 lg:overflow-y-auto${reedEnabled ? " xl:pr-[52px]" : ""}`}
+              className={`admin-main admin-panel flex-1 min-w-0 lg:overflow-y-auto${reedEnabled ? " xl:pr-[52px]" : ""}`}
             >
               <V2TabZone nav={nav} />
               {children}
             </main>
           </RailEntityProvider>
           <V2ReedEdge />
-          {/* B5: the V2 bottom bar — Today · Work · ＋ · Programs · More,
-              derived from the same resolved nav as the sidebar. */}
+          {/* B5: the bottom bar — Today · Work · Capture · Fundraising ·
+              More, derived from the same resolved nav as the sidebar. The
+              centre is voice Capture behind ai.capture (V4 §8), else the ＋
+              quick-add sheet. */}
           <V2MobileBar nav={nav} currentUser={user} reedEnabled={reedEnabled} captureEnabled={captureEnabled} />
           {/* B6: the shell-level Quick Add — capture, report-an-issue, and
               the search overlay, at every desktop width (V2 has no rail). */}
           <V2QuickAdd currentUser={user} reedEnabled={reedEnabled} captureEnabled={captureEnabled} />
         </ReedLauncherProvider>
-        <GlobalSearch />
+        <GlobalSearch pages={searchPages} />
       </div>
       </ConfirmProvider>
       </ToastProvider>

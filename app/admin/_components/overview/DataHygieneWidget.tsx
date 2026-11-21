@@ -37,7 +37,7 @@ export default async function DataHygieneWidget({ className }: { className?: str
       </div>
 
       <div className="pt-3 border-t border-hairline space-y-2 text-sm">
-        <Link href="/admin/fundraising/duplicates" className="flex items-center justify-between hover:text-orange transition-colors group">
+        <Link href="/admin/settings/fundraising/duplicates" className="flex items-center justify-between hover:text-orange transition-colors group">
           <span className="text-ink-2 group-hover:text-orange">Possible duplicate constituents</span>
           <span className="text-orange font-semibold">Review →</span>
         </Link>

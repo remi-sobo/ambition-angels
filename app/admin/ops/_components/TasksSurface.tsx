@@ -150,7 +150,7 @@ export default function TasksSurface({
         </div>
 
         {scope === "active" && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {doneActive.length > 0 && (
               <button
                 type="button"

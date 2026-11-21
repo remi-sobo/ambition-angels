@@ -77,7 +77,7 @@ export default async function CommsPage({
   if (!ctx) {
     return (
       <div className="px-4 lg:px-8 py-6 lg:py-8">
-        <PageHeader title="Comms" subtitle="Sign in to view comms." />
+        <PageHeader title="Emails" subtitle="Sign in to view emails." />
       </div>
     );
   }
@@ -103,7 +103,7 @@ export default async function CommsPage({
   if (campaignsRes.error) {
     return (
       <div className="min-h-screen bg-ink p-6 lg:p-10">
-        <h1 className={`${TYPE.pageTitle} mb-4`}>Comms</h1>
+        <h1 className={`${TYPE.pageTitle} mb-4`}>Emails</h1>
         <div className="bg-tile border border-orange/30 rounded-panel-lg p-6 max-w-xl text-sm text-ink-2 leading-relaxed">
           The comms tables aren&apos;t in this database yet. Apply{" "}
           <code className="text-orange">create_email_campaigns.sql</code>, then reload.
@@ -121,7 +121,7 @@ export default async function CommsPage({
   return (
     <div className="min-h-screen bg-ink">
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-        <PageHeader title="Comms" subtitle="Email your donor segments" />
+        <PageHeader title="Emails" subtitle="Email your donor segments" />
 
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 flex-1 min-w-[18rem]">
@@ -166,7 +166,7 @@ export default async function CommsPage({
                     {c.status === "draft" ? (
                       <div className="text-sm font-medium text-ink-1 truncate">{c.name}</div>
                     ) : (
-                      <Link href={`/admin/fundraising/comms/${c.id}`} className="block text-sm font-medium text-ink-1 truncate hover:text-orange transition-colors">
+                      <Link href={`/admin/comms/emails/${c.id}`} className="block text-sm font-medium text-ink-1 truncate hover:text-orange transition-colors">
                         {c.name}
                       </Link>
                     )}

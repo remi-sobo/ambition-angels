@@ -103,7 +103,7 @@ export default function PageHeader({
         {hasActions ? (
           // V1 keeps its no-shrink action group; V4 lets the group wrap on a
           // phone so a secondary action plus the primary never overflow 390px.
-          <div className={`flex flex-wrap items-center gap-2 ${isV4 ? "max-w-full" : "shrink-0"}`}>
+          <div className="flex flex-wrap items-center gap-2 max-w-full">
             {actions}
             {secondaryActions}
             {more}

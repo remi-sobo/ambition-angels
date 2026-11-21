@@ -29,7 +29,7 @@ export default async function FinanceUploadPage() {
       {/* Other import flows */}
       <section className="grid sm:grid-cols-2 gap-3">
         <HubLink
-          href="/admin/finance/budget/import"
+          href="/admin/settings/finance/budget-import"
           title="Import budget →"
           desc="Bring in your annual budget from a QuickBooks export."
         />

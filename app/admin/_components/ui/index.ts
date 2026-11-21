@@ -73,6 +73,9 @@ export { default as TableSavedViews } from "./TableSavedViews";
 export type { ServerSavedView } from "./TableSavedViews";
 export { default as DataTable, DataTableSkeleton } from "./DataTable";
 export type { DataTableColumn, DataTableBulkAction } from "./DataTable";
+// The client half of DataTable. Pages use <DataTable>; exported so the barrel
+// covers every kit file (tests/kit-tokens.test.ts).
+export { default as DataTableFrame } from "./DataTableFrame";
 
 // Navigation
 export { default as Tabs, TabLink } from "./Tabs";

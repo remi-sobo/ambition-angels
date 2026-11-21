@@ -8,6 +8,9 @@ import { getGmailConnectionStatus } from "@/lib/comms/gmail-connection";
 import { getCalendarConnectionStatus } from "@/lib/google/connection";
 import { hubspotReadOrg, hubspotWriteOrg } from "@/lib/hubspot/connection";
 import { connectionRows, type ConnectionFacts, type ConnectionTone } from "@/lib/admin/connectionsView";
+import { getResidentOrgId } from "@/lib/admin/orgs";
+import { getSchedulerConnectionStatus } from "@/lib/google/scheduler-connection";
+import { SchedulerGoogleCard, type SchedulerNotice } from "./SchedulerGoogleCard";
 
 // V4 Stage F: Settings → Connections. Gmail, Google Calendar and HubSpot
 // status in one place, each with its one next step (the connect flows stay
@@ -24,7 +27,18 @@ const TONE: Record<ConnectionTone, string> = {
 };
 const TONE_LABEL: Record<ConnectionTone, string> = { ok: "Connected", attention: "Needs you", off: "Off" };
 
-export default async function Page() {
+function schedulerNotice(sp: Record<string, string | string[] | undefined>): SchedulerNotice {
+  const v = typeof sp.scheduler === "string" ? sp.scheduler : null;
+  if (v === "connected" || v === "cancelled") return { kind: v };
+  if (v === "error") return { kind: "error", reason: typeof sp.reason === "string" ? sp.reason : undefined };
+  return null;
+}
+
+export default async function Page({
+  searchParams = {},
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
   const gate = await requirePagePermission("org.manage", "Connections");
   if (!gate.ok) return <SettingsSectionPage sectionKey="connections" />;
   const ctx = gate.ctx;
@@ -44,6 +58,9 @@ export default async function Page() {
     hubspot: hasFeature(ents, "aa.hubspot_mirror") ? { syncOut: hubOut === ctx.orgId, syncIn: hubIn === ctx.orgId } : null,
   };
   const rows = connectionRows(facts);
+  // The /meet scheduler only books for the resident org (lib/meet/host.ts).
+  const residentOrgId = await getResidentOrgId().catch(() => null);
+  const scheduler = ctx.orgId === residentOrgId ? await getSchedulerConnectionStatus(ctx.orgId) : null;
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-reading space-y-6">
@@ -70,6 +87,7 @@ export default async function Page() {
           </li>
         ))}
       </ul>
+      {scheduler ? <SchedulerGoogleCard status={scheduler} notice={schedulerNotice(searchParams)} /> : null}
     </div>
   );
 }

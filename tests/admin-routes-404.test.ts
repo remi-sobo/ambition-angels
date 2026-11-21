@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isKnownAdminPath, isUnknownAdminPath, __parseRoute } from "@/lib/admin/adminRoutes";
 import { ADMIN_ROUTES } from "@/lib/admin/adminRoutes.generated";
-// @ts-expect-error plain ESM script, no types
 import { scanAdminRoutes } from "../scripts/admin-routes.mjs";
 
 const ROOT = join(__dirname, "..");

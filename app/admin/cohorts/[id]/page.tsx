@@ -265,7 +265,7 @@ export default async function CohortPage({
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
-        breadcrumb={[{ label: terms.cohorts, href: "/admin/programs/cohorts" }, { label: cohort.name }]}
+        breadcrumb={[{ label: terms.cohorts, href: "/admin/programs/cohorts" }]}
         title={cohort.name}
         subtitle={
           [cohort.program, cohort.term, cohort.location].filter(Boolean).join(" · ") +
@@ -341,7 +341,7 @@ export default async function CohortPage({
         />
       </SummaryStrip>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_420px] gap-4 items-start">
+      <div className="space-y-4">
         <div className="min-w-0 space-y-4">
           <DataTable
             label={`${cohort.name} roster`}
@@ -384,7 +384,11 @@ export default async function CohortPage({
           ) : null}
         </div>
 
-        <div className="min-w-0 space-y-4">
+      </div>
+
+      {/* Detail archetype: one timeline on the left, compact context panels on the right. */}
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px] gap-4 items-start mt-4">
+        <div className="min-w-0">
           <Timeline
             title={terms.sessions}
             entries={entries}
@@ -396,6 +400,8 @@ export default async function CohortPage({
             composer={canWrite ? <NewSessionForm cohortId={cohort.id} /> : undefined}
             emptyText={`No ${terms.sessions.toLowerCase()} scheduled yet.`}
           />
+        </div>
+        <div className="min-w-0 space-y-4">
           <EntityTasks entityType="cohort" entityId={cohort.id} entityLabel={cohort.name} defaultCategory="program" />
           <EntityDocuments entityType="cohort" entityId={cohort.id} entityLabel={cohort.name} />
         </div>

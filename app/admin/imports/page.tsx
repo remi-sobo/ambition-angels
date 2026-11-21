@@ -51,7 +51,7 @@ export default async function ImportsPage({
   searchParams,
 }: {
   searchParams?: Record<string, string | string[] | undefined>;
-} = {}) {
+}) {
   const roleGate = await requirePagePermission(["program.read", "fundraising.read"], "Imports");
   if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();

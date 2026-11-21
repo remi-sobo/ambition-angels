@@ -141,7 +141,8 @@ export default async function CohortsPage() {
         ]}
       />
 
-      <SectionSummary section="cohorts" />
+      {/* An empty org has nothing to summarize; "attendance is current" would be a false all-clear. */}
+      {cohorts.length > 0 ? <SectionSummary section="cohorts" /> : null}
 
       {(membersCapped || sessionsCapped || marksCapped) && (
         <Alert tone="warning" title="Partial data" className="mb-6">

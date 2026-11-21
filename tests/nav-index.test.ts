@@ -40,6 +40,9 @@ describe("global search's page list", () => {
     for (const f of [AA, NINE_KEY]) {
       for (const p of index(f)) {
         expect(p.label).not.toMatch(/Command Center|Executive Briefing|YGB|Overview \(V1\)|Ask Log|Monday Plan|Students/);
+        // The weekly briefing is a live screen that still sits under the V1
+        // /admin/briefing prefix (no 308); V4 B2 indexes it under Plan & Close.
+        if (p.href === "/admin/briefing/weekly") continue;
         expect(p.href).not.toMatch(/^\/admin\/(ops|students|strategic-plan|briefing|ygb|demoday|meetings|cohorts|partners|board|compliance|analytics)(\/|$)/);
       }
     }

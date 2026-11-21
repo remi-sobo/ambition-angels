@@ -68,7 +68,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
           title="Strategy not found"
           subtitle={
             <>
-              It may have been deleted. <Link href="/admin/fundraising/plan" className="text-orange">Back to the plan →</Link>
+              It may have been deleted. <Link href="/admin/fundraising/campaigns#plan" className="text-orange">Back to Campaigns →</Link>
             </>
           }
         />
@@ -145,7 +145,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
       <PageHeader
         title={strategy.name}
         eyebrow={
-          <Link href={`/admin/fundraising/plan?year=${year}`} className="hover:text-orange transition-colors">
+          <Link href="/admin/fundraising/campaigns#plan" className="hover:text-orange transition-colors">
             Fundraising Plan · {year}
           </Link>
         }

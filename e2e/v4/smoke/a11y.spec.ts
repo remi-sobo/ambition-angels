@@ -15,7 +15,7 @@ import { LOGS, gotoAdmin, setMock, writesSince } from "./helpers";
  */
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
-const BLOCKING = new Set((process.env.V4_A11Y_BLOCKING ?? "button-name,label,aria-allowed-role,select-name,link-name,aria-progressbar-name,aria-command-name,image-alt,duplicate-id-aria,frame-title,document-title,html-has-lang").split(","));
+const BLOCKING = new Set((process.env.V4_A11Y_BLOCKING ?? "button-name,label,select-name,link-name,image-alt,aria-allowed-role,aria-prohibited-attr,aria-progressbar-name,aria-command-name,duplicate-id-aria,frame-title,document-title,html-has-lang,link-in-text-block,label-content-name-mismatch,landmark-main-is-top-level,landmark-no-duplicate-main").split(","));
 
 test("axe on every route", async ({ page }, info) => {
   test.setTimeout(3 * 60 * 60 * 1000);

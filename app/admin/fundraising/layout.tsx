@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import FeatureGate from "@/app/admin/_components/FeatureGate";
+import PermissionGate from "@/app/admin/_components/PermissionGate";
 
 // Section layout for /admin/fundraising/*. The sidebar keeps only the daily
 // surfaces (Today's Moves · Donors · Pipeline · Grants · Campaigns); the
@@ -14,7 +15,15 @@ import FeatureGate from "@/app/admin/_components/FeatureGate";
 export default function FundraisingLayout({ children }: { children: ReactNode }) {
   return (
     <FeatureGate feature="modules.fundraising" label="Fundraising">
-      {children}
+      {/* V4 Stage P: and the role must read fundraising. RLS already returns
+          no rows to a role without it (a board viewer, finance); this shows
+          the not-authorized panel instead of empty screens with write
+          buttons. Pages that read through the service role still call
+          requirePagePermission themselves (client navigation inside the
+          group does not re-run this layout). */}
+      <PermissionGate perm="fundraising.read" label="Fundraising">
+        {children}
+      </PermissionGate>
     </FeatureGate>
   );
 }

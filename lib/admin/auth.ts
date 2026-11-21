@@ -2,6 +2,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { assigneeSlug } from "@/lib/admin/assignees";
+import { ACTIVE_ORG_COOKIE, resolveActiveMembership } from "@/lib/admin/activeOrg";
 
 /**
  * BloomOS Ring 1 auth helpers, backed by Supabase Auth.
@@ -22,11 +23,8 @@ import { assigneeSlug } from "@/lib/admin/assignees";
 
 export type AdminUser = string;
 
-/** Cookie naming the user's active org (core fence spec §6c, C1). Written
- *  ONLY by /api/admin/org/switch after validating membership — server
- *  components can't set cookies, so reads here ignore an invalid value
- *  instead of clearing it (the deterministic fallback makes that harmless). */
-export const ACTIVE_ORG_COOKIE = "bloom_active_org";
+// The active-org rule lives in an edge-safe module so middleware shares it.
+export { ACTIVE_ORG_COOKIE, resolveActiveMembership };
 
 export type OrgContext = {
   userId: string;
@@ -76,21 +74,6 @@ const getSessionMemberships = cache(
     };
   },
 );
-
-/** Active-org resolution rule (core fence spec §6c), pure for testability:
- *  a cookie naming an org the user belongs to wins; otherwise (no cookie,
- *  or a stale/foreign value) fall back to the oldest membership. */
-export function resolveActiveMembership<T extends { org_id: string }>(
-  memberships: readonly T[],
-  cookieOrgId: string | null | undefined,
-): T | null {
-  if (memberships.length === 0) return null;
-  if (cookieOrgId) {
-    const match = memberships.find((m) => m.org_id === cookieOrgId);
-    if (match) return match;
-  }
-  return memberships[0];
-}
 
 /** Session + membership context, or null when unauthenticated/unprovisioned.
  *  React-cached so layout + page can both call it in one request. */

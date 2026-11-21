@@ -3,12 +3,18 @@
 import { useEffect, useMemo, useState } from "react";
 import EmptyState from "../../../_components/EmptyState";
 import { TYPE } from "@/lib/admin/typeScale";
+import Figure, { SummaryStrip } from "@/app/admin/_components/ui/Figure";
+import Button from "@/app/admin/_components/ui/Button";
+import Input, { Checkbox, Select } from "@/app/admin/_components/ui/Input";
 
 // Scenario forecast. Projects cash month-by-month from today's cash at the
 // current burn, then layers user "levers" (one-time or recurring income/
 // expense) on top. Baseline (burn only) crosses zero at cash / burn — the same
 // runway the dashboard shows — so the scenario line is always read against a
-// familiar baseline. Levers persist per-device in localStorage.
+// familiar baseline. Levers persist per-device in localStorage (a planning
+// scratchpad, not a record: nothing here writes to the server).
+// V4 Stage G2: figures through the kit Figure with sources, labeled kit
+// controls on every lever, kit Buttons.
 
 export type SeedLever = { label: string; amount: number; date: string; status: string };
 
@@ -135,134 +141,141 @@ export default function ForecastBoard({
   const baseRunway = runway(baseline, cashOnHand);
   const scenRunway = runway(scenario, cashOnHand);
 
+  const burnSrc = "Average spending over the last three active months";
   return (
     <div className="space-y-6">
-      {/* Headline */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Stat label="Cash on hand" value={money(cashOnHand)} />
-        <Stat label="Monthly burn" value={money(monthlyBurn)} sub="trailing 3-month avg" tone="expense" />
-        <RunwayStat baseLabel={baseRunway.label} scenLabel={scenRunway.label} better={(scenRunway.months ?? 999) > (baseRunway.months ?? 999)} worse={(scenRunway.months ?? 999) < (baseRunway.months ?? 999)} />
-      </section>
+      <SummaryStrip label="Forecast figures">
+        <Figure label="Cash on hand" value={money(cashOnHand)} source="From the snapshot: the balance you set plus transactions since" />
+        <Figure label="Monthly burn" value={monthlyBurn > 0 ? money(monthlyBurn) : null} source={monthlyBurn > 0 ? burnSrc : "No spending imported yet"} />
+        <Figure
+          label="Runway, this scenario"
+          value={scenRunway.label}
+          compare={`Baseline: ${baseRunway.label}`}
+          compareTone={(scenRunway.months ?? 999) < (baseRunway.months ?? 999) ? "danger" : "muted"}
+          source="Cash on hand less burn, plus the what-ifs below that are switched on"
+        />
+      </SummaryStrip>
 
-      {/* Chart */}
-      <section className="rounded-panel-lg border-hairline bg-surface p-5">
-        <h2 className={`${TYPE.cardTitle} mb-1`}>Projected cash · 24 months</h2>
-        <p className="text-xs text-ink-2 mb-4">
-          Solid = your scenario. Faint = baseline (burn only, no income). Where a line crosses zero is when you run out.
+      <section className="bg-surface border border-hairline rounded-panel p-5">
+        <h2 className={`${TYPE.cardTitle} mb-1`}>Projected cash, next 24 months</h2>
+        <p className={`${TYPE.bodyMuted} mb-4`}>
+          Solid is your scenario. Faint is the baseline: burn only, no income. Where a line crosses zero is when you run out.
         </p>
         <Chart baseline={baseline} scenario={scenario} />
       </section>
 
-      {/* Levers */}
-      <section className="rounded-panel-lg border-hairline bg-surface p-5">
+      <section className="bg-surface border border-hairline rounded-panel p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h2 className={TYPE.cardTitle}>What-ifs</h2>
-          <div className="flex items-center gap-2 text-xs">
-            <button onClick={() => add("expense", "monthly")} className="rounded-full bg-tile border-hairline px-2.5 py-1 hover:bg-tile text-ink-1">+ Hire / recurring cost</button>
-            <button onClick={() => add("income", "one_time")} className="rounded-full bg-tile border-hairline px-2.5 py-1 hover:bg-tile text-ink-1">+ Expected gift</button>
-            <button onClick={() => add("income", "monthly")} className="rounded-full bg-tile border-hairline px-2.5 py-1 hover:bg-tile text-ink-1">+ Recurring income</button>
-            <button onClick={reset} className="text-ink-2 hover:text-ink-1 px-1">Reset</button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button size="sm" variant="secondary" onClick={() => add("expense", "monthly")}>
+              Add a hire or recurring cost
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => add("income", "one_time")}>
+              Add an expected gift
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => add("income", "monthly")}>
+              Add recurring income
+            </Button>
+            <Button size="sm" variant="quiet" onClick={reset}>
+              Reset
+            </Button>
           </div>
         </div>
 
         {levers.length === 0 ? (
           <EmptyState
             label="what-ifs"
-            hint="Stack a hire, a grant landing, or a slip with the buttons above. Until then this is the baseline burn-down."
+            hint="Stack a hire, a grant landing or a slip with the buttons above. Until then this is the baseline burn-down."
           />
         ) : (
-          <ul className="space-y-2">
+          <ul className="divide-y divide-hairline border-y border-hairline">
             {levers.map((l) => (
-              <li key={l.id} className="flex items-center gap-2 flex-wrap text-xs bg-tile/40 rounded-panel border border-hairline px-3 py-2">
-                <input type="checkbox" checked={l.enabled} onChange={(e) => update(l.id, { enabled: e.target.checked })} className="accent-orange" />
-                <input
+              <li key={l.id} className="flex items-center gap-2 flex-wrap py-2.5 text-[13px]">
+                <Checkbox
+                  aria-label={`Count ${l.label} in the scenario`}
+                  checked={l.enabled}
+                  onChange={(e) => update(l.id, { enabled: e.target.checked })}
+                />
+                <Input
+                  aria-label="What-if name"
                   value={l.label}
                   onChange={(e) => update(l.id, { label: e.target.value })}
-                  className="bg-ink border border-hairline rounded px-2 py-1 text-ink-1 w-44 min-w-0 flex-1"
+                  className="w-44 min-w-0 flex-1 text-[13px]"
                 />
-                <select
+                <Select
+                  aria-label={`Money in or out for ${l.label}`}
                   value={l.kind}
                   onChange={(e) => update(l.id, { kind: e.target.value as Lever["kind"] })}
-                  className="bg-ink border border-hairline rounded px-1.5 py-1 text-ink-1"
+                  className="w-32 text-[13px]"
                 >
-                  <option value="income">income</option>
-                  <option value="expense">expense</option>
-                </select>
-                <span className="text-ink-2">$</span>
-                <input
+                  <option value="income">Money in</option>
+                  <option value="expense">Money out</option>
+                </Select>
+                <Input
+                  aria-label={`Amount for ${l.label}`}
                   value={String(l.amount)}
                   onChange={(e) => update(l.id, { amount: Math.max(0, Number(e.target.value.replace(/[^0-9.]/g, "")) || 0) })}
                   inputMode="decimal"
-                  className="bg-ink border border-hairline rounded px-2 py-1 text-ink-1 w-24 [font-variant-numeric:tabular-nums]"
+                  className="w-28 tabular-nums text-[13px]"
                 />
-                <select
+                <Select
+                  aria-label={`How often for ${l.label}`}
                   value={l.mode}
                   onChange={(e) => update(l.id, { mode: e.target.value as Lever["mode"] })}
-                  className="bg-ink border border-hairline rounded px-1.5 py-1 text-ink-1"
+                  className="w-32 text-[13px]"
                 >
-                  <option value="one_time">one-time</option>
-                  <option value="monthly">/mo</option>
-                </select>
-                <span className="text-ink-2">{l.mode === "monthly" ? "from" : "in"}</span>
-                <select
+                  <option value="one_time">One time</option>
+                  <option value="monthly">Every month</option>
+                </Select>
+                <Select
+                  aria-label={l.mode === "monthly" ? `First month for ${l.label}` : `Month for ${l.label}`}
                   value={l.startMonth}
                   onChange={(e) => update(l.id, { startMonth: Number(e.target.value) })}
-                  className="bg-ink border border-hairline rounded px-1.5 py-1 text-ink-1"
+                  className="w-28 text-[13px]"
                 >
                   {Array.from({ length: HORIZON }, (_, i) => (
                     <option key={i} value={i}>
                       {monthLabel(i)}
                     </option>
                   ))}
-                </select>
-                {l.mode === "monthly" && (
-                  <>
-                    <span className="text-ink-2">to</span>
-                    <select
-                      value={l.endMonth ?? -1}
-                      onChange={(e) => update(l.id, { endMonth: Number(e.target.value) < 0 ? null : Number(e.target.value) })}
-                      className="bg-ink border border-hairline rounded px-1.5 py-1 text-ink-1"
-                    >
-                      <option value={-1}>end</option>
-                      {Array.from({ length: HORIZON }, (_, i) => (
-                        <option key={i} value={i}>
-                          {monthLabel(i)}
-                        </option>
-                      ))}
-                    </select>
-                  </>
-                )}
-                <button onClick={() => remove(l.id)} aria-label="Remove" className="ml-auto text-ink-3 hover:text-expense">
-                  ✕
-                </button>
+                </Select>
+                {l.mode === "monthly" ? (
+                  <Select
+                    aria-label={`Last month for ${l.label}`}
+                    value={l.endMonth ?? -1}
+                    onChange={(e) => update(l.id, { endMonth: Number(e.target.value) < 0 ? null : Number(e.target.value) })}
+                    className="w-28 text-[13px]"
+                  >
+                    <option value={-1}>No end</option>
+                    {Array.from({ length: HORIZON }, (_, i) => (
+                      <option key={i} value={i}>
+                        {monthLabel(i)}
+                      </option>
+                    ))}
+                  </Select>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant="quiet"
+                  iconOnly
+                  aria-label={`Remove ${l.label}`}
+                  onClick={() => remove(l.id)}
+                  className="ml-auto"
+                >
+                  <svg aria-hidden viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M4 4l8 8M12 4l-8 8" />
+                  </svg>
+                </Button>
               </li>
             ))}
           </ul>
         )}
-        <p className="text-xs text-ink-3 mt-3">
-          Seeded from your secured + projected pledges (projected ones weighted by probability). Edits are saved on this device; “Reset” reloads from your pledges.
+        <p className="text-xs text-ink-2 mt-3">
+          Seeded from your secured and projected pledges (projected ones weighted by their chance of closing). Edits are saved on
+          this device only; Reset reloads from your pledges.
         </p>
       </section>
-    </div>
-  );
-}
-
-function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "expense" }) {
-  return (
-    <div className="rounded-panel-lg border-hairline bg-surface p-5">
-      <div className={TYPE.cardLabel}>{label}</div>
-      <div className={`mt-1 font-display font-black text-3xl leading-none ${tone === "expense" ? "text-expense" : "text-ink-1"}`}>{value}</div>
-      {sub && <div className="mt-2 text-xs text-ink-2">{sub}</div>}
-    </div>
-  );
-}
-
-function RunwayStat({ baseLabel, scenLabel, better, worse }: { baseLabel: string; scenLabel: string; better: boolean; worse: boolean }) {
-  return (
-    <div className="rounded-panel-lg border-hairline bg-surface p-5">
-      <div className={TYPE.cardLabel}>Runway (scenario)</div>
-      <div className={`mt-1 font-display font-black text-2xl leading-none ${better ? "text-revenue" : worse ? "text-expense" : "text-ink-1"}`}>{scenLabel}</div>
-      <div className="mt-2 text-xs text-ink-2">baseline: {baseLabel}</div>
     </div>
   );
 }

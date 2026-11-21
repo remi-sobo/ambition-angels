@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { userMessage } from "@/lib/admin/errors";
-import { TYPE } from "@/lib/admin/typeScale";
+import { saveAction } from "@/lib/admin/saveAction";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import Button from "@/app/admin/_components/ui/Button";
+import { CheckboxField, DateField, SelectField, TextField, TextareaField } from "@/app/admin/_components/ui/Field";
 import { DOC_TYPES, DOC_TYPE_LABEL, docTypeExpires, minExpirationISO } from "@/lib/documents/config";
 
 export type EditableDoc = {
@@ -20,12 +23,13 @@ export type EditableDoc = {
 /**
  * Metadata edit dialog for a document row — every field the upload form sets
  * (title, type, notes, issue date, restricted) plus, for renewal-tracked
- * types, the expiration date, without re-uploading the file. Mirrors
- * TaskEditModal's shell: dimmed backdrop, Escape to close, one PATCH with
- * every editable field on save.
+ * types, the expiration date, without re-uploading the file. The kit Drawer
+ * (V4 Stage G): focus trap, Escape, phone sheet; one PATCH through
+ * saveAction with every editable field on save.
  */
 export default function DocumentEditModal({ doc, onClose }: { doc: EditableDoc; onClose: () => void }) {
   const router = useRouter();
+  const toast = useToast();
 
   const [title, setTitle] = useState(doc.title ?? "");
   const [docType, setDocType] = useState(doc.doc_type ?? "");
@@ -41,14 +45,6 @@ export default function DocumentEditModal({ doc, onClose }: { doc: EditableDoc; 
   // dates) so it can be corrected or cleared.
   const showExpires = docTypeExpires(docType) || doc.expires_at != null;
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !saving) onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose, saving]);
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     // A NEW expiry must be a future date (same gate as upload); an unchanged
@@ -59,134 +55,90 @@ export default function DocumentEditModal({ doc, onClose }: { doc: EditableDoc; 
     }
     setError(null);
     setSaving(true);
-    try {
-      const r = await fetch(`/api/admin/documents/${doc.id}`, {
+    const r = await saveAction({
+      request: {
+        url: `/api/admin/documents/${doc.id}`,
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           title: title.trim() || null,
           doc_type: docType || null,
           notes: notes.trim() || null,
           issued_at: issued || null,
           expires_at: showExpires ? expires || null : doc.expires_at,
           visibility: restricted ? "restricted" : "org",
-        }),
-      });
-      if (!r.ok) {
-        const body = await r.json().catch(() => ({}));
-        throw new Error(userMessage(r, body));
-      }
-      router.refresh();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
-      setSaving(false);
+        },
+      },
+      failure: false,
+      success: "Document saved",
+      toast,
+    });
+    setSaving(false);
+    if (!r.ok) {
+      setError(r.message);
+      return;
     }
+    router.refresh();
+    onClose();
   }
 
-  const inputCls =
-    "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40 w-full";
-  const labelCls = "text-xs text-ink-2 block";
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-      onClick={() => !saving && onClose()}
+    <Drawer
+      open
+      onClose={() => !saving && onClose()}
+      title="Edit document"
+      description={doc.filename}
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button type="submit" form={`edit-doc-${doc.id}`} loading={saving}>
+            {saving ? "Saving" : "Save"}
+          </Button>
+        </>
+      }
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-panel border-hairline bg-surface shadow-2xl max-h-[90vh] overflow-y-auto"
-      >
-        <form onSubmit={submit} className="p-6 space-y-4">
-          <div className="min-w-0">
-            <h2 className={TYPE.modalTitle}>Edit document</h2>
-            <p className="text-xs text-ink-2 mt-0.5 truncate">{doc.filename}</p>
-          </div>
-
-          <label className={labelCls}>
-            Title
-            <input
-              className={`${inputCls} mt-1`}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={doc.filename}
-              maxLength={200}
-            />
-          </label>
-
-          <div className="grid grid-cols-2 gap-3">
-            <label className={labelCls}>
-              Type
-              <select className={`${inputCls} mt-1`} value={docType} onChange={(e) => setDocType(e.target.value)}>
-                <option value="">Type…</option>
-                {DOC_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {DOC_TYPE_LABEL[t]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={labelCls}>
-              Issue date
-              <input
-                className={`${inputCls} mt-1`}
-                type="date"
-                value={issued}
-                onChange={(e) => setIssued(e.target.value)}
-                title="When the document was created or approved"
-              />
-            </label>
-            {showExpires && (
-              <label className={labelCls}>
-                Expiration date
-                <input
-                  className={`${inputCls} mt-1`}
-                  type="date"
-                  value={expires}
-                  onChange={(e) => setExpires(e.target.value)}
-                  title="Feeds the renewal queue and the expiring-soon view"
-                />
-              </label>
-            )}
-          </div>
-
-          <label className="inline-flex items-center gap-2 text-xs text-ink-2">
-            <input type="checkbox" checked={restricted} onChange={(e) => setRestricted(e.target.checked)} />
-            Restricted: hide from the board and other limited-access roles
-          </label>
-
-          <label className={labelCls}>
-            Notes
-            <textarea
-              className={`${inputCls} mt-1 min-h-[96px] resize-y`}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Provider, policy number, coverage details, context…"
-              maxLength={4000}
-            />
-          </label>
-
-          {error && <p className="text-expense text-sm">{error}</p>}
-
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={saving}
-              className="px-4 py-2 text-xs text-ink-2 hover:text-ink-1 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-5 py-2 rounded-full transition-colors disabled:opacity-50"
-            >
-              {saving ? "Saving…" : "Save"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      <form id={`edit-doc-${doc.id}`} onSubmit={submit} className="grid grid-cols-2 gap-4">
+        <TextField className="col-span-2" label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={doc.filename} maxLength={200} />
+        <SelectField
+          label="Type"
+          value={docType}
+          onChange={(e) => setDocType(e.target.value)}
+          placeholder="Choose a type"
+          options={DOC_TYPES.map((t) => ({ value: t, label: DOC_TYPE_LABEL[t] }))}
+        />
+        <DateField label="Issue date" hint="When it was created or approved" value={issued} onChange={(e) => setIssued(e.target.value)} />
+        {showExpires ? (
+          <DateField
+            className="col-span-2"
+            label="Expiration date"
+            hint="Feeds the renewal queue and the expiring-soon view"
+            value={expires}
+            onChange={(e) => setExpires(e.target.value)}
+            error={error && /Expiration/.test(error) ? error : undefined}
+          />
+        ) : null}
+        <CheckboxField
+          className="col-span-2"
+          label="Restricted"
+          hint="Hide from the board and other limited-access roles"
+          checked={restricted}
+          onChange={(e) => setRestricted(e.target.checked)}
+        />
+        <TextareaField
+          className="col-span-2"
+          label="Notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Provider, policy number, coverage details, context"
+          maxLength={4000}
+        />
+        {error && !/Expiration/.test(error) ? (
+          <p role="alert" className="col-span-2 text-sm font-medium text-status-critical-text">
+            {error}
+          </p>
+        ) : null}
+      </form>
+    </Drawer>
   );
 }

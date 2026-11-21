@@ -92,7 +92,6 @@
     "app/admin/finance/transactions/_components/TransactionFilters.tsx": 4,
     "app/admin/finance/upload/_components/UploadClient.tsx": 2,
     "app/admin/fundraising/_components/FunderPicker.tsx": 1,
-    "app/admin/fundraising/acknowledgments/_components/AckComposer.tsx": 3,
     "app/admin/fundraising/acknowledgments/_components/LogAckButton.tsx": 3,
     "app/admin/fundraising/acknowledgments/templates/_components/TemplateManager.tsx": 5,
     "app/admin/fundraising/asks/_components/AskControls.tsx": 3,

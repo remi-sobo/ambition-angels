@@ -20,14 +20,20 @@ import { resolveDonor360 } from "./resolve";
 // modules.fundraising fence this route group already applies.
 export const dynamic = "force-dynamic";
 
-export default async function Donor360Page({ params }: { params: { id: string } }) {
+export default async function Donor360Page({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams?: { activity?: string };
+}) {
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
   const supabase = createServerSupabase();
 
   const kind = await resolveDonor360((table) =>
     supabase.from(table).select("id").eq("id", params.id).maybeSingle(),
   );
-  if (kind === "constituent") return <DonorProfile id={params.id} v2 />;
+  if (kind === "constituent") return <DonorProfile id={params.id} v2 showAll={searchParams?.activity === "all"} />;
   if (kind === "prospect") {
     return (
       <FeatureGate feature="ai.prospect_research" label="Prospect Research">

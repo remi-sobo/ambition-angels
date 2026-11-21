@@ -2,7 +2,6 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
-import StatCard from "../../_components/StatCard";
 import PageHeader from "../../_components/PageHeader";
 import { constituentName } from "@/lib/fundraising/display";
 import {
@@ -14,7 +13,26 @@ import {
 import { resolveOrgEmailIdentity } from "@/lib/email/org-identity";
 import { reconcileAckQueue, type AckQueueGift } from "@/lib/fundraising/ack-tasks";
 import { ensureEscalationsForQueue } from "@/lib/fundraising/stewardship";
-import { type AckChannel } from "@/lib/fundraising/ack-channels";
+import { type AckChannel, CHANNEL_LABEL } from "@/lib/fundraising/ack-channels";
+import Figure, { SummaryStrip } from "../../_components/ui/Figure";
+import SavedViews from "../../_components/ui/SavedViews";
+import DataTable, { type DataTableColumn } from "../../_components/ui/DataTable";
+import EmptyState from "../../_components/EmptyState";
+import { parseTableState, type TableSpec } from "@/lib/admin/dataTable";
+import { todayInTZ } from "@/lib/admin/ops/week";
+import { daysBetween, shortDay, usd } from "@/lib/fundraising/donorRecord";
+import {
+  THANK_VIEWS,
+  filterThankYous,
+  isThankView,
+  nextStepFor,
+  pageOf,
+  sortThankYous,
+  thankSummary,
+  type ThankViewKey,
+} from "@/lib/fundraising/thankYouList";
+import ThankYouButton from "./_components/ThankYouButton";
+import { RecordGiftButton, ReviewGiftButton } from "../_components/gift/GiftButtons";
 import AckComposer, { type AckTemplateLite } from "./_components/AckComposer";
 import ThankathonButton from "./_components/ThankathonButton";
 import LogAckButton from "./_components/LogAckButton";
@@ -40,7 +58,23 @@ const fmtDate = (iso: string) =>
 const daysSince = (iso: string) =>
   Math.max(Math.floor((Date.now() - new Date(iso + "T00:00:00").getTime()) / 86400000), 0);
 
-export default async function AckQueue({ embedded = false }: { embedded?: boolean }) {
+const BASE = "/admin/fundraising/acknowledgments";
+// DataTable v2 spec: oldest gift first by default (the IRS clock), sortable
+// by date and amount, 50 to a page.
+const THANK_TABLE: TableSpec = {
+  sortable: [{ key: "date", first: "asc" }, { key: "amount", first: "desc" }],
+  defaultSort: { key: "date", dir: "asc" },
+  pageSize: 50,
+};
+
+export default async function AckQueue({
+  embedded = false,
+  searchParams,
+}: {
+  embedded?: boolean;
+  /** Standalone page only: view, sort, dir, page. */
+  searchParams?: Record<string, string | undefined>;
+}) {
   const supabase = createServerSupabase();
   const ctx = await getOrgContext();
   const createdBy = await getAdminUser();
@@ -78,12 +112,20 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
         ? identity.reason
         : "";
 
-  const required = pending.filter((g) => requiresSubstantiation(g.amount));
-  const oldest = pending[0];
+  const receiptOf = (g: AckQueueGift): ReceiptGift => ({
+    amount: g.amount,
+    gift_date: g.gift_date,
+    method: g.method,
+    fair_market_value: g.fair_market_value === null ? null : Number(g.fair_market_value),
+    deductible_amount: g.deductible_amount === null ? null : Number(g.deductible_amount),
+  });
 
-  return (
-    <div>
-      {embedded ? (
+  if (embedded) {
+    // Fundraising → Today's "Thank someone" section: the same queue and
+    // composer, plus (V4 B1) "Review gift", which opens the gift drawer on
+    // that gift to fix it or mark it thanked.
+    return (
+      <div>
         <div className="flex items-center gap-3 flex-wrap mb-4">
           <div>
             <h2 className={TYPE.cardTitle}>
@@ -97,89 +139,27 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
             <LogAckButton />
             <ThankathonButton count={pending.length} />
             <Link
-              href="/admin/fundraising/acknowledgments/templates"
+              href="/admin/fundraising/acknowledgments"
               className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
             >
-              Templates →
+              All thank-yous →
             </Link>
           </div>
         </div>
-      ) : null}
-
-      <div className={embedded ? "space-y-4" : "max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6"}>
-        {/* V4 A2: standalone, this queue is Fundraising → Thank-yous, so it
-            takes the standard page header under the shell tab row (the V1
-            sticky bar and its "← Donors" link to a 308'd path are gone). */}
-        {!embedded && (
-          <PageHeader
-            title="Thank-yous"
-            subtitle="Gifts waiting for a thank-you, oldest first. The receipt language is generated, never edited."
-            actions={
-              <>
-                <LogAckButton />
-                <ThankathonButton count={pending.length} />
-                <Link
-                  href="/admin/fundraising/acknowledgments/letters"
-                  className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
-                >
-                  Letters →
-                </Link>
-                <Link
-                  href="/admin/fundraising/acknowledgments/templates"
-                  className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
-                >
-                  Templates →
-                </Link>
-              </>
-            }
-          />
-        )}
-        {!embedded && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <StatCard
-            label="Awaiting Thanks"
-            value={pending.length}
-            sub={pending.length > 0 ? "oldest first below" : "all caught up 🎉"}
-          />
-          <StatCard
-            label={`IRS-Required (≥ $${IRS_SUBSTANTIATION_THRESHOLD})`}
-            value={required.length}
-            delta={required.length > 0 ? { text: "written receipt required", direction: "down" } : undefined}
-            sub={required.length === 0 ? "none outstanding" : undefined}
-            muted={required.length === 0}
-          />
-          <StatCard
-            label="Oldest Waiting"
-            value={oldest ? `${daysSince(oldest.gift_date)}d` : "—"}
-            sub={oldest ? `gift on ${fmtDate(oldest.gift_date)}` : undefined}
-          />
-        </div>
-        )}
-
         <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
           {pending.length === 0 ? (
             <p className={`p-8 ${TYPE.bodyMuted}`}>
-              Every gift has been thanked. New Stripe donations of $250+ will appear here
-              automatically; smaller gifts are marked not-required but can still be thanked from
-              the donor&apos;s profile.
+              Every gift has been thanked. New Stripe donations of $250+ will appear here automatically; smaller gifts
+              are marked not-required but can still be thanked from the donor&apos;s profile.
             </p>
           ) : (
             <ul className="divide-y divide-hairline">
               {pending.map((g) => {
-                const receiptGift: ReceiptGift = {
-                  amount: g.amount,
-                  gift_date: g.gift_date,
-                  method: g.method,
-                  fair_market_value: g.fair_market_value === null ? null : Number(g.fair_market_value),
-                  deductible_amount: g.deductible_amount === null ? null : Number(g.deductible_amount),
-                };
                 const email = g.constituent?.emails?.[0] ?? null;
                 return (
                   <li key={g.id} className="px-5 py-4">
                     <div className="flex items-center gap-4 flex-wrap">
-                      <span className="font-bold text-ink-1 [font-variant-numeric:tabular-nums] w-24">
-                        {money(g.amount)}
-                      </span>
+                      <span className="font-bold text-ink-1 [font-variant-numeric:tabular-nums] w-24">{money(g.amount)}</span>
                       <div className="min-w-0 flex-1">
                         <div className="text-sm text-ink-1 font-medium truncate">
                           {g.constituent ? constituentName(g.constituent) : "Anonymous"}
@@ -195,11 +175,12 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
                           Receipt required
                         </span>
                       )}
+                      <ReviewGiftButton giftId={g.id} />
                       <AckComposer
                         giftId={g.id}
                         donorName={g.constituent ? constituentName(g.constituent) : "there"}
                         donorEmail={email}
-                        complianceBlock={previewBlock(receiptGift)}
+                        complianceBlock={previewBlock(receiptOf(g))}
                         templates={templates}
                         defaultChannel={(g.constituent?.preferred_ack_channel as AckChannel | null) ?? null}
                         orgName={ctx?.orgName ?? "our organization"}
@@ -211,15 +192,195 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
             </ul>
           )}
         </section>
-
-        <p className="text-xs text-ink-2 leading-relaxed max-w-2xl">
-          Each pending thank-you is also a task on the Ops queue and the Right Rail, linked to the
-          donor. The receipt language (gift amount, date, the no-goods-or-services statement, and the
-          quid-pro-quo split when a fair market value is recorded) is generated from the gift record
-          and appended to every email automatically. It is never AI-written and never editable. AI
-          drafts only the personal note, and nothing sends without your review.
-        </p>
       </div>
+    );
+  }
+
+  // ── Standalone: Fundraising → Thank-yous, the List archetype on DataTable
+  // v2 (V4 B1). Views and sort live in the URL; the whole queue is already in
+  // hand (reconciled above), so the page is cut here.
+  const today = todayInTZ();
+  type Row = AckQueueGift & { email: string | null; donor: string };
+  const all: Row[] = pending.map((g) => ({
+    ...g,
+    email: g.constituent?.emails?.[0] ?? null,
+    donor: g.constituent ? constituentName(g.constituent) : "Anonymous",
+  }));
+  const params = searchParams ?? {};
+  const view: ThankViewKey = isThankView(params.view) ? params.view : "all";
+  const state = parseTableState(params, THANK_TABLE);
+  const inView = filterThankYous(all, view);
+  const sortedRows = sortThankYous(inView, state.sort);
+  const rows = pageOf(sortedRows, state.page, THANK_TABLE.pageSize);
+  const sum = thankSummary(all, today);
+  const filters: Record<string, string> = view !== "all" ? { view } : {};
+  const viewCount = (k: ThankViewKey) => filterThankYous(all, k).length;
+
+  const columns: DataTableColumn<Row>[] = [
+    {
+      key: "donor",
+      header: "Donor",
+      card: "title",
+      render: (r) =>
+        r.constituent_id ? (
+          <Link href={`/admin/fundraising/donors-funders/${r.constituent_id}`} className="font-semibold text-ink-1 hover:underline underline-offset-2">
+            {r.donor}
+          </Link>
+        ) : (
+          <span className="font-semibold text-ink-1">{r.donor}</span>
+        ),
+    },
+    { key: "amount", header: "Gift", align: "right", className: "font-semibold text-ink-1 tabular-nums", render: (r) => usd(r.amount) },
+    {
+      key: "date",
+      header: "Given",
+      className: "text-ink-2 tabular-nums",
+      render: (r) => (
+        <>
+          {shortDay(r.gift_date, today)}
+          <span className="block text-xs">
+            {(() => {
+              const d = Math.max(0, daysBetween(r.gift_date, today));
+              return d === 0 ? "today" : `${d} day${d === 1 ? "" : "s"} ago`;
+            })()}
+          </span>
+        </>
+      ),
+    },
+    {
+      key: "contact",
+      header: "Thank by",
+      className: "text-ink-2",
+      render: (r) => (
+        <>
+          <span className="block truncate max-w-[220px]">{r.email ?? "No email on file"}</span>
+          {r.constituent?.preferred_ack_channel ? (
+            <span className="block text-xs">Prefers {CHANNEL_LABEL[r.constituent.preferred_ack_channel]?.toLowerCase() ?? r.constituent.preferred_ack_channel}</span>
+          ) : null}
+        </>
+      ),
+    },
+    {
+      key: "receipt",
+      header: "Receipt",
+      className: "text-ink-2",
+      render: (r) =>
+        requiresSubstantiation(r.amount) ? (
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-status-critical-bg text-status-critical-text">Required</span>
+        ) : (
+          <span className="text-xs">Not required</span>
+        ),
+    },
+  ];
+
+  return (
+    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
+      <PageHeader
+        title="Thank-yous"
+        subtitle="Gifts waiting for a thank-you, oldest first. The receipt language is generated, never edited."
+        secondaryActions={
+          <span className="flex flex-wrap items-center gap-3">
+            <LogAckButton />
+            <ThankathonButton count={pending.length} />
+          </span>
+        }
+        moreActions={[
+          { label: "Print letters", href: "/admin/fundraising/acknowledgments/letters" },
+          { label: "Thank-you templates", href: "/admin/fundraising/acknowledgments/templates" },
+        ]}
+        primaryAction={<RecordGiftButton />}
+      />
+
+      <SavedViews
+        label="Thank-you views"
+        activeKey={view}
+        views={THANK_VIEWS.map((v) => ({
+          key: v.key,
+          label: v.label,
+          count: viewCount(v.key),
+          href: v.key === "all" ? BASE : `${BASE}?view=${v.key}`,
+        }))}
+      />
+
+      <SummaryStrip label="Thank-you summary">
+        <Figure
+          label="Waiting for thanks"
+          value={sum.count}
+          compare={sum.count > 0 ? usd(sum.total) : undefined}
+          source="Gifts marked thank-you pending, as of now"
+        />
+        <Figure
+          label={`Written receipt required ($${IRS_SUBSTANTIATION_THRESHOLD} and up)`}
+          value={sum.receiptCount}
+          source="IRS rule for a single gift, from each gift's amount"
+        />
+        <Figure
+          label="Oldest waiting"
+          value={sum.oldestDays === null ? null : `${sum.oldestDays} day${sum.oldestDays === 1 ? "" : "s"}`}
+          compareTone={sum.oldestDays !== null && sum.oldestDays > 2 ? "danger" : "muted"}
+          source={sum.oldestDate ? `Gift on ${shortDay(sum.oldestDate, today)}` : "Shows when a gift is waiting"}
+        />
+      </SummaryStrip>
+
+      <DataTable
+        label="Gifts waiting for a thank-you"
+        noun={{ one: "gift", many: "gifts" }}
+        columns={columns}
+        nextStep={{
+          header: "Next step",
+          render: (r) => (
+            <span className="flex flex-wrap items-center gap-2">
+              <ThankYouButton
+                mode={nextStepFor({ email: r.email, preferred: r.constituent?.preferred_ack_channel })}
+                giftId={r.id}
+                donorName={r.donor === "Anonymous" ? "there" : r.donor}
+                donorEmail={r.email}
+                complianceBlock={previewBlock(receiptOf(r))}
+                templates={templates}
+                defaultChannel={(r.constituent?.preferred_ack_channel as AckChannel | null) ?? null}
+                orgName={ctx?.orgName ?? "our organization"}
+                giftLine={`${usd(r.amount)} gift on ${shortDay(r.gift_date, today)}${r.email ? `. To ${r.email}` : ". No email on file"}`}
+              />
+              <ReviewGiftButton giftId={r.id} />
+            </span>
+          ),
+        }}
+        data={{ rows, total: inView.length, page: state.page, pageSize: THANK_TABLE.pageSize }}
+        getRowId={(r) => r.id}
+        getRowLabel={(r) => `${r.donor}, ${usd(r.amount)}`}
+        spec={THANK_TABLE}
+        state={state}
+        baseHref={BASE}
+        filters={filters}
+        bulkActions={[
+          {
+            kind: "request",
+            key: "mark",
+            label: "Mark thanked",
+            url: "/api/admin/acknowledgments/mark/bulk",
+            confirm: "Mark these gifts thanked?",
+            confirmBody: "Each is recorded as thanked outside BloomOS and leaves this list. No email is sent.",
+            success: "Marked thanked",
+          },
+        ]}
+        empty={
+          all.length === 0 ? (
+            <EmptyState
+              label="thank-yous waiting"
+              hint="Every gift has been thanked. New gifts land here when your thank-you rules ask for a personal touch."
+            />
+          ) : undefined
+        }
+        emptyMessage="No gifts in this view."
+      />
+
+      <p className="text-xs text-ink-2 leading-relaxed max-w-2xl mt-4">
+        Each pending thank-you is also a task on the Ops queue and the Right Rail, linked to the donor. The receipt
+        language (gift amount, date, the no-goods-or-services statement, and the quid-pro-quo split when a fair market
+        value is recorded) is generated from the gift record and appended to every email automatically. It is never
+        AI-written and never editable. AI drafts only the personal note, and nothing sends without your review. Mark
+        thanked never sends anything.
+      </p>
     </div>
   );
 }

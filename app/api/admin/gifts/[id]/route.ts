@@ -1,67 +1,100 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { requirePermission } from "@/lib/admin/requirePermission";
 import { audit } from "@/lib/audit";
+import {
+  EDITABLE_FIELDS,
+  FIELD_LABEL,
+  diffGift,
+  lockedViolations,
+  normalizeGiftPatch,
+  receiptWasSent,
+} from "@/lib/fundraising/giftEdit";
 
-// PATCH / DELETE a single gift. Editing and removing hand-entered (or
-// mis-keyed) gifts; the donor link itself is not reassigned here.
+// PATCH / DELETE a single gift. The donor link itself is not reassigned here.
+//
+// V4 Stage B1 made gifts editable from the donor timeline (the gift drawer).
+// The edit rules live in lib/fundraising/giftEdit.ts; in short: server-guarded
+// with fundraising.write, scoped to the active org, synced gifts keep their
+// amount/date/method, every edit is audited with the before and after of what
+// changed, and a gift whose tax receipt already went out is never resent.
 
-const METHODS = ["card", "cash", "check", "ach", "in_kind", "stock", "other"] as const;
-const isISODate = (v: unknown): v is string =>
-  typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
-const money = (v: unknown): number | null =>
-  typeof v === "number" && isFinite(v) && v >= 0 ? Math.round(v * 100) / 100 : null;
+
+const GIFT_COLUMNS = `id, org_id, amount, gift_date, method, fund_id, campaign_id, appeal_id, fair_market_value, deductible_amount, notes, external_source`;
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requirePermission("fundraising.write");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  const ctx = gate.ctx;
   if (!isUuid(params.id)) return NextResponse.json({ error: "Bad id" }, { status: 400 });
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
-  const update: Record<string, unknown> = {};
-  const amount = money(body.amount);
-  if (amount !== null && amount > 0) update.amount = amount;
-  if (isISODate(body.gift_date)) update.gift_date = body.gift_date;
-  if (METHODS.includes(body.method as (typeof METHODS)[number])) update.method = body.method;
-  if (isUuid(body.fund_id) || body.fund_id === null) update.fund_id = body.fund_id;
-  if (isUuid(body.campaign_id) || body.campaign_id === null) update.campaign_id = body.campaign_id;
-  if (isUuid(body.appeal_id) || body.appeal_id === null) update.appeal_id = body.appeal_id;
-  const fmv = money(body.fair_market_value);
-  if (fmv !== null) {
-    update.fair_market_value = fmv > 0 ? fmv : null;
-    if (fmv > 0 && amount !== null) {
-      update.deductible_amount = Math.max(0, Math.round((amount - fmv) * 100) / 100);
-    } else if (fmv === 0) {
-      update.deductible_amount = null;
-    }
-  }
-  if (typeof body.notes === "string") update.notes = body.notes.slice(0, 2000) || null;
+  const supabase = createServerSupabase();
+  // Read the row first: the audit needs the before, and the active org is the
+  // fence (RLS alone spans every org the user belongs to).
+  const { data: before, error: readErr } = await supabase
+    .from("gifts")
+    .select(GIFT_COLUMNS)
+    .eq("id", params.id)
+    .eq("org_id", ctx.orgId)
+    .maybeSingle();
+  if (readErr) return NextResponse.json({ error: "Could not read the gift" }, { status: 500 });
+  if (!before) return NextResponse.json({ error: "Gift not found" }, { status: 404 });
 
+  const update = normalizeGiftPatch(body, Number(before.amount));
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }
+  const diff = diffGift(before as Record<string, unknown>, update);
+  if (diff.changed.length === 0 && !("deductible_amount" in diff.after)) {
+    // Nothing moved: no write and no audit row.
+    return NextResponse.json({ ok: true, changed: [] });
+  }
+  const blocked = lockedViolations(before.external_source as string | null, diff.changed);
+  if (blocked.length > 0) {
+    return NextResponse.json(
+      {
+        error: `This gift came from ${before.external_source}. Change its ${blocked
+          .map((f) => FIELD_LABEL[f].toLowerCase())
+          .join(", ")} at the source; it would sync back here.`,
+      },
+      { status: 409 },
+    );
+  }
 
-  const supabase = createServerSupabase();
-  const { error } = await supabase.from("gifts").update(update).eq("id", params.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // Write only what changed.
+  const write: Record<string, unknown> = {};
+  for (const f of EDITABLE_FIELDS) if (diff.changed.includes(f)) write[f] = update[f];
+  if ("deductible_amount" in diff.after) write.deductible_amount = diff.after.deductible_amount;
+
+  const { error } = await supabase.from("gifts").update(write).eq("id", params.id).eq("org_id", ctx.orgId);
+  if (error) return NextResponse.json({ error: "Could not save the gift" }, { status: 500 });
+
+  // Was a receipt already sent? The edit never resends; the response tells
+  // the drawer so it can say so.
+  const { data: acks } = await supabase
+    .from("acknowledgments")
+    .select("template, channel, sent_at")
+    .eq("gift_id", params.id)
+    .limit(50);
+  const receiptSent = receiptWasSent((acks ?? []) as Array<{ template: string | null; channel: string | null; sent_at: string | null }>);
 
   await audit(req, {
     action: "fundraising.gift.update",
     entityType: "gifts",
     entityId: params.id,
-    after: update,
+    before: diff.before,
+    after: { ...diff.after, receipt_already_sent: receiptSent },
   });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, changed: diff.changed, receiptSent });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requirePermission("fundraising.write");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   if (!isUuid(params.id)) return NextResponse.json({ error: "Bad id" }, { status: 400 });
 
   const supabase = createServerSupabase();
@@ -73,6 +106,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     .from("gifts")
     .select("external_source")
     .eq("id", params.id)
+    .eq("org_id", gate.ctx.orgId)
     .maybeSingle();
   if (!gift) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const synced = ["stripe", "givebutter", "hubspot_deal"];
@@ -86,7 +120,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     );
   }
 
-  const { error } = await supabase.from("gifts").delete().eq("id", params.id);
+  const { error } = await supabase.from("gifts").delete().eq("id", params.id).eq("org_id", gate.ctx.orgId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   await audit(req, {

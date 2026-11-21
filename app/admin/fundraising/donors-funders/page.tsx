@@ -24,6 +24,7 @@ import {
 import { hasEntitlement } from "@/lib/admin/entitlements";
 import { getTermLabel, pluralizeTerm } from "@/lib/admin/terminology";
 import ResearchDrawer from "./_components/ResearchDrawer";
+import { RecordGiftButton } from "../_components/gift/GiftButtons";
 import { todayISO } from "../../ops/_types/ops";
 
 // Spec Fundraising, stage F1 — Donors & Funders: ONE people-list over
@@ -123,6 +124,9 @@ export default async function DonorsFundersPage({
               ) : null}
             </div>
           }
+          // V4 B1: the list's one primary action opens the gift drawer; the
+          // donor is picked there (GiftFlow.dc.html).
+          primaryAction={<RecordGiftButton />}
         />
 
         {/* ── Views + filters (URL-driven, server-rendered) ── */}

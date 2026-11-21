@@ -1,31 +1,19 @@
 "use client";
 
-// Client pieces of the Major Gifts pipeline: the new-opportunity form and
-// the per-card actions (stage moves, edit, lost/reopen). Same convention as
+// The new-ask form for the Pipeline header. Same convention as
 // GrantControls: call the admin APIs, then router.refresh() so the server
-// page re-renders with fresh data.
+// page re-renders with fresh data. The card and its actions moved to
+// PipelineBoardV4 at V4 B1.
 
-import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { type OpportunityRow } from "./pipeline-stages";
-import {
-  firstOpenStageKey,
-  stageKeysOfType,
-  type PipelineStage,
-} from "@/lib/fundraising/stages";
-import { isLostStage, isWonStage } from "@/lib/fundraising/stage-sets";
-import OpportunityEditModal from "./OpportunityEditModal";
+import Button from "@/app/admin/_components/ui/Button";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage, networkMessage } from "@/lib/admin/errors";
 
 const inputCls =
   "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
-
-const fmtMoney = (n: number) =>
-  n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export function NewOpportunityForm() {
   const router = useRouter();
@@ -76,12 +64,9 @@ export function NewOpportunityForm() {
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors"
-      >
-        + New ask
-      </button>
+      <Button type="button" size="lg" onClick={() => setOpen(true)}>
+        Add an ask
+      </Button>
     );
   }
 
@@ -173,166 +158,5 @@ export function NewOpportunityForm() {
       </label>
       {error && <p className="col-span-full text-expense text-xs">{error}</p>}
     </form>
-  );
-}
-
-function CapacityDots({ rating }: { rating: number }) {
-  return (
-    <span className="inline-flex gap-0.5" title={`Capacity ${rating}/5`}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <span
-          key={i}
-          className={`w-1.5 h-1.5 rounded-full ${i <= rating ? "bg-orange" : "bg-tile"}`}
-        />
-      ))}
-    </span>
-  );
-}
-
-export function OpportunityCard({
-  opp,
-  stages,
-}: {
-  opp: OpportunityRow;
-  /** The card's pipeline config (drives the Lost / Reopen actions). */
-  stages: PipelineStage[];
-}) {
-  const router = useRouter();
-  const toast = useToast();
-  const confirm = useConfirm();
-  const [busy, setBusy] = useState(false);
-  const [editing, setEditing] = useState(false);
-
-  // Stage semantics come from config; fall back to the cross-taxonomy sets for
-  // a card whose stage key isn't in this pipeline's config (stale data).
-  const stageType =
-    stages.find((s) => s.key === opp.stage)?.stageType ??
-    (isWonStage(opp.stage) ? "won" : isLostStage(opp.stage) ? "lost" : "open");
-  const lostKey = stageKeysOfType(stages, "lost")[0] ?? null;
-  const reopenKey = firstOpenStageKey(stages);
-
-  const patch = async (fields: Record<string, unknown>) => {
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/admin/opportunities/${opp.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fields),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        toast.error(userMessage(res, j));
-      }
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const overdue =
-    !!opp.nextStepDue &&
-    stageType === "open" &&
-    opp.nextStepDue < new Date().toISOString().slice(0, 10);
-
-  return (
-    <article
-      className={`bg-surface border rounded-panel p-3 text-sm ${
-        overdue ? "border-expense/30" : "border-hairline"
-      } ${busy ? "opacity-60" : ""}`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          {opp.constituentId ? (
-            <Link
-              href={`/admin/fundraising/donors/${opp.constituentId}`}
-              draggable={false}
-              onClick={(e) => e.stopPropagation()}
-              className="font-semibold text-ink-1 hover:text-orange transition-colors truncate block"
-            >
-              {opp.label}
-            </Link>
-          ) : (
-            <span className="font-semibold text-ink-1 truncate block">{opp.label}</span>
-          )}
-          {opp.constituentName && opp.label !== opp.constituentName && (
-            <span className="text-xs text-ink-2 truncate block">{opp.constituentName}</span>
-          )}
-        </div>
-        {opp.capacityRating != null && <CapacityDots rating={opp.capacityRating} />}
-      </div>
-
-      <div className="flex items-center gap-2 mt-2 text-xs text-ink-1 tabular-nums">
-        {opp.askAmount != null && <span className="font-semibold">{fmtMoney(opp.askAmount)}</span>}
-        {opp.probability != null && (
-          <span className="text-ink-2">{opp.probability}%</span>
-        )}
-        {opp.owner && (
-          <span
-            className="ml-auto w-5 h-5 rounded-full bg-tile text-xs flex items-center justify-center uppercase"
-            title={opp.owner}
-          >
-            {opp.owner.charAt(0)}
-          </span>
-        )}
-      </div>
-
-      {opp.nextStep && (
-        <p className={`mt-2 text-xs leading-snug ${overdue ? "text-expense" : "text-ink-2"}`}>
-          {opp.nextStep}
-          {opp.nextStepDue && (
-            <span className="whitespace-nowrap"> · {opp.nextStepDue.slice(5)}</span>
-          )}
-        </p>
-      )}
-
-      <div className="flex items-center gap-1 mt-3">
-        {stageType === "lost" && (
-          <button
-            onClick={() => patch({ stage: reopenKey })}
-            disabled={busy}
-            className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
-          >
-            Reopen
-          </button>
-        )}
-        <button
-          onClick={() => setEditing((v) => !v)}
-          className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
-        >
-          Edit
-        </button>
-        {stageType !== "lost" && stageType !== "won" && lostKey && (
-          <button
-            onClick={async () => {
-              const ok = await confirm({
-                title: "Mark this ask as lost?",
-                body: "You can reopen it from the Lost column later.",
-                confirmLabel: "Mark lost",
-              });
-              if (ok) void patch({ stage: lostKey });
-            }}
-            disabled={busy}
-            className="ml-auto px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense"
-          >
-            Lost
-          </button>
-        )}
-        {opp.hubspotId && (
-          <Link
-            href={`/admin/fundraising/prospects/by-hubspot/${opp.hubspotId}`}
-            draggable={false}
-            onClick={(e) => e.stopPropagation()}
-            className="ml-auto px-2 py-1 rounded-control text-xs text-ink-2 hover:text-ink-1"
-            title="Research brief"
-          >
-            Brief
-          </Link>
-        )}
-      </div>
-
-      {editing && (
-        <OpportunityEditModal opp={opp} stages={stages} onClose={() => setEditing(false)} />
-      )}
-    </article>
   );
 }

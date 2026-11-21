@@ -60,11 +60,12 @@ export function quarterEnd(today: string): string {
   return `${y}-${String(endMonth).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
 }
 
+/** Built-in saved views. "Mine" needs an owner on each ask, which waits on
+ *  the assignment migration; until then the views are about the work. */
 export const BOARD_VIEWS = [
   { key: "all", label: "All asks" },
+  { key: "open", label: "Open asks" },
   { key: "quarter", label: "Closing this quarter" },
-  { key: "late", label: "Late next step" },
-  { key: "no_next", label: "No next step" },
 ] as const;
 export type BoardViewKey = (typeof BOARD_VIEWS)[number]["key"];
 
@@ -72,27 +73,42 @@ export function isBoardView(v: unknown): v is BoardViewKey {
   return BOARD_VIEWS.some((b) => b.key === v);
 }
 
-/** Apply a built-in view. Views about next steps only look at open asks. */
-export function applyBoardView(
+/** Quick filters in the filter row; several can be on at once (AND). */
+export const QUICK_FILTERS = [
+  { key: "late", label: "Late next step" },
+  { key: "no_next", label: "No next step" },
+  { key: "large", label: "$10,000 and up" },
+] as const;
+export type QuickKey = (typeof QUICK_FILTERS)[number]["key"];
+export const LARGE_ASK = 10000;
+
+/** Apply a saved view, then every active quick filter, then the search. */
+export function filterBoard(
   opps: readonly BoardOpp[],
-  view: BoardViewKey,
+  opts: { view: BoardViewKey; quick: readonly QuickKey[]; q: string },
   stageTypeOf: (stage: string) => string,
   today: string,
 ): BoardOpp[] {
   const open = (o: BoardOpp) => stageTypeOf(o.stage) === "open";
-  switch (view) {
-    case "quarter": {
-      const end = quarterEnd(today);
-      const start = quarterStart(today);
-      return opps.filter((o) => open(o) && !!o.expectedClose && o.expectedClose >= start && o.expectedClose <= end);
-    }
-    case "late":
-      return opps.filter((o) => open(o) && !!o.nextStep && !!o.nextStepDue && o.nextStepDue < today);
-    case "no_next":
-      return opps.filter((o) => open(o) && !o.nextStep);
-    default:
-      return [...opps];
+  let out = [...opps];
+  if (opts.view === "open") out = out.filter(open);
+  if (opts.view === "quarter") {
+    const start = quarterStart(today);
+    const end = quarterEnd(today);
+    out = out.filter((o) => open(o) && !!o.expectedClose && o.expectedClose >= start && o.expectedClose <= end);
   }
+  for (const k of opts.quick) {
+    if (k === "late") out = out.filter((o) => open(o) && !!o.nextStep && !!o.nextStepDue && o.nextStepDue < today);
+    if (k === "no_next") out = out.filter((o) => open(o) && !o.nextStep);
+    if (k === "large") out = out.filter((o) => (o.askAmount ?? 0) >= LARGE_ASK);
+  }
+  return searchOpps(out, opts.q);
+}
+
+/** The columns a view shows: "Open asks" and "Closing this quarter" hide
+ *  the won, lost and on-hold columns. */
+export function columnsForView<S extends BoardStage>(stages: readonly S[], view: BoardViewKey): S[] {
+  return view === "all" ? [...stages] : stages.filter((s) => s.stageType === "open");
 }
 
 /** The first day of today's calendar quarter. */

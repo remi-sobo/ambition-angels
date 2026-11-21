@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import EmptyState from "../../_components/EmptyState";
 import { useRouter } from "next/navigation";
-import { userMessage } from "@/lib/admin/errors";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import { saveAction } from "@/lib/admin/saveAction";
 import type { AdminUser } from "@/lib/admin/auth";
 import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
-import { patchTask } from "./taskSave";
+import { sendTaskPatch, taskPatchRequest } from "./taskSave";
 import TaskRow, { PriorityFlag } from "./TaskRow";
 import {
   TASK_CATEGORIES,
@@ -133,21 +133,22 @@ export default function TaskListView({
     const updates = nextTop
       .map((t, i) => ({ id: t.id, order: i + 1, old: t.display_order }))
       .filter((u) => u.order !== u.old);
+    if (updates.length === 0) return;
     setBusy(true);
-    try {
-      const errors = await Promise.all(updates.map((u) => patchTask(u.id, { display_order: u.order })));
-      const failed = errors.find((e) => e !== null);
-      if (failed) {
-        // Roll the optimistic order back; a partial save is re-read from
-        // the server on the refresh below.
-        console.error("Reorder failed:", failed);
-        setLocal(previous);
-        toast.error(failed);
-      }
-      startTransition(() => router.refresh());
-    } finally {
-      setBusy(false);
-    }
+    // The optimistic order is already on screen (onDrop). One saveAction for
+    // the batch: the request answers with the first failed PATCH, if any, so
+    // a single failure rolls the whole order back with one toast. A partial
+    // save is re-read from the server on the refresh below.
+    await saveAction({
+      request: async () => {
+        const responses = await Promise.all(updates.map((u) => sendTaskPatch(u.id, { display_order: u.order })));
+        return responses.find((r) => !r.ok) ?? responses[0];
+      },
+      rollback: () => setLocal(previous),
+      toast,
+    });
+    startTransition(() => router.refresh());
+    setBusy(false);
   }
 
   function onDrop(targetId: string) {
@@ -180,19 +181,15 @@ export default function TaskListView({
   // ── Complete (with the collapse animation, drawer mode) ─────────────────
   async function patchStatus(t: OpsTask, status: "todo" | "done") {
     setBusy(true);
-    try {
-      const failed = await patchTask(t.id, { status });
-      if (failed) {
-        // Bring the row back from its collapse and say why.
-        console.error("Task status save failed:", failed);
-        cancel(t.id);
-        toast.error(failed);
-        return;
-      }
-      startTransition(() => router.refresh());
-    } finally {
-      setBusy(false);
-    }
+    // The collapse animation is the optimistic change; on failure saveAction
+    // brings the row back (rollback) and shows the standard error toast.
+    const r = await saveAction({
+      request: taskPatchRequest(t.id, { status }),
+      rollback: () => cancel(t.id),
+      toast,
+    });
+    if (r.ok) startTransition(() => router.refresh());
+    setBusy(false);
   }
   const onCompleteTask = (t: OpsTask) => {
     if (t.status === "done") void patchStatus(t, "todo");
@@ -210,28 +207,23 @@ export default function TaskListView({
     if (!title) return;
     setAdding(true);
     setAddError(null);
-    try {
-      const r = await fetch("/api/admin/ops/tasks", {
+    // Not optimistic: the new row needs its server id. The error shows
+    // inline under the add row, so the toast is off.
+    const r = await saveAction({
+      request: {
+        url: "/api/admin/ops/tasks",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          category: "other",
-          priority: "medium",
-          assigned_to: currentUser ?? null,
-        }),
-      });
-      if (!r.ok) {
-        const body = await r.json().catch(() => ({}));
-        throw new Error(userMessage(r, body));
-      }
+        body: { title, category: "other", priority: "medium", assigned_to: currentUser ?? null },
+      },
+      failure: false,
+    });
+    if (r.ok) {
       setNewTitle("");
       startTransition(() => router.refresh());
-    } catch (e) {
-      setAddError(e instanceof Error ? e.message : "Add failed");
-    } finally {
-      setAdding(false);
+    } else {
+      setAddError(r.message);
     }
+    setAdding(false);
   }
 
   function toggleExpand(id: string) {

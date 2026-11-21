@@ -53,8 +53,8 @@ Phase 1 interview, Phase 2 spec, Stage A onward, as in `specs/bloomos-v4-product
 |---|---|---|
 | `UNSUBSCRIBE_SECRET` on the `ambition-angels` Vercel project | Copy the value from the `bloomos` project, or generate one and set it on both; redeploy | Open. That project's production deploys fail until it is set. |
 | Off-site backup | Add `SUPABASE_DB_URL` as a GitHub secret; then one restore gets tested | Open |
-| Six unscheduled jobs | Decide per job: HubSpot sync, journeys, meeting reminders, daily reminders, weekly digest, stewardship milestones | Open |
-| Two-step login | Decide whether SafeSpace staff and board viewers must use it | Open |
+| Six unscheduled jobs | Remi: "your recommendations". Email jobs get a per-org opt-in (Ambition Angels first, SafeSpace at go-live); daily reminders, weekly digest, meeting reminders and stewardship milestones scheduled; HubSpot after one supervised run; journeys waits for Stage D | In progress |
+| Two-step login | Remi: required for everyone. Authenticator-app two-step on every admin page and route, owner reset in People and roles | In progress |
 | Gmail verification for pilots | A privacy policy page, then Google's review (see the brief's appendix) | Open |
 | Dead screens to delete | Approved 2026-11-21 | In progress (Stage B2) |
 | `org_entitlements` write policy | Approved and applied 2026-11-21 (`entitlements_operator_only_writes`) | Done |
